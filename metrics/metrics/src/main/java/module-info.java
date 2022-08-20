@@ -20,13 +20,13 @@ module io.helidon.metrics {
     requires java.logging;
 
     requires io.helidon.common;
-    requires io.helidon.webserver.cors;
+    requires io.helidon.reactive.webserver.cors;
     requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.metrics.serviceapi;
 
     requires transitive microprofile.metrics.api;
     requires java.management;
-    requires transitive io.helidon.webserver; // webserver/webserver/Context is a public return value
+    requires transitive io.helidon.reactive.webserver; // webserver/webserver/Context is a public return value
     requires io.helidon.reactive.media.jsonp;
     requires jakarta.json;
     requires io.helidon.servicecommon.rest;

@@ -21,8 +21,8 @@ import java.util.logging.Logger;
 
 import io.helidon.examples.dbclient.common.AbstractPokemonService;
 import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 
 /**
  * Example service using a database.

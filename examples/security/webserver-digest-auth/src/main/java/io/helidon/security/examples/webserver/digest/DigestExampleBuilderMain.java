@@ -27,14 +27,14 @@ import java.util.Set;
 
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpDigest;
 import io.helidon.security.providers.httpauth.HttpDigestAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 /**
  * Example of HTTP digest authentication with WebServer fully configured programmatically.

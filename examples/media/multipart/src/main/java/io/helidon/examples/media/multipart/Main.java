@@ -20,9 +20,9 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.media.multipart.MultiPartSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.staticcontent.StaticContentSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
 
 /**
  * This application provides a simple file upload service with a UI to exercise multipart.

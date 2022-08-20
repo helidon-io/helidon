@@ -27,9 +27,11 @@ import java.util.function.Function;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.InvocationCallback;
 import org.glassfish.jersey.client.ClientAsyncExecutor;
 import org.glassfish.jersey.spi.ThreadPoolExecutorProvider;
 import org.junit.jupiter.api.AfterAll;
@@ -41,10 +43,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.InvocationCallback;
 
 public class ContextTest {
 

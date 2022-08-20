@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.cors.CorsSupportBase;
-import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.reactive.webserver.cors.CorsSupportBase;
+import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;

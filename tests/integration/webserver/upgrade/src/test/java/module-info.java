@@ -21,7 +21,7 @@ open module helidon.tests.integration.webserver.upgrade.test {
 
     requires helidon.tests.integration.webserver.upgrade;
 
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
     requires io.helidon.reactive.webclient;
     requires java.net.http;
     requires java.logging;

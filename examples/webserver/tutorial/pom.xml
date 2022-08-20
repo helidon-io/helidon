@@ -38,7 +38,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.tutorial.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.tutorial.Main</mainClass>
     </properties>
 
     <dependencies>

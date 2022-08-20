@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import io.helidon.common.uri.UriQuery;
+import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webserver.ServerRequest;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

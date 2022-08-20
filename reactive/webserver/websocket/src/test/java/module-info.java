@@ -18,7 +18,7 @@
  */
 open module helidon.webserver.websocket.test {
 
-    requires io.helidon.webserver.websocket;
+    requires io.helidon.reactive.webserver.websocket;
 
     requires java.logging;
     requires java.net.http;
@@ -29,5 +29,5 @@ open module helidon.webserver.websocket.test {
     requires org.glassfish.tyrus.client;
     requires org.glassfish.tyrus.container.jdk.client;
 
-    exports io.helidon.webserver.websocket.test;
+    exports io.helidon.reactive.webserver.websocket.test;
 }

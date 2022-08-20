@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
+import io.helidon.reactive.webserver.jersey.HelidonHK2InjectionManagerFactory;
+
 import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
 
 /**
  * Jersey integration.
  */
-module io.helidon.webserver.jersey {
+module io.helidon.reactive.webserver.jersey {
     requires transitive jakarta.annotation;
-    requires transitive io.helidon.webserver;
+    requires transitive io.helidon.reactive.webserver;
     requires transitive jakarta.ws.rs;
     requires transitive io.helidon.jersey.server;
     requires transitive io.helidon.jersey.client;
@@ -33,10 +35,10 @@ module io.helidon.webserver.jersey {
     requires io.netty.buffer;
     requires jersey.common;
 
-    exports io.helidon.webserver.jersey;
+    exports io.helidon.reactive.webserver.jersey;
 
-    provides InjectionManagerFactory with io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory;
+    provides InjectionManagerFactory with HelidonHK2InjectionManagerFactory;
 
     // reflection access from jersey injection
-    opens io.helidon.webserver.jersey to org.glassfish.hk2.utilities, org.glassfish.hk2.locator;
+    opens io.helidon.reactive.webserver.jersey to org.glassfish.hk2.utilities, org.glassfish.hk2.locator;
 }

@@ -36,11 +36,11 @@
         "org.glassfish.hk2.api.ProxyCtl"
     ],
     [
-        "io.helidon.webserver.ServerRequest",
+        "io.helidon.reactive.webserver.ServerRequest",
         "org.glassfish.hk2.api.ProxyCtl"
     ],
     [
-        "io.helidon.webserver.ServerResponse",
+        "io.helidon.reactive.webserver.ServerResponse",
         "org.glassfish.hk2.api.ProxyCtl"
     ]
 ]

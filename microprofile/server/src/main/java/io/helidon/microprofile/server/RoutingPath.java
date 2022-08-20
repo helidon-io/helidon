@@ -25,9 +25,9 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Path of a {@link io.helidon.webserver.Service} to register with routing.
+ * Path of a {@link io.helidon.reactive.webserver.Service} to register with routing.
  * If a service is not annotated with this annotation, it would be registered without a path using
- * {@link io.helidon.webserver.Routing.Rules#register(io.helidon.webserver.Service...)}.
+ * {@link io.helidon.reactive.webserver.Routing.Rules#register(io.helidon.reactive.webserver.Service...)}.
  *
  * Configuration can be overridden using configuration:
  * <ul>
@@ -68,7 +68,7 @@ public @interface RoutingPath {
     String CONFIG_KEY_PATH = "routing-path.path";
 
     /**
-     * Path of this WebServer service. Use the same path as would be used with {@link io.helidon.webserver.Routing.Rules}.
+     * Path of this WebServer service. Use the same path as would be used with {@link io.helidon.reactive.webserver.Routing.Rules}.
      *
      * @return path to register the service on.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Service;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

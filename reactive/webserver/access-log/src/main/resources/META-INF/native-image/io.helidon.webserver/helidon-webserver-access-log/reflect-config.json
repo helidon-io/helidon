@@ -1,6 +1,6 @@
 [
     {
-        "name": "io.helidon.webserver.accesslog.AccessLogHandler",
+        "name": "io.helidon.reactive.webserver.accesslog.AccessLogHandler",
         "allDeclaredConstructors": true,
         "allPublicMethods": true
     }

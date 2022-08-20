@@ -25,9 +25,9 @@ import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jsonb.JsonbSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 /**
  * Simple Hello World rest application.
@@ -69,7 +69,7 @@ public final class PokemonMain {
     /**
      * Start the server.
      *
-     * @return the created {@link io.helidon.webserver.WebServer} instance
+     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
      */
     static WebServer startServer() {
 
@@ -101,7 +101,7 @@ public final class PokemonMain {
     }
 
     /**
-     * Creates new {@link io.helidon.webserver.Routing}.
+     * Creates new {@link io.helidon.reactive.webserver.Routing}.
      *
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service

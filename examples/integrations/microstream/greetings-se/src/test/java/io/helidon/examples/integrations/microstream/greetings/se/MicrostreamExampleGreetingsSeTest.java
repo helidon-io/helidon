@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;

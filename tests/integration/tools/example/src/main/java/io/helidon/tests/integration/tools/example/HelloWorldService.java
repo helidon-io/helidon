@@ -19,10 +19,10 @@ import java.util.Optional;
 
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 
 import jakarta.json.Json;
 import jakarta.json.JsonValue;

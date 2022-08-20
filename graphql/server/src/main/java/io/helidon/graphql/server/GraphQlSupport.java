@@ -31,12 +31,12 @@ import io.helidon.config.Config;
 import io.helidon.reactive.media.common.MessageBodyReader;
 import io.helidon.reactive.media.common.MessageBodyWriter;
 import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 import graphql.schema.GraphQLSchema;
 import jakarta.json.bind.Jsonb;
@@ -78,7 +78,7 @@ public class GraphQlSupport implements Service {
      * Create GraphQL support for a GraphQL schema.
      *
      * @param schema schema to use for GraphQL
-     * @return a new support to register with {@link io.helidon.webserver.WebServer} {@link Routing.Builder}
+     * @return a new support to register with {@link io.helidon.reactive.webserver.WebServer} {@link Routing.Builder}
      */
     public static GraphQlSupport create(GraphQLSchema schema) {
         return builder()

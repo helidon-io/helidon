@@ -39,7 +39,7 @@ Instead, build a `MetricsSettings` object from the configuration.
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 
 import org.eclipse.microprofile.metrics.MetricRegistry;

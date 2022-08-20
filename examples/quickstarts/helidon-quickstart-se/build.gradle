@@ -47,7 +47,7 @@ repositories {
 dependencies {
     // import Helidon BOM
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
-    implementation 'io.helidon.webserver:helidon-reactive-webserver'
+    implementation 'io.helidon.reactive.webserver:helidon-reactive-webserver'
     implementation 'io.helidon.reactive.media:helidon-reactive-media-jsonp'
     implementation 'io.helidon.config:helidon-config-yaml'
     implementation 'io.helidon.reactive.health:helidon-reactive-health'

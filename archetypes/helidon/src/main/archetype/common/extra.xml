@@ -97,7 +97,7 @@
                                     <value key="artifactId">helidon-microprofile-cors</value>
                                 </map>
                                 <map if="${flavor} == 'se'">
-                                    <value key="groupId">io.helidon.webserver</value>
+                                    <value key="groupId">io.helidon.reactive.webserver</value>
                                     <value key="artifactId">helidon-reactive-webserver-cors</value>
                                 </map>
                             </list>
@@ -109,8 +109,8 @@
                                 <value>jakarta.ws.rs.HttpMethod</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.webserver.cors.CorsSupport</value>
-                                <value>io.helidon.webserver.cors.CrossOriginConfig</value>
+                                <value>io.helidon.reactive.webserver.cors.CorsSupport</value>
+                                <value>io.helidon.reactive.webserver.cors.CrossOriginConfig</value>
                             </list>
                             <list key="Main-createRouting" if="${flavor} == 'se'">
                                 <value><![CDATA[

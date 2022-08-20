@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.microprofile.accesslog;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webserver.accesslog.AccessLogSupport;
+import io.helidon.reactive.webserver.accesslog.AccessLogSupport;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;

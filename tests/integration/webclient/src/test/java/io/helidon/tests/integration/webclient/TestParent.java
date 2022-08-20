@@ -23,12 +23,12 @@ import java.util.stream.Stream;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.spi.WebClientService;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.spi.WebClientService;
-import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

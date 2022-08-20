@@ -30,8 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.jersey.JerseySupport;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.jersey.JerseySupport;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

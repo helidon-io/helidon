@@ -18,6 +18,6 @@
  * WebServer Bundle module.
  */
 module io.helidon.bundles.webserver {
-    requires transitive io.helidon.webserver;
+    requires transitive io.helidon.reactive.webserver;
     requires transitive io.helidon.reactive.media.jsonp;
 }

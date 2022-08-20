@@ -18,14 +18,14 @@
  * Static content support for Helidon WebServer.
  * Supports both classpath and file system based static content.
  */
-module io.helidon.webserver.staticcontent {
+module io.helidon.reactive.webserver.staticcontent {
     requires java.logging;
 
     requires io.helidon.common.http;
     requires io.helidon.common.media.type;
     requires io.helidon.common.reactive;
     requires io.helidon.reactive.media.common;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
-    exports io.helidon.webserver.staticcontent;
+    exports io.helidon.reactive.webserver.staticcontent;
 }

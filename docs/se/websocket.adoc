@@ -172,5 +172,5 @@ thread pool. See the documentation for `io.helidon.common.configurable.ThreadPoo
 
 == Reference
 
-* link:{javadoc-base-url}/io.helidon.webserver.websocket/module-summary.html[Helidon WebSocket JavaDoc]
+* link:{javadoc-base-url}/io.helidon.reactive.webserver.websocket/module-summary.html[Helidon WebSocket JavaDoc]
 * link:{jakarta-websocket-spec-url}[Jakarta WebSocket Specification]

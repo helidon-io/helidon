@@ -24,7 +24,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

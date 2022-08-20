@@ -21,10 +21,10 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 /**
  * Common base implementation for {@linkplain Service service} support classes which involve REST endpoints.
@@ -77,10 +77,10 @@ public abstract class HelidonRestServiceSupport implements RestServiceSupport {
      * Configures service endpoint on the provided routing rules. This method
      * just adds the endpoint path (as defaulted or configured).
      * This method is exclusive to
-     * {@link #update(io.helidon.webserver.Routing.Rules)} (e.g. you should not
+     * {@link #update(io.helidon.reactive.webserver.Routing.Rules)} (e.g. you should not
      * use both, as otherwise you would register the endpoint twice)
      *
-     * @param defaultRules default routing rules (also accepts {@link io.helidon.webserver.Routing.Builder}
+     * @param defaultRules default routing rules (also accepts {@link io.helidon.reactive.webserver.Routing.Builder}
      * @param serviceEndpointRoutingRules actual rules (if different from default) for the service endpoint
      */
     @Override

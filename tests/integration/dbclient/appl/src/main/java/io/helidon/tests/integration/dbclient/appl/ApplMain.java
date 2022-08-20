@@ -48,8 +48,8 @@ import io.helidon.tests.integration.dbclient.appl.transaction.TransactionGetServ
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionInsertService;
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionQueriesService;
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionUpdateService;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Main class.

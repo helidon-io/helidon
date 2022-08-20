@@ -25,7 +25,7 @@ import java.util.stream.LongStream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.ServerResponse;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;

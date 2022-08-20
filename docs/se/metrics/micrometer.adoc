@@ -193,9 +193,9 @@ MicrometerSupport support = MicrometerSupport.builder()
                 .build();
 ----
 <1> Create the meter registry. This example uses a Prometheus registry but it can be any extension of `MeterRegistry`.
-<2> Provide the function that checks if the link:{webserver-javadoc-base-url}/io/helidon/webserver/ServerRequest.html[`ServerRequest`]
+<2> Provide the function that checks if the link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/ServerRequest.html[`ServerRequest`]
 accepts content that your meter registry can produce (e.g., either `text/plain` or unspecified is normally an indication for Prometheus-style output)
-and returns the appropriate `Optional<link:{webserver-javadoc-base-url}/io/helidon/webserver/Handler.html[``Handler``]>`.
+and returns the appropriate `Optional<link:{webserver-javadoc-base-url}/io/helidon/reactive/webserver/Handler.html[``Handler``]>`.
 <3> A very simple in-line `Handler` that sets the response entity from the Prometheus registry's `scrape()` method.
 
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=accessing-endpoint-intro]

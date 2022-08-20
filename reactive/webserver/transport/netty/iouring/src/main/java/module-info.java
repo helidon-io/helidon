@@ -17,12 +17,12 @@
 /**
  * Netty IOURING transport.
  */
-module io.helidon.webserver.transport.netty.iouring {
-    requires io.helidon.webserver;
+module io.helidon.reactive.webserver.transport.netty.iouring {
+    requires io.helidon.reactive.webserver;
 
     requires io.netty.transport;
 
     requires io.netty.incubator.transport.io_uring;
 
-    exports io.helidon.webserver.transport.netty.iouring;
+    exports io.helidon.reactive.webserver.transport.netty.iouring;
 }

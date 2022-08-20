@@ -25,9 +25,9 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerTls;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServerTls;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;

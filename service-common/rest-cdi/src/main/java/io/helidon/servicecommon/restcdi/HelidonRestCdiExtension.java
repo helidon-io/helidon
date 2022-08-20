@@ -33,9 +33,9 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.reactive.webserver.Routing;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSupport;
-import io.helidon.webserver.Routing;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

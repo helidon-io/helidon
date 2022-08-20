@@ -31,7 +31,7 @@ import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.webserver.Routing;
+import io.helidon.reactive.webserver.Routing;
 
 import io.grpc.Context;
 import io.grpc.Metadata;

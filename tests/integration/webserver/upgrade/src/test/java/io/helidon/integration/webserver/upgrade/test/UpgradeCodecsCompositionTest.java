@@ -43,7 +43,7 @@ import io.helidon.integration.webserver.upgrade.Main;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webclient.WebClientTls;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;

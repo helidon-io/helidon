@@ -35,7 +35,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.faulttolerance.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.faulttolerance.Main</mainClass>
     </properties>
 
     <dependencies>

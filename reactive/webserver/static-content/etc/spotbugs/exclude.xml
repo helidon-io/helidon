@@ -24,25 +24,25 @@
 
     <Match>
         <!-- input for temp file creation -->
-        <Class name="io.helidon.webserver.staticcontent.ClassPathContentHandler"/>
+        <Class name="io.helidon.reactive.webserver.staticcontent.ClassPathContentHandler"/>
         <Method name="lambda$new$0"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- input for temp file creation -->
-        <Class name="io.helidon.webserver.staticcontent.ClassPathContentHandler"/>
+        <Class name="io.helidon.reactive.webserver.staticcontent.ClassPathContentHandler"/>
         <Method name="lambda$new$1"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- extracting from classpath -->
-        <Class name="io.helidon.webserver.staticcontent.ClassPathContentHandler"/>
+        <Class name="io.helidon.reactive.webserver.staticcontent.ClassPathContentHandler"/>
         <Method name="getLastModified"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- extracting from classpath -->
-        <Class name="io.helidon.webserver.staticcontent.ClassPathContentHandler"/>
+        <Class name="io.helidon.reactive.webserver.staticcontent.ClassPathContentHandler"/>
         <Method name="extractJarEntry"/>
         <Bug pattern="URLCONNECTION_SSRF_FD"/>
     </Match>

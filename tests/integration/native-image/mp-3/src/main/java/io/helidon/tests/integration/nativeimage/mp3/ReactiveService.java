@@ -16,9 +16,9 @@
 package io.helidon.tests.integration.nativeimage.mp3;
 
 import io.helidon.microprofile.server.RoutingPath;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.Service;
 import io.helidon.security.Security;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.Service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

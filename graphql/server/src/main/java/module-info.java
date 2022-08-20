@@ -27,9 +27,9 @@ module io.helidon.graphql.server {
     requires io.helidon.common.http;
     requires io.helidon.reactive.media.common;
     requires io.helidon.reactive.media.jsonb;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
-    requires transitive io.helidon.webserver.cors;
+    requires transitive io.helidon.reactive.webserver.cors;
     requires transitive io.helidon.config;
     requires transitive graphql.java;
 

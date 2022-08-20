@@ -52,12 +52,12 @@ import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import io.helidon.reactive.media.common.MessageBodyReaderContext;
 import io.helidon.reactive.media.common.MessageBodyWriterContext;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
@@ -86,7 +86,7 @@ import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
 
-import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
+import static io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document

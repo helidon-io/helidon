@@ -22,11 +22,11 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver.transport</groupId>
+        <groupId>io.helidon.reactive.webserver.transport</groupId>
         <artifactId>helidon-reactive-webserver-transport-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver.transport.netty</groupId>
+    <groupId>io.helidon.reactive.webserver.transport.netty</groupId>
     <artifactId>helidon-reactive-webserver-transport-netty-project</artifactId>
     <name>Helidon Reactive WebServer Transport Netty Project</name>
     <packaging>pom</packaging>

@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.helidon.webserver.spi.UpgradeCodecProvider;
+import io.helidon.reactive.webserver.http2.Http2UpgradeCodecProvider;
+import io.helidon.reactive.webserver.spi.UpgradeCodecProvider;
 
-module io.helidon.webserver.http2 {
+module io.helidon.reactive.webserver.http2 {
 
-    exports io.helidon.webserver.http2;
+    exports io.helidon.reactive.webserver.http2;
 
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
     requires io.netty.transport;
     requires io.netty.codec.http2;
     requires io.netty.handler;
@@ -30,5 +31,5 @@ module io.helidon.webserver.http2 {
     requires io.netty.codec;
 
     provides UpgradeCodecProvider
-            with io.helidon.webserver.http2.Http2UpgradeCodecProvider;
+            with Http2UpgradeCodecProvider;
 }

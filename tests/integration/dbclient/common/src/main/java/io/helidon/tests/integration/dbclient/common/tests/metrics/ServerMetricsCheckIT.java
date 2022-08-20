@@ -41,8 +41,8 @@ import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

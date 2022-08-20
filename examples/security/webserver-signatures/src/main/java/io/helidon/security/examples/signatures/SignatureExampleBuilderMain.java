@@ -29,6 +29,8 @@ import java.util.Optional;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.CompositeProviderFlag;
 import io.helidon.security.CompositeProviderSelectionPolicy;
 import io.helidon.security.Security;
@@ -42,8 +44,6 @@ import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.security.providers.httpsign.HttpSignProvider;
 import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.

@@ -25,7 +25,7 @@ module io.helidon.examples.integrations.oci.atp.reactive {
     requires io.helidon.common.reactive;
     requires io.helidon.reactive.dbclient;
     requires io.helidon.reactive.dbclient.jdbc;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
     requires oci.java.sdk.shaded.full;
 

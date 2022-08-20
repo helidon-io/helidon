@@ -25,8 +25,8 @@ import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
@@ -51,7 +51,7 @@ public final class Main {
 
     /**
      * Start the server.
-     * @return the created {@link io.helidon.webserver.WebServer} instance
+     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
      */
     static Single<WebServer> startServer() {
 
@@ -94,7 +94,7 @@ public final class Main {
     }
 
     /**
-     * Creates new {@link io.helidon.webserver.Routing}.
+     * Creates new {@link io.helidon.reactive.webserver.Routing}.
      *
      * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server

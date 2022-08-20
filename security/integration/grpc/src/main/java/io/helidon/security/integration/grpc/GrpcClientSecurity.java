@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
+import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -29,7 +30,6 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.OutboundTracing;
 import io.helidon.security.integration.common.SecurityTracing;
-import io.helidon.webserver.ServerRequest;
 
 import io.grpc.CallCredentials;
 import io.grpc.Metadata;

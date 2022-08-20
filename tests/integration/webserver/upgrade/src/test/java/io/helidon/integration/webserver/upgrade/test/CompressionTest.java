@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

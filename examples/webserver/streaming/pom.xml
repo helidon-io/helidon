@@ -37,7 +37,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.streaming.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.streaming.Main</mainClass>
     </properties>
 
     <dependencies>

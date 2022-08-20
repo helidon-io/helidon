@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.opentracing.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.opentracing.Main</mainClass>
         <version.lib.mockito>2.23.4</version.lib.mockito>
     </properties>
 

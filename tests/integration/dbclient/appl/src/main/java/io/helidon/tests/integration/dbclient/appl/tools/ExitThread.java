@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.tests.integration.dbclient.appl.tools;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Exits JPA MP application after short delay.

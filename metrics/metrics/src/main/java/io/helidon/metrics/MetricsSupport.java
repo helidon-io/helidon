@@ -48,14 +48,14 @@ import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
 import io.helidon.reactive.media.common.MessageBodyWriter;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Handler;
+import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
+import io.helidon.reactive.webserver.RequestHeaders;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.KeyPerformanceIndicatorSupport;
-import io.helidon.webserver.RequestHeaders;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -379,7 +379,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     /**
      * Configure vendor metrics on the provided routing. This method is
-     * exclusive to {@link #update(io.helidon.webserver.Routing.Rules)} (e.g.
+     * exclusive to {@link #update(io.helidon.reactive.webserver.Routing.Rules)} (e.g.
      * you should not use both, as otherwise you would duplicate the metrics)
      *
      * @param routingName name of the routing (may be null)
@@ -424,10 +424,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * just adds the endpoint {@code /metrics} (or appropriate one as
      * configured). For simple routings, just register {@code MetricsSupport}
      * instance. This method is exclusive to
-     * {@link #update(io.helidon.webserver.Routing.Rules)} (e.g. you should not
+     * {@link #update(io.helidon.reactive.webserver.Routing.Rules)} (e.g. you should not
      * use both, as otherwise you would register the endpoint twice)
      *
-     * @param defaultRules routing rules for default routing (also accepts {@link io.helidon.webserver.Routing.Builder})
+     * @param defaultRules routing rules for default routing (also accepts {@link io.helidon.reactive.webserver.Routing.Builder})
      * @param serviceEndpointRoutingRules possibly different rules for the metrics endpoint routing
      */
     @Override
@@ -484,11 +484,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     /**
      * Method invoked by the web server to update routing rules. Register this
      * instance with webserver through
-     * {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...)}
+     * {@link io.helidon.reactive.webserver.Routing.Builder#register(io.helidon.reactive.webserver.Service...)}
      * rather than calling this method directly. If multiple sockets (and
      * routings) should be supported, you can use the
-     * {@link #configureEndpoint(io.helidon.webserver.Routing.Rules, io.helidon.webserver.Routing.Rules)}, and
-     * {@link #configureVendorMetrics(String, io.helidon.webserver.Routing.Rules)}
+     * {@link #configureEndpoint(io.helidon.reactive.webserver.Routing.Rules, io.helidon.reactive.webserver.Routing.Rules)}, and
+     * {@link #configureVendorMetrics(String, io.helidon.reactive.webserver.Routing.Rules)}
      * methods.
      *
      * @param rules a routing rules to update

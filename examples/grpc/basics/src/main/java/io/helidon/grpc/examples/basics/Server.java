@@ -26,8 +26,8 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.reactive.health.HealthSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * A basic example of a Helidon gRPC server.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
  * Example of integration (expects an instance of {@link io.helidon.security.Security}):
  * <pre>
  * // Web server routing builder - this is our integration point
- * {@link io.helidon.webserver.Routing} routing = Routing.builder()
+ * {@link io.helidon.reactive.webserver.Routing} routing = Routing.builder()
  * // register the WebSecurity to create context (shared by all routes)
  * .register({@link io.helidon.security.integration.webserver.WebSecurity}.{@link
  * io.helidon.security.integration.webserver.WebSecurity#create(io.helidon.security.Security) from(security)})
@@ -31,7 +31,7 @@
  * .get("/admin", WebSecurity.rolesAllowed("admin")
  * .authenticate()
  * )
- * // build a routing instance to start {@link io.helidon.webserver.WebServer} with.
+ * // build a routing instance to start {@link io.helidon.reactive.webserver.WebServer} with.
  * .build();
  * </pre>
  *

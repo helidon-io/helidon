@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.spi.UpgradeCodecProvider;
+import io.helidon.reactive.webserver.spi.UpgradeCodecProvider;
+import io.helidon.reactive.webserver.websocket.WebsocketUpgradeCodecProvider;
 
 /**
  * WebSocket support for Helidon webserver.
  */
-module io.helidon.webserver.websocket {
+module io.helidon.reactive.webserver.websocket {
 
-    exports io.helidon.webserver.websocket;
+    exports io.helidon.reactive.webserver.websocket;
 
     requires java.logging;
-    requires transitive io.helidon.webserver;
+    requires transitive io.helidon.reactive.webserver;
     requires io.helidon.common.http;
     requires transitive jakarta.websocket;
     requires io.netty.transport;
@@ -39,5 +40,5 @@ module io.helidon.webserver.websocket {
     requires org.glassfish.tyrus.client;
 
     provides UpgradeCodecProvider
-            with io.helidon.webserver.websocket.WebsocketUpgradeCodecProvider;
+            with WebsocketUpgradeCodecProvider;
 }

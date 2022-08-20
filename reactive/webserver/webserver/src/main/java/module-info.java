@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.spi.UpgradeCodecProvider;
+import io.helidon.reactive.webserver.spi.UpgradeCodecProvider;
 
 /**
  * Reactive web server.
  */
-module io.helidon.webserver {
+module io.helidon.reactive.webserver {
     requires io.helidon.common;
     requires transitive io.helidon.reactive.media.common;
     requires transitive io.helidon.common.http;
@@ -41,8 +41,8 @@ module io.helidon.webserver {
     requires io.netty.common;
     requires io.netty.buffer;
 
-    exports io.helidon.webserver;
-    exports io.helidon.webserver.spi;
+    exports io.helidon.reactive.webserver;
+    exports io.helidon.reactive.webserver.spi;
 
     uses UpgradeCodecProvider;
 }

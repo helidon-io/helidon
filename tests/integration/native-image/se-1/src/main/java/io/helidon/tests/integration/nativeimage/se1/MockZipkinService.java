@@ -29,21 +29,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
-import jakarta.json.Json;
-import jakarta.json.JsonPointer;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
-
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.media.common.MessageBodyReaderContext;
 import io.helidon.reactive.media.common.MessageBodyStreamReader;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
+
+import jakarta.json.Json;
+import jakarta.json.JsonPointer;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 
 public class MockZipkinService implements Service {
 

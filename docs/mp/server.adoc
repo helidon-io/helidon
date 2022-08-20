@@ -107,7 +107,7 @@ By default, the server uses the MicroProfile Config, but you may also want to us
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
-include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_reactive_webserver_WebServer.adoc[leveloffset=+1,tag=config]
 
 == Examples
 
@@ -192,7 +192,7 @@ health:
 
 === Configuring A Reactive Route
 
-Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.Service`
+Helidon MP Server will pick up CDI beans that implement the `io.helidon.reactive.webserver.Service`
 interface and configure them with the underlying WebServer.
 
 This allows configuration of reactive routes to run alongside a JAX-RS application.

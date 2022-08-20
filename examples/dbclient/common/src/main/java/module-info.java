@@ -25,7 +25,7 @@ module io.helidon.examples.dbclient.common {
     requires jakarta.json;
     requires transitive io.helidon.reactive.dbclient;
     requires io.helidon.common.http;
-    requires transitive io.helidon.webserver;
+    requires transitive io.helidon.reactive.webserver;
 
     exports io.helidon.examples.dbclient.common;
 

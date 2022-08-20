@@ -33,7 +33,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.mtls.ServerConfigMain</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.mtls.ServerConfigMain</mainClass>
     </properties>
 
     <dependencies>

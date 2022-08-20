@@ -343,10 +343,10 @@ package io.helidon.examples.quickstart.se;
 
 import io.helidon.common.http.Http;     // <1>
 import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 
 public class LibraryService implements Service {
 
@@ -361,7 +361,7 @@ public class LibraryService implements Service {
 <2> Declare the Helidon DB Client
 <3> A DB Client instance is provided when LibraryService is instantiated.
 
-As the LibraryService implements `io.helidon.webserver.Service`, the `update(Routing)` method has to be implemented.
+As the LibraryService implements `io.helidon.reactive.webserver.Service`, the `update(Routing)` method has to be implemented.
 It defines application endpoints and Http request which can be reached by clients.
 
 [source,java]

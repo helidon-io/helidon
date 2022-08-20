@@ -18,8 +18,8 @@ package io.helidon.servicecommon.restcdi;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.reactive.webserver.Routing;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
-import io.helidon.webserver.Routing;
 
 /**
  * Test SE service which does not really expose its own endpoint but does use config to set an "importance" value.

@@ -17,14 +17,14 @@
 /**
  * The Helidon SE CORS module
  */
-module io.helidon.webserver.cors {
+module io.helidon.reactive.webserver.cors {
     requires java.logging;
 
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
     requires static io.helidon.config.metadata;
 
-    exports io.helidon.webserver.cors;
+    exports io.helidon.reactive.webserver.cors;
 }

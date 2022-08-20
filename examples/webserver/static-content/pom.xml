@@ -37,7 +37,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.staticcontent.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.staticcontent.Main</mainClass>
     </properties>
 
     <dependencies>

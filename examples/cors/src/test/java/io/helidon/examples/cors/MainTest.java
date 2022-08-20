@@ -29,8 +29,8 @@ import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientRequestHeaders;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webclient.WebClientResponseHeaders;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;

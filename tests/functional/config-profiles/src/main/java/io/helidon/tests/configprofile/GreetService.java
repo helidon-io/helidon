@@ -19,15 +19,15 @@ package io.helidon.tests.configprofile;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.config.Config;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
+
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-
-import io.helidon.config.Config;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 
 public class GreetService implements Service {
 

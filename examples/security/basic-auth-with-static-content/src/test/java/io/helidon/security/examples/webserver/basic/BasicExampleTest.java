@@ -20,12 +20,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.security.Security;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webclient.security.WebClientSecurity;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

@@ -24,13 +24,13 @@
 
     <Match>
         <!-- Path comes from code/config  -->
-        <Class name="io.helidon.webserver.testsupport.TemporaryFolder"/>
+        <Class name="io.helidon.reactive.webserver.testsupport.TemporaryFolder"/>
         <Method name="newFile"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- Path comes from code/config  -->
-        <Class name="io.helidon.webserver.testsupport.TemporaryFolder"/>
+        <Class name="io.helidon.reactive.webserver.testsupport.TemporaryFolder"/>
         <Method name="newFolder"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>

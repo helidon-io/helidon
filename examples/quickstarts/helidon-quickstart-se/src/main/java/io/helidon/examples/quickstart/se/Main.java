@@ -23,8 +23,8 @@ import io.helidon.health.checks.HealthChecks;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * The application main class.

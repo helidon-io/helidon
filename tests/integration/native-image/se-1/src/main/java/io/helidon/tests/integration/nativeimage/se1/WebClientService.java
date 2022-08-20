@@ -34,10 +34,10 @@ import io.helidon.reactive.media.jsonb.JsonbSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientException;
 import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 
 import jakarta.json.JsonValue;
 

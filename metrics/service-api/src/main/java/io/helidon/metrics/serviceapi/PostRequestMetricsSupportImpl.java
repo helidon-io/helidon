@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 
 class PostRequestMetricsSupportImpl implements PostRequestMetricsSupport {
 

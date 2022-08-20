@@ -37,6 +37,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.security.WebClientSecurity;
+import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -44,7 +45,6 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -306,7 +306,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * <tr>
  *     <td>{@code cors}</td>
  *     <td>&nbsp;</td>
- *     <td>Cross-origin resource sharing settings. See {@link io.helidon.webserver.cors.CrossOriginConfig}.</td>
+ *     <td>Cross-origin resource sharing settings. See {@link io.helidon.reactive.webserver.cors.CrossOriginConfig}.</td>
  * </tr>
  * <tr>
  *     <td>{@code force-https-redirects}</td>

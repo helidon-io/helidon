@@ -15,11 +15,11 @@
  */
 open module helidon.webserver.http2.test {
 
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
     requires java.logging;
     requires java.net.http;
     requires hamcrest.all;
     requires org.junit.jupiter.api;
-    requires io.helidon.webserver.http2;
+    requires io.helidon.reactive.webserver.http2;
     requires io.helidon.reactive.webclient;
 }

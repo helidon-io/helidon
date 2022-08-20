@@ -44,7 +44,7 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
         1. For pom packaging, the module is a "project module" (considering modules that serve as aggregators for sub-modules 
             into a common reactor)
     2. Maven coordinates:
-        1. Group id: io.helidon.${project_module}* - such as io.helidon.webserver; io.helidon.microprofile.config
+        1. Group id: io.helidon.${project_module}* - such as io.helidon.reactive.webserver; io.helidon.microprofile.config
         2. Artifact id: helidon-${module_name}(-project)? - such as "helidon-security", "helicon-security-project", 
             where project modules use the suffix "-project"
         3. Version: always inherited

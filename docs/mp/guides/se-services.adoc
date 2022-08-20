@@ -32,7 +32,7 @@ For this 10 minute tutorial, you will need the following:
 include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 Helidon MP supports xref:../server.adoc[Reactive routing] which brings possibility for reusing
-`io.helidon.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common
+`io.helidon.reactive.webserver.Service` implementations in Helidon MP. Such feature can be quite useful for common
 solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
 
 Let's define simple Helidon SE Service for adding special header to every REST response:

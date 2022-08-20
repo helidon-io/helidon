@@ -45,12 +45,12 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.webserver.KeyPerformanceIndicatorSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.jersey.JerseySupport;
-import io.helidon.webserver.staticcontent.StaticContentSupport;
+import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.jersey.JerseySupport;
+import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

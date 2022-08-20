@@ -23,10 +23,10 @@ module io.helidon.reactive.health {
     requires io.helidon.common;
     requires io.helidon.health;
     requires transitive microprofile.health.api;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
     requires io.helidon.servicecommon.rest;
     requires static io.helidon.config.metadata;
-    requires io.helidon.webserver.cors;
+    requires io.helidon.reactive.webserver.cors;
     requires io.helidon.reactive.media.jsonp;
     requires jakarta.json;
     requires io.helidon.reactive.faulttolerance;

@@ -22,9 +22,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.servicecommon.restcdi.HelidonInterceptor;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
 
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;

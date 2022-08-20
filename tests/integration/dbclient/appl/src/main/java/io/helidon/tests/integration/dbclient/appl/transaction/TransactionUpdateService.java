@@ -28,9 +28,9 @@ import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 

@@ -44,7 +44,7 @@ Type: link:{javadoc-base-url}/io.helidon.metrics.serviceapi/io/helidon/metrics/s
 
 |`appName` |string |{nbsp} |Sets the value for the `_app` tag to be applied to all metrics.
 |`base` |xref:{rootdir}/config/io_helidon_metrics_api_BaseMetricsSettings.adoc[BaseMetricsSettings] |{nbsp} |Set the base metrics settings.
-|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
+|`cors` |xref:{rootdir}/config/io_helidon_reactive_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
 |`enabled` |boolean |{nbsp} |Sets whether metrics should be enabled.
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsSettings.adoc[KeyPerformanceIndicatorMetricsSettings] |{nbsp} |Set the KPI metrics settings.
 |`registries` |xref:{rootdir}/config/io_helidon_metrics_api_RegistrySettings.adoc[Map&lt;string, RegistrySettings&gt;] |{nbsp} |Sets the registry settings for the specified registry type.

@@ -29,9 +29,9 @@ import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.WebServer;
 
 import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;

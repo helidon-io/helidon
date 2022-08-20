@@ -1072,7 +1072,7 @@
             </dependency>
             <!-- CORS support -->
             <dependency>
-                <groupId>io.helidon.webserver.cors</groupId>
+                <groupId>io.helidon.reactive.webserver.cors</groupId>
                 <artifactId>helidon-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

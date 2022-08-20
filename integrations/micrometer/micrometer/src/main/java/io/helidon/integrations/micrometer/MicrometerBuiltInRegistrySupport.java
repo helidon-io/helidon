@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.function.Function;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.ServerRequest;
+import io.helidon.reactive.webserver.Handler;
+import io.helidon.reactive.webserver.ServerRequest;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;

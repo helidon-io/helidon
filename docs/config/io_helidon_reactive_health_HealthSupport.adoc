@@ -44,7 +44,7 @@ This is a standalone configuration type, prefix from configuration root: `health
 |===
 |key |type |default value |description
 
-|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
+|`cors` |xref:{rootdir}/config/io_helidon_reactive_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
 |`enabled` |boolean |`true` |HealthSupport can be disabled by invoking this method.
 |`exclude` |string[&#93; |{nbsp} |Add health checks to a black list.
  Health check results that match by name with a blacklisted records will not be

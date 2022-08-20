@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.reactive.webclient.spi.WebClientService;
 import io.helidon.reactive.webclient.WebClientServiceRequest;
 import io.helidon.reactive.webclient.WebClientServiceResponse;
+import io.helidon.reactive.webclient.spi.WebClientService;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;

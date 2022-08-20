@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;
+import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -42,7 +43,6 @@ import io.helidon.security.integration.common.ResponseTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
-import io.helidon.webserver.ServerRequest;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;

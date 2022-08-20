@@ -17,9 +17,9 @@
 /**
  * Reactive web server.
  */
-module io.helidon.webserver.accesslog {
+module io.helidon.reactive.webserver.accesslog {
     requires java.logging;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
-    exports io.helidon.webserver.accesslog;
+    exports io.helidon.reactive.webserver.accesslog;
 }

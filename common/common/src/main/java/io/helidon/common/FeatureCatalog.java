@@ -133,19 +133,19 @@ final class FeatureCatalog {
               "Tracing",
               "Tracing support",
               "Tracing");
-        addSe("io.helidon.webserver",
+        addSe("io.helidon.reactive.webserver",
               "WebServer",
               "Helidon WebServer",
               "WebServer");
-        addSe("io.helidon.webserver.accesslog",
+        addSe("io.helidon.reactive.webserver.accesslog",
               "Access Log",
               "Access log support",
               "WebServer", "AccessLog");
-        addSe("io.helidon.webserver.cors",
+        addSe("io.helidon.reactive.webserver.cors",
               "CORS",
               "CORS support for WebServer",
               "WebServer", "CORS");
-        addSe("io.helidon.webserver.jersey",
+        addSe("io.helidon.reactive.webserver.jersey",
               "Jersey",
               "WebServer integration with Jersey",
               "WebServer", "Jersey");
@@ -156,7 +156,7 @@ final class FeatureCatalog {
                         .description("Scheduling of periodical tasks")
                         .path("Scheduling")
                         .nativeSupported(true));
-        add("io.helidon.webserver.tyrus",
+        add("io.helidon.reactive.webserver.tyrus",
             FeatureDescriptor.builder()
                     .flavor(HelidonFlavor.SE)
                     .name("Websocket")
@@ -614,7 +614,7 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
-        add("io.helidon.webserver.staticcontent",
+        add("io.helidon.reactive.webserver.staticcontent",
             "Static Content",
             "Static content support for webserver",
             "WebServer", "Static Content");

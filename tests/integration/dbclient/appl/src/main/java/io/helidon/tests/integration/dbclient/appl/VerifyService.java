@@ -26,10 +26,10 @@ import io.helidon.config.Config;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 
 import static io.helidon.tests.integration.dbclient.appl.AbstractService.QUERY_ID_PARAM;
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;

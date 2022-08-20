@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.websocket.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.websocket.Main</mainClass>
     </properties>
 
     <dependencies>

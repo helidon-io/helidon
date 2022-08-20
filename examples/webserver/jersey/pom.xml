@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.jersey.Main</mainClass>
+        <mainClass>io.helidon.reactive.webserver.examples.jersey.Main</mainClass>
     </properties>
 
     <dependencies>

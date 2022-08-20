@@ -15,12 +15,12 @@
  */
 
 /**
- * A simple HTTP like client suitable for tests of {@code Web Server} {@link io.helidon.webserver.Routing Routing}.
+ * A simple HTTP like client suitable for tests of {@code Web Server} {@link io.helidon.reactive.webserver.Routing Routing}.
  *
- * @see io.helidon.webserver.testsupport.TestClient
+ * @see io.helidon.reactive.webserver.testsupport.TestClient
  */
-module io.helidon.webserver.test.support {
-    requires io.helidon.webserver;
+module io.helidon.reactive.webserver.test.support {
+    requires io.helidon.reactive.webserver;
     requires io.helidon.common.http;
 
     requires java.logging;

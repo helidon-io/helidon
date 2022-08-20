@@ -20,11 +20,11 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.testsupport.MediaPublisher;
-import io.helidon.webserver.testsupport.TestClient;
-import io.helidon.webserver.testsupport.TestResponse;
+import io.helidon.reactive.webserver.Handler;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.testsupport.MediaPublisher;
+import io.helidon.reactive.webserver.testsupport.TestClient;
+import io.helidon.reactive.webserver.testsupport.TestResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;

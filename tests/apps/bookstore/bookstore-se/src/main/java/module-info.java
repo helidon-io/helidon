@@ -21,7 +21,7 @@ module io.helidon.tests.apps.bookstore.se {
     requires java.logging;
     requires jakarta.json;
 
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
     requires io.helidon.config.yaml;
     requires io.helidon.config;
     requires io.helidon.reactive.health;

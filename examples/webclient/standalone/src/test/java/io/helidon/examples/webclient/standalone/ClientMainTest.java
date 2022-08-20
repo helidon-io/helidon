@@ -30,7 +30,7 @@ import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientServiceRequest;
 import io.helidon.reactive.webclient.WebClientServiceResponse;
 import io.helidon.reactive.webclient.spi.WebClientService;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;

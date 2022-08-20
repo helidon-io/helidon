@@ -17,10 +17,10 @@
 /**
  * Netty EPOLL transport.
  */
-module io.helidon.webserver.transport.netty.epoll {
-    requires io.helidon.webserver;
+module io.helidon.reactive.webserver.transport.netty.epoll {
+    requires io.helidon.reactive.webserver;
 
     requires io.netty.transport.classes.epoll;
 
-    exports io.helidon.webserver.transport.netty.epoll;
+    exports io.helidon.reactive.webserver.transport.netty.epoll;
 }

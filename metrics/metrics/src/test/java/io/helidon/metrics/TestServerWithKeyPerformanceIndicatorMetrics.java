@@ -24,7 +24,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
