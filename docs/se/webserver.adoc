@@ -55,8 +55,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver</artifactId>
+    <groupId>io.helidon.reactive.webserver</groupId>
+    <artifactId>helidon-reactive-webserver</artifactId>
 </dependency>
 ----
 
@@ -407,8 +407,8 @@ To enable Http/2 support add the following dependency to your project's `pom.xml
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-http2</artifactId>
+    <groupId>io.helidon.reactive.webserver</groupId>
+    <artifactId>helidon-reactive-webserver-http2</artifactId>
 </dependency>
 ----
 
@@ -428,8 +428,8 @@ To enable Static Content Support add the following dependency to your project's 
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-static-content</artifactId>
+    <groupId>io.helidon.reactive.webserver</groupId>
+    <artifactId>helidon-reactive-webserver-static-content</artifactId>
 </dependency>
 ----
 
@@ -465,8 +465,8 @@ To enable Jersey (JAX-RS) Support add the following dependency to your project's
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-jersey</artifactId>
+    <groupId>io.helidon.reactive.webserver</groupId>
+    <artifactId>helidon-reactive-webserver-jersey</artifactId>
 </dependency>
 ----
 

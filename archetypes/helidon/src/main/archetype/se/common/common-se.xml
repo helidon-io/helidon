@@ -29,7 +29,7 @@
             <list key="dependencies">
                 <map order="999">
                     <value key="groupId">io.helidon.webserver</value>
-                    <value key="artifactId">helidon-webserver</value>
+                    <value key="artifactId">helidon-reactive-webserver</value>
                 </map>
                 <map order="999">
                     <value key="groupId">io.helidon.config</value>

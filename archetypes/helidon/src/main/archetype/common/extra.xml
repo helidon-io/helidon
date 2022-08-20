@@ -98,7 +98,7 @@
                                 </map>
                                 <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.webserver</value>
-                                    <value key="artifactId">helidon-webserver-cors</value>
+                                    <value key="artifactId">helidon-reactive-webserver-cors</value>
                                 </map>
                             </list>
                             <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">

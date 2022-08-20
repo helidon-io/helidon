@@ -308,7 +308,7 @@ public abstract class WebTracingConfig {
             // tracing is enabled, so we replace the parent span with web server parent span
             Span.Builder<?> spanBuilder = tracer.spanBuilder(spanName)
                     .kind(Span.Kind.SERVER)
-                    .tag(Tag.COMPONENT.create("helidon-webserver"))
+                    .tag(Tag.COMPONENT.create("helidon-reactive-webserver"))
                     .tag(Tag.HTTP_METHOD.create(req.method().name()))
                     .tag(Tag.HTTP_URL.create(req.uri().toString()))
                     .tag(Tag.HTTP_VERSION.create(req.version().value()));

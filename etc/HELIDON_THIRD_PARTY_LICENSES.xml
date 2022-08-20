@@ -154,7 +154,7 @@ Fourth Party Dependencies
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-websocket</consumer>
-                <consumer>helidon-webserver-websocket</consumer>
+                <consumer>helidon-reactive-webserver-websocket</consumer>
             </consumers>
             <attribution>Eclipse Tyrus (org.glassfish.tyrus:tyrus-*)
   Copyright (c) 2007,2022 Oracle and/or its affiliates. All rights reserved.
@@ -2251,7 +2251,7 @@ The project maintains the following source code repositories:
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-websocket</consumer>
-                <consumer>helidon-webserver-websocket</consumer>
+                <consumer>helidon-reactive-webserver-websocket</consumer>
             </consumers>
             <attribution>1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/websocket-api (The EPL license is reproduced below).
@@ -5274,7 +5274,7 @@ License Identifier: Apache-2.0
                 <consumer>helidon-jersey-client</consumer>
                 <consumer>helidon-jersey-connector</consumer>
                 <consumer>helidon-jersey-server</consumer>
-                <consumer>helidon-webserver-jersey</consumer>
+                <consumer>helidon-reactive-webserver-jersey</consumer>
             </consumers>
             <attribution>jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
   Copyright (c) 2017,2022 Oracle and/or its affiliates. All rights reserved.
@@ -6946,10 +6946,10 @@ under the License.
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-reactive-webclient</consumer>
-                <consumer>helidon-webserver</consumer>
-                <consumer>helidon-webserver-http2</consumer>
-                <consumer>helidon-webserver-jersey</consumer>
-                <consumer>helidon-webserver-transport-netty-epoll</consumer>
+                <consumer>helidon-reactive-webserver</consumer>
+                <consumer>helidon-reactive-webserver-http2</consumer>
+                <consumer>helidon-reactive-webserver-jersey</consumer>
+                <consumer>helidon-reactive-webserver-transport-netty-epoll</consumer>
             </consumers>
             <attribution>Netty (io.netty:netty-*)
   Copyright 2012,2021 The Netty Project

@@ -33,8 +33,8 @@
             <artifactId>jakarta.json-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.reactive.webserver</groupId>
+            <artifactId>helidon-reactive-webserver</artifactId>
         </dependency>
     </dependencies>
 

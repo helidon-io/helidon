@@ -127,7 +127,7 @@ Fourth Party Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Tyrus  Oracle
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-microprofile-websocket, helidon-webserver-websocket]
+Used by: [helidon-microprofile-websocket, helidon-reactive-webserver-websocket]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Tyrus (org.glassfish.tyrus:tyrus-*)
   Copyright (c) 2007,2022 Oracle and/or its affiliates. All rights reserved.
@@ -2023,7 +2023,7 @@ The project maintains the following source code repositories:
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta WebSocket  Oracle
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-microprofile-websocket, helidon-webserver-websocket]
+Used by: [helidon-microprofile-websocket, helidon-reactive-webserver-websocket]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/websocket-api (The EPL license is reproduced below).
@@ -4803,7 +4803,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-hk2  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server, helidon-webserver-jersey]
+Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server, helidon-reactive-webserver-jersey]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
   Copyright (c) 2017,2022 Oracle and/or its affiliates. All rights reserved.
@@ -6391,7 +6391,7 @@ under the License.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 netty  The Netty Project
 Apache 2.0
-Used by: [helidon-reactive-webclient, helidon-webserver, helidon-webserver-http2, helidon-webserver-jersey, helidon-webserver-transport-netty-epoll]
+Used by: [helidon-reactive-webclient, helidon-reactive-webserver, helidon-reactive-webserver-http2, helidon-reactive-webserver-jersey, helidon-reactive-webserver-transport-netty-epoll]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Netty (io.netty:netty-*)
   Copyright 2012,2021 The Netty Project

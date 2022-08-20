@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class Main {
                         .register(new TranslatorBackendService()))
                 .port(9080)
                 .tracer(TracerBuilder.create(config.get("tracing"))
-                                .serviceName("helidon-webserver-translator-backend")
+                                .serviceName("helidon-reactive-webserver-translator-backend")
                                 .build())
                 .build();
 
