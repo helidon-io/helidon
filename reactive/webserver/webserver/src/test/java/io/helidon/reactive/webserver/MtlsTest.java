@@ -112,7 +112,7 @@ public class MtlsTest {
         clientWithCertificate.get()
             .uri("https://localhost:" + webServer.port())
             .request(String.class)
-            .thenAccept(it -> assertThat(it, is("helidon-reactive-webserver-netty-test")))
+            .thenAccept(it -> assertThat(it, is("helidon-webserver-netty-test")))
             .await(TIMEOUT);
     }
 
