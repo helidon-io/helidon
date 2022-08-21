@@ -77,13 +77,13 @@ This is a standalone configuration type, prefix from configuration root: `server
  server socket.
 
  If `0` then use implementation default.
-|`sockets` |xref:{rootdir}/config/io_helidon_webserver_SocketConfiguration.adoc[SocketConfiguration[&#93;] |{nbsp} |Adds an additional named server socket configuration. As a result, the server will listen
+|`sockets` |xref:{rootdir}/config/io_helidon_reactive_webserver_SocketConfiguration.adoc[SocketConfiguration[&#93;] |{nbsp} |Adds an additional named server socket configuration. As a result, the server will listen
  on multiple ports.
 
  An additional named server socket may have a dedicated Routing configured
  through io.helidon.reactive.webserver.WebServer.Builder#addNamedRouting(String, Routing).
 |`timeout-millis` |long |`0` |Socket timeout in milliseconds
-|`tls` |xref:{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[WebServerTls] |{nbsp} |Configures SSL for this socket. When configured, the server enforces SSL
+|`tls` |xref:{rootdir}/config/io_helidon_reactive_webserver_WebServerTls.adoc[WebServerTls] |{nbsp} |Configures SSL for this socket. When configured, the server enforces SSL
  configuration.
  If this method is called, any other method except for #tls(java.util.function.Supplier)¨
  and repeated invocation of this method would be ignored.

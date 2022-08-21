@@ -85,7 +85,7 @@ This type provides the following service implementations:
  Defaults to false.
 |`cookie-use` |boolean |`true` |Whether to use cookie to store JWT between requests.
  Defaults to `DEFAULT_COOKIE_USE`.
-|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assign cross-origin resource sharing settings.
+|`cors` |xref:{rootdir}/config/io_helidon_reactive_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assign cross-origin resource sharing settings.
 |`force-https-redirects` |boolean |`false` |Force HTTPS for redirects to identity provider.
  Defaults to `false`.
 |`frontend-uri` |string |{nbsp} |Full URI of this application that is visible from user browser.

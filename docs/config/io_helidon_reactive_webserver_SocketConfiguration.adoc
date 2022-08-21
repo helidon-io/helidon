@@ -82,7 +82,7 @@ Type: link:{javadoc-base-url}/io.helidon.reactive.webserver/io/helidon/reactive/
 
  If `0` then use implementation default.
 |`timeout-millis` |long |`0` |Socket timeout in milliseconds
-|`tls` |xref:{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[WebServerTls] |{nbsp} |Configures SSL for this socket. When configured, the server enforces SSL
+|`tls` |xref:{rootdir}/config/io_helidon_reactive_webserver_WebServerTls.adoc[WebServerTls] |{nbsp} |Configures SSL for this socket. When configured, the server enforces SSL
  configuration.
  If this method is called, any other method except for #tls(java.util.function.Supplier)¨
  and repeated invocation of this method would be ignored.
