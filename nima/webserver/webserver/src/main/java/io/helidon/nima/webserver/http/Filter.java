@@ -26,8 +26,9 @@ public interface Filter {
      * If request processing should continue with next filter,
      * call {@link FilterChain#proceed()}.
      *
-     * @param req routing request
-     * @param res routing response
+     * @param chain to proceed with further filters (or routing if this is the last filter)
+     * @param req   routing request
+     * @param res   routing response
      */
-    void handle(FilterChain chain, RoutingRequest req, RoutingResponse res);
+    void filter(FilterChain chain, RoutingRequest req, RoutingResponse res);
 }

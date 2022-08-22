@@ -24,9 +24,9 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.CloseConnectionException;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpSimpleRequest;
+import io.helidon.nima.webserver.http.SimpleHandler;
 
 /**
  * HTTP 1 prologue parsing support.

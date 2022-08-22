@@ -23,10 +23,10 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.http.SimpleHandler;
 
 record ByteRangeRequest(long fileLength, long offset, long length) {
     private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");

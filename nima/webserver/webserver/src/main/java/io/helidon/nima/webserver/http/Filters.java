@@ -95,7 +95,7 @@ public class Filters {
                 return;
             }
             if (filters.hasNext()) {
-                filters.next().handle(this, request, response);
+                filters.next().filter(this, request, response);
             } else {
                 routingHandler.handle(request, response);
                 if (!response.isSent()) {

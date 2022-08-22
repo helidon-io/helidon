@@ -34,11 +34,11 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.SimpleHandler;
-import io.helidon.nima.webserver.http.SimpleHandler.EventType;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpSimpleRequest;
+import io.helidon.nima.webserver.http.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler.EventType;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 

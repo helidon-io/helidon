@@ -40,10 +40,10 @@ import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.http.SimpleHandler;
 
 abstract class FileBasedContentHandler extends StaticContentHandler {
     private static final System.Logger LOGGER = System.getLogger(FileBasedContentHandler.class.getName());

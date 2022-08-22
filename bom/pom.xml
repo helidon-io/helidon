@@ -1211,11 +1211,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http</groupId>
-                <artifactId>helidon-nima-http-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.nima.http.encoding</groupId>
                 <artifactId>helidon-nima-http-encoding</artifactId>
                 <version>${helidon.version}</version>

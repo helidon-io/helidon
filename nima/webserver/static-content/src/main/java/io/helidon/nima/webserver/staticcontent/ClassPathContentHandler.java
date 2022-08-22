@@ -37,10 +37,10 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.http.SimpleHandler;
 
 /**
  * Handles static content from the classpath.

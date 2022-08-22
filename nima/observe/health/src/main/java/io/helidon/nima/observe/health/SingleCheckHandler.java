@@ -27,11 +27,11 @@ import io.helidon.health.HealthCheckResponse;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
 import io.helidon.nima.webserver.HtmlEncoder;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.http.SimpleHandler;
 
 import jakarta.json.JsonObject;
 

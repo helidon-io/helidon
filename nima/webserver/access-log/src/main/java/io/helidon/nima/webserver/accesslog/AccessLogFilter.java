@@ -86,7 +86,7 @@ public final class AccessLogFilter implements Filter {
     }
 
     @Override
-    public void handle(FilterChain chain, RoutingRequest req, RoutingResponse res) {
+    public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
         ZonedDateTime now = ZonedDateTime.now(clock);
         long nanoNow = System.nanoTime();
 

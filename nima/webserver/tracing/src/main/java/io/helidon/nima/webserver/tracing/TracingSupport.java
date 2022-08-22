@@ -84,7 +84,7 @@ public class TracingSupport {
         }
 
         @Override
-        public void handle(FilterChain chain, RoutingRequest req, RoutingResponse res) {
+        public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             Optional<SpanContext> context = tracer.extract(new NimaHeaderProvider(req));
 
             HttpPrologue prologue = req.prologue();
@@ -97,7 +97,7 @@ public class TracingSupport {
                     .update(it -> context.ifPresent(it::parent))
                     .start();
 
-            try(Scope ignored = span.activate()) {
+            try (Scope ignored = span.activate()) {
                 span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
                 span.tag(Tag.HTTP_URL.create(prologue.protocol() + "://" + req.authority() + "/" + prologue.uriPath().path()));
                 span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
