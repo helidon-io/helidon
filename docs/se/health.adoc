@@ -471,11 +471,14 @@ spec:
     name: http
 ---
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: acme # <2>
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: acme
   template:
     metadata:
       name: acme

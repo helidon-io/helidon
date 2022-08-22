@@ -683,11 +683,14 @@ spec:
       name: http
 ---
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
   replicas: 1 // <2>
+  selector:
+    matchLabels:
+      app: helidon-tracing
   template:
     metadata:
       labels:
