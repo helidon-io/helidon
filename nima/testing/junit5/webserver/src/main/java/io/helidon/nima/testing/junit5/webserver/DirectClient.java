@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Http;
@@ -47,6 +48,7 @@ public class DirectClient implements Http1Client {
     private Certificate[] serverTlsCertificates;
     private boolean isTls;
     private Router router;
+    private List<Http.HeaderName> authorityHeaders;
 
     /**
      * Create a direct client for HTTP routing.
@@ -75,6 +77,9 @@ public class DirectClient implements Http1Client {
         if (serverHost == null) {
             serverHost = "localhost";
         }
+        if (authorityHeaders == null) {
+            authorityHeaders = List.of(Http.Header.FORWARDED, Http.Header.X_FORWARDED_HOST);
+        }
         PeerInfo clientPeer = new DirectPeerInfo(
                 InetSocketAddress.createUnresolved(clientHost, clientPort),
                 clientHost,
@@ -90,7 +95,7 @@ public class DirectClient implements Http1Client {
                 Optional.ofNullable(serverTlsCertificates));
 
         return httpClient.method(method)
-                .connection(new DirectClientConnection(clientPeer, localPeer, router, isTls));
+                .connection(new DirectClientConnection(clientPeer, localPeer, router, isTls, authorityHeaders));
     }
 
     /**
@@ -189,6 +194,17 @@ public class DirectClient implements Http1Client {
      */
     public DirectClient serverTlsCertificates(Certificate[] serverTlsCertificates) {
         this.serverTlsCertificates = serverTlsCertificates;
+        return this;
+    }
+
+    /**
+     * List of headers used to find authority from the request.
+     *
+     * @param headers headers to look for, such as {@link Http.Header#HOST}
+     * @return updated client
+     */
+    public DirectClient authorityHeaders(List<Http.HeaderName> headers) {
+        this.authorityHeaders = headers;
         return this;
     }
 }

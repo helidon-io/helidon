@@ -34,6 +34,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
@@ -66,7 +67,7 @@ class ServerListener {
     private final MediaContext mediaContext = MediaContext.create();
     private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
     private final LoomServer server;
-
+    private final List<Http.HeaderName> authorityHeaders;
     private volatile boolean running;
     private volatile int connectedPort;
     private volatile ServerSocket serverSocket;
@@ -83,6 +84,7 @@ class ServerListener {
         this.listenerConfig = listenerConfig;
         this.router = router;
         this.connectionOptions = listenerConfig.connectionOptions();
+        this.authorityHeaders = listenerConfig.authorityHeaders();
 
         this.serverThread = Thread.ofPlatform()
                 .allowSetThreadLocals(true)
@@ -235,7 +237,8 @@ class ServerListener {
                                                     router,
                                                     listenerConfig.writeQueueLength(),
                                                     listenerConfig.maxPayloadSize(),
-                                                    simpleHandlers);
+                                                    simpleHandlers,
+                                                    authorityHeaders);
 
                     readerExecutor.submit(handler);
                 } catch (Exception e) {

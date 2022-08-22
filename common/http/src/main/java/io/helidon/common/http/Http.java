@@ -1499,6 +1499,21 @@ public final class Http {
          * This header will be removed if it is part of the request.
          */
         public static final HeaderName X_HELIDON_CN = HeaderEnum.X_HELIDON_CN;
+        /**
+         * The {@code X-Forwarded-For} header name.
+         * Used to represent the original host requested by a client, when request passed through a proxy server.
+         */
+        public static final HeaderName X_FORWARDED_FOR = HeaderEnum.X_FORWARDED_FOR;
+        /**
+         * The {@code X-Forwarded-Host} header name.
+         * Used to represent the original host requested by a client, when request passed through a proxy server.
+         */
+        public static final HeaderName X_FORWARDED_HOST = HeaderEnum.X_FORWARDED_HOST;
+        /**
+         * The {@code X-Forwarded-Proto} header name.
+         * Used to represent the original protocol used by a client, when request passed through a proxy server.
+         */
+        public static final HeaderName X_FORWARDED_PROTO = HeaderEnum.X_FORWARDED_PROTO;
 
         private Header() {
         }

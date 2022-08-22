@@ -40,7 +40,7 @@ class RequestAdapterNima implements CorsSupportBase.RequestAdapter<ServerRequest
 
     @Override
     public String authority() {
-        return request.authority();
+        return request.usedAuthority();
     }
 
     @Override

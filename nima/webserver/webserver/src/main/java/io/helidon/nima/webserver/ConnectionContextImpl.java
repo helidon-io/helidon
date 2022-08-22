@@ -16,11 +16,13 @@
 
 package io.helidon.nima.webserver;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.Http;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -39,6 +41,7 @@ final class ConnectionContextImpl implements ConnectionContext {
     private final SimpleHandlers simpleHandlers;
     private final HelidonSocket socket;
     private final long maxPayloadSize;
+    private List<Http.HeaderName> authorityHeaders;
 
     ConnectionContextImpl(MediaContext mediaContext,
                           ContentEncodingContext contentEncodingContext,
@@ -50,7 +53,8 @@ final class ConnectionContextImpl implements ConnectionContext {
                           String childSocketId,
                           SimpleHandlers simpleHandlers,
                           HelidonSocket socket,
-                          long maxPayloadSize) {
+                          long maxPayloadSize,
+                          List<Http.HeaderName> authorityHeaders) {
         this.mediaContext = mediaContext;
         this.contentEncodingContext = contentEncodingContext;
         this.sharedExecutor = sharedExecutor;
@@ -62,6 +66,7 @@ final class ConnectionContextImpl implements ConnectionContext {
         this.simpleHandlers = simpleHandlers;
         this.socket = socket;
         this.maxPayloadSize = maxPayloadSize;
+        this.authorityHeaders = authorityHeaders;
     }
 
     @Override
@@ -127,6 +132,11 @@ final class ConnectionContextImpl implements ConnectionContext {
     @Override
     public String childSocketId() {
         return childSocketId;
+    }
+
+    @Override
+    public List<Http.HeaderName> authorityHeaders() {
+        return authorityHeaders;
     }
 
     @Override

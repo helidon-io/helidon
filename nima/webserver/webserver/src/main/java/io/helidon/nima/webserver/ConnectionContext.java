@@ -16,10 +16,12 @@
 
 package io.helidon.nima.webserver;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.Http;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -44,6 +46,7 @@ public interface ConnectionContext extends SocketContext {
      * @param simpleHandlers         error handling configuration
      * @param socket                 socket to obtain information about peers
      * @param maxPayloadSize         maximal size of a payload entity
+     * @param authorityHeaders
      * @return a new context
      */
     static ConnectionContext create(MediaContext mediaContext,
@@ -56,7 +59,8 @@ public interface ConnectionContext extends SocketContext {
                                     String channelId,
                                     SimpleHandlers simpleHandlers,
                                     HelidonSocket socket,
-                                    long maxPayloadSize) {
+                                    long maxPayloadSize,
+                                    List<Http.HeaderName> authorityHeaders) {
         return new ConnectionContextImpl(mediaContext,
                                          contentEncodingContext,
                                          sharedExecutor,
@@ -67,7 +71,8 @@ public interface ConnectionContext extends SocketContext {
                                          channelId,
                                          simpleHandlers,
                                          socket,
-                                         maxPayloadSize);
+                                         maxPayloadSize,
+                                         authorityHeaders);
     }
 
     /**
@@ -125,4 +130,16 @@ public interface ConnectionContext extends SocketContext {
      * @return simple handlers
      */
     SimpleHandlers simpleHandlers();
+
+    /**
+     * Headers that can be used to obtain authority. Níma semantically understands the following headers (in order of use):
+     * {@link io.helidon.common.http.Http.Header#HOST} (or HTTP/2 authority pseudo-header),
+     * {@link io.helidon.common.http.Http.Header#FORWARDED} (using the Host directive),
+     * {@link io.helidon.common.http.Http.Header#X_FORWARDED_HOST},
+     * or {@link io.helidon.common.http.Http.Header#X_FORWARDED_FOR}.
+     * Any other header defined will be used verbatim.
+     *
+     * @return list of header names to use to obtain authority
+     */
+    List<Http.HeaderName> authorityHeaders();
 }

@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.http.Http;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -64,7 +65,8 @@ class ConnectionHandler implements Runnable {
                       Router router,
                       int writeQueueLength,
                       long maxPayloadSize,
-                      SimpleHandlers simpleHandlers) {
+                      SimpleHandlers simpleHandlers,
+                      List<Http.HeaderName> authorityHeaders) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;
@@ -82,7 +84,8 @@ class ConnectionHandler implements Runnable {
                                             channelId,
                                             simpleHandlers,
                                             socket,
-                                            maxPayloadSize);
+                                            maxPayloadSize,
+                                            authorityHeaders);
     }
 
     @Override

@@ -24,9 +24,11 @@ import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 
@@ -42,6 +44,7 @@ public final class ListenerConfiguration {
     private final SocketOptions connectionOptions;
     private final int writeQueueLength;
     private final long maxPayloadSize;
+    private final List<Http.HeaderName> authorityHeaders;
 
     private ListenerConfiguration(Builder builder) {
         this.socketOptions = new HashMap<>(builder.socketOptions);
@@ -52,6 +55,7 @@ public final class ListenerConfiguration {
         this.connectionOptions = builder.connectionOptions;
         this.writeQueueLength = builder.writeQueueLength;
         this.maxPayloadSize = builder.maxPayloadSize;
+        this.authorityHeaders = builder.authorityHeaders;
     }
 
     /**
@@ -102,6 +106,15 @@ public final class ListenerConfiguration {
     }
 
     /**
+     * List of headers we try to find to configure authority, available through server request.
+     *
+     * @return list of header names
+     */
+    public List<Http.HeaderName> authorityHeaders() {
+        return authorityHeaders;
+    }
+
+    /**
      * Options for connections accepted by this listener.
      *
      * @return socket options
@@ -148,6 +161,7 @@ public final class ListenerConfiguration {
 
         private final String socketName;
         private final SocketOptions.Builder connectOptionsBuilder = SocketOptions.builder();
+        private List<Http.HeaderName> authorityHeaders;
         private int port = 0;
         private InetAddress address;
         private int backlog = 1024;
@@ -169,6 +183,9 @@ public final class ListenerConfiguration {
             }
             if (connectionOptions == null) {
                 connectionOptions = connectOptionsBuilder.build();
+            }
+            if (authorityHeaders == null) {
+                authorityHeaders = List.of(Http.Header.FORWARDED, Http.Header.X_FORWARDED_HOST);
             }
             return new ListenerConfiguration(this);
         }
@@ -273,9 +290,27 @@ public final class ListenerConfiguration {
          * Defaults to unlimited ({@code -1}).
          *
          * @param maxPayloadSize maximal number of bytes of entity
+         * @return updated builder
          */
-        public void maxPayloadSize(long maxPayloadSize) {
+        public Builder maxPayloadSize(long maxPayloadSize) {
             this.maxPayloadSize = maxPayloadSize;
+            return this;
+        }
+
+        /**
+         * Headers used to obtain authority of the request (usually used is {@link Http.Header#HOST}, which is insufficient
+         * when the request travels through a proxy, when we may use {@link Http.Header#FORWARDED}, or
+         * {@link Http.Header#X_FORWARDED_HOST}.
+         * When using {@link Http.Header#FORWARDED}, we look for the {@code Host} directive. For other headers, we look for
+         * the first value and use it verbatim.
+         * Defaults to {@link Http.Header#FORWARDED}, {@link Http.Header#X_FORWARDED_HOST}, {@link Http.Header#HOST}.
+         *
+         * @param authorityHeaders headers to use to obtain authority, first header that is found is used
+         * @return updated builder
+         */
+        public Builder authorityHeaders(List<Http.HeaderName> authorityHeaders) {
+            this.authorityHeaders = List.copyOf(authorityHeaders);
+            return this;
         }
     }
 }

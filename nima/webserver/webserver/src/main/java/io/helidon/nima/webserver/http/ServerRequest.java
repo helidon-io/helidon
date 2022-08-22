@@ -24,6 +24,7 @@ import io.helidon.nima.http.media.ReadableEntity;
 public interface ServerRequest extends HttpRequest {
     /**
      * Whether this request was over a secure protocol (TLS).
+     * This only returns if the last step was over secure protocol. If a reverse proxy is used, check {@link #usedProtocol()}.
      *
      * @return whether this is a secure request
      */

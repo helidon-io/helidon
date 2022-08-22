@@ -29,13 +29,14 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.http.HttpRequestBase;
 import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
 /**
  * Http 1 server request base.
  */
-abstract class Http1ServerRequest implements RoutingRequest {
+abstract class Http1ServerRequest extends HttpRequestBase implements RoutingRequest {
     private final HeadersServerRequest headers;
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
@@ -45,11 +46,14 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private HeadersWritable<?> writable;
 
     private HttpPrologue newPrologue;
+    // cached authority
+    private String authority;
 
     Http1ServerRequest(ConnectionContext ctx,
                        HttpPrologue prologue,
                        Headers headers,
                        int requestId) {
+        super(ctx);
         this.ctx = ctx;
         this.prologue = prologue;
         this.headers = HeadersServerRequest.create(headers);
@@ -142,11 +146,6 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public String authority() {
-        return headers.get(Http.Header.HOST).value();
-    }
-
-    @Override
     public void header(Http.HeaderValue header) {
         if (writable == null) {
             writable = HeadersWritable.create(headers);
@@ -164,5 +163,10 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Http1ServerRequest prologue(HttpPrologue newPrologue) {
         this.newPrologue = newPrologue;
         return this;
+    }
+
+    @Override
+    protected String host() {
+        return headers().get(Http.Header.HOST).value();
     }
 }

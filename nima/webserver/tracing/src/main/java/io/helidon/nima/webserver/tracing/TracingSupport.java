@@ -99,7 +99,11 @@ public class TracingSupport {
 
             try (Scope ignored = span.activate()) {
                 span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
-                span.tag(Tag.HTTP_URL.create(prologue.protocol() + "://" + req.authority() + "/" + prologue.uriPath().path()));
+                span.tag(Tag.HTTP_URL.create(req.usedProtocol()
+                                                     + "://"
+                                                     + req.usedAuthority()
+                                                     + "/"
+                                                     + prologue.uriPath().path()));
                 span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
 
                 chain.proceed();

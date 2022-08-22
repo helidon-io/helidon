@@ -148,8 +148,10 @@ class MultiPortTest {
                                               .any((req, res) -> {
                                                   res.status(Http.Status.MOVED_PERMANENTLY_301)
                                                           .header(Header.LOCATION.withValue(
-                                                                  String.format("http://%s:%s%s",
-                                                                                host(req.authority()),
+                                                                  String.format("%s://%s:%s%s",
+                                                                                req.usedProtocol(),
+                                                                                // we want to redirect to a different port
+                                                                                host(req.usedAuthority()),
                                                                                 server.port(),
                                                                                 req.path().absolute().rawPathNoParams())))
                                                           .send();

@@ -71,12 +71,27 @@ public interface HttpRequest {
     PeerInfo localPeer();
 
     /**
-     * The content of the {@link io.helidon.common.http.Http.Header#HOST} header
-     * or {@code authority} pseudo header (HTTP/2).
+     * The authority requested (host and optional port). This is authority as may be obtained from
+     * {@link io.helidon.common.http.Http.Header#HOST} (or HTTP/2 authority pseudo-header),
+     * {@link io.helidon.common.http.Http.Header#FORWARDED},
+     * {@link io.helidon.common.http.Http.Header#X_FORWARDED_HOST}
+     *  - depending on server configuration
+     * Authority can be used for redirections.
+     * The underlying headers are not modified, so if you need access to the actual requested host, you can still
+     * use the {@link Http.Header#HOST}.
      *
      * @return authority of this request
      */
-    String authority();
+    String usedAuthority();
+
+    /**
+     * The protocol used in the original request.
+     * This is obtained from socket information, {@link io.helidon.common.http.Http.Header#FORWARDED},
+     * or {@link io.helidon.common.http.Http.Header#X_FORWARDED_PROTO}.
+     * Protocol can be used for redirections.
+     * @return used protocol
+     */
+    String usedProtocol();
 
     /**
      * Replace (or set) a request header.

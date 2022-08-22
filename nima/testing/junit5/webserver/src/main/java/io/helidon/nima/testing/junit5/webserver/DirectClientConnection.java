@@ -16,6 +16,7 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.Http;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -44,13 +46,16 @@ class DirectClientConnection implements ClientConnection {
     private final DataReader serverReader;
     private final DataWriter serverWriter;
     private final DirectSocket socket;
+    private final List<Http.HeaderName> authorityHeaders;
 
     DirectClientConnection(PeerInfo clientPeer,
                            PeerInfo localPeer,
                            Router router,
-                           boolean isTls) {
+                           boolean isTls,
+                           List<Http.HeaderName> authorityHeaders) {
 
         this.router = router;
+        this.authorityHeaders = authorityHeaders;
         this.socket = new DirectSocket(localPeer, clientPeer, isTls);
 
         ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
@@ -152,7 +157,8 @@ class DirectClientConnection implements ClientConnection {
                 "unit-channel",
                 SimpleHandlers.builder().build(),
                 socket,
-                -1);
+                -1,
+                authorityHeaders);
 
         ServerConnection connection = Http1ConnectionProvider.builder()
                 .build()

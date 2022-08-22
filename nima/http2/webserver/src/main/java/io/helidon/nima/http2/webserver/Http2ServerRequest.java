@@ -30,13 +30,14 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.http.HttpRequestBase;
 import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
 /**
  * HTTP/2 server request.
  */
-class Http2ServerRequest implements RoutingRequest {
+class Http2ServerRequest extends HttpRequestBase implements RoutingRequest {
     private static final Runnable NO_OP_RUNNABLE = () -> {
     };
     private final Http2Headers http2Headers;
@@ -57,6 +58,7 @@ class Http2ServerRequest implements RoutingRequest {
                        ContentDecoder decoder,
                        int requestId,
                        Supplier<BufferData> entitySupplier) {
+        super(ctx);
         this.ctx = ctx;
         this.originalPrologue = prologue;
         this.http2Headers = headers;
@@ -86,11 +88,6 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public RoutedPath path() {
-        return path;
-    }
-
-    @Override
     public ReadableEntity content() {
         return entity.get();
     }
@@ -116,6 +113,11 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
+    public RoutedPath path() {
+        return path;
+    }
+
+    @Override
     public UriQuery query() {
         return prologue().query();
     }
@@ -128,11 +130,6 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public PeerInfo localPeer() {
         return ctx.localPeer();
-    }
-
-    @Override
-    public String authority() {
-        return authority;
     }
 
     @Override
@@ -153,5 +150,10 @@ class Http2ServerRequest implements RoutingRequest {
     public RoutingRequest prologue(HttpPrologue newPrologue) {
         this.prologue = newPrologue;
         return this;
+    }
+
+    @Override
+    protected String host() {
+        return authority;
     }
 }

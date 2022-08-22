@@ -90,7 +90,10 @@ enum HeaderEnum implements Http.HeaderName {
     VARY("Vary"),
     WARNING("Warning"),
     WWW_AUTHENTICATE("WWW-Authenticate"),
-    X_HELIDON_CN("X-HELIDON-CN");
+    X_HELIDON_CN("X-HELIDON-CN"),
+    X_FORWARDED_FOR("X-Forwarded-For"),
+    X_FORWARDED_HOST("X-Forwarded-Host"),
+    X_FORWARDED_PROTO("X-Forwarded-Proto");
 
     private static final Map<String, Http.HeaderName> BY_NAME;
     private static final Map<String, Http.HeaderName> BY_CAP_NAME;
