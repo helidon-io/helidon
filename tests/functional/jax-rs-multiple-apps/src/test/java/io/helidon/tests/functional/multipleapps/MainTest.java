@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -68,5 +70,11 @@ class MainTest {
         JsonObject jsonObject = response.readEntity(JsonObject.class);
         assertEquals("Hello World 2!", jsonObject.getString("message"),
                 "default message");
+    }
+
+    @Test
+    void testContextApps() {
+        assertThat(SharedFeature.applications(), hasItem(GreetApplication1.class));
+        assertThat(SharedFeature.applications(), hasItem(GreetApplication2.class));
     }
 }
