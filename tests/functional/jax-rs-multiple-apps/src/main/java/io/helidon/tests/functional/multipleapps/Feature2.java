@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.functional.multipleapps;
 
-import java.util.Set;
+import javax.ws.rs.ConstrainedTo;
+import javax.ws.rs.RuntimeType;
+import javax.ws.rs.container.DynamicFeature;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.FeatureContext;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-
-/**
- * First application.
- */
-@ApplicationScoped
-@ApplicationPath("app1")
-public class GreetApplication1 extends Application {
+@ConstrainedTo(RuntimeType.SERVER)
+public class Feature2 implements DynamicFeature {
 
     @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(GreetResource1.class, Filter1.class, SharedFilter.class, SharedFeature.class);
+    public void configure(ResourceInfo resourceInfo, FeatureContext featureContext) {
+        featureContext.register(Filter3.class);
     }
 }
