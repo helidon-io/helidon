@@ -30,7 +30,7 @@ import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.PathMatchers;

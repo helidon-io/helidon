@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.SimpleHandler;
 
 /**
  * HTTP exception. This allows custom handlers to be used for different even types.

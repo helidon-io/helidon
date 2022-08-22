@@ -51,7 +51,7 @@ import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
 import io.helidon.nima.http2.webserver.spi.SubProtocolResult;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerResponse;

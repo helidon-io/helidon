@@ -29,6 +29,8 @@ import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 /**

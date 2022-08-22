@@ -22,12 +22,12 @@ package io.helidon.nima.webserver.http;
 public interface Filter {
     /**
      * Handle a request.
-     * Filter does not need to call {@link RoutingResponse#next()} - this is implied.
-     * If filter calls any of the {@link RoutingResponse#send()} methods, the request will immediately terminate
-     * and send a response.
+     * If request processing should be terminated, do not call {@link FilterChain#proceed()}.
+     * If request processing should continue with next filter,
+     * call {@link FilterChain#proceed()}.
      *
      * @param req routing request
      * @param res routing response
      */
-    void handle(RoutingRequest req, RoutingResponse res);
+    void handle(FilterChain chain, RoutingRequest req, RoutingResponse res);
 }

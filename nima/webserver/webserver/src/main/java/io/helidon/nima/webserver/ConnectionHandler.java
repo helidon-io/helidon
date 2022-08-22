@@ -28,6 +28,7 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.HttpException;
+import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 

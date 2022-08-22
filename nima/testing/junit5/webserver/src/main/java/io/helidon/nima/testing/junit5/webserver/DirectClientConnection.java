@@ -30,7 +30,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.SimpleHandlers;
+import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 

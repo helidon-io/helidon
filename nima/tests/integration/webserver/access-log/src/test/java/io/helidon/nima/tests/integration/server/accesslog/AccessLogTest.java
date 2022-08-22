@@ -25,9 +25,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 
+import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.accesslog.AccessLogFilter;
 import io.helidon.nima.webserver.accesslog.HostLogEntry;
 import io.helidon.nima.webserver.accesslog.RequestLineLogEntry;
@@ -38,6 +40,7 @@ import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
@@ -70,10 +73,20 @@ class AccessLogTest {
     @SuppressWarnings("resource")
     @Test
     void testRequestsAndValidateAccessLog() throws IOException {
-        client.get("/access").request().as(String.class);
-        client.get("/wrong").request().as(String.class);
-        List<String> lines = Files.readAllLines(ACCESS_LOG);
+        Http1ClientResponse response = client.get("/access").request();
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.entity().as(String.class), is("Hello World!"));
 
+        response = client.get("/wrong").request();
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+
+        response = client.get("/access")
+                .header(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, "47a"))
+                .request();
+
+        assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+
+        List<String> lines = Files.readAllLines(ACCESS_LOG);
         assertThat(lines, contains("127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
                                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"));
     }

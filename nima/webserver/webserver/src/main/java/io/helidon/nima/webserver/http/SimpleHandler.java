@@ -30,7 +30,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver;
+package io.helidon.nima.webserver.http;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

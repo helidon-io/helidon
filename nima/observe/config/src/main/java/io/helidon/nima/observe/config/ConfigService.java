@@ -28,7 +28,7 @@ import io.helidon.config.ConfigValue;
 import io.helidon.nima.Nima;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;

@@ -30,19 +30,25 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver;
+package io.helidon.nima.webserver.http;
 
 import java.util.EnumMap;
 import java.util.Map;
 
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.SimpleHandler.EventType;
+import io.helidon.nima.webserver.CloseConnectionException;
+import io.helidon.nima.webserver.HtmlEncoder;
+import io.helidon.nima.webserver.http.SimpleHandler.EventType;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Configured handlers for expected (and internal) exceptions.
  */
 public class SimpleHandlers {
+    private static final System.Logger LOGGER = System.getLogger(SimpleHandlers.class.getName());
+
     private final Map<EventType, SimpleHandler> handlers;
 
     private SimpleHandlers(Map<EventType, SimpleHandler> handlers) {
@@ -67,6 +73,52 @@ public class SimpleHandlers {
      */
     public SimpleHandler handler(EventType eventType) {
         return handlers.get(eventType);
+    }
+
+    /**
+     * Handle an HTTP Exception that occurred when request and response is available.
+     *
+     * @param httpException exception to handle
+     * @param res           response
+     */
+    public void handle(HttpException httpException, ServerResponse res) {
+        SimpleHandler.SimpleResponse response = handler(httpException.eventType()).handle(
+                httpException.request(),
+                httpException.eventType(),
+                httpException.status(),
+                httpException.responseHeaders(),
+                httpException);
+
+        Http.Status usedStatus;
+
+        res.status(response.status());
+        response.headers()
+                .forEach(res::header);
+        if (!httpException.keepAlive()) {
+            res.header(Http.HeaderValues.CONNECTION_CLOSE);
+        }
+
+        if (res.isSent()) {
+            throw new CloseConnectionException(
+                    "Cannot send response of a simple handler, status and headers already written");
+        }
+
+        try {
+            response.message().ifPresentOrElse(res::send, res::send);
+        } catch (IllegalStateException ex) {
+            // failed to send - probably output stream was already obtained and used, so status is written
+            // we can only close the connection now
+            res.streamResult(response.message().map(String::new).orElseGet(() -> httpException.getCause().getMessage()));
+            throw new CloseConnectionException(
+                    "Cannot send response of a simple handler, status and headers already written",
+                    ex);
+        }
+
+        usedStatus = response.status();
+
+        if (usedStatus == Http.Status.INTERNAL_SERVER_ERROR_500) {
+            LOGGER.log(WARNING, "Internal server error", httpException);
+        }
     }
 
     /**

@@ -32,7 +32,7 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;

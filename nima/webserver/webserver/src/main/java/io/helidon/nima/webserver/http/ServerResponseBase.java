@@ -34,7 +34,6 @@ import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.SimpleHandler;
 
 /**
  * Base class for common server response tasks that can be shared across HTTP versions.

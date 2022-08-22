@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.http.Filter;
+import io.helidon.nima.webserver.http.FilterChain;
 import io.helidon.nima.webserver.http.RoutingRequest;
 import io.helidon.nima.webserver.http.RoutingResponse;
 
@@ -85,11 +86,15 @@ public final class AccessLogFilter implements Filter {
     }
 
     @Override
-    public void handle(RoutingRequest req, RoutingResponse res) {
+    public void handle(FilterChain chain, RoutingRequest req, RoutingResponse res) {
         ZonedDateTime now = ZonedDateTime.now(clock);
         long nanoNow = System.nanoTime();
 
-        res.whenSent(() -> log(req, res, now, nanoNow));
+        try {
+            chain.proceed();
+        } finally {
+            log(req, res, now, nanoNow);
+        }
     }
 
     String createLogRecord(RoutingRequest req,

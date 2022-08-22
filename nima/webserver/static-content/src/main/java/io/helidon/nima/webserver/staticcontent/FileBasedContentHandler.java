@@ -40,7 +40,7 @@ import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;

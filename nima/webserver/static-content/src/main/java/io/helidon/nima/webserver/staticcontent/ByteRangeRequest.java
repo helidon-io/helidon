@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;

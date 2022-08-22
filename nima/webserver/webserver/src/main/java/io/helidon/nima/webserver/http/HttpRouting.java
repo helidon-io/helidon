@@ -30,7 +30,6 @@ import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.SimpleHandler;
 
 /**
  * HTTP routing.
@@ -88,11 +87,11 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        Filters.FilterResult filterResult = filters.filter(request, response);
-        if (filterResult == Filters.FilterResult.FINISH) {
-            return;
-        }
+        RoutingHandler rh = new RoutingHandler(this, ctx, request, response);
+        filters.filter(request, response, rh);
+    }
 
+    void noFilterRoute(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
         HttpPrologue prologue = request.prologue();
         response.resetRouting();
 
@@ -102,12 +101,20 @@ public final class HttpRouting implements Routing {
             counter++;
             if (counter == 10) {
                 LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
-                throw HttpException.builder()
-                        .request(HttpSimpleRequest.create(prologue, request.headers()))
-                        .type(SimpleHandler.EventType.INTERNAL_ERROR)
-                        .build();
+                // need to handle exception through handlers
+                ctx.simpleHandlers().handle(HttpException.builder()
+                                                    .request(HttpSimpleRequest.create(prologue, request.headers()))
+                                                    .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                                                    .build(),
+                                            response);
             }
-            result = doRoute(ctx, request, response);
+            try {
+                result = doRoute(ctx, request, response);
+            } catch (HttpException e) {
+                ctx.simpleHandlers().handle(e, response);
+            } catch (RuntimeException e) {
+                throw e;
+            }
         }
 
         // finished and done
@@ -115,12 +122,14 @@ public final class HttpRouting implements Routing {
             return;
         }
 
-        throw HttpException.builder()
-                .request(request)
-                .response(response)
-                .type(SimpleHandler.EventType.NOT_FOUND)
-                .message("Endpoint not found")
-                .build();
+        // we need to handle 404 through handlers
+        ctx.simpleHandlers().handle(HttpException.builder()
+                                            .request(request)
+                                            .response(response)
+                                            .type(SimpleHandler.EventType.NOT_FOUND)
+                                            .message("Endpoint not found")
+                                            .build(),
+                                    response);
     }
 
     @Override
@@ -382,6 +391,26 @@ public final class HttpRouting implements Routing {
             return route(HttpRoute.builder()
                                  .path(pattern)
                                  .handler(handler));
+        }
+    }
+
+    private static class RoutingHandler implements Handler {
+        private final HttpRouting routing;
+        private final ConnectionContext ctx;
+        private final RoutingRequest request;
+        private final RoutingResponse response;
+
+        private RoutingHandler(HttpRouting routing, ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
+            this.routing = routing;
+            this.ctx = ctx;
+            this.request = request;
+            this.response = response;
+        }
+
+        @Override
+        public void handle(ServerRequest req, ServerResponse res) {
+            // ignore parameters, as we need instances of routing request (and we do not want to do an explicit cast)
+            routing.noFilterRoute(ctx, request, response);
         }
     }
 }

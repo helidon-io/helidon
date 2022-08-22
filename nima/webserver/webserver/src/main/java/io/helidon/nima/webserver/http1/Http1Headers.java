@@ -20,7 +20,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpSimpleRequest;
 

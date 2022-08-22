@@ -32,6 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 class LoomServer implements WebServer {

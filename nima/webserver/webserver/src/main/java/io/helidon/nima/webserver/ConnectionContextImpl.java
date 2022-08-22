@@ -25,6 +25,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.http.SimpleHandlers;
 
 final class ConnectionContextImpl implements ConnectionContext {
     private final MediaContext mediaContext;

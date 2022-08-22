@@ -24,6 +24,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.http.SimpleHandlers;
 
 /**
  * Server connection context.

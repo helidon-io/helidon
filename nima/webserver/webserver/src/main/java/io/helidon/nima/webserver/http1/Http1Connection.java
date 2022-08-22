@@ -18,7 +18,6 @@ package io.helidon.nima.webserver.http1;
 
 import java.io.UncheckedIOException;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 import io.helidon.common.buffers.BufferData;
@@ -35,12 +34,11 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.SimpleHandler;
-import io.helidon.nima.webserver.SimpleHandler.EventType;
+import io.helidon.nima.webserver.http.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler.EventType;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpSimpleRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
@@ -121,6 +119,11 @@ public class Http1Connection implements ServerConnection {
                         .build();
             }
         } catch (HttpException e) {
+            if (e.fullResponse().isPresent()) {
+                ctx.simpleHandlers().handle(e, e.fullResponse().get());
+                return;
+            }
+
             SimpleHandler handler = ctx.simpleHandlers().handler(e.eventType());
             SimpleHandler.SimpleResponse response = handler.handle(e.request(),
                                                                    e.eventType(),
@@ -128,54 +131,23 @@ public class Http1Connection implements ServerConnection {
                                                                    e.responseHeaders(),
                                                                    e);
 
-            Http.Status usedStatus;
-
-            Optional<ServerResponse> fullResponse = e.fullResponse();
-            if (fullResponse.isPresent()) {
-                ServerResponse res = fullResponse.get();
-                res.status(response.status());
-                response.headers()
-                        .forEach(res::header);
-                if (!e.keepAlive()) {
-                    res.header(HeaderValues.CONNECTION_CLOSE);
-                }
-
-                if (res.isSent()) {
-                    throw new CloseConnectionException(
-                            "Cannot send response of a simple handler, status and headers already written");
-                }
-
-                try {
-                    response.message().ifPresentOrElse(res::send, res::send);
-                } catch (IllegalStateException ex) {
-                    // failed to send - probably output stream was already obtained and used, so status is written
-                    // we can only close the connection now
-                    res.streamResult(response.message().map(String::new).orElseGet(() -> e.getCause().getMessage()));
-                    throw new CloseConnectionException(
-                            "Cannot send response of a simple handler, status and headers already written",
-                            ex);
-                }
-                usedStatus = response.status();
-            } else {
-                BufferData buffer = BufferData.growing(128);
-                HeadersServerResponse headers = response.headers();
-                if (!e.keepAlive()) {
-                    headers.set(HeaderValues.CONNECTION_CLOSE);
-                }
-                byte[] message = response.message().orElse(BufferData.EMPTY_BYTES);
-                if (message.length != 0) {
-                    headers.set(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(message.length)));
-                }
-                Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
-                if (message.length != 0) {
-                    buffer.write(message);
-                }
-
-                writer.write(buffer);
-                usedStatus = response.status();
+            BufferData buffer = BufferData.growing(128);
+            HeadersServerResponse headers = response.headers();
+            if (!e.keepAlive()) {
+                headers.set(HeaderValues.CONNECTION_CLOSE);
+            }
+            byte[] message = response.message().orElse(BufferData.EMPTY_BYTES);
+            if (message.length != 0) {
+                headers.set(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(message.length)));
+            }
+            Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
+            if (message.length != 0) {
+                buffer.write(message);
             }
 
-            if (usedStatus == Http.Status.INTERNAL_SERVER_ERROR_500) {
+            writer.write(buffer);
+
+            if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
                 LOGGER.log(WARNING, "Internal server error", e);
             }
         }

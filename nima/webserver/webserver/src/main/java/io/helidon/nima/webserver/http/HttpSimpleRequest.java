@@ -22,7 +22,6 @@ import java.util.Map;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.nima.webserver.SimpleHandler;
 
 /**
  * Simple request to use with {@link HttpException}.

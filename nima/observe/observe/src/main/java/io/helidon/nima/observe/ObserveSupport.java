@@ -26,7 +26,7 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.nima.Nima;
 import io.helidon.nima.observe.spi.ObserveProvider;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.cors.CorsSupport;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;

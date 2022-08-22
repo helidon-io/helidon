@@ -41,6 +41,7 @@ import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 import static java.lang.System.Logger.Level.INFO;

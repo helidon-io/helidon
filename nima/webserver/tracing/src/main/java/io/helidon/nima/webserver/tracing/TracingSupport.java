@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.http.Filter;
+import io.helidon.nima.webserver.http.FilterChain;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.RoutingRequest;
 import io.helidon.nima.webserver.http.RoutingResponse;
@@ -83,7 +84,7 @@ public class TracingSupport {
         }
 
         @Override
-        public void handle(RoutingRequest req, RoutingResponse res) {
+        public void handle(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             Optional<SpanContext> context = tracer.extract(new NimaHeaderProvider(req));
 
             HttpPrologue prologue = req.prologue();
@@ -96,13 +97,13 @@ public class TracingSupport {
                     .update(it -> context.ifPresent(it::parent))
                     .start();
 
-            Scope scope = span.activate();
+            try(Scope ignored = span.activate()) {
+                span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
+                span.tag(Tag.HTTP_URL.create(prologue.protocol() + "://" + req.authority() + "/" + prologue.uriPath().path()));
+                span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
 
-            span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
-            span.tag(Tag.HTTP_URL.create(prologue.protocol() + "://" + req.authority() + "/" + prologue.uriPath().path()));
-            span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
-
-            res.whenSent(() -> {
+                chain.proceed();
+            } finally {
                 Http.Status status = res.status();
                 span.tag(Tag.HTTP_STATUS.create(status.code()));
 
@@ -112,9 +113,8 @@ public class TracingSupport {
                     span.status(Span.Status.OK);
                 }
 
-                scope.close();
                 span.end();
-            });
+            }
         }
 
         private static class NimaHeaderProvider implements HeaderProvider {

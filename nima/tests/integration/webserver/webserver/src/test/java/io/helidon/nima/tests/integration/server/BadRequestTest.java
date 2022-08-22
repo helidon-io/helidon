@@ -27,7 +27,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.testing.junit5.webserver.SocketHttpClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http1.Http1Route;
