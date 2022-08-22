@@ -21,12 +21,12 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.LogConfig;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Microstream demo with a simple rest application.
@@ -91,7 +91,7 @@ public class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         GreetingService greetService = new GreetingService(config);

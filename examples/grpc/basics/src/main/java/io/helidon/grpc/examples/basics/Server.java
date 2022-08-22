@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import io.helidon.grpc.examples.common.StringService;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
-import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * A basic example of a Helidon gRPC server.
@@ -70,7 +70,7 @@ public class Server {
 
         // add support for standard and gRPC health checks
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())
+                .add(HealthChecks.healthChecks())
                 .addLiveness(grpcServer.healthChecks())
                 .build();
 

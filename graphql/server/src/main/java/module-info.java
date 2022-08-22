@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ module io.helidon.graphql.server {
 
     requires io.helidon.common.configurable;
     requires io.helidon.common.http;
-    requires io.helidon.media.common;
-    requires io.helidon.media.jsonb;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.media.common;
+    requires io.helidon.reactive.media.jsonb;
+    requires io.helidon.reactive.webserver;
 
-    requires transitive io.helidon.webserver.cors;
+    requires transitive io.helidon.reactive.webserver.cors;
     requires transitive io.helidon.config;
     requires transitive graphql.java;
 

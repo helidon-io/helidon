@@ -26,7 +26,7 @@ import java.time.Duration;
 import java.util.Random;
 
 import io.helidon.common.SerializationConfig;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;

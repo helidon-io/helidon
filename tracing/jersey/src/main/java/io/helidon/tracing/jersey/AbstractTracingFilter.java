@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -31,7 +32,6 @@ import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
-import io.helidon.webserver.ServerRequest;
 
 import jakarta.ws.rs.ConstrainedTo;
 import jakarta.ws.rs.RuntimeType;

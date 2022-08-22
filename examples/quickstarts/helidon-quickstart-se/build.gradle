@@ -47,15 +47,15 @@ repositories {
 dependencies {
     // import Helidon BOM
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
-    implementation 'io.helidon.webserver:helidon-webserver'
-    implementation 'io.helidon.media:helidon-media-jsonp'
+    implementation 'io.helidon.reactive.webserver:helidon-reactive-webserver'
+    implementation 'io.helidon.reactive.media:helidon-reactive-media-jsonp'
     implementation 'io.helidon.config:helidon-config-yaml'
-    implementation 'io.helidon.health:helidon-health'
+    implementation 'io.helidon.reactive.health:helidon-reactive-health'
     implementation 'io.helidon.health:helidon-health-checks'
     implementation 'io.helidon.metrics:helidon-metrics'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testImplementation 'io.helidon.webclient:helidon-webclient'
+    testImplementation 'io.helidon.reactive.webclient:helidon-reactive-webclient'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 

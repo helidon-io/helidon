@@ -19,11 +19,11 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.tests.integration.dbclient.appl.InitService;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Web resource to terminate web server.

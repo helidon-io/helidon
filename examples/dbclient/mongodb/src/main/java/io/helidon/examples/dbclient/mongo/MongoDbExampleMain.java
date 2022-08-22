@@ -18,18 +18,18 @@ package io.helidon.examples.dbclient.mongo;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.metrics.DbClientMetrics;
-import io.helidon.dbclient.tracing.DbClientTracing;
-import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.JsonbSupport;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.DbStatementType;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
+import io.helidon.reactive.dbclient.tracing.DbClientTracing;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 /**
  * Simple Hello World rest application.
@@ -54,7 +54,7 @@ public final class MongoDbExampleMain {
     /**
      * Start the server.
      *
-     * @return the created {@link io.helidon.webserver.WebServer} instance
+     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
      */
     static WebServer startServer() {
 
@@ -84,7 +84,7 @@ public final class MongoDbExampleMain {
     }
 
     /**
-     * Creates new {@link io.helidon.webserver.Routing}.
+     * Creates new {@link io.helidon.reactive.webserver.Routing}.
      *
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
@@ -103,8 +103,7 @@ public final class MongoDbExampleMain {
                 .build();
 
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(
-                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
                 .build();
 
         return Routing.builder()

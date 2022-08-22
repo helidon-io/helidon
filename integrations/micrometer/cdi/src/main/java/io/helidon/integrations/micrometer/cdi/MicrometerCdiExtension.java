@@ -27,8 +27,8 @@ import java.util.stream.Stream;
 
 import io.helidon.integrations.micrometer.MicrometerSupport;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.reactive.webserver.Routing;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
-import io.helidon.webserver.Routing;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;

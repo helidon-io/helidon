@@ -52,8 +52,8 @@ import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.reactive.webserver.Routing;
 import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
-import io.helidon.webserver.Routing;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

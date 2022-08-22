@@ -19,15 +19,15 @@ package io.helidon.examples.dbclient.pokemons;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.JsonbSupport;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 /**
  * Simple Hello World rest application.
@@ -69,7 +69,7 @@ public final class PokemonMain {
     /**
      * Start the server.
      *
-     * @return the created {@link io.helidon.webserver.WebServer} instance
+     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
      */
     static WebServer startServer() {
 
@@ -101,7 +101,7 @@ public final class PokemonMain {
     }
 
     /**
-     * Creates new {@link io.helidon.webserver.Routing}.
+     * Creates new {@link io.helidon.reactive.webserver.Routing}.
      *
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
@@ -114,8 +114,7 @@ public final class PokemonMain {
                 .build();
         // Some relational databases do not support DML statement as ping so using query which works for all of them
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(
-                        DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
                 .build();
 
         // Initialize database schema

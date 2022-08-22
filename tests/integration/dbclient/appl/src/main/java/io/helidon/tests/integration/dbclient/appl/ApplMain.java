@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import java.util.logging.Logger;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbClientService;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.metrics.DbClientMetrics;
-import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.JsonbSupport;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.DbClientService;
+import io.helidon.reactive.dbclient.DbStatementType;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tests.integration.dbclient.appl.health.HealthCheckService;
 import io.helidon.tests.integration.dbclient.appl.interceptor.InterceptorService;
@@ -48,8 +48,8 @@ import io.helidon.tests.integration.dbclient.appl.transaction.TransactionGetServ
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionInsertService;
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionQueriesService;
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionUpdateService;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Main class.

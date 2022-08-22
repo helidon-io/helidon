@@ -28,19 +28,19 @@ import java.util.stream.Collectors;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 
 /**
  * Integration of security into Web Server.
  * <p>
- * Methods that start with "from" are to register WebSecurity with {@link io.helidon.webserver.WebServer}
+ * Methods that start with "from" are to register WebSecurity with {@link io.helidon.reactive.webserver.WebServer}
  * - to create {@link SecurityContext} for requests:
  * <ul>
  * <li>{@link #create(Security)}</li>
@@ -51,7 +51,7 @@ import io.helidon.webserver.Service;
  * Example:
  * <pre>
  * // Web server routing builder - this is our integration point
- * {@link io.helidon.webserver.Routing} routing = Routing.builder()
+ * {@link io.helidon.reactive.webserver.Routing} routing = Routing.builder()
  * // register the WebSecurity to create context (shared by all routes)
  * .register({@link WebSecurity}.{@link
  * WebSecurity#create(Security) from(security)})

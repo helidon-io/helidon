@@ -25,7 +25,7 @@ module io.helidon.grpc.server {
     requires io.helidon.common.pki;
     requires io.helidon.config;
     requires transitive io.helidon.grpc.core;
-    requires transitive io.helidon.health;
+    requires transitive io.helidon.reactive.health;
     requires io.helidon.tracing;
 
     requires transitive grpc.services;

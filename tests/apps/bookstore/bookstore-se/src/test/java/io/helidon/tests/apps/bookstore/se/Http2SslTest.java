@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;

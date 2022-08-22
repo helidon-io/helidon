@@ -30,11 +30,11 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.media.common.DefaultMediaSupport;
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.webclient.Proxy;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webclient.WebClientTls;
+import io.helidon.reactive.media.common.DefaultMediaSupport;
+import io.helidon.reactive.media.common.MessageBodyReader;
+import io.helidon.reactive.webclient.Proxy;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClientTls;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
 import jakarta.ws.rs.ProcessingException;

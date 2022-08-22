@@ -26,10 +26,10 @@ import io.helidon.common.http.Http.Method;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.faulttolerance.FaultTolerance;
-import io.helidon.faulttolerance.FtHandler;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.faulttolerance.FaultTolerance;
+import io.helidon.reactive.faulttolerance.FtHandler;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -309,7 +309,7 @@ public interface RestApi {
 
         /**
          * Configure this builder from config.
-         * Uses {@code webclient} key to configure the {@link io.helidon.webclient.WebClient} builder, and {@code jsonp} key
+         * Uses {@code webclient} key to configure the {@link io.helidon.reactive.webclient.WebClient} builder, and {@code jsonp} key
          * to configure the JSON factories.
          *
          * @param config configuration on the node of this rest API
@@ -350,8 +350,8 @@ public interface RestApi {
         /**
          * Update web client builder.
          * This can be used to configure
-         * {@link io.helidon.webclient.WebClient.Builder#connectTimeout(long, java.util.concurrent.TimeUnit)},
-         * {@link io.helidon.webclient.WebClient.Builder#readTimeout(long, java.util.concurrent.TimeUnit)} and other options.
+         * {@link io.helidon.reactive.webclient.WebClient.Builder#connectTimeout(long, java.util.concurrent.TimeUnit)},
+         * {@link io.helidon.reactive.webclient.WebClient.Builder#readTimeout(long, java.util.concurrent.TimeUnit)} and other options.
          *
          * @param updater consumer that updates the web client builder
          * @return updated builder instance

@@ -22,11 +22,11 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.staticcontent.StaticContentSupport;
 
 /**
  * Example using configuration based approach.

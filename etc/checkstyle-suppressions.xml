@@ -56,5 +56,17 @@
     <!-- PKCS#1 private keys - required for OCI Instance Principal Authentication -->
     <suppress checks="IllegalImport"
             files="DerUtils\.java"/>
+
+    <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
+    <suppress files="nima/webserver/webserver/src/main/java/io/helidon/nima/webserver/ConnectionContext.java"
+            checks="ParameterNumber"/>
+
+    <!-- the huffman constants are long, but this is not actual code, just a set of constants -->
+    <suppress files="nima/http2/http2/src/main/java/io/helidon/nima/http2/Http2HuffmanConstants.java"
+            checks="FileLength"/>
+
+    <!-- builder brings no benefit, all parameters always needed -->
+    <suppress files="nima/http2/webserver/src/main/java/io/helidon/nima/http2/webserver/spi/Http2SubProtocolProvider.java"
+            checks="ParameterNumber"/>
 </suppressions>
 

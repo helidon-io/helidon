@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientException;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientException;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;

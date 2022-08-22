@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.reactive.webserver.Handler;
+import io.helidon.reactive.webserver.Routing;
 import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 import io.helidon.servicecommon.rest.RestServiceSettings;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 

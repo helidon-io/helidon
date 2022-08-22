@@ -22,10 +22,10 @@ module io.helidon.openapi {
 
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.media.common;
-    requires io.helidon.media.jsonp;
-    requires io.helidon.webserver;
-    requires io.helidon.webserver.cors;
+    requires io.helidon.reactive.media.common;
+    requires io.helidon.reactive.media.jsonp;
+    requires io.helidon.reactive.webserver;
+    requires io.helidon.reactive.webserver.cors;
 
     requires org.jboss.jandex;
 

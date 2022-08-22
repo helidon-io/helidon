@@ -40,10 +40,10 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.integration.webserver.upgrade.Main;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webclient.WebClientTls;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClientTls;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -66,8 +66,8 @@ class UpgradeCodecsCompositionTest {
 
     @BeforeAll
     static void beforeAll() {
-        webServer = Main.startServer(0, false).await(Duration.ofSeconds(15));
-        webServerTls = Main.startServer(0, true).await(Duration.ofSeconds(15));
+        webServer = Main.startServer(0, false).await(TIMEOUT);
+        webServerTls = Main.startServer(0, true).await(TIMEOUT);
         httpClient = HttpClient.newBuilder().sslContext(insecureContext()).build();
         webClient = WebClient.builder()
                 .tls(WebClientTls.builder()

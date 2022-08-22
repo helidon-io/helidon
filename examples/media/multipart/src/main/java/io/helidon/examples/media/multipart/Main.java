@@ -18,11 +18,11 @@ package io.helidon.examples.media.multipart;
 import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.media.multipart.MultiPartSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.staticcontent.StaticContentSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.multipart.MultiPartSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
 
 /**
  * This application provides a simple file upload service with a UI to exercise multipart.
@@ -57,17 +57,17 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        startServer();
+        startServer(8080);
     }
 
     /**
      * Start the server.
      * @return the created {@link WebServer} instance
      */
-    static Single<WebServer> startServer() {
+    static Single<WebServer> startServer(int port) {
         LogConfig.configureRuntime();
         WebServer server = WebServer.builder(createRouting())
-                .port(8080)
+                .port(port)
                 .addMediaSupport(MultiPartSupport.create())
                 .addMediaSupport(JsonpSupport.create())
                 .build();

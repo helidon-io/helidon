@@ -21,7 +21,7 @@ module io.helidon.examples.integrations.oci.objectstorage.reactive {
     requires java.logging;
 
     requires io.helidon.common.http;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
     requires oci.java.sdk.shaded.full;
 

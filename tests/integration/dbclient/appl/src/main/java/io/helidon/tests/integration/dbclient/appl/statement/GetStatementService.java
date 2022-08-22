@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,15 @@ import java.util.logging.Logger;
 import jakarta.json.JsonObject;
 
 import io.helidon.common.reactive.Single;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbRow;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.dbclient.appl.model.RangePoJo;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 

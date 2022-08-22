@@ -28,8 +28,8 @@
             <value key="parent-artifactId">helidon-se</value>
             <list key="dependencies">
                 <map order="999">
-                    <value key="groupId">io.helidon.webserver</value>
-                    <value key="artifactId">helidon-webserver</value>
+                    <value key="groupId">io.helidon.reactive.webserver</value>
+                    <value key="artifactId">helidon-reactive-webserver</value>
                 </map>
                 <map order="999">
                     <value key="groupId">io.helidon.config</value>
@@ -46,16 +46,16 @@
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
-                    <value key="groupId">io.helidon.webclient</value>
-                    <value key="artifactId">helidon-webclient</value>
+                    <value key="groupId">io.helidon.reactive.webclient</value>
+                    <value key="artifactId">helidon-reactive-webclient</value>
                 </map>
             </list>
             <list key="Main-helidon-imports">
                 <value>io.helidon.common.LogConfig</value>
                 <value>io.helidon.common.reactive.Single</value>
                 <value>io.helidon.config.Config</value>
-                <value>io.helidon.webserver.Routing</value>
-                <value>io.helidon.webserver.WebServer</value>
+                <value>io.helidon.reactive.webserver.Routing</value>
+                <value>io.helidon.reactive.webserver.WebServer</value>
             </list>
             <list key="MainTest-java-imports">
                 <value>java.util.concurrent.CompletableFuture</value>
@@ -63,9 +63,9 @@
             </list>
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.common.http.Http</value>
-                <value>io.helidon.webclient.WebClient</value>
-                <value>io.helidon.webclient.WebClientResponse</value>
-                <value>io.helidon.webserver.WebServer</value>
+                <value>io.helidon.reactive.webclient.WebClient</value>
+                <value>io.helidon.reactive.webclient.WebClientResponse</value>
+                <value>io.helidon.reactive.webserver.WebServer</value>
             </list>
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.AfterAll</value>

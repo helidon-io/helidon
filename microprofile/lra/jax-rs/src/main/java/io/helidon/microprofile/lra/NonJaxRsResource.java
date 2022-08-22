@@ -31,10 +31,10 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
-import io.helidon.webserver.RequestHeaders;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.RequestHeaders;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;

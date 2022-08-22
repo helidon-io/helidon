@@ -25,19 +25,19 @@ module io.helidon.security.providers.oidc.common {
     // TokenHandler is part of API
     requires transitive io.helidon.security.util;
     // WebClient is part of API
-    requires transitive io.helidon.webclient;
+    requires transitive io.helidon.reactive.webclient;
     requires io.helidon.common.parameters;
 
     requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
     requires io.helidon.security.providers.httpauth;
-    requires io.helidon.webclient.jaxrs;
-    requires io.helidon.webclient.security;
-    requires io.helidon.webclient.tracing;
-    requires io.helidon.media.jsonp;
+    requires io.helidon.reactive.webclient.jaxrs;
+    requires io.helidon.reactive.webclient.security;
+    requires io.helidon.reactive.webclient.tracing;
+    requires io.helidon.reactive.media.jsonp;
     requires io.helidon.common.crypto;
     requires static io.helidon.config.metadata;
-    requires io.helidon.webserver.cors;
+    requires io.helidon.reactive.webserver.cors;
 
     // these are deprecated and will be removed in 3.x
     requires jersey.client;

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.ServerResponse;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;

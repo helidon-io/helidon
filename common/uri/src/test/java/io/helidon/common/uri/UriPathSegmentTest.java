@@ -32,7 +32,7 @@ class UriPathSegmentTest {
         assertThat(segment.rawValue(), is(rawPath));
         assertThat(segment.value(), is(rawPath));
         assertThat(segment.rawValueNoParams(), is(rawPath));
-        assertThat(segment.pathParameters().isEmpty(), is(true));
+        assertThat(segment.matrixParameters().isEmpty(), is(true));
     }
 
     @Test
@@ -44,7 +44,7 @@ class UriPathSegmentTest {
         assertThat(segment.value(), is("plaintext"));
         assertThat(segment.rawValueNoParams(), is("plaintext"));
 
-        Parameters params = segment.pathParameters();
+        Parameters params = segment.matrixParameters();
         assertThat(params.isEmpty(), is(false));
         assertThat(params.value("v"), is("1.0"));
         assertThat(params.value("a"), is("b"));
@@ -61,7 +61,7 @@ class UriPathSegmentTest {
         assertThat(segment.value(), is("pla i/n;text"));
         assertThat(segment.rawValueNoParams(), is("pla%20i%2Fn%3Btext"));
 
-        Parameters params = segment.pathParameters();
+        Parameters params = segment.matrixParameters();
         assertThat(params.isEmpty(), is(false));
         assertThat(params.value("v"), is("1.0"));
         assertThat(params.value("a"), is("b"));

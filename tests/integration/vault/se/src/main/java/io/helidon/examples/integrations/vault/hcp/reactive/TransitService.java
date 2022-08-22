@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ import io.helidon.integrations.vault.secrets.transit.TransitSecretsRx;
 import io.helidon.integrations.vault.secrets.transit.UpdateKeyConfig;
 import io.helidon.integrations.vault.secrets.transit.Verify;
 import io.helidon.integrations.vault.sys.SysRx;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
 
 class TransitService implements Service {
     private static final String ENCRYPTION_KEY = "encryption-key";

@@ -30,7 +30,7 @@ import io.helidon.integrations.common.rest.RestApiBase;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.json.JsonObject;
 

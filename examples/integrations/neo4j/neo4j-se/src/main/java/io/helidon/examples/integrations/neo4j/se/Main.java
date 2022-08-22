@@ -24,16 +24,16 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.examples.integrations.neo4j.se.domain.MovieRepository;
-import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.integrations.neo4j.Neo4j;
 import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
-import io.helidon.media.jsonb.JsonbSupport;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.neo4j.driver.Driver;
 
@@ -115,7 +115,7 @@ public final class Main {
         MovieService movieService = new MovieService(new MovieRepository(neo4jDriver));
 
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addReadiness(healthCheck)
                 .build();
 

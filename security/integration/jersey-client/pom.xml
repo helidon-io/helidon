@@ -59,8 +59,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-jaxrs</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient-jaxrs</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

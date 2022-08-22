@@ -21,10 +21,10 @@ module io.helidon.examples.dbclient.jdbc {
     requires java.logging;
 
     requires io.helidon.config;
-    requires io.helidon.dbclient.health;
-    requires io.helidon.health;
-    requires io.helidon.media.jsonb;
-    requires io.helidon.media.jsonp;
+    requires io.helidon.reactive.dbclient.health;
+    requires io.helidon.reactive.health;
+    requires io.helidon.reactive.media.jsonb;
+    requires io.helidon.reactive.media.jsonp;
     requires io.helidon.metrics.serviceapi;
     requires io.helidon.tracing;
     requires io.helidon.examples.dbclient.common;

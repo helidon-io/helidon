@@ -21,13 +21,13 @@ import io.helidon.common.parameters.Parameters;
 class UriPathSegmentImpl implements UriPathSegment {
     private final String rawPath;
     private final String rawPathNoParams;
-    private final Parameters pathParameters;
+    private final Parameters matrixParameters;
     private final String decoded;
 
-    UriPathSegmentImpl(String rawPath, String rawPathNoParams, Parameters pathParameters, String decoded) {
+    UriPathSegmentImpl(String rawPath, String rawPathNoParams, Parameters matrixParameters, String decoded) {
         this.rawPath = rawPath;
         this.rawPathNoParams = rawPathNoParams;
-        this.pathParameters = pathParameters;
+        this.matrixParameters = matrixParameters;
         this.decoded = decoded;
     }
 
@@ -47,7 +47,7 @@ class UriPathSegmentImpl implements UriPathSegment {
     }
 
     @Override
-    public Parameters pathParameters() {
-        return pathParameters;
+    public Parameters matrixParameters() {
+        return matrixParameters;
     }
 }

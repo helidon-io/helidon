@@ -18,11 +18,11 @@ package io.helidon.metrics.serviceapi;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.servicecommon.rest.RestServiceSettings;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 

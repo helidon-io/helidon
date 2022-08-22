@@ -22,12 +22,12 @@ module io.helidon.microprofile.cors {
     requires jakarta.ws.rs;
     requires io.helidon.config;
     requires io.helidon.config.mp;
-    requires io.helidon.webserver.cors;
+    requires io.helidon.reactive.webserver.cors;
 
     // Following to help with JavaDoc...
     requires io.helidon.jersey.common;
-    requires io.helidon.webserver.jersey;
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver.jersey;
+    requires io.helidon.reactive.webserver;
     requires io.helidon.microprofile.config;
 
     // ---

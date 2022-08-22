@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.media.common.MediaContext;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.media.common.MediaContext;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

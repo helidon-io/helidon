@@ -1,0 +1,369 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.nima.webserver;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LogConfig;
+import io.helidon.config.Config;
+import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http.SimpleHandler;
+import io.helidon.nima.webserver.http.SimpleHandlers;
+import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+
+/**
+ * Server that opens server sockets and handles requests through routing.
+ */
+public interface WebServer {
+    /**
+     * The default server socket configuration name. All the default server socket
+     * configuration such as {@link WebServer#port(String)}
+     * is accessible using this name.
+     */
+    String DEFAULT_SOCKET_NAME = "@default";
+
+    /**
+     * A new builder to set up server.
+     *
+     * @return builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Starts the server. Has no effect if server is running.
+     * The start will fail on a server that is shut down, or that failed to start.
+     * In such cases, create a new instance of Web Server.
+     *
+     * @return a started server
+     * @throws IllegalStateException when startup fails, in such a case all channels are shut down
+     */
+    WebServer start();
+
+    /**
+     * Attempt to gracefully shutdown the server.
+     *
+     * @return a stopped server
+     * @see #start()
+     */
+    WebServer stop();
+
+    /**
+     * Returns {@code true} if the server is currently running. Running server in stopping phase returns {@code true} until it
+     * is not fully stopped.
+     *
+     * @return {@code true} if server is running
+     */
+    boolean isRunning();
+
+    /**
+     * Returns a port number the default server socket is bound to and is listening on;
+     * or {@code -1} if unknown or not active.
+     * <p>
+     * It is supported only when server is running.
+     *
+     * @return a listen port; or {@code -1} if unknown or the default server socket is not active
+     */
+    default int port() {
+        return port(DEFAULT_SOCKET_NAME);
+    }
+
+    /**
+     * Returns a port number an additional named server socket is bound to and is listening on;
+     * or {@code -1} if unknown or not active.
+     *
+     * @param socketName the name of an additional named server socket
+     * @return a listen port; or {@code -1} if socket name is unknown or the server socket is not active
+     */
+    int port(String socketName);
+
+    /**
+     * Returns {@code true} if TLS is configured for the default socket.
+     *
+     * @return whether TLS is enabled for the default socket
+     */
+    default boolean hasTls() {
+        return hasTls(DEFAULT_SOCKET_NAME);
+    }
+
+    /**
+     * Returns {@code true} if TLS is configured for the named socket.
+     *
+     * @param socketName the name of a socket
+     * @return whether TLS is enabled for the socket, returns {@code false} if the socket does not exists
+     */
+    boolean hasTls(String socketName);
+
+    /**
+     * Fluent API builder for {@link WebServer}.
+     */
+    class Builder implements io.helidon.common.Builder<Builder, WebServer>, Router.RouterBuilder<Builder> {
+        static {
+            LogConfig.initClass();
+        }
+
+        private final Map<String, ListenerConfiguration.Builder> socketBuilder = new HashMap<>();
+        private final Map<String, Router.Builder> routers = new HashMap<>();
+        private final SimpleHandlers.Builder simpleHandlers = SimpleHandlers.builder();
+
+        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
+                HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
+
+        Builder(Config rootConfig) {
+            Config config = rootConfig.get("nima.server");
+            config.get("host").asString().ifPresent(this::host);
+            config.get("port").asInt().ifPresent(this::port);
+
+            // now let's configure the sockets
+            config.get("sockets")
+                    .asNodeList()
+                    .orElseGet(List::of)
+                    .forEach(listenerConfig -> {
+                        String socketName = listenerConfig.get("name").asString()
+                                .orElseThrow(() -> new IllegalStateException("Socket name is a required key"));
+                        ListenerConfiguration.Builder listener = socket(socketName);
+
+                        // listener specific options
+                        listenerConfig.get("host").asString().ifPresent(listener::host);
+                        listenerConfig.get("port").asInt().ifPresent(listener::port);
+                        listenerConfig.get("backlog").asInt().ifPresent(listener::backlog);
+                        listenerConfig.get("receive-buffer-size").asInt().ifPresent(listener::receiveBufferSize);
+                        listenerConfig.get("write-queue-length").asInt().ifPresent(listener::writeQueueLength);
+
+                        listenerConfig.get("tls").as(Tls::create).ifPresent(listener::tls);
+
+                        // connection specific options
+                        listener.connectionOptions(socketOptionsBuilder -> {
+                            Config connConfig = listenerConfig.get("connection-options");
+                            connConfig.get("read-timeout-seconds").asInt().ifPresent(it -> socketOptionsBuilder.readTimeout(
+                                    Duration.ofSeconds(it)));
+                            connConfig.get("connect-timeout-seconds").asInt().ifPresent(it -> socketOptionsBuilder.connectTimeout(
+                                    Duration.ofSeconds(it)));
+                            connConfig.get("send-buffer-size").asInt().ifPresent(socketOptionsBuilder::socketSendBufferSize);
+                            connConfig.get("receive-buffer-size").asInt()
+                                    .ifPresent(socketOptionsBuilder::socketReceiveBufferSize);
+                            connConfig.get("keep-alive").asBoolean().ifPresent(socketOptionsBuilder::socketKeepAlive);
+                            connConfig.get("reuse-address").asBoolean().ifPresent(socketOptionsBuilder::socketReuseAddress);
+                            connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
+                        });
+                    });
+        }
+
+        private Builder() {
+            // let's use the configuration
+            this(Config.create());
+        }
+
+        @Override
+        public WebServer build() {
+            return new LoomServer(this, simpleHandlers.build());
+        }
+
+        /**
+         * Build and start the server.
+         *
+         * @return started server instance
+         */
+        public WebServer start() {
+            return build().start();
+        }
+
+        /**
+         * Configure additional socket with listener configuration using default routing.
+         *
+         * @param socketName    socket name
+         * @param socketBuilder consumer of listener configuration
+         * @return updated builder
+         */
+        public Builder socket(String socketName, Consumer<ListenerConfiguration.Builder> socketBuilder) {
+            socketBuilder.accept(socket(socketName));
+            return this;
+        }
+
+        /**
+         * Configure additional socket with listener configuration and custom routing.
+         *
+         * @param socketName socket name
+         * @param builders   consumer of listener and router builders
+         * @return updated builder
+         */
+        public Builder socket(String socketName,
+                              BiConsumer<ListenerConfiguration.Builder, Router.RouterBuilder<?>> builders) {
+            builders.accept(socket(socketName), router(socketName));
+            return this;
+        }
+
+        /**
+         * Router builder for a named socket.
+         *
+         * @param socketName name of the socket, when {@link WebServer#DEFAULT_SOCKET_NAME} is used, the same
+         *                   builder as used by this instance is returned
+         * @return listener builder
+         */
+        public Router.Builder routerBuilder(String socketName) {
+            return router(socketName);
+        }
+
+        /**
+         * Socket builder for a named socket.
+         *
+         * @param socketName name of the socket, when {@link WebServer#DEFAULT_SOCKET_NAME} is used, the same
+         *                   builder as used by this instance is returned
+         * @return listener builder
+         */
+        public ListenerConfiguration.Builder socketBuilder(String socketName) {
+            return socket(socketName);
+        }
+
+        /**
+         * Configure listener for the default socket.
+         *
+         * @param socketBuilder listener builder consumer
+         * @return updated builder
+         */
+        public Builder defaultSocket(Consumer<ListenerConfiguration.Builder> socketBuilder) {
+            return socket(DEFAULT_SOCKET_NAME, socketBuilder);
+        }
+
+        /**
+         * Port of the default socket.
+         *
+         * @param port port to bind to
+         * @return updated builder
+         */
+        public Builder port(int port) {
+            socket(DEFAULT_SOCKET_NAME).port(port);
+            return this;
+        }
+
+        /**
+         * Host of the default socket.
+         *
+         * @param host host or IP address to bind to
+         * @return updated builder
+         */
+        public Builder host(String host) {
+            socket(DEFAULT_SOCKET_NAME).host(host);
+            return this;
+        }
+
+        /**
+         * Configure a simple handler.
+         *
+         * @param handler    handler to use
+         * @param eventTypes event types this handler should handle
+         * @return updated builder
+         */
+        public Builder simpleHandler(SimpleHandler handler, SimpleHandler.EventType... eventTypes) {
+            for (SimpleHandler.EventType eventType : eventTypes) {
+                simpleHandlers.addHandler(eventType, handler);
+            }
+
+            return this;
+        }
+
+        /**
+         * Configure default HTTP routing.
+         *
+         * @param consumer routing consumer
+         * @return updated builder
+         * @see #addRouting(Routing)
+         */
+        public Builder routing(Consumer<? super HttpRouting.Builder> consumer) {
+            HttpRouting.Builder builder = HttpRouting.builder();
+            consumer.accept(builder);
+            addRouting(builder.build());
+            return this;
+        }
+
+        @Override
+        public Builder addRouting(Routing routing) {
+            router(DEFAULT_SOCKET_NAME).addRouting(routing);
+            return this;
+        }
+
+        /**
+         * Configure TLS for the default socket.
+         *
+         * @param tls tls to use
+         * @return updated builder
+         */
+        public Builder tls(Tls tls) {
+            this.socket(DEFAULT_SOCKET_NAME)
+                    .tls(tls);
+            return this;
+        }
+
+        /**
+         * Configure a connection provider. This instance has priority over provider(s) discovered by service loader.
+         *
+         * @param connectionProvider explicit connection provider
+         * @return updated builder
+         */
+        public Builder addConnectionProvider(ServerConnectionProvider connectionProvider) {
+            this.connectionProviders.addService(connectionProvider);
+            return this;
+        }
+
+        /**
+         * A method to validate a named socket configuration exists in this builder.
+         *
+         * @param socketName name of the socket, using {@link io.helidon.nima.webserver.WebServer#DEFAULT_SOCKET_NAME}
+         *                   will always return {@code true}
+         * @return {@code true} in case the named socket is configured in this builder
+         */
+        public boolean hasSocket(String socketName) {
+            return DEFAULT_SOCKET_NAME.equals(socketName) || socketBuilder.containsKey(socketName);
+        }
+
+        Map<String, ListenerConfiguration.Builder> socketBuilders() {
+            return socketBuilder;
+        }
+
+        /**
+         * Map of socket name to router.
+         *
+         * @return named sockets to router
+         */
+        Map<String, Router> routers() {
+            Map<String, Router> result = new HashMap<>();
+            routers.forEach((key, value) -> result.put(key, value.build()));
+            return result;
+        }
+
+        List<ServerConnectionProvider> connectionProviders() {
+            return connectionProviders.build().asList();
+        }
+
+        private ListenerConfiguration.Builder socket(String socketName) {
+            return socketBuilder.computeIfAbsent(socketName, ListenerConfiguration::builder);
+        }
+
+        private Router.Builder router(String socketName) {
+            return routers.computeIfAbsent(socketName, it -> Router.builder());
+        }
+    }
+}

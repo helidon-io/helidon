@@ -35,7 +35,7 @@ Neo4jMetricsSupport.builder()
         .initialize();
 // health checks
 HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addReadiness(Neo4jHealthCheck.create(neo4j.driver()))
                 .build();
 

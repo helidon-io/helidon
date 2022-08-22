@@ -49,7 +49,7 @@ mp.openapi
 |key |type |default value |description
 
 |`application-path-disable` |boolean |`false` |Sets whether the app path search should be disabled.
-|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
+|`cors` |xref:{rootdir}/config/io_helidon_reactive_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
 |`custom-schema-registry-class` |string |{nbsp} |Sets the custom schema registry class.
 |`filter` |string |{nbsp} |Sets the developer-provided OpenAPI filter class name.
 |`model.reader` |string |{nbsp} |Sets the developer-provided OpenAPI model reader class name.

@@ -48,7 +48,7 @@ micrometer
 |===
 |key |type |default value |description
 
-|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
+|`cors` |xref:{rootdir}/config/io_helidon_reactive_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
 |`routing` |string |{nbsp} |Sets the routing name to use for setting up the service's endpoint.
 |`web-context` |string |{nbsp} |Sets the web context to use for the service's endpoint.
 

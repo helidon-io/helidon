@@ -46,8 +46,12 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-key-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.reactive.health</groupId>
+            <artifactId>helidon-reactive-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

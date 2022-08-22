@@ -32,11 +32,11 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Collector;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.faulttolerance.FtHandler;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientRequestHeaders;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.faulttolerance.FtHandler;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientRequestHeaders;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import io.opentracing.SpanContext;
 import jakarta.json.JsonBuilderFactory;
@@ -823,7 +823,7 @@ public abstract class RestApiBase implements RestApi {
      * @param request API request
      * @param method HTTP method
      * @param requestId ID of this request
-     * @param requestBuilder {@link io.helidon.webclient.WebClient} request builder
+     * @param requestBuilder {@link io.helidon.reactive.webclient.WebClient} request builder
      * @param jsonObject JSON object that should be sent as a request entity
      *
      * @return supplier of a web client response
@@ -863,7 +863,7 @@ public abstract class RestApiBase implements RestApi {
      * @param request API request
      * @param method HTTP method
      * @param requestId ID of this request
-     * @param requestBuilder {@link io.helidon.webclient.WebClient} request builder
+     * @param requestBuilder {@link io.helidon.reactive.webclient.WebClient} request builder
      * @param publisher publisher to be used as request entity
      *
      * @return supplier of a web client response
@@ -896,7 +896,7 @@ public abstract class RestApiBase implements RestApi {
      * @param request API request
      * @param method HTTP method
      * @param requestId ID of this request
-     * @param requestBuilder {@link io.helidon.webclient.WebClient} request builder
+     * @param requestBuilder {@link io.helidon.reactive.webclient.WebClient} request builder
      * @return supplier of a web client response
      */
     protected Supplier<Single<WebClientResponse>> requestPayload(String path,

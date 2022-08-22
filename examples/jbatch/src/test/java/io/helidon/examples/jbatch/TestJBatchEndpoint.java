@@ -16,12 +16,12 @@
 package io.helidon.examples.jbatch;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import org.junit.jupiter.api.Test;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

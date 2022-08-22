@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.microprofile.messaging.health;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.health.HealthCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
@@ -31,7 +30,8 @@ import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;

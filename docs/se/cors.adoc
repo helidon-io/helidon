@@ -48,8 +48,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-cors</artifactId>
+    <groupId>io.helidon.reactive.webserver</groupId>
+    <artifactId>helidon-reactive-webserver-cors</artifactId>
 </dependency>
 ----
 
@@ -83,10 +83,10 @@ by including CORS into the routing you construct for your application.
 
 For each distinct resource or subresource your application exposes:
 
-. Create a link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/CorsSupport.html[`CorsSupport`] instance
+. Create a link:{webserver-cors-javadoc-base-url}/io/helidon/reactive/webserver/cors/CorsSupport.html[`CorsSupport`] instance
 corresponding to the resource.
 . For each different type of sharing you want to provide for that resource:
-.. Create a link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/CrossOriginConfig.html[`CrossOriginConfig`] instance. +
+.. Create a link:{webserver-cors-javadoc-base-url}/io/helidon/reactive/webserver/cors/CrossOriginConfig.html[`CrossOriginConfig`] instance. +
 The `CrossOriginConfig` Java class represents the details for a particular type of sharing, such as
 which origins are allowed to share via which HTTP methods, etc.
 .. Add the `CrossOriginConfig` to the `CorsSupport` instance for this resource.
@@ -120,7 +120,7 @@ private static Routing createRouting(Config config) {
     MetricsSupport metrics = MetricsSupport.create();
     GreetService greetService = new GreetService(config);
     HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+            .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
             .build();
     CorsSupport corsSupport = CorsSupport.builder()  // <1>
             .addCrossOriginConfig(CrossOriginConfig.builder() // <2>
@@ -202,7 +202,7 @@ private static Routing createRouting(Config config) {
     MetricsSupport metrics = MetricsSupport.create();
     GreetService greetService = new GreetService(config);
     HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+            .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
             .build();
     CorsSupport.Builder builder = CorsSupport.builder();
 
@@ -283,7 +283,7 @@ private static Routing createRouting(Config config) {
             .build();
     GreetService greetService = new GreetService(config);
     HealthSupport health = HealthSupport.builder()
-            .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+            .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
             .build();
 
     return Routing.builder()

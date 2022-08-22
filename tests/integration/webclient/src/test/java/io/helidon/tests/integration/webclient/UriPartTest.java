@@ -19,7 +19,7 @@ package io.helidon.tests.integration.webclient;
 import java.util.concurrent.CompletionException;
 
 import io.helidon.common.reactive.Single;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 import org.junit.jupiter.api.Test;
 

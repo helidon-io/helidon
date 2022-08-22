@@ -18,23 +18,22 @@ package io.helidon.tests.integration.nativeimage.se1;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import jakarta.websocket.server.ServerEndpointConfig;
-
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
-import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonb.JsonbSupport;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.reactive.webserver.websocket.WebSocketRouting;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.staticcontent.StaticContentSupport;
-import io.helidon.webserver.websocket.WebSocketRouting;
 
+import jakarta.websocket.server.ServerEndpointConfig;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -60,7 +59,7 @@ public final class Se1Main {
 
     /**
      * Start the server.
-     * @return the created {@link io.helidon.webserver.WebServer} instance
+     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
      */
     static WebServer startServer() {
         // load logging configuration
@@ -116,7 +115,7 @@ public final class Se1Main {
     }
 
     /**
-     * Creates new {@link io.helidon.webserver.Routing}.
+     * Creates new {@link io.helidon.reactive.webserver.Routing}.
      *
      * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server
@@ -125,10 +124,10 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
-        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
+        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-reactive-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check
                         .up()
                         .withData("timestamp", System.currentTimeMillis())

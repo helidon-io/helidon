@@ -136,6 +136,15 @@ update_version(){
         mv ${bfile}.tmp ${bfile}
     done
 
+    # Hack to update helidon-version in doc files
+    for dfile in `egrep ":helidon-version: .*" -r . --include attributes.adoc | cut -d ':' -f 1 | sort | uniq `
+    do
+        cat ${dfile} | \
+            sed -e s@':helidon-version: .*'@":helidon-version: ${FULL_VERSION}"@g \
+            > ${dfile}.tmp
+        mv ${dfile}.tmp ${dfile}
+    done
+
     # Invoke prepare hook
     if [ -n "${PREPARE_HOOKS}" ]; then
         for prepare_hook in ${PREPARE_HOOKS} ; do

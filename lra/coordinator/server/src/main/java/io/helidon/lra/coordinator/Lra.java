@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.webclient.WebClientRequestHeaders;
+import io.helidon.reactive.webclient.WebClientRequestHeaders;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.metrics.Counter;

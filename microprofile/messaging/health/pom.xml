@@ -56,18 +56,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.reactive.webclient</groupId>
+            <artifactId>helidon-reactive-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonp</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-jsonp</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media</groupId>
-            <artifactId>helidon-media-jsonb</artifactId>
+            <groupId>io.helidon.reactive.media</groupId>
+            <artifactId>helidon-reactive-media-jsonb</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

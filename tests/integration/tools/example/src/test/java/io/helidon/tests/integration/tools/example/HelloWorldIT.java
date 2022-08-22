@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,24 @@ package io.helidon.tests.integration.tools.example;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
-
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.HelidonTestException;
 import io.helidon.tests.integration.tools.client.TestClient;
 import io.helidon.tests.integration.tools.client.TestServiceClient;
 
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test Hello World service.
  */
-public class HelloWorldIT {
+class HelloWorldIT {
 
     private static final Logger LOGGER = Logger.getLogger(HelloWorldIT.class.getName());
 
@@ -46,10 +46,10 @@ public class HelloWorldIT {
 
     // Test sendHelloWorld service
     @Test
-    public void testHelloWorld() {
+    void testHelloWorld() {
         LOGGER.fine(() -> "Running testHelloWorld");
         JsonValue data = testClient.callServiceAndGetData("sendHelloWorld");
-        String helloWorld = ((JsonString)data).getString();
+        String helloWorld = ((JsonString) data).getString();
         LOGGER.finer(() -> String.format("Response: \"%s\"", helloWorld));
         assertThat(helloWorld, equalTo("Hello World!"));
     }
@@ -94,7 +94,7 @@ public class HelloWorldIT {
         JsonValue data = testClient.callServiceAndGetData(
                 "personalHelloWorld",
                 Map.of("nick", "Ash"));
-        String greeting = ((JsonString)data).getString();
+        String greeting = ((JsonString) data).getString();
         LOGGER.finer(() -> String.format("Response: \"%s\"", greeting));
         assertThat(greeting, containsString("Ash Ketchum"));
     }

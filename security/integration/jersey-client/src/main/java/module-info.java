@@ -30,7 +30,7 @@ module io.helidon.security.integration.jersey.client {
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;
     requires io.helidon.security.integration.common;
-    requires io.helidon.webclient.jaxrs;
+    requires io.helidon.reactive.webclient.jaxrs;
     requires jersey.common;
     requires jersey.client;
 

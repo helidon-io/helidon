@@ -55,8 +55,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health</artifactId>
+    <groupId>io.helidon.reactive.health</groupId>
+    <artifactId>helidon-reactive-health</artifactId>
 </dependency>
 ----
 
@@ -184,11 +184,11 @@ The following table provides a summary of the Health Check API classes.
 | `org.eclipse.microprofile.health.HealthCheckResponseBuilder`
 | Builder class to create `HealthCheckResponse` instances
 
-| `io.helidon.health.HealthSupport`
+| `io.helidon.reactive.health.HealthSupport`
 | WebServer service that exposes `/health` and invokes the registered health
 checks
 
-| `io.helidon.health.HealthSupport.Builder`
+| `io.helidon.reactive.health.HealthSupport.Builder`
 | Builder class to create `HealthSupport` instances
 |=======
 
@@ -229,7 +229,7 @@ The following code adds the default built-in health checks to your application:
 [source,java]
 ----
 HealthSupport health = HealthSupport.builder()
-    .addLiveness(HealthChecks.healthChecks())   // <1>
+    .add(HealthChecks.healthChecks())   // <1>
     .build();
 
 Routing.builder()
@@ -419,7 +419,7 @@ Routing healthRouting = Routing.builder()
         .register(JsonSupport.create())
         .register(HealthSupport.builder()
                 .webContext("/live") // <1>
-                .addLiveness(HealthChecks.healthChecks()) // <2>
+                .add(HealthChecks.healthChecks()) // <2>
                 .build())
         .register(HealthSupport.builder()
                 .webContext("/ready") // <3>

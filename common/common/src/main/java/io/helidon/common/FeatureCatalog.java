@@ -39,7 +39,7 @@ final class FeatureCatalog {
               "Config",
               "Configuration module",
               "Config");
-        addSe("io.helidon.faulttolerance",
+        addSe("io.helidon.reactive.faulttolerance",
                 "Fault Tolerance",
                 "Reactive Fault Tolerance module",
                 "FT");
@@ -71,35 +71,35 @@ final class FeatureCatalog {
               "Health",
               "Health checks support",
               "Health");
-        addSe("io.helidon.media.jsonp",
+        addSe("io.helidon.reactive.media.jsonp",
               "JSON-P",
               "Media support for Jakarta JSON Processing",
               "WebServer", "Jsonp");
-        addSe("io.helidon.media.jsonp",
+        addSe("io.helidon.reactive.media.jsonp",
               "JSON-P",
               "Media support for Jakarta JSON Processing",
               "WebClient", "Jsonp");
-        addSe("io.helidon.media.jsonb",
+        addSe("io.helidon.reactive.media.jsonb",
               "JSON-B",
               "Media support for Jakarta JSON Binding",
               "WebServer", "Jsonb");
-        addSe("io.helidon.media.jsonb",
+        addSe("io.helidon.reactive.media.jsonb",
               "JSON-B",
               "Media support for Jakarta JSON Binding",
               "WebClient", "Jsonb");
-        addSe("io.helidon.media.jackson",
+        addSe("io.helidon.reactive.media.jackson",
               "Jackson",
               "Media support for Jackson",
               "WebServer", "Jackson");
-        addSe("io.helidon.media.jackson",
+        addSe("io.helidon.reactive.media.jackson",
               "Jackson",
               "Media support for Jackson",
               "WebClient", "Jackson");
-        addSe("io.helidon.media.multipart",
+        addSe("io.helidon.reactive.media.multipart",
               "Multi-part",
               "Media support for Multi-part entities",
               "WebServer", "Multipart");
-        addSe("io.helidon.media.multipart",
+        addSe("io.helidon.reactive.media.multipart",
               "Multi-part",
               "Media support for Multi-part entities",
               "WebClient", "Multipart");
@@ -133,19 +133,19 @@ final class FeatureCatalog {
               "Tracing",
               "Tracing support",
               "Tracing");
-        addSe("io.helidon.webserver",
+        addSe("io.helidon.reactive.webserver",
               "WebServer",
               "Helidon WebServer",
               "WebServer");
-        addSe("io.helidon.webserver.accesslog",
+        addSe("io.helidon.reactive.webserver.accesslog",
               "Access Log",
               "Access log support",
               "WebServer", "AccessLog");
-        addSe("io.helidon.webserver.cors",
+        addSe("io.helidon.reactive.webserver.cors",
               "CORS",
               "CORS support for WebServer",
               "WebServer", "CORS");
-        addSe("io.helidon.webserver.jersey",
+        addSe("io.helidon.reactive.webserver.jersey",
               "Jersey",
               "WebServer integration with Jersey",
               "WebServer", "Jersey");
@@ -156,7 +156,7 @@ final class FeatureCatalog {
                         .description("Scheduling of periodical tasks")
                         .path("Scheduling")
                         .nativeSupported(true));
-        add("io.helidon.webserver.tyrus",
+        add("io.helidon.reactive.webserver.tyrus",
             FeatureDescriptor.builder()
                     .flavor(HelidonFlavor.SE)
                     .name("Websocket")
@@ -428,34 +428,34 @@ final class FeatureCatalog {
             "YAML",
             "YAML media type support for config",
             "Config", "YAML");
-        add("io.helidon.dbclient",
+        add("io.helidon.reactive.dbclient",
             FeatureDescriptor.builder()
                     .name("Db Client")
                     .description("Reactive database client")
                     .path("DbClient"));
-        add("io.helidon.dbclient.health",
+        add("io.helidon.reactive.dbclient.health",
             "Health Check",
             "Reactive database client health check support",
             "DbClient", "Health");
-        add("io.helidon.dbclient.jsonp",
+        add("io.helidon.reactive.dbclient.jsonp",
             "JSON-P",
             "JSON Processing mapping DbRow",
             "DbClient", "JSON-P");
-        add("io.helidon.dbclient.jdbc",
+        add("io.helidon.reactive.dbclient.jdbc",
             FeatureDescriptor.builder()
                     .name("JDBC")
                     .description("Reactive database client over JDBC")
                     .path("DbClient", "JDBC")
                     .nativeDescription("Tested with Helidon Oracle and H2 drivers (see examples)"));
-        add("io.helidon.dbclient.metrics",
+        add("io.helidon.reactive.dbclient.metrics",
             "Metrics",
             "Reactive database client metrics support",
             "DbClient", "Metrics");
-        add("io.helidon.dbclient.mongodb",
+        add("io.helidon.reactive.dbclient.mongodb",
             "mongo",
             "Reactive database client with reactive mongo driver",
             "DbClient", "mongo");
-        add("io.helidon.dbclient.tracing",
+        add("io.helidon.reactive.dbclient.tracing",
             "Tracing",
             "Reactive database client tracing support",
             "DbClient", "Tracing");
@@ -591,20 +591,20 @@ final class FeatureCatalog {
                         .name("Neo4j Metrics")
                         .description("Metrics for Neo4j integration")
                         .path("Neo4j", "Metrics"));
-        add("io.helidon.webclient",
+        add("io.helidon.reactive.webclient",
             FeatureDescriptor.builder()
                     .name("Web Client")
                     .description("Reactive web client")
                     .path("WebClient"));
-        add("io.helidon.webclient.metrics",
+        add("io.helidon.reactive.webclient.metrics",
             "Metrics",
             "Reactive web client support for metrics",
             "WebClient", "Metrics");
-        add("io.helidon.webclient.security",
+        add("io.helidon.reactive.webclient.security",
             "Security",
             "Reactive web client support for security",
             "WebClient", "Security");
-        add("io.helidon.webclient.tracing",
+        add("io.helidon.reactive.webclient.tracing",
             "Tracing",
             "Reactive web client support for tracing",
             "WebClient", "Tracing");
@@ -614,7 +614,7 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
-        add("io.helidon.webserver.staticcontent",
+        add("io.helidon.reactive.webserver.staticcontent",
             "Static Content",
             "Static content support for webserver",
             "WebServer", "Static Content");
@@ -678,10 +678,10 @@ final class FeatureCatalog {
         exclude("io.helidon.config.spi");
         exclude("io.helidon.config.mp");
         exclude("io.helidon.config.mp.spi");
-        exclude("io.helidon.dbclient.common");
-        exclude("io.helidon.dbclient.jdbc.spi");
-        exclude("io.helidon.dbclient.metrics.jdbc");
-        exclude("io.helidon.dbclient.spi");
+        exclude("io.helidon.reactive.dbclient.common");
+        exclude("io.helidon.reactive.dbclient.jdbc.spi");
+        exclude("io.helidon.reactive.dbclient.metrics.jdbc");
+        exclude("io.helidon.reactive.dbclient.spi");
         exclude("io.helidon.health.common");
         exclude("io.helidon.integrations.cdi.delegates");
         exclude("io.helidon.integrations.cdi.referencecountedcontext");
@@ -695,8 +695,8 @@ final class FeatureCatalog {
         exclude("io.helidon.jersey.common");
         exclude("io.helidon.logging.common");
         exclude("io.helidon.logging.jul");
-        exclude("io.helidon.media.common");
-        exclude("io.helidon.media.common.spi");
+        exclude("io.helidon.reactive.media.common");
+        exclude("io.helidon.reactive.media.common.spi");
         exclude("io.helidon.openapi.internal");
         exclude("io.helidon.security.abac.policy");
         exclude("io.helidon.security.abac.policy.spi");
@@ -717,8 +717,8 @@ final class FeatureCatalog {
         exclude("io.helidon.tracing.jersey.client.internal");
         exclude("io.helidon.tracing.spi");
         exclude("io.helidon.tracing.tracerresolver");
-        exclude("io.helidon.webclient.jaxrs");
-        exclude("io.helidon.webclient.spi");
+        exclude("io.helidon.reactive.webclient.jaxrs");
+        exclude("io.helidon.reactive.webclient.spi");
         exclude("io.helidon.common.context.spi");
         exclude("io.helidon.grpc.core");
     }

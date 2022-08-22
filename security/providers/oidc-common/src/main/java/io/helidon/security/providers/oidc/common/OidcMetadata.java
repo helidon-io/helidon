@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClient;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

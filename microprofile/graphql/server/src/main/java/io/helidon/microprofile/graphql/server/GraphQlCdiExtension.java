@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import io.helidon.graphql.server.GraphQlSupport;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webserver.Routing;
+import io.helidon.reactive.webserver.Routing;
 
 import graphql.schema.GraphQLSchema;
 import jakarta.annotation.Priority;

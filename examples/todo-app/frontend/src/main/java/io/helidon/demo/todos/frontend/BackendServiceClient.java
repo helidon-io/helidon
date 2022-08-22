@@ -23,12 +23,12 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.jersey.client.ClientSecurity;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
-import io.helidon.webserver.ServerResponse;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;

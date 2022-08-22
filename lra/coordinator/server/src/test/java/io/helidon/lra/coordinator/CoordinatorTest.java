@@ -23,11 +23,11 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.SocketConfiguration;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.SocketConfiguration;
+import io.helidon.reactive.webserver.WebServer;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;

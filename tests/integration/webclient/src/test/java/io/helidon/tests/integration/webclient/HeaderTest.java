@@ -19,11 +19,11 @@ import java.util.List;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientServiceRequest;
-import io.helidon.webclient.WebClientServiceResponse;
-import io.helidon.webclient.spi.WebClientService;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientServiceRequest;
+import io.helidon.reactive.webclient.WebClientServiceResponse;
+import io.helidon.reactive.webclient.spi.WebClientService;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;

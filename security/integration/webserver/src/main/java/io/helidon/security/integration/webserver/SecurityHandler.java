@@ -38,6 +38,10 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
+import io.helidon.reactive.webserver.Handler;
+import io.helidon.reactive.webserver.ResponseHeaders;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -56,10 +60,6 @@ import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.tracing.SpanContext;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.ResponseHeaders;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
 
@@ -141,7 +141,7 @@ public final class SecurityHandler implements Handler {
      * <pre>
      * {
      *   #
-     *   # these are used by {@link WebSecurity} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
+     *   # these are used by {@link WebSecurity} when loaded from config, to register with {@link io.helidon.reactive.webserver.WebServer}
      *   #
      *   path = "/noRoles"
      *   methods = ["get"]

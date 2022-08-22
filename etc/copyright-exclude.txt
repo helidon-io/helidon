@@ -13,6 +13,7 @@
 .jks
 .jpg
 .json
+.lua
 .mm
 .ods
 .png

@@ -28,13 +28,13 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.WebServer;
 
 import io.grpc.Channel;
 import io.grpc.StatusRuntimeException;

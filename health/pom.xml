@@ -33,7 +33,6 @@
     <description>Health check support for Helidon SE</description>
 
     <modules>
-        <module>common</module>
         <module>health</module>
         <module>health-checks</module>
     </modules>

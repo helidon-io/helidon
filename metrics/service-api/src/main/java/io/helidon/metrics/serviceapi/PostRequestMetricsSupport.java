@@ -17,8 +17,8 @@ package io.helidon.metrics.serviceapi;
 
 import java.util.function.BiConsumer;
 
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 
 /**
  * Encapsulates metrics-related post-request processing that other components use and factory methods for creating instances of

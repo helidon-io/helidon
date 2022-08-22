@@ -22,8 +22,8 @@ import java.util.List;
 import io.helidon.common.parameters.Parameters;
 
 /**
- * Abstraction of HTTP path supporting path parameters.
- * Note that path parameters are ONLY available on {@link #absolute()} path
+ * Abstraction of HTTP path supporting matrix parameters.
+ * Note that matrix parameters are ONLY available on {@link #absolute()} path or on {@link #segments()}.
  */
 public interface UriPath {
     /**
@@ -44,11 +44,11 @@ public interface UriPath {
      * @return a new HTTP path
      */
     static UriPath create(String rawPath) {
-        String rawPathNoParams = UriPathHelper.stripPathParams(rawPath);
+        String rawPathNoParams = UriPathHelper.stripMatrixParams(rawPath);
         if (rawPath.length() == rawPathNoParams.length()) {
             return new UriPathNoParam(rawPath);
         }
-        return new UriPathParam(rawPath, rawPathNoParams);
+        return new UriPathMatrix(rawPath, rawPathNoParams);
     }
 
     /**
@@ -61,17 +61,17 @@ public interface UriPath {
 
     /**
      * Path as it was received on the wire (Server request), or path as it will be sent
-     * over the wire (Client request) WITHOUT path parameters.
+     * over the wire (Client request) WITHOUT matrix parameters.
      *
      * @return path
      */
     String rawPathNoParams();
 
     /**
-     * Decoded path without path parameters.
+     * Decoded path without matrix parameters.
      *
-     * @return path without path parameters
-     * @see #pathParameters()
+     * @return path without matrix parameters
+     * @see #matrixParameters()
      */
     String path();
 
@@ -82,7 +82,7 @@ public interface UriPath {
      *
      * @return path parameters
      */
-    Parameters pathParameters();
+    Parameters matrixParameters();
 
     /**
      * If this instance represents a path relative to some context root then returns absolute requested path otherwise
@@ -98,7 +98,7 @@ public interface UriPath {
     /**
      * List of segments.
      * This is the most detailed access to the underlying path that provides raw, decoded access to path, access to
-     * path parameters bound to each segment.
+     * matrix parameters bound to each segment.
      * <p><b>NOTE:</b> this is an expensive method that requires full parsing of the path, please use with care
      *
      * @return list of URI path segments

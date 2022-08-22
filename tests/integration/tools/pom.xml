@@ -38,6 +38,7 @@
         <profile>
             <id>example</id>
             <modules>
+                <!-- TODO this cannot be started in maven, tests fail -->
                 <module>example</module>
             </modules>
         </profile>

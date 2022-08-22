@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.reactive.webserver.WebTracingConfig;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.WebTracingConfig;
 
 import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;

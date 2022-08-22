@@ -24,7 +24,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
-import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 
 class K8sRestApi extends VaultRestApi {
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();

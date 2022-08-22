@@ -17,10 +17,10 @@ package io.helidon.examples.webclient.standalone;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 /**
  * The application main class.

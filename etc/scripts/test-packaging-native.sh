@@ -57,7 +57,9 @@ cd ${WS_DIR}/tests/integration/native-image
 mvn ${MAVEN_ARGS} -e clean install
 
 # Build native images
-readonly native_image_tests="se-1 mp-1 mp-3"
+# TODO:java19
+# readonly native_image_tests="se-1 mp-1 mp-3"
+readonly native_image_tests="se-1 nima-1"
 for native_test in ${native_image_tests}; do
     cd ${WS_DIR}/tests/integration/native-image/${native_test}
     mvn ${MAVEN_ARGS} -e clean package -Pnative-image
@@ -65,9 +67,14 @@ done
 
 # Run this one because it has no pre-reqs and self-tests
 # Uses relative path to read configuration
-cd ${WS_DIR}/tests/integration/native-image/mp-1
-${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1 || true
+# TODO:java19
+# cd ${WS_DIR}/tests/integration/native-image/mp-1
+# ${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1 || true
 
 # Run SE-1 exiting on started
 cd ${WS_DIR}/tests/integration/native-image/se-1
 ${WS_DIR}/tests/integration/native-image/se-1/target/helidon-tests-native-image-se-1 -Dexit.on.started=! || true
+
+# Run Nima-1 exiting on started
+cd ${WS_DIR}/tests/integration/native-image/nima-1
+${WS_DIR}/tests/integration/native-image/nima-1/target/helidon-tests-native-image-nima-1 -Dexit.on.started=! || true

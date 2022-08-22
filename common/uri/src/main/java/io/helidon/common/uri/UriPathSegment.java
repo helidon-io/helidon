@@ -23,7 +23,7 @@ import io.helidon.common.parameters.Parameters;
  */
 public interface UriPathSegment {
     /**
-     * Create a new path segment from raw (encoded) segment value that may contain path parameters.
+     * Create a new path segment from raw (encoded) segment value that may contain matrix parameters.
      *
      * @param pathSegment raw path segment
      * @return parsed path segment
@@ -34,10 +34,10 @@ public interface UriPathSegment {
         - empty string ("/")
         - text ("/plaintext")
         - encoded text ("/plain%20text")
-        - text with path param(s) ("/plaintext;v=1.0;a;b=c,d")
+        - text with matrix param(s) ("/plaintext;v=1.0;a;b=c,d")
          */
-        Parameters pathParameters = UriPathParameters.create(pathSegment);
-        String rawPathNoParams = UriPathHelper.stripPathParams(pathSegment);
+        Parameters pathParameters = UriMatrixParameters.create(pathSegment);
+        String rawPathNoParams = UriPathHelper.stripMatrixParams(pathSegment);
         String decoded = UriEncoding.decodeUri(rawPathNoParams);
         return new UriPathSegmentImpl(pathSegment, rawPathNoParams, pathParameters, decoded);
     }
@@ -46,26 +46,26 @@ public interface UriPathSegment {
      * The text value of this path segment, without leading slash. This will return empty
      * string for path segments that do not have any text.
      *
-     * @return decoded value of this path segment without path parameters
+     * @return decoded value of this path segment without matrix parameters
      */
     String value();
 
     /**
      * The raw text value (encoded) of this path segment.
-     * @return encoded value of this path segment with path parameters
+     * @return encoded value of this path segment with matrix parameters
      */
     String rawValue();
 
     /**
-     * The raw text value (encoded) of this path segment without path parameters.
-     * @return encoded value of this path segment without path parameters
+     * The raw text value (encoded) of this path segment without matrix parameters.
+     * @return encoded value of this path segment without matrix parameters
      */
     String rawValueNoParams();
 
     /**
-     * All path parameters of this segment.
+     * All matrix parameters of this segment.
      *
-     * @return path parameters
+     * @return matrix parameters
      */
-    Parameters pathParameters();
+    Parameters matrixParameters();
 }

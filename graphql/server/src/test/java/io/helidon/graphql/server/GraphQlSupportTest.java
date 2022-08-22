@@ -20,10 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.media.jsonb.JsonbSupport;
-import io.helidon.webclient.WebClient;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.media.jsonb.JsonbSupport;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webserver.WebServer;
 
 import graphql.schema.GraphQLSchema;
 import graphql.schema.StaticDataFetcher;

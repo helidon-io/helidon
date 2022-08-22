@@ -31,7 +31,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Dropwizard Metrics  Coda Hale and Yammer, Inc.
 Apache 2.0
-Used by: [helidon-dbclient-metrics-jdbc]
+Used by: [helidon-reactive-dbclient-metrics-jdbc]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Copyright 2010-2013 Coda Hale and Yammer, Inc., 2014-2017 Dropwizard Team
 
@@ -73,7 +73,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-dbclient-jsonp, helidon-dbclient-mongodb, helidon-graal-native-image-extension, helidon-lra-coordinator-server, helidon-media-jsonb, helidon-media-jsonp, helidon-microprofile-server, helidon-mp-graal-native-image-extension, helidon-openapi, helidon-security-jwt]
+Used by: [helidon-reactive-dbclient-jsonp, helidon-reactive-dbclient-mongodb, helidon-graal-native-image-extension, helidon-lra-coordinator-server, helidon-reactive-media-jsonb, helidon-reactive-media-jsonp, helidon-microprofile-server, helidon-mp-graal-native-image-extension, helidon-openapi, helidon-security-jwt]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Parsson (org.eclipse.parsson:parsson)
   Copyright (c) 2011,2022 Oracle and/or its affiliates. All rights reserved.
@@ -127,7 +127,7 @@ Fourth Party Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Tyrus  Oracle
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-microprofile-websocket, helidon-webserver-websocket]
+Used by: [helidon-microprofile-websocket, helidon-reactive-webserver-websocket]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Tyrus (org.glassfish.tyrus:tyrus-*)
   Copyright (c) 2007,2022 Oracle and/or its affiliates. All rights reserved.
@@ -215,7 +215,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Yasson  Eclipse Foundation
 Multiple Licenses
-Used by: [helidon-media-jsonb, helidon-microprofile, helidon-openapi]
+Used by: [helidon-reactive-media-jsonb, helidon-microprofile, helidon-openapi]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Eclipse Yasson
 org.eclipse.yasson (org.eclipse:yasson)
@@ -996,7 +996,7 @@ failureaccess, v1.0.1, Apache 2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 HikariCP  Brett Woolridge
 Apache 2.0
-Used by: [helidon-dbclient-jdbc, helidon-dbclient-metrics-jdbc, helidon-integrations-cdi-datasource-hikaricp]
+Used by: [helidon-reactive-dbclient-jdbc, helidon-reactive-dbclient-metrics-jdbc, helidon-integrations-cdi-datasource-hikaricp]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 HikariCP (com.zaxxer:HikariCP)
   Copyright (C) 2013,2019 Brett Wooldridge
@@ -1666,7 +1666,7 @@ Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Json Processing API (JSON-P)  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-media-jsonp, helidon-microprofile-server, helidon-openapi, helidon-security-jwt]
+Used by: [helidon-reactive-media-jsonp, helidon-microprofile-server, helidon-openapi, helidon-security-jwt]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/jsonp/api (The EPL license is reproduced below).
@@ -1752,7 +1752,7 @@ Fourth Party Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Messaging API (JMS API)  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-health-checks, helidon-health-common, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jedis, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-neo4j, helidon-integrations-neo4j-health, helidon-integrations-neo4j-metrics, helidon-integrations-vault-cdi, helidon-jersey-client, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-jms-shim, helidon-messaging-kafka, helidon-messaging-mock, helidon-microprofile-bean-validation, helidon-microprofile-config, helidon-microprofile-cors, helidon-microprofile-fault-tolerance, helidon-microprofile-grpc-client, helidon-microprofile-grpc-core, helidon-microprofile-grpc-metrics, helidon-microprofile-grpc-server, helidon-microprofile-metrics, helidon-microprofile-rest-client, helidon-microprofile-server, helidon-microprofile-tracing, helidon-microprofile-websocket, helidon-security-integration-jersey, helidon-security-integration-jersey-client, helidon-service-common-rest-cdi, weld-se-core]
+Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jedis, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-neo4j, helidon-integrations-neo4j-health, helidon-integrations-neo4j-metrics, helidon-integrations-vault-cdi, helidon-jersey-client, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-jms-shim, helidon-messaging-kafka, helidon-messaging-mock, helidon-microprofile-bean-validation, helidon-microprofile-config, helidon-microprofile-cors, helidon-microprofile-fault-tolerance, helidon-microprofile-grpc-client, helidon-microprofile-grpc-core, helidon-microprofile-grpc-metrics, helidon-microprofile-grpc-server, helidon-microprofile-metrics, helidon-microprofile-rest-client, helidon-microprofile-server, helidon-microprofile-tracing, helidon-microprofile-websocket, helidon-security-integration-jersey, helidon-security-integration-jersey-client, helidon-service-common-rest-cdi, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/jakartaee/messaging.  (The EPL license is reproduced below).
@@ -2023,7 +2023,7 @@ The project maintains the following source code repositories:
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta WebSocket  Oracle
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-microprofile-websocket, helidon-webserver-websocket]
+Used by: [helidon-microprofile-websocket, helidon-reactive-webserver-websocket]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/websocket-api (The EPL license is reproduced below).
@@ -2323,7 +2323,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Health API  Eclipse Foundation
 Apache 2.0
-Used by: [helidon-health, helidon-integrations-neo4j-health, helidon-microprofile-health]
+Used by: [helidon-reactive-health, helidon-integrations-neo4j-health, helidon-microprofile-health]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Health API (org.eclipse.microprofile.health:microprofile-health-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation
@@ -2463,7 +2463,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MongoDB ReactiveStreams Driver  MongoDB, Inc.
 Apache 2.0
-Used by: [helidon-dbclient-mongodb]
+Used by: [helidon-reactive-dbclient-mongodb]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MongoDB Reactive Streams Driver (org.mongodb:mongodb-driver-reactivestreams)
   Copyright 2014,2017 MongoDB, Inc.
@@ -2752,7 +2752,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 OpenTracing API for Java  Opentracing.Io
 Apache 2.0
-Used by: [helidon-dbclient-tracing, helidon-integrations-common-rest, helidon-security-integration-jersey, helidon-tracing-opentracing, helidon-tracing-tracer-resolver, helidon-tracing-zipkin]
+Used by: [helidon-reactive-dbclient-tracing, helidon-integrations-common-rest, helidon-security-integration-jersey, helidon-tracing-opentracing, helidon-tracing-tracer-resolver, helidon-tracing-zipkin]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 opentracing-util: 0.33.0, Apache 2.0
 opentracing-mock: 0.33.0, Apache 2.0
@@ -2783,7 +2783,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Reactive Streams  Public Domain
 Other FOSS License
-Used by: [helidon-dbclient-mongodb, helidon-microprofile-reactive-streams]
+Used by: [helidon-reactive-dbclient-mongodb, helidon-microprofile-reactive-streams]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 /************************************************************************
@@ -4583,7 +4583,7 @@ source code repository logs.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jackson-databind  FasterXML, LLC
 Apache 2.0
-Used by: [helidon-media-jackson]
+Used by: [helidon-reactive-media-jackson]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 ------------------------------- Top-level license --------------------------
 License Identifier: Apache-2.0
@@ -4803,7 +4803,7 @@ License Identifier: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-hk2  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server, helidon-webserver-jersey]
+Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-jersey-server, helidon-reactive-webserver-jersey]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
   Copyright (c) 2017,2022 Oracle and/or its affiliates. All rights reserved.
@@ -6391,7 +6391,7 @@ under the License.
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 netty  The Netty Project
 Apache 2.0
-Used by: [helidon-webclient, helidon-webserver, helidon-webserver-http2, helidon-webserver-jersey, helidon-webserver-transport-netty-epoll]
+Used by: [helidon-reactive-webclient, helidon-reactive-webserver, helidon-reactive-webserver-http2, helidon-reactive-webserver-jersey, helidon-reactive-webserver-transport-netty-epoll]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Netty (io.netty:netty-*)
   Copyright 2012,2021 The Netty Project

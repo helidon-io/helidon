@@ -25,7 +25,6 @@ module io.helidon.microprofile.messaging.health {
     requires io.helidon.microprofile.messaging;
     requires io.helidon.microprofile.health;
     requires microprofile.health.api;
-    requires io.helidon.health.common;
 
     exports io.helidon.microprofile.messaging.health;
 }

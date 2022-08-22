@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.websocket.WebSocketRouting;
+import io.helidon.reactive.webserver.WebServer;
+import io.helidon.reactive.webserver.websocket.WebSocketRouting;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ import jakarta.json.stream.JsonParsingException;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.health.HealthSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+import io.helidon.reactive.health.HealthSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.eclipse.microprofile.health.HealthCheck;
 import org.junit.jupiter.api.AfterAll;

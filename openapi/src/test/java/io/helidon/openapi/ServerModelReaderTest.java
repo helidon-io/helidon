@@ -21,7 +21,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.openapi.test.MyModelReader;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.WebServer;
 
 import jakarta.json.JsonException;
 import jakarta.json.JsonString;

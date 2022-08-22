@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,15 @@ import jakarta.json.stream.JsonParsingException;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.metrics.DbClientMetrics;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.reactive.dbclient.DbStatementType;
+import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

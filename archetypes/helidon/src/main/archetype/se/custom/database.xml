@@ -133,8 +133,8 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                                     </list>
                                     <list key="MainTest-helidon-imports">
                                         <value>io.helidon.common.http.Http</value>
-                                        <value>io.helidon.media.jsonp.JsonpSupport</value>
-                                        <value>io.helidon.media.jsonb.JsonbSupport</value>
+                                        <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
+                                        <value>io.helidon.reactive.media.jsonb.JsonbSupport</value>
                                     </list>
                                     <list key="MainTest-java-imports">
                                         <value>java.util.Collections</value>
@@ -262,8 +262,8 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                     </list>
                                     <list key="dependencies">
                                         <map>
-                                            <value key="groupId">io.helidon.dbclient</value>
-                                            <value key="artifactId">helidon-dbclient-mongodb</value>
+                                            <value key="groupId">io.helidon.reactive.dbclient</value>
+                                            <value key="artifactId">helidon-reactive-dbclient-mongodb</value>
                                         </map>
                                         <map>
                                             <value key="groupId">com.h2database</value>
@@ -295,40 +295,40 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         </list>
                         <list key="dependencies">
                             <map>
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient</value>
                             </map>
                             <map>
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-jsonp</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-jsonp</value>
                             </map>
                             <map if="${media.json-lib} != 'jsonb'">
-                                <value key="groupId">io.helidon.media</value>
-                                <value key="artifactId">helidon-media-jsonb</value>
+                                <value key="groupId">io.helidon.reactive.media</value>
+                                <value key="artifactId">helidon-reactive-media-jsonb</value>
                             </map>
                             <map if="${media.json-lib} != 'jsonp'">
-                                <value key="groupId">io.helidon.media</value>
-                                <value key="artifactId">helidon-media-jsonp</value>
+                                <value key="groupId">io.helidon.reactive.media</value>
+                                <value key="artifactId">helidon-reactive-media-jsonp</value>
                             </map>
                             <map if="${server} != 'mongodb'">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-jdbc</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-jdbc</value>
                             </map>
                             <map if="${health}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-health</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-health</value>
                             </map>
                             <map if="${metrics}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-metrics-jdbc</value>
                             </map>
                             <map if="${metrics}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-metrics</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-metrics</value>
                             </map>
                             <map if="${tracing}">
-                                <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-tracing</value>
+                                <value key="groupId">io.helidon.reactive.dbclient</value>
+                                <value key="artifactId">helidon-reactive-dbclient-tracing</value>
                             </map>
                             <map>
                                 <value key="groupId">org.slf4j</value>
@@ -336,10 +336,10 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             </map>
                         </list>
                         <list key="Main-helidon-imports">
-                            <value>io.helidon.dbclient.DbClient</value>
-                            <value>io.helidon.media.jsonp.JsonpSupport</value>
-                            <value>io.helidon.media.jsonb.JsonbSupport</value>
-                            <value if="${health}">io.helidon.dbclient.health.DbClientHealthCheck</value>
+                            <value>io.helidon.reactive.dbclient.DbClient</value>
+                            <value>io.helidon.reactive.media.jsonp.JsonpSupport</value>
+                            <value>io.helidon.reactive.media.jsonb.JsonbSupport</value>
+                            <value if="${health}">io.helidon.reactive.dbclient.health.DbClientHealthCheck</value>
                         </list>
                         <list key="Main-serverBuilder">
                             <value><![CDATA[                .addMediaSupport(JsonbSupport.create())]]></value>
@@ -356,7 +356,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
         InitializeDb.init(dbClient);]]></value>
                         </list>
                         <list key="Main-healthBuilder" if="${health}">
-                            <value><![CDATA[                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
+                            <value><![CDATA[                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
                         </list>
                         <list key="Main-routingBuilder">
                             <value><![CDATA[                .register("/", new PokemonService(dbClient))]]></value>

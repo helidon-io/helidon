@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.metrics.prometheus;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.testsupport.TestClient;
-import io.helidon.webserver.testsupport.TestRequest;
-import io.helidon.webserver.testsupport.TestResponse;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.testsupport.TestClient;
+import io.helidon.reactive.webserver.testsupport.TestRequest;
+import io.helidon.reactive.webserver.testsupport.TestResponse;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Counter;

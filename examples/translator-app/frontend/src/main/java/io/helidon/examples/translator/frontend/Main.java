@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 /**
  * Translator application frontend main class.
@@ -51,7 +51,7 @@ public class Main {
                                 9080)))
                 .port(8080)
                 .tracer(TracerBuilder.create(config.get("tracing"))
-                                .serviceName("helidon-webserver-translator-frontend")
+                                .serviceName("helidon-reactive-webserver-translator-frontend")
                                 .registerGlobal(false)
                                 .build())
                 .build();

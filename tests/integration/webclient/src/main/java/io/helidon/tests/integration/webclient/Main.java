@@ -18,11 +18,11 @@ package io.helidon.tests.integration.webclient;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.opentracing.OpenTracing;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 import io.opentracing.Tracer;
 

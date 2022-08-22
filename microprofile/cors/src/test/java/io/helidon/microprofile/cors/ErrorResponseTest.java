@@ -25,8 +25,8 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.reactive.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.reactive.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

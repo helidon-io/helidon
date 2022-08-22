@@ -76,7 +76,7 @@ from the root directory of your project (helidon-quickstart-se).
 private static Routing createRouting(Config config) {
 
     HealthSupport health = HealthSupport.builder()
-      .addLiveness(HealthChecks.healthChecks())  // <1>
+      .add(HealthChecks.healthChecks())  // <1>
       .build();
 
     return Routing.builder()
@@ -153,8 +153,8 @@ state of the application.
 .Notice the custom health checks dependency is already in the project's pom.xml file:
 ----
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health</artifactId>
+    <groupId>io.helidon.reactive.health</groupId>
+    <artifactId>helidon-reactive-health</artifactId>
 </dependency>
 ----
 
@@ -433,7 +433,7 @@ You can combine built-in and custom health checks using the same `HealthSupport`
 .Register a custom health check in the `Main.createRouting` method:
 ----
 HealthSupport health = HealthSupport.builder()
-    .addLiveness(HealthChecks.healthChecks())  // <1>
+    .add(HealthChecks.healthChecks())  // <1>
     .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")
       .up()
       .withData("time", System.currentTimeMillis())
@@ -568,7 +568,7 @@ health endpoints for the Kubernetes liveness, readiness, and startup probes.
 .Change the `HealthSupport` builder in the `Main.createRouting` method to use the built-in liveness checks and custom liveness, readiness, and startup checks:
 ----
 HealthSupport health = HealthSupport.builder()
-    .addLiveness(HealthChecks.healthChecks()) // <1>
+    .add(HealthChecks.healthChecks()) // <1>
     .addLiveness(() -> HealthCheckResponse.named("LivenessCheck")  // <2>
       .up()
       .withData("time", System.currentTimeMillis())

@@ -22,8 +22,8 @@ import java.util.Map;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.Server;
-import io.helidon.webserver.testsupport.TemporaryFolder;
-import io.helidon.webserver.testsupport.TemporaryFolderExtension;
+import io.helidon.reactive.webserver.testsupport.TemporaryFolder;
+import io.helidon.reactive.webserver.testsupport.TemporaryFolderExtension;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;

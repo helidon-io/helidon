@@ -21,9 +21,9 @@ import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
-import io.helidon.webclient.WebClientException;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.WebClientException;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

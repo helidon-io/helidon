@@ -41,8 +41,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health</artifactId>
+            <groupId>io.helidon.reactive.health</groupId>
+            <artifactId>helidon-reactive-health</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -51,10 +51,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile.health</groupId>
             <artifactId>microprofile-health-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.health</groupId>
-            <artifactId>helidon-health-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service-common</groupId>

@@ -181,8 +181,6 @@
         <module>licensing</module>
         <module>common</module>
         <module>config</module>
-        <module>media</module>
-        <module>webserver</module>
         <module>security</module>
         <module>lra</module>
         <module>microprofile</module>
@@ -193,15 +191,14 @@
         <module>grpc</module>
         <module>openapi</module>
         <module>jersey</module>
-        <module>webclient</module>
         <module>integrations</module>
-        <module>dbclient</module>
         <module>messaging</module>
-        <module>fault-tolerance</module>
         <module>graphql</module>
         <module>logging</module>
         <module>scheduling</module>
         <module>service-common</module>
+        <module>nima</module>
+        <module>reactive</module>
     </modules>
 
 
@@ -244,7 +241,6 @@
                         <failOnError>true</failOnError>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
-                        <!--<verbose>true</verbose>-->
                         <isOffline>true</isOffline>
                         <offlineLinks>
                             <offlineLink>
@@ -392,9 +388,8 @@
                             <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki</additionalJOption>
                         </additionalJOptions>
                         <additionalOptions>
-                            <!--<additionalOption> - -add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>-->
+                            <additionalOption>--enable-preview</additionalOption>
                         </additionalOptions>
-                        <!-- <excludePackageNames>io.helidon.config.tests.*:io.helidon.config.testing.*:io.helidon.config.test.*</excludePackageNames> -->
                         <sourceFileExcludes>
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>
@@ -1197,7 +1192,7 @@
                         <configuration>
                             <skip>false</skip>
                             <skippedModules>
-helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,helidon-webserver-test-support
+helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,helidon-reactive-webserver-test-support
                             </skippedModules>
                             <excludePackageNames>io.grpc</excludePackageNames>
                             <sourceFileExcludes>

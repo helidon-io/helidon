@@ -78,7 +78,7 @@ public class TestUtil {
 
     /**
      * Returns a {@code HttpURLConnection} for the requested method and path and
-     * {code @MediaType} from the specified {@link io.helidon.webserver.WebServer}.
+     * {code @MediaType} from the specified {@link io.helidon.reactive.webserver.WebServer}.
      *
      * @param port port to connect to
      * @param method HTTP method to use in building the connection

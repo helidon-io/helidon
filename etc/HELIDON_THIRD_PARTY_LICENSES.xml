@@ -38,7 +38,7 @@ Fourth Party Runtime Dependencies
             <licensor>Coda Hale and Yammer, Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-metrics-jdbc</consumer>
+                <consumer>helidon-reactive-dbclient-metrics-jdbc</consumer>
             </consumers>
             <attribution>Copyright 2010-2013 Coda Hale and Yammer, Inc., 2014-2017 Dropwizard Team
 
@@ -85,12 +85,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</attr
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-jsonp</consumer>
-                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-reactive-dbclient-jsonp</consumer>
+                <consumer>helidon-reactive-dbclient-mongodb</consumer>
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-media-jsonb</consumer>
-                <consumer>helidon-media-jsonp</consumer>
+                <consumer>helidon-reactive-media-jsonb</consumer>
+                <consumer>helidon-reactive-media-jsonp</consumer>
                 <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-mp-graal-native-image-extension</consumer>
                 <consumer>helidon-openapi</consumer>
@@ -154,7 +154,7 @@ Fourth Party Dependencies
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-websocket</consumer>
-                <consumer>helidon-webserver-websocket</consumer>
+                <consumer>helidon-reactive-webserver-websocket</consumer>
             </consumers>
             <attribution>Eclipse Tyrus (org.glassfish.tyrus:tyrus-*)
   Copyright (c) 2007,2022 Oracle and/or its affiliates. All rights reserved.
@@ -247,7 +247,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Multiple Licenses</licenseName>
             <consumers>
-                <consumer>helidon-media-jsonb</consumer>
+                <consumer>helidon-reactive-media-jsonb</consumer>
                 <consumer>helidon-microprofile</consumer>
                 <consumer>helidon-openapi</consumer>
             </consumers>
@@ -1055,8 +1055,8 @@ failureaccess, v1.0.1, Apache 2.0
             <licensor>Brett Woolridge</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-jdbc</consumer>
-                <consumer>helidon-dbclient-metrics-jdbc</consumer>
+                <consumer>helidon-reactive-dbclient-jdbc</consumer>
+                <consumer>helidon-reactive-dbclient-metrics-jdbc</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
             </consumers>
             <attribution>HikariCP (com.zaxxer:HikariCP)
@@ -1821,7 +1821,7 @@ Jakarta JSON Processing API (JSON-P) (jakarta.json:jakarta.json-api)
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
-                <consumer>helidon-media-jsonp</consumer>
+                <consumer>helidon-reactive-media-jsonp</consumer>
                 <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-openapi</consumer>
                 <consumer>helidon-security-jwt</consumer>
@@ -1916,7 +1916,6 @@ Fourth Party Dependencies
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-health-checks</consumer>
-                <consumer>helidon-health-common</consumer>
                 <consumer>helidon-integrations-cdi-datasource</consumer>
                 <consumer>helidon-integrations-cdi-datasource-hikaricp</consumer>
                 <consumer>helidon-integrations-cdi-datasource-ucp</consumer>
@@ -2252,7 +2251,7 @@ The project maintains the following source code repositories:
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-websocket</consumer>
-                <consumer>helidon-webserver-websocket</consumer>
+                <consumer>helidon-reactive-webserver-websocket</consumer>
             </consumers>
             <attribution>1.  The follow files are available in source code form under the Eclipse Public License at:
     https://github.com/eclipse-ee4j/websocket-api (The EPL license is reproduced below).
@@ -2785,7 +2784,7 @@ License Identifier: Apache-2.0
             <licensor>MongoDB, Inc.</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-reactive-dbclient-mongodb</consumer>
             </consumers>
             <attribution>MongoDB Reactive Streams Driver (org.mongodb:mongodb-driver-reactivestreams)
   Copyright 2014,2017 MongoDB, Inc.
@@ -3085,7 +3084,7 @@ Fourth Party Runtime Dependencies
             <licensor>Opentracing.Io</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-tracing</consumer>
+                <consumer>helidon-reactive-dbclient-tracing</consumer>
                 <consumer>helidon-integrations-common-rest</consumer>
                 <consumer>helidon-security-integration-jersey</consumer>
                 <consumer>helidon-tracing-opentracing</consumer>
@@ -3133,7 +3132,7 @@ License Identifier: Apache-2.0
             <licensor>Public Domain</licensor>
             <licenseName>Other FOSS License</licenseName>
             <consumers>
-                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-reactive-dbclient-mongodb</consumer>
                 <consumer>helidon-microprofile-reactive-streams</consumer>
             </consumers>
             <attribution>
@@ -5019,7 +5018,7 @@ source code repository logs.
             <licensor>FasterXML, LLC</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-media-jackson</consumer>
+                <consumer>helidon-reactive-media-jackson</consumer>
             </consumers>
             <attribution>------------------------------- Top-level license --------------------------
 License Identifier: Apache-2.0
@@ -5275,7 +5274,7 @@ License Identifier: Apache-2.0
                 <consumer>helidon-jersey-client</consumer>
                 <consumer>helidon-jersey-connector</consumer>
                 <consumer>helidon-jersey-server</consumer>
-                <consumer>helidon-webserver-jersey</consumer>
+                <consumer>helidon-reactive-webserver-jersey</consumer>
             </consumers>
             <attribution>jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2)
   Copyright (c) 2017,2022 Oracle and/or its affiliates. All rights reserved.
@@ -6946,11 +6945,11 @@ under the License.
             <licensor>The Netty Project</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-webclient</consumer>
-                <consumer>helidon-webserver</consumer>
-                <consumer>helidon-webserver-http2</consumer>
-                <consumer>helidon-webserver-jersey</consumer>
-                <consumer>helidon-webserver-transport-netty-epoll</consumer>
+                <consumer>helidon-reactive-webclient</consumer>
+                <consumer>helidon-reactive-webserver</consumer>
+                <consumer>helidon-reactive-webserver-http2</consumer>
+                <consumer>helidon-reactive-webserver-jersey</consumer>
+                <consumer>helidon-reactive-webserver-transport-netty-epoll</consumer>
             </consumers>
             <attribution>Netty (io.netty:netty-*)
   Copyright 2012,2021 The Netty Project

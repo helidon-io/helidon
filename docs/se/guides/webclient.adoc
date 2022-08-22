@@ -99,8 +99,8 @@ In the pom.xml, remove the test scope under the WebClient dependency as it will 
 .Remove test scope:
 ----
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient</artifactId>
     <scope>test</scope> <!--  Remove this line -->
 </dependency>
 ----
@@ -129,8 +129,8 @@ specific settings and improves the readability and simplicity of the code.
 [source,java]
 .Add WebClient instance to the main method:
 ----
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
+import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.webclient.WebClient;
 
 WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:8080")   // <1>
@@ -277,8 +277,8 @@ There is a specific dependency to use WebClient metrics in your application.
 .Add the following dependency to pom.xml:
 ----
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-metrics</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient-metrics</artifactId>
 </dependency>
 ----
 
@@ -292,8 +292,8 @@ that can be used with any metric.
 ----
 import io.helidon.common.http.Http;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.webclient.metrics.WebClientMetrics;
-import io.helidon.webclient.spi.WebClientService;
+import io.helidon.reactive.webclient.metrics.WebClientMetrics;
+import io.helidon.reactive.webclient.spi.WebClientService;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics|.Counter;
                                        |.Meter;

@@ -1,0 +1,7 @@
+[
+    {
+        "name": "io.helidon.reactive.webserver.accesslog.AccessLogHandler",
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true
+    }
+]

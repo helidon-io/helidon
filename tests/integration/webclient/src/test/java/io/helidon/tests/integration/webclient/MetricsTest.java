@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package io.helidon.tests.integration.webclient;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webclient.metrics.WebClientMetrics;
-import io.helidon.webclient.spi.WebClientService;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.reactive.webclient.metrics.WebClientMetrics;
+import io.helidon.reactive.webclient.spi.WebClientService;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;

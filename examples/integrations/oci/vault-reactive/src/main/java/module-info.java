@@ -18,7 +18,7 @@
  * Example of OCI Vault integration in a reactive application.
  */
 module io.helidon.examples.integrations.oci.vault.reactive {
-    requires io.helidon.webserver;
+    requires io.helidon.reactive.webserver;
 
     requires oci.java.sdk.shaded.full;
 

@@ -63,6 +63,7 @@ class OpenTelemetryTracer implements Tracer {
     public Span.Builder<?> spanBuilder(String name) {
         OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name));
         tags.forEach(builder::tag);
+        Span.current().ifPresent(it -> builder.parent(it.context()));
         return builder;
     }
 

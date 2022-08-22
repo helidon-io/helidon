@@ -18,15 +18,15 @@ package io.helidon.tests.integration.tools.example;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jakarta.json.Json;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.reactive.dbclient.DbClient;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webserver.WebServer;
 
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.dbclient.DbClient;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
-import io.helidon.webserver.WebServer;
+import jakarta.json.Json;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -89,7 +89,7 @@ public class LifeCycleService implements Service {
      * @return {@code null} value
      */
     private void exit(final ServerRequest request, final ServerResponse response) {
-        response.headers().contentType(MediaType.TEXT_PLAIN);
+        response.headers().contentType(MediaTypes.TEXT_PLAIN);
         response.send("Testing web server shutting down.");
         ExitThread.start(server);
     }

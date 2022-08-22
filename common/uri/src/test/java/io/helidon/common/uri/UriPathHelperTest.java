@@ -18,7 +18,7 @@ package io.helidon.common.uri;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.uri.UriPathHelper.stripPathParams;
+import static io.helidon.common.uri.UriPathHelper.stripMatrixParams;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -28,24 +28,24 @@ class UriPathHelperTest {
     void testStripPathParams() {
         String expected = "/users/user/john";
 
-        String actual = stripPathParams("/users;domain=helidon/user;source=cz;type=main/john;alt=John");
+        String actual = stripMatrixParams("/users;domain=helidon/user;source=cz;type=main/john;alt=John");
         assertThat(actual, is(expected));
 
         // the method is expected to remove path parameters, it does not attempt
         // to "fix" the path, nor does it take care of queries
-        assertThat(stripPathParams("/admin/list"), is("/admin/list"));
-        assertThat(stripPathParams("/admin;a=b"), is("/admin"));
-        assertThat(stripPathParams("/admin;a=b/list;c=d;e=f"), is("/admin/list"));
-        assertThat(stripPathParams("/admin;a=b/list;c=d;e=f;"), is("/admin/list"));
-        assertThat(stripPathParams("/admin;"), is("/admin"));
-        assertThat(stripPathParams("/admin;/list"), is("/admin/list"));
-        assertThat(stripPathParams("/admin/;/list/"), is("/admin//list/"));
-        assertThat(stripPathParams("/;a=b"), is("/"));
-        assertThat(stripPathParams(";a=b;c=d;"), is(""));
-        assertThat(stripPathParams("/admin/;"), is("/admin/"));
-        assertThat(stripPathParams("/admin//;"), is("/admin//"));
-        assertThat(stripPathParams("/;"), is("/"));
-        assertThat(stripPathParams(";"), is(""));
-        assertThat(stripPathParams(";/admin/"), is("/admin/"));
+        assertThat(stripMatrixParams("/admin/list"), is("/admin/list"));
+        assertThat(stripMatrixParams("/admin;a=b"), is("/admin"));
+        assertThat(stripMatrixParams("/admin;a=b/list;c=d;e=f"), is("/admin/list"));
+        assertThat(stripMatrixParams("/admin;a=b/list;c=d;e=f;"), is("/admin/list"));
+        assertThat(stripMatrixParams("/admin;"), is("/admin"));
+        assertThat(stripMatrixParams("/admin;/list"), is("/admin/list"));
+        assertThat(stripMatrixParams("/admin/;/list/"), is("/admin//list/"));
+        assertThat(stripMatrixParams("/;a=b"), is("/"));
+        assertThat(stripMatrixParams(";a=b;c=d;"), is(""));
+        assertThat(stripMatrixParams("/admin/;"), is("/admin/"));
+        assertThat(stripMatrixParams("/admin//;"), is("/admin//"));
+        assertThat(stripMatrixParams("/;"), is("/"));
+        assertThat(stripMatrixParams(";"), is(""));
+        assertThat(stripMatrixParams(";/admin/"), is("/admin/"));
     }
 }

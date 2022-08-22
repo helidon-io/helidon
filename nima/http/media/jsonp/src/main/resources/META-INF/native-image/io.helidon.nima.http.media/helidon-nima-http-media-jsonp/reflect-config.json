@@ -1,0 +1,7 @@
+[
+    {
+        "name": "org.eclipse.parsson.JsonProviderImpl",
+        "allPublicConstructors": true,
+        "allPublicMethods": true
+    }
+]

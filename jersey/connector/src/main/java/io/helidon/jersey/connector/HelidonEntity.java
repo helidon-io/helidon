@@ -31,11 +31,11 @@ import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.OutputStreamMulti;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.ContentWriters;
-import io.helidon.media.common.MessageBodyWriter;
-import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.reactive.media.common.ContentWriters;
+import io.helidon.reactive.media.common.MessageBodyWriter;
+import io.helidon.reactive.media.common.MessageBodyWriterContext;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.ws.rs.ProcessingException;
 import org.glassfish.jersey.client.ClientProperties;
