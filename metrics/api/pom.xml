@@ -87,6 +87,8 @@
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <source>19</source>
+                    <target>19</target>
                 </configuration>
             </plugin>
         </plugins>

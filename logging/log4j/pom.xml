@@ -26,6 +26,18 @@
 
     <artifactId>helidon-logging-log4j</artifactId>
     <name>Helidon Log4J Integration</name>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>19</source>
+                    <target>19</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <!-- Javadoc should not run here since log4j is multi-release jar and javadoc plugin does not recognize it as module.
          This module also does not provide any specific user API so it is not required to have javadoc. -->
