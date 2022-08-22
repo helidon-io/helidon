@@ -457,11 +457,14 @@ spec:
       name: http
 ---
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: helidon-metrics
 spec:
   replicas: 1 // <3>
+  selector:
+    matchLabels:
+      app: helidon-metrics
   template:
     metadata:
       labels:
