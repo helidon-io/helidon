@@ -13,20 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Extension for Graal VM native image to correctly build Helidon applications.
- */
-module io.helidon.graal.nativeimage {
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.logging.jul;
-    requires io.github.classgraph;
-    requires io.helidon.config.mp;
-    requires svm;
-    requires org.graalvm.sdk;
-    requires jakarta.json;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
 
-    exports io.helidon.integrations.graal.nativeimage.extension;
-}
+/**
+ * Processor of feature annotations on {@code module-info.java}.
+ */
+package io.helidon.common.features.processor;

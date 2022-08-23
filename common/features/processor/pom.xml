@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,31 +21,23 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.common.features</groupId>
+        <artifactId>helidon-common-features-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.common</groupId>
-    <artifactId>helidon-common-project</artifactId>
-    <packaging>pom</packaging>
-    <name>Helidon Common Project</name>
+    <artifactId>helidon-common-features-processor</artifactId>
+    <name>Helidon Common Features Annotation Processor</name>
 
-    <modules>
-        <module>common</module>
-        <module>reactive</module>
-        <module>config</module>
-        <module>configurable</module>
-        <module>key-util</module>
-        <module>http</module>
-        <module>context</module>
-        <module>mapper</module>
-        <module>media-type</module>
-        <module>crypto</module>
-        <module>parameters</module>
-        <module>buffers</module>
-        <module>socket</module>
-        <module>uri</module>
-        <module>testing</module>
-        <module>features</module>
-    </modules>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgument>-proc:none</compilerArgument>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
