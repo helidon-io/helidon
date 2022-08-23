@@ -73,7 +73,7 @@ Add the following dependency in your `pom.xml`:
 .`pom.xml`
 ----
 <dependency>
-    <groupId>com.h2database</groupId>
+    <groupId>io.helidon.integrations.db</groupId>
     <artifactId>h2</artifactId>
     <scope>runtime</scope>
 </dependency>

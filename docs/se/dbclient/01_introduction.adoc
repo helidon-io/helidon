@@ -108,7 +108,7 @@ For the DB Client using JDBC implementation and H2 database, you must include th
          <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
-         <groupId>com.h2database</groupId> // <3>
+         <groupId>io.helidon.integrations.db</groupId> // <3>
          <artifactId>h2</artifactId>
     </dependency>
 </dependencies>

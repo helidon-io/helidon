@@ -64,15 +64,6 @@ to use a TCP connection:
 javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test
 ```
 
-Next, uncomment the following dependency in your project's pom file:
-
-```
-<dependency>
-    <groupId>io.helidon.integrations.db</groupId>
-    <artifactId>h2</artifactId>
-</dependency>
-```
-
 With all these changes, re-build your project and verify that all tests are passing.
 Finally, you can build a native binary using Maven as follows:
 
