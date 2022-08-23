@@ -59,12 +59,11 @@ curl -i http://localhost:8080/pets/s
         </dependency>
 ```
 
-- Update ./pom.xml to replace dependency on com.h2database with following
+- Update ./pom.xml to replace dependency on io.helidon.integrations.db with following
 ```
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
             <scope>runtime</scope>
         </dependency>
 ```
@@ -100,12 +99,11 @@ curl -i http://localhost:8080/pets/s
         </dependency>
 ```
 
-- Update ./pom.xml to replace dependency on com.h2database with following
+- Update ./pom.xml to replace dependency on io.helidon.integrations.db with following
 ```
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
             <scope>runtime</scope>
         </dependency>
 ```
