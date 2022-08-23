@@ -31,18 +31,14 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 
 class FeatureHandler {
     private static final String META_FILE = "META-INF/helidon/feature-metadata.properties";
     private final ModuleDescriptor descriptor = new ModuleDescriptor();
-    private Elements elementUtils;
     private Messager messager;
     private Filer filer;
-    private Types typeUtils;
 
     FeatureHandler() {
     }
@@ -51,8 +47,6 @@ class FeatureHandler {
         // get compiler utilities
         messager = processingEnv.getMessager();
         filer = processingEnv.getFiler();
-        typeUtils = processingEnv.getTypeUtils();
-        elementUtils = processingEnv.getElementUtils();
     }
 
     boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
