@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.config.PropertiesConfigParser;
 
 /**
@@ -21,6 +23,7 @@ import io.helidon.config.PropertiesConfigParser;
  *
  * @see io.helidon.config
  */
+@Feature(value = "Config", description = "Configuration module", in = {HelidonFlavor.NIMA, HelidonFlavor.SE})
 module io.helidon.config {
 
     requires java.logging;
@@ -29,6 +32,9 @@ module io.helidon.config {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.media.type;
+
+    requires static io.helidon.common.features.api;
+
 
     exports io.helidon.config;
     exports io.helidon.config.spi;

@@ -31,13 +31,13 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.LogConfig;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.features.HelidonFeatures;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigProviderResolver;
 
@@ -83,7 +83,8 @@ import static org.jboss.weld.executor.ExecutorServicesFactory.ThreadPoolType.COM
  * <p>Initialization should happen statically and is part of the compiled native image.
  * Start happens at runtime with current configuration.
  * <p>When running in JIT mode (or on any regular JDK), this works as if Weld is used directly.
- * <p>Important note - you need to explicitly use this class. Using {@link jakarta.enterprise.inject.se.SeContainerInitializer} will
+ * <p>Important note - you need to explicitly use this class. Using {@link jakarta.enterprise.inject.se.SeContainerInitializer}
+ * will
  * boot Weld.
  */
 final class HelidonContainerImpl extends Weld implements HelidonContainer {
@@ -117,7 +118,17 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     }
 
     /**
+     * Are we in runtime or build time.
+     *
+     * @return {@code true} if this is runtime, {@code false} if this is build time
+     */
+    public static boolean isRuntime() {
+        return IN_RUNTIME.get();
+    }
+
+    /**
      * Creates and initializes the CDI container.
+     *
      * @return a new initialized CDI container
      */
     static HelidonContainerImpl create() {
@@ -127,6 +138,47 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         container.initInContext();
 
         return container;
+    }
+
+    /**
+     * Start this container.
+     *
+     * @return
+     */
+    @Override
+    public SeContainer start() {
+        if (IN_RUNTIME.get()) {
+            // already started
+            return cdi;
+        }
+        SerializationConfig.configureRuntime();
+        LogConfig.configureRuntime();
+        try {
+            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        } catch (Exception e) {
+            try {
+                // we must clean up
+                shutdown();
+            } catch (Exception exception) {
+                e.addSuppressed(exception);
+            }
+            throw e;
+        }
+
+        if (EXIT_ON_STARTED) {
+            exitOnStarted();
+        }
+        return cdi;
+    }
+
+    @Override
+    public Context context() {
+        return ROOT_CONTEXT;
+    }
+
+    @Override
+    public void shutdown() {
+        cdi.close();
     }
 
     void initInContext() {
@@ -234,46 +286,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         }
     }
 
-    /**
-     * Start this container.
-     * @return
-     */
-    @Override
-    public SeContainer start() {
-        if (IN_RUNTIME.get()) {
-            // already started
-            return cdi;
-        }
-        SerializationConfig.configureRuntime();
-        LogConfig.configureRuntime();
-        try {
-            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
-        } catch (Exception e) {
-            try {
-                // we must clean up
-                shutdown();
-            } catch (Exception exception) {
-                e.addSuppressed(exception);
-            }
-            throw e;
-        }
-
-        if (EXIT_ON_STARTED) {
-            exitOnStarted();
-        }
-        return cdi;
-    }
-
-    @Override
-    public Context context() {
-        return ROOT_CONTEXT;
-    }
-
-    @Override
-    public void shutdown() {
-        cdi.close();
-    }
-
     private HelidonContainerImpl doStart() {
         long now = System.currentTimeMillis();
 
@@ -354,14 +366,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private void exitOnStarted() {
         LOGGER.info(String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
         System.exit(0);
-    }
-
-    /**
-     * Are we in runtime or build time.
-     * @return {@code true} if this is runtime, {@code false} if this is build time
-     */
-    public static boolean isRuntime() {
-        return IN_RUNTIME.get();
     }
 
     private static final class HelidonCdi extends AbstractCDI<Object> implements SeContainer {

@@ -118,7 +118,7 @@ public final class HttpRouting implements Routing {
     /**
      * Fluent API builder for {@link io.helidon.nima.webserver.http.HttpRouting}.
      */
-    public static class Builder implements HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
+    public static final class Builder implements HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
         private final List<Filter> filters = new LinkedList<>();
         private final ServiceRules rootRules = new ServiceRules();
 
@@ -142,13 +142,15 @@ public final class HttpRouting implements Routing {
         }
 
         @Override
-        public Builder register(Supplier<? extends HttpService>... service) {
+        @SafeVarargs
+        public final Builder register(Supplier<? extends HttpService>... service) {
             rootRules.register(service);
             return this;
         }
 
         @Override
-        public Builder register(String path, Supplier<? extends HttpService>... service) {
+        @SafeVarargs
+        public final Builder register(String path, Supplier<? extends HttpService>... service) {
             rootRules.register(path, service);
             return this;
         }

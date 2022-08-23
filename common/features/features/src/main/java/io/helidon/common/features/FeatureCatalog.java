@@ -14,43 +14,29 @@
  * limitations under the License.
  */
 
-package io.helidon.common;
+package io.helidon.common.features;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.System.Logger.Level;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
 import java.util.function.Supplier;
 
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
- * When updating this class, please keep the grouping (SE/MP/both/excludes) and keep
- * alphabetical order of packages.
+ * Feature catalog discovers features from META-INF/helidon/feature-metadata.properties.
  */
 final class FeatureCatalog {
-    // package name to list of features
-    private static final Map<String, Set<FeatureDescriptor>> FEATURES = new HashMap<>();
-    private static final Set<String> EXCLUDED = new HashSet<>();
+    private static final System.Logger LOGGER = System.getLogger(FeatureCatalog.class.getName());
+    private static final HelidonFlavor[] NO_FLAVORS = new HelidonFlavor[0];
 
     static {
-        /*
-         * SE modules
-         */
-        addSe("io.helidon.config",
-              "Config",
-              "Configuration module",
-              "Config");
-        addSe("io.helidon.reactive.faulttolerance",
-                "Fault Tolerance",
-                "Reactive Fault Tolerance module",
-                "FT");
-        add("io.helidon.grpc.server",
-            FeatureDescriptor.builder()
-                    .name("gRPC Server")
-                    .description("Server for gRPC services")
-                    .path("grpc")
-                    .flavor(HelidonFlavor.SE)
-                    .nativeSupported(true)
-                    .nativeDescription("Experimental support in native image"));
         add("io.helidon.grpc.client",
             FeatureDescriptor.builder()
                     .name("gRPC Client")
@@ -108,7 +94,8 @@ final class FeatureCatalog {
                     .name("Messaging")
                     .description("Reactive messaging support")
                     .path("Messaging")
-                    .flavor(HelidonFlavor.SE));
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         addSe("io.helidon.metrics",
               "Metrics",
               "Metrics support",
@@ -133,30 +120,30 @@ final class FeatureCatalog {
               "Tracing",
               "Tracing support",
               "Tracing");
-        addSe("io.helidon.reactive.webserver",
+        addSe("io.helidon.webserver",
               "WebServer",
               "Helidon WebServer",
               "WebServer");
-        addSe("io.helidon.reactive.webserver.accesslog",
+        addSe("io.helidon.webserver.accesslog",
               "Access Log",
               "Access log support",
               "WebServer", "AccessLog");
-        addSe("io.helidon.reactive.webserver.cors",
+        addSe("io.helidon.webserver.cors",
               "CORS",
               "CORS support for WebServer",
               "WebServer", "CORS");
-        addSe("io.helidon.reactive.webserver.jersey",
+        addSe("io.helidon.webserver.jersey",
               "Jersey",
               "WebServer integration with Jersey",
               "WebServer", "Jersey");
         add("io.helidon.scheduling",
-                FeatureDescriptor.builder()
-                        .flavor(HelidonFlavor.SE)
-                        .name("Scheduling")
-                        .description("Scheduling of periodical tasks")
-                        .path("Scheduling")
-                        .nativeSupported(true));
-        add("io.helidon.reactive.webserver.tyrus",
+            FeatureDescriptor.builder()
+                    .flavor(HelidonFlavor.SE)
+                    .name("Scheduling")
+                    .description("Scheduling of periodical tasks")
+                    .path("Scheduling")
+                    .nativeSupported(true));
+        add("io.helidon.webserver.tyrus",
             FeatureDescriptor.builder()
                     .flavor(HelidonFlavor.SE)
                     .name("Websocket")
@@ -170,7 +157,8 @@ final class FeatureCatalog {
                     .description("GraphQL support")
                     .path("GraphQL")
                     .nativeDescription("Experimental support, tested on limited use cases")
-                    .flavor(HelidonFlavor.SE));
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         add("io.helidon.integrations.micrometer",
             FeatureDescriptor.builder()
                     .name("Micrometer")
@@ -179,18 +167,27 @@ final class FeatureCatalog {
                     .experimental(true)
                     .nativeSupported(true)
                     .flavor(HelidonFlavor.SE));
+        add("io.helidon.integrations.oci.connect",
+            FeatureDescriptor.builder()
+                    .name("OCI")
+                    .description("OCI Integration")
+                    .path("OCI")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         add("io.helidon.integrations.vault",
             FeatureDescriptor.builder()
                     .name("HCP Vault")
                     .description("Hashicorp Vault Integration")
                     .path("HCP Vault")
-                    .flavor(HelidonFlavor.SE));
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         add("io.helidon.integrations.microstream",
             FeatureDescriptor.builder()
                     .name("Microstream")
                     .description("Microstream Integration")
                     .path("Microstream")
                     .flavor(HelidonFlavor.SE)
+                    .experimental(true)
                     .nativeSupported(false));
         /*
          * MP Modules
@@ -248,7 +245,8 @@ final class FeatureCatalog {
                     .description("MicroProfile GraphQL spec implementation")
                     .path("GraphQL")
                     .nativeDescription("Experimental support, tested on limited use cases")
-                    .flavor(HelidonFlavor.MP));
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         add("io.helidon.microprofile.grpc.server",
             FeatureDescriptor.builder()
                     .name("gRPC Server")
@@ -286,7 +284,8 @@ final class FeatureCatalog {
                     .name("Messaging")
                     .description("MicroProfile Reactive Messaging spec implementation")
                     .path("Messaging")
-                    .flavor(HelidonFlavor.MP));
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         addMp("io.helidon.microprofile.metrics",
               "Metrics",
               "MicroProfile metrics spec implementation",
@@ -300,7 +299,8 @@ final class FeatureCatalog {
                     .name("Reactive")
                     .description("MicroProfile Reactive Stream operators")
                     .path("Reactive")
-                    .flavor(HelidonFlavor.MP));
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         addMp("io.helidon.microprofile.security",
               "Security",
               "Security support",
@@ -359,6 +359,7 @@ final class FeatureCatalog {
                     .path("Scheduling")
                     .flavor(HelidonFlavor.MP)
                     .nativeSupported(true)
+                    .experimental(true)
         );
 
         add("io.helidon.integrations.micrometer.cdi",
@@ -370,27 +371,30 @@ final class FeatureCatalog {
                     .nativeSupported(true)
                     .flavor(HelidonFlavor.MP));
 
-        add("io.helidon.integrations.oci.sdk.cdi",
+        add("io.helidon.integrations.oci.cdi",
             FeatureDescriptor.builder()
-                    .name("OCI SDK")
-                    .description("OCI SDK Integration")
-                    .path("OCI SDK")
-                    .flavor(HelidonFlavor.MP));
+                    .name("OCI")
+                    .description("OCI Integration")
+                    .path("OCI")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
 
         add("io.helidon.integrations.vault.cdi",
             FeatureDescriptor.builder()
                     .name("HCP Vault")
                     .description("Hashicorp Vault Integration")
                     .path("HCP Vault")
-                    .flavor(HelidonFlavor.MP));
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
 
         add("io.helidon.microprofile.lra",
-                FeatureDescriptor.builder()
-                        .name("Long Running Actions")
-                        .description("MicroProfile Long Running Actions")
-                        .path("LRA")
-                        .flavor(HelidonFlavor.MP)
-                        .nativeSupported(true));
+            FeatureDescriptor.builder()
+                    .name("Long Running Actions")
+                    .description("MicroProfile Long Running Actions")
+                    .path("LRA")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeSupported(true)
+                    .experimental(true));
 
         add("io.helidon.integrations.microstream.cdi",
             FeatureDescriptor.builder()
@@ -398,6 +402,7 @@ final class FeatureCatalog {
                     .description("Microstream Integration")
                     .path("Microstream")
                     .flavor(HelidonFlavor.MP)
+                    .experimental(true)
                     .nativeSupported(false));
         /*
          * Common modules
@@ -432,7 +437,8 @@ final class FeatureCatalog {
             FeatureDescriptor.builder()
                     .name("Db Client")
                     .description("Reactive database client")
-                    .path("DbClient"));
+                    .path("DbClient")
+                    .experimental(true));
         add("io.helidon.reactive.dbclient.health",
             "Health Check",
             "Reactive database client health check support",
@@ -468,18 +474,21 @@ final class FeatureCatalog {
                     .name("Kafka Connector")
                     .description("Reactive messaging connector for Kafka")
                     .path("Messaging", "Kafka")
+                    .experimental(true)
                     .nativeSupported(true));
         add("io.helidon.messaging.connectors.jms",
             FeatureDescriptor.builder()
                     .name("JMS Connector")
                     .description("Reactive messaging connector for JMS")
                     .path("Messaging", "JMS")
+                    .experimental(true)
                     .nativeSupported(false));
         add("io.helidon.messaging.connectors.aq",
             FeatureDescriptor.builder()
                     .name("Oracle AQ Connector")
                     .description("Reactive messaging connector for Oracle AQ")
                     .path("Messaging", "OracleAQ")
+                    .experimental(true)
                     .nativeSupported(false));
         add("io.helidon.security.abac.policy.el",
             FeatureDescriptor.builder()
@@ -560,9 +569,9 @@ final class FeatureCatalog {
             "Jaeger tracer integration",
             "Tracing", "Jaeger");
         add("io.helidon.metrics.jaeger",
-                "Jaeger metrics",
-                "Jaeger tracer metrics integration",
-                "Metrics", "Jaeger");
+            "Jaeger metrics",
+            "Jaeger tracer metrics integration",
+            "Metrics", "Jaeger");
         add("io.helidon.tracing.jersey",
             "Jersey Server",
             "Tracing integration with Jersey server",
@@ -576,26 +585,28 @@ final class FeatureCatalog {
             "Zipkin tracer integration",
             "Tracing", "Zipkin");
         add("io.helidon.integrations.neo4j",
-                FeatureDescriptor.builder()
-                        .name("Neo4j integration")
-                        .description("Integration with Neo4j driver")
-                        .path("Neo4j")
-                        .nativeSupported(true));
+            FeatureDescriptor.builder()
+                    .name("Neo4j integration")
+                    .description("Integration with Neo4j driver")
+                    .path("Neo4j")
+                    .experimental(true)
+                    .nativeSupported(true));
         add("io.helidon.integrations.neo4j.health",
-                FeatureDescriptor.builder()
-                        .name("Neo4j Health")
-                        .description("Health check for Neo4j integration")
-                        .path("Neo4j", "Health"));
+            FeatureDescriptor.builder()
+                    .name("Neo4j Health")
+                    .description("Health check for Neo4j integration")
+                    .path("Neo4j", "Health"));
         add("io.helidon.integrations.neo4j.metrics",
-                FeatureDescriptor.builder()
-                        .name("Neo4j Metrics")
-                        .description("Metrics for Neo4j integration")
-                        .path("Neo4j", "Metrics"));
+            FeatureDescriptor.builder()
+                    .name("Neo4j Metrics")
+                    .description("Metrics for Neo4j integration")
+                    .path("Neo4j", "Metrics"));
         add("io.helidon.reactive.webclient",
             FeatureDescriptor.builder()
                     .name("Web Client")
                     .description("Reactive web client")
-                    .path("WebClient"));
+                    .path("WebClient")
+                    .experimental(true));
         add("io.helidon.reactive.webclient.metrics",
             "Metrics",
             "Reactive web client support for metrics",
@@ -614,10 +625,22 @@ final class FeatureCatalog {
                     .path("Logging", "Log4j")
                     .description("Log4j MDC support")
                     .nativeDescription("Only programmatic configuration supported, does not work with Helidon loggers"));
-        add("io.helidon.reactive.webserver.staticcontent",
+        add("io.helidon.webserver.staticcontent",
             "Static Content",
             "Static content support for webserver",
             "WebServer", "Static Content");
+        add("io.helidon.integrations.oci.objectstorage",
+            "OCI Object Storage",
+            "Integration with OCI Object Storage",
+            "OCI", "Object Storage");
+        add("io.helidon.integrations.oci.vault",
+            "OCI Vault",
+            "Integration with OCI Vault",
+            "OCI", "Vault");
+        add("io.helidon.integrations.oci.telemetry",
+            "OCI Telemetry",
+            "Integration with OCI Telemetry",
+            "OCI", "Telemetry");
         add("io.helidon.integrations.vault.auths.approle",
             "AppRole",
             "AppRole Authentication Method",
@@ -658,224 +681,109 @@ final class FeatureCatalog {
             "Sys",
             "System operations",
             "HCP Vault", "Sys");
-
-        /*
-         * Packages that are not a feature
-         */
-        exclude("io.helidon.bundles.config");
-        exclude("io.helidon.common");
-        exclude("io.helidon.common.configurable");
-        exclude("io.helidon.common.context");
-        exclude("io.helidon.common.features");
-        exclude("io.helidon.common.http");
-        exclude("io.helidon.common.mapper");
-        exclude("io.helidon.common.mapper.spi");
-        exclude("io.helidon.common.media.type");
-        exclude("io.helidon.common.media.type.spi");
-        exclude("io.helidon.common.pki");
-        exclude("io.helidon.common.reactive");
-        exclude("io.helidon.common.serviceloader");
-        exclude("io.helidon.config.spi");
-        exclude("io.helidon.config.mp");
-        exclude("io.helidon.config.mp.spi");
-        exclude("io.helidon.reactive.dbclient.common");
-        exclude("io.helidon.reactive.dbclient.jdbc.spi");
-        exclude("io.helidon.reactive.dbclient.metrics.jdbc");
-        exclude("io.helidon.reactive.dbclient.spi");
-        exclude("io.helidon.health.common");
-        exclude("io.helidon.integrations.cdi.delegates");
-        exclude("io.helidon.integrations.cdi.referencecountedcontext");
-        exclude("io.helidon.integrations.cdi.jpa.jaxb");
-        exclude("io.helidon.integrations.datasource.cdi");
-        exclude("io.helidon.integrations.datasource.hikaricp.cdi");
-        exclude("io.helidon.integrations.db.h2");
-        exclude("io.helidon.integrations.graal.nativeimage.extension");
-        exclude("io.helidon.integrations.graal.mp.nativeimage.extension");
-        exclude("io.helidon.integrations.jta.weld");
-        exclude("io.helidon.jersey.common");
-        exclude("io.helidon.logging.common");
-        exclude("io.helidon.logging.jul");
-        exclude("io.helidon.reactive.media.common");
-        exclude("io.helidon.reactive.media.common.spi");
-        exclude("io.helidon.openapi.internal");
-        exclude("io.helidon.security.abac.policy");
-        exclude("io.helidon.security.abac.policy.spi");
-        exclude("io.helidon.security.annotations");
-        exclude("io.helidon.security.integration.common");
-        exclude("io.helidon.security.integration.jersey.client");
-        exclude("io.helidon.security.internal");
-        exclude("io.helidon.security.jwt");
-        exclude("io.helidon.security.jwt.jwk");
-        exclude("io.helidon.security.providers.abac.spi");
-        exclude("io.helidon.security.providers.common");
-        exclude("io.helidon.security.providers.common.spi");
-        exclude("io.helidon.security.providers.httpauth.spi");
-        exclude("io.helidon.security.providers.oidc.common");
-        exclude("io.helidon.security.spi");
-        exclude("io.helidon.security.util");
-        exclude("io.helidon.tracing.config");
-        exclude("io.helidon.tracing.jersey.client.internal");
-        exclude("io.helidon.tracing.spi");
-        exclude("io.helidon.tracing.tracerresolver");
-        exclude("io.helidon.reactive.webclient.jaxrs");
-        exclude("io.helidon.reactive.webclient.spi");
-        exclude("io.helidon.common.context.spi");
-        exclude("io.helidon.grpc.core");
-    }
-
-    static Set<FeatureDescriptor> get(String packageName) {
-        Set<FeatureDescriptor> features = FEATURES.get(packageName);
-        if (features == null) {
-            if (packageName.startsWith("io.helidon.")) {
-                // now let's see if excluded
-                if (EXCLUDED.contains(packageName)) {
-                    return Set.of();
-                }
-                // now let's see if a test or an example (we consider these not to be features as well
-                if (packageName.contains(".examples.")
-                        || packageName.contains(".tests.")
-                        || packageName.endsWith(".tests")
-                        || packageName.endsWith(".example")) {
-                    return Set.of();
-                }
-            }
-
-            // not a feature
-            return null;
-        }
-        return features;
     }
 
     // hide utility class constructor
     private FeatureCatalog() {
     }
 
-    private static void exclude(String packageName) {
-        EXCLUDED.add(packageName);
+    static List<FeatureDescriptor> features(ClassLoader classLoader) {
+        List<FeatureDescriptor> features = new LinkedList<>();
+        try {
+            Enumeration<URL> resources = classLoader.getResources("META-INF/helidon/feature-metadata.properties");
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                Properties props = new Properties();
+                try (InputStream in = url.openStream()) {
+                    props.load(in);
+                }
+                String module = props.getProperty("m");
+                if (module == null) {
+                    LOGGER.log(Level.WARNING, "Got module descriptor with no module name. Available properties: " + props);
+                    continue;
+                }
+                FeatureDescriptor.Builder builder = FeatureDescriptor.builder();
+                builder.name(props.getProperty("n", module))
+                        .module(module)
+                        .description(props.getProperty("d", ""))
+                        .path(toArray(props.getProperty("p"), props.getProperty("n")))
+                        .flavor(toFlavor(module, props.getProperty("in"), true))
+                        .notFlavor(toFlavor(module, props.getProperty("not"), false));
+
+                if ("true".equals(props.getProperty("e"))) {
+                    builder.experimental(true);
+                }
+                if ("false".equals(props.getProperty("aot"))) {
+                    builder.nativeSupported(false);
+                }
+                String aotDescription = props.getProperty("aotd");
+                if (aotDescription != null) {
+                    builder.nativeDescription(aotDescription);
+                }
+                features.add(builder.build());
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Could not discover Helidon features", e);
+        }
+        Collections.sort(features);
+        return features;
+    }
+
+    private static HelidonFlavor[] toFlavor(String module, String flavorString, boolean useAllIfMissing) {
+        if (flavorString == null || flavorString.isBlank()) {
+            return useAllIfMissing ? HelidonFlavor.values() : NO_FLAVORS;
+        }
+        String[] values = toArray(flavorString, flavorString);
+        HelidonFlavor[] result = new HelidonFlavor[values.length];
+        for (int i = 0; i < values.length; i++) {
+            try {
+                result[i] = HelidonFlavor.valueOf(values[i]);
+            } catch (IllegalArgumentException e) {
+                LOGGER.log(Level.ERROR, "Invalid flavor defined: " + values[i] + " in module " + module);
+                return NO_FLAVORS;
+            }
+        }
+        return result;
+    }
+
+    private static String[] toArray(String property, String defaultValue) {
+        String toProcess = property;
+        if (property == null) {
+            toProcess = defaultValue;
+        }
+        if (toProcess == null) {
+            return new String[0];
+        }
+        return toProcess.split(",");
     }
 
     private static void add(String packageName,
                             String name,
                             String description,
                             String... path) {
-        add(packageName, FeatureDescriptor.builder()
-                .name(name)
-                .path(path)
-                .description(description));
+    }
+
+    private static void addNima(String packageName,
+                                String name,
+                                String description,
+                                String... path) {
     }
 
     private static void addSe(String packageName,
                               String name,
                               String description,
                               String... path) {
-        add(packageName, FeatureDescriptor.builder()
-                .name(name)
-                .path(path)
-                .description(description)
-                .flavor(HelidonFlavor.SE));
+
     }
 
     private static void addMp(String packageName,
                               String name,
                               String description,
                               String... path) {
-        add(packageName, FeatureDescriptor.builder()
-                .name(name)
-                .path(path)
-                .description(description)
-                .flavor(HelidonFlavor.MP));
+
     }
 
     private static void add(String packageName, Supplier<FeatureDescriptor> descriptorBuilder) {
-        FeatureDescriptor descriptor = descriptorBuilder.get();
-        Set<FeatureDescriptor> featureDescriptors = ensurePackage(packageName);
-        if (!featureDescriptors.add(descriptor)) {
-            throw new IllegalStateException("Feature "
-                                                    + descriptor.name()
-                                                    + " on path "
-                                                    + descriptor.stringPath()
-                                                    + " is registered more than once in package "
-                                                    + packageName);
-        }
-    }
-
-    private static Set<FeatureDescriptor> ensurePackage(String packageName) {
-        return FEATURES.computeIfAbsent(packageName, it -> new HashSet<>());
-    }
-
-    // this section can be used to print native image support for all features. Commented out not to pollute production code
-    /*
-    public static void main(String[] args) {
-        List<FeatureDescriptor> allFeatures = FEATURES.values()
-                .stream()
-                .flatMap(Collection::stream)
-                .sorted(Comparator.comparing(FeatureDescriptor::stringPath))
-                .collect(Collectors.toList());
-
-        print(HelidonFlavor.SE, allFeatures);
-//        print(HelidonFlavor.MP, allFeatures);
-    }
-
-    private static void print(HelidonFlavor flavor, List<FeatureDescriptor> allFeatures) {
-        String last = null;
-        for (FeatureDescriptor it : allFeatures) {
-            if (it.hasFlavor(flavor)) {
-                System.out.println("|" + supported(it)
-                                           + " |" + feature(last, it)
-                                           + " |" + component(it)
-                                           + " |" + description(it));
-                last = root(it);
-            }
-        }
 
     }
-
-    private static String component(FeatureDescriptor it) {
-        List<String> components = new ArrayList<>(Arrays.asList(it.path()));
-
-        if (components.size() <= 2) {
-            return it.name();
-        }
-        // remove first (root component is listed already as feature)
-        components.remove(0);
-        // remove last (me)
-        components.remove(components.size() - 1);
-
-        // The rest is prefix
-        return String.join("/", components) + ": " + it.name();
-    }
-
-    private static String feature(String last, FeatureDescriptor it) {
-        String root = root(it);
-        if (root.equals(last)) {
-            return "{nbsp}";
-        }
-        return it.name();
-    }
-
-    private static String root(FeatureDescriptor it) {
-        return it.path()[0];
-    }
-
-    private static String description(FeatureDescriptor it) {
-        if (it.nativeDescription().isBlank()) {
-            if (it.nativeSupported()) {
-                return "{nbsp}";
-            }
-            return "Not yet tested.";
-        }
-        return it.nativeDescription();
-    }
-
-    private static String supported(FeatureDescriptor it) {
-        if (it.nativeSupported()) {
-            if (it.nativeDescription().isBlank()) {
-                return "✅";
-            }
-            return "\uD83D\uDD36";
-        } else {
-            return "❓";
-        }
-    }
-     */
 }

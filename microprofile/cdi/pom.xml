@@ -62,7 +62,10 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-context</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
