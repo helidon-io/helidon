@@ -27,6 +27,29 @@
                     <exclude name="testProxy"/>
                 </methods>
             </class>
+            <!-- These tests are sensitive to pipeline network environment and are unstable -->
+            <class name="org.eclipse.microprofile.rest.client.tck.timeout.TimeoutTest">
+                <methods>
+                    <exclude name="testConnectTimeout"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.rest.client.tck.timeout.TimeoutViaMPConfigTest">
+                <methods>
+                    <exclude name="testConnectTimeout"/>
+                    <exclude name="testReadTimeout"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.rest.client.tck.timeout.TimeoutViaMPConfigWithConfigKeyTest">
+                <methods>
+                    <exclude name="testConnectTimeout"/>
+                    <exclude name="testReadTimeout"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.rest.client.tck.timeout.TimeoutBuilderIndependentOfMPConfigTest">
+                <methods>
+                    <exclude name="testConnectTimeout"/>
+                </methods>
+            </class>
         </classes>
     </test>
 </suite>
