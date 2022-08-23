@@ -32,8 +32,9 @@
 
     <modules>
         <module>common</module>
-        <module>reactive</module>
+        <module>config</module>
         <module>configurable</module>
+        <module>reactive</module>
         <module>key-util</module>
         <module>http</module>
         <module>context</module>

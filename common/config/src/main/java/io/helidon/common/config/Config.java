@@ -1,0 +1,346 @@
+/*
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.common.config;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * <h2>Configuration</h2>
+ * Immutable tree-structured configuration.
+ *
+ * See {@link ConfigValue}.
+ */
+public interface Config {
+
+    /**
+     * Returns the fully-qualified key of the {@code Config} node.
+     * <p>
+     * The fully-qualified key is a sequence of tokens derived from the name of
+     * each node along the path from the config root to the current node. Tokens
+     * are separated by {@code .} (the dot character). See {@link #name()} for
+     * more information on the format of each token.
+     *
+     * @return current config node key
+     * @see #name()
+     */
+    BaseKey key();
+
+    /**
+     * Returns the last token of the fully-qualified key for the {@code Config}
+     * node.
+     * <p>
+     * The name of a node is the last token in its fully-qualified key.
+     * <p>
+     * The exact format of the name depends on the {@code Type} of the
+     * containing node:
+     * <ul>
+     * <li>from a Type#OBJECT node the token for a child is the
+     * <strong>name of the object member</strong>;</li>
+     * <li>from a Type#LIST node the token for a child is a zero-based
+     * <strong>index of the element</strong>, an unsigned base-10 integer value
+     * with no leading zeros.</li>
+     * </ul>
+     * <p>
+     * The ABNF syntax of config key is:
+     * <pre>{@code
+     * config-key = *1( key-token *( "." key-token ) )
+     *  key-token = *( unescaped / escaped )
+     *  unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
+     *            ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
+     *    escaped = "~" ( "0" / "1" )
+     *            ; representing '~' and '.', respectively
+     * }</pre>
+     *
+     * @return current config node key
+     * @see #key()
+     * @see Config.BaseKey#name()
+     */
+    default String name() {
+        return key().name();
+    }
+
+    /**
+     * Returns the single sub-node for the specified sub-key.
+     * <p>
+     * The format of the key is described on {@link #key()} method.
+     *
+     * @param key sub-key of requested sub-node
+     * @return config node for specified sub-key, never returns {@code null}.
+     * @see #get(Config.BaseKey)
+     * @throws io.helidon.common.config.ConfigException if not defined
+     */
+    default Config get(String key) throws ConfigException {
+        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+    }
+
+    /**
+     * Returns the single sub-node for the specified sub-key.
+     *
+     * @param key sub-key of requested sub-node
+     * @return config node for specified sub-key, never returns {@code null}.
+     * @see #get(String)
+     */
+    default Config get(BaseKey key) {
+        return get(key.name());
+    }
+
+    /**
+     * Returns a copy of the {@code Config} node with no parent.
+     * <p>
+     * The returned node acts as a root node for the subtree below it. Its key
+     * is the empty string; {@code ""}. The original config node is unchanged,
+     * and the original and the copy point to the same children.
+     * <p>
+     * Consider the following configuration:
+     * <pre>
+     * app:
+     *      name: Example 1
+     *      page-size: 20
+     * logging:
+     *      app.level = INFO
+     *      level = WARNING
+     * </pre>
+     * The {@code Config} instances {@code name1} and {@code name2} represents same data and
+     * in fact refer to the same object:
+     * <pre>
+     * Config name1 = config
+     *                  .get("app")
+     *                  .get("name");
+     * Config name2 = config
+     *                  .get("app")
+     *                  .detach()               //DETACHED node
+     *                  .get("name");
+     *
+     * assert name1.asString() == "Example 1";
+     * assert name2.asString() == "Example 1";  //DETACHED node
+     * </pre>
+     * The only difference is the key each node returns:
+     * <pre>
+     * assert name1.key() == "app.name";
+     * assert name2.key() == "name";            //DETACHED node
+     * </pre>
+     * <p>
+     * See asMap() for example of config detaching.
+     *
+     * @return returns detached Config instance of same config node
+     * @throws io.helidon.common.config.ConfigException if not defined
+     */
+    default Config detach() throws ConfigException {
+        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+    }
+
+    /**
+     * Returns {@code true} if the node exists, whether an object, a list, a
+     * value node, etc.
+     *
+     * @return {@code true} if the node exists
+     */
+    boolean exists();
+
+    /**
+     * Returns {@code true} if this node exists and is a leaf node (has no
+     * children).
+     * <p>
+     * A leaf node has no nested configuration subtree and has a single value.
+     *
+     * @return {@code true} if the node is existing leaf node, {@code false}
+     *         otherwise.
+     */
+    boolean isLeaf();
+
+    /**
+     * Returns {@code true} if this node exists and is Type#Object.
+     *
+     * @return {@code true} if the node exists and is Type#Object, {@code false}
+     *         otherwise.
+     */
+    boolean isObject();
+
+    /**
+     * Returns {@code true} if this node exists and is Type#List.
+     *
+     * @return {@code true} if the node exists and is Type#List, {@code false}
+     *         otherwise.
+     */
+    boolean isList();
+
+    //
+    // accessors
+    //
+
+    /**
+     * Typed value as a {@link ConfigValue}.
+     *
+     * @param type type class
+     * @param <T>  type
+     * @return typed value
+     * @see ConfigValue#map(java.util.function.Function)
+     * @see ConfigValue#get()
+     * @see ConfigValue#orElse(Object)
+     */
+    <T> ConfigValue<T> as(Class<T> type);
+
+    // shortcut methods
+
+    /**
+     * Returns list of specified type.
+     *
+     * @param type type class
+     * @param <T>  type of list elements
+     * @return a typed list with values
+     * @throws io.helidon.common.config.ConfigException in case of problem to map property value.
+     */
+    default <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException {
+        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+    }
+
+    /**
+     * Transform all leaf nodes (values) into Map instance.
+     *
+     * @return new Map instance that contains all config leaf node values
+     * @throws io.helidon.common.config.ConfigException in case the node is Type#MISSING.
+     */
+    default ConfigValue<Map<String, String>> asMap() throws ConfigException {
+        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+    }
+
+    /**
+     * Object represents fully-qualified key of config node.
+     * <p>
+     * Fully-qualified key is list of key tokens separated by {@code .} (dot character).
+     * Depending on context the key token is evaluated one by one:
+     * <ul>
+     * <li>in Type#OBJECT node the token represents a <strong>name of object member</strong>;</li>
+     * <li>in Type#LIST node the token represents an zero-based <strong>index of list
+     * element</strong>,
+     * an unsigned base-10 integer value, leading zeros are not allowed.</li>
+     * </ul>
+     * <p>
+     * The ABNF syntax of config key is:
+     * <pre>{@code
+     * config-key = *1( key-token *( "." key-token ) )
+     *  key-token = *( unescaped / escaped )
+     *  unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
+     *            ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
+     *    escaped = "~" ( "0" / "1" )
+     *            ; representing '~' and '.', respectively
+     * }</pre>
+     *
+     * @see Config#key()
+     */
+    interface BaseKey extends Comparable<BaseKey> {
+        /**
+         * Escape {@code '~'} to {@code ~0} and {@code '.'} to {@code ~1} in specified name.
+         *
+         * @param name name to be escaped
+         * @return escaped name
+         */
+        static String escapeName(String name) {
+            if (!name.contains("~") && !name.contains(".")) {
+                return name;
+            }
+            StringBuilder sb = new StringBuilder();
+            char[] chars = name.toCharArray();
+            for (char ch : chars) {
+                if (ch == '~') {
+                    sb.append("~0");
+                } else if (ch == '.') {
+                    sb.append("~1");
+                } else {
+                    sb.append(ch);
+                }
+            }
+            return sb.toString();
+        }
+
+        /**
+         * Unescape {@code ~0} to {@code '~'} and {@code ~1} to {@code '.'} in specified escaped name.
+         *
+         * @param escapedName escaped name
+         * @return unescaped name
+         */
+        static String unescapeName(String escapedName) {
+            return escapedName.replaceAll("~1", ".")
+                    .replaceAll("~0", "~");
+        }
+
+        /**
+         * Returns instance of Key that represents key of parent config node.
+         * <p>
+         * If the key represents root config node it throws an exception.
+         *
+         * @return key that represents key of parent config node.
+         * @see #isRoot()
+         * @throws IllegalStateException in case you attempt to call this method on a root node
+         * @throws io.helidon.common.config.ConfigException if not defined
+         */
+        default BaseKey parent() throws ConfigException {
+            throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+        }
+
+        /**
+         * Returns {@code true} in case the key represents root config node,
+         * otherwise it returns {@code false}.
+         *
+         * @return {@code true} in case the key represents root node, otherwise {@code false}.
+         * @see #parent()
+         * @throws io.helidon.common.config.ConfigException if not defined
+         */
+        default boolean isRoot() {
+            throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+        }
+
+        /**
+         * Returns the name of Config node.
+         * <p>
+         * The name of a node is the last token in fully-qualified key.
+         * Depending on context the name is evaluated one by one:
+         * <ul>
+         * <li>in Type#OBJECT} node the name represents a <strong>name of object member</strong>;
+         * </li>
+         * <li>in Type#LIST} node the name represents an zero-based <strong>index of list
+         * element</strong>,
+         * an unsigned base-10 integer value, leading zeros are not allowed.</li>
+         * </ul>
+         *
+         * @return name of config node
+         * @see Config#name()
+         */
+        String name();
+
+        /**
+         * Returns formatted fully-qualified key.
+         *
+         * @return formatted fully-qualified key.
+         */
+        @Override
+        String toString();
+
+        /**
+         * Create a child key to the current key.
+         *
+         * @param key child key (relative to current key)
+         * @return a new resolved key
+         * @throws io.helidon.common.config.ConfigException if not defined
+         */
+        default BaseKey child(BaseKey key) {
+            throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
+        }
+    }
+
+}

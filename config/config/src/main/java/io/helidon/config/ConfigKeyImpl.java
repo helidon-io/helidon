@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,12 +147,13 @@ class ConfigKeyImpl implements Config.Key {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof io.helidon.common.config.Config.BaseKey)) {
             return false;
         }
-        ConfigKeyImpl key = (ConfigKeyImpl) o;
-        return Objects.equals(name, key.name)
-                && Objects.equals(parent, key.parent);
+        io.helidon.common.config.Config.BaseKey key = (io.helidon.common.config.Config.BaseKey) o;
+        return Objects.equals(name(), key.name())
+                && Objects.equals(isRoot(), key.isRoot())
+                && (isRoot() || Objects.equals(parent(), key.parent()));
     }
 
     @Override
@@ -161,7 +162,8 @@ class ConfigKeyImpl implements Config.Key {
     }
 
     @Override
-    public int compareTo(Config.Key that) {
+    public int compareTo(io.helidon.common.config.Config.BaseKey that) {
         return toString().compareTo(that.toString());
     }
+
 }
