@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Extension for Graal VM native image to correctly build Helidon applications.
- */
-module io.helidon.graal.nativeimage {
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.logging.jul;
-    requires io.github.classgraph;
-    requires io.helidon.config.mp;
-    requires org.graalvm.sdk;
-    requires jakarta.json;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
 
-    exports io.helidon.integrations.graal.nativeimage.extension;
+package io.helidon.common.features.api;
+
+/**
+ * Flavors of Helidon.
+ */
+public enum HelidonFlavor {
+    /**
+     * The "Standard Edition" flavor.
+     */
+    SE,
+    /**
+     * The "MicroProfile" flavor.
+     */
+    MP,
+    /**
+     * The Loom based blocking flavor.
+     */
+    NIMA
 }

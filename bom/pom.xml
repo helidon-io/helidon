@@ -686,6 +686,21 @@
                 <artifactId>helidon-reactive-service-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
