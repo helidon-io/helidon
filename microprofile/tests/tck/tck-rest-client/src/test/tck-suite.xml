@@ -25,13 +25,5 @@
                 <exclude name="org.eclipse.microprofile.rest.client.tck.timeout"/>
             </package>
         </packages>
-        <classes>
-            <class name="org.eclipse.microprofile.rest.client.tck.ProxyServerTest">
-                <methods>
-                    <!--https://github.com/eclipse/microprofile-rest-client/pull/298-->
-                    <exclude name="testProxy"/>
-                </methods>
-            </class>
-        </classes>
     </test>
 </suite>
