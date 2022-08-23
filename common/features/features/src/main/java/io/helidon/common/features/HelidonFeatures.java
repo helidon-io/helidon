@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.common.NativeImageHelper;
-import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
