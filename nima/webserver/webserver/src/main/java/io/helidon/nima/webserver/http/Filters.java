@@ -52,43 +52,29 @@ public class Filters {
      * @param routingHandler this handler is called after all filters finish processing
      *                       (unless a filter does not invoke the chain)
      */
-    public void filter(RoutingRequest request, RoutingResponse response, Handler routingHandler) {
+    public void filter(RoutingRequest request, RoutingResponse response, Runnable routingHandler) {
         if (noFilters) {
-            routingHandler.handle(request, response);
+            routingHandler.run();
             return;
         }
 
         FilterChain chain = new FilterChainImpl(filters, request, response, routingHandler);
         request.path(new FilterRoutedPath(request.prologue().uriPath()));
-
-        try {
-            chain.proceed();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw HttpException.builder()
-                    .message("Failed to process request filters or routing")
-                    .type(SimpleHandler.EventType.INTERNAL_ERROR)
-                    .request(HttpSimpleRequest.create(request.prologue(),
-                                                      request.headers()))
-                    .cause(e)
-                    .build();
-        }
+        chain.proceed();
     }
 
     private static final class FilterChainImpl implements FilterChain {
         private final Iterator<Filter> filters;
+        private final Runnable routingHandler;
         private RoutingRequest request;
         private RoutingResponse response;
-        private final Handler routingHandler;
 
-        private FilterChainImpl(List<Filter> filters, RoutingRequest request, RoutingResponse response, Handler routingHandler) {
+        private FilterChainImpl(List<Filter> filters, RoutingRequest request, RoutingResponse response, Runnable routingHandler) {
             this.filters = filters.iterator();
             this.request = request;
             this.response = response;
             this.routingHandler = routingHandler;
         }
-
         @Override
         public void proceed() {
             if (response.hasEntity()) {
@@ -97,7 +83,7 @@ public class Filters {
             if (filters.hasNext()) {
                 filters.next().filter(this, request, response);
             } else {
-                routingHandler.handle(request, response);
+                routingHandler.run();
                 if (!response.isSent()) {
                     throw HttpException.builder()
                             .request(request)
