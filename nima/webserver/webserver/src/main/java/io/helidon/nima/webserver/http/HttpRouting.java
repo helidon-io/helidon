@@ -87,8 +87,8 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RouteExecutor rh = new RouteExecutor(rootRoute, ctx, request, response);
-        filters.filter(request, response, rh);
+        RoutingExecutor routingExecutor = new RoutingExecutor(rootRoute, ctx, request, response);
+        filters.filter(request, response, routingExecutor);
     }
 
     @Override
@@ -278,13 +278,13 @@ public final class HttpRouting implements Routing {
         }
     }
 
-    private static final class RouteExecutor implements Runnable {
+    private static final class RoutingExecutor implements Runnable {
         private final ConnectionContext ctx;
         private final RoutingRequest request;
         private final RoutingResponse response;
         private final ServiceRoute rootRoute;
 
-        private RouteExecutor(ServiceRoute rootRoute, ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
+        private RoutingExecutor(ServiceRoute rootRoute, ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
             this.rootRoute = rootRoute;
             this.ctx = ctx;
             this.request = request;
