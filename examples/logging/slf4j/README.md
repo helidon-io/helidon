@@ -13,7 +13,7 @@ Expected output should be similar to the following (for both hotspot and native)
 15:40:44.240 INFO  [main] i.h.examples.logging.slf4j.Main - Starting up startup
 15:40:44.241 INFO  [main] i.h.examples.logging.slf4j.Main - Using JUL logger startup
 15:40:44.245 INFO  [pool-1-thread-1] i.h.examples.logging.slf4j.Main - Running on another thread propagated
-15:40:44.395 INFO  [features-thread] io.helidon.common.HelidonFeatures - Helidon SE 2.2.0 features: [Config, WebServer]
+15:40:44.395 INFO  [features-thread] io.helidon.common.features.HelidonFeatures - Helidon SE 2.2.0 features: [Config, WebServer]
 15:40:44.538 INFO  [nioEventLoopGroup-2-1] io.helidon.reactive.webserver.NettyWebServer - Channel '@default' started: [id: 0x8e516487, L:/0:0:0:0:0:0:0:0:8080]
 ```
 
