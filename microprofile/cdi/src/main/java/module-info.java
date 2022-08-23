@@ -29,6 +29,8 @@ module io.helidon.microprofile.cdi {
 
     requires io.helidon.common;
     requires io.helidon.logging.common;
+    requires io.helidon.common.features.api;
+    requires io.helidon.common.features;
     requires io.helidon.config;
     requires io.helidon.config.mp;
 

@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Extension for Graal VM native image to correctly build Helidon applications.
- */
-module io.helidon.graal.nativeimage {
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
-    requires io.helidon.logging.jul;
-    requires io.github.classgraph;
-    requires io.helidon.config.mp;
-    requires svm;
-    requires org.graalvm.sdk;
-    requires jakarta.json;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
 
-    exports io.helidon.integrations.graal.nativeimage.extension;
+package io.helidon.common.features.api;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Annotation for experimental modules.
+ */
+@Target(ElementType.MODULE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface Experimental {
 }
