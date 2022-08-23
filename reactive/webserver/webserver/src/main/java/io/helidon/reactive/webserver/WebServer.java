@@ -777,7 +777,7 @@ public interface WebServer {
          *
          * @param shouldPrint whether to print details or not
          * @return updated builder instance
-         * @see io.helidon.common.HelidonFeatures
+         * @see io.helidon.common.features.HelidonFeatures
          */
         @ConfiguredOption(key = "features.print-details", value = "false")
         public Builder printFeatureDetails(boolean shouldPrint) {
