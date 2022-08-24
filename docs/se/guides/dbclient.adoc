@@ -23,8 +23,8 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-This guide describes Helidon DB Client features and how to create a sample Helidon SE project
-that can be used to run some basic example using helidon db client.
+This guide describes the features of Helidon's DB Client and how to create a sample Helidon SE project
+that can be used to run some basic examples using the Helidon DB Client.
 
 == What You Need
 
@@ -34,10 +34,8 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-The Helidon DB Client offers a simple and easy way to work with databases in reactive application.
-In Helidon 2.0.0 we introduced the pre-release version of Helidon DB Client — a unified,
-reactive API for working with databases in non-blocking way. Helidon team constantly updates this API in order
-to make it more user-friendly and efficient. For this matter, it is recommended to use the latest helidon version.
+The Helidon DB Client simplifies how you work with databases in reactive applications. It provides a unified,
+reactive API for working with databases in a non-blocking way. 
 
 === Main Features
 
@@ -50,13 +48,12 @@ with JDBC driver or MongoDB are supported.
 Most JDBC drivers are blocking. Using them in a reactive application is problematic. Helidon DB Client allows the use
 of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service.
 * *Observability*:
-Support for health checks, metrics and tracing was added to all Helidon SE APIs and the Helidon DB Client
-is no exception.
+Support for health checks, metrics and tracing.
 * *Backpressure*:
-Helidon DB Client performs database operations only when it is requested by the consumer.
+Performs database operations only when it is requested by the consumer.
 This is propagated all the way to the TCP layer.
 * *Portability between relational database drivers*:
-The DB Client works with native database statements that can be used inline in the code or defined as named statements
+Works with native database statements that can be used inline in the code or defined as named statements
 in database configuration. By moving the native query code to configuration files, the Helidon DB Client allows you to
 switch to another database by changing the configuration files, not the code.
 
@@ -64,7 +61,9 @@ switch to another database by changing the configuration files, not the code.
 
 This section describes how to configure and use the key features of the Helidon DB Client.
 
-=== Set up H2 database
+=== Set Up the H2 database
+H2 is a Java SQL database that is lightweight and easy to use.
+If H2 is not installed on your machine, here are few steps to quickly download and set it up:
 
 ==== From Docker
 
@@ -116,26 +115,24 @@ docker build -f Dockerfile.h2 . -t h2db
 docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 h2db
 ----
 
-==== From Command Line
+==== From the Command Line
 
-A database stores the books from the library. H2 is a java SQL database easy to use and light.
-If H2 is not installed on your machine, here are few steps to quickly download and set it up:
-
-    * Download the latest H2 version from the official website: https://www.h2database.com/html/main.html
-    ** On windows, let guides yourself by the H2 installer.
-    ** On another platform, unzip the downloaded file into your wished directory.
-    ** Only the h2-\{latest-version}.jar, located into h2/bin folder, will be needed.
-    * Run the following command to start H2, do not forget to replace `\{latest-version}` by your current version.
+    1. Download the latest H2 version from the official website: https://www.h2database.com/html/main.html
+    
+    Note: Windows operating system users can download the Windows Installer.
+    
+    2. Unzip the downloaded file into your directory.
+    * Only the h2-\{latest-version}.jar, located in the h2/bin folder, will be needed.
+    
+    3. Open a terminal window and run the following command to start H2: 
+    
 
 [source,bash]
-.Open a terminal and enter the following:
+.Replace `\{latest-version}` with your current H2 version:
 ----
 java -jar h2-\{latest-version}.jar -webAllowOthers -tcpAllowOthers
 ----
 
-==== Run H2
-
-This output should be printed:
 
 [source,bash]
 .Terminal output
@@ -146,19 +143,20 @@ TCP server running at tcp://127.0.1.1:9092 (others can connect)
 PG server running at pg://127.0.1.1:5435 (only local connections)
 ----
 
+=== Connect to the Database
+
 Open the console at http://127.0.1.1:8082 in your favorite browser. It displays a login window.
-Select `Generic H2 (Server)` from `Saved Settings`. Here is the list of setting, all of them should be set by default.
+Select `Generic H2` from `Saved Settings`. The following settings should be set by default:
 
 * Driver Class: org.h2.Driver
 * JDBC URL: jdbc:h2:tcp://localhost:9092/~/test
 * User Name: sa
 * Password:
 
-Password must stay empty. Press connect, the browser displays a web page. The database is correctly set and running.
+Password must stay empty. Click **Connect**, the browser displays a web page. The database is correctly set and running.
 
-=== Create a sample SE project
 
-==== Using maven archetype
+=== Create a Sample SE Project Using Maven Archetype
 
 Generate the project sources using the Helidon SE Maven archetype.
 The result is a simple project that can be used for the examples in this guide.
@@ -183,12 +181,12 @@ A new directory named `helidon-quickstart-se` is created.
 cd helidon-quickstart-se
 ----
 
-=== Add new dependency
+=== Add Dependencies
 
-First thing to do is to open the pom.xml file and add helidon dependencies to use the DB Client.
+Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to add the following Helidon dependencies required to use the DB Client:
 
 [source,xml]
-.Copy those dependencies:
+.Copy these dependencies to pom.xml:
 ----
 <dependencies>
     <dependency>
@@ -226,11 +224,11 @@ First thing to do is to open the pom.xml file and add helidon dependencies to us
 
 === Configure the DB Client
 
-To configure the application, helidon uses by default the application.yaml. The DB client configuration can be joined
-in the same file. It is located here: `src/main/resources`.
+To configure the application, Helidon uses the `application.yaml`. The DB Client configuration can be joined
+in the same file and is located here: `src/main/resources`.
 
 [source,yaml]
-.Copy those properties into application.yaml
+.Copy these properties into application.yaml
 ----
 db:
   source: jdbc  # <1>
@@ -248,10 +246,10 @@ db:
 <2> Connection detail we used to set up H2.
 <3> SQL statements to manage the database.
 
-=== Build and set up Helidon DB Client
+=== Build and Set Up Helidon DB Client
 
-In the application Main.class, an instance of DbClient is created based on the configuration from
-application.yaml.
+In the application `Main.class`, an instance of DbClient is created based on the configuration from
+`application.yaml`.
 
 [source,java]
 .Create a DbClient in the Main.startServer method:
@@ -270,8 +268,8 @@ DbClient dbClient = DbClient.builder()
 <2> Configure the DB Client with the "db" section of application.yaml.
 <3> Add a counter for metrics.
 
-The DB Client metric counter will be executed only for `select-book` statement, and check how many times it was invoked.
-At this point, the database is empty, and needs to be initialised. To achieve that, the DB Client can be used
+The DB Client metric counter will be executed only for the  `select-book` statement and it will check how many times it was invoked.
+At this point, the database is empty, and needs to be initialized. To achieve that, the DB Client can be used
 to create a table in the database.
 
 [source,java]
@@ -295,9 +293,9 @@ private static void createTable(DbClient dbClient) {
 ----
 <1> Use the "create-table" script to build a table with book name and information.
 
-The `createTable` is invoked only once and create an empty table with two columns: name and info. It is used to boostrap
+The `createTable` is invoked only once and creates an empty table with two columns: name and info. The script is used to boostrap
 the server, so the `await` method is called in this particular case because the table must be created before the server
-starts. A new service can manage request to interact with this table which represent our library.The services are
+starts. A new service can manage requests to interact with this table which represents our library.The services are
 registered in the `createRouting` method.
 
 [source,java]
@@ -327,7 +325,7 @@ private static Routing createRouting(Config config, DbClient dbClient) {
 <2> Add Health check to control the application behavior.
 <3> Register the LibraryService to the Routing.
 
-The library service does not exist yet but that is the next step of the guide. It has a constructor with the
+The library service does not yet exist, but you'll creat it in the next step of the guide. It has a constructor with the
 DB Client as a parameter because it will manage the library. The DB Client health check uses the `select-book` statement
 from the configuration. As shown above, to create a DB Client health check, call the `DbClientHealthCheck.create` method
 and pass the concerned DbClient. Then add it to the health support builder and register it to the routing.
@@ -381,9 +379,9 @@ public void update(Routing.Rules rules) {
 <3> Remove a book from the library.
 <4> Return the book information in Json format.
 
-To summarise, there is one endpoint which can manipulate books. The number of endpoints and application
+To summarize, there is one endpoint that can manipulate books. The number of endpoints and application
 features can be changed from these rules by creating or modifying methods. `\{name}` is a path parameter for the book
-name. The architecture of the application is defined, so next step is to create these features.
+name. The architecture of the application is defined, so the next step is to create these features.
 
 [source,java]
 .Add getBook to the LibraryService:
@@ -403,10 +401,10 @@ private void getBook(ServerRequest serverRequest, ServerResponse serverResponse)
             .exceptionally(serverResponse::send);   // <5>
 }
 ----
-<1> Get the book name from the path in the url.
-<2> Helidon db Client execute the `select-book` SQL script from application.yaml.
-<3> Send book information to the client.
-<4> Send 404 Http status if no book was found for the given name.
+<1> Get the book name from the path in the URL.
+<2> Helidon DB Client executes the `select-book` SQL script from application.yaml.
+<3> Sends book information to the client.
+<4> Sends 404 HTTP status if no book was found for the given name.
 <5> If an exception occurred during the process, it is sent to the client.
 
 The `getBook` method reach the book from the database and send the information to the client. The name of the book is
@@ -487,9 +485,9 @@ private void deleteBook(ServerRequest serverRequest, ServerResponse serverRespon
 To remove a book from the library, use the "delete-book" script in the way than previously. If the book is removed
 successfully, a HTTP 204 is sent back.
 
-== Build and Run the Library application
+== Build and Run the Library Application
 
-The application is ready to be built and ran.
+The application is ready to be built and run.
 
 [source,bash]
 .Run the following to build the application:
@@ -497,7 +495,7 @@ The application is ready to be built and ran.
 mvn package
 ----
 
-Note that the tests are passing as the GreetService process was not modified. For the purposes of this demonstration,
+Note that the tests are passing as the `GreetService` process was not modified. For the purposes of this demonstration,
 we only added independent new content to the existing application.
 Make sure H2 is running and start the Helidon quickstart with this command:
 
@@ -588,7 +586,7 @@ content-length: 6
 {"INFO":"Fantasy"}
 ----
 
-It returns the database row in a Json format for Harry Potter book.
+It returns the database row in a Json format for the Harry Potter book.
 Harry Potter can be removed from the library with the following:
 
 [source,bash]
@@ -658,6 +656,8 @@ curl -H "Accept: application/json" http://localhost:8080/metrics/application
 ----
 
 The select-book statement was invoked four times.
+
+=== Summary
 
 This guide provided an introduction to the Helidon DB Client's key features. If you want to learn more, see the
 Helidon DB Client samples in https://medium.com/helidon/helidon-db-client-e12bbdc85b7.
