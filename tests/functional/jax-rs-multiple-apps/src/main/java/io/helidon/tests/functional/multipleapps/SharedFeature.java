@@ -16,13 +16,13 @@
 
 package io.helidon.tests.functional.multipleapps;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.RuntimeType;
-import javax.ws.rs.container.DynamicFeature;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.FeatureContext;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.RuntimeType;
+import jakarta.ws.rs.container.DynamicFeature;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.FeatureContext;
 import java.util.HashSet;
 import java.util.Set;
 
