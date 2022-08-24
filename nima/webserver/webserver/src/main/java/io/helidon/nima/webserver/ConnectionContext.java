@@ -24,7 +24,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webserver.http.SimpleHandlers;
+import io.helidon.nima.webserver.http.DirectHandlers;
 
 /**
  * Server connection context.
@@ -54,7 +54,7 @@ public interface ConnectionContext extends SocketContext {
                                     Router router,
                                     String serverChannelId,
                                     String channelId,
-                                    SimpleHandlers simpleHandlers,
+                                    DirectHandlers simpleHandlers,
                                     HelidonSocket socket,
                                     long maxPayloadSize) {
         return new ConnectionContextImpl(mediaContext,
@@ -124,5 +124,5 @@ public interface ConnectionContext extends SocketContext {
      *
      * @return simple handlers
      */
-    SimpleHandlers simpleHandlers();
+    DirectHandlers directHandlers();
 }

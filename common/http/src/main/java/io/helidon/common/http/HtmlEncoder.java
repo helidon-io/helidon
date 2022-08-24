@@ -30,7 +30,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver;
+package io.helidon.common.http;
 
 /**
  * HTML encoding of special characters to prevent cross site scripting (XSS) attacks.

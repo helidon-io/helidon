@@ -19,6 +19,7 @@ package io.helidon.nima.observe.info;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
@@ -27,7 +28,6 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -62,7 +62,7 @@ class InfoService implements HttpService {
         Object value = info.get(name);
         if (value == null) {
             throw HttpException.builder()
-                    .type(SimpleHandler.EventType.NOT_FOUND)
+                    .type(DirectHandler.EventType.NOT_FOUND)
                     .message("Application info value for " + name + " is not defined.")
                     .request(req)
                     .response(res)

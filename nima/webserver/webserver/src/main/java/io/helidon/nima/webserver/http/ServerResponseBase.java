@@ -25,6 +25,7 @@ import java.util.List;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
@@ -107,7 +108,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         } catch (IllegalArgumentException e) {
             throw HttpException.builder()
                     .message(e.getMessage())
-                    .type(SimpleHandler.EventType.OTHER)
+                    .type(DirectHandler.EventType.OTHER)
                     .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
                     .request(HttpSimpleRequest.create(requestPrologue, requestHeaders))
                     .build();

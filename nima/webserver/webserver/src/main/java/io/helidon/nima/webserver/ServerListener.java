@@ -41,7 +41,7 @@ import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webserver.http.SimpleHandlers;
+import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 import static java.lang.System.Logger.Level.INFO;
@@ -57,7 +57,7 @@ class ServerListener {
     private final ExecutorService readerExecutor;
     private final ExecutorService sharedExecutor;
     private final Thread serverThread;
-    private final SimpleHandlers simpleHandlers;
+    private final DirectHandlers simpleHandlers;
     private final CompletableFuture<Void> closeFuture;
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
@@ -76,7 +76,7 @@ class ServerListener {
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
-                   SimpleHandlers simpleHandlers) {
+                   DirectHandlers simpleHandlers) {
         this.server = loomServer;
         this.connectionProviders = ConnectionProviders.create(connectionProviders);
         this.socketName = socketName;

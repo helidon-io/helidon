@@ -17,16 +17,15 @@
 package io.helidon.nima.webserver.http1;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpSimpleRequest;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 /**
  * HTTP 1 prologue parsing support.
@@ -72,8 +71,8 @@ public final class Http1Prologue {
             protocolAndVersion = protocol + "/" + version;
         }
         return HttpException.builder()
-                .type(SimpleHandler.EventType.BAD_REQUEST)
-                .request(HttpSimpleRequest.create(protocolAndVersion, method, path, Map.of()))
+                .type(DirectHandler.EventType.BAD_REQUEST)
+                .request(HttpSimpleRequest.create(protocolAndVersion, method, path))
                 .message(message)
                 .build();
     }
@@ -116,9 +115,9 @@ public final class Http1Prologue {
             } else if (secondSpace == maxLen) {
                 throw HttpException.builder()
                         .message("Request URI too long.")
-                        .type(SimpleHandler.EventType.BAD_REQUEST)
+                        .type(DirectHandler.EventType.BAD_REQUEST)
                         .status(Http.Status.REQUEST_URI_TOO_LONG_414)
-                        .request(HttpSimpleRequest.create("", method.text(), reader.readAsciiString(secondSpace), Map.of()))
+                        .request(HttpSimpleRequest.create("", method.text(), reader.readAsciiString(secondSpace)))
                         .build();
             }
             path = reader.readAsciiString(secondSpace);
@@ -135,7 +134,7 @@ public final class Http1Prologue {
         } catch (DataReader.IncorrectNewLineException e) {
             throw HttpException.builder()
                     .message("Invalid prologue: " + e.getMessage())
-                    .type(SimpleHandler.EventType.BAD_REQUEST)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
                     .cause(e)
                     .build();
         }

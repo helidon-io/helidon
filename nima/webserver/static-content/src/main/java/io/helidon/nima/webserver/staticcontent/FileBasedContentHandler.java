@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
@@ -43,7 +44,6 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 abstract class FileBasedContentHandler extends StaticContentHandler {
     private static final System.Logger LOGGER = System.getLogger(FileBasedContentHandler.class.getName());
@@ -122,7 +122,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         if (!Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
             throw HttpException.builder()
                     .message("File is not accessible")
-                    .type(SimpleHandler.EventType.OTHER)
+                    .type(DirectHandler.EventType.OTHER)
                     .status(Http.Status.FORBIDDEN_403)
                     .build();
         }
@@ -235,7 +235,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                     }
                     throw HttpException.builder()
                             .message("Media type " + it + " is not accepted by request")
-                            .type(SimpleHandler.EventType.OTHER)
+                            .type(DirectHandler.EventType.OTHER)
                             .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
                             .build();
                 })

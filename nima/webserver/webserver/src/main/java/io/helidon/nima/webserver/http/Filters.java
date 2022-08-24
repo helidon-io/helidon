@@ -19,6 +19,7 @@ package io.helidon.nima.webserver.http;
 import java.util.Iterator;
 import java.util.List;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
 
@@ -92,7 +93,7 @@ public class Filters {
                     throw HttpException.builder()
                             .request(request)
                             .response(response)
-                            .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                            .type(DirectHandler.EventType.INTERNAL_ERROR)
                             .message("Routing finished but response was not sent. Níma does not support asynchronous responses. "
                                              + "Please block until a response is sent.")
                             .build();

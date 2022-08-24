@@ -19,6 +19,7 @@ package io.helidon.reactive.webserver;
 import java.util.Arrays;
 import java.util.List;
 
+import io.helidon.common.http.HtmlEncoder;
 import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.BeforeAll;

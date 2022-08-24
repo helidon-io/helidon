@@ -19,12 +19,14 @@ package io.helidon.reactive.webserver;
 import java.time.Duration;
 import java.util.List;
 
+import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.DirectHandler.TransportResponse;
 import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.DirectHandler.TransportResponse;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,6 +84,24 @@ class Gh1893Test {
                 .build();
 
         socketClient = SocketHttpClient.create(webServer.port());
+    }
+
+    private static TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
+                                                       DirectHandler.EventType eventType,
+                                                       Http.Status defaultStatus,
+                                                       HeadersServerResponse headers,
+                                                       String message) {
+        if (request.path().equals("/redirect")) {
+            return TransportResponse.builder()
+                    .status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .header(Http.Header.LOCATION, "/errorPage")
+                    .build();
+        }
+        return TransportResponse.builder()
+                .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
+                                                   CUSTOM_REASON_PHRASE))
+                .entity(CUSTOM_ENTITY)
+                .build();
     }
 
     @AfterAll
@@ -165,10 +185,10 @@ class Gh1893Test {
                                                        DirectHandler.EventType eventType,
                                                        Http.Status defaultStatus,
                                                        String message) {
-        if (request.uri().equals("/redirect")) {
+        if (request.path().equals("/redirect")) {
             return TransportResponse.builder()
                     .status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.Header.LOCATION.defaultCase(), "/errorPage")
+                    .header(Http.Header.LOCATION, "/errorPage")
                     .build();
         }
         return TransportResponse.builder()

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.nima.Nima;
@@ -33,7 +34,6 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -102,7 +102,7 @@ class ConfigService implements HttpService {
             write(req, res, json.build());
         } else {
             throw HttpException.builder()
-                    .type(SimpleHandler.EventType.NOT_FOUND)
+                    .type(DirectHandler.EventType.NOT_FOUND)
                     .message("Config value for key: " + name)
                     .request(req)
                     .response(res)

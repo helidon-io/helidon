@@ -36,11 +36,11 @@ import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 /**
  * Handles static content from the classpath.
@@ -71,7 +71,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 } catch (IOException e) {
                     throw HttpException.builder()
                             .message("Static content processing issue")
-                            .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                            .type(DirectHandler.EventType.INTERNAL_ERROR)
                             .cause(e)
                             .build();
                 }
@@ -83,7 +83,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 } catch (IOException e) {
                     throw HttpException.builder()
                             .message("Static content processing issue")
-                            .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                            .type(DirectHandler.EventType.INTERNAL_ERROR)
                             .cause(e)
                             .build();
                 }
@@ -267,7 +267,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         } catch (IOException ioe) {
             throw HttpException.builder()
                     .message("Cannot load JAR file!")
-                    .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                    .type(DirectHandler.EventType.INTERNAL_ERROR)
                     .cause(ioe)
                     .build();
         }

@@ -26,11 +26,11 @@ import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LogConfig;
+import io.helidon.common.http.DirectHandler;
 import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.SimpleHandler;
-import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 /**
@@ -127,7 +127,7 @@ public interface WebServer {
 
         private final Map<String, ListenerConfiguration.Builder> socketBuilder = new HashMap<>();
         private final Map<String, Router.Builder> routers = new HashMap<>();
-        private final SimpleHandlers.Builder simpleHandlers = SimpleHandlers.builder();
+        private final DirectHandlers.Builder simpleHandlers = DirectHandlers.builder();
 
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
                 HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
@@ -277,8 +277,8 @@ public interface WebServer {
          * @param eventTypes event types this handler should handle
          * @return updated builder
          */
-        public Builder simpleHandler(SimpleHandler handler, SimpleHandler.EventType... eventTypes) {
-            for (SimpleHandler.EventType eventType : eventTypes) {
+        public Builder directHandler(DirectHandler handler, DirectHandler.EventType... eventTypes) {
+            for (DirectHandler.EventType eventType : eventTypes) {
                 simpleHandlers.addHandler(eventType, handler);
             }
 

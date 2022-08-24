@@ -18,6 +18,7 @@ package io.helidon.nima.tests.integration.server;
 
 import java.util.List;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
@@ -29,7 +30,6 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ class BadRequestTest {
 
     @SetUpServer
     static void setUpServer(WebServer.Builder builder) {
-        builder.simpleHandler(BadRequestTest::badRequestHandler, SimpleHandler.EventType.BAD_REQUEST);
+        builder.directHandler(BadRequestTest::badRequestHandler, DirectHandler.EventType.BAD_REQUEST);
     }
 
     // no need to try with resources when reading as string
@@ -142,22 +142,22 @@ class BadRequestTest {
         assertThat(response, containsString(CUSTOM_ENTITY));
     }
 
-    private static SimpleHandler.SimpleResponse badRequestHandler(SimpleHandler.SimpleRequest request,
-                                                                  SimpleHandler.EventType eventType,
-                                                                  Http.Status httpStatus,
-                                                                  HeadersServerResponse responseHeaders,
-                                                                  String message) {
+    private static DirectHandler.TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
+                                                                     DirectHandler.EventType eventType,
+                                                                     Http.Status httpStatus,
+                                                                     HeadersServerResponse responseHeaders,
+                                                                     String message) {
         if (request.path().equals("/redirect")) {
-            return SimpleHandler.SimpleResponse.builder()
+            return DirectHandler.TransportResponse.builder()
                     .status(Http.Status.TEMPORARY_REDIRECT_307)
                     .header(Header.LOCATION, "/errorPage")
                     .build();
         }
-        return SimpleHandler.SimpleResponse.builder()
+        return DirectHandler.TransportResponse.builder()
                 .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
                                            CUSTOM_REASON_PHRASE))
                 .headers(responseHeaders)
-                .message(CUSTOM_ENTITY)
+                .entity(CUSTOM_ENTITY)
                 .build();
     }
 }

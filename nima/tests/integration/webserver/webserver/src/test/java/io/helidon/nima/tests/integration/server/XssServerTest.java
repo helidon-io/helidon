@@ -18,11 +18,11 @@ package io.helidon.nima.tests.integration.server;
 
 import java.util.List;
 
+import io.helidon.common.http.HtmlEncoder;
 import io.helidon.common.http.Http;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.nima.webserver.HtmlEncoder;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
