@@ -30,7 +30,7 @@ import io.helidon.nima.webserver.http.HttpRouting;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.health.HealthCheckResponse.Status.DOWN;
 import static io.helidon.health.HealthCheckResponse.Status.UP;
 import static org.hamcrest.CoreMatchers.is;

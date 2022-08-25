@@ -16,14 +16,14 @@
 
 package io.helidon.reactive.webserver;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,8 +43,10 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 public class EncodingV2ApiTest {
 
     private static final Logger LOGGER = Logger.getLogger(EncodingV2ApiTest.class.getName());
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
+    private static SocketHttpClient client;
 
     /**
      * Start the Web Server
@@ -64,8 +66,8 @@ public class EncodingV2ApiTest {
                                  .build())
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
+        client = SocketHttpClient.create(webServer.port());
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -76,8 +78,8 @@ public class EncodingV2ApiTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEncodedUrl() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/f%6F%6F", Http.Method.GET, null, webServer);
+    void testEncodedUrl() throws Exception {
+        String s = client.sendAndReceive("/f%6F%6F", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("connection", "keep-alive"));
@@ -89,8 +91,8 @@ public class EncodingV2ApiTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEncodedUrlParams() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null, webServer);
+    void testEncodedUrlParams() throws Exception {
+        String s = client.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("bar"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("connection", "keep-alive"));
@@ -139,17 +141,16 @@ public class EncodingV2ApiTest {
     }
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         // start the server at a free port
         startServer(0);
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 }

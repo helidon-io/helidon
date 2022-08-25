@@ -16,6 +16,7 @@
 
 package io.helidon.reactive.webserver;
 
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,10 +40,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Deprecated(since = "3.0.0", forRemoval = true)
 public class HttpPipelineV2ApiTest {
     private static final Logger LOGGER = Logger.getLogger(HttpPipelineV2ApiTest.class.getName());
+    private static final Duration TIMEOUT = Duration.ofSeconds(30);
+    private static final AtomicInteger counter = new AtomicInteger(0);
+    private static final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
 
     private static WebServer webServer;
-    private static AtomicInteger counter = new AtomicInteger(0);
-    private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+    private static SocketHttpClient client;
 
     @BeforeAll
     public static void startServer() throws Exception {
@@ -53,8 +56,7 @@ public class HttpPipelineV2ApiTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(1, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
@@ -86,8 +88,9 @@ public class HttpPipelineV2ApiTest {
                         .build())
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
+
+        client = SocketHttpClient.create(webServer.port());
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -101,20 +104,18 @@ public class HttpPipelineV2ApiTest {
      */
     @Test
     public void testPipelining() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
-            s.request(Http.Method.PUT, "/");        // reset server
-            s.request(Http.Method.GET, null);        // request_0
-            s.request(Http.Method.GET, null);        // request_1
-            log("put client");
-            String reset = s.receive();
-            assertThat(reset, notNullValue());
-            log("request0 client");
-            String request_0 = s.receive();
-            assertThat(request_0, containsString("Response 0"));
-            log("request1 client");
-            String request_1 = s.receive();
-            assertThat(request_1, containsString("Response 1"));
-        }
+        client.request(Http.Method.PUT, "/");        // reset server
+        client.request(Http.Method.GET, null);        // request_0
+        client.request(Http.Method.GET, null);        // request_1
+        log("put client");
+        String reset = client.receive();
+        assertThat(reset, notNullValue());
+        log("request0 client");
+        String request_0 = client.receive();
+        assertThat(request_0, containsString("Response 0"));
+        log("request1 client");
+        String request_1 = client.receive();
+        assertThat(request_1, containsString("Response 1"));
     }
 
     private static void log(String prefix) {

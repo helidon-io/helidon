@@ -28,7 +28,7 @@ import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

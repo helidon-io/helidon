@@ -18,22 +18,22 @@ package io.helidon.reactive.webserver;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
+import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webserver.DirectHandler.TransportResponse;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
  * Problem Description
@@ -63,7 +63,7 @@ class Gh1893Test {
 
     private static WebServer webServer;
     private static WebClient webClient;
-
+    private static SocketHttpClient socketClient;
 
     @BeforeAll
     static void startServer() {
@@ -80,33 +80,27 @@ class Gh1893Test {
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
                 .build();
-    }
 
-    private static TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
-                                                       DirectHandler.EventType eventType,
-                                                       Http.Status defaultStatus,
-                                                       String message) {
-        if (request.uri().equals("/redirect")) {
-            return TransportResponse.builder()
-                    .status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.Header.LOCATION.defaultCase(), "/errorPage")
-                    .build();
-        }
-        return TransportResponse.builder()
-                .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
-                                                   CUSTOM_REASON_PHRASE))
-                .entity(CUSTOM_ENTITY)
-                .build();
+        socketClient = SocketHttpClient.create(webServer.port());
     }
 
     @AfterAll
-    static void stopServer() {
+    static void stopServer() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIMEOUT);
         }
+        if (socketClient != null) {
+            socketClient.close();
+        }
         webServer = null;
         webClient = null;
+    }
+
+    @BeforeEach
+    void resetSocketClient() {
+        socketClient.disconnect();
+        socketClient.connect();
     }
 
     @Test
@@ -121,38 +115,35 @@ class Gh1893Test {
     @Test
     void testInvalidRequest() throws Exception {
         // wrong content length
-        String response = SocketHttpClient.sendAndReceive("/",
-                                                          Http.Method.GET,
-                                                          null,
-                                                          List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"),
-                                                          webServer);
+        String response = socketClient.sendAndReceive("/",
+                                                      Http.Method.GET,
+                                                      null,
+                                                      List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"));
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
         assertThat(response, containsString(CUSTOM_ENTITY));
     }
 
     @Test
-    void testInvalidRequestWithRedirect() throws Exception {
+    void testInvalidRequestWithRedirect() {
         // wrong content length
-        String response = SocketHttpClient.sendAndReceive("/redirect",
-                                                          Http.Method.GET,
-                                                          null,
-                                                          List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"),
-                                                          webServer);
+        String response = socketClient.sendAndReceive("/redirect",
+                                                      Http.Method.GET,
+                                                      null,
+                                                      List.of(Http.Header.CONTENT_LENGTH.defaultCase() + ": 47a"));
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
 
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(response);
-        assertThat(headers, hasEntry(equalToIgnoringCase("Location"), is("/errorPage")));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.HeaderValue.create(Http.Header.LOCATION, "/errorPage")));
     }
 
     @Test
     void testInvalidUri() throws Exception {
         // must fail on creation of bare request impl (URI.create())
-        String response = SocketHttpClient.sendAndReceive("/bad{",
-                                                          Http.Method.GET,
-                                                          null,
-                                                          webServer);
+        String response = socketClient.sendAndReceive("/bad{",
+                                                      Http.Method.GET,
+                                                      null);
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
         assertThat(response, containsString(CUSTOM_ENTITY));
@@ -160,7 +151,7 @@ class Gh1893Test {
 
     @Test
     void testInvalidFirstLine() throws Exception {
-        try(SocketHttpClient client = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient client = SocketHttpClient.create(webServer.port())) {
 
             client.request("GET IT", "/", "HTTP/1.1", null, null, null);
             String response = client.receive();
@@ -168,5 +159,22 @@ class Gh1893Test {
             assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
             assertThat(response, containsString(CUSTOM_ENTITY));
         }
+    }
+
+    private static TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
+                                                       DirectHandler.EventType eventType,
+                                                       Http.Status defaultStatus,
+                                                       String message) {
+        if (request.uri().equals("/redirect")) {
+            return TransportResponse.builder()
+                    .status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .header(Http.Header.LOCATION.defaultCase(), "/errorPage")
+                    .build();
+        }
+        return TransportResponse.builder()
+                .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
+                                           CUSTOM_REASON_PHRASE))
+                .entity(CUSTOM_ENTITY)
+                .build();
     }
 }

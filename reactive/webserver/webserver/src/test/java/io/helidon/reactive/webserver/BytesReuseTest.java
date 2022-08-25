@@ -18,25 +18,19 @@ package io.helidon.reactive.webserver;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.time.Duration;
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -54,21 +48,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * The BytesReuseTest verifies whether the {@link DataChunk} instances get released properly.
  * <p>
- * Note that with {@link DataChunk#finalize()} which calls {@link DataChunk#release()},
+ * Note that with {@link io.helidon.common.http.DataChunk#finalize()} which calls {@link DataChunk#release()},
  * we no longer experience {@link OutOfMemoryError} exceptions in case the chunks aren't freed
  * as long as no references to the {@link DataChunk} instances are kept.
  */
-public class BytesReuseTest {
+class BytesReuseTest {
 
     private static final Logger LOGGER = Logger.getLogger(PlainTest.class.getName());
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
 
     private static final Queue<DataChunk> chunkReference = new ConcurrentLinkedQueue<>();
-    private static final ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r) {{
-        setDaemon(true);
-    }});
 
     /**
      * Start the Web Server
@@ -77,7 +68,7 @@ public class BytesReuseTest {
      *             the port is dynamically selected
      * @throws Exception in case of an error
      */
-    private static void startServer(int port) throws Exception {
+    private static void startServer(int port) {
         webServer = WebServer.builder()
                 .host("localhost")
                 .port(port)
@@ -177,8 +168,10 @@ public class BytesReuseTest {
     }
 
     private void doSubscriberPostRequest(boolean release) throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
-            s.request(Http.Method.POST, "/subscriber?test=myData&release=" + release, "myData" + SocketHttpClient.longData(100_000).toString());
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
+            s.request(Http.Method.POST,
+                      "/subscriber?test=myData&release=" + release,
+                      "myData" + SocketHttpClient.longData(100_000));
             assertThat(s.receive(), endsWith("\nFinished\n0\n\n"));
         }
     }
@@ -232,8 +225,10 @@ public class BytesReuseTest {
 
     @Test
     public void toStringConverterFreesTheRequestChunks() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
-            s.request(Http.Method.POST, "/string?test=myData", "myData" + SocketHttpClient.longData(100_000).toString());
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
+            s.request(Http.Method.POST,
+                      "/string?test=myData",
+                      "myData" + SocketHttpClient.longData(100_000));
             assertThat(s.receive(), endsWith("\nFinished\n0\n\n"));
         }
         assertChunkReferencesAreReleased();
@@ -241,8 +236,10 @@ public class BytesReuseTest {
 
     @Test
     public void toByteArrayConverterFreesTheRequestChunks() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
-            s.request(Http.Method.POST, "/bytes?test=myData", "myData" + SocketHttpClient.longData(100_000).toString());
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
+            s.request(Http.Method.POST,
+                      "/bytes?test=myData",
+                      "myData" + SocketHttpClient.longData(100_000));
             assertThat(s.receive(), endsWith("\nFinished\n0\n\n"));
         }
         assertChunkReferencesAreReleased();
@@ -250,7 +247,7 @@ public class BytesReuseTest {
 
     @Test
     public void toByteArrayDeferredConverterFreesTheRequestChunks() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             s.request(Http.Method.POST, "/bytes_deferred?test=myData", "myData" + SocketHttpClient.longData(100_000).toString());
             assertThat(s.receive(), endsWith("\nFinished\n0\n\n"));
         }
@@ -259,7 +256,7 @@ public class BytesReuseTest {
 
     @Test
     public void toInputStreamConverterFreesTheRequestChunks() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             s.request(Http.Method.POST, "/input_stream?test=myData", "myData" + SocketHttpClient.longData(100_000).toString());
             assertThat(s.receive(), endsWith("\nFinished\n0\n\n"));
         }
@@ -268,7 +265,7 @@ public class BytesReuseTest {
 
     @Test
     public void notFoundPostRequestPayloadGetsReleased() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             s.request(Http.Method.POST, "/non_existent?test=myData", "myData" + SocketHttpClient.longData(100_000).toString());
             assertThat(s.receive(), startsWith("HTTP/1.1 404 Not Found\n"));
         }
@@ -277,7 +274,7 @@ public class BytesReuseTest {
 
     @Test
     public void unconsumedPostRequestPayloadGetsReleased() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             s.request(Http.Method.POST, "/unconsumed?test=myData", "myData" + SocketHttpClient.longData(100_000).toString());
             assertThat(s.receive(), endsWith("Nothing consumed!\n0\n\n"));
         }
@@ -400,54 +397,4 @@ public class BytesReuseTest {
         }
     }
 
-    private static class ChunkedSocketHttpClient extends SocketHttpClient {
-        private final long limit;
-        private final AtomicLong sentData = new AtomicLong();
-
-        public ChunkedSocketHttpClient(WebServer webServer, long limit) throws IOException {
-            super(webServer);
-            this.limit = limit;
-        }
-
-        @Override
-        protected void sendPayload(PrintWriter pw, String payload) {
-            pw.println("transfer-encoding: chunked");
-            pw.println("");
-            pw.println("9");
-            pw.println("unlimited");
-
-            ScheduledFuture<?> future = startMeasuring();
-
-            try {
-                String data = longData(1_000_000).toString();
-                long i = 0;
-                for (; !pw.checkError() && (limit == 0 || i < limit); ++i) {
-                    pw.println(Integer.toHexString(data.length()));
-                    pw.println(data);
-                    pw.flush();
-
-                    sentData.addAndGet(data.length());
-                }
-                LOGGER.info("Published chunks: " + i);
-            } finally {
-                future.cancel(true);
-            }
-        }
-
-        ScheduledFuture<?> startMeasuring() {
-            long startTime = System.nanoTime();
-            Queue<Long> receivedDataShort = new LinkedList<>();
-
-            return service.scheduleAtFixedRate(() -> {
-                long l = sentData.get() / 1000000;
-                receivedDataShort.add(l);
-                long previous = l - (receivedDataShort.size() > 10 ? receivedDataShort.remove() : 0);
-                long time = TimeUnit.SECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-                System.out.println("Sent bytes: " + sentData.get() / 1000_000 + " MB");
-                System.out.println("SPEED: " + l / time + " MB/s");
-                System.out.println("SHORT SPEED: " + previous / (time > 10 ? 10 : time) + " MB/s");
-                System.out.println("====");
-            }, 1, 1, TimeUnit.SECONDS);
-        }
-    }
 }

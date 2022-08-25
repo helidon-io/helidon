@@ -26,24 +26,26 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.media.common.MessageBodyWriter;
 import io.helidon.reactive.media.common.MessageBodyWriterContext;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class FilterTest {
+class FilterTest {
 
     private static final Logger LOGGER = Logger.getLogger(FilterTest.class.getName());
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static WebServer webServer;
     private static final AtomicLong filterItemCounter = new AtomicLong(0);
+    private static SocketHttpClient client;
 
     /**
      * Start the Web Server
@@ -99,44 +101,56 @@ public class FilterTest {
                 .start()
                 .await(TIMEOUT);
 
+        client = SocketHttpClient.create(webServer.port());
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         // start the server at a free port
         startServer(0);
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIMEOUT);
         }
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @BeforeEach
+    void resetClient() {
+        client.disconnect();
+        client.connect();
     }
 
     @Test
-    public void customWriterTest() throws Exception {
+    void customWriterTest() {
         filterItemCounter.set(0);
-        SocketHttpClient.sendAndReceive("/customWriter", Http.Method.GET, null, webServer);
-        assertThat("Filter should been called only once, but was called " + filterItemCounter.get() + " times.",
-                filterItemCounter.get(), is(equalTo(1L)));
+        String response = client.sendAndReceive("/customWriter", Http.Method.GET, null);
+        assertThat(response, containsString("200 OK"));
+        assertThat("Filter should been called once.",
+                filterItemCounter.get(), is(1L));
     }
 
     @Test
-    public void dataChunkPublisherTest() throws Exception {
+    void dataChunkPublisherTest() {
         filterItemCounter.set(0);
-        SocketHttpClient.sendAndReceive("/dataChunkPublisher", Http.Method.GET, null, webServer);
-        assertThat("Filter should been called only once, but was called " + filterItemCounter.get() + " times.",
-                filterItemCounter.get(), is(equalTo(1L)));
+        String response = client.sendAndReceive("/dataChunkPublisher", Http.Method.GET, null);
+        assertThat(response, containsString("200 OK"));
+        assertThat("Filter should been called once.",
+                filterItemCounter.get(), is(1L));
     }
 
     @Test
-    public void dataChunkPublisherNoFiltersTest() throws Exception {
+    void dataChunkPublisherNoFiltersTest() {
         filterItemCounter.set(0);
-        SocketHttpClient.sendAndReceive("/dataChunkPublisherNoFilters", Http.Method.GET, null, webServer);
-        assertThat("Filter shouldn't been called, but was called " + filterItemCounter.get() + " times.",
-                filterItemCounter.get(), is(equalTo(0L)));
+        client.sendAndReceive("/dataChunkPublisherNoFilters", Http.Method.GET, null);
+        assertThat("Filter shouldn't been called.",
+                filterItemCounter.get(), is(0L));
     }
 }

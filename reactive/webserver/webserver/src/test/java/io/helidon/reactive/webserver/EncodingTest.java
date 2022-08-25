@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,12 +39,13 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 /**
  * The PlainTest.
  */
-public class EncodingTest {
+class EncodingTest {
 
     private static final Logger LOGGER = Logger.getLogger(EncodingTest.class.getName());
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
+    private static SocketHttpClient client;
 
     /**
      * Start the Web Server
@@ -67,6 +68,7 @@ public class EncodingTest {
                 .build()
                 .start()
                 .await(TIMEOUT);
+        client = SocketHttpClient.create(webServer.port());
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -77,8 +79,8 @@ public class EncodingTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEncodedUrl() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/f%6F%6F", Http.Method.GET, null, webServer);
+    void testEncodedUrl() throws Exception {
+        String s = client.sendAndReceive("/f%6F%6F", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("connection", "keep-alive"));
@@ -90,8 +92,8 @@ public class EncodingTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEncodedUrlParams() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null, webServer);
+    void testEncodedUrlParams() throws Exception {
+        String s = client.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("bar"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("connection", "keep-alive"));
@@ -140,13 +142,13 @@ public class EncodingTest {
     }
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         // start the server at a free port
         startServer(0);
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIMEOUT);

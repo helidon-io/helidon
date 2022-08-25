@@ -18,29 +18,28 @@ package io.helidon.reactive.webserver;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
  * Tests support for compression in the webserver.
  */
-public class CompressionTest {
+class CompressionTest {
     private static final Logger LOGGER = Logger.getLogger(CompressionTest.class.getName());
     private static final Duration TIME_OUT = Duration.of(30, ChronoUnit.SECONDS);
 
@@ -49,12 +48,12 @@ public class CompressionTest {
     private static WebClient webClient;
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         startServer(0);
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIME_OUT);
@@ -66,9 +65,8 @@ public class CompressionTest {
      *
      * @param port the port on which to start the server; if less than 1,
      * the port is dynamically selected
-     * @throws Exception in case of an error
      */
-    private static void startServer(int port) throws Exception {
+    private static void startServer(int port) {
         webServer = WebServer.builder()
                 .defaultSocket(s -> s
                         .host("localhost")
@@ -97,12 +95,16 @@ public class CompressionTest {
      * @throws Exception if error occurs.
      */
     @Test
-    public void testGzipHeader() throws Exception {
-        List<String> requestHeaders = Arrays.asList("Accept-Encoding: gzip");
-        String s = SocketHttpClient.sendAndReceive("/compressed", Http.Method.GET, null,
-                                                   requestHeaders, webServer);
-        Map<String, String> responseHeaders = TransferEncodingTest.cutHeaders(s);
-        assertThat(responseHeaders, hasEntry("content-encoding", "gzip"));
+    void testGzipHeader() throws Exception {
+        List<String> requestHeaders = List.of("Accept-Encoding: gzip");
+        try (SocketHttpClient c = SocketHttpClient.create(webServer.port())) {
+            String s = c.sendAndReceive("/compressed",
+                                        Http.Method.GET, null,
+                                        requestHeaders);
+
+            HeadersClientResponse responseHeaders = SocketHttpClient.headersFromResponse(s);
+            assertThat(responseHeaders, hasHeader(Http.HeaderValue.create(Http.Header.CONTENT_ENCODING, "gzip")));
+        }
     }
 
     /**
@@ -113,12 +115,16 @@ public class CompressionTest {
      * @throws Exception if error occurs.
      */
     @Test
-    public void testDeflateHeader() throws Exception {
-        List<String> requestHeaders = Arrays.asList("Accept-Encoding: deflate");
-        String s = SocketHttpClient.sendAndReceive("/compressed", Http.Method.GET, null,
-                requestHeaders, webServer);
-        Map<String, String> responseHeaders = TransferEncodingTest.cutHeaders(s);
-        assertThat(responseHeaders, hasEntry("content-encoding", "deflate"));
+    void testDeflateHeader() throws Exception {
+        List<String> requestHeaders = List.of("Accept-Encoding: deflate");
+        try (SocketHttpClient c = SocketHttpClient.create(webServer.port())) {
+            String s = c.sendAndReceive("/compressed",
+                                        Http.Method.GET, null,
+                                        requestHeaders);
+
+            HeadersClientResponse responseHeaders = SocketHttpClient.headersFromResponse(s);
+            assertThat(responseHeaders, hasHeader(Http.HeaderValue.create(Http.Header.CONTENT_ENCODING, "deflate")));
+        }
     }
 
     /**
@@ -127,7 +133,7 @@ public class CompressionTest {
      * @throws Exception if error occurs.
      */
     @Test
-    public void testGzipContent() throws Exception {
+    void testGzipContent() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         builder.headers().add("Accept-Encoding", "gzip");
         WebClientResponse response = builder.path("/compressed")
@@ -142,7 +148,7 @@ public class CompressionTest {
      * @throws Exception if error occurs.
      */
     @Test
-    public void testDeflateContent() throws Exception {
+    void testDeflateContent() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         builder.headers().add("Accept-Encoding", "deflate");
         WebClientResponse response = builder.path("/compressed")

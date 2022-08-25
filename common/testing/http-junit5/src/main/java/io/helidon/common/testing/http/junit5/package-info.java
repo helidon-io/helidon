@@ -19,7 +19,7 @@
  * <p>
  * Hamcrest Matchers:
  * <ul>
- *     <li>{@link io.helidon.common.testing.http.HttpHeaderMatcher}</li>
+ *     <li>{@link io.helidon.common.testing.http.junit5.HttpHeaderMatcher}</li>
  * </ul>
  */
-package io.helidon.common.testing.http;
+package io.helidon.common.testing.http.junit5;

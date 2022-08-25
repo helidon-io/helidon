@@ -16,30 +16,30 @@
 
 package io.helidon.nima.tests.integration.server;
 
-import java.util.Map;
-
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.testing.junit5.webserver.SocketHttpClient;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
  * Tests transfer encoding.
  */
 @ServerTest
 class TransferEncodingTest {
+    private static final Http.HeaderValue CONTENT_LENGTH_NINE = Http.HeaderValue.create(Header.CONTENT_LENGTH, "9");
     private final SocketHttpClient socketHttpClient;
 
     TransferEncodingTest(SocketHttpClient socketHttpClient) {
@@ -78,8 +78,8 @@ class TransferEncodingTest {
     void testEmptyContentLength() {
         String s = socketHttpClient.sendAndReceive("/empty", Http.Method.GET, null);
 
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasEntry("Content-Length", "0"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
     }
 
     /**
@@ -88,8 +88,8 @@ class TransferEncodingTest {
     @Test
     void testEmptyChunked() {
         String s = socketHttpClient.sendAndReceive("/emptychunked", Http.Method.GET, null);
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasEntry("Transfer-Encoding", "chunked"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     /**
@@ -99,8 +99,8 @@ class TransferEncodingTest {
     void testContentLength() {
         String s = socketHttpClient.sendAndReceive("/length", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasEntry("Content-Length", "9"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(CONTENT_LENGTH_NINE));
     }
 
     /**
@@ -110,8 +110,8 @@ class TransferEncodingTest {
     void testChunkedEncoding() {
         String s = socketHttpClient.sendAndReceive("/chunked", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasEntry("Transfer-Encoding", "chunked"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     /**
@@ -121,8 +121,8 @@ class TransferEncodingTest {
     void testOptimized() {
         String s = socketHttpClient.sendAndReceive("/optimized", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasEntry("Content-Length", "9"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(CONTENT_LENGTH_NINE));
     }
 
     private String cutPayloadAndCheckHeadersFormat(String response) {
