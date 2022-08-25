@@ -26,13 +26,11 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.nima.http.encoding.ContentDecoder;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2ErrorCode;
 import io.helidon.nima.http2.Http2Exception;
@@ -69,7 +67,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private static final List<Http2SubProtocolProvider> SUB_PROTOCOL_PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(Http2SubProtocolProvider.class))
                     .asList();
-    private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+    // todo nima - use or remove
+    //private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
     private final FlowControl flowControl;
     private final ConnectionContext ctx;
     private final int streamId;
