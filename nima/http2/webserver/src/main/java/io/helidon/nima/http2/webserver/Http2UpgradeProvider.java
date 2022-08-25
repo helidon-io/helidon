@@ -60,14 +60,20 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
             throw new RuntimeException("Bad request -> not " + HTTP2_SETTINGS_HEADER_NAME + " header");
         }
         Http2Headers http2Headers = Http2Headers.create(headers);
-
         http2Headers.path(prologue.uriPath().rawPath());
         http2Headers.method(prologue.method());
         headers.remove(Header.HOST,
                        it -> http2Headers.authority(it.value()));
         http2Headers.scheme("http"); // TODO need to get if https (ctx)?
 
-        connection.upgradeConnectionHeaders(http2Headers);
+        HttpPrologue newPrologue = HttpPrologue.create(prologue.protocol(),
+                                                       Http2Connection.PROTOCOL_VERSION,
+                                                       prologue.method(),
+                                                       prologue.uriPath(),
+                                                       prologue.query(),
+                                                       prologue.fragment());
+
+        connection.upgradeConnectionData(newPrologue, http2Headers);
         connection.expectPreface();
         DataWriter dataWriter = ctx.dataWriter();
         dataWriter.write(BufferData.create(SWITCHING_PROTOCOLS_BYTES));

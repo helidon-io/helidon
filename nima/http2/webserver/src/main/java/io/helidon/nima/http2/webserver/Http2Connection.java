@@ -25,8 +25,10 @@ import java.util.Optional;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
 import io.helidon.nima.http2.Http2ErrorCode;
@@ -65,6 +67,9 @@ import static java.lang.System.Logger.Level.TRACE;
  * A single connection serves multiple streams.
  */
 public class Http2Connection implements ServerConnection {
+    static final String PROTOCOL = "HTTP";
+    static final String PROTOCOL_VERSION = "2.0";
+
     private static final System.Logger LOGGER = System.getLogger(Http2Connection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
 
@@ -89,6 +94,7 @@ public class Http2Connection implements ServerConnection {
     private BufferData frameInProgress;
     private Http2Ping ping;
     private boolean expectPreface;
+    private HttpPrologue upgradePrologue;
     private Http2Headers upgradeHeaders;
     private boolean returnErrorDetails = true;
     private State state = State.WRITE_SERVER_SETTINGS;
@@ -158,9 +164,11 @@ public class Http2Connection implements ServerConnection {
     /**
      * Connection headers from an upgrade request from HTTP/1.1.
      *
-     * @param headers headers to use for first stream (obtained from original HTTP/1.1 request)
+     * @param prologue prologue of the HTTP/2 request
+     * @param headers  headers to use for first stream (obtained from original HTTP/1.1 request)
      */
-    public void upgradeConnectionHeaders(Http2Headers headers) {
+    public void upgradeConnectionData(HttpPrologue prologue, Http2Headers headers) {
+        this.upgradePrologue = prologue;
         this.upgradeHeaders = headers;
     }
 
@@ -401,6 +409,7 @@ public class Http2Connection implements ServerConnection {
                     || httpHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             // we now have all information needed to execute
             Http2Stream stream = stream(1).stream();
+            stream.prologue(upgradePrologue);
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
             ctx.sharedExecutor()
@@ -482,6 +491,15 @@ public class Http2Connection implements ServerConnection {
 
         receiveFrameListener.headers(ctx, headers);
         headers.validateRequest();
+        // todo configure path validation
+        String path = headers.path();
+        Http.Method method = headers.method();
+        HttpPrologue httpPrologue = HttpPrologue.create(PROTOCOL,
+                                                        PROTOCOL_VERSION,
+                                                        method,
+                                                        path,
+                                                        true);
+        stream.prologue(httpPrologue);
         stream.headers(headers, endOfStream);
         state = State.READ_FRAME;
 

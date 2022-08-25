@@ -38,10 +38,13 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -85,8 +88,12 @@ class Http2ServerTest {
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
         // explicitly on HTTP/2 only, to make sure we do upgrade
-        router.route(Http2Route.route(Http.Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
-                .send(MESSAGE)));
+        router.route(Http2Route.route(GET, "/", (req, res) -> res.header(TEST_HEADER).send(MESSAGE)))
+                .route(Http2Route.route(GET, "/query", Http2ServerTest::queryEndpoint));
+    }
+
+    private static void queryEndpoint(ServerRequest req, ServerResponse res) {
+        res.send(req.query().value("param"));
     }
 
     @Test
@@ -118,6 +125,23 @@ class Http2ServerTest {
     }
 
     @Test
+    void testQueryParam() throws IOException, InterruptedException {
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build()
+                .send(HttpRequest.newBuilder()
+                              .timeout(Duration.ofSeconds(5))
+                              .uri(URI.create("http://localhost:" + plainPort + "/query?param=paramValue"))
+                              .GET()
+                              .build(),
+                      HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), is("paramValue"));
+    }
+
+    @Test
     void testAppProtocol() throws IOException, InterruptedException {
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
@@ -134,6 +158,25 @@ class Http2ServerTest {
         assertThat(response.statusCode(), is(200));
         assertThat(response.body(), is(MESSAGE));
         assertThat(response.headers().firstValue(TEST_HEADER_NAME), is(Optional.of(TEST_HEADER_VALUE)));
+        System.clearProperty("jdk.internal.httpclient.disableHostnameVerification");
+    }
+
+    @Test
+    void testAppProtocol2() throws IOException, InterruptedException {
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(5))
+                .sslContext(insecureTls.sslContext())
+                .build()
+                .send(HttpRequest.newBuilder()
+                              .timeout(Duration.ofSeconds(5))
+                              .uri(URI.create("https://localhost:" + tlsPort + "/query?param=paramValue"))
+                              .GET()
+                              .build(),
+                      HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), is("paramValue"));
         System.clearProperty("jdk.internal.httpclient.disableHostnameVerification");
     }
 
