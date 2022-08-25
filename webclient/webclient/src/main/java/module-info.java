@@ -37,6 +37,8 @@ module io.helidon.webclient {
     requires io.netty.handler;
     requires io.netty.handler.proxy;
     requires io.netty.transport;
+    requires io.netty.resolver;
+    requires io.netty.resolver.dns;
 
     requires static io.helidon.config.metadata;
 
