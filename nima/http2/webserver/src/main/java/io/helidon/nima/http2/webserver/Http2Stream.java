@@ -26,13 +26,11 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.nima.http.encoding.ContentDecoder;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2ErrorCode;
 import io.helidon.nima.http2.Http2Exception;
@@ -69,9 +67,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private static final List<Http2SubProtocolProvider> SUB_PROTOCOL_PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(Http2SubProtocolProvider.class))
                     .asList();
-    private static final String PROTOCOL = "HTTP";
-    private static final String PROTOCOL_VERSION = "2.0";
-    private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+    // todo nima - use or remove
+    //private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
     private final FlowControl flowControl;
     private final ConnectionContext ctx;
     private final int streamId;
@@ -88,6 +85,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private Http2SubProtocolProvider.SubProtocolHandler subProtocolHandler;
     private long expectedLength = -1;
     private HttpRouting routing;
+    private HttpPrologue prologue;
 
     /**
      * A new HTTP/2 server stream.
@@ -324,6 +322,10 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         }
     }
 
+    void prologue(HttpPrologue prologue) {
+        this.prologue = prologue;
+    }
+
     private BufferData readEntityFromPipeline() {
         if (wasLastDataFrame) {
             return BufferData.empty();
@@ -348,21 +350,12 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         if (httpHeaders.contains(Header.CONTENT_LENGTH)) {
             this.expectedLength = httpHeaders.get(Header.CONTENT_LENGTH).value(long.class);
         }
-        String path = headers.path();
-        Http.Method method = headers.method();
-
-        // todo configure path validation
-        HttpPrologue httpPrologue = HttpPrologue.create(PROTOCOL,
-                                                        PROTOCOL_VERSION,
-                                                        method,
-                                                        path,
-                                                        true);
 
         subProtocolHandler = null;
 
         for (Http2SubProtocolProvider provider : SUB_PROTOCOL_PROVIDERS) {
             SubProtocolResult subProtocolResult = provider.subProtocol(ctx,
-                                                                       httpPrologue,
+                                                                       prologue,
                                                                        headers,
                                                                        writer,
                                                                        streamId,
@@ -395,7 +388,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             //            }
             ContentDecoder decoder = ContentDecoder.NO_OP;
             Http2ServerRequest request = Http2ServerRequest.create(ctx,
-                                                                   httpPrologue,
+                                                                   prologue,
                                                                    headers,
                                                                    decoder,
                                                                    streamId,
