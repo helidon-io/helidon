@@ -322,7 +322,7 @@ class WebClientConfiguration {
         private MessageBodyWriterContext writerContext;
         private boolean validateHeaders;
         private boolean relativeUris;
-        public DnsResolverType dnsResolverType;
+        private DnsResolverType dnsResolverType;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
