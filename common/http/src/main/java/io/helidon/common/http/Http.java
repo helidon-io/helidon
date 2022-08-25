@@ -1510,6 +1510,16 @@ public final class Http {
          */
         public static final HeaderName X_FORWARDED_HOST = HeaderEnum.X_FORWARDED_HOST;
         /**
+         * The {@code X-Forwarded-Port} header name.
+         * Used to represent the original port requested by a client, when request passed through a proxy server.
+         */
+        public static final HeaderName X_FORWARDED_PORT = HeaderEnum.X_FORWARDED_PORT;
+        /**
+         * The {@code X-Forwarded-Prefix} header name.
+         * Used to represent the original path prefix requested by a client, when request passed through a proxy server.
+         */
+        public static final HeaderName X_FORWARDED_PREFIX = HeaderEnum.X_FORWARDED_PREFIX;
+        /**
          * The {@code X-Forwarded-Proto} header name.
          * Used to represent the original protocol used by a client, when request passed through a proxy server.
          */

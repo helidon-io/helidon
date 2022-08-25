@@ -46,8 +46,6 @@ abstract class Http1ServerRequest extends HttpRequestBase implements RoutingRequ
     private HeadersWritable<?> writable;
 
     private HttpPrologue newPrologue;
-    // cached authority
-    private String authority;
 
     Http1ServerRequest(ConnectionContext ctx,
                        HttpPrologue prologue,
