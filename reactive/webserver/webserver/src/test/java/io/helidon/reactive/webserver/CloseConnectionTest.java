@@ -27,7 +27,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,11 +84,11 @@ public class CloseConnectionTest {
 
     @Test
     void closeManually() throws Exception {
-        try (SocketHttpClient c = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient c = SocketHttpClient.create(webServer.port())) {
             c.request(Http.Method.GET);
             String result = c.receive();
             Single.create(closedConnectionFuture, true).await(TIME_OUT);
-            SocketHttpClient.assertConnectionIsClosed(c);
+            c.assertConnectionIsClosed();
             assertThat(result, containsString("item0"));
             assertThat(result, not(containsString("item9")));
         }

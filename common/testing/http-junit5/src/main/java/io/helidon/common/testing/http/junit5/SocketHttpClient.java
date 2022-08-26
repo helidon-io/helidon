@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.testing.junit5.webserver;
+package io.helidon.common.testing.http.junit5;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,30 +26,27 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
-
-import org.hamcrest.core.Is;
-import org.hamcrest.core.StringEndsWith;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 
 /**
  * The SocketHttpClient provides means to simply pass any bytes over the network
  * and to see how a server deals with such a case.
  */
-public class SocketHttpClient {
+public class SocketHttpClient implements AutoCloseable {
 
     private static final System.Logger LOGGER = System.getLogger(SocketHttpClient.class.getName());
 
@@ -57,68 +54,38 @@ public class SocketHttpClient {
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
     private final String host;
     private final int port;
+    private final Duration timeout;
 
-    private Duration timeout;
     private Socket socket;
     private boolean connected;
 
-    /**
-     * Creates the instance linked with the provided server.
-     *
-     * @param host    host to connect to
-     * @param port    port to connect to
-     * @param timeout to use when connecting
-     */
-    public SocketHttpClient(String host, int port, Duration timeout) {
+    protected SocketHttpClient(String host, int port, Duration timeout) {
         this.host = host;
         this.port = port;
         this.timeout = timeout;
     }
 
     /**
-     * Creates the instance linked with the provided server.
-     * Timeout is set to 5 seconds.
+     * Socket client that allows sending any content.
      *
-     * @param host host to connect to
-     * @param port port to connect to
+     * @param host    host to connect to
+     * @param port    port to connect to
+     * @param timeout socket timeout
+     * @return a new (disconnected) client
      */
-    public SocketHttpClient(String host, int port) {
-        this(host, port, Duration.of(5, ChronoUnit.SECONDS));
+    public static SocketHttpClient create(String host, int port, Duration timeout) {
+        return new SocketHttpClient(host, port, timeout);
     }
 
     /**
-     * Assert that the socket associated with the provided client is working and open.
+     * Socket client that allows sending any content.
+     * Uses localhost and timeout of 5 seconds.
      *
-     * @param s the socket client
+     * @param port    port to connect to
+     * @return a new (disconnected) client
      */
-    public static void assertConnectionIsOpen(SocketHttpClient s) {
-        // get
-        s.request(Http.Method.GET);
-        // assert
-        assertThat(s.receive(), StringEndsWith.endsWith("\n9\nIt works!\n0\n\n"));
-    }
-
-    /**
-     * Assert that the socket associated with the provided client is closed.
-     *
-     * @param s the socket client
-     */
-    public static void assertConnectionIsClosed(SocketHttpClient s) {
-        // get
-        s.request(Http.Method.POST, null);
-        // assert
-        try {
-            // when the connection is closed before we start reading, just "" is returned by receive()
-            assertThat(s.receive(), Is.is(""));
-        } catch (UncheckedIOException e) {
-            if (e.getCause() instanceof SocketException) {
-                // "Connection reset" exception is thrown in case we were fast enough and started receiving the response
-                // before it was closed
-                LOGGER.log(System.Logger.Level.TRACE, "Received: " + e.getMessage());
-            } else {
-                throw e;
-            }
-        }
+    public static SocketHttpClient create(int port) {
+        return create("localhost", port, Duration.ofSeconds(5));
     }
 
     /**
@@ -143,7 +110,8 @@ public class SocketHttpClient {
      * @param response full HTTP response
      * @return headers map
      */
-    public static Map<String, String> headersFromResponse(String response) {
+    public static HeadersClientResponse headersFromResponse(String response) {
+        HeadersWritable<?> headers = HeadersWritable.create();
 
         assertThat(response, notNullValue());
         int index = response.indexOf("\n\n");
@@ -153,9 +121,9 @@ public class SocketHttpClient {
         String hdrsPart = response.substring(0, index);
         String[] lines = hdrsPart.split("\\n");
         if (lines.length <= 1) {
-            return Collections.emptyMap();
+            return HeadersClientResponse.create(headers);
         }
-        Map<String, String> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
         boolean first = true;
         for (String line : lines) {
             if (first) {
@@ -166,9 +134,9 @@ public class SocketHttpClient {
             if (i < 0) {
                 throw new AssertionError("Header without semicolon - " + line);
             }
-            result.put(line.substring(0, i).trim(), line.substring(i + 1).trim());
+            headers.add(Http.Header.create(line.substring(0, i).trim()), line.substring(i + 1).trim());
         }
-        return result;
+        return HeadersClientResponse.create(headers);
     }
 
     /**
@@ -216,6 +184,42 @@ public class SocketHttpClient {
         }
 
         return response.substring(index + 2);
+    }
+
+    @Override
+    public void close() throws Exception {
+        disconnect();
+    }
+
+    /**
+     * Assert that the socket is working and open.
+     */
+    public void assertConnectionIsOpen() {
+        // get
+        request(Http.Method.GET, "/this/path/should/not/exist", null);
+        // assert
+        assertThat(receive(), containsString("HTTP/1.1"));
+    }
+
+    /**
+     * Assert that the socket is closed.
+     */
+    public void assertConnectionIsClosed() {
+        // get
+        request(Http.Method.POST, null);
+        // assert
+        try {
+            // when the connection is closed before we start reading, just "" is returned by receive()
+            assertThat(receive(), is(""));
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof SocketException) {
+                // "Connection reset" exception is thrown in case we were fast enough and started receiving the response
+                // before it was closed
+                LOGGER.log(System.Logger.Level.TRACE, "Received: " + e.getMessage());
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**

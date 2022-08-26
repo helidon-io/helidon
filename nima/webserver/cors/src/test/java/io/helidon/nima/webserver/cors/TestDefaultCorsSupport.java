@@ -27,8 +27,8 @@ import io.helidon.nima.webserver.http.HttpRules;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.common.testing.http.HttpHeaderMatcher.hasHeader;
-import static io.helidon.common.testing.http.HttpHeaderMatcher.noHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

@@ -24,8 +24,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.media.common.DefaultMediaSupport;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ResourceLeakDetector;
@@ -138,9 +138,10 @@ public class DataChunkReleaseTest {
                     .start()
                     .await(2, TimeUnit.SECONDS);
 
+            SocketHttpClient client = SocketHttpClient.create(server.port());
 
             for (int i = 0; i < 30; i++) {
-                assertThat("Unexpected response", get(" ", server), is(endsWith("OK")));
+                assertThat("Unexpected response", get(client, " "), is(endsWith("OK")));
             }
 
         } finally {
@@ -151,9 +152,9 @@ public class DataChunkReleaseTest {
         assertFalse(leakIntercepted, "Chunk was not released!");
     }
 
-    private String get(String content, WebServer server) {
+    private String get(SocketHttpClient client, String content) {
         try {
-            return SocketHttpClient.sendAndReceive("/", Http.Method.GET, content, server);
+            return client.sendAndReceive("/", Http.Method.GET, content);
         } catch (Exception e) {
             fail("Error when sending test GET request", e);
             return null;

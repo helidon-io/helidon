@@ -16,6 +16,7 @@
 
 package io.helidon.reactive.webserver;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,20 +41,21 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 /**
  * Tests transfer encoding and optimizations.
  */
-public class TransferEncodingTest {
+class TransferEncodingTest {
 
     private static final Logger LOGGER = Logger.getLogger(TransferEncodingTest.class.getName());
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
+    private static SocketHttpClient client;
 
     /**
      * Start the Web Server
      *
      * @param port the port on which to start the server; if less than 1,
      * the port is dynamically selected
-     * @throws Exception in case of an error
      */
-    private static void startServer(int port) throws Exception {
+    private static void startServer(int port) {
         webServer = WebServer.builder()
                 .defaultSocket(s -> s
                         .host("localhost")
@@ -84,8 +86,9 @@ public class TransferEncodingTest {
                 )
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(TIMEOUT);
+
+        client = SocketHttpClient.create(webServer.port());
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -96,8 +99,8 @@ public class TransferEncodingTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEmptyContentLength() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/empty", Http.Method.GET, null, webServer);
+    void testEmptyContentLength() throws Exception {
+        String s = client.sendAndReceive("/empty", Http.Method.GET, null);
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("content-length", "0"));
     }
@@ -108,8 +111,8 @@ public class TransferEncodingTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEmptyChunked() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/emptychunked", Http.Method.GET, null, webServer);
+    void testEmptyChunked() throws Exception {
+        String s = client.sendAndReceive("/emptychunked", Http.Method.GET, null);
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("transfer-encoding", "chunked"));
     }
@@ -120,8 +123,8 @@ public class TransferEncodingTest {
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testContentLength() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/length", Http.Method.GET, null, webServer);
+    void testContentLength() throws Exception {
+        String s = client.sendAndReceive("/length", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry(equalToIgnoringCase("content-length"), is("9")));
@@ -129,12 +132,10 @@ public class TransferEncodingTest {
 
     /**
      * Test chunked encoding.
-     *
-     * @throws Exception If an error occurs.
      */
     @Test
-    public void testChunkedEncoding() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/chunked", Http.Method.GET, null, webServer);
+    void testChunkedEncoding() {
+        String s = client.sendAndReceive("/chunked", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("transfer-encoding", "chunked"));
@@ -142,12 +143,10 @@ public class TransferEncodingTest {
 
     /**
      * Test optimized or content length in this case.
-     *
-     * @throws Exception If an error occurs.
      */
     @Test
-    public void testOptimized() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/optimized", Http.Method.GET, null, webServer);
+    void testOptimized() {
+        String s = client.sendAndReceive("/optimized", Http.Method.GET, null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, hasEntry("content-length", "9"));
@@ -196,13 +195,13 @@ public class TransferEncodingTest {
     }
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         // start the server at a free port
         startServer(0);
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .toCompletableFuture()

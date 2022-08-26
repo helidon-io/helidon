@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.testing.http;
+package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
 

@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,10 +40,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class HttpPipelineTest {
     private static final Logger LOGGER = Logger.getLogger(HttpPipelineTest.class.getName());
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
-
-    private static WebServer webServer;
     private static final AtomicInteger counter = new AtomicInteger(0);
     private static final ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+
+    private static WebServer webServer;
+    private static SocketHttpClient client;
 
     @BeforeAll
     public static void startServer() throws Exception {
@@ -58,7 +59,30 @@ public class HttpPipelineTest {
         }
     }
 
-    private static void startServer(int port) throws Exception {
+    /**
+     * Pipelines request_0 and request_1 and makes sure responses are returned in the
+     * correct order. Note that the server will delay the response for request_0 to
+     * make sure they are properly synchronized.
+     *
+     * @throws Exception If there are connection problems.
+     */
+    @Test
+    public void testPipelining() throws Exception {
+        client.request(Http.Method.PUT, "/");        // reset server
+        client.request(Http.Method.GET, null);        // request_0
+        client.request(Http.Method.GET, null);        // request_1
+        log("put client");
+        String reset = client.receive();
+        assertThat(reset, notNullValue());
+        log("request0 client");
+        String request_0 = client.receive();
+        assertThat(request_0, containsString("Response 0"));
+        log("request1 client");
+        String request_1 = client.receive();
+        assertThat(request_1, containsString("Response 1"));
+    }
+
+    private static void startServer(int port) {
         webServer = WebServer.builder()
                 .host("localhost")
                 .port(port)
@@ -78,42 +102,19 @@ public class HttpPipelineTest {
                             int n = counter.getAndIncrement();
                             int delay = (n % 2 == 0) ? 1000 : 0;    // alternate delay 1 second and no delay
                             executor.schedule(() -> {
-                                        log("get server schedule");
-                                        res.status(Http.Status.OK_200).send("Response " + n + "\n");
-                                    },
-                                    delay, TimeUnit.MILLISECONDS);
+                                                  log("get server schedule");
+                                                  res.status(Http.Status.OK_200).send("Response " + n + "\n");
+                                              },
+                                              delay, TimeUnit.MILLISECONDS);
                         })
                 )
                 .build()
                 .start()
                 .await(TIMEOUT);
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
-    }
+        client = SocketHttpClient.create(webServer.port());
 
-    /**
-     * Pipelines request_0 and request_1 and makes sure responses are returned in the
-     * correct order. Note that the server will delay the response for request_0 to
-     * make sure they are properly synchronized.
-     *
-     * @throws Exception If there are connection problems.
-     */
-    @Test
-    public void testPipelining() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
-            s.request(Http.Method.PUT, "/");        // reset server
-            s.request(Http.Method.GET, null);        // request_0
-            s.request(Http.Method.GET, null);        // request_1
-            log("put client");
-            String reset = s.receive();
-            assertThat(reset, notNullValue());
-            log("request0 client");
-            String request_0 = s.receive();
-            assertThat(request_0, containsString("Response 0"));
-            log("request1 client");
-            String request_1 = s.receive();
-            assertThat(request_1, containsString("Response 1"));
-        }
+        LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
 
     private static void log(String prefix) {

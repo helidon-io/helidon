@@ -18,7 +18,7 @@ package io.helidon.nima.webserver.staticcontent;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.testing.http.HttpHeaderMatcher;
+import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
 import io.helidon.nima.testing.junit5.webserver.RoutingTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;

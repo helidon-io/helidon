@@ -17,33 +17,33 @@
 package io.helidon.nima.tests.integration.server;
 
 import java.util.List;
-import java.util.Map;
 
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.testing.junit5.webserver.SocketHttpClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 @ServerTest
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
     public static final String CUSTOM_ENTITY = "There we go";
+    private static final Http.HeaderValue LOCATION_ERROR_PAGE = Http.HeaderValue.create(Header.LOCATION, "/errorPage");
 
     private final Http1Client client;
     private final SocketHttpClient socketClient;
@@ -98,8 +98,8 @@ class BadRequestTest {
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
 
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(response);
-        assertThat(headers, hasEntry(equalToIgnoringCase("Location"), is("/errorPage")));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers, hasHeader(LOCATION_ERROR_PAGE));
     }
 
     @Test

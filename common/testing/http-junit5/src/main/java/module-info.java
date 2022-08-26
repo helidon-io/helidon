@@ -23,5 +23,5 @@ module io.helidon.common.testing.http.junit5 {
     requires hamcrest.all;
     requires org.junit.jupiter.api;
 
-    exports io.helidon.common.testing.http;
+    exports io.helidon.common.testing.http.junit5;
 }

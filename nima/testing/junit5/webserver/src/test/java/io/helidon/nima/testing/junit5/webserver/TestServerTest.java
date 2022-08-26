@@ -18,6 +18,7 @@ package io.helidon.nima.testing.junit5.webserver;
 
 import java.net.URI;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 

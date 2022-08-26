@@ -15,10 +15,11 @@
  */
 package io.helidon.examples.se.httpstatuscount;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Status;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.RegistryFactory;
@@ -37,10 +38,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class StatusTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
     private static WebClient webClient;
@@ -52,7 +57,7 @@ public class StatusTest {
         Routing.Builder routingBuilder = Main.createRouting(Config.create());
         routingBuilder.register("/status", new StatusService());
 
-        webServer = Main.startServer(routingBuilder).await();
+        webServer = Main.startServer(routingBuilder).await(TIMEOUT);
 
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
@@ -64,8 +69,7 @@ public class StatusTest {
     public static void stopServer() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
+                    .await(TIMEOUT);
         }
     }
 
@@ -80,13 +84,13 @@ public class StatusTest {
 
     @Test
     void checkStatusMetrics() throws ExecutionException, InterruptedException {
-        checkAfterStatus(171);
-        checkAfterStatus(200);
-        checkAfterStatus(201);
-        checkAfterStatus(204);
-        checkAfterStatus(301);
-        checkAfterStatus(401);
-        checkAfterStatus(404);
+        checkAfterStatus(Status.create(171));
+        checkAfterStatus(Status.OK_200);
+        checkAfterStatus(Status.CREATED_201);
+        checkAfterStatus(Status.NO_CONTENT_204);
+        checkAfterStatus(Status.MOVED_PERMANENTLY_301);
+        checkAfterStatus(Status.UNAUTHORIZED_401);
+        checkAfterStatus(Status.NOT_FOUND_404);
     }
 
     @Test
@@ -100,26 +104,39 @@ public class StatusTest {
                 .accept(MediaTypes.APPLICATION_JSON)
                 .request()
                 .get();
-        assertThat("Status of /greet", response.status().code(), is(Http.Status.OK_200.code()));
-        checkCounters(response.status().code(), before);
+        assertThat("Status of /greet", response.status(), is(Status.OK_200));
+        String entity = response.content().as(String.class).await(TIMEOUT);
+        assertThat(entity, not(isEmptyString()));
+        checkCounters(response.status(), before);
     }
 
-    void checkAfterStatus(int status) throws ExecutionException, InterruptedException {
+    void checkAfterStatus(Status status) throws ExecutionException, InterruptedException {
         long[] before = new long[6];
         for (int i = 1; i < 6; i++) {
             before[i] = STATUS_COUNTERS[i].getCount();
         }
         WebClientResponse response = webClient.get()
-                .path("/status/" + status)
+                .path("/status/" + status.code())
                 .accept(MediaTypes.APPLICATION_JSON)
                 .request()
                 .get();
-        assertThat("Response status", response.status().code(), is(status));
+        assertThat("Response status", response.status(), is(status));
+        response.content().as(String.class).await(TIMEOUT);
         checkCounters(status, before);
     }
 
-    private void checkCounters(int status, long[] before) {
-        int family = status / 100;
+    private void checkCounters(Status status, long[] before) throws InterruptedException {
+        // first make sure we do not have a request in progress
+        long now = System.currentTimeMillis();
+
+        while (HttpStatusMetricService.isInProgress()) {
+            Thread.sleep(50);
+            if (System.currentTimeMillis() - now > 5000) {
+                fail("Timed out while waiting for monitoring to finish");
+            }
+        }
+
+        int family = status.code() / 100;
         for (int i = 1; i < 6; i++) {
             long expectedDiff = i == family ? 1 : 0;
             assertThat("Diff in counter " + family + "xx", STATUS_COUNTERS[i].getCount() - before[i], is(expectedDiff));

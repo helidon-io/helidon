@@ -17,28 +17,29 @@ package io.helidon.reactive.webserver;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 
-public class TestNettyRejectRequest {
+class TestNettyRejectRequest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer server;
+    private static SocketHttpClient client;
 
     @BeforeAll
-    public static void createAndStartServer() {
+    static void createAndStartServer() {
         server = WebServer.builder()
                 .host("localhost")
                 .routing(Routing.builder()
@@ -47,32 +48,35 @@ public class TestNettyRejectRequest {
                 .build()
                 .start()
                 .await(TIMEOUT);
+        client = SocketHttpClient.create(server.port());
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    static void stopServer() throws Exception {
         if (server != null) {
             server.shutdown()
                     .await(TIMEOUT);
         }
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Test
-    public void testBadHeader() throws Exception {
+    void testBadHeader() throws Exception {
         // Cannot use WebClient or HttpURLConnection for this test because they use Netty's DefaultHttpHeaders
         // which prevents bad headers from being sent to the server.
 
-        String response = SocketHttpClient.sendAndReceive("/any",
-                                                          Http.Method.GET,
-                                                          null,
-                                                          List.of("Accept: text/plain", "Bad=Header: anything"),
-                                                          server);
+        String response = client.sendAndReceive("/any",
+                                                Http.Method.GET,
+                                                null,
+                                                List.of("Accept: text/plain", "Bad=Header: anything"));
 
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(response);
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(response);
         Http.Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
 
-        assertThat(headers, hasKey(equalToIgnoringCase("content-length")));
+        assertThat(headers, hasHeader(Http.Header.CONTENT_LENGTH));
         assertThat(status, is(Http.Status.BAD_REQUEST_400));
         assertThat(entity, containsString("prohibited characters"));
     }

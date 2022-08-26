@@ -26,6 +26,7 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.LogConfig;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.ListenerConfiguration;
@@ -55,7 +56,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
     private Class<?> testClass;
     private WebServer server;
     private final LazyValue<SocketHttpClient> socketHttpClient =
-            LazyValue.create(() -> new SocketHttpClient("localhost", server.port()));
+            LazyValue.create(() -> SocketHttpClient.create(server.port()));
     private final LazyValue<Http1Client> httpClient =
             LazyValue.create(() -> WebClient.builder()
                     .baseUri("http://localhost:" + server.port())

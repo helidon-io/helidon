@@ -19,22 +19,27 @@ package io.helidon.reactive.webserver;
 import java.time.Duration;
 import java.util.logging.Logger;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
 
 class BaseServerTest {
     private static final Logger LOGGER = Logger.getLogger(BaseServerTest.class.getName());
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private static WebServer webServer;
     private static WebClient webClient;
+    private static SocketHttpClient socketClient;
 
     @AfterAll
     static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIMEOUT);
+        }
+        if (socketClient != null) {
+            socketClient.close();
         }
     }
 
@@ -44,6 +49,10 @@ class BaseServerTest {
 
     protected static WebClient webClient() {
         return webClient;
+    }
+
+    protected static SocketHttpClient socketClient() {
+        return socketClient;
     }
 
     protected static void startServer(int port, Routing routing) throws Exception {
@@ -62,6 +71,8 @@ class BaseServerTest {
                 .validateHeaders(false)
                 .keepAlive(true)
                 .build();
+
+        socketClient = SocketHttpClient.create(webServer.port());
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }

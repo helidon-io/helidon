@@ -21,7 +21,7 @@ import java.util.List;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.testing.junit5.webserver.SocketHttpClient;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webserver.HtmlEncoder;
 import io.helidon.nima.webserver.http.HttpRules;
 

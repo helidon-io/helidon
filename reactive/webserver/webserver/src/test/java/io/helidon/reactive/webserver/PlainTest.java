@@ -30,39 +30,41 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.utils.SocketHttpClient;
 
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsIterableWithSize;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.HeaderValues.TRANSFER_ENCODING_CHUNKED;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.hamcrest.collection.IsMapContaining.hasKey;
 
 /**
  * The PlainTest.
  */
-public class PlainTest {
+class PlainTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(25);
     private static final Logger LOGGER = Logger.getLogger(PlainTest.class.getName());
     private static final RuntimeException TEST_EXCEPTION = new RuntimeException("BOOM!");
     private static WebServer webServer;
+    private static SocketHttpClient client;
 
     /**
      * Start the Web Server
@@ -77,378 +79,387 @@ public class PlainTest {
                             res.headers().set(TRANSFER_ENCODING_CHUNKED);
                             req.next();
                         })
-                                 .any("/exception", (req, res) -> {
-                                     throw new RuntimeException("my always thrown exception");
-                                 })
-                                 .get("/", (req, res) -> {
-                                     res.send("It works!");
-                                 })
-                                 .post("/unconsumed", (req, res) -> res.send("Payload not consumed!"))
-                                 .any("/deferred", (req, res) -> ForkJoinPool.commonPool().submit(() -> {
-                                     Thread.yield();
-                                     res.send("I'm deferred!");
-                                 }))
-                                 .trace("/trace", (req, res) -> {
-                                     res.send("In trace!");
-                                 })
-                                 .get("/force-chunked", (req, res) -> {
-                                     res.headers().set(TRANSFER_ENCODING_CHUNKED);
-                                     res.send("abcd");
-                                 })
-                                 .get("/multi", (req, res) -> {
-                                     res.send(Multi.just("test 1", "test 2", "test 3")
-                                                      .map(String::getBytes)
-                                                      .map(DataChunk::create));
-                                 })
-                                 .get("/multiFirstError", (req, res) -> {
-                                     res.send(Multi.error(TEST_EXCEPTION));
-                                 })
-                                 .get("/multiSecondError", (req, res) -> {
-                                     res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
-                                                           Multi.error(TEST_EXCEPTION)));
-                                 })
-                                 .get("/multiThirdError", (req, res) -> {
-                                     res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
-                                                           Multi.error(TEST_EXCEPTION)));
-                                 })
-                                 .get("/multiDelayedThirdError", (req, res) -> {
-                                     res.send(Multi.interval(100, 100, TimeUnit.MILLISECONDS,
-                                                             Executors.newSingleThreadScheduledExecutor())
-                                                      .peek(i -> {
-                                                          if (i > 2) {
-                                                              throw TEST_EXCEPTION;
-                                                          }
-                                                      })
-                                                      .map(i -> DataChunk.create(("test " + i).getBytes())));
-                                 })
-                                 .get("/multi", (req, res) -> {
-                                     res.send(Multi.just("test1", "test2")
-                                                      .map(i -> DataChunk.create(String.valueOf(i).getBytes())));
-                                 })
-                                 .get("/absoluteUri", (req, res) -> {
-                                     res.send(req.absoluteUri().toString());
-                                 })
-                                 .any(Handler.create(String.class, (req, res, entity) -> {
-                                     res.send("It works! Payload: " + entity);
-                                 })))
+                        .any("/exception", (req, res) -> {
+                            throw new RuntimeException("my always thrown exception");
+                        })
+                        .get("/", (req, res) -> {
+                            res.send("It works!");
+                        })
+                        .post("/unconsumed", (req, res) -> res.send("Payload not consumed!"))
+                        .any("/deferred", (req, res) -> ForkJoinPool.commonPool().submit(() -> {
+                            Thread.yield();
+                            res.send("I'm deferred!");
+                        }))
+                        .trace("/trace", (req, res) -> {
+                            res.send("In trace!");
+                        })
+                        .get("/force-chunked", (req, res) -> {
+                            res.headers().set(TRANSFER_ENCODING_CHUNKED);
+                            res.send("abcd");
+                        })
+                        .get("/multi", (req, res) -> {
+                            res.send(Multi.just("test 1", "test 2", "test 3")
+                                             .map(String::getBytes)
+                                             .map(DataChunk::create));
+                        })
+                        .get("/multiFirstError", (req, res) -> {
+                            res.send(Multi.error(TEST_EXCEPTION));
+                        })
+                        .get("/multiSecondError", (req, res) -> {
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/multiThirdError", (req, res) -> {
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                                  Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/multiDelayedThirdError", (req, res) -> {
+                            res.send(Multi.interval(100, 100, TimeUnit.MILLISECONDS,
+                                                    Executors.newSingleThreadScheduledExecutor())
+                                             .peek(i -> {
+                                                 if (i > 2) {
+                                                     throw TEST_EXCEPTION;
+                                                 }
+                                             })
+                                             .map(i -> DataChunk.create(("test " + i).getBytes())));
+                        })
+                        .get("/multi", (req, res) -> {
+                            res.send(Multi.just("test1", "test2")
+                                             .map(i -> DataChunk.create(String.valueOf(i).getBytes())));
+                        })
+                        .get("/absoluteUri", (req, res) -> {
+                            res.send(req.absoluteUri().toString());
+                        })
+                        .any(Handler.create(String.class, (req, res, entity) -> {
+                            res.send("It works! Payload: " + entity);
+                        })))
                 .build()
                 .start()
                 .await(TIMEOUT);
+
+        client = SocketHttpClient.create(webServer.port());
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIMEOUT);
         }
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @BeforeEach
+    void resetSocketClient() {
+        client.disconnect();
+        client.connect();
+    }
+    @Test
+    void getTest() {
+        String s = client.sendAndReceive(Http.Method.GET, null);
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(SocketHttpClient.entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
     }
 
     @Test
-    public void getTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive(Http.Method.GET, null, webServer);
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasEntry(equalToIgnoringCase("connection"), is("keep-alive")));
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
+    void getDeferredTest() {
+        String s = client.sendAndReceive("/deferred", Http.Method.GET, null);
+        assertThat(SocketHttpClient.entityFromResponse(s, true), is("d\nI'm deferred!\n0\n\n"));
     }
 
     @Test
-    public void getDeferredTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/deferred", Http.Method.GET, null, webServer);
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, true), is("d\nI'm deferred!\n0\n\n"));
+    void getWithPayloadDeferredTest() {
+        String s = client.sendAndReceive("/deferred", Http.Method.GET, "illegal-payload");
+        assertThat(SocketHttpClient.entityFromResponse(s, true), is("d\nI'm deferred!\n0\n\n"));
     }
 
     @Test
-    public void getWithPayloadDeferredTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/deferred", Http.Method.GET, "illegal-payload", webServer);
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, true), is("d\nI'm deferred!\n0\n\n"));
+    void getWithLargePayloadDeferredTest() {
+        String s = client.sendAndReceive("/deferred",
+                                         Http.Method.GET,
+                                         SocketHttpClient.longData(100_000).toString());
+        assertThat(SocketHttpClient.entityFromResponse(s, true), is("d\nI'm deferred!\n0\n\n"));
     }
 
     @Test
-    public void getWithLargePayloadDeferredTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/deferred",
-                                                   Http.Method.GET,
-                                                   SocketHttpClient.longData(100_000).toString(),
-                                                   webServer);
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, true), is("d\nI'm deferred!\n0\n\n"));
+    void getWithPayloadTest() {
+        String s = client.sendAndReceive(Http.Method.GET, "test-payload");
+        assertThat(SocketHttpClient.entityFromResponse(s, true), is("9\nIt works!\n0\n\n"));
     }
 
     @Test
-    public void getWithPayloadTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive(Http.Method.GET, "test-payload", webServer);
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, true), is("9\nIt works!\n0\n\n"));
+    void postNoPayloadTest() {
+        String s = client.sendAndReceive(Http.Method.POST, null);
+        assertThat(SocketHttpClient.entityFromResponse(s, true), is("13\nIt works! Payload: \n0\n\n"));
     }
 
     @Test
-    public void postNoPayloadTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive(Http.Method.POST, null, webServer);
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, true), is("13\nIt works! Payload: \n0\n\n"));
+    void simplePostTest() {
+        String s = client.sendAndReceive(Http.Method.POST, "test-payload");
+        assertThat(SocketHttpClient.entityFromResponse(s, true), is("1f\nIt works! Payload: test-payload\n0\n\n"));
     }
 
     @Test
-    public void simplePostTest() throws Exception {
-        String s = SocketHttpClient.sendAndReceive(Http.Method.POST, "test-payload", webServer);
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, true), is("1f\nIt works! Payload: test-payload\n0\n\n"));
-    }
-
-    @Test
-    public void twoGetsTest() throws Exception {
+    void twoGetsTest() {
         getTest();
         getTest();
     }
 
     @Test
-    public void twoGetsWithPayloadTest() throws Exception {
+    void twoGetsWithPayloadTest() {
         getWithPayloadTest();
         getWithPayloadTest();
     }
 
     @Test
-    public void testTwoGetsTheSameConnection() throws Exception {
+    void testTwoGetsTheSameConnection() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.GET);
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
             // get
             s.request(Http.Method.GET);
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
         }
     }
 
     @Test
-    public void testTwoPostsTheSameConnection() throws Exception {
+    void testTwoPostsTheSameConnection() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // post
             s.request(Http.Method.POST, "test-payload-1");
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("21\nIt works! Payload: test-payload-1\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true),
+                       is("21\nIt works! Payload: test-payload-1\n0\n\n"));
             // post
             s.request(Http.Method.POST, "test-payload-2");
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("21\nIt works! Payload: test-payload-2\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true),
+                       is("21\nIt works! Payload: test-payload-2\n0\n\n"));
         }
     }
 
     @Test
-    public void postGetPostGetTheSameConnection() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+    void postGetPostGetTheSameConnection() throws Exception {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // post
             s.request(Http.Method.POST, "test-payload-1");
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("21\nIt works! Payload: test-payload-1\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true),
+                       is("21\nIt works! Payload: test-payload-1\n0\n\n"));
             // get
             s.request(Http.Method.GET);
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
             // post
             s.request(Http.Method.POST, "test-payload-2");
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("21\nIt works! Payload: test-payload-2\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true),
+                       is("21\nIt works! Payload: test-payload-2\n0\n\n"));
             // get
             s.request(Http.Method.GET);
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
         }
     }
 
     @Test
-    public void getWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
+    void getWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.GET, SocketHttpClient.longData(100_000).toString());
 
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void traceWithAnyPayloadCausesConnectionCloseButDoesNotFail() throws Exception {
+    void traceWithAnyPayloadCausesConnectionCloseButDoesNotFail() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.TRACE, "/trace", "small");
 
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIn trace!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIn trace!\n0\n\n"));
+            s.assertConnectionIsClosed();
         }
     }
 
     @Test
-    public void traceWithAnyPayloadCausesConnectionCloseAndBadRequestWhenHandled() throws Exception {
+    void traceWithAnyPayloadCausesConnectionCloseAndBadRequestWhenHandled() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.TRACE, "small");
 
             // assert that the Handler.of ContentReader transforms the exception to 400 error
             assertThat(s.receive(), startsWith("HTTP/1.1 400 Bad Request\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            s.assertConnectionIsClosed();
         }
     }
 
     @Test
-    public void deferredGetWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
+    void deferredGetWithLargePayloadDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.GET, "/deferred", SocketHttpClient.longData(100_000).toString());
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void getWithIllegalSmallEnoughPayloadDoesntCauseConnectionClose() throws Exception {
+    void getWithIllegalSmallEnoughPayloadDoesntCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.GET, "illegal-but-small-enough-payload");
 
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void unconsumedSmallPostDataDoesNotCauseConnectionClose() throws Exception {
+    void unconsumedSmallPostDataDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.POST, "/unconsumed", "not-consumed-payload");
             String received = s.receive();
             System.out.println(received);
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(received, true), is("15\nPayload not consumed!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            assertThat(SocketHttpClient.entityFromResponse(received, true), is("15\nPayload not consumed!\n0\n\n"));
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void unconsumedLargePostDataDoesNotCauseConnectionClose() throws Exception {
+    void unconsumedLargePostDataDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.POST, "/unconsumed", SocketHttpClient.longData(100_000).toString());
 
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("15\nPayload not consumed!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("15\nPayload not consumed!\n0\n\n"));
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void unconsumedDeferredLargePostDataDoesNotCauseConnectionClose() throws Exception {
+    void unconsumedDeferredLargePostDataDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.POST, "/deferred", SocketHttpClient.longData(100_000).toString());
 
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("d\nI'm deferred!\n0\n\n"));
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void errorHandlerWithGetPayloadDoesNotCauseConnectionClose() throws Exception {
+    void errorHandlerWithGetPayloadDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.GET, "/exception", "not-consumed-payload");
 
             // assert
             assertThat(s.receive(), startsWith("HTTP/1.1 500 Internal Server Error\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void errorHandlerWithPostDataDoesNotCauseConnectionClose() throws Exception {
+    void errorHandlerWithPostDataDoesNotCauseConnectionClose() throws Exception {
         // open
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.POST, "/exception", "not-consumed-payload");
 
             // assert
             assertThat(s.receive(), startsWith("HTTP/1.1 500 Internal Server Error\n"));
-            SocketHttpClient.assertConnectionIsOpen(s);
+            s.assertConnectionIsOpen();
         }
     }
 
     @Test
-    public void testConnectionCloseWhenKeepAliveOff() throws Exception {
-        try (SocketHttpClient s = new SocketHttpClient(webServer)) {
+    void testConnectionCloseWhenKeepAliveOff() throws Exception {
+        try (SocketHttpClient s = SocketHttpClient.create(webServer.port())) {
             // get
             s.request(Http.Method.GET, "/", null, List.of("Connection: close"));
 
             // assert
-            MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
-            SocketHttpClient.assertConnectionIsClosed(s);
+            assertThat(SocketHttpClient.entityFromResponse(s.receive(), true), is("9\nIt works!\n0\n\n"));
+            s.assertConnectionIsClosed();
         }
     }
 
     @Test
-    public void testForcedChunkedWithConnectionCloseHeader() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/force-chunked",
-                                                   Http.Method.GET,
-                                                   null,
-                                                   List.of("Connection: close"),
-                                                   webServer);
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, not(hasKey(equalToIgnoringCase("connection"))));
-        assertThat(headers, hasEntry(equalToIgnoringCase(Http.Header.TRANSFER_ENCODING.defaultCase()), is("chunked")));
+    void testForcedChunkedWithConnectionCloseHeader() {
+        String s = client.sendAndReceive("/force-chunked",
+                                         Http.Method.GET,
+                                         null,
+                                         List.of("Connection: close"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, noHeader(Http.Header.CONNECTION));
+        assertThat(headers, hasHeader(TRANSFER_ENCODING_CHUNKED));
 
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, false), is("4\nabcd\n0\n\n"));
+        assertThat(SocketHttpClient.entityFromResponse(s, false), is("4\nabcd\n0\n\n"));
     }
 
     @Test
-    public void testConnectionCloseHeader() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/",
-                                                   Http.Method.GET,
-                                                   null,
-                                                   List.of("Connection: close"),
-                                                   webServer);
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, not(hasKey(equalToIgnoringCase("connection"))));
-        MatcherAssert.assertThat(SocketHttpClient.entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
+    void testConnectionCloseHeader() {
+        String s = client.sendAndReceive("/",
+                                         Http.Method.GET,
+                                         null,
+                                         List.of("Connection: close"));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, noHeader(Http.Header.CONNECTION));
+        assertThat(SocketHttpClient.entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
     }
 
     @Test
-    public void testBadURL() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/?p=|",
-                                                   Http.Method.GET,
-                                                   null,
-                                                   List.of("Connection: close"),
-                                                   webServer);
+    void testBadURL() {
+        String s = client.sendAndReceive("/?p=|",
+                                         Http.Method.GET,
+                                         null,
+                                         List.of("Connection: close"));
         assertThat(s, containsString("400 Bad Request"));
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasKey(equalToIgnoringCase("content-type")));
-        assertThat(headers, hasKey(equalToIgnoringCase("content-length")));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(Http.Header.CONTENT_TYPE));
+        assertThat(headers, hasHeader(Http.Header.CONTENT_LENGTH));
     }
 
     @Test
-    public void testBadContentType() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/",
-                                                   Http.Method.GET,
-                                                   null,
-                                                   List.of("Content-Type: %", "Connection: close"),
-                                                   webServer);
+    void testBadContentType() {
+        String s = client.sendAndReceive("/",
+                                         Http.Method.GET,
+                                         null,
+                                         List.of("Content-Type: %", "Connection: close"));
         assertThat(s, containsString("400 Bad Request"));
-        Map<String, String> headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasKey(equalToIgnoringCase("content-type")));
-        assertThat(headers, hasKey(equalToIgnoringCase("content-length")));
+        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        assertThat(headers, hasHeader(Http.Header.CONTENT_TYPE));
+        assertThat(headers, hasHeader(Http.Header.CONTENT_LENGTH));
     }
 
     @Test
@@ -465,10 +476,10 @@ public class PlainTest {
     }
 
     @Test
-    public void testMulti() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multi",
-                                                   Http.Method.GET,
-                                                   null, webServer);
+    void testMulti() {
+        String s = client.sendAndReceive("/multi",
+                                         Http.Method.GET,
+                                         null);
         assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
         List<String> chunks = Arrays.stream(s.split("\\n[0-9]\\n?\\s*"))
                 .skip(1)
@@ -490,24 +501,23 @@ public class PlainTest {
      * stream-result: java.lang.RuntimeException: BOOM!
      */
     @Test
-    public void testMultiFirstError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiFirstError",
-                                                   Http.Method.GET,
-                                                   null, webServer);
-        System.out.println(s);
+    void testMultiFirstError() {
+        String s = client.sendAndReceive("/multiFirstError",
+                                         Http.Method.GET,
+                                         null);
 
         assertThat(s, startsWith("HTTP/1.1 500 Internal Server Error\n"));
-        MatcherAssert.assertThat(SocketHttpClient.headersFromResponse(s), hasKey(equalToIgnoringCase(Http.Header.TRAILER.defaultCase())));
+        assertThat(SocketHttpClient.headersFromResponse(s), hasHeader(Http.Header.TRAILER));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-status"), is("500")));
         assertThat(trailerHeaders, hasEntry(equalToIgnoringCase("stream-result"), is(TEST_EXCEPTION.toString())));
     }
 
     @Test
-    public void testMultiSecondError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiSecondError",
-                                                   Http.Method.GET,
-                                                   null, webServer);
+    void testMultiSecondError() {
+        String s = client.sendAndReceive("/multiSecondError",
+                                         Http.Method.GET,
+                                         null);
         assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry("stream-status", "500"));
@@ -515,10 +525,10 @@ public class PlainTest {
     }
 
     @Test
-    public void testMultiThirdError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiThirdError",
-                                                   Http.Method.GET,
-                                                   null, webServer);
+    void testMultiThirdError() {
+        String s = client.sendAndReceive("/multiThirdError",
+                                         Http.Method.GET,
+                                         null);
         assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
         Map<String, String> trailerHeaders = cutTrailerHeaders(s);
         assertThat(trailerHeaders, hasEntry("stream-status", "500"));
@@ -542,10 +552,10 @@ public class PlainTest {
      * stream-result: java.lang.RuntimeException: BOOM!
      */
     @Test
-    public void testMultiDelayedThirdError() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/multiDelayedThirdError",
-                                                   Http.Method.GET,
-                                                   null, webServer);
+    void testMultiDelayedThirdError() {
+        String s = client.sendAndReceive("/multiDelayedThirdError",
+                                         Http.Method.GET,
+                                         null);
         assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
         Map<String, String> headers = cutTrailerHeaders(s);
         assertThat(headers, hasEntry("stream-status", "500"));
