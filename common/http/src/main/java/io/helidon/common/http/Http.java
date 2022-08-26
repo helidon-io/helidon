@@ -308,6 +308,11 @@ public final class Http {
         }
 
         @Override
+        public String toString() {
+            return text();
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) {
                 return true;

@@ -107,82 +107,46 @@ public class Http1Connection implements ServerConnection {
     @Override
     public void handle() throws InterruptedException {
         try {
-            try {
-                doHandle();
-            } catch (CloseConnectionException | HttpException | UncheckedIOException e) {
-                throw e;
-            } catch (Throwable e) {
-                throw HttpException.builder()
-                        .message("Internal error")
-                        .type(EventType.INTERNAL_ERROR)
-                        .cause(e)
-                        .build();
-            }
-        } catch (HttpException e) {
-            if (e.fullResponse().isPresent()) {
-                ctx.simpleHandlers().handle(e, e.fullResponse().get());
-                return;
-            }
+            // handle connection until an exception (or explicit connection close)
+            while (true) {
+                // prologue (first line of request)
+                HttpPrologue prologue = http1prologue.readPrologue();
+                recvListener.prologue(ctx, prologue);
+                currentEntitySize = 0;
+                currentEntitySizeRead = 0;
 
-            SimpleHandler handler = ctx.simpleHandlers().handler(e.eventType());
-            SimpleHandler.SimpleResponse response = handler.handle(e.request(),
-                                                                   e.eventType(),
-                                                                   e.status(),
-                                                                   e.responseHeaders(),
-                                                                   e);
+                HeadersWritable<?> headers = http1headers.readHeaders(prologue);
+                recvListener.headers(ctx, headers);
 
-            BufferData buffer = BufferData.growing(128);
-            HeadersServerResponse headers = response.headers();
-            if (!e.keepAlive()) {
-                headers.set(HeaderValues.CONNECTION_CLOSE);
-            }
-            byte[] message = response.message().orElse(BufferData.EMPTY_BYTES);
-            if (message.length != 0) {
-                headers.set(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(message.length)));
-            }
-            Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
-            if (message.length != 0) {
-                buffer.write(message);
-            }
-
-            writer.write(buffer);
-
-            if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
-                LOGGER.log(WARNING, "Internal server error", e);
-            }
-        }
-    }
-
-    private void doHandle() throws InterruptedException {
-        // handle connection until an exception (or explicit connection close)
-        while (true) {
-            // prologue (first line of request)
-            HttpPrologue prologue = http1prologue.readPrologue();
-            recvListener.prologue(ctx, prologue);
-            currentEntitySize = 0;
-            currentEntitySizeRead = 0;
-
-            HeadersWritable<?> headers = http1headers.readHeaders(prologue);
-            recvListener.headers(ctx, headers);
-
-            if (canUpgrade) {
-                if (headers.contains(Http.Header.UPGRADE)) {
-                    Http1UpgradeProvider upgrader = upgradeProviderMap.get(headers.get(Http.Header.UPGRADE).value());
-                    if (upgrader != null) {
-                        ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
-                        // upgrader may decide not to upgrade this connection
-                        if (upgradeConnection != null) {
-                            if (LOGGER.isLoggable(TRACE)) {
-                                LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
+                if (canUpgrade) {
+                    if (headers.contains(Http.Header.UPGRADE)) {
+                        Http1UpgradeProvider upgrader = upgradeProviderMap.get(headers.get(Http.Header.UPGRADE).value());
+                        if (upgrader != null) {
+                            ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
+                            // upgrader may decide not to upgrade this connection
+                            if (upgradeConnection != null) {
+                                if (LOGGER.isLoggable(TRACE)) {
+                                    LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
+                                }
+                                // this will block until the connection terminates
+                                upgradeConnection.handle();
+                                return;
                             }
-                            // this will block until the connection terminates
-                            upgradeConnection.handle();
-                            return;
                         }
                     }
                 }
+                route(prologue, headers);
             }
-            route(prologue, headers);
+        } catch (CloseConnectionException | UncheckedIOException e) {
+            throw e;
+        } catch (HttpException e) {
+            handleHttpException(e);
+        } catch (Throwable e) {
+            handleHttpException(HttpException.builder()
+                                        .message("Internal error")
+                                        .type(EventType.INTERNAL_ERROR)
+                                        .cause(e)
+                                        .build());
         }
     }
 
@@ -368,6 +332,40 @@ public class Http1Connection implements ServerConnection {
                         .build();
             }
             throw new CloseConnectionException("Failed to consume request entity, must close", e);
+        }
+    }
+
+    private void handleHttpException(HttpException e) {
+        if (e.fullResponse().isPresent()) {
+            ctx.simpleHandlers().handle(e, e.fullResponse().get());
+            return;
+        }
+
+        SimpleHandler handler = ctx.simpleHandlers().handler(e.eventType());
+        SimpleHandler.SimpleResponse response = handler.handle(e.request(),
+                                                               e.eventType(),
+                                                               e.status(),
+                                                               e.responseHeaders(),
+                                                               e);
+
+        BufferData buffer = BufferData.growing(128);
+        HeadersServerResponse headers = response.headers();
+        if (!e.keepAlive()) {
+            headers.set(HeaderValues.CONNECTION_CLOSE);
+        }
+        byte[] message = response.message().orElse(BufferData.EMPTY_BYTES);
+        if (message.length != 0) {
+            headers.set(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(message.length)));
+        }
+        Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
+        if (message.length != 0) {
+            buffer.write(message);
+        }
+
+        writer.write(buffer);
+
+        if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
+            LOGGER.log(WARNING, "Internal server error", e);
         }
     }
 }

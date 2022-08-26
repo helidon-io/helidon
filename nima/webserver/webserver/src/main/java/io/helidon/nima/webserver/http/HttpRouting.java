@@ -87,8 +87,8 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RoutingHandler rh = new RoutingHandler(rootRoute, ctx, request, response);
-        filters.filter(request, response, rh);
+        RoutingExecutor routingExecutor = new RoutingExecutor(rootRoute, ctx, request, response);
+        filters.filter(request, response, routingExecutor);
     }
 
     @Override
@@ -278,13 +278,13 @@ public final class HttpRouting implements Routing {
         }
     }
 
-    private static class RoutingHandler implements Handler {
+    private static final class RoutingExecutor implements Runnable {
         private final ConnectionContext ctx;
         private final RoutingRequest request;
         private final RoutingResponse response;
         private final ServiceRoute rootRoute;
 
-        private RoutingHandler(ServiceRoute rootRoute, ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
+        private RoutingExecutor(ServiceRoute rootRoute, ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
             this.rootRoute = rootRoute;
             this.ctx = ctx;
             this.request = request;
@@ -292,46 +292,40 @@ public final class HttpRouting implements Routing {
         }
 
         @Override
-        public void handle(ServerRequest req, ServerResponse res) {
+        public void run() {
             try {
-                doHandle();
+                HttpPrologue prologue = request.prologue();
+                response.resetRouting();
+
+                RoutingResult result = RoutingResult.ROUTE;
+                int counter = 0;
+                while (result == RoutingResult.ROUTE) {
+                    counter++;
+                    if (counter == 10) {
+                        LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
+
+                        throw HttpException.builder()
+                                .request(HttpSimpleRequest.create(prologue, request.headers()))
+                                .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                                .build();
+                    }
+
+                    result = doRoute(ctx, request, response);
+                }
+
+                // finished and done
+                if (result == RoutingResult.FINISH) {
+                    return;
+                }
+                ctx.simpleHandlers().handle(HttpException.builder()
+                                                    .request(request)
+                                                    .response(response)
+                                                    .type(SimpleHandler.EventType.NOT_FOUND)
+                                                    .message("Endpoint not found")
+                                                    .build(), response);
             } catch (HttpException e) {
                 ctx.simpleHandlers().handle(e, response);
             }
-        }
-
-        private void doHandle() {
-            // ignore parameters, as we need instances of routing request (and we do not want to do an explicit cast)
-            HttpPrologue prologue = request.prologue();
-            response.resetRouting();
-
-            RoutingResult result = RoutingResult.ROUTE;
-            int counter = 0;
-            while (result == RoutingResult.ROUTE) {
-                counter++;
-                if (counter == 10) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
-
-                    throw HttpException.builder()
-                            .request(HttpSimpleRequest.create(prologue, request.headers()))
-                            .type(SimpleHandler.EventType.INTERNAL_ERROR)
-                            .build();
-                }
-
-                result = doRoute(ctx, request, response);
-            }
-
-            // finished and done
-            if (result == RoutingResult.FINISH) {
-                return;
-            }
-
-            throw HttpException.builder()
-                    .request(request)
-                    .response(response)
-                    .type(SimpleHandler.EventType.NOT_FOUND)
-                    .message("Endpoint not found")
-                    .build();
         }
 
         // todo we may have a lru cache (or most commonly used - weighted by number of usages) to
@@ -349,7 +343,7 @@ public final class HttpRouting implements Routing {
                     if (response.shouldReroute()) {
                         if (response.isSent()) {
                             LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
-                                    + " in inconsistent state. Request for re-router, but response was already sent. Ignoring "
+                                    + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
                                     + "reroute.");
                             return RoutingResult.FINISH;
                         }
@@ -361,16 +355,18 @@ public final class HttpRouting implements Routing {
                     if (response.isNexted()) {
                         if (response.isSent()) {
                             LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
-                                    + " in inconsistent state. Request was nexted, but response was already sent. "
+                                    + " in inconsistent state. Request to next, but response was already sent. "
                                     + "Ignoring next().");
                             return RoutingResult.FINISH;
                         }
                         continue;
                     }
-                    if (!response.hasEntity()) {
-                        // not nexted, not rerouted - just send it!
-                        response.send();
+                    if (response.isSent()) {
+                        return RoutingResult.FINISH;
                     }
+
+                    // not nexted, not rerouted - just send it!
+                    response.send();
 
                     return RoutingResult.FINISH;
                 } catch (CloseConnectionException | HttpException e) {
