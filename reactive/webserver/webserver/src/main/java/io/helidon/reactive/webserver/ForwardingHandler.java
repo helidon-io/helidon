@@ -21,9 +21,7 @@ import java.lang.ref.ReferenceQueue;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,10 +32,14 @@ import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.DirectHandler.TransportResponse;
+import io.helidon.common.http.HeadersServerRequest;
+import io.helidon.common.http.HeadersServerResponse;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.reactive.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
-import io.helidon.reactive.webserver.DirectHandler.TransportResponse;
 import io.helidon.reactive.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.buffer.ByteBuf;
@@ -433,7 +435,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         This would solve connection close for 404 for requests with entity
          */
         if (HttpUtil.is100ContinueExpected(request)) {
-            send100Continue(ctx, request);
+            send100Continue(ctx);
         }
 
         // If a problem during routing, return 400 response
@@ -484,16 +486,11 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
     }
 
-    private void send100Continue(ChannelHandlerContext ctx,
-                                        HttpRequest request) {
+    private void send100Continue(ChannelHandlerContext ctx) {
 
-        TransportResponse transportResponse = directHandlers.handler(DirectHandler.EventType.CONTINUE)
-                .handle(new DirectHandlerRequest(request),
-                        DirectHandler.EventType.CONTINUE,
-                        Http.Status.CONTINUE_100,
-                        "");
+        // continue is not a full HTTP response
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.CONTINUE);
 
-        FullHttpResponse response = toNettyResponse(transportResponse);
         // we should flush this immediately, as we need the client to send entity
         ctx.writeAndFlush(response);
     }
@@ -511,6 +508,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.BAD_REQUEST,
                         Http.Status.BAD_REQUEST_400,
+                        HeadersServerResponse.create(),
                         t);
 
         FullHttpResponse response = toNettyResponse(handlerResponse);
@@ -533,6 +531,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.PAYLOAD_TOO_LARGE,
                         Http.Status.REQUEST_ENTITY_TOO_LARGE_413,
+                        HeadersServerResponse.create(),
                         "");
 
         FullHttpResponse response = toNettyResponse(transportResponse);
@@ -548,7 +547,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private FullHttpResponse toNettyResponse(TransportResponse handlerResponse) {
         Optional<byte[]> entity = handlerResponse.entity();
         Http.Status status = handlerResponse.status();
-        Map<String, List<String>> headers = handlerResponse.headers();
+        HeadersServerResponse headers = handlerResponse.headers();
 
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(status.code(), status.reasonPhrase());
 
@@ -558,7 +557,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .orElseGet(() -> new DefaultFullHttpResponse(HTTP_1_1, nettyStatus));
 
         HttpHeaders nettyHeaders = response.headers();
-        headers.forEach(nettyHeaders::add);
+        headers.forEach(it -> nettyHeaders.add(it.name(), it.allValues()));
         return response;
     }
 
@@ -595,17 +594,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         private final String protocolVersion;
         private final String uri;
         private final String method;
-        private final Map<String, List<String>> headers;
+        private final HeadersServerRequest headers;
 
         private DirectHandlerRequest(HttpRequest request) {
             protocolVersion = request.protocolVersion().text();
             uri = request.uri();
             method = request.method().name();
-            Map<String, List<String>> result = new HashMap<>();
+            HeadersWritable<?> result = HeadersWritable.create();
             for (String name : request.headers().names()) {
-                result.put(name, request.headers().getAll(name));
+                result.add(Http.HeaderValue.create(Http.Header.create(name), request.headers().getAll(name)));
             }
-            headers = Map.copyOf(result);
+            headers = HeadersServerRequest.create(result);
         }
 
         @Override
@@ -614,7 +613,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         @Override
-        public String uri() {
+        public String path() {
             return uri;
         }
 
@@ -624,7 +623,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         @Override
-        public Map<String, List<String>> headers() {
+        public HeadersServerRequest headers() {
             return headers;
         }
     }

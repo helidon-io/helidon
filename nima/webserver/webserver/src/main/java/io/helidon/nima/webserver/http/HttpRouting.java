@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.CloseConnectionException;
@@ -306,7 +307,7 @@ public final class HttpRouting implements Routing {
 
                         throw HttpException.builder()
                                 .request(HttpSimpleRequest.create(prologue, request.headers()))
-                                .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                                .type(DirectHandler.EventType.INTERNAL_ERROR)
                                 .build();
                     }
 
@@ -317,14 +318,14 @@ public final class HttpRouting implements Routing {
                 if (result == RoutingResult.FINISH) {
                     return;
                 }
-                ctx.simpleHandlers().handle(HttpException.builder()
+                ctx.directHandlers().handle(HttpException.builder()
                                                     .request(request)
                                                     .response(response)
-                                                    .type(SimpleHandler.EventType.NOT_FOUND)
+                                                    .type(DirectHandler.EventType.NOT_FOUND)
                                                     .message("Endpoint not found")
                                                     .build(), response);
             } catch (HttpException e) {
-                ctx.simpleHandlers().handle(e, response);
+                ctx.directHandlers().handle(e, response);
             }
         }
 
@@ -391,7 +392,7 @@ public final class HttpRouting implements Routing {
                         ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed", thrown);
                         // we must close connection, as we could not consume request
                         throw HttpException.builder()
-                                .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                                .type(DirectHandler.EventType.INTERNAL_ERROR)
                                 .cause(thrown)
                                 .request(request)
                                 .response(response)

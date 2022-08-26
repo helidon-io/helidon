@@ -27,8 +27,8 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpException;
-import io.helidon.nima.webserver.http.SimpleHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -64,7 +64,7 @@ class ConnectionHandler implements Runnable {
                       Router router,
                       int writeQueueLength,
                       long maxPayloadSize,
-                      SimpleHandlers simpleHandlers) {
+                      DirectHandlers simpleHandlers) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;

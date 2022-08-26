@@ -32,7 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import io.helidon.nima.webserver.http.SimpleHandlers;
+import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 class LoomServer implements WebServer {
@@ -48,7 +48,7 @@ class LoomServer implements WebServer {
     private volatile List<ListenerFuture> startFutures;
     private boolean alreadyStarted = false;
 
-    LoomServer(Builder builder, SimpleHandlers simpleHandlers) {
+    LoomServer(Builder builder, DirectHandlers simpleHandlers) {
         List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
 
         Map<String, Router> routers = builder.routers();

@@ -19,23 +19,22 @@ package io.helidon.nima.webserver.http;
 import java.util.EnumMap;
 import java.util.Map;
 
-import io.helidon.common.http.HeadersServerResponse;
+import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.DirectHandler.EventType;
 import io.helidon.common.http.Http;
 import io.helidon.nima.webserver.CloseConnectionException;
-import io.helidon.nima.webserver.HtmlEncoder;
-import io.helidon.nima.webserver.http.SimpleHandler.EventType;
 
 import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Configured handlers for expected (and internal) exceptions.
  */
-public class SimpleHandlers {
-    private static final System.Logger LOGGER = System.getLogger(SimpleHandlers.class.getName());
+public class DirectHandlers {
+    private static final System.Logger LOGGER = System.getLogger(DirectHandlers.class.getName());
 
-    private final Map<EventType, SimpleHandler> handlers;
+    private final Map<EventType, DirectHandler> handlers;
 
-    private SimpleHandlers(Map<EventType, SimpleHandler> handlers) {
+    private DirectHandlers(Map<EventType, DirectHandler> handlers) {
         this.handlers = new EnumMap<>(handlers);
     }
 
@@ -55,7 +54,7 @@ public class SimpleHandlers {
      * @param eventType event type
      * @return handler to use
      */
-    public SimpleHandler handler(EventType eventType) {
+    public DirectHandler handler(EventType eventType) {
         return handlers.get(eventType);
     }
 
@@ -66,7 +65,7 @@ public class SimpleHandlers {
      * @param res           response
      */
     public void handle(HttpException httpException, ServerResponse res) {
-        SimpleHandler.SimpleResponse response = handler(httpException.eventType()).handle(
+        DirectHandler.TransportResponse response = handler(httpException.eventType()).handle(
                 httpException.request(),
                 httpException.eventType(),
                 httpException.status(),
@@ -88,11 +87,11 @@ public class SimpleHandlers {
         }
 
         try {
-            response.message().ifPresentOrElse(res::send, res::send);
+            response.entity().ifPresentOrElse(res::send, res::send);
         } catch (IllegalStateException ex) {
             // failed to send - probably output stream was already obtained and used, so status is written
             // we can only close the connection now
-            res.streamResult(response.message().map(String::new).orElseGet(() -> httpException.getCause().getMessage()));
+            res.streamResult(response.entity().map(String::new).orElseGet(() -> httpException.getCause().getMessage()));
             throw new CloseConnectionException(
                     "Cannot send response of a simple handler, status and headers already written",
                     ex);
@@ -106,21 +105,21 @@ public class SimpleHandlers {
     }
 
     /**
-     * Fluent API builder for {@link SimpleHandlers}.
+     * Fluent API builder for {@link DirectHandlers}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, SimpleHandlers> {
-        private final Map<EventType, SimpleHandler> handlers = new EnumMap<>(EventType.class);
-        private final SimpleHandler defaultHandler = new DefaultHandler();
+    public static class Builder implements io.helidon.common.Builder<Builder, DirectHandlers> {
+        private final Map<EventType, DirectHandler> handlers = new EnumMap<>(EventType.class);
+        private final DirectHandler defaultHandler = DirectHandler.defaultHandler();
 
         private Builder() {
         }
 
         @Override
-        public SimpleHandlers build() {
+        public DirectHandlers build() {
             for (EventType value : EventType.values()) {
                 handlers.putIfAbsent(value, defaultHandler);
             }
-            return new SimpleHandlers(handlers);
+            return new DirectHandlers(handlers);
         }
 
         /**
@@ -130,28 +129,9 @@ public class SimpleHandlers {
          * @param handler   handler to handle that type
          * @return updated builder
          */
-        public Builder addHandler(EventType eventType, SimpleHandler handler) {
+        public Builder addHandler(EventType eventType, DirectHandler handler) {
             handlers.put(eventType, handler);
             return this;
-        }
-    }
-
-    private static class DefaultHandler implements SimpleHandler {
-        @Override
-        public SimpleResponse handle(SimpleRequest request,
-                                     EventType eventType,
-                                     Http.Status defaultStatus,
-                                     HeadersServerResponse headers,
-                                     String message) {
-            return SimpleResponse.builder()
-                    .status(defaultStatus)
-                    .headers(headers)
-                    .update(it -> {
-                        if (!message.isEmpty()) {
-                            it.message(HtmlEncoder.encode(message));
-                        }
-                    })
-                    .build();
         }
     }
 }

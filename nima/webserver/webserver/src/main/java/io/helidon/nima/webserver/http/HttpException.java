@@ -18,6 +18,7 @@ package io.helidon.nima.webserver.http;
 
 import java.util.Optional;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 
@@ -25,18 +26,24 @@ import io.helidon.common.http.Http;
  * HTTP exception. This allows custom handlers to be used for different even types.
  */
 public class HttpException extends RuntimeException {
-    private final SimpleHandler.EventType eventType;
+    private final DirectHandler.EventType eventType;
     private final Http.Status status;
-    private final SimpleHandler.SimpleRequest simpleRequest;
+    private final DirectHandler.TransportRequest transportRequest;
     private final ServerResponse fullResponse;
     private final boolean keepAlive;
     private final HeadersServerResponse responseHeaders;
 
-    private HttpException(Builder builder) {
+    /**
+     * A new exception with a predefined status, even type.
+     * Additional information may be added to simplify handling.
+     *
+     * @param builder builder with details to create this instance
+     */
+    protected HttpException(Builder builder) {
         super(builder.message, builder.cause);
         this.eventType = builder.type;
         this.status = builder.status;
-        this.simpleRequest = builder.request;
+        this.transportRequest = builder.request;
         this.fullResponse = builder.fullResponse;
         this.keepAlive = builder.keepAlive;
         this.responseHeaders = builder.responseHeaders;
@@ -65,17 +72,17 @@ public class HttpException extends RuntimeException {
      *
      * @return event type
      */
-    public SimpleHandler.EventType eventType() {
+    public DirectHandler.EventType eventType() {
         return eventType;
     }
 
     /**
-     * Simple request with as much information as is available.
+     * Transport request with as much information as is available.
      *
      * @return request
      */
-    public SimpleHandler.SimpleRequest request() {
-        return simpleRequest;
+    public DirectHandler.TransportRequest request() {
+        return transportRequest;
     }
 
     /**
@@ -112,12 +119,12 @@ public class HttpException extends RuntimeException {
     public static class Builder implements io.helidon.common.Builder<Builder, HttpException> {
         private String message;
         private Throwable cause;
-        private SimpleHandler.SimpleRequest request;
-        private SimpleHandler.EventType type;
+        private DirectHandler.TransportRequest request;
+        private DirectHandler.EventType type;
         private Http.Status status;
         private ServerResponse fullResponse;
         private Boolean keepAlive;
-        private HeadersServerResponse responseHeaders = HeadersServerResponse.create();
+        private final HeadersServerResponse responseHeaders = HeadersServerResponse.create();
 
         private Builder() {
         }
@@ -128,10 +135,10 @@ public class HttpException extends RuntimeException {
                 message = "";
             }
             if (request == null) {
-                request = SimpleHandler.SimpleRequest.empty();
+                request = DirectHandler.TransportRequest.empty();
             }
             if (type == null) {
-                type(SimpleHandler.EventType.INTERNAL_ERROR);
+                type(DirectHandler.EventType.INTERNAL_ERROR);
             }
             return new HttpException(this);
         }
@@ -170,7 +177,7 @@ public class HttpException extends RuntimeException {
         }
 
         /**
-         * Routing response to be used to handle response from simple handler.
+         * Routing response to be used to handle response from direct handler.
          *
          * @param response response to use
          * @return updated builder
@@ -181,12 +188,12 @@ public class HttpException extends RuntimeException {
         }
 
         /**
-         * Simple request with as much information as is available.
+         * Transport request with as much information as is available.
          *
          * @param request request to use
          * @return updated builder
          */
-        public Builder request(SimpleHandler.SimpleRequest request) {
+        public Builder request(DirectHandler.TransportRequest request) {
             this.request = request;
             return this;
         }
@@ -197,7 +204,7 @@ public class HttpException extends RuntimeException {
          * @param type type to use
          * @return updated builder
          */
-        public Builder type(SimpleHandler.EventType type) {
+        public Builder type(DirectHandler.EventType type) {
             this.type = type;
             if (status == null) {
                 status = type.defaultStatus();
@@ -210,7 +217,7 @@ public class HttpException extends RuntimeException {
 
         /**
          * Http status to use. This will override default status from
-         * {@link SimpleHandler.EventType#defaultStatus()}.
+         * {@link io.helidon.common.http.DirectHandler.EventType#defaultStatus()}.
          *
          * @param status status to use
          * @return updated builder

@@ -26,6 +26,7 @@ import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
@@ -33,7 +34,6 @@ import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.HttpException;
-import io.helidon.nima.webserver.http.SimpleHandler;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
@@ -106,7 +106,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
 
         if (!SUPPORTED_VERSION.equals(version)) {
             throw HttpException.builder()
-                    .type(SimpleHandler.EventType.BAD_REQUEST)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
                     .message("Unsupported WebSocket Version")
                     .header(SUPPORTED_VERSION_HEADER)
                     .build();
@@ -125,7 +125,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
                 if (!origins.contains(origin)) {
                     throw HttpException.builder()
                             .message("Invalid Origin")
-                            .type(SimpleHandler.EventType.FORBIDDEN)
+                            .type(DirectHandler.EventType.FORBIDDEN)
                             .build();
                 }
             }
@@ -156,7 +156,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             MUST be selected randomly for each connection.
              */
             throw HttpException.builder()
-                    .type(SimpleHandler.EventType.BAD_REQUEST)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
                     .message("Invalid Sec-WebSocket-Key header")
                     .build();
         }

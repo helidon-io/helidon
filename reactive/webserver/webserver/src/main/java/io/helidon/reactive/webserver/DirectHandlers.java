@@ -19,7 +19,7 @@ package io.helidon.reactive.webserver;
 import java.util.EnumMap;
 import java.util.Map;
 
-import io.helidon.common.http.Http;
+import io.helidon.common.http.DirectHandler;
 
 class DirectHandlers {
     private final Map<DirectHandler.EventType, DirectHandler> handlers;
@@ -38,7 +38,7 @@ class DirectHandlers {
 
     static class Builder implements io.helidon.common.Builder<Builder, DirectHandlers> {
         private final Map<DirectHandler.EventType, DirectHandler> handlers = new EnumMap<>(DirectHandler.EventType.class);
-        private final DirectHandler defaultHandler = new DefaultHandler();
+        private final DirectHandler defaultHandler = DirectHandler.defaultHandler();
 
         private Builder() {
         }
@@ -54,24 +54,6 @@ class DirectHandlers {
         Builder addHandler(DirectHandler.EventType eventType, DirectHandler handler) {
             handlers.put(eventType, handler);
             return this;
-        }
-    }
-
-    private static class DefaultHandler implements DirectHandler {
-        @Override
-        public TransportResponse handle(TransportRequest request,
-                                        EventType eventType,
-                                        Http.Status defaultStatus,
-                                        String message) {
-
-            TransportResponse.Builder builder = TransportResponse.builder()
-                    .status(defaultStatus);
-
-            if (!message.isEmpty()) {
-                builder.entity(message);
-            }
-
-            return builder.build();
         }
     }
 }

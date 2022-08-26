@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.HtmlEncoder;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.tracing.Span;

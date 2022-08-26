@@ -25,7 +25,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webserver.http.SimpleHandlers;
+import io.helidon.nima.webserver.http.DirectHandlers;
 
 final class ConnectionContextImpl implements ConnectionContext {
     private final MediaContext mediaContext;
@@ -36,7 +36,7 @@ final class ConnectionContextImpl implements ConnectionContext {
     private final Router router;
     private final String socketId;
     private final String childSocketId;
-    private final SimpleHandlers simpleHandlers;
+    private final DirectHandlers simpleHandlers;
     private final HelidonSocket socket;
     private final long maxPayloadSize;
 
@@ -48,7 +48,7 @@ final class ConnectionContextImpl implements ConnectionContext {
                           Router router,
                           String socketId,
                           String childSocketId,
-                          SimpleHandlers simpleHandlers,
+                          DirectHandlers simpleHandlers,
                           HelidonSocket socket,
                           long maxPayloadSize) {
         this.mediaContext = mediaContext;
@@ -100,7 +100,7 @@ final class ConnectionContextImpl implements ConnectionContext {
     }
 
     @Override
-    public SimpleHandlers simpleHandlers() {
+    public DirectHandlers directHandlers() {
         return simpleHandlers;
     }
 

@@ -24,6 +24,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http.Header;
@@ -52,7 +53,6 @@ import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 /**
  * Server HTTP/2 stream implementation.
@@ -272,17 +272,17 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             } catch (Throwable e) {
                 throw HttpException.builder()
                         .message("Internal error")
-                        .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                        .type(DirectHandler.EventType.INTERNAL_ERROR)
                         .cause(e)
                         .build();
             }
         } catch (HttpException e) {
-            SimpleHandler handler = ctx.simpleHandlers().handler(e.eventType());
-            SimpleHandler.SimpleResponse response = handler.handle(e.request(),
-                                                                   e.eventType(),
-                                                                   e.status(),
-                                                                   e.responseHeaders(),
-                                                                   e);
+            DirectHandler handler = ctx.directHandlers().handler(e.eventType());
+            DirectHandler.TransportResponse response = handler.handle(e.request(),
+                                                                      e.eventType(),
+                                                                      e.status(),
+                                                                      e.responseHeaders(),
+                                                                      e);
 
             Optional<ServerResponse> fullResponse = e.fullResponse();
             if (fullResponse.isPresent()) {
@@ -290,11 +290,11 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                     res.status(response.status());
                     response.headers()
                             .forEach(res::header);
-                    response.message().ifPresentOrElse(res::send, res::send);
+                    response.entity().ifPresentOrElse(res::send, res::send);
                 });
             } else {
                 HeadersServerResponse headers = response.headers();
-                byte[] message = response.message().orElse(BufferData.EMPTY_BYTES);
+                byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
                 if (message.length != 0) {
                     headers.set(HeaderValue.create(Header.CONTENT_LENGTH, String.valueOf(message.length)));
                 }
@@ -410,7 +410,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                 throw HttpException.builder()
                         .request(request)
                         .response(response)
-                        .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                        .type(DirectHandler.EventType.INTERNAL_ERROR)
                         .message(e.getMessage())
                         .cause(e)
                         .build();

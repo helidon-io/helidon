@@ -16,26 +16,25 @@
 
 package io.helidon.nima.webserver.http;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.HeadersServerRequest;
+import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpPrologue;
 
 /**
  * Simple request to use with {@link HttpException}.
  */
-public class HttpSimpleRequest implements SimpleHandler.SimpleRequest {
+public class HttpSimpleRequest implements DirectHandler.TransportRequest {
     private final String version;
     private final String method;
     private final String path;
-    private final Map<String, List<String>> headers;
+    private final HeadersServerRequest headers;
 
     private HttpSimpleRequest(String version,
                               String method,
                               String path,
-                              Map<String, List<String>> headers) {
+                              HeadersServerRequest headers) {
         this.version = version;
         this.method = method;
         this.path = path;
@@ -48,14 +47,15 @@ public class HttpSimpleRequest implements SimpleHandler.SimpleRequest {
      * @param protocolAndVersion protocol with version
      * @param method             method
      * @param path               path
-     * @param headers            headers
      * @return a new simple request
      */
-    public static SimpleHandler.SimpleRequest create(String protocolAndVersion,
-                                                     String method,
-                                                     String path,
-                                                     Map<String, List<String>> headers) {
-        return new HttpSimpleRequest(protocolAndVersion, method, path, headers);
+    public static DirectHandler.TransportRequest create(String protocolAndVersion,
+                                                        String method,
+                                                        String path) {
+        return new HttpSimpleRequest(protocolAndVersion,
+                                     method,
+                                     path,
+                                     HeadersServerRequest.create(HeadersWritable.create()));
     }
 
     /**
@@ -65,14 +65,11 @@ public class HttpSimpleRequest implements SimpleHandler.SimpleRequest {
      * @param headers  parsed headers
      * @return a new simple request
      */
-    public static SimpleHandler.SimpleRequest create(HttpPrologue prologue, Headers headers) {
-        Map<String, List<String>> headerMap = new HashMap<>();
-        headers.forEach(it -> headerMap.put(it.name(), it.allValues()));
-
+    public static DirectHandler.TransportRequest create(HttpPrologue prologue, Headers headers) {
         return new HttpSimpleRequest(prologue.protocol() + "/" + prologue.protocolVersion(),
                                      prologue.method().text(),
                                      prologue.uriPath().rawPathNoParams(),
-                                     headerMap);
+                                     HeadersServerRequest.create(headers));
     }
 
     @Override
@@ -91,7 +88,7 @@ public class HttpSimpleRequest implements SimpleHandler.SimpleRequest {
     }
 
     @Override
-    public Map<String, List<String>> headers() {
+    public HeadersServerRequest headers() {
         return headers;
     }
 }

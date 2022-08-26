@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,60 +14,30 @@
  * limitations under the License.
  */
 
-/*
- * Copyright (c) 2022 Oracle and/or its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package io.helidon.nima.webserver.http;
+package io.helidon.common.http;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderName;
-
 /**
- * A handler that is invoked when a response is sent outside of router.
- * See {@link SimpleHandler.EventType} to see which types
+ * A handler that is invoked when a response is sent outside of routing.
+ * See {@link DirectHandler.EventType} to see which types
  * of events are covered by this handler.
+ * Direct handlers can be used both with blocking and reactive servers in Helidon.
  */
 @FunctionalInterface
-public interface SimpleHandler {
+public interface DirectHandler {
     /**
-     * Handler of responses that bypass router.
-     * <p>
-     * This method should be used to return custom status, header and possible entity.
-     * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
+     * Default handler will HTML encode the message (if any),
+     * use the default status code for the event type, and copy all headers configured.
      *
-     * @param request       request as received with as much known information as possible
-     * @param eventType     type of the event
-     * @param defaultStatus default status expected to be returned
-     * @param responseHeaders headers to be added to response
-     * @param thrown        throwable caught as part of processing with possible additional details about the reason of failure
-     * @return response to use to return to original request
+     *
+     * @return default direct handler
      */
-    default SimpleResponse handle(SimpleRequest request,
-                                  EventType eventType,
-                                  Http.Status defaultStatus,
-                                  HeadersServerResponse responseHeaders,
-                                  Throwable thrown) {
-        return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
+    static DirectHandler defaultHandler() {
+        return DirectHandlerDefault.INSTANCE;
     }
 
     /**
@@ -76,20 +46,85 @@ public interface SimpleHandler {
      * This method should be used to return custom status, header and possible entity.
      * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
      *
-     * @param request       request as received with as much known information as possible
-     * @param eventType     type of the event
+     * @param request request as received with as much known information as possible
+     * @param eventType type of the event
      * @param defaultStatus default status expected to be returned
      * @param responseHeaders headers to be added to response
-     * @param message       informative message for cases that are not triggered by an exception, by default this will be called
+     * @param thrown throwable caught as part of processing with possible additional details about the reason of failure
+     * @return response to use to return to original request
+     */
+    default TransportResponse handle(TransportRequest request,
+                                     EventType eventType,
+                                     Http.Status defaultStatus,
+                                     HeadersServerResponse responseHeaders,
+                                     Throwable thrown) {
+        return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
+    }
+
+    /**
+     * Handler of responses that bypass routing.
+     * <p>
+     * This method should be used to return custom status, header and possible entity.
+     * If there is a need to handle more details, please redirect the client to a proper endpoint to handle them.
+     *
+     * @param request request as received with as much known information as possible
+     * @param eventType type of the event
+     * @param defaultStatus default status expected to be returned
+     * @param responseHeaders headers to be added to response
+     * @param message informative message for cases that are not triggered by an exception, by default this will be called
      *                      also
      *                      for exceptional cases with the exception message
      * @return response to use to return to original request
      */
-    SimpleResponse handle(SimpleRequest request,
-                          EventType eventType,
-                          Http.Status defaultStatus,
-                          HeadersServerResponse responseHeaders,
-                          String message);
+    TransportResponse handle(TransportRequest request,
+                             EventType eventType,
+                             Http.Status defaultStatus,
+                             HeadersServerResponse responseHeaders,
+                             String message);
+
+    /**
+     * Request information.
+     * Note that the information may not be according to specification, as this marks a bad request (by definition).
+     */
+    interface TransportRequest {
+        /**
+         * Create an empty transport request.
+         * This is usually used when an error occurs before we could parse request information.
+         *
+         * @return empty transport request
+         */
+        static TransportRequest empty() {
+            return DirectHandlerEmptyRequest.INSTANCE;
+        }
+
+        /**
+         * Protocol version (either from actual request, or guessed).
+         *
+         * @return protocol version
+         */
+        String protocolVersion();
+
+        /**
+         * HTTP method.
+         *
+         * @return method
+         */
+        String method();
+
+        /**
+         * Requested path, if found in request.
+         *
+         * @return uri or an empty string
+         */
+        String path();
+
+        /**
+         * Headers, if found in request.
+         *
+         * @return headers or an empty map
+         */
+        HeadersServerRequest headers();
+    }
 
     /**
      * Types of events that can be triggered outside of router
@@ -150,81 +185,18 @@ public interface SimpleHandler {
     }
 
     /**
-     * Request information.
-     * Note that the information may not be according to specification, as this marks a bad request (by definition).
-     */
-    interface SimpleRequest {
-        /**
-         * Empty request, for cases where no information is available.
-         *
-         * @return empty simple request
-         */
-        static SimpleRequest empty() {
-            return new SimpleRequest() {
-                @Override
-                public String protocolVersion() {
-                    return "";
-                }
-
-                @Override
-                public String method() {
-                    return "";
-                }
-
-                @Override
-                public String path() {
-                    return "";
-                }
-
-                @Override
-                public Map<String, List<String>> headers() {
-                    return Map.of();
-                }
-            };
-        }
-
-        /**
-         * Protocol version (either from actual request, or guessed).
-         *
-         * @return protocol version
-         */
-        String protocolVersion();
-
-        /**
-         * HTTP method.
-         *
-         * @return method
-         */
-        String method();
-
-        /**
-         * Requested URI, if found in request.
-         *
-         * @return uri or an empty string
-         */
-        String path();
-
-        /**
-         * Headers, if found in request.
-         *
-         * @return headers or an empty map
-         */
-        Map<String, List<String>> headers();
-    }
-
-    /**
      * Response to correctly reply to the original client.
      */
-    class SimpleResponse {
+    class TransportResponse {
         private final Http.Status status;
-        private final byte[] message;
         private final HeadersServerResponse headers;
+        private final byte[] entity;
         private final boolean keepAlive;
 
-        private SimpleResponse(Builder builder) {
+        private TransportResponse(Builder builder) {
             this.status = builder.status;
-            this.message = builder.message;
             this.headers = builder.headers;
+            this.entity = builder.entity;
             this.keepAlive = builder.keepAlive;
         }
 
@@ -260,8 +232,8 @@ public interface SimpleHandler {
          *
          * @return mesage bytes or empty if no message is configured
          */
-        public Optional<byte[]> message() {
-            return Optional.ofNullable(message);
+        public Optional<byte[]> entity() {
+            return Optional.ofNullable(entity);
         }
 
         /**
@@ -274,11 +246,11 @@ public interface SimpleHandler {
         }
 
         /**
-         * Fluent API builder for {@link SimpleHandler.SimpleResponse}.
+         * Fluent API builder for {@link DirectHandler.TransportResponse}.
          */
-        public static class Builder implements io.helidon.common.Builder<Builder, SimpleResponse> {
-            private Http.Status status = Http.Status.OK_200;
-            private byte[] message = BufferData.EMPTY_BYTES;
+        public static class Builder implements io.helidon.common.Builder<Builder, TransportResponse> {
+            private Http.Status status = Http.Status.BAD_REQUEST_400;
+            private byte[] entity;
             private HeadersServerResponse headers = HeadersServerResponse.create();
             private boolean keepAlive = true;
 
@@ -286,8 +258,8 @@ public interface SimpleHandler {
             }
 
             @Override
-            public SimpleResponse build() {
-                return new SimpleResponse(this);
+            public TransportResponse build() {
+                return new TransportResponse(this);
             }
 
             /**
@@ -313,6 +285,31 @@ public interface SimpleHandler {
             }
 
             /**
+             * Set a header (if exists, it would be replaced).
+             * Keep alive header is ignored, please use {@link #keepAlive(boolean)}.
+             *
+             * @param name name of the header
+             * @param values value of the header
+             * @return updated builder
+             */
+            public Builder header(Http.HeaderName name, String... values) {
+                this.headers.set(name, List.of(values));
+                return this;
+            }
+
+            /**
+             * Set a header (if exists, it would be replaced).
+             * Keep alive header is ignored, please use {@link #keepAlive(boolean)}.
+             *
+             * @param header header value
+             * @return updated builder
+             */
+            public Builder header(Http.HeaderValue header) {
+                this.headers.add(header);
+                return this;
+            }
+
+            /**
              * Configure keep alive.
              *
              * @param keepAlive whether to keep alive
@@ -324,53 +321,37 @@ public interface SimpleHandler {
             }
 
             /**
-             * Custom entity. Uses the content, encodes it for HTML, reads it as {@code UTF-8}, configures
+             * Custom entity. Uses the content, reads it as {@code UTF-8}, configures
              * {@code Content-Length} header, configures {@code Content-Type} header to {@code text/plain}.
              * <p>
-             * Use {@link #message(byte[])} for custom encoding.
+             * Use {@link #entity(byte[])} for custom encoding.
+             * <p>
+             * Note that this method does not do any escaping (such as HTML encoding), make sure the entity is safe.
              *
-             * @param message response entity
+             * @param entity response entity
              * @return updated builder
              */
-            public Builder message(String message) {
+            public Builder entity(String entity) {
                 this.headers.setIfAbsent(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
-                return message(message.getBytes(StandardCharsets.UTF_8));
+                return entity(entity.getBytes(StandardCharsets.UTF_8));
             }
 
             /**
              * Custom entity. Uses the content, configures
              * {@code Content-Length} header.
              * <p>
-             * Use {@link #message(String)} for simple text messages.
+             * Use {@link #entity(String)} for simple text messages.
              *
              * @param entity response entity
              * @return updated builder
              */
-            public Builder message(byte[] entity) {
-                this.message = entity;
-                return this;
-            }
-
-            /**
-             * Configure an additional header.
-             *
-             * @param headerName  header name
-             * @param headerValue header value
-             * @return updated builder
-             */
-            public Builder header(HeaderName headerName, String headerValue) {
-                this.headers.add(headerName.withValue(headerValue));
-                return this;
-            }
-
-            /**
-             * Configure an additional header.
-             *
-             * @param header header value
-             * @return updated builder
-             */
-            public Builder header(Http.HeaderValue header) {
-                this.headers.add(header);
+            public Builder entity(byte[] entity) {
+                this.entity = Arrays.copyOf(entity, entity.length);
+                if (this.entity.length == 0) {
+                    this.headers.remove(Http.Header.CONTENT_LENGTH);
+                } else {
+                    header(Http.Header.CONTENT_LENGTH, String.valueOf(entity.length));
+                }
                 return this;
             }
         }

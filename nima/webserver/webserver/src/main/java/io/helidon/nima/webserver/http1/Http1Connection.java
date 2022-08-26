@@ -23,6 +23,8 @@ import java.util.concurrent.CountDownLatch;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.DirectHandler.EventType;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.HeadersWritable;
@@ -37,8 +39,6 @@ import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpSimpleRequest;
-import io.helidon.nima.webserver.http.SimpleHandler;
-import io.helidon.nima.webserver.http.SimpleHandler.EventType;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
@@ -337,23 +337,23 @@ public class Http1Connection implements ServerConnection {
 
     private void handleHttpException(HttpException e) {
         if (e.fullResponse().isPresent()) {
-            ctx.simpleHandlers().handle(e, e.fullResponse().get());
+            ctx.directHandlers().handle(e, e.fullResponse().get());
             return;
         }
 
-        SimpleHandler handler = ctx.simpleHandlers().handler(e.eventType());
-        SimpleHandler.SimpleResponse response = handler.handle(e.request(),
-                                                               e.eventType(),
-                                                               e.status(),
-                                                               e.responseHeaders(),
-                                                               e);
+        DirectHandler handler = ctx.directHandlers().handler(e.eventType());
+        DirectHandler.TransportResponse response = handler.handle(e.request(),
+                                                                  e.eventType(),
+                                                                  e.status(),
+                                                                  e.responseHeaders(),
+                                                                  e);
 
         BufferData buffer = BufferData.growing(128);
         HeadersServerResponse headers = response.headers();
         if (!e.keepAlive()) {
             headers.set(HeaderValues.CONNECTION_CLOSE);
         }
-        byte[] message = response.message().orElse(BufferData.EMPTY_BYTES);
+        byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
         if (message.length != 0) {
             headers.set(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(message.length)));
         }

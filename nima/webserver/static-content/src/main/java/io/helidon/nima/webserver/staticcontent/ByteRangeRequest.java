@@ -21,12 +21,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 record ByteRangeRequest(long fileLength, long offset, long length) {
     private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");
@@ -65,7 +65,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             throw HttpException.builder()
                     .request(req)
                     .response(res)
-                    .type(SimpleHandler.EventType.BAD_REQUEST)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
                     .message("Invalid range header")
                     .build();
         }
@@ -91,7 +91,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             throw HttpException.builder()
                     .request(req)
                     .response(res)
-                    .type(SimpleHandler.EventType.BAD_REQUEST)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
                     .status(Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416)
                     .build();
         }

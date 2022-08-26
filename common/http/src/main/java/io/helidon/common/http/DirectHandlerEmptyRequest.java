@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver;
+package io.helidon.common.http;
 
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-class HtmlEncoderTest {
-    @Test
-    void testEncode() {
-        String s = HtmlEncoder.encode("&<>\"'");
-        assertThat(s, is("&amp;&lt;&gt;&quot;&#x27;"));
-        s = HtmlEncoder.encode("<script>bad</script>");
-        assertThat(s, is("&lt;script&gt;bad&lt;/script&gt;"));
-    }
+record DirectHandlerEmptyRequest(String protocolVersion, String method, String path, HeadersServerRequest headers)
+        implements DirectHandler.TransportRequest {
+    static final DirectHandlerEmptyRequest INSTANCE =
+            new DirectHandlerEmptyRequest("",
+                                          "",
+                                          "",
+                                          HeadersServerRequest.create(HeadersWritable.create()));
 }

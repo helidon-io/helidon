@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
@@ -35,7 +36,6 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.PathMatchers;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SimpleHandler;
 
 /**
  * Base implementation of static content support.
@@ -76,7 +76,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
                     throw HttpException.builder()
                             .message("Accepted by If-None-Match header!")
-                            .type(SimpleHandler.EventType.OTHER)
+                            .type(DirectHandler.EventType.OTHER)
                             .status(Http.Status.NOT_MODIFIED_304)
                             .build();
                 }
@@ -98,7 +98,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
                 if (!ifMatchChecked) {
                     throw HttpException.builder()
                             .message("Not accepted by If-Match header!")
-                            .type(SimpleHandler.EventType.OTHER)
+                            .type(DirectHandler.EventType.OTHER)
                             .status(Http.Status.PRECONDITION_FAILED_412)
                             .build();
                 }
@@ -130,7 +130,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
             throw HttpException.builder()
                     .message("Not valid for If-Modified-Since header!")
-                    .type(SimpleHandler.EventType.OTHER)
+                    .type(DirectHandler.EventType.OTHER)
                     .status(Http.Status.NOT_MODIFIED_304)
                     .build();
         }
@@ -141,7 +141,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
             throw HttpException.builder()
                     .message("Not valid for If-Unmodified-Since header!")
-                    .type(SimpleHandler.EventType.OTHER)
+                    .type(DirectHandler.EventType.OTHER)
                     .status(Http.Status.PRECONDITION_FAILED_412)
                     .build();
         }
@@ -157,7 +157,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         if (condition) {
             throw HttpException.builder()
                     .message("Static content not found!")
-                    .type(SimpleHandler.EventType.NOT_FOUND)
+                    .type(DirectHandler.EventType.NOT_FOUND)
                     .build();
         }
     }
@@ -242,7 +242,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
             LOGGER.log(Level.TRACE, "Failed to access static resource", e);
             throw HttpException.builder()
                     .message("Cannot access static resource!")
-                    .type(SimpleHandler.EventType.INTERNAL_ERROR)
+                    .type(DirectHandler.EventType.INTERNAL_ERROR)
                     .cause(e)
                     .build();
         }
