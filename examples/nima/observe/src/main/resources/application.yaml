@@ -14,15 +14,14 @@
 # limitations under the License.
 #
 
-nima:
-  server:
-    host: "127.0.0.1"
-    port: 8080
-  observe:
-    info:
-      values:
-        name: "Observe Example"
-        version: "1.0.0"
+server:
+  host: "127.0.0.1"
+  port: 8080
+observe:
+  info:
+    values:
+      name: "Observe Example"
+      version: "1.0.0"
 
 app:
   greeting: "Hello!"

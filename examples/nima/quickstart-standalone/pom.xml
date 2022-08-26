@@ -24,7 +24,7 @@
     <version>4.0.0-SNAPSHOT</version>
 
     <name>Helidon Níma Examples Quickstart Standalone</name>
-    <description>Example demonstrating a standalone project without a Warp parent.</description>
+    <description>Example demonstrating a standalone project without an application parent.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

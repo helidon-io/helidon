@@ -14,23 +14,22 @@
 # limitations under the License.
 #
 
-nima:
-  server:
-    sockets:
-      - name: "@default"
-        host: "127.0.0.1"
-        port: 8080
-        backlog: 8192
+server:
+  sockets:
+    - name: "@default"
+      host: "127.0.0.1"
+      port: 8080
+      backlog: 8192
+      receive-buffer-size: 64000
+      write-queue-length: 8192
+      connection-options:
+        read-timeout-seconds: 0
+        connect-timeout-seconds: 0
+        send-buffer-size: 64000
         receive-buffer-size: 64000
-        write-queue-length: 8192
-        connection-options:
-          read-timeout-seconds: 0
-          connect-timeout-seconds: 0
-          send-buffer-size: 64000
-          receive-buffer-size: 64000
-    connection-providers:
-      "http_1_1":
-        validate-headers: false
-        validate-path: false
-        recv-log: false
-        send-log: false
+  connection-providers:
+    "http_1_1":
+      validate-headers: false
+      validate-path: false
+      recv-log: false
+      send-log: false

@@ -43,7 +43,7 @@ abstract class AbstractBasicRoutingTest {
                 .request()
                 .as(String.class);
 
-        assertThat(response, is("Warp Works!"));
+        assertThat(response, is("Níma Works!"));
     }
 
     @Test
@@ -52,6 +52,6 @@ abstract class AbstractBasicRoutingTest {
                 .request()
                 .as(String.class);
 
-        assertThat(response, is("Warp Works!"));
+        assertThat(response, is("Níma Works!"));
     }
 }

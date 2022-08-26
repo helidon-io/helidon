@@ -141,7 +141,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
 
         private Builder() {
             Config config = Config.create()
-                    .get("nima.server.connection-providers.http_1_1");
+                    .get("server.connection-providers.http_1_1");
 
             config.get("validate-headers").asBoolean().ifPresent(this::validateHeaders);
             config.get("validate-path").asBoolean().ifPresent(this::validatePath);
