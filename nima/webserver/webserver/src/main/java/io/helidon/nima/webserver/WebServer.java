@@ -133,7 +133,7 @@ public interface WebServer {
                 HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
         Builder(Config rootConfig) {
-            Config config = rootConfig.get("nima.server");
+            Config config = rootConfig.get("server");
             config.get("host").asString().ifPresent(this::host);
             config.get("port").asInt().ifPresent(this::port);
 

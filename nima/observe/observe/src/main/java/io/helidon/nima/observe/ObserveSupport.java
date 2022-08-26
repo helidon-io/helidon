@@ -114,7 +114,7 @@ public class ObserveSupport implements Consumer<HttpRouting.Builder> {
         private Config config;
 
         private Builder() {
-            config(Nima.config().get("nima.observe"));
+            config(Nima.config().get("observe"));
         }
 
         @Override
