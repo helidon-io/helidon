@@ -86,14 +86,14 @@ is defined.
 
 include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=2]
 
-To disable Helidon tracing for web server and security:
+To disable Helidon tracing for WebServer and security:
 [source,properties]
 ----
 tracing.components.web-server.enabled=false
 tracing.components.security.enabled=false
 ----
 
-To disables MP Tracing as by specification:
+To disable MP Tracing per specification:
 [source,properties]
 ----
 mp.opentracing.server.skip-pattern=.*
@@ -123,17 +123,17 @@ tracing:
 
 === Controlling Tracing Output
 
-For Web Server we have a path based support for configuring tracing, in addition
+For WebServer we have path-based support for configuring tracing, in addition
 to the configuration described above.
 
-Configuration of path can use any path string supported by the
-Web Server. The configuration itself has the same possibilities
+Path configuration can use any path string supported by the
+WebServer. The configuration itself has the same possibilities
 as traced configuration described above. The path specific configuration
 will be merged with global configuration (path is the "newer" configuration, global is the "older")
 
 ==== Renaming top level span using request properties
 
-To have a nicer overview in search pane of a tracer, you can customize the top-level span name using configuration.
+To have a better overview in the search pane of a tracer, you can customize the top-level span name using configuration.
 
 Example:
 [source,properties]
