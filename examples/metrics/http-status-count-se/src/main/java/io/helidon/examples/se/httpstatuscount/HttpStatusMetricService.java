@@ -15,6 +15,8 @@
  */
 package io.helidon.examples.se.httpstatuscount;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -43,6 +45,8 @@ public class HttpStatusMetricService implements Service {
 
     static final String STATUS_TAG_NAME = "range";
 
+    private static final AtomicInteger IN_PROGRESS = new AtomicInteger();
+
     private final Counter[] responseCounters = new Counter[6];
 
     static HttpStatusMetricService create() {
@@ -69,8 +73,14 @@ public class HttpStatusMetricService implements Service {
         rules.any(this::updateRange);
     }
 
+    // for testing
+    static boolean isInProgress() {
+        return IN_PROGRESS.get() != 0;
+    }
+
     // Edited to adopt Ciaran's fix later in the thread.
     private void updateRange(ServerRequest request, ServerResponse response) {
+        IN_PROGRESS.incrementAndGet();
         response.whenSent()
                 .thenAccept(this::logMetric);
         request.next();
@@ -81,5 +91,6 @@ public class HttpStatusMetricService implements Service {
         if (range > 0 && range < responseCounters.length) {
             responseCounters[range].inc();
         }
+        IN_PROGRESS.decrementAndGet();
     }
 }
