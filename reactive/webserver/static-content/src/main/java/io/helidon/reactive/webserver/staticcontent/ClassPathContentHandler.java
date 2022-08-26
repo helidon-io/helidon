@@ -37,8 +37,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.reactive.IoMulti;
-import io.helidon.reactive.webserver.HttpException;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 

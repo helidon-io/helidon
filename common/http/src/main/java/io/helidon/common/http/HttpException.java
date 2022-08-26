@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.reactive.webserver;
-
-import io.helidon.common.http.Http;
+package io.helidon.common.http;
 
 /**
  * Runtime exception for applications.

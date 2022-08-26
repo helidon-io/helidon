@@ -27,12 +27,12 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.reactive.media.common.DefaultMediaSupport;
 import io.helidon.reactive.media.common.MessageBodyWriter;
-import io.helidon.reactive.webserver.HttpException;
 import io.helidon.reactive.webserver.RequestHeaders;
 import io.helidon.reactive.webserver.ResponseHeaders;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -61,12 +61,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     /**
-     * Find welcome file in provided directory or throw not found {@link io.helidon.reactive.webserver.HttpException}.
+     * Find welcome file in provided directory or throw not found {@link io.helidon.common.http.HttpException}.
      *
      * @param directory a directory to find in
      * @param name welcome file name
      * @return a path of the welcome file
-     * @throws io.helidon.reactive.webserver.HttpException if welcome file doesn't exists
+     * @throws io.helidon.common.http.HttpException if welcome file doesn't exists
      */
     private static Path resolveWelcomeFile(Path directory, String name) {
         throwNotFoundIf(name == null || name.isEmpty());

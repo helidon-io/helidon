@@ -21,8 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import io.helidon.reactive.webserver.BadRequestException;
-import io.helidon.reactive.webserver.NotFoundException;
+import io.helidon.common.http.BadRequestException;
+import io.helidon.common.http.NotFoundException;
 
 /**
  * Simple bean to managed a directory based storage.

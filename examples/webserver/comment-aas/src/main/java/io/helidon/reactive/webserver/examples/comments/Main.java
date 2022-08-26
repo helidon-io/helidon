@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.HttpException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 
