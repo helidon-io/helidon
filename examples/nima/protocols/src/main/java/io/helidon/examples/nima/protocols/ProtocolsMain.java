@@ -41,7 +41,7 @@ import static io.helidon.nima.grpc.webserver.ResponseHelper.complete;
  * Example showing supported protocols.
  */
 public class ProtocolsMain {
-    private static final byte[] RESPONSE = "Hello from WARP!".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] RESPONSE = "Hello from Níma!".getBytes(StandardCharsets.UTF_8);
 
     private ProtocolsMain() {
     }

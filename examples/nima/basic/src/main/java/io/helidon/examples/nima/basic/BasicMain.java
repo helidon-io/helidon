@@ -55,6 +55,6 @@ public class BasicMain {
      * @param router HTTP routing builder to configure routes for this service
      */
     static void routing(HttpRouting.Builder router) {
-        router.get("/*", (req, res) -> res.send("Warp Works!"));
+        router.get("/*", (req, res) -> res.send("Níma Works!"));
     }
 }

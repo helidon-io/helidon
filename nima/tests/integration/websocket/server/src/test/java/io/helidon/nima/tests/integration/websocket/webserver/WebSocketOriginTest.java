@@ -62,7 +62,7 @@ class WebSocketOriginTest {
     static void updateServer(WebServer.Builder builder) {
         builder.addConnectionProvider(Http1ConnectionProvider.builder()
                                               .addUpgradeProvider(WsUpgradeProvider.builder()
-                                                                          .addOrigin("WarpTest")
+                                                                          .addOrigin("NimaTest")
                                                                           .build())
                                               .build());
     }
@@ -79,7 +79,7 @@ class WebSocketOriginTest {
         CompletableFuture<Boolean> wsCompleted = new CompletableFuture<>();
 
         java.net.http.WebSocket webSocket = client.newWebSocketBuilder()
-                .header("Origin", "WarpTest")
+                .header("Origin", "NimaTest")
                 .buildAsync(URI.create("ws://localhost:" + port + "/single"),
                             new java.net.http.WebSocket.Listener() {
                                 @Override
