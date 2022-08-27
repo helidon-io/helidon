@@ -26,6 +26,7 @@ package io.helidon.common.http;
 public class HttpException extends RuntimeException {
 
     private final Http.Status status;
+    private final boolean keepAlive;
 
     /**
      * Creates {@link HttpException} associated with {@link Http.Status#INTERNAL_SERVER_ERROR_500}.
@@ -53,10 +54,20 @@ public class HttpException extends RuntimeException {
      * @param status the http status
      */
     public HttpException(String message, Http.Status status) {
-        super(message);
-
-        this.status = status;
+        this(message, status, null);
     }
+
+    /**
+     * Creates {@link HttpException}.
+     *
+     * @param message the message
+     * @param status the http status
+     * @param keepAlive whether to keep the connection alive
+     */
+    public HttpException(String message, Http.Status status, boolean keepAlive) {
+        this(message, status, null, keepAlive);
+    }
+
 
     /**
      * Creates {@link HttpException}.
@@ -66,9 +77,22 @@ public class HttpException extends RuntimeException {
      * @param cause the cause of this exception
      */
     public HttpException(String message, Http.Status status, Throwable cause) {
+        this(message, status, cause, false);
+    }
+
+    /**
+     * Creates {@link HttpException}.
+     *
+     * @param message the message
+     * @param status the http status
+     * @param cause the cause of this exception
+     * @param keepAlive whether to keep this connection alive
+     */
+    public HttpException(String message, Http.Status status, Throwable cause, boolean keepAlive) {
         super(message, cause);
 
         this.status = status;
+        this.keepAlive = keepAlive;
     }
 
     /**
@@ -78,5 +102,15 @@ public class HttpException extends RuntimeException {
      */
     public final Http.Status status() {
         return status;
+    }
+
+    /**
+     * Whether we should attempt to keep the connection alive (if enabled for it).
+     * Some exceptions may allow the connection to be further used (such as {@link io.helidon.common.http.NotFoundException}.
+     *
+     * @return whether to keep alive
+     */
+    public boolean keepAlive() {
+        return keepAlive;
     }
 }

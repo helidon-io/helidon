@@ -17,26 +17,27 @@
 package io.helidon.common.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#NOT_FOUND_404 not found}.
+ * A runtime exception indicating a {@link io.helidon.common.http.Http.Status#INTERNAL_SERVER_ERROR_500 internal server error}.
  */
-public class NotFoundException extends HttpException {
-
+public class InternalServerException extends HttpException {
     /**
-     * Creates {@link NotFoundException}.
-     *
-     * @param message the message
-     */
-    public NotFoundException(String message) {
-        super(message, Http.Status.NOT_FOUND_404, null, true);
-    }
-
-    /**
-     * Creates {@link NotFoundException}.
+     * Creates {@link io.helidon.common.http.InternalServerException}.
      *
      * @param message the message
      * @param cause the cause of this exception
      */
-    public NotFoundException(String message, Throwable cause) {
-        super(message, Http.Status.NOT_FOUND_404, cause, true);
+    public InternalServerException(String message, Throwable cause) {
+        super(message, Http.Status.INTERNAL_SERVER_ERROR_500, cause);
+    }
+
+    /**
+     * Creates {@link io.helidon.common.http.InternalServerException}.
+     *
+     * @param message the message
+     * @param cause the cause of this exception
+     * @param keepAlive whether to keep the connection alive (if keep alives are enabled)
+     */
+    public InternalServerException(String message, Throwable cause, boolean keepAlive) {
+        super(message, Http.Status.INTERNAL_SERVER_ERROR_500, cause, keepAlive);
     }
 }

@@ -25,13 +25,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.HttpException;
+import io.helidon.common.http.InternalServerException;
+import io.helidon.common.http.NotFoundException;
+import io.helidon.common.http.RequestException;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.PathMatchers;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -59,7 +61,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param etag            the proposed ETag. If {@code null} then method returns false
      * @param requestHeaders  an HTTP request headers
      * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.nima.webserver.http.HttpException if ETag is checked
+     * @throws io.helidon.common.http.RequestException if ETag is checked
      */
     static void processEtag(String etag, HeadersServerRequest requestHeaders, HeadersServerResponse responseHeaders) {
         if (etag == null || etag.isEmpty()) {
@@ -74,11 +76,8 @@ abstract class StaticContentHandler implements StaticContentSupport {
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
-                    throw HttpException.builder()
-                            .message("Accepted by If-None-Match header!")
-                            .type(DirectHandler.EventType.OTHER)
-                            .status(Http.Status.NOT_MODIFIED_304)
-                            .build();
+                    // using exception to handle normal flow (same as in reactive static content)
+                    throw new HttpException("Accepted by If-None-Match header", Http.Status.NOT_MODIFIED_304, true);
                 }
             }
         }
@@ -96,11 +95,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
                     }
                 }
                 if (!ifMatchChecked) {
-                    throw HttpException.builder()
-                            .message("Not accepted by If-Match header!")
-                            .type(DirectHandler.EventType.OTHER)
-                            .status(Http.Status.PRECONDITION_FAILED_412)
-                            .build();
+                    throw new HttpException("Not accepted by If-Match header", Http.Status.PRECONDITION_FAILED_412, true);
                 }
             }
         }
@@ -113,7 +108,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param modified        the last modification instance. If {@code null} then method just returns {@code false}.
      * @param requestHeaders  an HTTP request headers
      * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.nima.webserver.http.HttpException if (un)modify since header is checked
+     * @throws io.helidon.common.http.RequestException if (un)modify since header is checked
      */
     static void processModifyHeaders(Instant modified,
                                      HeadersServerRequest requestHeaders,
@@ -128,37 +123,26 @@ abstract class StaticContentHandler implements StaticContentSupport {
                 .ifModifiedSince()
                 .map(ChronoZonedDateTime::toInstant);
         if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
-            throw HttpException.builder()
-                    .message("Not valid for If-Modified-Since header!")
-                    .type(DirectHandler.EventType.OTHER)
-                    .status(Http.Status.NOT_MODIFIED_304)
-                    .build();
+            throw new HttpException("Not valid for If-Modified-Since header", Http.Status.NOT_MODIFIED_304, true);
         }
         // If-Unmodified-Since
         Optional<Instant> ifUnmodSince = requestHeaders
                 .ifUnmodifiedSince()
                 .map(ChronoZonedDateTime::toInstant);
         if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
-            throw HttpException.builder()
-                    .message("Not valid for If-Unmodified-Since header!")
-                    .type(DirectHandler.EventType.OTHER)
-                    .status(Http.Status.PRECONDITION_FAILED_412)
-                    .build();
+            throw new HttpException("Not valid for If-Unmodified-Since header", Http.Status.PRECONDITION_FAILED_412, true);
         }
     }
 
     /**
-     * If provided {@code condition} is {@code true} then throws not found {@link io.helidon.nima.webserver.http.HttpException}.
+     * If provided {@code condition} is {@code true} then throws not found {@link io.helidon.common.http.RequestException}.
      *
      * @param condition if condition is true then throws an exception otherwise not
-     * @throws io.helidon.nima.webserver.http.HttpException if {@code condition} parameter is {@code true}.
+     * @throws io.helidon.common.http.RequestException if {@code condition} parameter is {@code true}.
      */
     static void throwNotFoundIf(boolean condition) {
         if (condition) {
-            throw HttpException.builder()
-                    .message("Static content not found!")
-                    .type(DirectHandler.EventType.NOT_FOUND)
-                    .build();
+            throw new NotFoundException("Static content not found");
         }
     }
 
@@ -231,7 +215,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
             if (!doHandle(method, requestPath, request, response)) {
                 response.next();
             }
-        } catch (HttpException httpException) {
+        } catch (RequestException httpException) {
             if (httpException.status().code() == Http.Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND
                 response.next();
@@ -240,11 +224,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
             }
         } catch (Exception e) {
             LOGGER.log(Level.TRACE, "Failed to access static resource", e);
-            throw HttpException.builder()
-                    .message("Cannot access static resource!")
-                    .type(DirectHandler.EventType.INTERNAL_ERROR)
-                    .cause(e)
-                    .build();
+            throw new InternalServerException("Cannot access static resource", e);
         }
     }
 
@@ -257,7 +237,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param response      an HTTP response
      * @return {@code true} only if static content was found and processed.
      * @throws java.io.IOException                          if resource is not acceptable
-     * @throws io.helidon.nima.webserver.http.HttpException if some known WEB error
+     * @throws io.helidon.common.http.RequestException if some known WEB error
      */
     abstract boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
             throws IOException, URISyntaxException;

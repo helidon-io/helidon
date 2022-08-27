@@ -18,7 +18,6 @@ package io.helidon.nima.http2.webserver;
 
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -30,6 +29,7 @@ import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http2.FlowControl;
@@ -48,11 +48,10 @@ import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
 import io.helidon.nima.http2.webserver.spi.SubProtocolResult;
+import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
  * Server HTTP/2 stream implementation.
@@ -262,21 +261,12 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                 .setName("[" + ctx.socketId() + " "
                                  + ctx.childSocketId() + " ] - " + streamId);
         try {
-            try {
-                handle();
-            } catch (UncheckedIOException | SocketWriterException e) {
-                // failed to write to socket, this happens (remote connection closed, network issues)
-                ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to write to socket", e);
-            } catch (HttpException e) {
-                throw e;
-            } catch (Throwable e) {
-                throw HttpException.builder()
-                        .message("Internal error")
-                        .type(DirectHandler.EventType.INTERNAL_ERROR)
-                        .cause(e)
-                        .build();
-            }
-        } catch (HttpException e) {
+            handle();
+        } catch (SocketWriterException e) {
+            throw new CloseConnectionException(e.getMessage(), e);
+        } catch (CloseConnectionException | UncheckedIOException e) {
+            throw e;
+        } catch (RequestException e) {
             DirectHandler handler = ctx.directHandlers().handler(e.eventType());
             DirectHandler.TransportResponse response = handler.handle(e.request(),
                                                                       e.eventType(),
@@ -284,37 +274,27 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                                       e.responseHeaders(),
                                                                       e);
 
-            Optional<ServerResponse> fullResponse = e.fullResponse();
-            if (fullResponse.isPresent()) {
-                fullResponse.ifPresent(res -> {
-                    res.status(response.status());
-                    response.headers()
-                            .forEach(res::header);
-                    response.entity().ifPresentOrElse(res::send, res::send);
-                });
+            HeadersServerResponse headers = response.headers();
+            byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
+            if (message.length != 0) {
+                headers.set(HeaderValue.create(Header.CONTENT_LENGTH, String.valueOf(message.length)));
+            }
+            Http2Headers http2Headers = Http2Headers.create(headers);
+            if (message.length == 0) {
+                writer.writeHeaders(http2Headers,
+                                    streamId,
+                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                    flowControl);
             } else {
-                HeadersServerResponse headers = response.headers();
-                byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-                if (message.length != 0) {
-                    headers.set(HeaderValue.create(Header.CONTENT_LENGTH, String.valueOf(message.length)));
-                }
-                Http2Headers http2Headers = Http2Headers.create(headers);
-                if (message.length == 0) {
-                    writer.writeHeaders(http2Headers,
-                                        streamId,
-                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                        flowControl);
-                } else {
-                    Http2FrameHeader dataHeader = Http2FrameHeader.create(message.length,
-                                                                          Http2FrameTypes.DATA,
-                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                          streamId);
-                    writer.writeHeaders(http2Headers,
-                                        streamId,
-                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                        new Http2FrameData(dataHeader, BufferData.create(message)),
-                                        flowControl);
-                }
+                Http2FrameHeader dataHeader = Http2FrameHeader.create(message.length,
+                                                                      Http2FrameTypes.DATA,
+                                                                      Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                      streamId);
+                writer.writeHeaders(http2Headers,
+                                    streamId,
+                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                    new Http2FrameData(dataHeader, BufferData.create(message)),
+                                    flowControl);
             }
         } finally {
             headers = null;
@@ -394,26 +374,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                                    streamId,
                                                                    this::readEntityFromPipeline);
             Http2ServerResponse response = new Http2ServerResponse(ctx, request, writer, streamId, flowControl);
-
             try {
                 routing.route(ctx, request, response);
-            } catch (HttpException e) {
-                throw HttpException.builder()
-                        .request(request)
-                        .response(response)
-                        .type(e.eventType())
-                        .status(e.status())
-                        .message(e.getMessage())
-                        .cause(e)
-                        .build();
-            } catch (Throwable e) {
-                throw HttpException.builder()
-                        .request(request)
-                        .response(response)
-                        .type(DirectHandler.EventType.INTERNAL_ERROR)
-                        .message(e.getMessage())
-                        .cause(e)
-                        .build();
             } finally {
                 this.state = Http2StreamState.CLOSED;
             }

@@ -21,8 +21,8 @@ import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.nima.webserver.http.HttpException;
-import io.helidon.nima.webserver.http.HttpSimpleRequest;
+import io.helidon.common.http.RequestException;
+import io.helidon.nima.webserver.http.DirectTransportRequest;
 
 /**
  * HTTP/1 headers reader.
@@ -56,9 +56,9 @@ public final class Http1Headers {
         try {
             return Http1HeadersParser.readHeaders(reader, maxHeadersSize, validateHeaders);
         } catch (IllegalStateException | IllegalArgumentException e) {
-            throw HttpException.builder()
+            throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)
-                    .request(HttpSimpleRequest.create(prologue, HeadersWritable.create()))
+                    .request(DirectTransportRequest.create(prologue, HeadersWritable.create()))
                     .message(e.getMessage())
                     .cause(e)
                     .build();

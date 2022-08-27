@@ -32,16 +32,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.ForbiddenException;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -120,11 +120,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
 
         // now it exists and is a file
         if (!Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
-            throw HttpException.builder()
-                    .message("File is not accessible")
-                    .type(DirectHandler.EventType.OTHER)
-                    .status(Http.Status.FORBIDDEN_403)
-                    .build();
+            throw new ForbiddenException("File is not accessible");
         }
 
         // Caching headers support
@@ -206,12 +202,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     /**
-     * Find welcome file in provided directory or throw not found {@link io.helidon.nima.webserver.http.HttpException}.
+     * Find welcome file in provided directory or throw not found {@link io.helidon.common.http.RequestException}.
      *
      * @param directory a directory to find in
      * @param name      welcome file name
      * @return a path of the welcome file
-     * @throws io.helidon.nima.webserver.http.HttpException if welcome file doesn't exists
+     * @throws io.helidon.common.http.RequestException if welcome file doesn't exists
      */
     private static Path resolveWelcomeFile(Path directory, String name) {
         throwNotFoundIf(name == null || name.isEmpty());
@@ -233,11 +229,9 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                     if (requestHeaders.isAccepted(it)) {
                         return it;
                     }
-                    throw HttpException.builder()
-                            .message("Media type " + it + " is not accepted by request")
-                            .type(DirectHandler.EventType.OTHER)
-                            .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
-                            .build();
+                    throw new HttpException("Media type " + it + " is not accepted by request",
+                                            Http.Status.UNSUPPORTED_MEDIA_TYPE_415,
+                                            true);
                 })
                 .orElseGet(() -> {
                     List<HttpMediaType> acceptedTypes = requestHeaders.acceptedTypes();

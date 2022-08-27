@@ -22,6 +22,7 @@ import java.util.Map;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.EventType;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.RequestException;
 import io.helidon.nima.webserver.CloseConnectionException;
 
 import static java.lang.System.Logger.Level.WARNING;
@@ -64,7 +65,7 @@ public class DirectHandlers {
      * @param httpException exception to handle
      * @param res           response
      */
-    public void handle(HttpException httpException, ServerResponse res) {
+    public void handle(RequestException httpException, ServerResponse res) {
         DirectHandler.TransportResponse response = handler(httpException.eventType()).handle(
                 httpException.request(),
                 httpException.eventType(),

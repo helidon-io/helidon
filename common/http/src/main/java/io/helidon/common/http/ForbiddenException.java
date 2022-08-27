@@ -17,26 +17,26 @@
 package io.helidon.common.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#NOT_FOUND_404 not found}.
+ * A runtime exception indicating a {@link io.helidon.common.http.Http.Status#NOT_FOUND_404 not found}.
  */
-public class NotFoundException extends HttpException {
+public class ForbiddenException extends HttpException {
 
     /**
-     * Creates {@link NotFoundException}.
+     * Creates {@link io.helidon.common.http.ForbiddenException}.
      *
      * @param message the message
      */
-    public NotFoundException(String message) {
-        super(message, Http.Status.NOT_FOUND_404, null, true);
+    public ForbiddenException(String message) {
+        super(message, Http.Status.FORBIDDEN_403, null, true);
     }
 
     /**
-     * Creates {@link NotFoundException}.
+     * Creates {@link io.helidon.common.http.ForbiddenException}.
      *
      * @param message the message
      * @param cause the cause of this exception
      */
-    public NotFoundException(String message, Throwable cause) {
-        super(message, Http.Status.NOT_FOUND_404, cause, true);
+    public ForbiddenException(String message, Throwable cause) {
+        super(message, Http.Status.FORBIDDEN_403, cause, true);
     }
 }

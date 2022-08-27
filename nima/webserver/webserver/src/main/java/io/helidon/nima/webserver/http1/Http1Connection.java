@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.EventType;
 import io.helidon.common.http.HeadersServerRequest;
@@ -31,14 +32,15 @@ import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.InternalServerException;
+import io.helidon.common.http.RequestException;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.HttpException;
+import io.helidon.nima.webserver.http.DirectTransportRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.HttpSimpleRequest;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
@@ -139,14 +141,22 @@ public class Http1Connection implements ServerConnection {
             }
         } catch (CloseConnectionException | UncheckedIOException e) {
             throw e;
-        } catch (HttpException e) {
-            handleHttpException(e);
+        } catch (BadRequestException e) {
+            handleRequestException(RequestException.builder()
+                                           .message(e.getMessage())
+                                           .cause(e)
+                                           .type(EventType.BAD_REQUEST)
+                                           .status(e.status())
+                                           .setKeepAlive(e.keepAlive())
+                                           .build());
+        } catch (RequestException e) {
+            handleRequestException(e);
         } catch (Throwable e) {
-            handleHttpException(HttpException.builder()
-                                        .message("Internal error")
-                                        .type(EventType.INTERNAL_ERROR)
-                                        .cause(e)
-                                        .build());
+            handleRequestException(RequestException.builder()
+                                           .message("Internal error")
+                                           .type(EventType.INTERNAL_ERROR)
+                                           .cause(e)
+                                           .build());
         }
     }
 
@@ -167,10 +177,10 @@ public class Http1Connection implements ServerConnection {
 
         currentEntitySizeRead += chunkLength;
         if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {
-            throw HttpException.builder()
+            throw RequestException.builder()
                     .type(EventType.BAD_REQUEST)
                     .status(Http.Status.REQUEST_ENTITY_TOO_LARGE_413)
-                    .request(HttpSimpleRequest.create(prologue, headers))
+                    .request(DirectTransportRequest.create(prologue, headers))
                     .setKeepAlive(false)
                     .build();
         }
@@ -178,7 +188,7 @@ public class Http1Connection implements ServerConnection {
         if (chunkLength == 0) {
             String end = reader.readLine();
             if (!end.isEmpty()) {
-                throw HttpException.builder()
+                throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
                         .message("Invalid terminating chunk")
                         .build();
@@ -213,18 +223,18 @@ public class Http1Connection implements ServerConnection {
             try {
                 this.currentEntitySize = headers.get(Http.Header.CONTENT_LENGTH).value(long.class);
                 if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
-                    throw HttpException.builder()
+                    throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
                             .status(Http.Status.REQUEST_ENTITY_TOO_LARGE_413)
-                            .request(HttpSimpleRequest.create(prologue, headers))
+                            .request(DirectTransportRequest.create(prologue, headers))
                             .setKeepAlive(false)
                             .build();
                 }
                 entity = currentEntitySize == 0 ? EntityStyle.NONE : EntityStyle.LENGTH;
             } catch (MapperException e) {
-                throw HttpException.builder()
+                throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
-                        .request(HttpSimpleRequest.create(prologue, headers))
+                        .request(DirectTransportRequest.create(prologue, headers))
                         .message("Content length is not a number")
                         .cause(e)
                         .build();
@@ -266,9 +276,9 @@ public class Http1Connection implements ServerConnection {
                 if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                     decoder = contentEncodingContext.decoder(contentEncoding);
                 } else {
-                    throw HttpException.builder()
+                    throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
-                            .request(HttpSimpleRequest.create(prologue, headers))
+                            .request(DirectTransportRequest.create(prologue, headers))
                             .message("Unsupported content encoding")
                             .build();
                 }
@@ -301,9 +311,9 @@ public class Http1Connection implements ServerConnection {
         try {
             entityReadLatch.await();
         } catch (InterruptedException e) {
-            throw HttpException.builder()
+            throw RequestException.builder()
                     .type(EventType.INTERNAL_ERROR)
-                    .request(HttpSimpleRequest.create(prologue, headers))
+                    .request(DirectTransportRequest.create(prologue, headers))
                     .message("Failed to wait for pipeline")
                     .cause(e)
                     .build();
@@ -322,25 +332,13 @@ public class Http1Connection implements ServerConnection {
             boolean keepAlive = request.content().consumed() && response.headers().contains(HeaderValues.CONNECTION_KEEP_ALIVE);
             // we must close connection, as we could not consume request
             if (!response.isSent()) {
-                throw HttpException.builder()
-                        .type(EventType.INTERNAL_ERROR)
-                        .cause(e)
-                        .request(request)
-                        .response(response)
-                        .message(e.getMessage())
-                        .setKeepAlive(keepAlive)
-                        .build();
+                throw new InternalServerException(e.getMessage(), e, keepAlive);
             }
             throw new CloseConnectionException("Failed to consume request entity, must close", e);
         }
     }
 
-    private void handleHttpException(HttpException e) {
-        if (e.fullResponse().isPresent()) {
-            ctx.directHandlers().handle(e, e.fullResponse().get());
-            return;
-        }
-
+    private void handleRequestException(RequestException e) {
         DirectHandler handler = ctx.directHandlers().handler(e.eventType());
         DirectHandler.TransportResponse response = handler.handle(e.request(),
                                                                   e.eventType(),
@@ -362,6 +360,8 @@ public class Http1Connection implements ServerConnection {
             buffer.write(message);
         }
 
+        sendListener.headers(ctx, headers);
+        sendListener.data(ctx, buffer);
         writer.write(buffer);
 
         if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {

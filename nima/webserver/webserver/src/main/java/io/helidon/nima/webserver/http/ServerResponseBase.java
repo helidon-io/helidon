@@ -25,9 +25,9 @@ import java.util.List;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -106,12 +106,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             mediaContext.writer(type, requestHeaders, headers())
                     .write(type, entity, outputStream, requestHeaders, this.headers());
         } catch (IllegalArgumentException e) {
-            throw HttpException.builder()
-                    .message(e.getMessage())
-                    .type(DirectHandler.EventType.OTHER)
-                    .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
-                    .request(HttpSimpleRequest.create(requestPrologue, requestHeaders))
-                    .build();
+            throw new HttpException(e.getMessage(), Http.Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
         }
     }
 

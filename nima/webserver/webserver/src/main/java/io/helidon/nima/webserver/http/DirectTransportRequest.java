@@ -23,18 +23,18 @@ import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpPrologue;
 
 /**
- * Simple request to use with {@link HttpException}.
+ * Simple request to use with {@link io.helidon.common.http.RequestException}.
  */
-public class HttpSimpleRequest implements DirectHandler.TransportRequest {
+public class DirectTransportRequest implements DirectHandler.TransportRequest {
     private final String version;
     private final String method;
     private final String path;
     private final HeadersServerRequest headers;
 
-    private HttpSimpleRequest(String version,
-                              String method,
-                              String path,
-                              HeadersServerRequest headers) {
+    private DirectTransportRequest(String version,
+                                   String method,
+                                   String path,
+                                   HeadersServerRequest headers) {
         this.version = version;
         this.method = method;
         this.path = path;
@@ -52,10 +52,10 @@ public class HttpSimpleRequest implements DirectHandler.TransportRequest {
     public static DirectHandler.TransportRequest create(String protocolAndVersion,
                                                         String method,
                                                         String path) {
-        return new HttpSimpleRequest(protocolAndVersion,
-                                     method,
-                                     path,
-                                     HeadersServerRequest.create(HeadersWritable.create()));
+        return new DirectTransportRequest(protocolAndVersion,
+                                          method,
+                                          path,
+                                          HeadersServerRequest.create(HeadersWritable.create()));
     }
 
     /**
@@ -66,10 +66,10 @@ public class HttpSimpleRequest implements DirectHandler.TransportRequest {
      * @return a new simple request
      */
     public static DirectHandler.TransportRequest create(HttpPrologue prologue, Headers headers) {
-        return new HttpSimpleRequest(prologue.protocol() + "/" + prologue.protocolVersion(),
-                                     prologue.method().text(),
-                                     prologue.uriPath().rawPathNoParams(),
-                                     HeadersServerRequest.create(headers));
+        return new DirectTransportRequest(prologue.protocol() + "/" + prologue.protocolVersion(),
+                                          prologue.method().text(),
+                                          prologue.uriPath().rawPathNoParams(),
+                                          HeadersServerRequest.create(headers));
     }
 
     @Override
