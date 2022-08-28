@@ -196,6 +196,8 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                                     </list>
                                     <value key="jdbcDataSource">org.h2.jdbcx.JdbcDataSource</value>
                                     <value key="databaseUrl">jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</value>
+                                    <value key="dbUser">sa</value>
+                                    <value key="userPassword"></value>
                                     <list key="MainTest-methods">
                                         <value><![CDATA[
     @Test
@@ -257,16 +259,6 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
     }
 ]]></value>
                                     </list>
-                                    <list key="main-persistence-properties">
-                                        <map>
-                                            <value key="name">jakarta.persistence.sql-load-script-source</value>
-                                            <value key="value">META-INF/init_script.sql</value>
-                                        </map>
-                                        <map>
-                                            <value key="name">jakarta.persistence.schema-generation.database.action</value>
-                                            <value key="value">drop-and-create</value>
-                                        </map>
-                                    </list>
                                 </model>
                             </output>
                         </option>
@@ -306,6 +298,9 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_D
                                         </map>
                                     </list>
                                     <value key="jdbcDataSource">com.mysql.cj.jdbc.MysqlDataSource</value>
+                                    <value key="databaseUrl">jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false</value>
+                                    <value key="dbUser">user</value>
+                                    <value key="userPassword">password</value>
                                 </model>
                             </output>
                         </option>
@@ -346,6 +341,9 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                         </map>
                                     </list>
                                     <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
+                                    <value key="databaseUrl">jdbc:oracle:thin:@localhost:1521:XE</value>
+                                    <value key="dbUser">sys</value>
+                                    <value key="userPassword">oracle</value>
                                 </model>
                             </output>
                         </option>
@@ -481,6 +479,12 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                     </execution>
                 </executions>
             </plugin>]]></value>
+                        </list>
+                        <list key="main-persistence-properties">
+                            <map>
+                                <value key="name">jakarta.persistence.sql-load-script-source</value>
+                                <value key="value">META-INF/init_script.sql</value>
+                            </map>
                         </list>
                     </model>
                 </output>
