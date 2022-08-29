@@ -70,7 +70,7 @@ class ConnectionHandler implements Runnable {
         this.serverChannelId = serverChannelId;
         this.socket = socket;
         this.channelId = channelId;
-        this.writer = new SocketWriter(sharedExecutor, socket, channelId, writeQueueLength);
+        this.writer = SocketWriter.create(sharedExecutor, socket, writeQueueLength);
         this.reader = new DataReader(socket);
         this.ctx = ConnectionContext.create(mediaContext,
                                             contentEncodingContext,

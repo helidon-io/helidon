@@ -71,6 +71,10 @@ class HeadersImpl<T extends HeadersWritable<T>> implements HeadersWritable<T> {
         if (headerValue == null) {
             return false;
         }
+        if (headerWithValue.valueCount() == 1 && headerValue.valueCount() == 1) {
+            // just a string compare instead of list compare
+            return headerWithValue.value().equals(headerValue.value());
+        }
         return headerWithValue.allValues().equals(headerValue.allValues());
     }
 
@@ -158,7 +162,14 @@ class HeadersImpl<T extends HeadersWritable<T>> implements HeadersWritable<T> {
 
     @Override
     public T set(HeaderValue header) {
-        doSet(header);
+        HeaderName name = header.headerName();
+        int index = name.index();
+        if (index == -1) {
+            customHeaders.put(name, header);
+        } else {
+            knownHeaders[index] = header;
+            knownHeaderIndices.add(index);
+        }
         return (T) this;
     }
 
@@ -212,18 +223,6 @@ class HeadersImpl<T extends HeadersWritable<T>> implements HeadersWritable<T> {
         }
         return customHeaders.remove(name);
     }
-
-    private void doSet(HeaderValue header) {
-        HeaderName name = header.headerName();
-        int index = name.index();
-        if (index == -1) {
-            customHeaders.put(name, header);
-        } else {
-            knownHeaders[index] = header;
-            knownHeaderIndices.add(index);
-        }
-    }
-
     private HeaderValue find(HeaderName name) {
         int index = name.index();
 

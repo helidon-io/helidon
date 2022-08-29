@@ -118,7 +118,7 @@ class Http2ClientConnection {
                 ? PlainSocket.client(socket, channelId)
                 : TlsSocket.client(sslSocket, channelId);
 
-        DataWriter writer = new SocketWriter(executor, helidonSocket, channelId, 32);
+        DataWriter writer = SocketWriter.create(executor, helidonSocket, 32);
         inputStream = socket.getInputStream();
         this.writer = new Http2ConnectionWriter(helidonSocket, writer, List.of());
 
