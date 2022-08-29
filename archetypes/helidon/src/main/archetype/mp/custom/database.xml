@@ -342,7 +342,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                     </list>
                                     <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
                                     <value key="databaseUrl">jdbc:oracle:thin:@localhost:1521:XE</value>
-                                    <value key="dbUser">sys</value>
+                                    <value key="dbUser">sys as sysdba</value>
                                     <value key="userPassword">oracle</value>
                                 </model>
                             </output>
