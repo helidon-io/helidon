@@ -17,7 +17,7 @@
 package io.helidon.common.http;
 
 /**
- * A runtime exception indicating a {@link io.helidon.common.http.Http.Status#NOT_FOUND_404 not found}.
+ * A runtime exception indicating a {@link io.helidon.common.http.Http.Status#FORBIDDEN_403 not found}.
  */
 public class ForbiddenException extends HttpException {
 
