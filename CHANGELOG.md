@@ -38,6 +38,13 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 ### CHANGES
 
 - Nima: [4748](https://github.com/oracle/helidon/pull/4748)
+- Nima: a few optimizations [4809](https://github.com/oracle/helidon/pull/4809)
+- Nima: Config and name [4802](https://github.com/oracle/helidon/pull/4802)
+- Nima: Use a single SocketHttpClient. [4794](https://github.com/oracle/helidon/pull/4794)
+- Nima: Http exception refactoring [4804](https://github.com/oracle/helidon/pull/4804)
+- Nima: Cleaner stack when running HTTP requests. [4768](https://github.com/oracle/helidon/pull/4768)
+- Nima: Fix query params being lost on upgrade requests. [4796](https://github.com/oracle/helidon/pull/4796)
+- Common: Move DirectHandler to HTTP common and refactor reactive and Nima [4782](https://github.com/oracle/helidon/pull/4782)
 - Common: Updates to Helidon Common, Part 1 [4693](https://github.com/oracle/helidon/pull/4693)
 - Common: Updates to Helidon Common, Part 2 [4718](https://github.com/oracle/helidon/pull/4718)
 - Config: Unescape the keys when config is returned as a map in Main branch (#4678) [4716](https://github.com/oracle/helidon/pull/4716)
