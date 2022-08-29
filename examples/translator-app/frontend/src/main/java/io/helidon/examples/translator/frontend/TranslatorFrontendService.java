@@ -18,7 +18,7 @@ package io.helidon.examples.translator.frontend;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.reactive.webserver.BadRequestException;
+import io.helidon.common.http.BadRequestException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;

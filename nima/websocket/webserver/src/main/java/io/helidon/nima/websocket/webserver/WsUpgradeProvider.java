@@ -32,8 +32,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RequestException;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
@@ -105,7 +105,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
         }
 
         if (!SUPPORTED_VERSION.equals(version)) {
-            throw HttpException.builder()
+            throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)
                     .message("Unsupported WebSocket Version")
                     .header(SUPPORTED_VERSION_HEADER)
@@ -123,7 +123,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             if (headers.contains(Header.ORIGIN)) {
                 String origin = headers.get(Header.ORIGIN).value();
                 if (!origins.contains(origin)) {
-                    throw HttpException.builder()
+                    throw RequestException.builder()
                             .message("Invalid Origin")
                             .type(DirectHandler.EventType.FORBIDDEN)
                             .build();
@@ -155,7 +155,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             been base64-encoded (see Section 4 of [RFC4648]).  The nonce
             MUST be selected randomly for each connection.
              */
-            throw HttpException.builder()
+            throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)
                     .message("Invalid Sec-WebSocket-Key header")
                     .build();

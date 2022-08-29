@@ -23,12 +23,12 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -121,7 +121,7 @@ class ConnectionHandler implements Runnable {
             } finally {
                 writer.close();
             }
-        } catch (HttpException e) {
+        } catch (RequestException e) {
             ctx.log(LOGGER, WARNING, "escaped HTTP exception", e);
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client

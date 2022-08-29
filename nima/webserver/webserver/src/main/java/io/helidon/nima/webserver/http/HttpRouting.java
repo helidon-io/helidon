@@ -25,9 +25,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.InternalServerException;
+import io.helidon.common.http.NotFoundException;
+import io.helidon.common.http.RequestException;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Routing;
@@ -42,9 +45,11 @@ public final class HttpRouting implements Routing {
 
     private final Filters filters;
     private final ServiceRoute rootRoute;
+    // todo configure on HTTP routing
+    private final ErrorHandlers errorHandlers = new ErrorHandlers();
 
     private HttpRouting(Builder builder) {
-        this.filters = Filters.create(List.copyOf(builder.filters));
+        this.filters = Filters.create(errorHandlers, List.copyOf(builder.filters));
         this.rootRoute = builder.rootRules.build();
     }
 
@@ -88,8 +93,10 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RoutingExecutor routingExecutor = new RoutingExecutor(rootRoute, ctx, request, response);
-        filters.filter(request, response, routingExecutor);
+        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, errorHandlers, rootRoute, request, response);
+        // we cannot throw an exception to the filters, as then the filter would not have information about actual status
+        // code, so error handling is done in routing executor and for each filter
+        filters.filter(ctx, request, response, routingExecutor);
     }
 
     @Override
@@ -281,52 +288,45 @@ public final class HttpRouting implements Routing {
 
     private static final class RoutingExecutor implements Runnable {
         private final ConnectionContext ctx;
+        private final ErrorHandlers errorHandlers;
         private final RoutingRequest request;
         private final RoutingResponse response;
         private final ServiceRoute rootRoute;
 
-        private RoutingExecutor(ServiceRoute rootRoute, ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-            this.rootRoute = rootRoute;
+        private RoutingExecutor(ConnectionContext ctx,
+                                ErrorHandlers errorHandlers,
+                                ServiceRoute rootRoute,
+                                RoutingRequest request,
+                                RoutingResponse response) {
             this.ctx = ctx;
+            this.errorHandlers = errorHandlers;
+            this.rootRoute = rootRoute;
             this.request = request;
             this.response = response;
         }
 
         @Override
         public void run() {
-            try {
-                HttpPrologue prologue = request.prologue();
-                response.resetRouting();
+            response.resetRouting();
 
-                RoutingResult result = RoutingResult.ROUTE;
-                int counter = 0;
-                while (result == RoutingResult.ROUTE) {
-                    counter++;
-                    if (counter == 10) {
-                        LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
+            RoutingResult result = RoutingResult.ROUTE;
+            int counter = 0;
+            while (result == RoutingResult.ROUTE) {
+                counter++;
+                if (counter == 10) {
+                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
 
-                        throw HttpException.builder()
-                                .request(HttpSimpleRequest.create(prologue, request.headers()))
-                                .type(DirectHandler.EventType.INTERNAL_ERROR)
-                                .build();
-                    }
-
-                    result = doRoute(ctx, request, response);
+                    throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
                 }
 
-                // finished and done
-                if (result == RoutingResult.FINISH) {
-                    return;
-                }
-                ctx.directHandlers().handle(HttpException.builder()
-                                                    .request(request)
-                                                    .response(response)
-                                                    .type(DirectHandler.EventType.NOT_FOUND)
-                                                    .message("Endpoint not found")
-                                                    .build(), response);
-            } catch (HttpException e) {
-                ctx.directHandlers().handle(e, response);
+                result = doRoute(ctx, request, response);
             }
+
+            // finished and done
+            if (result == RoutingResult.FINISH) {
+                return;
+            }
+            throw new NotFoundException("Endpoint not found");
         }
 
         // todo we may have a lru cache (or most commonly used - weighted by number of usages) to
@@ -370,11 +370,9 @@ public final class HttpRouting implements Routing {
                     response.send();
 
                     return RoutingResult.FINISH;
-                } catch (CloseConnectionException | HttpException e) {
+                } catch (CloseConnectionException | RequestException | HttpException e) {
                     throw e;
                 } catch (Exception thrown) {
-                    // TODO need to use error handler, error handler may reroute/next
-                    // prevent infinite loops here
                     if (thrown.getCause() instanceof SocketException se) {
                         throw new UncheckedIOException(se);
                     }
@@ -390,15 +388,8 @@ public final class HttpRouting implements Routing {
                         }
                         // attempt to consume the request entity
                         ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed", thrown);
-                        // we must close connection, as we could not consume request
-                        throw HttpException.builder()
-                                .type(DirectHandler.EventType.INTERNAL_ERROR)
-                                .cause(thrown)
-                                .request(request)
-                                .response(response)
-                                .message(thrown.getMessage())
-                                .setKeepAlive(keepAlive)
-                                .build();
+
+                        throw new InternalServerException(thrown.getMessage(), thrown, keepAlive);
                     }
                 }
             }

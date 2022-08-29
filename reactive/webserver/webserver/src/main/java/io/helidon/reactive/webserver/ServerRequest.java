@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.reactive.media.common.MessageBodyReadableContent;

@@ -27,12 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RequestException;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
@@ -210,7 +211,7 @@ class StaticContentHandlerTest {
             throw new AssertionError("Expected HttpException was not thrown!");
         } catch (HttpException he) {
             if (status != null && status.code() != he.status().code()) {
-                throw new AssertionError("Unexpected status in HttpException. "
+                throw new AssertionError("Unexpected status in RequestException. "
                                                  + "(Expected: " + status.code() + ", Actual: " + status.code() + ")");
             }
         }

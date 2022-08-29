@@ -19,18 +19,22 @@ package io.helidon.nima.webserver.http;
 import java.util.Iterator;
 import java.util.List;
 
-import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
+import io.helidon.nima.webserver.ConnectionContext;
 
 /**
  * Handler of HTTP filters.
  */
 public class Filters {
+    private final ErrorHandlers errorHandlers;
     private final List<Filter> filters;
     private final boolean noFilters;
 
-    private Filters(List<Filter> filters) {
+    private Filters(ErrorHandlers errorHandlers, List<Filter> filters) {
+        this.errorHandlers = errorHandlers;
         this.filters = filters;
         this.noFilters = filters.isEmpty();
     }
@@ -38,42 +42,50 @@ public class Filters {
     /**
      * Create filters.
      *
-     * @param filters list of filters to use
+     * @param errorHandlers
+     * @param filters       list of filters to use
      * @return filters
      */
-    public static Filters create(List<Filter> filters) {
-        return new Filters(filters);
+    public static Filters create(ErrorHandlers errorHandlers, List<Filter> filters) {
+        return new Filters(errorHandlers, filters);
     }
 
     /**
      * Filter request.
      *
+     * @param ctx             connection context
      * @param request         request
      * @param response        response
      * @param routingExecutor this handler is called after all filters finish processing
      *                        (unless a filter does not invoke the chain)
      */
-    public void filter(RoutingRequest request, RoutingResponse response, Runnable routingExecutor) {
+    public void filter(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Runnable routingExecutor) {
         if (noFilters) {
-            routingExecutor.run();
+            errorHandlers.runWithErrorHandling(ctx, request, response, routingExecutor);
             return;
         }
 
-        FilterChain chain = new FilterChainImpl(filters, request, response, routingExecutor);
+        FilterChain chain = new FilterChainImpl(ctx, errorHandlers, filters, request, response, routingExecutor);
         request.path(new FilterRoutedPath(request.prologue().uriPath()));
         chain.proceed();
     }
 
     private static final class FilterChainImpl implements FilterChain {
+        private final ConnectionContext ctx;
+        private final ErrorHandlers errorHandlers;
         private final Iterator<Filter> filters;
         private final Runnable routingExecutor;
         private RoutingRequest request;
         private RoutingResponse response;
 
-        private FilterChainImpl(List<Filter> filters,
+        private FilterChainImpl(ConnectionContext ctx,
+                                ErrorHandlers errorHandlers,
+                                List<Filter> filters,
                                 RoutingRequest request,
                                 RoutingResponse response,
                                 Runnable routingExecutor) {
+            this.ctx = ctx;
+            this.errorHandlers = errorHandlers;
             this.filters = filters.iterator();
             this.request = request;
             this.response = response;
@@ -86,19 +98,20 @@ public class Filters {
                 return;
             }
             if (filters.hasNext()) {
-                filters.next().filter(this, request, response);
+                errorHandlers.runWithErrorHandling(ctx, request, response, this::runNextFilter);
             } else {
-                routingExecutor.run();
+                errorHandlers.runWithErrorHandling(ctx, request, response, routingExecutor);
                 if (!response.isSent()) {
-                    throw HttpException.builder()
-                            .request(request)
-                            .response(response)
-                            .type(DirectHandler.EventType.INTERNAL_ERROR)
-                            .message("Routing finished but response was not sent. Níma does not support asynchronous responses. "
-                                             + "Please block until a response is sent.")
-                            .build();
+                    // intentionally not using InternalServerException, as we do not have a cause
+                    throw new HttpException("Routing finished but response was not sent. Níma does not support asynchronous"
+                                                    + " responses. Please block until a response can be sent.",
+                                            Http.Status.INTERNAL_SERVER_ERROR_500);
                 }
             }
+        }
+
+        private void runNextFilter() {
+            filters.next().filter(this, request, response);
         }
     }
 

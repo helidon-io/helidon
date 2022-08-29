@@ -23,13 +23,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.nima.Nima;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -101,12 +100,7 @@ class ConfigService implements HttpService {
             json.add("value", obfuscate(name, value.get()));
             write(req, res, json.build());
         } else {
-            throw HttpException.builder()
-                    .type(DirectHandler.EventType.NOT_FOUND)
-                    .message("Config value for key: " + name)
-                    .request(req)
-                    .response(res)
-                    .build();
+            throw new NotFoundException("Config value for key: " + name);
         }
     }
 

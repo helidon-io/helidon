@@ -36,9 +36,8 @@ import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.http.HttpException;
+import io.helidon.common.http.InternalServerException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -69,11 +68,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 try {
                     return Files.createTempFile(prefix, suffix);
                 } catch (IOException e) {
-                    throw HttpException.builder()
-                            .message("Static content processing issue")
-                            .type(DirectHandler.EventType.INTERNAL_ERROR)
-                            .cause(e)
-                            .build();
+                    throw new InternalServerException("Failed to create temporary file", e, true);
                 }
             };
         } else {
@@ -81,11 +76,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 try {
                     return Files.createTempFile(tmpDir, prefix, suffix);
                 } catch (IOException e) {
-                    throw HttpException.builder()
-                            .message("Static content processing issue")
-                            .type(DirectHandler.EventType.INTERNAL_ERROR)
-                            .cause(e)
-                            .build();
+                    throw new InternalServerException("Failed to create temporary file", e, true);
                 }
             };
         }
@@ -265,11 +256,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 }
             }
         } catch (IOException ioe) {
-            throw HttpException.builder()
-                    .message("Cannot load JAR file!")
-                    .type(DirectHandler.EventType.INTERNAL_ERROR)
-                    .cause(ioe)
-                    .build();
+            throw new InternalServerException("Cannot load resource", ioe);
         }
     }
 

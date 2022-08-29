@@ -149,10 +149,6 @@ public interface DirectHandler {
          */
         INTERNAL_ERROR(Http.Status.INTERNAL_SERVER_ERROR_500, true),
         /**
-         * No route was found for the request.
-         */
-        NOT_FOUND(Http.Status.NOT_FOUND_404, true),
-        /**
          * Other type, please specify expected status code.
          */
         OTHER(Http.Status.INTERNAL_SERVER_ERROR_500, true);

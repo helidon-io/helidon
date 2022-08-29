@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.HttpException;
+import io.helidon.common.http.HttpException;
 import io.helidon.reactive.webserver.RequestHeaders;
 import io.helidon.reactive.webserver.ResponseHeaders;
 import io.helidon.reactive.webserver.Routing;
@@ -128,7 +128,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param response an HTTP response
      * @return {@code true} only if static content was found and processed.
      * @throws java.io.IOException   if resource is not acceptable
-     * @throws io.helidon.reactive.webserver.HttpException if some known WEB error
+     * @throws io.helidon.common.http.HttpException if some known WEB error
      */
     abstract boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
             throws IOException, URISyntaxException;
@@ -140,7 +140,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param etag the proposed ETag. If {@code null} then method returns false
      * @param requestHeaders an HTTP request headers
      * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.reactive.webserver.HttpException if ETag is checked
+     * @throws io.helidon.common.http.HttpException if ETag is checked
      */
     static void processEtag(String etag, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
         if (etag == null || etag.isEmpty()) {
@@ -198,7 +198,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param modified the last modification instance. If {@code null} then method just returns {@code false}.
      * @param requestHeaders an HTTP request headers
      * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.reactive.webserver.HttpException if (un)modify since header is checked
+     * @throws io.helidon.common.http.HttpException if (un)modify since header is checked
      */
     static void processModifyHeaders(Instant modified, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
         if (modified == null) {
@@ -223,10 +223,10 @@ abstract class StaticContentHandler implements StaticContentSupport {
     }
 
     /**
-     * If provided {@code condition} is {@code true} then throws not found {@link io.helidon.reactive.webserver.HttpException}.
+     * If provided {@code condition} is {@code true} then throws not found {@link io.helidon.common.http.HttpException}.
      *
      * @param condition if condition is true then throws an exception otherwise not
-     * @throws io.helidon.reactive.webserver.HttpException if {@code condition} parameter is {@code true}.
+     * @throws io.helidon.common.http.HttpException if {@code condition} parameter is {@code true}.
      */
     static void throwNotFoundIf(boolean condition) {
         if (condition) {

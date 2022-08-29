@@ -21,15 +21,14 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.HtmlEncoder;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
 import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -54,12 +53,7 @@ class SingleCheckHandler implements Handler {
         String name = req.path().pathParameters().value("name");
         HealthCheck check = checks.get(name);
         if (check == null) {
-            throw HttpException.builder()
-                    .request(req)
-                    .response(res)
-                    .type(DirectHandler.EventType.NOT_FOUND)
-                    .message("Health check " + name + " does not exist")
-                    .build();
+            throw new NotFoundException(name);
         }
 
         HealthCheckResponse response;

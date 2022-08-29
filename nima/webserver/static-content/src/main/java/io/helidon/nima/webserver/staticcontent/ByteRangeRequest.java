@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.nima.webserver.http.HttpException;
+import io.helidon.common.http.HttpException;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -62,12 +62,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));
         }
         if (!found) {
-            throw HttpException.builder()
-                    .request(req)
-                    .response(res)
-                    .type(DirectHandler.EventType.BAD_REQUEST)
-                    .message("Invalid range header")
-                    .build();
+            throw new BadRequestException("Invalid range header");
         }
 
         return parts;
@@ -88,12 +83,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
     private static ByteRangeRequest create(ServerRequest req, ServerResponse res, long offset, long last, long fileLength) {
         if (offset >= fileLength || last < offset) {
             res.header(Header.CONTENT_RANGE.withValue("*/" + fileLength));
-            throw HttpException.builder()
-                    .request(req)
-                    .response(res)
-                    .type(DirectHandler.EventType.BAD_REQUEST)
-                    .status(Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416)
-                    .build();
+            throw new HttpException("Wrong range", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 
         long length = (last - offset) + 1;

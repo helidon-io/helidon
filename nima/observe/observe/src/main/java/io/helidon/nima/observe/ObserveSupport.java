@@ -22,13 +22,12 @@ import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.config.Config;
 import io.helidon.nima.Nima;
 import io.helidon.nima.observe.spi.ObserveProvider;
 import io.helidon.nima.webserver.cors.CorsSupport;
-import io.helidon.nima.webserver.http.HttpException;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
@@ -91,13 +90,7 @@ public class ObserveSupport implements Consumer<HttpRouting.Builder> {
             }
         } else {
             builder.get(endpoint, (req, res) -> {
-                throw HttpException.builder()
-                        .type(DirectHandler.EventType.OTHER)
-                        .status(Http.Status.SERVICE_UNAVAILABLE_503)
-                        .message("Observe endpoint is disabled")
-                        .request(req)
-                        .response(res)
-                        .build();
+                throw new HttpException("Observe endpoint is disabled", Http.Status.SERVICE_UNAVAILABLE_503, true);
             });
         }
     }

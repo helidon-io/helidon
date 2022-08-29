@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-package io.helidon.reactive.webserver;
-
-import io.helidon.common.http.Http;
+package io.helidon.common.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#BAD_REQUEST_400 bad request}.
+ * A runtime exception indicating a {@link Http.Status#NOT_FOUND_404 not found}.
  */
-public class BadRequestException extends HttpException {
+public class NotFoundException extends HttpException {
 
     /**
-     * Creates {@link BadRequestException}.
+     * Creates {@link NotFoundException}.
      *
      * @param message the message
      */
-    public BadRequestException(String message) {
-        super(message, Http.Status.BAD_REQUEST_400);
+    public NotFoundException(String message) {
+        super(message, Http.Status.NOT_FOUND_404, null, true);
     }
 
     /**
-     * Creates {@link BadRequestException}.
+     * Creates {@link NotFoundException}.
      *
      * @param message the message
      * @param cause the cause of this exception
      */
-    public BadRequestException(String message, Throwable cause) {
-        super(message, Http.Status.BAD_REQUEST_400, cause);
+    public NotFoundException(String message, Throwable cause) {
+        super(message, Http.Status.NOT_FOUND_404, cause, true);
     }
 }

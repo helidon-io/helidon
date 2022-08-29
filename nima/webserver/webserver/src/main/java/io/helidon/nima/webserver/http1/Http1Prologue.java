@@ -23,9 +23,9 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RequestException;
 import io.helidon.nima.webserver.CloseConnectionException;
-import io.helidon.nima.webserver.http.HttpException;
-import io.helidon.nima.webserver.http.HttpSimpleRequest;
+import io.helidon.nima.webserver.http.DirectTransportRequest;
 
 /**
  * HTTP 1 prologue parsing support.
@@ -63,16 +63,16 @@ public final class Http1Prologue {
         }
     }
 
-    private static HttpException badRequest(String message, String method, String path, String protocol, String version) {
+    private static RequestException badRequest(String message, String method, String path, String protocol, String version) {
         String protocolAndVersion;
         if (protocol.isBlank() && version.isBlank()) {
             protocolAndVersion = "";
         } else {
             protocolAndVersion = protocol + "/" + version;
         }
-        return HttpException.builder()
+        return RequestException.builder()
                 .type(DirectHandler.EventType.BAD_REQUEST)
-                .request(HttpSimpleRequest.create(protocolAndVersion, method, path))
+                .request(DirectTransportRequest.create(protocolAndVersion, method, path))
                 .message(message)
                 .build();
     }
@@ -113,11 +113,11 @@ public final class Http1Prologue {
             if (secondSpace < 0) {
                 throw badRequest("Invalid prologue" + reader.debugDataHex(), method.text(), "", "", "");
             } else if (secondSpace == maxLen) {
-                throw HttpException.builder()
+                throw RequestException.builder()
                         .message("Request URI too long.")
                         .type(DirectHandler.EventType.BAD_REQUEST)
                         .status(Http.Status.REQUEST_URI_TOO_LONG_414)
-                        .request(HttpSimpleRequest.create("", method.text(), reader.readAsciiString(secondSpace)))
+                        .request(DirectTransportRequest.create("", method.text(), reader.readAsciiString(secondSpace)))
                         .build();
             }
             path = reader.readAsciiString(secondSpace);
@@ -132,7 +132,7 @@ public final class Http1Prologue {
             protocol = reader.readAsciiString(eol);
             reader.skip(2); // \r\n
         } catch (DataReader.IncorrectNewLineException e) {
-            throw HttpException.builder()
+            throw RequestException.builder()
                     .message("Invalid prologue: " + e.getMessage())
                     .type(DirectHandler.EventType.BAD_REQUEST)
                     .cause(e)

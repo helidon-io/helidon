@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.HttpException;
+import io.helidon.common.http.HttpException;
 import io.helidon.reactive.webserver.RequestHeaders;
 import io.helidon.reactive.webserver.ResponseHeaders;
 import io.helidon.reactive.webserver.ServerRequest;

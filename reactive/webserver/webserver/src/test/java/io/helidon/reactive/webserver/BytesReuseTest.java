@@ -27,6 +27,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;

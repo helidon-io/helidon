@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Single;

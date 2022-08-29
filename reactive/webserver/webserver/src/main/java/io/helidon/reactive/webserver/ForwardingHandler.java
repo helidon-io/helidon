@@ -32,6 +32,7 @@ import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.TransportResponse;
 import io.helidon.common.http.HeadersServerRequest;

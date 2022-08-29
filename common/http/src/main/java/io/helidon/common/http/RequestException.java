@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver.http;
-
-import java.util.Optional;
-
-import io.helidon.common.http.DirectHandler;
-import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.Http;
+package io.helidon.common.http;
 
 /**
- * HTTP exception. This allows custom handlers to be used for different even types.
+ * Exception that will be handled by {@link io.helidon.common.http.DirectHandler}, unless server request and server response
+ * are already available, in which case it would be handled by appropriate error handler of routing.
+ * This exception is not used by clients.
  */
-public class HttpException extends RuntimeException {
+public class RequestException extends RuntimeException {
     private final DirectHandler.EventType eventType;
     private final Http.Status status;
     private final DirectHandler.TransportRequest transportRequest;
-    private final ServerResponse fullResponse;
     private final boolean keepAlive;
     private final HeadersServerResponse responseHeaders;
 
@@ -39,12 +34,11 @@ public class HttpException extends RuntimeException {
      *
      * @param builder builder with details to create this instance
      */
-    protected HttpException(Builder builder) {
+    protected RequestException(Builder builder) {
         super(builder.message, builder.cause);
         this.eventType = builder.type;
         this.status = builder.status;
         this.transportRequest = builder.request;
-        this.fullResponse = builder.fullResponse;
         this.keepAlive = builder.keepAlive;
         this.responseHeaders = builder.responseHeaders;
     }
@@ -86,16 +80,6 @@ public class HttpException extends RuntimeException {
     }
 
     /**
-     * Routing response (if available). This is used to correctly send response through this vehicle to handle
-     * post-send events.
-     *
-     * @return routing response if available
-     */
-    public Optional<ServerResponse> fullResponse() {
-        return Optional.ofNullable(fullResponse);
-    }
-
-    /**
      * Whether to attempt to keep connection alive.
      *
      * @return whether to keep connection alive
@@ -114,15 +98,14 @@ public class HttpException extends RuntimeException {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.nima.webserver.http.HttpException}.
+     * Fluent API builder for {@link RequestException}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, HttpException> {
+    public static class Builder implements io.helidon.common.Builder<Builder, RequestException> {
         private String message;
         private Throwable cause;
         private DirectHandler.TransportRequest request;
         private DirectHandler.EventType type;
         private Http.Status status;
-        private ServerResponse fullResponse;
         private Boolean keepAlive;
         private final HeadersServerResponse responseHeaders = HeadersServerResponse.create();
 
@@ -130,7 +113,7 @@ public class HttpException extends RuntimeException {
         }
 
         @Override
-        public HttpException build() {
+        public RequestException build() {
             if (message == null) {
                 message = "";
             }
@@ -140,7 +123,7 @@ public class HttpException extends RuntimeException {
             if (type == null) {
                 type(DirectHandler.EventType.INTERNAL_ERROR);
             }
-            return new HttpException(this);
+            return new RequestException(this);
         }
 
         /**
@@ -162,28 +145,6 @@ public class HttpException extends RuntimeException {
          */
         public Builder cause(Throwable cause) {
             this.cause = cause;
-            return this;
-        }
-
-        /**
-         * Routing request.
-         *
-         * @param request request to obtain information from
-         * @return updated builder
-         */
-        public Builder request(ServerRequest request) {
-            this.request = HttpSimpleRequest.create(request.prologue(), request.headers());
-            return this;
-        }
-
-        /**
-         * Routing response to be used to handle response from direct handler.
-         *
-         * @param response response to use
-         * @return updated builder
-         */
-        public Builder response(ServerResponse response) {
-            this.fullResponse = response;
             return this;
         }
 
@@ -231,7 +192,7 @@ public class HttpException extends RuntimeException {
          * Override default keep alive for this exception.
          *
          * @param keepAlive whether to keep connection alive
-         * @return updated builderw
+         * @return updated builder
          */
         public Builder setKeepAlive(boolean keepAlive) {
             this.keepAlive = keepAlive;

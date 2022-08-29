@@ -20,8 +20,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.HttpException;
-import io.helidon.reactive.webserver.NotFoundException;
+import io.helidon.common.http.HttpException;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.reactive.webserver.Routing;
 
 import org.junit.jupiter.api.Test;

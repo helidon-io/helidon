@@ -23,13 +23,13 @@ import java.util.Collections;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.reactive.media.common.MediaContext;
 import io.helidon.reactive.media.common.MessageBodyReader;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.HttpException;
 import io.helidon.reactive.webserver.RequestPredicate;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
