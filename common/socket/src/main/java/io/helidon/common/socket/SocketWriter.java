@@ -16,65 +16,43 @@
 
 package io.helidon.common.socket;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.buffers.DataWriter;
 
 /**
  * Socket writer (possibly) used from multiple threads, takes care of writing to a single
  * socket.
  */
-public class SocketWriter implements DataWriter {
-    private static final System.Logger LOGGER = System.getLogger(SocketWriter.class.getName());
-    private static final BufferData CLOSING_TOKEN = BufferData.empty();
-    private final ExecutorService executor;
+public abstract class SocketWriter implements DataWriter {
     private final HelidonSocket socket;
-    private final ArrayBlockingQueue<BufferData> writeQueue;
-    private final CountDownLatch cdl = new CountDownLatch(1);
-    private final String channelId;
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private volatile Throwable caught;
-    private volatile boolean run = true;
-    private Thread thread;
 
     /**
      * A new socket writer.
      *
-     * @param executor executor used to create a thread for asynchronous writes
      * @param socket socket to write to
-     * @param channelId channel id of this connection
-     * @param writeQueueLength maximal number of queued writes, write operation will block if the queue is full
      */
-    public SocketWriter(ExecutorService executor, HelidonSocket socket, String channelId, int writeQueueLength) {
-        this.executor = executor;
+    protected SocketWriter(HelidonSocket socket) {
         this.socket = socket;
-        this.channelId = channelId;
-        this.writeQueue = new ArrayBlockingQueue<>(writeQueueLength);
     }
 
-    @Override
-    public void write(BufferData... buffers) {
-        for (BufferData buffer : buffers) {
-            write(buffer);
-        }
-    }
-
-    @Override
-    public void write(BufferData buffer) {
-        checkRunning();
-        try {
-            if (!writeQueue.offer(buffer, 10, TimeUnit.SECONDS)) {
-                checkRunning();
-                throw new IllegalStateException("Failed to write data to queue, timed out");
-            }
-        } catch (InterruptedException e) {
-            throw new IllegalStateException("Interrupted while trying to write to a queue", e);
+    /**
+     * Create a new socket writer.
+     *
+     * @param executor         executor used to create a thread for asynchronous writes
+     * @param socket           socket to write to
+     * @param writeQueueLength maximal number of queued writes, write operation will block if the queue is full; if set to
+     *                         {code 1} or lower, write queue is disabled and writes are direct to socket (blocking)
+     * @return a new socket writer
+     */
+    public static SocketWriter create(ExecutorService executor,
+                                      HelidonSocket socket,
+                                      int writeQueueLength) {
+        if (writeQueueLength <= 1) {
+            return new SocketWriterDirect(socket);
+        } else {
+            return new SocketWriterAsync(executor, socket, writeQueueLength);
         }
     }
 
@@ -91,67 +69,17 @@ public class SocketWriter implements DataWriter {
 
     /**
      * Close this writer. Will attempt to write all enqueued buffers and will stop the thread if created.
+     * Does not close the socket.
      */
     public void close() {
-        run = false;
-        if (!started.get()) {
-            // thread never started
-            return;
-        }
-        try {
-            writeQueue.put(CLOSING_TOKEN); // wake up blocked take() operation
-            if (cdl.await(1000, TimeUnit.MILLISECONDS)) {
-                // reads finished because we set run to false
-                BufferData available;
-                while ((available = writeQueue.poll()) != null) {
-                    try {
-                        writeNow(available);
-                    } catch (Exception e) {
-                        LOGGER.log(System.Logger.Level.TRACE, "Failed to write last buffers during writer shutdown", e);
-                        // in case we fail to write to socket when closing, it is probably because it is already closed
-                        // we still need to release all buffers
-                    }
-                }
-            }
-            if (thread != null) {
-                // fail blocked writers
-                thread.interrupt();
-            }
-        } catch (InterruptedException e) {            // failed to get
-        }
-
     }
 
-    private void run() {
-        this.thread = Thread.currentThread();
-        try {
-            while (run) {
-                CompositeBufferData toWrite = BufferData.createComposite(writeQueue.take());  // wait if the queue is empty
-                // we only want to read a certain amount of data, if somebody writes huge amounts
-                // we could spin here forever and run out of memory
-                for (int i = 0; i < 1000; i++) {
-                    BufferData newBuf = writeQueue.poll(); // drain ~all elements from the queue, don't wait.
-                    if (newBuf == null) {
-                        break;
-                    }
-                    toWrite.add(newBuf);
-                }
-                writeNow(toWrite);
-            }
-            cdl.countDown();
-        } catch (Throwable e) {
-            this.caught = e;
-            this.run = false;
-        }
-    }
-
-    private void checkRunning() {
-        if (started.compareAndSet(false, true)) {
-            // start writer on first asynchronous write
-            executor.submit(this::run);
-        }
-        if (!run) {
-            throw new SocketWriterException(caught);
-        }
+    /**
+     * Provides access to the underlying socket.
+     *
+     * @return socket
+     */
+    protected HelidonSocket socket() {
+        return socket;
     }
 }
