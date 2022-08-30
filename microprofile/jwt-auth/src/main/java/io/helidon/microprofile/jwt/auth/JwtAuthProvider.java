@@ -247,7 +247,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     SignedJwt signedJwt;
                     try {
                         headers = JwtHeaders.parseToken(token);
-                        if (headers.encryption().isPresent()) {
+                        if (headers.encryption().isPresent() || decryptionKeys.get() != null) {
                             EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(headers, token);
                             if (!headers.contentType().map("JWT"::equals).orElse(false)) {
                                 throw new JwtException("Header \"cty\" (content type) must be set to \"JWT\" "
