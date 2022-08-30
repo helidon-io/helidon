@@ -52,9 +52,9 @@ public class OciMetricsSupportTest {
     private static final MonitoringClient monitoringClient = mock(MonitoringClient.class);
     private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
 
-    private static int testMetricUpdatePostMetricDataCallCount = 0;
-    private static Double testMetricUpdateCounterValue;
-    private static int testMetricCount = 0;
+    private static volatile int testMetricUpdatePostMetricDataCallCount = 0;
+    private static volatile Double testMetricUpdateCounterValue;
+    private static volatile int testMetricCount = 0;
 
     private final RegistryFactory rf = RegistryFactory.getInstance();
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
@@ -300,6 +300,7 @@ public class OciMetricsSupportTest {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
         }
     }
 }
