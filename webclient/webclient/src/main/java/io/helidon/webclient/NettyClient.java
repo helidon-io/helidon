@@ -49,6 +49,8 @@ final class NettyClient implements WebClient {
     private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
     private static final WebClientTls DEFAULT_TLS = WebClientTls.builder().build();
 
+    private static final DnsResolverType DEFAULT_DNS_RESOLVER_TYPE = DnsResolverType.DEFAULT;
+
     private static final Config GLOBAL_CLIENT_CONFIG;
 
     // configurable per client instance
@@ -71,6 +73,7 @@ final class NettyClient implements WebClient {
                 .tls(DEFAULT_TLS)
                 .keepAlive(DEFAULT_KEEP_ALIVE)
                 .validateHeaders(DEFAULT_VALIDATE_HEADERS)
+                .dnsResolverType(DEFAULT_DNS_RESOLVER_TYPE)
                 .config(GLOBAL_CLIENT_CONFIG)
                 .build();
     }
