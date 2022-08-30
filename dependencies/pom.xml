@@ -1535,8 +1535,19 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- OCI BOM omitted due to https://github.com/oracle/oci-java-sdk/issues/432 -->
+            <!--
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-bom</artifactId>
+                <version>${version.lib.oci}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            -->
 
-            <!-- OCI BOM contents -->
+            <!-- OCI BOM contents inlined below to work around https://github.com/oracle/oci-java-sdk/issues/432 -->
+
             <!-- Common packages -->
             <dependency>
               <groupId>com.oracle.oci.sdk</groupId>
