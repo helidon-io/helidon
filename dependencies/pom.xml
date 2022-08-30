@@ -854,17 +854,6 @@
                 <version>${version.lib.postgresql}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-objectstorage</artifactId>
-                <version>${version.lib.oci-java-sdk-objectstorage}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${version.lib.hikaricp}</version>
@@ -1616,14 +1605,12 @@
               <version>${version.lib.oci}</version>
               <optional>false</optional>
             </dependency>
-            <!--
             <dependency>
               <groupId>com.oracle.oci.sdk</groupId>
               <artifactId>oci-java-sdk-objectstorage</artifactId>
               <version>${version.lib.oci}</version>
               <optional>false</optional>
             </dependency>
-            -->
             <dependency>
               <groupId>com.oracle.oci.sdk</groupId>
               <artifactId>oci-java-sdk-addons-resteasy-client-configurator</artifactId>
