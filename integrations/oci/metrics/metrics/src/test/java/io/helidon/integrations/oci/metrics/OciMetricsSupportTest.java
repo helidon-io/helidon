@@ -284,11 +284,11 @@ public class OciMetricsSupportTest {
 
         public Timer(int timeOut) {
             this.timeOut = timeOut;
-            this.endTime = System.currentTimeMillis() + 1_000L * timeOut;
+            this.endTime = System.nanoTime() + 1_000_000_000L * timeOut;
         }
 
         public boolean expired() {
-            return System.currentTimeMillis() >= this.endTime;
+            return System.nanoTime() >= this.endTime;
         }
 
         int getTimeout() {
