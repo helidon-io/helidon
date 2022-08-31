@@ -40,10 +40,10 @@ public final class ErrorHandlers {
      * Run a task and handle the errors, if any. Uses error handlers configured on routing.
      * Correctly handles all expected (and unexpected) exceptions that can happen in filters and routes.
      *
-     * @param ctx connection context
-     * @param request HTTP server request
+     * @param ctx      connection context
+     * @param request  HTTP server request
      * @param response HTTP server response
-     * @param task task to execute
+     * @param task     task to execute
      */
     public void runWithErrorHandling(ConnectionContext ctx, ServerRequest request, ServerResponse response, Executable task) {
         try {
@@ -82,7 +82,10 @@ public final class ErrorHandlers {
         }
     }
 
-    private void handleRequestException(ConnectionContext ctx, ServerRequest request, ServerResponse response, RequestException e) {
+    private void handleRequestException(ConnectionContext ctx,
+                                        ServerRequest request,
+                                        ServerResponse response,
+                                        RequestException e) {
         if (response.isSent()) {
             ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed: " + request.prologue()
                     + ", cannot send error response, as response already sent", e);
