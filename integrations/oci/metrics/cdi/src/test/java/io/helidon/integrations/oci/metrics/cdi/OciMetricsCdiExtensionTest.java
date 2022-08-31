@@ -110,6 +110,9 @@ public class OciMetricsCdiExtensionTest {
         public void setRegion(String s) {}
 
         @Override
+        public void refreshClient() {}
+
+        @Override
         public ChangeAlarmCompartmentResponse changeAlarmCompartment(ChangeAlarmCompartmentRequest changeAlarmCompartmentRequest) {
             return null;
         }

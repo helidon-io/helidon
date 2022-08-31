@@ -52,9 +52,9 @@ public class OciMetricsSupportTest {
     private static final MonitoringClient monitoringClient = mock(MonitoringClient.class);
     private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
 
-    private static int testMetricUpdatePostMetricDataCallCount = 0;
-    private static Double testMetricUpdateCounterValue;
-    private static int testMetricCount = 0;
+    private static volatile int testMetricUpdatePostMetricDataCallCount = 0;
+    private static volatile Double testMetricUpdateCounterValue;
+    private static volatile int testMetricCount = 0;
 
     private final RegistryFactory rf = RegistryFactory.getInstance();
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
@@ -284,11 +284,11 @@ public class OciMetricsSupportTest {
 
         public Timer(int timeOut) {
             this.timeOut = timeOut;
-            this.endTime = System.currentTimeMillis() + 1_000L * timeOut;
+            this.endTime = System.nanoTime() + 1_000_000_000L * timeOut;
         }
 
         public boolean expired() {
-            return System.currentTimeMillis() >= this.endTime;
+            return System.nanoTime() >= this.endTime;
         }
 
         int getTimeout() {
@@ -300,6 +300,7 @@ public class OciMetricsSupportTest {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
         }
     }
 }
