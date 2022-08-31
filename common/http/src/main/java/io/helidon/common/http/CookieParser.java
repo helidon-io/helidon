@@ -71,8 +71,8 @@ final class CookieParser {
             }
         }
 
-        for (String baseToken : HeaderHelper.tokenize(',', "\"", false, cookieHeaderValue)) {
-            for (String token : HeaderHelper.tokenize(';', "\"", false, baseToken)) {
+        for (String baseToken : HeaderHelper.tokenize(',', cookieHeaderValue)) {
+            for (String token : HeaderHelper.tokenize(';', baseToken)) {
                 int eqInd = token.indexOf('=');
                 if (eqInd > 0) {
                     String name = token.substring(0, eqInd).trim();

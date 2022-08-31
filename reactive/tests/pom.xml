@@ -23,33 +23,29 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.reactive</groupId>
+        <artifactId>helidon-reactive-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.reactive</groupId>
-    <artifactId>helidon-reactive-project</artifactId>
-    <name>Helidon Reactive Project (Helidon SE)</name>
+    <groupId>io.helidon.reactive.tests</groupId>
+    <artifactId>helidon-reactive-tests-project</artifactId>
+    <name>Helidon Reactive Tests Project</name>
 
     <packaging>pom</packaging>
 
     <modules>
-        <module>health</module>
-        <module>fault-tolerance</module>
-        <module>media</module>
-        <module>dbclient</module>
-        <module>webclient</module>
-        <module>webserver</module>
+        <module>benchmark</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>tests</id>
-            <modules>
-                <module>tests</module>
-            </modules>
-        </profile>
-    </profiles>
+    <properties>
+        <helidon.services.skip>true</helidon.services.skip>
+        <javadoc.skip>true</javadoc.skip>
+        <checkstyle.skip>true</checkstyle.skip>
+        <spotbugs.skip>true</spotbugs.skip>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
 </project>

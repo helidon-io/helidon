@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver.http;
 
 import java.io.UncheckedIOException;
+import java.net.SocketException;
 
 import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
@@ -30,6 +31,8 @@ import io.helidon.nima.webserver.ConnectionContext;
  * Http routing Error handlers.
  */
 public class ErrorHandlers {
+    private static final System.Logger LOGGER = System.getLogger(ErrorHandlers.class.getName());
+
     ErrorHandlers() {
     }
 
@@ -49,10 +52,10 @@ public class ErrorHandlers {
             // these errors must "bubble up"
             throw e;
         } catch (RequestException e) {
-            handleRequestException(ctx, response, e);
+            handleRequestException(ctx, request, response, e);
         } catch (BadRequestException e) {
             // bad request exception MUST be handled by direct handlers
-            handleRequestException(ctx, response, RequestException.builder()
+            handleRequestException(ctx, request, response, RequestException.builder()
                     .message(e.getMessage())
                     .cause(e)
                     .type(DirectHandler.EventType.BAD_REQUEST)
@@ -71,11 +74,28 @@ public class ErrorHandlers {
             handleError(ctx, request, response, e);
         } catch (RuntimeException e) {
             handleError(ctx, request, response, e);
+        } catch (Exception e) {
+            if (e.getCause() instanceof SocketException se) {
+                throw new UncheckedIOException(se);
+            }
         }
     }
 
-    private void handleRequestException(ConnectionContext ctx, ServerResponse response, RequestException e) {
-        ctx.directHandlers().handle(e, response);
+    private void handleRequestException(ConnectionContext ctx, ServerRequest request, ServerResponse response, RequestException e) {
+        if (response.isSent()) {
+            ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed: " + request.prologue()
+                    + ", cannot send error response, as response already sent", e);
+        }
+        boolean keepAlive = e.keepAlive();
+        if (keepAlive && !request.content().consumed()) {
+            try {
+                // attempt to consume the request entity (only when keeping the connection alive)
+                request.content().consume();
+            } catch (Exception ignored) {
+                keepAlive = request.content().consumed();
+            }
+        }
+        ctx.directHandlers().handle(e, response, keepAlive);
     }
 
     private boolean hasErrorHandler(Throwable cause) {
@@ -85,7 +105,7 @@ public class ErrorHandlers {
 
     private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
         // to be handled by error handler
-        handleRequestException(ctx, response, RequestException.builder()
+        handleRequestException(ctx, request, response, RequestException.builder()
                 .cause(e)
                 .type(DirectHandler.EventType.INTERNAL_ERROR)
                 .message(e.getMessage())
@@ -95,7 +115,7 @@ public class ErrorHandlers {
 
     private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, HttpException e) {
         // to be handled by error handler
-        handleRequestException(ctx, response, RequestException.builder()
+        handleRequestException(ctx, request, response, RequestException.builder()
                 .cause(e)
                 .type(DirectHandler.EventType.OTHER)
                 .message(e.getMessage())

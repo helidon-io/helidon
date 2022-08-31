@@ -168,6 +168,15 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
     }
 
     /**
+     * Set a header.
+     *
+     * @param headerValue header name and value to set (replaces existing)
+     */
+    default void header(Http.HeaderValue headerValue) {
+        headers().set(headerValue);
+    }
+
+    /**
      * Adds header values for a specified name.
      *
      * @param value header value

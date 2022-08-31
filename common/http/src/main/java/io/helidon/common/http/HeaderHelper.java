@@ -23,25 +23,21 @@ import java.util.List;
  * Headers utility methods.
  */
 final class HeaderHelper {
-    static final Runnable EMPTY_RUNNABLE = () -> {
-    };
+    private static final char QUOTE = '"';
 
     private HeaderHelper() {
     }
 
     /**
      * Tokenize provide {@code text} by {@code separator} char respecting quoted sub-sequences. Quoted sub-sequences are
-     * parts of {@code text} which starts and ends by the same {@code quoteChar}.
+     * parts of {@code text} which starts and ends by {@code "} character.
+     * Empty tokens are not returned.
      *
-     * @param separator          a token separator.
-     * @param quoteChars         characters which can be used for quoting. Quoted part must start and ends with the same
-     *                           character.
-     * @param includeEmptyTokens return also tokens with {@code length == 0}.
-     * @param text               a text to be tokenized.
+     * @param separator a token separator.
+     * @param text      a text to be tokenized.
      * @return A list of tokens without separator characters.
      */
-    public static List<String> tokenize(char separator, String quoteChars, boolean includeEmptyTokens, String text) {
-        char[] quotes = quoteChars == null ? new char[0] : quoteChars.toCharArray();
+    public static List<String> tokenize(char separator, String text) {
         StringBuilder token = new StringBuilder();
         List<String> result = new ArrayList<>();
         boolean quoted = false;
@@ -55,23 +51,20 @@ final class HeaderHelper {
                 token.append(ch);
             } else {
                 if (ch == separator) {
-                    if (includeEmptyTokens || token.length() > 0) {
+                    if (token.length() > 0) {
                         result.add(token.toString());
                     }
                     token.setLength(0);
                 } else {
-                    for (char quote : quotes) {
-                        if (ch == quote) {
-                            quoted = true;
-                            lastQuoteCharacter = ch;
-                            break;
-                        }
+                    if (ch == QUOTE) {
+                        quoted = true;
+                        lastQuoteCharacter = ch;
                     }
                     token.append(ch);
                 }
             }
         }
-        if (includeEmptyTokens || token.length() > 0) {
+        if (token.length() > 0) {
             result.add(token.toString());
         }
         return result;
@@ -84,7 +77,7 @@ final class HeaderHelper {
      * @return unwrapped string.
      */
     public static String unwrap(String str) {
-        if (str.length() >= 2 && '"' == str.charAt(0) && '"' == str.charAt(str.length() - 1)) {
+        if (str.length() >= 2 && QUOTE == str.charAt(0) && QUOTE == str.charAt(str.length() - 1)) {
             return str.substring(1, str.length() - 1);
         }
         return str;

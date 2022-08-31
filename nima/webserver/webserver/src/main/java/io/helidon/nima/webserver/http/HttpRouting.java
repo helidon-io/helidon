@@ -16,8 +16,6 @@
 
 package io.helidon.nima.webserver.http;
 
-import java.io.UncheckedIOException;
-import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -28,10 +26,7 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.NotFoundException;
-import io.helidon.common.http.RequestException;
-import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Routing;
 
@@ -93,7 +88,7 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, errorHandlers, rootRoute, request, response);
+        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response);
         // we cannot throw an exception to the filters, as then the filter would not have information about actual status
         // code, so error handling is done in routing executor and for each filter
         filters.filter(ctx, request, response, routingExecutor);
@@ -288,18 +283,15 @@ public final class HttpRouting implements Routing {
 
     private static final class RoutingExecutor implements Runnable {
         private final ConnectionContext ctx;
-        private final ErrorHandlers errorHandlers;
         private final RoutingRequest request;
         private final RoutingResponse response;
         private final ServiceRoute rootRoute;
 
         private RoutingExecutor(ConnectionContext ctx,
-                                ErrorHandlers errorHandlers,
                                 ServiceRoute rootRoute,
                                 RoutingRequest request,
                                 RoutingResponse response) {
             this.ctx = ctx;
-            this.errorHandlers = errorHandlers;
             this.rootRoute = rootRoute;
             this.request = request;
             this.response = response;
@@ -307,13 +299,21 @@ public final class HttpRouting implements Routing {
 
         @Override
         public void run() {
-            response.resetRouting();
+            // initial attempt - most common case, handled separately
+            RoutingResult result = doRoute(ctx, request, response);
 
-            RoutingResult result = RoutingResult.ROUTE;
+            if (result == RoutingResult.FINISH) {
+                return;
+            }
+            if (result == RoutingResult.NONE) {
+                throw new NotFoundException("Endpoint not found");
+            }
+
+            // rerouting, do the more heavyweight while loop
             int counter = 0;
             while (result == RoutingResult.ROUTE) {
                 counter++;
-                if (counter == 10) {
+                if (counter == 9) {
                     LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
 
                     throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
@@ -329,8 +329,6 @@ public final class HttpRouting implements Routing {
             throw new NotFoundException("Endpoint not found");
         }
 
-        // todo we may have a lru cache (or most commonly used - weighted by number of usages) to
-        // immediately get a route based on request prologue
         private RoutingResult doRoute(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
             HttpPrologue prologue = request.prologue();
             RouteCrawler crawler = rootRoute.crawler(ctx, request);
@@ -339,59 +337,37 @@ public final class HttpRouting implements Routing {
                 response.resetRouting();
                 RouteCrawler.CrawlerItem next = crawler.next();
                 request.path(next.path());
-                try {
-                    next.handler().handle(request, response);
-                    if (response.shouldReroute()) {
-                        if (response.isSent()) {
-                            LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
-                                    + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
-                                    + "reroute.");
-                            return RoutingResult.FINISH;
-                        }
-                        HttpPrologue newPrologue = response.reroutePrologue(prologue);
-                        request.prologue(newPrologue);
-                        response.resetRouting();
-                        return RoutingResult.ROUTE;
-                    }
-                    if (response.isNexted()) {
-                        if (response.isSent()) {
-                            LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
-                                    + " in inconsistent state. Request to next, but response was already sent. "
-                                    + "Ignoring next().");
-                            return RoutingResult.FINISH;
-                        }
-                        continue;
-                    }
+
+                next.handler().handle(request, response);
+                if (response.shouldReroute()) {
                     if (response.isSent()) {
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                                + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
+                                + "reroute.");
                         return RoutingResult.FINISH;
                     }
-
-                    // not nexted, not rerouted - just send it!
-                    response.send();
-
-                    return RoutingResult.FINISH;
-                } catch (CloseConnectionException | RequestException | HttpException e) {
-                    throw e;
-                } catch (Exception thrown) {
-                    if (thrown.getCause() instanceof SocketException se) {
-                        throw new UncheckedIOException(se);
-                    }
-                    if (response.isSent()) {
-                        ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed: " + request.prologue()
-                                + ", cannot send error response, as response already sent", thrown);
-                    } else {
-                        boolean keepAlive = true;
-                        try {
-                            request.content().consume();
-                        } catch (Exception e) {
-                            keepAlive = request.content().consumed();
-                        }
-                        // attempt to consume the request entity
-                        ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed", thrown);
-
-                        throw new InternalServerException(thrown.getMessage(), thrown, keepAlive);
-                    }
+                    HttpPrologue newPrologue = response.reroutePrologue(prologue);
+                    request.prologue(newPrologue);
+                    response.resetRouting();
+                    return RoutingResult.ROUTE;
                 }
+                if (response.isNexted()) {
+                    if (response.isSent()) {
+                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
+                                + " in inconsistent state. Request to next, but response was already sent. "
+                                + "Ignoring next().");
+                        return RoutingResult.FINISH;
+                    }
+                    continue;
+                }
+                if (response.hasEntity()) {
+                    return RoutingResult.FINISH;
+                }
+
+                // not nexted, not rerouted - just send it!
+                response.send();
+
+                return RoutingResult.FINISH;
             }
 
             return RoutingResult.NONE;
