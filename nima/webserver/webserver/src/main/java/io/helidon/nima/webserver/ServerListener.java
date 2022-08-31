@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
@@ -45,6 +46,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
+import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
 
@@ -250,6 +252,8 @@ class ServerListener {
                                                     simpleHandlers);
 
                     readerExecutor.submit(handler);
+                } catch (RejectedExecutionException e) {
+                    LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
                     // we may get an SSL handshake errors, which should only fail one socket, not the listener
                     LOGGER.log(TRACE, "Failed to handle accepted socket", e);
