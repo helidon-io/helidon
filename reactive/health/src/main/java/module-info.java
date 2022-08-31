@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Microprofile configuration module.
  */
+@Feature(value = "Health", description = "Health check support", in = HelidonFlavor.SE)
 module io.helidon.reactive.health {
     requires java.logging;
 
@@ -25,11 +29,12 @@ module io.helidon.reactive.health {
     requires transitive microprofile.health.api;
     requires io.helidon.reactive.webserver;
     requires io.helidon.servicecommon.rest;
-    requires static io.helidon.config.metadata;
     requires io.helidon.reactive.webserver.cors;
     requires io.helidon.reactive.media.jsonp;
     requires jakarta.json;
     requires io.helidon.reactive.faulttolerance;
+    requires static io.helidon.config.metadata;
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.reactive.health;
     provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider
