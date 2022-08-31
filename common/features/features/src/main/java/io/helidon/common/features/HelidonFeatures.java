@@ -61,7 +61,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 public final class HelidonFeatures {
     private static final System.Logger LOGGER = System.getLogger(HelidonFeatures.class.getName());
-    private static final System.Logger EXPERIMENTAL = System.getLogger(HelidonFeatures.class.getName() + ".experimental");
+    private static final System.Logger INCUBATING = System.getLogger(HelidonFeatures.class.getName() + ".incubating");
     private static final System.Logger INVALID = System.getLogger(HelidonFeatures.class.getName() + ".invalid");
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
@@ -219,11 +219,11 @@ public final class HelidonFeatures {
             }
 
             if (!allExperimental.isEmpty()) {
-                EXPERIMENTAL.log(Level.INFO,
-                                 "You are using experimental features. These APIs may change, please follow changelog!");
+                INCUBATING.log(Level.INFO,
+                               "You are using Incubating features. These APIs may change, please follow changelog!");
                 allExperimental
-                        .forEach(it -> EXPERIMENTAL.log(Level.INFO,
-                                                        "\tExperimental feature: "
+                        .forEach(it -> INCUBATING.log(Level.INFO,
+                                                      "\tIncubating feature: "
                                                                 + it.name()
                                                                 + " ("
                                                                 + it.stringPath()
@@ -241,7 +241,7 @@ public final class HelidonFeatures {
     }
 
     private static void gatherExperimental(List<FeatureDescriptor> allExperimental, Node node) {
-        if (node.descriptor != null && node.descriptor.experimental()) {
+        if (node.descriptor != null && node.descriptor.incubating()) {
             allExperimental.add(node.descriptor);
         }
         node.children().values().forEach(it -> gatherExperimental(allExperimental, it));
@@ -303,7 +303,7 @@ public final class HelidonFeatures {
             } else {
                 suffix = "\t";
             }
-            String experimental = feat.experimental() ? "Experimental - " : "";
+            String experimental = feat.incubating() ? "Incubating - " : "";
             String nativeDesc = "";
             if (!feat.nativeSupported()) {
                 nativeDesc = " (NOT SUPPORTED in native image)";
