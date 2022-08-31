@@ -74,7 +74,7 @@ public class IdcsRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase imple
         this.asserterUri = oidcConfig.identityUri() + "/admin/v1/Asserter";
         this.tokenEndpointUri = oidcConfig.tokenEndpointUri();
 
-        this.appToken = new AppTokenRx(oidcConfig.appWebClient(), tokenEndpointUri);
+        this.appToken = new AppTokenRx(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
     }
 
     /**

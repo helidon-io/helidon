@@ -16,6 +16,8 @@
 package io.helidon.security.providers.idcs.mapper;
 
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedList;
@@ -383,10 +385,12 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         private final AtomicReference<CompletableFuture<AppTokenData>> token = new AtomicReference<>();
         private final WebClient webClient;
         private final URI tokenEndpointUri;
+        private final Duration tokenRefreshSkew;
 
-        protected AppTokenRx(WebClient webClient, URI tokenEndpointUri) {
+        protected AppTokenRx(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
+            this.tokenRefreshSkew = tokenRefreshSkew;
         }
 
         protected Single<Optional<String>> getToken(RoleMapTracing tracing) {
@@ -405,8 +409,10 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
             return Single.create(currentTokenData)
                     .flatMapSingle(tokenData -> {
                         Jwt jwt = tokenData.appJwt();
-                        if (jwt == null || !tokenData.appJwt().validate(TIME_VALIDATORS).isValid()) {
-                            // it is not valid - we must get a new value
+                        if (jwt == null
+                                || !jwt.validate(TIME_VALIDATORS).isValid()
+                                || isNearExpiration(jwt)) {
+                            // it is not valid or is very close to expiration - we must get a new value
                             CompletableFuture<AppTokenData> future = new CompletableFuture<>();
                             if (token.compareAndSet(currentTokenData, future)) {
                                 fromServer(tracing, future);
@@ -420,6 +426,12 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                             return Single.just(tokenData.tokenContent());
                         }
                     });
+        }
+
+        private boolean isNearExpiration(Jwt jwt) {
+            return jwt.expirationTime()
+                    .map(exp -> exp.minus(tokenRefreshSkew).isBefore(Instant.now()))
+                    .orElse(false);
         }
 
         private void fromServer(RoleMapTracing tracing, CompletableFuture<AppTokenData> future) {
