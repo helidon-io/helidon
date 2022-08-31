@@ -30,7 +30,7 @@ import io.helidon.nima.webserver.ConnectionContext;
 /**
  * Http routing Error handlers.
  */
-public class ErrorHandlers {
+public final class ErrorHandlers {
     private static final System.Logger LOGGER = System.getLogger(ErrorHandlers.class.getName());
 
     ErrorHandlers() {
@@ -45,9 +45,9 @@ public class ErrorHandlers {
      * @param response HTTP server response
      * @param task task to execute
      */
-    public void runWithErrorHandling(ConnectionContext ctx, ServerRequest request, ServerResponse response, Runnable task) {
+    public void runWithErrorHandling(ConnectionContext ctx, ServerRequest request, ServerResponse response, Executable task) {
         try {
-            task.run();
+            task.execute();
         } catch (CloseConnectionException | UncheckedIOException e) {
             // these errors must "bubble up"
             throw e;
@@ -78,6 +78,7 @@ public class ErrorHandlers {
             if (e.getCause() instanceof SocketException se) {
                 throw new UncheckedIOException(se);
             }
+            handleError(ctx, request, response, e);
         }
     }
 

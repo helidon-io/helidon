@@ -281,7 +281,7 @@ public final class HttpRouting implements Routing {
         }
     }
 
-    private static final class RoutingExecutor implements Runnable {
+    private static final class RoutingExecutor implements Executable {
         private final ConnectionContext ctx;
         private final RoutingRequest request;
         private final RoutingResponse response;
@@ -298,7 +298,7 @@ public final class HttpRouting implements Routing {
         }
 
         @Override
-        public void run() {
+        public void execute() throws Exception {
             // initial attempt - most common case, handled separately
             RoutingResult result = doRoute(ctx, request, response);
 
@@ -329,7 +329,7 @@ public final class HttpRouting implements Routing {
             throw new NotFoundException("Endpoint not found");
         }
 
-        private RoutingResult doRoute(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
+        private RoutingResult doRoute(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) throws Exception {
             HttpPrologue prologue = request.prologue();
             RouteCrawler crawler = rootRoute.crawler(ctx, request);
 

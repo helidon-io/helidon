@@ -117,11 +117,7 @@ class ConnectionHandler implements Runnable {
             //                    executor.join();
             //                }
             //            }
-            try {
-                connection.handle();
-            } finally {
-                writer.close();
-            }
+            connection.handle();
         } catch (RequestException e) {
             ctx.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {
@@ -135,6 +131,7 @@ class ConnectionHandler implements Runnable {
         } catch (Exception e) {
             ctx.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
+            writer.close();
             closeChannel();
         }
 
