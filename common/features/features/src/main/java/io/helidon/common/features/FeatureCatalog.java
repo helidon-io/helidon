@@ -35,7 +35,44 @@ import io.helidon.common.features.api.HelidonFlavor;
 final class FeatureCatalog {
     private static final System.Logger LOGGER = System.getLogger(FeatureCatalog.class.getName());
     private static final HelidonFlavor[] NO_FLAVORS = new HelidonFlavor[0];
+/*
 
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+                        <path>
+                            <groupId>io.helidon.config</groupId>
+                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+
+
+
+        @Feature(value = "Health", description = "Health check API")
+        requires static io.helidon.common.features.api;
+ */
     static {
         add("io.helidon.grpc.client",
             FeatureDescriptor.builder()
@@ -53,10 +90,6 @@ final class FeatureCatalog {
               "Metrics",
               "Metrics for gRPC client",
               "grpcClient", "Metrics");
-        addSe("io.helidon.health",
-              "Health",
-              "Health checks support",
-              "Health");
         addSe("io.helidon.reactive.media.jsonp",
               "JSON-P",
               "Media support for Jakarta JSON Processing",
@@ -112,14 +145,6 @@ final class FeatureCatalog {
               "OpenAPI",
               "Open API support",
               "OpenAPI");
-        addSe("io.helidon.security",
-              "Security",
-              "Security support",
-              "Security");
-        addSe("io.helidon.tracing",
-              "Tracing",
-              "Tracing support",
-              "Tracing");
         addSe("io.helidon.webserver",
               "WebServer",
               "Helidon WebServer",
