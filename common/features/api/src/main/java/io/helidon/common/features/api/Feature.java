@@ -62,5 +62,5 @@ public @interface Feature {
      *
      * @return flavors that are not compatible with this feature
      */
-    HelidonFlavor[] notIn() default {};
+    HelidonFlavor[] invalidIn() default {};
 }

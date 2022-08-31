@@ -26,5 +26,5 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.MODULE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Experimental {
+public @interface Incubating {
 }

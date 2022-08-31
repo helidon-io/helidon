@@ -33,7 +33,7 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
     private final String description;
     private final boolean nativeSupported;
     private final String nativeDescription;
-    private final boolean experimental;
+    private final boolean incubating;
     private final String module;
 
     private FeatureDescriptor(Builder builder) {
@@ -44,7 +44,7 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         this.description = builder.description;
         this.nativeSupported = builder.nativeSupported;
         this.nativeDescription = builder.nativeDescription;
-        this.experimental = builder.experimental;
+        this.incubating = builder.experimental;
         this.module = builder.module;
     }
 
@@ -136,8 +136,8 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         return String.join("/", path());
     }
 
-    boolean experimental() {
-        return experimental;
+    boolean incubating() {
+        return incubating;
     }
 
     boolean hasFlavor(HelidonFlavor expected) {
