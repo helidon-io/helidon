@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 /**
- * Helidon data repository API.
- *
- * @see io.helidon.data
+ * Reactive data repository interfaces.
+ * This package provides interfaces for reactive data access.
  */
-module io.helidon.data {
-    requires java.logging;
-    requires transitive io.helidon.common.reactive;
-    requires com.fasterxml.jackson.annotation;
-
-    //exports io.helidon.data;
-    exports io.helidon.data.repository;
-
-}
+package io.helidon.data.repository.reactive;

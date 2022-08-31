@@ -1,4 +1,4 @@
 /**
- * Helidon Data Repository API.
+ * Helidon data repository API.
  */
 package io.helidon.data;

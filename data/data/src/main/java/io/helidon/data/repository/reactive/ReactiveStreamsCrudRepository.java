@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.repository;
+package io.helidon.data.repository.reactive;
 
 import java.util.Optional;
+import java.util.concurrent.Flow;
 
-// TODO: Blocking operations. Consider marking interface woth some @Blocking annotation.
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
+import io.helidon.data.repository.GenericRepository;
+import io.helidon.data.repository.RepositoryException;
+
 /**
- * Data repository interface for blocking CRUD operations.
+ * Reactive data repository interface for blocking CRUD operations.
  * Blocking variant of <ul>
  *     <li>Create</li>
  *     <li>Read</li>
@@ -30,7 +35,7 @@ import java.util.Optional;
  * @param <E> type of the entity
  * @param <ID> type of the ID (primary key)
  */
-public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
+public interface ReactiveStreamsCrudRepository<E, ID> extends GenericRepository<E, ID> {
 
     /**
      * Persists provided entity.
@@ -41,7 +46,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return persisted entity. Never returns {@code null}
      * @throws {@link RepositoryException} if the entity is {@code null} or the operation has failed
      */
-    <T extends E> T save(T entity);
+    <T extends E> Single<T> save(T entity);
 
     /**
      * Persists all provided entities.
@@ -52,7 +57,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return persisted entities. Never returns {@code null}
      * @throws {@link RepositoryException} if the entities are {@code null} or the operation has failed
      */
-    <T extends E> Iterable<T> saveAll(Iterable<T> entities);
+    <T extends E> Multi<T> saveAll(Iterable<T> entities);
 
     /**
      * Persists provided entity with {@code update} operation.
@@ -62,7 +67,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return persisted entity. Never returns {@code null}
      * @throws {@link RepositoryException} if the entity is {@code null} or the operation has failed
      */
-    <T extends E> T update(T entity);
+    <T extends E> Single<T> update(T entity);
 
     /**
      * Persists all provided entities with {@code update} operation.
@@ -72,7 +77,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return persisted entities. Never returns {@code null}
      * @throws {@link RepositoryException} if the entities are {@code null} or the operation has failed
      */
-    <T extends E> Iterable<T> updateAll(Iterable<T> entities);
+    <T extends E> Multi<T> updateAll(Iterable<T> entities);
 
     /**
      * Find entity by ID (primary key) value.
@@ -81,7 +86,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return the entity with the given ID or {@code Optional#empty()} if no such entity was found
      * @throws {@link RepositoryException} if the ID is {@code null} or the operation has failed
      */
-    Optional<E> findById(ID id);
+    Single<Optional<E>> findById(ID id);
 
     /**
      * Check whether entity with given ID (primary key) exists.
@@ -90,7 +95,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return value of {2ode true} if an entity with the given ID exists or {@code false} otherwise
      * @throws {@link RepositoryException} if the ID is {@code null} or the operation has failed
      */
-    boolean existsById(ID id);
+    Single<Boolean> existsById(ID id);
 
     /**
      * Return all entities of the {@code E} type.
@@ -98,7 +103,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return all entities found
      * @throws {@link RepositoryException} if the operation has failed
      */
-    Iterable<E> findAll();
+    Multi<E> findAll();
 
     /**
      * Return the number of all entities of the {@code E} type.
@@ -106,7 +111,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @return the number of all entities found
      * @throws {@link RepositoryException} if the operation has failed
      */
-    long count();
+    Single<Long> count();
 
     /**
      * Deletes the entity with the given ID (primary key.
@@ -114,7 +119,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @param id ID of the entity to be deleted. Must not be {@code null}
      * @throws {@link RepositoryException} if the ID is {@code null} or the operation has failed
      */
-    void deleteById(ID id);
+    Single<Void> deleteById(ID id);
 
     /**
      * Deletes provided entity.
@@ -122,7 +127,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @param entity the entity to delete. Must not be {@code null}
      * @throws {@link RepositoryException} if the entity is {@code null} or the operation has failed
      */
-    void delete(E entity);
+    Single<Void> delete(E entity);
 
     /**
      * Deletes all provided entities.
@@ -130,13 +135,13 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      * @param entities the entities to delete. Must not be {@code null}
      * @throws {@link RepositoryException} if the entities are {@code null} or the operation has failed
      */
-    void deleteAll(Iterable<? extends E> entities);
+    Single<Void> deleteAll(Iterable<? extends E> entities);
 
     /**
      * Deletes all entities of the {@code E} type.
      *
      * @throws {@link RepositoryException} if the operation has failed
      */
-    void deleteAll();
-
+    Single<Void> deleteAll();
 }
+
