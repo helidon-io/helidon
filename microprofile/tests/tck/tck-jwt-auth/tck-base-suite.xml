@@ -58,12 +58,6 @@
                     <exclude name="testNeedsGroup1Mapping"/>
                 </methods>
             </class>
-            <!-- There is no reason why this should fail -->
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.jwe.RolesAllowedSignEncryptTest">
-                <methods>
-                    <exclude name="callEchoSignToken"/>
-                </methods>
-            </class>
         </classes>
     </test>
 </suite>
