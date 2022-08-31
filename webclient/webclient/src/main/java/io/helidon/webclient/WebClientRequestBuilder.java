@@ -320,14 +320,6 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder allowChunkedEncoding(boolean allowChunkedEncoding);
 
     /**
-     * Set which type of DNS resolver should be used.
-     *
-     * @param dnsResolverType type of the DNS resolver to be used
-     * @return updated builder instance
-     */
-    WebClientRequestBuilder dnsResolverType(DnsResolverType dnsResolverType);
-
-    /**
      * Performs prepared request and transforms response to requested type.
      *
      * When transformation is done the returned {@link CompletionStage} is notified.
