@@ -401,12 +401,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder dnsResolverType(DnsResolverType dnsResolverType) {
-        this.dnsResolverType = dnsResolverType;
-        return this;
-    }
-
-    @Override
     public <T> Single<T> request(Class<T> responseType) {
         return request(GenericType.create(responseType));
     }
