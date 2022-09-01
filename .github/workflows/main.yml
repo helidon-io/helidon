@@ -1,0 +1,100 @@
+name: "Validate PR"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  copyright:
+    runs-on: ubuntu-latest
+    steps:
+     - uses: actions/checkout@v3
+     - name: Set up JDK 19
+       uses: actions/setup-java@v3
+       with:
+         java-version: '19-ea'
+         cache: maven
+     - name: Copyright
+       run: etc/scripts/copyright.sh
+  checkstyle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          java-version: '19-ea'
+          cache: maven
+      - name: Checkstyle
+        run: etc/scripts/checkstyle.sh
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          java-version: '19-ea'
+          cache: maven
+      - name: Docs
+        run: etc/scripts/site.sh
+  spotbugs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          java-version: '19-ea'
+          cache: maven
+      - name: Docs
+        run: etc/scripts/spotbugs.sh
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          java-version: '19-ea'
+          cache: maven
+      - name: Maven build
+        run: etc/scripts/github-build.sh
+  archetypes:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Test archetypes
+        run: etc/scripts/test-archetypes.sh
+  packaging:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          java-version: '19-ea'
+          cache: maven
+      - name: JAR packaging
+        run: etc/scripts/test-packaging-jar
+      - name: JLink packaging
+        run: etc/scripts/test-packaging-jlink
+      - name: MP-1 test
+        run: tests/integration/native-image/mp-1/test-runtime.sh
+      - name: MP-3 test
+        run: tests/integration/native-image/mp-3/test-runtime.sh
+
