@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class BulkheadTest {
     private static final System.Logger LOGGER = System.getLogger(BulkheadTest.class.getName());
 
-    private static final long WAIT_TIMEOUT_MILLIS = 1000;
+    private static final long WAIT_TIMEOUT_MILLIS = 2000;
 
     @BeforeAll
     static void setupTest() {
