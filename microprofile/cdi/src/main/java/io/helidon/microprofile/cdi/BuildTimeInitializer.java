@@ -19,7 +19,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 
 /**
  * Holds the container singleton.

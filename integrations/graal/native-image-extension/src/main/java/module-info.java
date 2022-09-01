@@ -18,6 +18,8 @@
  */
 module io.helidon.graal.nativeimage {
     requires io.helidon.config;
+    requires io.helidon.logging.common;
+    requires io.helidon.logging.jul;
     requires io.github.classgraph;
     requires io.helidon.config.mp;
     requires svm;

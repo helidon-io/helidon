@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.Consumer;

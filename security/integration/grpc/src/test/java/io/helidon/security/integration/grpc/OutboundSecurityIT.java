@@ -18,7 +18,6 @@ package io.helidon.security.integration.grpc;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.GrpcHelper;
@@ -28,6 +27,7 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;

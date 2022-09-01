@@ -16,7 +16,6 @@
 
 package io.helidon.grpc.examples.basics;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.GreetServiceJava;
@@ -25,6 +24,7 @@ import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;

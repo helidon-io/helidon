@@ -51,7 +51,7 @@
                 </map>
             </list>
             <list key="Main-helidon-imports">
-                <value>io.helidon.common.LogConfig</value>
+                <value>io.helidon.logging.common.LogConfig</value>
                 <value>io.helidon.common.reactive.Single</value>
                 <value>io.helidon.config.Config</value>
                 <value>io.helidon.reactive.webserver.Routing</value>

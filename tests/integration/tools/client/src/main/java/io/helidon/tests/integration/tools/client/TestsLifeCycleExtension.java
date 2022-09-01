@@ -17,7 +17,7 @@ package io.helidon.tests.integration.tools.client;
 
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner.ExecType;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;

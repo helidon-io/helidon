@@ -15,9 +15,9 @@
  */
 package io.helidon.nima.webserver.cors;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;

@@ -11,12 +11,16 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [4.0.0-ALPHA-1]
-
+## [4.0.0]
 We are pleased to announce Helidon 4.0.0 a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
+
+## [4.0.0-ALPHA-1]
 
 ### Notable Changes
 
+- `LogConfig` is moved from `helidon-common` to `helidon-logging-common` and uses a service loader to initialize logging implementation; this means that now you can simply add `helidon-logging-log4j` or `helidon-logging-slf4j` to you classpath and these frameworks will be used instead of the default `helidon-logging-jul`; also as we are moving to `System.Logger`, integration will work without additional configuration steps, and all Helidon logs should be seen in `log4j` or `slf4j` as long as the libraries are on classpath
+- `HelidonConsoleHandler` is now available only in `helidon-logging-jul` module
+- `sfl4j` upgraded to version 2.0.0 to support `System.Logger`
 - Java 19 early access (with Loom support) as the minimal Java version
 - Using System.Logger instead of java util logging (incremental change)
 - `HelidonServiceLoader` is now part of `helidon-common` module

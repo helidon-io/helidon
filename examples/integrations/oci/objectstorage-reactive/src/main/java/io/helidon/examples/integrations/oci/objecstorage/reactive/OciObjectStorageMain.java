@@ -16,7 +16,7 @@
 
 package io.helidon.examples.integrations.oci.objecstorage.reactive;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;

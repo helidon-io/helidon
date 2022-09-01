@@ -16,7 +16,6 @@
 
 package io.helidon.grpc.examples.metrics;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.StringService;
@@ -24,6 +23,7 @@ import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;

@@ -79,6 +79,10 @@
             <artifactId>helidon-common-reactive</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tests.integration</groupId>
             <artifactId>helidon-tests-native-image-static-content</artifactId>
             <version>${project.version}</version>

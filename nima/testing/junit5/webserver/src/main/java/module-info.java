@@ -24,8 +24,11 @@ module io.helidon.nima.testing.junit5.webserver {
     requires transitive io.helidon.common.testing.http.junit5;
     requires transitive io.helidon.nima.webserver;
     requires transitive io.helidon.nima.webclient;
+    requires io.helidon.logging.common;
+
     requires transitive org.junit.jupiter.api;
     requires transitive hamcrest.all;
+
 
     exports io.helidon.nima.testing.junit5.webserver;
 }

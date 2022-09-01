@@ -16,9 +16,9 @@
 
 package io.helidon.examples.metrics.kpi;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.MetricsSupport;

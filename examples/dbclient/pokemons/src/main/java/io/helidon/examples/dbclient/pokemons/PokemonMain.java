@@ -16,9 +16,9 @@
 
 package io.helidon.examples.dbclient.pokemons;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;

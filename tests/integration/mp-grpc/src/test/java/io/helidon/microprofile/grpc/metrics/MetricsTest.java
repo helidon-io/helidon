@@ -21,10 +21,10 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
 import io.helidon.grpc.examples.common.StringServiceGrpc;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.GrpcServer;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
 import io.helidon.microprofile.server.Server;
 

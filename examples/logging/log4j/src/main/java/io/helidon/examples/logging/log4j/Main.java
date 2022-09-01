@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 
@@ -42,12 +43,7 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFact
  * You would need to use JUL or slf4j to have Helidon logs combined with application logs.
  */
 public final class Main {
-    static {
-        // replace JUL log manager with Log4j log manager, so we log all to it
-        System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
-    }
-
-    private static java.util.logging.Logger julLogger;
+    private static System.Logger systemLogger;
     private static Logger logger;
 
     private Main() {
@@ -61,10 +57,11 @@ public final class Main {
     public static void main(String[] args) {
         // file based logging configuration does not work
         // with native image!
-        configureLogging();
+        configureLog4j();
+        LogConfig.configureRuntime();
         // get logger after configuration
-        logger = LogManager.getLogger(Main.class.getName());
-        julLogger = java.util.logging.Logger.getLogger(Main.class.getName());
+        logger = LogManager.getLogger(Main.class);
+        systemLogger = System.getLogger(Main.class.getName());
 
         // the Helidon context is used to propagate MDC across threads
         // if running within Helidon WebServer, you do not need to runInContext, as that is already
@@ -88,7 +85,7 @@ public final class Main {
     private static void logging() {
         HelidonMdc.set("name", "startup");
         logger.info("Starting up");
-        julLogger.info("Using JUL logger");
+        systemLogger.log(System.Logger.Level.INFO, "Using System logger");
 
         // now let's see propagation across executor service boundary, we can also use Log4j's ThreadContext
         ThreadContext.put("name", "propagated");
@@ -108,7 +105,7 @@ public final class Main {
         logger.info("Running on another thread");
     }
 
-    private static void configureLogging() {
+    private static void configureLog4j() {
         // configure log4j
         final var builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setConfigurationName("root");

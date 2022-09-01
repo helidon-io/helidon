@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common;
+package io.helidon.logging.jul;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -24,9 +24,12 @@ import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import io.helidon.common.Weight;
+import io.helidon.logging.common.spi.LoggingProvider;
+
 /**
- * Logging configuration utility.
- * Methods are invoked by Helidon on startup, so you do not need to explicitly configure
+ * JUL Logging provider.
+ * You do not need to explicitly configure
  * Java Util logging as long as a file {@code logging.properties} is on the classpath or
  * in the current directory, or you configure logging explicitly using System properties.
  * Both {@value #SYS_PROP_LOGGING_CLASS} and {@value #SYS_PROP_LOGGING_FILE} are
@@ -34,28 +37,28 @@ import java.util.logging.Logger;
  * If you wish to configure the logging system differently, just do not include the file and/or
  * system properties, or set system property {@value #SYS_PROP_DISABLE_CONFIG} to {@code true}.
  */
-public final class LogConfig {
+@Weight(1)
+public class JulProvider implements LoggingProvider {
     private static final String TEST_LOGGING_FILE = "logging-test.properties";
     private static final String LOGGING_FILE = "logging.properties";
     private static final String SYS_PROP_DISABLE_CONFIG = "io.helidon.logging.config.disabled";
     private static final String SYS_PROP_LOGGING_CLASS = "java.util.logging.config.class";
     private static final String SYS_PROP_LOGGING_FILE = "java.util.logging.config.file";
 
-    static {
+    /**
+     * Default constructor required by {@link java.util.ServiceLoader}.
+     */
+    public JulProvider() {
+    }
+
+    @Override
+    public void initialization() {
         configureLogging("initialization");
     }
 
-    private LogConfig() {
-    }
-
-    /**
-     * Reconfigures logging with runtime configuration if within a native image.
-     * See GraalVM native image support in Helidon.
-     */
-    public static void configureRuntime() {
-        if (NativeImageHelper.isRuntime()) {
-            configureLogging("runtime");
-        }
+    @Override
+    public void runTime() {
+        configureLogging("runtime");
     }
 
     // when is either `initialization` or `runtime`
@@ -91,7 +94,7 @@ public final class LogConfig {
             source = findAndConfigureLogging();
         }
 
-        Logger.getLogger(LogConfig.class.getName()).info("Logging at " + when + " configured using " + source);
+        Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
     }
 
     private static String findAndConfigureLogging() throws IOException {
@@ -151,14 +154,6 @@ public final class LogConfig {
     }
 
     private static InputStream classPath(String loggingFile) {
-        return LogConfig.class.getResourceAsStream("/" + loggingFile);
-    }
-
-    /**
-     * This method is for internal use, to correctly load logging configuration at AOT build time.
-     */
-    public static void initClass() {
-        // DO NOT DELETE THIS METHOD
-        // we need to ensure class initialization for native image by invoking this method
+        return JulProvider.class.getResourceAsStream("/" + loggingFile);
     }
 }

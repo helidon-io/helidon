@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.tracing.TracerBuilder;
 
 import com.oracle.bedrock.testsupport.deferred.Eventually;

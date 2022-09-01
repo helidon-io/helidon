@@ -24,5 +24,5 @@ module io.helidon.logging.common {
     exports io.helidon.logging.common.spi;
 
     uses io.helidon.logging.common.spi.MdcProvider;
-
+    uses io.helidon.logging.common.spi.LoggingProvider;
 }

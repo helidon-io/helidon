@@ -28,6 +28,7 @@ module io.helidon.microprofile.cdi {
     requires jakarta.cdi;
 
     requires io.helidon.common;
+    requires io.helidon.logging.common;
     requires io.helidon.config;
     requires io.helidon.config.mp;
 

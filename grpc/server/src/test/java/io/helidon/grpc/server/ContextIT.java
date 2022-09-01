@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
+import io.helidon.logging.common.LogConfig;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;

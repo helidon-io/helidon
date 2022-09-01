@@ -16,7 +16,7 @@
 
 package io.helidon.examples.nima.observe;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveSupport;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;

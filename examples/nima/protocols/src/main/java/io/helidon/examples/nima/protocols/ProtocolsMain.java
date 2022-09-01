@@ -19,10 +19,10 @@ package io.helidon.examples.nima.protocols;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.examples.nima.grpc.strings.Strings;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.grpc.webserver.GrpcRouting;
 import io.helidon.nima.http2.webserver.Http2Route;

@@ -24,5 +24,8 @@ module helidon.tests.integration.webserver.upgrade {
     requires io.helidon.reactive.webserver;
     requires io.helidon.reactive.webserver.http2;
     requires io.helidon.reactive.webserver.websocket;
+    requires io.helidon.logging.common;
+    requires io.helidon.logging.jul;
+
     requires java.logging;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.security.integration.grpc;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.grpc.server.GrpcRouting;
@@ -29,6 +28,7 @@ import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
 import io.helidon.grpc.server.test.StringServiceGrpc;
 import io.helidon.grpc.server.test.Strings;
+import io.helidon.logging.common.LogConfig;
 
 import io.grpc.Channel;
 import io.grpc.Status;

@@ -18,7 +18,6 @@ package io.helidon.grpc.examples.security.outbound;
 
 import java.util.Optional;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -32,6 +31,7 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webclient.security.WebClientSecurity;

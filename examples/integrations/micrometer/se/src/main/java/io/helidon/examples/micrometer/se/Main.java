@@ -16,10 +16,10 @@
 
 package io.helidon.examples.micrometer.se;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.integrations.micrometer.MicrometerSupport;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;

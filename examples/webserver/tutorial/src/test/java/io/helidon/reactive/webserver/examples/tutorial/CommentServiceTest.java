@@ -18,9 +18,9 @@ package io.helidon.reactive.webserver.examples.tutorial;
 
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.testsupport.MediaPublisher;
 import io.helidon.reactive.webserver.testsupport.TestClient;

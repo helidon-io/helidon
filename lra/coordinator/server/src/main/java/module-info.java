@@ -30,4 +30,5 @@ module io.helidon.lra.coordinator {
     requires io.helidon.reactive.media.jsonp;
     requires io.helidon.reactive.health;
     requires io.helidon.health.checks;
+    requires io.helidon.logging.common;
 }

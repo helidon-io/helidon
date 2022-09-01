@@ -18,8 +18,8 @@ package io.helidon.demo.todos.backend;
 
 import java.util.List;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.server.Server;
 
 import static io.helidon.config.ConfigSources.classpath;

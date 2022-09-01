@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.logging.slf4j.Slf4jProvider;
+
 /**
  * Helidon Slf4j MDC module.
  */
@@ -25,6 +27,7 @@ module io.helidon.logging.slf4j {
 
     exports io.helidon.logging.slf4j;
 
+    provides io.helidon.logging.common.spi.LoggingProvider with Slf4jProvider;
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.slf4j.Slf4jMdcPropagator;
     provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.slf4j.Slf4jMdcProvider;
 }

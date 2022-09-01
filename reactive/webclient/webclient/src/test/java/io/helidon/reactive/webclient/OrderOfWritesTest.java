@@ -24,18 +24,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.logging.common.LogConfig;
 
+import com.sun.net.httpserver.HttpServer;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.sun.net.httpserver.HttpServer;
 
 class OrderOfWritesTest {
     private static final Duration TIME_OUT = Duration.ofSeconds(5);

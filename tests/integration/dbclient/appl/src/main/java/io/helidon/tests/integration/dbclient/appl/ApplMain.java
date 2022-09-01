@@ -18,7 +18,7 @@ package io.helidon.tests.integration.dbclient.appl;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.reactive.dbclient.DbClient;

@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webserver.Routing;

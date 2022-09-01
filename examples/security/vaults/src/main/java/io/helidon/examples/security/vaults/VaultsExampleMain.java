@@ -18,8 +18,8 @@ package io.helidon.examples.security.vaults;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.Security;

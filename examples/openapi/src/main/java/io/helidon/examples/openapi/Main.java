@@ -16,10 +16,10 @@
 
 package io.helidon.examples.openapi;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.openapi.OpenAPISupport;
 import io.helidon.reactive.health.HealthSupport;

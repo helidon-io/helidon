@@ -31,4 +31,6 @@ module io.helidon.examples.dbclient.mongodb {
     requires io.helidon.examples.dbclient.common;
     requires io.helidon.reactive.dbclient.metrics;
     requires io.helidon.reactive.dbclient.tracing;
+    requires io.helidon.logging.common;
+    requires io.helidon.logging.jul;
 }

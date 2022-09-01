@@ -16,10 +16,10 @@
 
 package io.helidon.examples.nima.quickstart;
 
-import io.helidon.common.LogConfig;
 import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveSupport;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.observe.health.HealthService;

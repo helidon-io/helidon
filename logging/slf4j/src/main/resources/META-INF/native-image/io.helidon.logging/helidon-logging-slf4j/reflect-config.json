@@ -15,7 +15,7 @@
         "allPublicConstructors": true
     },
     {
-        "name": "ch.qos.logback.core.hook.DelayingShutdownHook",
+        "name": "ch.qos.logback.core.hook.DefaultShutdownHook",
         "allPublicMethods": true,
         "allPublicConstructors": true
     },

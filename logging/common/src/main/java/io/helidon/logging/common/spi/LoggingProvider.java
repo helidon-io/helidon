@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.logging.common.spi;
 
 /**
- * Helidon Java Util Logging MDC support module.
+ * Used by Helidon to correctly initialize logging at build time (such as when building GraalVM native image)
+ * and at runtime (to configure loggers).
+ *
+ * @see io.helidon.logging.common.LogConfig
  */
-module io.helidon.logging.jul {
-    requires java.logging;
+public interface LoggingProvider {
+    /**
+     * This is executed at static initialization, such as when building
+     * GraalVM native image or when starting the application.
+     */
+    void initialization();
 
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.logging.common;
-
-    exports  io.helidon.logging.jul;
-
-    provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.jul.JulMdcPropagator;
-    provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.jul.JulMdcProvider;
-    provides io.helidon.logging.common.spi.LoggingProvider with io.helidon.logging.jul.JulProvider;
+    /**
+     * Runtime configuration, called when the application starts in GraalVM native image (not called when running on hotspot).
+     */
+    void runTime();
 }

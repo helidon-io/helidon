@@ -35,8 +35,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
@@ -72,7 +70,7 @@ import io.netty.util.concurrent.Future;
 class NettyWebServer implements WebServer {
     static final String TRACING_COMPONENT = "web-server";
 
-    private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(NettyWebServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
 
     private final Transport transport;
@@ -130,7 +128,7 @@ class NettyWebServer implements WebServer {
             SocketConfiguration soConfig = entry.getValue();
 
             if (!soConfig.enabled()) {
-                LOGGER.info("Channel '" + name + "' is disabled.");
+                LOGGER.log(System.Logger.Level.INFO, "Channel '" + name + "' is disabled.");
                 continue;
             }
 
@@ -167,7 +165,9 @@ class NettyWebServer implements WebServer {
         // Log entry that also initializes NettyInitializer class
         String maxOrderProp = NettyInitializer.getMaxOrderProperty();
         String maxOrderValue = NettyInitializer.getMaxOrderValue();
-        LOGGER.fine(() -> maxOrderProp + " set to " + maxOrderValue);
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, maxOrderProp + " set to " + maxOrderValue);
+        }
     }
 
     private SslContext createSslContext(WebServerTls webServerTls) {
@@ -253,8 +253,10 @@ class NettyWebServer implements WebServer {
                 try {
                     bootstrap.bind(bindAddress, port).addListener(channelFuture -> {
                         if (!channelFuture.isSuccess()) {
-                            LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
-                                    + channelFuture.cause().getMessage() + "'.");
+                            if (LOGGER.isLoggable(System.Logger.Level.INFO)) {
+                                LOGGER.log(System.Logger.Level.INFO, "Channel '" + name + "' startup failed with message '"
+                                        + channelFuture.cause().getMessage() + "'.");
+                            }
                             Throwable cause = channelFuture.cause();
 
                             String message = "Channel startup failed: " + name;
@@ -269,13 +271,17 @@ class NettyWebServer implements WebServer {
                         }
 
                         Channel channel = ((ChannelFuture) channelFuture).channel();
-                        LOGGER.info(() -> "Channel '" + name + "' started: " + channel
-                                + (socketConfig.tls().isPresent() ? " with TLS " : ""));
+                        if (LOGGER.isLoggable(System.Logger.Level.INFO)) {
+                            LOGGER.log(System.Logger.Level.INFO, "Channel '" + name + "' started: " + channel
+                                    + (socketConfig.tls().isPresent() ? " with TLS " : ""));
+                        }
 
                         channels.put(name, channel);
 
                         channel.closeFuture().addListener(future -> {
-                            LOGGER.info(() -> "Channel '" + name + "' closed: " + channel);
+                            if (LOGGER.isLoggable(System.Logger.Level.INFO)) {
+                                LOGGER.log(System.Logger.Level.INFO, "Channel '" + name + "' closed: " + channel);
+                            }
                             channels.remove(name);
                             if (channelsUpFuture.isCompletedExceptionally()) {
                                 // we're in a startup failure handler
@@ -283,7 +289,7 @@ class NettyWebServer implements WebServer {
                                     channelsUpFuture.exceptionally(this::startFailureHandler);
                                     // all the channels are down
                                 } else if (future.cause() != null) {
-                                    LOGGER.log(Level.WARNING,
+                                    LOGGER.log(System.Logger.Level.WARNING,
                                                "Startup failure channel close failure",
                                                new IllegalStateException(future.cause()));
                                 }
@@ -303,7 +309,9 @@ class NettyWebServer implements WebServer {
                         }
 
                         if (channels.size() >= bootstrapsSize) {
-                            LOGGER.finer(() -> "All channels started: " + channels.size());
+                            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                                LOGGER.log(System.Logger.Level.TRACE, "All channels started: " + channels.size());
+                            }
                             channelsUpFuture.complete(this);
                         }
                     });
@@ -318,7 +326,9 @@ class NettyWebServer implements WebServer {
             }
 
             started = true;
-            LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "All channels startup routine initiated: " + bootstrapsSize);
+            }
         }
         return Single.create(startFuture);
     }
@@ -326,7 +336,7 @@ class NettyWebServer implements WebServer {
     private void started(WebServer server) {
         // this must be done at runtime, so it works in native image
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
-            LOGGER.info(String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
+            LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             System.exit(0);
         } else {
             startFuture.complete(server);
@@ -337,7 +347,7 @@ class NettyWebServer implements WebServer {
         shutdownThreadGroups()
                 .whenComplete((webServer, t) -> {
                     if (t != null) {
-                        LOGGER.log(Level.WARNING, "Netty Thread Groups were unable to shutdown.", t);
+                        LOGGER.log(System.Logger.Level.WARNING, "Netty Thread Groups were unable to shutdown.", t);
                     }
                     shutdownFuture.complete(this);
                     startFuture.completeExceptionally(new IllegalStateException("WebServer was unable to start.",
@@ -353,7 +363,7 @@ class NettyWebServer implements WebServer {
                         shutdownFuture.complete(this);
                     } else if (cause != null) {
                         if (throwable != null) {
-                            LOGGER.log(Level.WARNING, "Netty Thread Groups were unable to shutdown.", throwable);
+                            LOGGER.log(System.Logger.Level.WARNING, "Netty Thread Groups were unable to shutdown.", throwable);
                         }
                         shutdownFuture.completeExceptionally(
                                 new IllegalStateException("WebServer was unable to stop.", cause));
@@ -477,7 +487,9 @@ class NettyWebServer implements WebServer {
         if (!transport.isAvailableFor(this)) {
             transport = new NioTransport();
         }
-        LOGGER.fine("Using Transport " + transport);
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Using Transport " + transport);
+        }
         return transport;
     }
 
