@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.repository;
+package io.helidon.data;
 
 /**
  * A {@link RuntimeException} used by Helidon Repository Data component.

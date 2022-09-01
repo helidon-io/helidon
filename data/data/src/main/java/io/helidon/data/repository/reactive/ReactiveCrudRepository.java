@@ -16,12 +16,11 @@
 package io.helidon.data.repository.reactive;
 
 import java.util.Optional;
-import java.util.concurrent.Flow;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.data.repository.GenericRepository;
-import io.helidon.data.repository.RepositoryException;
+import io.helidon.data.RepositoryException;
 
 /**
  * Reactive data repository interface for blocking CRUD operations.
@@ -35,7 +34,7 @@ import io.helidon.data.repository.RepositoryException;
  * @param <E> type of the entity
  * @param <ID> type of the ID (primary key)
  */
-public interface ReactiveStreamsCrudRepository<E, ID> extends GenericRepository<E, ID> {
+public interface ReactiveCrudRepository<E, ID> extends GenericRepository<E, ID> {
 
     /**
      * Persists provided entity.
