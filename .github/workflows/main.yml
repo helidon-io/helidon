@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  JAVA_VERSION: '19-ea'
+  JAVA_DISTRO: 'temurin'
+
 jobs:
   copyright:
     runs-on: ubuntu-latest
@@ -18,7 +22,8 @@ jobs:
      - name: Set up JDK 19
        uses: actions/setup-java@v3
        with:
-         java-version: '19-ea'
+         distribution: ${{ env.JAVA_DISTRO }}
+         java-version: ${{ env.JAVA_VERSION }}
          cache: maven
      - name: Copyright
        run: etc/scripts/copyright.sh
@@ -29,7 +34,8 @@ jobs:
       - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
-          java-version: '19-ea'
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
@@ -40,7 +46,8 @@ jobs:
       - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
-          java-version: '19-ea'
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Docs
         run: etc/scripts/site.sh
@@ -51,7 +58,8 @@ jobs:
       - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
-          java-version: '19-ea'
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Docs
         run: etc/scripts/spotbugs.sh
@@ -65,7 +73,8 @@ jobs:
       - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
-          java-version: '19-ea'
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
@@ -87,7 +96,8 @@ jobs:
       - name: Set up JDK 19
         uses: actions/setup-java@v3
         with:
-          java-version: '19-ea'
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: JAR packaging
         run: etc/scripts/test-packaging-jar
