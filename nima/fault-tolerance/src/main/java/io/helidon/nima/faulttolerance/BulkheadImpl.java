@@ -36,9 +36,7 @@ class BulkheadImpl implements Bulkhead {
     BulkheadImpl(Builder builder) {
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
-
         this.maxQueue = builder.queueLength();
-
     }
 
     @Override
