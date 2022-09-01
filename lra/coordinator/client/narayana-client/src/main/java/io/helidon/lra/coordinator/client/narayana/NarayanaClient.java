@@ -12,11 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package io.helidon.lra.coordinator.client.narayana;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,6 +71,7 @@ public class NarayanaClient implements CoordinatorClient {
         this.coordinatorTimeout = timeout;
         this.coordinatorTimeoutUnit = timeoutUnit;
         this.retry = Retry.builder()
+                .overallTimeout(Duration.ofMillis(timeoutUnit.toMillis(timeout)))
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
                         .calls(RETRY_ATTEMPTS)
                         .build())
@@ -207,7 +208,7 @@ public class NarayanaClient implements CoordinatorClient {
                     switch (res.status().code()) {
                         case 412:
                             return connectionError(res.lastEndpointURI()
-                                    + "Too late to join LRA - LRAID: " + lraId, 412);
+                                    + " Too late to join LRA - LRAID: " + lraId, 412);
                         case 404:
                             // Narayana returns 404 for already terminated lras
                         case 410:
@@ -312,13 +313,13 @@ public class NarayanaClient implements CoordinatorClient {
      */
     private String compensatorLinks(Participant p) {
         return Map.of(
-                "compensate", p.compensate(),
-                "complete", p.complete(),
-                "forget", p.forget(),
-                "leave", p.leave(),
-                "after", p.after(),
-                "status", p.status()
-        )
+                        "compensate", p.compensate(),
+                        "complete", p.complete(),
+                        "forget", p.forget(),
+                        "leave", p.leave(),
+                        "after", p.after(),
+                        "status", p.status()
+                )
                 .entrySet()
                 .stream()
                 .filter(e -> e.getValue().isPresent())

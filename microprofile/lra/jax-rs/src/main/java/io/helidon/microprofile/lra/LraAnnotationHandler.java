@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.lra;
@@ -22,7 +21,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.ws.rs.WebApplicationException;
@@ -51,12 +49,15 @@ class LraAnnotationHandler implements AnnotationHandler {
     private final InspectionService.Lra annotation;
     private final CoordinatorClient coordinatorClient;
     private final ParticipantService participantService;
+    private Duration coordinatorTimeout;
 
     LraAnnotationHandler(AnnotationInstance annotation,
                          CoordinatorClient coordinatorClient,
                          InspectionService inspectionService,
-                         ParticipantService participantService) {
+                         ParticipantService participantService,
+                         Duration coordinatorTimeout) {
         this.participantService = participantService;
+        this.coordinatorTimeout = coordinatorTimeout;
         this.annotation = inspectionService.lraAnnotation(annotation);
         this.coordinatorClient = coordinatorClient;
     }
@@ -219,7 +220,7 @@ class LraAnnotationHandler implements AnnotationHandler {
     private <T> T awaitCoordinator(Single<T> single) {
         try {
             // Connection timeout should be handled by client impl separately
-            return single.await(5, TimeUnit.SECONDS);
+            return single.await(coordinatorTimeout);
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof CoordinatorConnectionException) {

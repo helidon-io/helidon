@@ -21,16 +21,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.arquillian.HelidonContainerConfiguration;
 import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeStart;
@@ -53,25 +54,23 @@ public class CoordinatorDeployer {
         HelidonContainerConfiguration containerConfig = helidonContainer.getContainerConfig();
 
         containerConfig.addConfigBuilderConsumer(configBuilder -> {
-            configBuilder.withSources(
+            var is = CoordinatorService.class.getResourceAsStream("/application.yaml");
+            configBuilder.withSources(MpConfigSources.create(ConfigSources.create(is, MediaType.APPLICATION_X_YAML.toString())),
                     MpConfigSources.create(Map.of(
                             // Force client to use random port first time with 0
                             // reuse port second time(TckRecoveryTests does redeploy)
                             "server.port", String.valueOf(clientPort.get()),
-                            "server.workers", "16",
+                            "server.worker-count", "16",
                             "server.sockets.0.name", COORDINATOR_ROUTING_NAME,
                             // Force coordinator to use random port first time with 0
                             // reuse port second time(TckRecoveryTests does redeploy)
                             "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
-                            "server.sockets.0.workers", "16",
+                            "server.sockets.0.worker-count", "16",
                             "server.sockets.0.bind-address", "localhost",
-                            "helidon.lra.coordinator.timeout", "3000",
+                            "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator",
                             "helidon.lra.coordinator.recovery-interval", "100",
-                            "helidon.lra.coordinator.recovery-initial-delay", "100",
-                            "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
-                    )),
-                    MpConfigSources.create(CoordinatorService.class.getResource("/application.yaml"))
-            );
+                            "helidon.lra.coordinator.timeout", "3000"
+                    )));
         });
 
         JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)

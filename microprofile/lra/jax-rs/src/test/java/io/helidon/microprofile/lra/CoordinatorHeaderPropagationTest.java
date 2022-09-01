@@ -103,7 +103,7 @@ import static org.hamcrest.Matchers.not;
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".2", value = "xcc-tmm-")
 class CoordinatorHeaderPropagationTest {
 
-    private static final long TIMEOUT_SEC = 10L;
+    private static final long TIMEOUT_SEC = 30L;
     private static final String PROPAGATED_HEADER = "xxx-tmm-propagated-header";
     private static final String EXTRA_COORDINATOR_PROPAGATED_HEADER = "xBb-tmm-extra-start-header";
     private static final String NOT_PROPAGATED_HEADER = "non-propagated-header";
