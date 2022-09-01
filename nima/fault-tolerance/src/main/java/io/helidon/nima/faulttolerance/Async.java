@@ -19,6 +19,10 @@ package io.helidon.nima.faulttolerance;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+/**
+ * Runs synchronous suppliers asynchronously using virtual threads. Includes
+ * convenient static method to avoid creating instances of this class.
+ */
 public interface Async {
 
     /**
