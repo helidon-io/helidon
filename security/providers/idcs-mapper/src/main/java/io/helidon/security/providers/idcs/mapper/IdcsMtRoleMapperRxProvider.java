@@ -292,7 +292,8 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
     protected Single<Optional<String>> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
         return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppTokenRx(oidcConfig().appWebClient(),
-                                                                              multitenantEndpoints.tokenEndpoint(idcsTenantId)))
+                                                                              multitenantEndpoints.tokenEndpoint(idcsTenantId),
+                                                                              oidcConfig().tokenRefreshSkew()))
                 .getToken(tracing);
     }
 

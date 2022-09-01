@@ -339,6 +339,7 @@ public final class OidcConfig {
     static final int DEFAULT_MAX_REDIRECTS = 5;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
     static final boolean DEFAULT_FORCE_HTTPS_REDIRECTS = false;
+    static final Duration DEFAULT_TOKEN_REFRESH_SKEW = Duration.ofSeconds(5);
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
@@ -382,6 +383,7 @@ public final class OidcConfig {
     private final URI logoutEndpointUri;
     private final CrossOriginConfig crossOriginConfig;
     private final boolean forceHttpsRedirects;
+    private final Duration tokenRefreshSkew;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -454,6 +456,7 @@ public final class OidcConfig {
             }
         }
         this.crossOriginConfig = builder.crossOriginConfig;
+        this.tokenRefreshSkew = builder.tokenRefreshSkew;
 
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
         LOGGER.finest(() -> "Redirect URI with host: " + frontendUri + redirectUri);
@@ -974,6 +977,15 @@ public final class OidcConfig {
     }
 
     /**
+     * Amount of time access token should be refreshed before its expiration time.
+     *
+     * @return refresh time skew
+     */
+    public Duration tokenRefreshSkew() {
+        return tokenRefreshSkew;
+    }
+
+    /**
      * Client Authentication methods that are used by Clients to authenticate to the Authorization
      * Server when using the Token Endpoint.
      */
@@ -1109,6 +1121,7 @@ public final class OidcConfig {
         private URI postLogoutUri;
         private CrossOriginConfig crossOriginConfig;
         private boolean forceHttpsRedirects = DEFAULT_FORCE_HTTPS_REDIRECTS;
+        private Duration tokenRefreshSkew = DEFAULT_TOKEN_REFRESH_SKEW;
 
         @Override
         public OidcConfig build() {
@@ -1320,6 +1333,20 @@ public final class OidcConfig {
 
             config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
+            config.get("token-refresh-before-expiration").as(Duration.class).ifPresent(this::tokenRefreshSkew);
+
+            return this;
+        }
+
+        /**
+         * Amount of time access token should be refreshed before its expiration time.
+         * Default is 5 seconds.
+         *
+         * @param tokenRefreshSkew time to refresh token before expiration
+         * @return updated builder
+         */
+        public Builder tokenRefreshSkew(Duration tokenRefreshSkew) {
+            this.tokenRefreshSkew = tokenRefreshSkew;
             return this;
         }
 
