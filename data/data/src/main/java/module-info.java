@@ -20,6 +20,7 @@
  */
 module io.helidon.data {
     requires java.logging;
+    requires java.sql;
     requires transitive io.helidon.common.reactive;
     requires com.fasterxml.jackson.annotation;
 
