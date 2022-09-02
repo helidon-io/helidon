@@ -51,6 +51,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data</groupId>
+            <artifactId>helidon-data</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tests.integration.data</groupId>
             <artifactId>helidon-tests-integration-data-common</artifactId>
             <version>${project.version}</version>

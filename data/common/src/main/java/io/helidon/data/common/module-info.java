@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 /**
- * Helidon data repository API.
+ * Helidon data repository common module.
  *
  * @see io.helidon.data
  */
-module io.helidon.data {
+module io.helidon.data.common {
     requires java.logging;
-    requires transitive io.helidon.common.reactive;
-    requires com.fasterxml.jackson.annotation;
+    requires io.helidon.data;
 
-    //exports io.helidon.data;
-    exports io.helidon.data.annotation.event;
-    exports io.helidon.data.event;
-    exports io.helidon.data.event.listeners;
-    exports io.helidon.data.model;
-    exports io.helidon.data.repository;
+    exports io.helidon.data.common;
 }

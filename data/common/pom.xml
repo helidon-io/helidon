@@ -18,22 +18,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <artifactId>helidon-data-project</artifactId>
+        <groupId>io.helidon.data</groupId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
+    <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.data</groupId>
-    <artifactId>helidon-data-project</artifactId>
-    <name>Helidon Data Repository Project</name>
+    <artifactId>helidon-data-common</artifactId>
+    <name>Helidon Data Repository Common </name>
 
-    <description>Data Repository for Helidon SE</description>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.data</groupId>
+            <artifactId>helidon-data</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-    <modules>
-        <module>data</module>
-        <module>common</module>
-    </modules>
 </project>

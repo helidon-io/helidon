@@ -76,6 +76,12 @@
             </modules>
         </profile>
         <profile>
+            <id>data-it</id>
+            <modules>
+                <module>data</module>
+            </modules>
+        </profile>
+        <profile>
             <id>vault-it</id>
             <modules>
                 <module>vault</module>

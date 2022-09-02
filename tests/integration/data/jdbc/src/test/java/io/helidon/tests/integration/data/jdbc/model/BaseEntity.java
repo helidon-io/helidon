@@ -13,20 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Helidon data repository API.
- *
- * @see io.helidon.data
- */
-module io.helidon.data {
-    requires java.logging;
-    requires transitive io.helidon.common.reactive;
-    requires com.fasterxml.jackson.annotation;
+package io.helidon.tests.integration.data.jdbc.init;
 
-    //exports io.helidon.data;
-    exports io.helidon.data.annotation.event;
-    exports io.helidon.data.event;
-    exports io.helidon.data.event.listeners;
-    exports io.helidon.data.model;
-    exports io.helidon.data.repository;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+@Entity
+public class BaseEntity {
+
+    @Id
+    private int id;
+    private String name;
+
+    public BaseEntity(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
 }
