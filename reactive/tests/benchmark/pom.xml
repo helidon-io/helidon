@@ -27,7 +27,7 @@
 
     <groupId>io.helidon.reactive.tests.benchmark</groupId>
     <artifactId>helidon-reactive-tests-benchmark-project</artifactId>
-    <name>Helidon Reactive Tests Be;chmark Project</name>
+    <name>Helidon Reactive Tests Benchmark Project</name>
     <packaging>pom</packaging>
 
     <modules>
