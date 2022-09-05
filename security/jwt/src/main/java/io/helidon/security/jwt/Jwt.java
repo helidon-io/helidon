@@ -986,14 +986,14 @@ public class Jwt {
         private final TemporalUnit allowedTimeSkewUnit;
 
         private InstantValidator() {
-            this.instant = Instant.now();
+            this.instant = null;
             this.allowedTimeSkewAmount = 5;
             this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
         }
 
         private InstantValidator(boolean mandatory) {
             super(mandatory);
-            this.instant = Instant.now();
+            this.instant = null;
             this.allowedTimeSkewAmount = 5;
             this.allowedTimeSkewUnit = ChronoUnit.SECONDS;
         }
@@ -1007,11 +1007,15 @@ public class Jwt {
         }
 
         Instant latest() {
-            return instant.plus(allowedTimeSkewAmount, allowedTimeSkewUnit);
+            return instant().plus(allowedTimeSkewAmount, allowedTimeSkewUnit);
         }
 
         Instant earliest() {
-            return instant.minus(allowedTimeSkewAmount, allowedTimeSkewUnit);
+            return instant().minus(allowedTimeSkewAmount, allowedTimeSkewUnit);
+        }
+
+        Instant instant() {
+            return instant == null ? Instant.now() : instant;
         }
     }
 
