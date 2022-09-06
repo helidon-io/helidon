@@ -1,0 +1,23 @@
+name: Create Backport Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Issue number'
+        required: true
+      version:
+        description: 'Helidon version this issue was reported for'
+        required: true
+        default: '2.x'
+env:
+  GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
+
+
+jobs:
+  Issue-Backport:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - run: etc/scripts/actions/create-backport-issues.sh $GITHUB_REPOSITORY ${{ github.event.inputs.issue }} ${{ github.event.inputs.version }}
