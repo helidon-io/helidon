@@ -36,7 +36,7 @@
             </list>
             <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    @Test
-    public void testGreetings() {
+    void testGreetings() {
         JsonObject jsonObject;
         WebClientResponse response;
 
@@ -61,7 +61,7 @@
             </list>
             <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
                 <value><![CDATA[    @Test
-    public void testGreetings() {
+    void testGreetings() {
         Message json;
         WebClientResponse response;
 

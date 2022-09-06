@@ -44,7 +44,7 @@
             </list>
             <list key="MainTest-methods" if="${media.json-lib} == 'jsonp'">
                 <value><![CDATA[    @Test
-    public void testGreetings() throws Exception {
+    void testGreetings() {
         JsonObject jsonObject = target
                 .path("greet/Joe")
                 .request()
@@ -68,7 +68,7 @@
             </list>
             <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
                 <value><![CDATA[    @Test
-    public void testGreetings() throws Exception {
+    void testGreetings() {
         Message jsonMessage = target
                 .path("greet/Joe")
                 .request()

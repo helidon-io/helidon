@@ -67,7 +67,7 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                                     <list key="MainTest-methods">
                                         <value template="mustache"><![CDATA[
     @Test
-    public void testPokemonTypes() throws Exception {
+    void testPokemonTypes() throws ExecutionException, InterruptedException {
         webClient.get()
                 .path("/type")
                 .request(JsonArray.class)
@@ -81,7 +81,7 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
     }
 
     @Test
-    public void testPokemons() throws Exception {
+    void testPokemons() throws ExecutionException, InterruptedException {
         assertThat(getPokemonCount(), is(6));
 
         webClient.get()
@@ -121,7 +121,7 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
         assertThat(getPokemonCount(), is(6));
     }
 
-    private int getPokemonCount() throws Exception {
+    private int getPokemonCount() throws ExecutionException, InterruptedException {
         CompletableFuture<Integer> result = new CompletableFuture<>();
         webClient.get()
                 .path("/pokemon")
@@ -138,6 +138,7 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                                     </list>
                                     <list key="MainTest-java-imports">
                                         <value>java.util.Collections</value>
+                                        <value>java.util.concurrent.ExecutionException</value>
                                         <value>jakarta.json.Json</value>
                                         <value>jakarta.json.JsonBuilderFactory</value>
                                         <value>jakarta.json.JsonArray</value>
