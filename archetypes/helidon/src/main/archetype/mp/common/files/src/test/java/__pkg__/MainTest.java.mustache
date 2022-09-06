@@ -19,9 +19,8 @@ import {{.}};
 
 {{#helidon-test}}
 @HelidonTest
-@TestMethodOrder(MethodOrderer.MethodName.class)
 {{/helidon-test}}
-public class MainTest {
+class MainTest {
 {{#helidon-test}}
 {{#MainTest-static-fields}}
 {{.}}

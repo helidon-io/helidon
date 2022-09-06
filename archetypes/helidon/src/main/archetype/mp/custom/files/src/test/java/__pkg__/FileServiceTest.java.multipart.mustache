@@ -50,11 +50,11 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddBean(FileStorage.class)
 @AddBean(MultiPartFeatureProvider.class)
 @TestMethodOrder(OrderAnnotation.class)
-public class FileServiceTest {
+class FileServiceTest {
 
     @Test
     @Order(1)
-    public void testUpload(WebTarget target) throws IOException {
+    void testUpload(WebTarget target) throws IOException {
         Path tempDirectory = Files.createTempDirectory(null);
         File file = Files.write(tempDirectory.resolve("foo.txt"), "bar\n".getBytes(StandardCharsets.UTF_8)).toFile();
         MultiPart multipart = new MultiPart()
@@ -71,7 +71,7 @@ public class FileServiceTest {
 
     @Test
     @Order(2)
-    public void testList(WebTarget target) {
+    void testList(WebTarget target) {
         try (Response response = target
                 .path("/multipart")
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -86,7 +86,7 @@ public class FileServiceTest {
 
     @Test
     @Order(3)
-    public void testDownload(WebTarget target) throws IOException {
+    void testDownload(WebTarget target) throws IOException {
         try (Response response = target
                 .register(MultiPartFeature.class)
                 .path("/multipart/foo.txt")

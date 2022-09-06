@@ -10,9 +10,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,14 +19,13 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TestCORS {
+class TestCORS {
 
     private static WebClient client;
     private static WebServer server;
 
     @BeforeAll
-    static void init() throws Exception {
+    static void init() throws InterruptedException {
         server = Main.startServer().await();
 
         client = WebClient.builder()

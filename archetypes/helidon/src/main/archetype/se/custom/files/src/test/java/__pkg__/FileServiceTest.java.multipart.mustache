@@ -35,13 +35,13 @@ import static org.hamcrest.Matchers.notNullValue;
  * Tests {@link FileService}.
  */
 @TestMethodOrder(OrderAnnotation.class)
-public class FileServiceTest {
+class FileServiceTest {
 
     private static WebServer webServer;
     private static WebClient webClient;
 
     @BeforeAll
-    public static void startTheServer() {
+    static void startTheServer() {
         webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
@@ -52,7 +52,7 @@ public class FileServiceTest {
     }
 
     @AfterAll
-    public static void stopServer() {
+    static void stopServer() {
         if (webServer != null) {
             webServer.shutdown()
                     .await(10, TimeUnit.SECONDS);
@@ -61,7 +61,7 @@ public class FileServiceTest {
 
     @Test
     @Order(1)
-    public void testUpload() throws IOException {
+    void testUpload() throws IOException {
         Path file = Files.write( Files.createTempFile(null, null), "bar\n".getBytes(StandardCharsets.UTF_8));
         WebClientResponse response = webClient
                 .post()
@@ -75,7 +75,7 @@ public class FileServiceTest {
 
     @Test
     @Order(2)
-    public void testStreamUpload() throws IOException {
+    void testStreamUpload() throws IOException {
         Path file = Files.write( Files.createTempFile(null, null), "stream bar\n".getBytes(StandardCharsets.UTF_8));
         Path file2 = Files.write( Files.createTempFile(null, null), "stream foo\n".getBytes(StandardCharsets.UTF_8));
         WebClientResponse response = webClient
@@ -92,7 +92,7 @@ public class FileServiceTest {
 
     @Test
     @Order(3)
-    public void testList() {
+    void testList() {
         WebClientResponse response = webClient
                 .get()
                 .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +107,7 @@ public class FileServiceTest {
 
     @Test
     @Order(4)
-    public void testDownload() {
+    void testDownload() {
         WebClientResponse response = webClient
                 .get()
                 .path("foo.txt")

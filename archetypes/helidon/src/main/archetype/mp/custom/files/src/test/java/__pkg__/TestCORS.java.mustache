@@ -9,9 +9,7 @@ import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.cors.CrossOriginConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,8 +17,7 @@ import java.util.Optional;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TestCORS {
+class TestCORS {
 
     private static WebClient client;
     private static Server server;
@@ -49,7 +46,7 @@ public class TestCORS {
     @Test
     void testAnonymousGreetWithCors() {
         WebClientRequestBuilder builder = client.get();
-        Headers headers = builder.headers();
+        WebClientRequestHeaders headers = builder.headers();
         headers.add("Origin", "http://foo.com");
         headers.add("Host", "here.com");
 
@@ -57,8 +54,8 @@ public class TestCORS {
         assertThat("HTTP response", r.status().code(), is(200));
         String payload = fromPayload(r);
         assertThat("HTTP response payload", payload, is("{\"message\":\"Hello World!\"}"));
-        headers = r.headers();
-        Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        WebClientResponseHeaders resHeaders = r.headers();
+        Optional<String> allowOrigin = resHeaders.value(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is present",
                 allowOrigin.isPresent(), is(true));
         assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin.get(), is("http://foo.com"));
