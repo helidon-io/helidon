@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <h2>Configuration</h2>
  * Immutable tree-structured configuration.
  *
  * See {@link ConfigValue}.
@@ -38,7 +37,7 @@ public interface Config {
      * @return current config node key
      * @see #name()
      */
-    BaseKey key();
+    Key key();
 
     /**
      * Returns the last token of the fully-qualified key for the {@code Config}
@@ -68,7 +67,7 @@ public interface Config {
      *
      * @return current config node key
      * @see #key()
-     * @see Config.BaseKey#name()
+     * @see io.helidon.common.config.Config.Key#name()
      */
     default String name() {
         return key().name();
@@ -81,12 +80,10 @@ public interface Config {
      *
      * @param key sub-key of requested sub-node
      * @return config node for specified sub-key, never returns {@code null}.
-     * @see #get(Config.BaseKey)
+     * @see #get(io.helidon.common.config.Config.Key)
      * @throws io.helidon.common.config.ConfigException if not defined
      */
-    default Config get(String key) throws ConfigException {
-        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-    }
+    Config get(String key) throws ConfigException;
 
     /**
      * Returns the single sub-node for the specified sub-key.
@@ -95,7 +92,7 @@ public interface Config {
      * @return config node for specified sub-key, never returns {@code null}.
      * @see #get(String)
      */
-    default Config get(BaseKey key) {
+    default Config get(Key key) {
         return get(key.name());
     }
 
@@ -140,9 +137,7 @@ public interface Config {
      * @return returns detached Config instance of same config node
      * @throws io.helidon.common.config.ConfigException if not defined
      */
-    default Config detach() throws ConfigException {
-        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-    }
+    Config detach() throws ConfigException;
 
     /**
      * Returns {@code true} if the node exists, whether an object, a list, a
@@ -179,6 +174,17 @@ public interface Config {
      */
     boolean isList();
 
+    /**
+     * Returns {@code true} if this configuration node has a direct value.
+     * <p>
+     * This may be a value node (e.g. a leaf) or object node or a list node
+     * (e.g. a branch with value). The application can invoke methods such as
+     * {@link #as(Class)} on nodes that have value.
+     *
+     * @return {@code true} if the node has direct value, {@code false} otherwise.
+     */
+    boolean hasValue();
+
     //
     // accessors
     //
@@ -205,9 +211,7 @@ public interface Config {
      * @return a typed list with values
      * @throws io.helidon.common.config.ConfigException in case of problem to map property value.
      */
-    default <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException {
-        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-    }
+    <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException;
 
     /**
      * Transform all leaf nodes (values) into Map instance.
@@ -215,9 +219,7 @@ public interface Config {
      * @return new Map instance that contains all config leaf node values
      * @throws io.helidon.common.config.ConfigException in case the node is Type#MISSING.
      */
-    default ConfigValue<Map<String, String>> asMap() throws ConfigException {
-        throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-    }
+    ConfigValue<Map<String, String>> asMap() throws ConfigException;
 
     /**
      * Object represents fully-qualified key of config node.
@@ -243,7 +245,7 @@ public interface Config {
      *
      * @see Config#key()
      */
-    interface BaseKey extends Comparable<BaseKey> {
+    interface Key extends Comparable<Key> {
         /**
          * Escape {@code '~'} to {@code ~0} and {@code '.'} to {@code ~1} in specified name.
          *
@@ -289,9 +291,7 @@ public interface Config {
          * @throws IllegalStateException in case you attempt to call this method on a root node
          * @throws io.helidon.common.config.ConfigException if not defined
          */
-        default BaseKey parent() throws ConfigException {
-            throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-        }
+        Key parent() throws ConfigException;
 
         /**
          * Returns {@code true} in case the key represents root config node,
@@ -301,9 +301,7 @@ public interface Config {
          * @see #parent()
          * @throws io.helidon.common.config.ConfigException if not defined
          */
-        default boolean isRoot() {
-            throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-        }
+        boolean isRoot();
 
         /**
          * Returns the name of Config node.
@@ -338,9 +336,8 @@ public interface Config {
          * @return a new resolved key
          * @throws io.helidon.common.config.ConfigException if not defined
          */
-        default BaseKey child(BaseKey key) {
-            throw new ConfigException("unsupported; do you have a valid config module in the classpath?");
-        }
+        Key child(Key key);
+
     }
 
 }

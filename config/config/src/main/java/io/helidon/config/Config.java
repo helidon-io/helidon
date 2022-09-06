@@ -615,6 +615,7 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @return {@code true} if the node has direct value, {@code false} otherwise.
      */
+    @Override
     boolean hasValue();
 
     /**
@@ -913,7 +914,7 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @see Config#key()
      */
-    interface Key extends io.helidon.common.config.Config.BaseKey {
+    interface Key extends io.helidon.common.config.Config.Key {
         /**
          * Returns instance of Key that represents key of parent config node.
          * <p>
@@ -932,7 +933,8 @@ public interface Config extends io.helidon.common.config.Config {
          * @param key child key (relative to current key)
          * @return a new resolved key
          */
-        Key child(Key key);
+        @Override
+        Key child(io.helidon.common.config.Config.Key key);
 
         /**
          * Creates new instance of Key for specified {@code key} literal.

@@ -84,17 +84,17 @@
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
     <Match>
-        <!-- Path shadows common/config -->
+        <!-- inheritance of the same interface from common/config -->
         <Class name="io.helidon.config.Config"/>
         <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
     </Match>
     <Match>
-        <!-- Path shadows common/config -->
+        <!-- inheritance of the same interface from common/config -->
         <Class name="io.helidon.config.ConfigValue"/>
         <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
     </Match>
     <Match>
-        <!-- Path shadows common/config -->
+        <!-- inheritance of the same interface from common/config -->
         <Class name="io.helidon.config.ConfigException"/>
         <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
     </Match>

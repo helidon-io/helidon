@@ -44,7 +44,7 @@ public interface ConfigValue<T> {
      * @return current config node key
      * @see #name()
      */
-    Config.BaseKey key();
+    Config.Key key();
 
     /**
      * Returns the last token of the fully-qualified key for the originating {@code Config}
@@ -74,7 +74,7 @@ public interface ConfigValue<T> {
      *
      * @return current config node key
      * @see #key()
-     * @see Config.BaseKey#name()
+     * @see io.helidon.common.config.Config.Key#name()
      */
     default String name() {
         return key().name();
