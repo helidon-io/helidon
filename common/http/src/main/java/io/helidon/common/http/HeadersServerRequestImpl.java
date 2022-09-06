@@ -16,6 +16,8 @@
 
 package io.helidon.common.http;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -79,12 +81,15 @@ class HeadersServerRequestImpl implements HeadersServerRequest {
         if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.value().equals(acceptValues.get(0))) {
             acceptedTypes = HUC_ACCEPT_DEFAULT_TYPES;
         } else {
-            acceptedTypes = acceptValues.stream()
-                    .flatMap(h -> HeaderHelper.tokenize(',', "\"", false, h).stream())
-                    .map(String::trim)
-                    .map(HttpMediaType::create)
-                    .sorted()
-                    .toList();
+            acceptedTypes = new ArrayList<>(5);
+
+            for (String acceptValue : acceptValues) {
+                List<String> tokenized = HeaderHelper.tokenize(',', acceptValue);
+                for (String token : tokenized) {
+                    acceptedTypes.add(HttpMediaType.create(token.trim()));
+                }
+            }
+            Collections.sort(acceptedTypes);
         }
         cachedAccepted = acceptedTypes;
 

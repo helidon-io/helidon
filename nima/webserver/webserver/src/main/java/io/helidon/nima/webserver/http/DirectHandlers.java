@@ -64,8 +64,9 @@ public class DirectHandlers {
      *
      * @param httpException exception to handle
      * @param res           response
+     * @param keepAlive     whether to keep the connection alive
      */
-    public void handle(RequestException httpException, ServerResponse res) {
+    public void handle(RequestException httpException, ServerResponse res, boolean keepAlive) {
         DirectHandler.TransportResponse response = handler(httpException.eventType()).handle(
                 httpException.request(),
                 httpException.eventType(),
@@ -78,7 +79,7 @@ public class DirectHandlers {
         res.status(response.status());
         response.headers()
                 .forEach(res::header);
-        if (!httpException.keepAlive()) {
+        if (!keepAlive) {
             res.header(Http.HeaderValues.CONNECTION_CLOSE);
         }
 

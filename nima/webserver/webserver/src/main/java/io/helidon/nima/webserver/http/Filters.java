@@ -28,7 +28,7 @@ import io.helidon.nima.webserver.ConnectionContext;
 /**
  * Handler of HTTP filters.
  */
-public class Filters {
+public final class Filters {
     private final ErrorHandlers errorHandlers;
     private final List<Filter> filters;
     private final boolean noFilters;
@@ -59,7 +59,7 @@ public class Filters {
      * @param routingExecutor this handler is called after all filters finish processing
      *                        (unless a filter does not invoke the chain)
      */
-    public void filter(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Runnable routingExecutor) {
+    public void filter(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Executable routingExecutor) {
         if (noFilters) {
             errorHandlers.runWithErrorHandling(ctx, request, response, routingExecutor);
             return;
@@ -74,7 +74,7 @@ public class Filters {
         private final ConnectionContext ctx;
         private final ErrorHandlers errorHandlers;
         private final Iterator<Filter> filters;
-        private final Runnable routingExecutor;
+        private final Executable routingExecutor;
         private RoutingRequest request;
         private RoutingResponse response;
 
@@ -83,7 +83,7 @@ public class Filters {
                                 List<Filter> filters,
                                 RoutingRequest request,
                                 RoutingResponse response,
-                                Runnable routingExecutor) {
+                                Executable routingExecutor) {
             this.ctx = ctx;
             this.errorHandlers = errorHandlers;
             this.filters = filters.iterator();

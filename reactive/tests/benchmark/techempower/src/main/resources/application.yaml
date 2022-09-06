@@ -13,13 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-handlers=java.util.logging.ConsoleHandler
-java.util.logging.ConsoleHandler.level=FINEST
-java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
-java.util.logging.SimpleFormatter.format=%1$tH:%1$tM:%1$tS %4$s %3$s %5$s%6$s%n
-# Global logging level. Can be overridden by specific loggers
-.level=INFO
-io.helidon.nima.level=INFO
-io.helidon.nima.webserver.http.Http1Connection.level=INFO
-io.helidon.nima.webserver.http.HttpRouting.level=INFO
 
+server:
+  sockets:
+    - name: "@default"
+      host: "127.0.0.1"
+      port: 8080
+      backlog: 8192
+      receive-buffer-size: 64000
+      write-queue-length: 8192
+      connection-options:
+        read-timeout-seconds: 0
+        connect-timeout-seconds: 0
+        send-buffer-size: 64000
+        receive-buffer-size: 64000
+  connection-providers:
+    "http_1_1":
+      validate-headers: false
+      validate-path: false
+      recv-log: false
+      send-log: false

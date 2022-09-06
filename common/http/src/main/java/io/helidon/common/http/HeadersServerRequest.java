@@ -61,6 +61,15 @@ public interface HeadersServerRequest extends Headers {
     }
 
     /**
+     * Create new empty server request headers.
+     *
+     * @return empty headers
+     */
+    static HeadersServerRequest create() {
+        return new HeadersServerRequestImpl(HeadersWritable.create());
+    }
+
+    /**
      * Optionally returns a value of {@link Http.Header#IF_MODIFIED_SINCE} header.
      * <p>
      * Allows a 304 Not Modified to be returned if content is unchanged.

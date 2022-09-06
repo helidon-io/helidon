@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
     Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,42 +13,24 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
--->
-
+  -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.reactive.tests</groupId>
+        <artifactId>helidon-reactive-tests-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.reactive</groupId>
-    <artifactId>helidon-reactive-project</artifactId>
-    <name>Helidon Reactive Project (Helidon SE)</name>
-
+    <groupId>io.helidon.reactive.tests.benchmark</groupId>
+    <artifactId>helidon-reactive-tests-benchmark-project</artifactId>
+    <name>Helidon Reactive Tests Benchmark Project</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>health</module>
-        <module>fault-tolerance</module>
-        <module>media</module>
-        <module>dbclient</module>
-        <module>webclient</module>
-        <module>webserver</module>
+        <module>techempower</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>tests</id>
-            <modules>
-                <module>tests</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

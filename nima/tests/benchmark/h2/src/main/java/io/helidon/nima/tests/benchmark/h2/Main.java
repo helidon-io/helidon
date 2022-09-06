@@ -73,6 +73,7 @@ public class Main {
                                 .host("127.0.0.1")
                                 .tls(tls)
                                 .backlog(8192)
+                                .writeQueueLength(4000)
                 )
                 .build()
                 .start();

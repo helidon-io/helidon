@@ -132,5 +132,5 @@ public interface Handler extends ServerLifecycle {
      * @param req request
      * @param res response
      */
-    void handle(ServerRequest req, ServerResponse res);
+    void handle(ServerRequest req, ServerResponse res) throws Exception;
 }
