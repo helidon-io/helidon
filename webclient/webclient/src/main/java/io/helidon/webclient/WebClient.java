@@ -403,6 +403,18 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Set which type of DNS resolver should be used.
+         *
+         * @param dnsResolverType type of the DNS resolver to be used
+         * @return updated builder instance
+         */
+        public Builder dnsResolverType(DnsResolverType dnsResolverType) {
+            configuration.dnsResolverType(dnsResolverType);
+            return this;
+        }
+
+
         WebClientConfiguration configuration() {
             configuration.clientServices(services());
             return configuration.build();
