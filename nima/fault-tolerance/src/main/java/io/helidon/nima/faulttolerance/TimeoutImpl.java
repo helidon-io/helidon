@@ -16,7 +16,6 @@
 
 package io.helidon.nima.faulttolerance;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,10 +34,8 @@ class TimeoutImpl implements Timeout {
     private final LazyValue<? extends ScheduledExecutorService> executor;
     private final boolean currentThread;
     private final String name;
-    private final Duration timeout;
 
     TimeoutImpl(Builder builder) {
-        this.timeout = builder.timeout();
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
         this.currentThread = builder.currentThread();
@@ -60,7 +57,11 @@ class TimeoutImpl implements Timeout {
             } catch (InterruptedException e) {
                 throw new TimeoutException("Call interrupted", e);
             } catch (ExecutionException e) {
-                throw new TimeoutException("Asynchronous execution error", e.getCause());
+                // Map java.util.concurrent.TimeoutException to Nima's TimeoutException
+                if (e.getCause() instanceof java.util.concurrent.TimeoutException) {
+                   throw new TimeoutException("Timeout reached", e.getCause().getCause());
+                }
+                throw new RuntimeException("Asynchronous execution error", e.getCause());
             }
         } else {
             Thread thisThread = Thread.currentThread();
