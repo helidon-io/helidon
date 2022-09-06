@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 #
 
 set -e  # Immediately exit if any command has a non-zero exit status
-set -u  # Immediately exit if an unitialized variable is referenced
+set -u  # Immediately exit if an uninitialized variable is referenced
 
 readonly REPOSITORY_FULL_NAME="$1"
 readonly ISSUE_NUMBER="$2"
