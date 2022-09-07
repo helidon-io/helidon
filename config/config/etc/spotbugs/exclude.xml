@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -82,6 +82,26 @@
         <Class name="io.helidon.config.PropertiesConfigParser"/>
         <Method name="parse"/>
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    </Match>
+    <Match>
+        <!-- inheritance of the same interface from common/config -->
+        <Class name="io.helidon.config.Config"/>
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+    </Match>
+    <Match>
+        <!-- inheritance of the same interface from common/config -->
+        <Class name="io.helidon.config.Config$Key"/>
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+    </Match>
+    <Match>
+        <!-- inheritance of the same interface from common/config -->
+        <Class name="io.helidon.config.ConfigValue"/>
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+    </Match>
+    <Match>
+        <!-- inheritance of the same interface from common/config -->
+        <Class name="io.helidon.config.ConfigException"/>
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
     </Match>
 
 </FindBugsFilter>

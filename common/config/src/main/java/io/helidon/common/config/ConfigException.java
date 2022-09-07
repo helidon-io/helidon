@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.config;
+package io.helidon.common.config;
 
 /**
  * Exception is thrown by {@link Config} implementations.
  */
-public class ConfigException extends io.helidon.common.config.ConfigException {
+public class ConfigException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

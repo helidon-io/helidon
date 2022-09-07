@@ -238,7 +238,7 @@ import io.helidon.config.spi.OverrideSource;
  * config system merges these together so that values from config sources with higher priority have
  * precedence over values from config sources with lower priority.
  */
-public interface Config {
+public interface Config extends io.helidon.common.config.Config {
     /**
      * Generic type of configuration.
      */
@@ -446,6 +446,7 @@ public interface Config {
      * @return current config node key
      * @see #name()
      */
+    @Override
     Key key();
 
     /**
@@ -478,6 +479,7 @@ public interface Config {
      * @see #key()
      * @see Key#name()
      */
+    @Override
     default String name() {
         return key().name();
     }
@@ -491,6 +493,7 @@ public interface Config {
      * @return config node for specified sub-key, never returns {@code null}.
      * @see #get(Key)
      */
+    @Override
     default Config get(String key) {
         Objects.requireNonNull(key, "Key argument is null.");
 
@@ -546,6 +549,7 @@ public interface Config {
      *
      * @return returns detached Config instance of same config node
      */
+    @Override
     Config detach();
 
     /**
@@ -561,6 +565,7 @@ public interface Config {
      *
      * @return {@code true} if the node exists
      */
+    @Override
     default boolean exists() {
         return type().exists();
     }
@@ -574,8 +579,31 @@ public interface Config {
      * @return {@code true} if the node is existing leaf node, {@code false}
      *         otherwise.
      */
+    @Override
     default boolean isLeaf() {
         return type().isLeaf();
+    }
+
+    /**
+     * Returns {@code true} if this node exists and is Type#Object.
+     *
+     * @return {@code true} if the node exists and is Type#Object, {@code false}
+     *         otherwise.
+     */
+    @Override
+    default boolean isObject() {
+        return (Type.OBJECT == type());
+    }
+
+    /**
+     * Returns {@code true} if this node exists and is Type#List.
+     *
+     * @return {@code true} if the node exists and is Type#List, {@code false}
+     *         otherwise.
+     */
+    @Override
+    default boolean isList() {
+        return (Type.LIST == type());
     }
 
     /**
@@ -587,6 +615,7 @@ public interface Config {
      *
      * @return {@code true} if the node has direct value, {@code false} otherwise.
      */
+    @Override
     boolean hasValue();
 
     /**
@@ -698,6 +727,7 @@ public interface Config {
      * @see ConfigValue#get()
      * @see ConfigValue#orElse(Object)
      */
+    @Override
     <T> ConfigValue<T> as(Class<T> type);
 
     /**
@@ -766,6 +796,7 @@ public interface Config {
      * @return a typed list with values
      * @throws ConfigMappingException in case of problem to map property value.
      */
+    @Override
     <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException;
 
     /**
@@ -833,6 +864,7 @@ public interface Config {
      * @see #traverse()
      * @see #detach()
      */
+    @Override
     ConfigValue<Map<String, String>> asMap() throws MissingValueException;
 
     //
@@ -882,7 +914,7 @@ public interface Config {
      *
      * @see Config#key()
      */
-    interface Key extends Comparable<Key> {
+    interface Key extends io.helidon.common.config.Config.Key {
         /**
          * Returns instance of Key that represents key of parent config node.
          * <p>
@@ -892,40 +924,8 @@ public interface Config {
          * @see #isRoot()
          * @throws java.lang.IllegalStateException in case you attempt to call this method on a root node
          */
-        Key parent();
-
-        /**
-         * Returns {@code true} in case the key represents root config node,
-         * otherwise it returns {@code false}.
-         *
-         * @return {@code true} in case the key represents root node, otherwise {@code false}.
-         * @see #parent()
-         */
-        boolean isRoot();
-
-        /**
-         * Returns the name of Config node.
-         * <p>
-         * The name of a node is the last token in fully-qualified key.
-         * Depending on context the name is evaluated one by one:
-         * <ul>
-         * <li>in {@link Type#OBJECT} node the name represents a <strong>name of object member</strong>;</li>
-         * <li>in {@link Type#LIST} node the name represents an zero-based <strong>index of list element</strong>,
-         * an unsigned base-10 integer value, leading zeros are not allowed.</li>
-         * </ul>
-         *
-         * @return name of config node
-         * @see Config#name()
-         */
-        String name();
-
-        /**
-         * Returns formatted fully-qualified key.
-         *
-         * @return formatted fully-qualified key.
-         */
         @Override
-        String toString();
+        Key parent();
 
         /**
          * Create a child key to the current key.
@@ -933,7 +933,8 @@ public interface Config {
          * @param key child key (relative to current key)
          * @return a new resolved key
          */
-        Key child(Key key);
+        @Override
+        Key child(io.helidon.common.config.Config.Key key);
 
         /**
          * Creates new instance of Key for specified {@code key} literal.
