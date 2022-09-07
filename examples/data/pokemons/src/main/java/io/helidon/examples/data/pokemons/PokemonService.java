@@ -23,8 +23,8 @@ import java.util.stream.StreamSupport;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.examples.data.pokemons.dao.PokemonDao;
-import io.helidon.examples.data.pokemons.dao.TypesDao;
+import io.helidon.examples.data.pokemons.dao.PokemonRepository;
+import io.helidon.examples.data.pokemons.dao.TypesRepository;
 import io.helidon.examples.data.pokemons.model.Pokemon;
 import io.helidon.reactive.webserver.*;
 
@@ -38,11 +38,11 @@ public class PokemonService implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(PokemonService.class.getName());
 
-    PokemonDao pokemonDao;
-    TypesDao typesDao;
+    PokemonRepository pokemonDao;
+    TypesRepository typesDao;
 
     PokemonService(EntityManager entityManager) {
-        // TODO: Initialization
+        // TODO: Initialization - manual for SE/Pico, @Inject for MP
         this.pokemonDao = null;
         this.typesDao = null;
     }
@@ -59,6 +59,8 @@ public class PokemonService implements Service {
                 .get("/pokemon/name/{name}", this::getPokemonByName)
                 // Get pokemon by ID
                 .get("/pokemon/{id}", this::getPokemonById)
+                // Get pokemons by Type name
+                .get("/pokemon/type/{name}", this::getPokemonsByType)
                 // Create new pokemon
                 .post("/pokemon", Handler.create(Pokemon.class, this::insertPokemon))
                 // Update name of existing pokemon
@@ -99,6 +101,7 @@ public class PokemonService implements Service {
     private void listTypes(ServerRequest request, ServerResponse response) {
         response.send(
                 StreamSupport.stream(typesDao.findAll().spliterator(), true)
+                        // TODO: This needs to be done better
                         .map(it -> it.toJson()));
     }
 
@@ -146,6 +149,23 @@ public class PokemonService implements Service {
             String pokemonName = request.path().param("name");
             response.send(
                     pokemonDao.findByName(pokemonName).stream().map(it -> it.toJson()));
+        } catch (Throwable t) {
+            sendError(t, response);
+        }
+    }
+
+    /**
+     * Get a pokemons by type name.
+     *
+     * @param request  server request
+     * @param response server response
+     */
+    private void getPokemonsByType(ServerRequest request, ServerResponse response) {
+        try {
+            String typeName = request.path().param("name");
+            response.send(
+                    StreamSupport.stream(pokemonDao.pokemonsByType(typeName).spliterator(), true)
+                            .map(it -> it.toJson()));
         } catch (Throwable t) {
             sendError(t, response);
         }

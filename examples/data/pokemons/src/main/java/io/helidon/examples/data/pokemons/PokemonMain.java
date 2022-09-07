@@ -19,7 +19,6 @@ package io.helidon.examples.data.pokemons;
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.examples.data.pokemons.dao.PokemonDao;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
@@ -111,7 +110,7 @@ public final class PokemonMain {
         // Initialize database schema
         InitializeDb.init(dbClient);
 
-        // TODO: Initialization
+        // TODO: Initialization - manual for SE/Pico, @Inject for MP
         EntityManager entityManager = null;
 
         return Routing.builder()

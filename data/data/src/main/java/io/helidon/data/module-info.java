@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * JDBC example.
+ * Helidon data repository API.
+ *
+ * @see io.helidon.data
  */
-module io.helidon.examples.data.pokemons {
+module io.helidon.data {
     requires java.logging;
-    requires jakarta.json;
-    requires jakarta.persistence;
+    requires java.sql;
+    requires transitive io.helidon.common.reactive;
+    requires com.fasterxml.jackson.annotation;
 
-    requires io.helidon.config;
-    requires io.helidon.data;
-    requires transitive io.helidon.reactive.dbclient;
-    requires io.helidon.reactive.webserver;
-
+    //exports io.helidon.data;
+    exports io.helidon.data.annotation;
+    exports io.helidon.data.annotation.event;
+    exports io.helidon.data.event;
+    exports io.helidon.data.event.listeners;
+    exports io.helidon.data.model;
+    exports io.helidon.data.repository;
 }
