@@ -75,10 +75,7 @@
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.AfterAll</value>
                 <value>org.junit.jupiter.api.BeforeAll</value>
-                <value>org.junit.jupiter.api.MethodOrderer</value>
-                <value>org.junit.jupiter.api.MethodOrderer.MethodName</value>
                 <value>org.junit.jupiter.api.Test</value>
-                <value>org.junit.jupiter.api.TestMethodOrder</value>
             </list>
             <list key="MainTest-static-imports">
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>

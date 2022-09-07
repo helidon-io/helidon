@@ -130,7 +130,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-methods">
                                         <value if="${flavor} == 'mp'"><![CDATA[
     @Test
-    public void testMicroprofileMetrics() {
+    void testMicroprofileMetrics() {
         String message = target.path("simple-greet/Joe")
                 .request()
                 .get(String.class);
@@ -149,7 +149,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }]]></value>
                                         <value if="${flavor} == 'se'"><![CDATA[
     @Test
-    public void testMicroprofileMetrics() {
+    void testMicroprofileMetrics() {
         String get = webClient.get()
                 .path("/simple-greet/greet-count")
                 .request(String.class)
@@ -247,7 +247,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     <list key="MainTest-methods">
                                         <value if="${flavor} == 'mp'"><![CDATA[
     @Test
-    public void testMicrometerMetrics() {
+    void testMicrometerMetrics() {
         String message = target.path("simple-greet/Joe")
                 .request()
                 .get(String.class);
@@ -266,7 +266,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }]]></value>
                                         <value if="${flavor} == 'se'"><![CDATA[
     @Test
-    public void testMicrometerMetrics() {
+    void testMicrometerMetrics() {
         String get = webClient.get()
                 .path("/micrometer-greet/greet-count")
                 .request(String.class)
@@ -342,7 +342,7 @@ allRequests_total 0.0
                                 <list key="MainTest-methods">
                                     <value if="${flavor} == 'mp'"><![CDATA[
     @Test
-    public void testMetrics() throws Exception {
+    void testMetrics() {
         Response response = target
                 .path("metrics")
                 .request()
@@ -351,7 +351,7 @@ allRequests_total 0.0
     }]]></value>
                                     <value if="${flavor} == 'se'"><![CDATA[
     @Test
-    public void testMetrics() throws Exception {
+    void testMetrics() {
         WebClientResponse response = webClient.get()
                 .path("/metrics")
                 .request()
@@ -429,7 +429,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                 <list key="MainTest-methods">
                                     <value if="${flavor} == 'mp'"><![CDATA[
     @Test
-    public void testHealth() throws Exception {
+    void testHealth() {
         Response response = target
                 .path("health")
                 .request()
@@ -438,7 +438,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }]]></value>
                                     <value if="${flavor} == 'se'"><![CDATA[
     @Test
-    public void testHealth() throws Exception {
+    void testHealth() {
         WebClientResponse response = webClient.get()
                 .path("health")
                 .request()
@@ -516,7 +516,7 @@ tracing:
                                     <list key="MainTest-methods">
                                         <value if="${flavor} == 'mp'"><![CDATA[
     @Test
-    public void testMetricJaeger() {
+    void testMetricJaeger() {
         Response response = target
                 .path("metrics/vendor")
                 .request()
@@ -525,7 +525,7 @@ tracing:
     }]]></value>
                                         <value if="${flavor} == 'se'"><![CDATA[
     @Test
-    public void testMetricJaeger() {
+    void testMetricJaeger() {
         WebClientResponse response = webClient.get()
                 .path("metrics/vendor")
                 .request()
