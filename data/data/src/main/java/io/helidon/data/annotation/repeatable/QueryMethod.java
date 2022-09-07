@@ -15,6 +15,8 @@
  */
 package io.helidon.data.annotation;
 
+import java.lang.annotation.*;
+
 /**
  * Defines the query method. Query type and statement is build from method name.
  *

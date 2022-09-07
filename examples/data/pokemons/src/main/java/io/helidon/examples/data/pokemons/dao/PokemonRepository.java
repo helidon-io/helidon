@@ -16,6 +16,8 @@
 package io.helidon.examples.data.pokemons.dao;
 
 import io.helidon.data.annotation.Repository;
+import io.helidon.data.annotation.Query;
+import io.helidon.data.annotation.QueryMethod;
 import io.helidon.data.repository.CrudRepository;
 import io.helidon.examples.data.pokemons.model.Pokemon;
 import jakarta.persistence.EntityManager;
