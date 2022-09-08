@@ -18,17 +18,18 @@ package io.helidon.tests.integration.dbclient.common.tests.health;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -56,8 +57,8 @@ public class HealthCheckIT {
         LOGGER.log(Level.INFO, "Running test testHealthCheck");
         HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -69,8 +70,8 @@ public class HealthCheckIT {
         final String hcName = "TestHC";
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).config(CONFIG.get("db.health-check")).name(hcName).build();
         HealthCheckResponse response = check.call();
-        String name = response.getName();
-        HealthCheckResponse.Status state = response.getStatus();
+        String name = check.name();
+        HealthCheckResponse.Status state = response.status();
         assertThat(name, equalTo(hcName));
         assertThat(state, equalTo(HealthCheckResponse.Status.UP));
     }
@@ -87,8 +88,8 @@ public class HealthCheckIT {
         }
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).dml().statementName("ping-dml").build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -108,8 +109,8 @@ public class HealthCheckIT {
         LOGGER.log(Level.INFO, () -> String.format("Using db.statements.ping-dml value %s", statement));
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).dml().statement(statement).build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -120,8 +121,8 @@ public class HealthCheckIT {
         LOGGER.log(Level.INFO, "Running test testHealthCheckWithCustomNamedQuery");
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).query().statementName("ping-query").build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -137,8 +138,8 @@ public class HealthCheckIT {
         LOGGER.log(Level.INFO, () -> String.format("Using db.statements.ping-query value %s", statement));
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).query().statement(statement).build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
 

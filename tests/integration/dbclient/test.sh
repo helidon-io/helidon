@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,13 +89,13 @@ fi
 # Run simple JDBC tests
 [ -n "${FLAG_S}" ] && \
     (cd ${WS_DIR}/tests/integration/dbclient && \
-        echo mvn -P${DB_PROFILE} -pl common,jdbc \
+        echo mvn -D${DB_PROPERTY} -pl common,jdbc \
             -Dapp.config=${TEST_CONFIG} \
             -Ddb.user=${DB_USER} \
             -Ddb.password=${DB_PASSWORD} \
             -Ddb.url="${DB_URL}" \
              verify && \
-        mvn -P${DB_PROFILE} -pl common,jdbc \
+        mvn -D${DB_PROPERTY} -pl common,jdbc \
             -Dapp.config=${TEST_CONFIG} \
             -Ddb.user=${DB_USER} \
             -Ddb.password=${DB_PASSWORD} \
@@ -105,13 +105,13 @@ fi
 # Run remote application tests in Java VM mode
 [ -n "${FLAG_J}" ] && \
     (cd ${WS_DIR}/tests/integration/dbclient && \
-        echo mvn -P${DB_PROFILE} \
+        echo mvn -D${DB_PROPERTY} \
             -Dapp.config=${TEST_CONFIG} \
             -Ddb.user=${DB_USER} \
             -Ddb.password=${DB_PASSWORD} \
             -Ddb.url="${DB_URL}" \
             -pl appl verify && \
-        mvn -P${DB_PROFILE} \
+        mvn -D${DB_PROPERTY} \
             -Dapp.config=${TEST_CONFIG} \
             -Ddb.user=${DB_USER} \
             -Ddb.password=${DB_PASSWORD} \
@@ -121,13 +121,13 @@ fi
 # Run remote application tests in native image mode
 [ -n "${FLAG_N}" ] && \
     (cd ${WS_DIR}/tests/integration/dbclient && \
-        echo mvn -P${DB_PROFILE} -Pnative-image \
+        echo mvn -D${DB_PROPERTY} -Pnative-image \
             -Dapp.config=${TEST_CONFIG} \
             -Ddb.user=${DB_USER} \
             -Ddb.password=${DB_PASSWORD} \
             -Ddb.url="${DB_URL}" \
             -pl appl verify && \
-        mvn -P${DB_PROFILE} -Pnative-image \
+        mvn -D${DB_PROPERTY} -Pnative-image \
             -Dapp.config=${TEST_CONFIG} \
             -Ddb.user=${DB_USER} \
             -Ddb.password=${DB_PASSWORD} \

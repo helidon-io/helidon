@@ -18,21 +18,20 @@ package io.helidon.tests.integration.dbclient.appl.health;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObjectBuilder;
-
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.tests.integration.dbclient.appl.AbstractService;
-import io.helidon.tests.integration.tools.service.AppResponse;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.tests.integration.dbclient.appl.AbstractService;
+import io.helidon.tests.integration.tools.service.AppResponse;
+import io.helidon.tests.integration.tools.service.RemoteTestException;
 
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 
@@ -91,8 +90,8 @@ public class HealthCheckService extends AbstractService {
             try {
                 JsonObjectBuilder job = Json.createObjectBuilder();
                 HealthCheckResponse hcResponse = check.call();
-                HealthCheckResponse.Status state = hcResponse.getStatus();
-                job.add("name", hcResponse.getName());
+                HealthCheckResponse.Status state = hcResponse.status();
+                job.add("name", check.name());
                 job.add("status", state.name());
                 response.send(AppResponse.okStatus(job.build()));
             } catch (Throwable t) {

@@ -30,21 +30,19 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonStructure;
-import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonParsingException;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import io.helidon.common.reactive.Multi;
-import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
 import io.helidon.reactive.dbclient.DbRow;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
-
-import org.eclipse.microprofile.health.HealthCheck;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
@@ -67,7 +65,7 @@ public class ServerHealthCheckIT {
     private static Routing createRouting() {
         HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         final HealthSupport health = HealthSupport.builder()
-                .addLiveness(check)
+                .add(check)
                 .build();
         return Routing.builder()
                 .register(health) // Health at "/health"
@@ -144,13 +142,8 @@ public class ServerHealthCheckIT {
         }
         JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
         assertThat(checks.size(), greaterThan(0));
-        checks.stream().map((check) -> {
-            String name = check.asJsonObject().getString("name");
-            return check;
-        }).forEachOrdered((check) -> {
-            String state = check.asJsonObject().getString("state");
+        checks.stream().forEachOrdered((check) -> {
             String status = check.asJsonObject().getString("status");
-            assertThat(state, equalTo("UP"));
             assertThat(status, equalTo("UP"));
         });
     }

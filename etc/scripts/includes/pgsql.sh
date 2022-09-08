@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,5 +31,6 @@ readonly DOCKER_ENV="-e POSTGRES_USER=${DB_USER} -e POSTGRES_DB=${DB_NAME} -e PO
 readonly DOCKER_IMG='postgres'
 
 readonly DB_PROFILE='pgsql'
+readonly DB_PROPERTY='db=pgsql'
 
 echo " - Database URL: ${DB_URL}"

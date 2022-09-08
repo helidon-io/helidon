@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import java.lang.System.Logger.Level;
 
 import io.helidon.tests.integration.dbclient.appl.it.tools.JsonTools;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
@@ -27,6 +23,8 @@ import io.helidon.tests.integration.tools.client.HelidonTestException;
 import io.helidon.tests.integration.tools.client.TestClient;
 import io.helidon.tests.integration.tools.client.TestServiceClient;
 
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -38,7 +36,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(OrderAnnotation.class)
 public class ApplInitIT {
 
-    private static final Logger LOGGER = Logger.getLogger(ApplInitIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ApplInitIT.class.getName());
 
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
@@ -48,19 +46,19 @@ public class ApplInitIT {
     // Test executor methods
 
     private void executeTest(final String testName) {
-        LOGGER.fine(() -> String.format("Running %s", testName));
+        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
         JsonObject data = testClient
                 .callServiceAndGetData(testName)
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
     }
 
     private void executeInit(final String testName) {
-        LOGGER.fine(() -> String.format("Running %s", testName));
+        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
         JsonValue data = testClient
                 .callServiceAndGetData(testName);
         Long count = JsonTools.getLong(data);
-        LOGGER.finer(() -> String.format("Rows modified: %d", count));
+        LOGGER.log(Level.DEBUG, () -> String.format("Rows modified: %d", count));
     }
 
     @Test
@@ -75,37 +73,32 @@ public class ApplInitIT {
         executeTest("testPing");
     }
 
-    @Test
-    @Order(3)
+    // Called from LifeCycleExtension in setup phase
     public void testDropSchema() {
         try {
             executeInit("testDropSchema");
         // This remote call will fail on fresh database without existing tables.
         } catch (HelidonTestException ex){
-            LOGGER.info(() -> "Remote database tables did not exist.");
+            LOGGER.log(Level.INFO, () -> "Remote database tables did not exist.");
         }
     }
 
-    @Test
-    @Order(4)
+    // Called from LifeCycleExtension in setup phase
     public void testInitSchema() {
         executeInit("testInitSchema");
     }
 
-    @Test
-    @Order(5)
+    // Called from LifeCycleExtension in setup phase
     public void testInitTypes() {
         executeInit("testInitTypes");
     }
 
-    @Test
-    @Order(6)
+    // Called from LifeCycleExtension in setup phase
     public void testInitPokemons() {
         executeInit("testInitPokemons");
     }
 
-    @Test
-    @Order(7)
+    // Called from LifeCycleExtension in setup phase
     public void testInitPokemonTypes() {
         executeInit("testInitPokemonTypes");
     }

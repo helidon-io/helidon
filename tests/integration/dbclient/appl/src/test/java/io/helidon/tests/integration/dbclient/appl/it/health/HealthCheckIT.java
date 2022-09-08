@@ -15,10 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it.health;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import jakarta.json.JsonObject;
+import java.lang.System.Logger.Level;
 
 import io.helidon.tests.integration.dbclient.appl.it.LogData;
 import io.helidon.tests.integration.dbclient.appl.tools.QueryParams;
@@ -26,6 +23,7 @@ import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.TestClient;
 import io.helidon.tests.integration.tools.client.TestServiceClient;
 
+import jakarta.json.JsonObject;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,7 +37,7 @@ import static org.hamcrest.Matchers.equalTo;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HealthCheckIT {
 
-    private static final Logger LOGGER = Logger.getLogger(HealthCheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HealthCheckIT.class.getName());
 
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
@@ -51,18 +49,18 @@ public class HealthCheckIT {
 
     @BeforeAll
     public void setup() {
-        LOGGER.info(() -> "Running HealthCheckIT setup");
+        LOGGER.log(Level.INFO, () -> "Running HealthCheckIT setup");
         final JsonObject dbTypeValue = testClient
                 .callServiceAndGetData("Verify", "getDatabaseType", null)
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, dbTypeValue);
+        LogData.logJsonObject(Level.DEBUG, dbTypeValue);
         dbType = dbTypeValue.getString("type");
         final JsonObject pingDmlValue = testClient
                 .callServiceAndGetData(
                         "Verify", "getConfigParam",
                         QueryParams.single(QueryParams.NAME, "test.ping-dml"))
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, pingDmlValue);
+        LogData.logJsonObject(Level.DEBUG, pingDmlValue);
         if (pingDmlValue.containsKey("config")) {
             pingDml = Boolean.parseBoolean(pingDmlValue.getString("config"));
         }
@@ -73,11 +71,11 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheck() {
-        LOGGER.info(() -> "Running test testHealthCheck");
+        LOGGER.log(Level.INFO, () -> "Running test testHealthCheck");
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheck")
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
@@ -86,14 +84,14 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithName() {
-        LOGGER.info(() -> "Running test testHealthCheckWithName");
+        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithName");
         final String hcName = "TestHC";
         JsonObject data = testClient
                 .callServiceAndGetData(
                         "testHealthCheckWithName",
                         QueryParams.single(QueryParams.NAME, hcName))
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
         assertThat(data.getString("name"), equalTo(hcName));
     }
@@ -103,15 +101,15 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomNamedDML() {
-        LOGGER.info(() -> "Running test testHealthCheckWithCustomNamedDML");
+        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomNamedDML");
         if (!pingDml) {
-            LOGGER.info(() -> String.format("Database %s does not support DML ping, skipping this test", dbType));
+            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", dbType));
             return;
         }
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheckWithCustomNamedDML")
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
@@ -120,15 +118,15 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomDML() {
-        LOGGER.info(() -> "Running test testHealthCheckWithCustomDML");
+        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomDML");
         if (!pingDml) {
-            LOGGER.info(() -> String.format("Database %s does not support DML ping, skipping this test", dbType));
+            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", dbType));
             return;
         }
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheckWithCustomDML")
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
@@ -137,11 +135,11 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomNamedQuery() {
-        LOGGER.info(() -> "Running test testHealthCheckWithCustomNamedQuery");
+        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomNamedQuery");
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheckWithCustomNamedQuery")
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 
@@ -150,11 +148,11 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomQuery() {
-        LOGGER.info(() -> "Running test testHealthCheckWithCustomQuery");
+        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomQuery");
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheckWithCustomQuery")
                 .asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         assertThat(data.getString("status"), equalTo(HealthCheckResponse.Status.UP.name()));
     }
 

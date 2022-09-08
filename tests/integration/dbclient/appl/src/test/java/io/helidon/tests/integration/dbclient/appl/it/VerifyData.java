@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package io.helidon.tests.integration.dbclient.appl.it;
 
 import java.util.logging.Logger;
 
-import jakarta.json.JsonObject;
-
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.tools.QueryParams;
 import io.helidon.tests.integration.tools.client.TestClient;
+
+import jakarta.json.JsonObject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

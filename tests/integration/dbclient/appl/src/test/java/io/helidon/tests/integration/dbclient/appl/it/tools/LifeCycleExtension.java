@@ -15,26 +15,26 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it.tools;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.tests.integration.dbclient.appl.ApplMain;
+import io.helidon.tests.integration.dbclient.appl.it.ApplInitIT;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner.ExecType;
 import io.helidon.tests.integration.tools.client.TestsLifeCycleExtension;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
 
 /**
  * jUnit test life cycle extensions.
  */
 public class LifeCycleExtension extends TestsLifeCycleExtension {
 
-    private static final Logger LOGGER = Logger.getLogger(LifeCycleExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LifeCycleExtension.class.getName());
 
     /* Thread sleep time in miliseconds while waiting for database or appserver to come up. */
     private static final int SLEEP_MILIS = 250;
@@ -54,7 +54,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
 
     @Override
     public void check() {
-        LOGGER.fine("Running test application check()");
+        LOGGER.log(Level.DEBUG, "Running test application check()");
         waitForDatabase();
     }
 
@@ -63,7 +63,16 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
      */
     @Override
     public void setup() {
-        LOGGER.fine("Running test application setup()");
+        LOGGER.log(Level.DEBUG, "Running test application setup()");
+        // Call schema initialization services
+        if ("h2.yaml".equals(appConfigProperty)) {
+            ApplInitIT init = new ApplInitIT();
+            init.testDropSchema();
+            init.testInitSchema();
+            init.testInitTypes();
+            init.testInitPokemons();
+            init.testInitPokemonTypes();
+        }
     }
 
     /**
@@ -72,7 +81,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
      */
     @Override
     public void close() throws Throwable {
-        LOGGER.fine("Running test application close()");
+        LOGGER.log(Level.DEBUG, "Running test application close()");
         shutdown();
     }
 
@@ -118,19 +127,19 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
         long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
         while (true) {
             try {
-                LOGGER.finest(() -> String.format("Connection check: user=%s password=%s url=%s", dbUser, dbPassword, dbUrl));
+                LOGGER.log(Level.DEBUG, () -> String.format("Connection check: user=%s password=%s url=%s", dbUser, dbPassword, dbUrl));
                 Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
                 closeConnection(conn);
                 return;
             } catch (SQLException ex) {
-                LOGGER.finest(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.log(Level.DEBUG, () -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > endTm) {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
                 try {
                     Thread.sleep(SLEEP_MILIS);
                 } catch (InterruptedException ie) {
-                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+                    LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
                 }
             }
         }
@@ -148,10 +157,10 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
                 .path("/Exit")
                 .submit()
                 .await(1, TimeUnit.MINUTES);
-        LOGGER.info(() -> String.format(
+        LOGGER.log(Level.INFO, () -> String.format(
                 "Status: %s",
                 response.status()));
-        LOGGER.info(() -> String.format(
+        LOGGER.log(Level.INFO, () -> String.format(
                 "Response: %s",
                 response
                         .content()
@@ -164,7 +173,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
         try {
             connection.close();
         } catch (SQLException ex) {
-            LOGGER.warning(() -> String.format("Could not close database connection: %s", ex.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("Could not close database connection: %s", ex.getMessage()));
         }
     }
 

@@ -20,22 +20,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObjectBuilder;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
-import io.helidon.tests.integration.dbclient.appl.model.Type;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
+import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
+import io.helidon.tests.integration.dbclient.appl.model.Type;
 
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -103,7 +102,7 @@ public class InitService implements Service {
                                 dbClient,
                                 dbConfig.get("health-check"));
         HealthCheckResponse checkResponse = check.call();
-        HealthCheckResponse.Status checkState = checkResponse.getStatus();
+        HealthCheckResponse.Status checkState = checkResponse.status();
         final JsonObjectBuilder data = Json.createObjectBuilder();
         data.add("state", checkState.name());
         response.send(okStatus(data.build()));

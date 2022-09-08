@@ -20,9 +20,9 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.Service;
+import io.helidon.tests.integration.tools.service.RemoteTestException;
 
 /**
  * Common web service code for testing application.

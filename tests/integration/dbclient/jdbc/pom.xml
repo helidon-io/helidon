@@ -182,11 +182,121 @@
     </build>
 
     <profiles>
+
+        <profile>
+            <id>h2</id>
+            <activation>
+                <property>
+                    <name>!db</name>
+                </property>
+            </activation>
+            <properties>
+                <app.config>h2.yaml</app.config>
+                <db.port>9092</db.port>
+                <db.host>localhost</db.host>
+                <db.database>test</db.database>
+                <db.user>sa</db.user>
+                <db.password>password</db.password>
+                <db.url>jdbc:h2:tcp://${db.host}:${db.port}/${db.database};DATABASE_TO_UPPER=FALSE</db.url>
+                <mainClassH2>org.h2.tools.Server</mainClassH2>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.integrations.db</groupId>
+                    <artifactId>h2</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <io.helidon.tests.integration.dbclient.config>h2.yaml</io.helidon.tests.integration.dbclient.config>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-libs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeArtifactIds>h2</includeArtifactIds>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>start-db</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <argument>${project.build.directory}/dependency/h2-${version.lib.h2}.jar</argument>
+                                        <argument>${mainClassH2}</argument>
+                                        <argument>-tcp</argument>
+                                        <argument>-tcpPassword</argument>
+                                        <argument>${db.password}</argument>
+                                        <argument>-tcpPort</argument>
+                                        <argument>${db.port}</argument>
+                                        <argument>-baseDir</argument>
+                                        <argument>${project.build.directory}/h2</argument>
+                                        <argument>-ifNotExists</argument>
+                                    </arguments>
+                                    <async>true</async>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>stop-db</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <argument>${project.build.directory}/dependency/h2-${version.lib.h2}.jar</argument>
+                                        <argument>${mainClassH2}</argument>
+                                        <argument>-tcpShutdown</argument>
+                                        <argument>tcp://localhost:${db.port}</argument>
+                                        <argument>-tcpPassword</argument>
+                                        <argument>${db.password}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>mysql</id>
             <activation>
                 <property>
-                    <name>mysql</name>
+                    <name>db</name>
+                    <value>mysql</value>
                 </property>
             </activation>
             <properties>
@@ -258,7 +368,8 @@
             <id>mariadb</id>
             <activation>
                 <property>
-                    <name>mariadb</name>
+                    <name>db</name>
+                    <value>mariadb</value>
                 </property>
             </activation>
             <properties>
@@ -330,7 +441,8 @@
             <id>pgsql</id>
             <activation>
                 <property>
-                    <name>pgsql</name>
+                    <name>db</name>
+                    <value>pgsql</value>
                 </property>
             </activation>
             <properties>
@@ -400,7 +512,8 @@
             <id>mssql</id>
             <activation>
                 <property>
-                    <name>mssql</name>
+                    <name>db</name>
+                    <value>mssqk</value>
                 </property>
             </activation>
             <properties>

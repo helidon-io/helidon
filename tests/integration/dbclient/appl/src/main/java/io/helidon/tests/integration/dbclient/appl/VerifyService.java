@@ -17,19 +17,19 @@ package io.helidon.tests.integration.dbclient.appl;
 
 import java.util.logging.Logger;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-
 import io.helidon.config.Config;
 import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.tests.integration.tools.service.AppResponse;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
+import io.helidon.tests.integration.tools.service.AppResponse;
+import io.helidon.tests.integration.tools.service.RemoteTestException;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.dbclient.appl.AbstractService.QUERY_ID_PARAM;
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;

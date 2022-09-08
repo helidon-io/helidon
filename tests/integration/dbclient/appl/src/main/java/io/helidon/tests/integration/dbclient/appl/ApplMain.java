@@ -15,10 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.appl;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
-import java.util.logging.Logger;
 
-import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.reactive.dbclient.DbClient;
@@ -29,7 +28,9 @@ import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jsonb.JsonbSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.WebServer;
 import io.helidon.tests.integration.dbclient.appl.health.HealthCheckService;
 import io.helidon.tests.integration.dbclient.appl.interceptor.InterceptorService;
 import io.helidon.tests.integration.dbclient.appl.mapping.MapperService;
@@ -48,8 +49,6 @@ import io.helidon.tests.integration.dbclient.appl.transaction.TransactionGetServ
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionInsertService;
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionQueriesService;
 import io.helidon.tests.integration.dbclient.appl.transaction.TransactionUpdateService;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
 
 /**
  * Main class.
@@ -57,7 +56,7 @@ import io.helidon.reactive.webserver.WebServer;
  */
 public class ApplMain {
 
-    private static final Logger LOGGER = Logger.getLogger(ApplMain.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ApplMain.class.getName());
 
     private static final String CONFIG_PROPERTY_NAME="app.config";
 
@@ -76,7 +75,7 @@ public class ApplMain {
                                     .statementTypes(DbStatementType.GET))
                 .build();
         final HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck
+                .add(DbClientHealthCheck
                         .builder(dbClient)
                         //.dml()
                         .statementName("ping")
@@ -123,8 +122,7 @@ public class ApplMain {
                 .build();
 
         // Prepare routing for the server
-        final WebServer.Builder serverBuilder = WebServer.builder()
-                .routing(routing)
+        final WebServer.Builder serverBuilder = WebServer.builder(routing)
                 // Get webserver config from the "server" section of application.yaml
                 .config(config.get("server"));
 
@@ -161,9 +159,8 @@ public class ApplMain {
         } else {
             configFile = System.getProperty(CONFIG_PROPERTY_NAME, DEFAULT_CONFIG_FILE);
         }
-        LOGGER.info(() -> String.format("Configuration file: %s", configFile));
+        LOGGER.log(Level.INFO, () -> String.format("Configuration file: %s", configFile));
 
-        LogConfig.configureRuntime();
         startServer(configFile);
 
     }

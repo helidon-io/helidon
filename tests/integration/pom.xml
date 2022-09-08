@@ -62,6 +62,7 @@
         <module>jpa</module>
         <module>jms</module>
         <module>config</module>
+        <module>dbclient</module>
         <module>jep290</module>
         <module>mp-bean-validation</module>
         <module>restclient</module>
@@ -82,12 +83,4 @@
         </dependencies>
     </dependencyManagement>
 
-    <profiles>
-        <profile>
-            <id>dbclient-it</id>
-            <modules>
-                <module>dbclient</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

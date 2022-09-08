@@ -15,20 +15,19 @@
  */
 package io.helidon.tests.integration.dbclient.appl.model;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.reactive.dbclient.DbMapper;
+import io.helidon.reactive.dbclient.DbRow;
+
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.DbRow;
 
 import static io.helidon.tests.integration.dbclient.appl.model.Type.TYPES;
 

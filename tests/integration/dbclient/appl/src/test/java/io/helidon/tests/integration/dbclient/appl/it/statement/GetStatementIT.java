@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it.statement;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import jakarta.json.JsonObject;
+import java.lang.System.Logger.Level;
 
 import io.helidon.tests.integration.dbclient.appl.it.LogData;
 import io.helidon.tests.integration.dbclient.appl.it.VerifyData;
@@ -28,6 +25,7 @@ import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.TestClient;
 import io.helidon.tests.integration.tools.client.TestServiceClient;
 
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,7 +36,7 @@ import static org.hamcrest.Matchers.equalTo;
  */
 public class GetStatementIT {
 
-    private static final Logger LOGGER = Logger.getLogger(GetStatementIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GetStatementIT.class.getName());
 
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
@@ -47,7 +45,7 @@ public class GetStatementIT {
 
     // Test executor method
     public void executeTest(final String testName, final int fromId, final int toId) {
-        LOGGER.fine(() -> String.format("Running %s", testName));
+        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
         JsonObject data = testClient.callServiceAndGetData(
                 testName,
                 QueryParams.builder()
@@ -55,7 +53,7 @@ public class GetStatementIT {
                     .add(QueryParams.TO_ID, String.valueOf(toId))
                     .build()
         ).asJsonObject();
-        LogData.logJsonObject(Level.FINER, data);
+        LogData.logJsonObject(Level.DEBUG, data);
         int counter[] = { 0 };
         Pokemon.POKEMONS.keySet().forEach(id -> {
             if (id > fromId && id < toId) {
