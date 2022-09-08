@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
-import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
@@ -29,7 +29,7 @@ import io.helidon.common.http.SetCookie;
 /**
  * Headers that may be available on response from server.
  */
-public interface WebClientResponseHeaders extends HeadersClientResponse {
+public interface WebClientResponseHeaders extends ClientResponseHeaders {
 
     /**
      * Returns {@link SetCookie} header of the response.

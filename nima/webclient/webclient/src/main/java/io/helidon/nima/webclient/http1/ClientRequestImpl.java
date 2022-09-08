@@ -32,15 +32,15 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersClientRequest;
-import io.helidon.common.http.HeadersClientResponse;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.Http1HeadersParser;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriQueryWriteable;
@@ -59,7 +59,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private static final String HTTPS = "https";
     private static final Map<KeepAliveKey, Queue<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
-    private final HeadersWritable<?> explicitHeaders = HeadersWritable.create();
+    private final WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private final UriQueryWriteable query;
     private final Map<String, String> pathParams = new HashMap<>();
 
@@ -143,7 +143,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             String resolved = resolvePathParams(uriTemplate);
             this.uri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
         }
-        HeadersClientRequest headers = HeadersClientRequest.create(explicitHeaders);
+        ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
         boolean keepAlive = handleKeepAlive(headers);
 
         ClientConnection connection = getConnection(keepAlive);
@@ -178,7 +178,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
         // todo validate request ok
 
-        HeadersWritable<?> headers = HeadersWritable.create(explicitHeaders);
+        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
         boolean keepAlive = handleKeepAlive(headers);
 
         ClientConnection connection = getConnection(keepAlive);
@@ -217,7 +217,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        return readResponse(HeadersClientRequest.create(headers), connection, reader);
+        return readResponse(ClientRequestHeaders.create(headers), connection, reader);
     }
 
     @Override
@@ -271,21 +271,21 @@ class ClientRequestImpl implements Http1ClientRequest {
         return result;
     }
 
-    private Http1ClientResponse readResponse(HeadersClientRequest usedHeaders, ClientConnection connection, DataReader reader) {
+    private Http1ClientResponse readResponse(ClientRequestHeaders usedHeaders, ClientConnection connection, DataReader reader) {
         Http.Status responseStatus = readStatus(reader);
-        HeadersClientResponse responseHeaders = readHeaders(reader);
+        ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return new ClientResponseImpl(responseStatus, usedHeaders, responseHeaders, connection, reader);
     }
 
-    private HeadersClientResponse readHeaders(DataReader reader) {
+    private ClientResponseHeaders readHeaders(DataReader reader) {
         // todo configurable max headers and validate headers
         int maxHeaderSize = 8192;
         boolean validateHeaders = true;
 
-        HeadersWritable<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
+        WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
 
-        return HeadersClientResponse.create(writable);
+        return ClientResponseHeaders.create(writable);
     }
 
     private Http.Status readStatus(DataReader reader) {
@@ -345,7 +345,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         }
     }
 
-    private boolean handleKeepAlive(HeadersWritable<?> headers) {
+    private boolean handleKeepAlive(WritableHeaders<?> headers) {
         if (headers.contains(HeaderValues.CONNECTION_CLOSE)) {
             return false;
         }
@@ -402,7 +402,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         return connection;
     }
 
-    private byte[] entityBytes(Object entity, HeadersClientRequest headers) {
+    private byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
         if (entity instanceof byte[]) {
             return (byte[]) entity;
         }

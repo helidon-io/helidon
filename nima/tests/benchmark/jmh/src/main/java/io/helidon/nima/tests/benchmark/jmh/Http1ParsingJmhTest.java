@@ -21,9 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.http1.Http1Headers;
 import io.helidon.nima.webserver.http1.Http1Prologue;
 
@@ -95,7 +95,7 @@ public class Http1ParsingJmhTest {
         Http1Headers headers = new Http1Headers(reader, 4096, false);
 
         HttpPrologue httpPrologue = prologue.readPrologue();
-        HeadersWritable<?> httpHeaders = headers.readHeaders(httpPrologue);
+        WritableHeaders<?> httpHeaders = headers.readHeaders(httpPrologue);
         boolean hasContent = httpHeaders.contains(Header.CONTENT_LENGTH);
         String authority = httpHeaders.get(Header.HOST).value();
 

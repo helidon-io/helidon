@@ -21,8 +21,8 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -33,7 +33,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
                                  HttpPrologue prologue,
-                                 HeadersServerRequest headers,
+                                 ServerRequestHeaders headers,
                                  ContentDecoder decoder,
                                  int requestId,
                                  CountDownLatch entityReadLatch,

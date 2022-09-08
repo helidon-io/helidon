@@ -25,13 +25,13 @@ import java.util.function.Supplier;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.ServerResponseHeaders;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
@@ -58,8 +58,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private final Http1ConnectionListener sendListener;
     private final DataWriter dataWriter;
     private final Http1ServerRequest request;
-    private final HeadersServerResponse headers;
-    private final HeadersWritable<?> trailers = HeadersWritable.create();
+    private final ServerResponseHeaders headers;
+    private final WritableHeaders<?> trailers = WritableHeaders.create();
     private final boolean keepAlive;
 
     private boolean streamingEntity;
@@ -79,11 +79,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.sendListener = sendListener;
         this.dataWriter = dataWriter;
         this.request = request;
-        this.headers = HeadersServerResponse.create();
+        this.headers = ServerResponseHeaders.create();
         this.keepAlive = keepAlive;
     }
 
-    static void nonEntityBytes(HeadersServerResponse headers,
+    static void nonEntityBytes(ServerResponseHeaders headers,
                                Http.Status status,
                                BufferData buffer,
                                boolean keepAlive) {
@@ -178,7 +178,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
-    public HeadersServerResponse headers() {
+    public ServerResponseHeaders headers() {
         return headers;
     }
 
@@ -232,8 +232,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     private static class BlockingOutputStream extends OutputStream {
-        private final HeadersServerResponse headers;
-        private final HeadersWritable<?> trailers;
+        private final ServerResponseHeaders headers;
+        private final WritableHeaders<?> trailers;
         private final Supplier<Http.Status> status;
         private final DataWriter dataWriter;
         private final Runnable responseCloseRunnable;
@@ -252,8 +252,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private boolean forcedChunked;
         private long responseBytesTotal;
 
-        private BlockingOutputStream(HeadersServerResponse headers,
-                                     HeadersWritable<?> trailers,
+        private BlockingOutputStream(ServerResponseHeaders headers,
+                                     WritableHeaders<?> trailers,
                                      Supplier<Http.Status> status,
                                      Supplier<String> streamResult,
                                      DataWriter dataWriter,

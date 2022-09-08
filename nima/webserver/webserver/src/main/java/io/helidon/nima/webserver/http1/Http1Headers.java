@@ -18,10 +18,10 @@ package io.helidon.nima.webserver.http1;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.DirectHandler;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RequestException;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.http.DirectTransportRequest;
 
 /**
@@ -52,13 +52,13 @@ public final class Http1Headers {
      * @param prologue parsed prologue of this request
      * @return writable headers parsed from the request data
      */
-    public HeadersWritable<?> readHeaders(HttpPrologue prologue) {
+    public WritableHeaders<?> readHeaders(HttpPrologue prologue) {
         try {
             return Http1HeadersParser.readHeaders(reader, maxHeadersSize, validateHeaders);
         } catch (IllegalStateException | IllegalArgumentException e) {
             throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)
-                    .request(DirectTransportRequest.create(prologue, HeadersWritable.create()))
+                    .request(DirectTransportRequest.create(prologue, WritableHeaders.create()))
                     .message(e.getMessage())
                     .cause(e)
                     .build();

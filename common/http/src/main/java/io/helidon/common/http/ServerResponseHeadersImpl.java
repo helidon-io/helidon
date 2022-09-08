@@ -22,25 +22,25 @@ import java.util.List;
 
 import io.helidon.common.LazyValue;
 
-class HeadersServerResponseImpl extends HeadersImpl<HeadersServerResponse> implements HeadersServerResponse {
+class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> implements ServerResponseHeaders {
     private static final LazyValue<ZonedDateTime> START_OF_YEAR_1970 = LazyValue.create(
             () -> ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")));
 
-    HeadersServerResponseImpl() {
+    ServerResponseHeadersImpl() {
     }
 
-    HeadersServerResponseImpl(Headers existing) {
+    ServerResponseHeadersImpl(Headers existing) {
         super(existing);
     }
 
     @Override
-    public HeadersServerResponse addCookie(SetCookie cookie) {
+    public ServerResponseHeaders addCookie(SetCookie cookie) {
         add(Http.HeaderValue.create(Http.Header.SET_COOKIE, cookie.toString()));
         return this;
     }
 
     @Override
-    public HeadersServerResponse clearCookie(String name) {
+    public ServerResponseHeaders clearCookie(String name) {
         SetCookie expiredCookie = SetCookie.builder(name, "deleted")
                 .path("/")
                 .expires(START_OF_YEAR_1970.get())

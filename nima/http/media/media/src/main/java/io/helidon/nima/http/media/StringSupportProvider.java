@@ -26,10 +26,10 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
@@ -53,7 +53,7 @@ public class StringSupportProvider implements MediaSupportProvider {
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
-                                        HeadersWritable<?> responseHeaders) {
+                                        WritableHeaders<?> responseHeaders) {
         if (type.equals(GenericType.STRING)) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupportProvider::writer);
         }
@@ -71,7 +71,7 @@ public class StringSupportProvider implements MediaSupportProvider {
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         if (type.equals(GenericType.STRING)) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, StringSupportProvider::writer);
         }
@@ -96,7 +96,7 @@ public class StringSupportProvider implements MediaSupportProvider {
                           String object,
                           OutputStream outputStream,
                           Headers requestHeaders,
-                          HeadersWritable<?> responseHeaders) {
+                          WritableHeaders<?> responseHeaders) {
             write(object, outputStream, responseHeaders);
         }
 
@@ -104,13 +104,13 @@ public class StringSupportProvider implements MediaSupportProvider {
         public void write(GenericType<String> type,
                           String object,
                           OutputStream outputStream,
-                          HeadersWritable<?> headers) {
+                          WritableHeaders<?> headers) {
             write(object, outputStream, headers);
         }
 
         private void write(String toWrite,
                            OutputStream outputStream,
-                           HeadersWritable<?> writableHeaders) {
+                           WritableHeaders<?> writableHeaders) {
             Charset charset;
             if (writableHeaders.contains(Http.Header.CONTENT_TYPE)) {
                 charset = writableHeaders.contentType()

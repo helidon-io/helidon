@@ -33,15 +33,15 @@ import static io.helidon.common.http.Http.Header.LOCATION;
 /**
  * HTTP Headers of a client response.
  */
-public interface HeadersClientResponse extends Headers {
+public interface ClientResponseHeaders extends Headers {
     /**
      * Create a new instance from headers parsed from client response.
      *
      * @param responseHeaders client response headers
      * @return immutable instance of client response HTTP headers
      */
-    static HeadersClientResponse create(Headers responseHeaders) {
-        return new HeadersClientResponseImpl(responseHeaders);
+    static ClientResponseHeaders create(Headers responseHeaders) {
+        return new ClientResponseHeadersImpl(responseHeaders);
     }
 
     /**

@@ -19,11 +19,11 @@ package io.helidon.reactive.webserver;
 import java.time.Duration;
 import java.util.List;
 
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.TransportResponse;
-import io.helidon.common.http.HeadersClientResponse;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
@@ -89,7 +89,7 @@ class Gh1893Test {
     private static TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
                                                        DirectHandler.EventType eventType,
                                                        Http.Status defaultStatus,
-                                                       HeadersServerResponse headers,
+                                                       ServerResponseHeaders headers,
                                                        String message) {
         if (request.path().equals("/redirect")) {
             return TransportResponse.builder()
@@ -154,7 +154,7 @@ class Gh1893Test {
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
 
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(response);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         assertThat(headers, HttpHeaderMatcher.hasHeader(Http.HeaderValue.create(Http.Header.LOCATION, "/errorPage")));
     }
 

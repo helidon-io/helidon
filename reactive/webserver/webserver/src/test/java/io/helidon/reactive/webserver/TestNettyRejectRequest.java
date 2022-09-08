@@ -18,7 +18,7 @@ package io.helidon.reactive.webserver;
 import java.time.Duration;
 import java.util.List;
 
-import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 
@@ -30,7 +30,6 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasKey;
 
 class TestNettyRejectRequest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -72,7 +71,7 @@ class TestNettyRejectRequest {
                                                 null,
                                                 List.of("Accept: text/plain", "Bad=Header: anything"));
 
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(response);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         Http.Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
 

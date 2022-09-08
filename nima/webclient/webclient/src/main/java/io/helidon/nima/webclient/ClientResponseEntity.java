@@ -21,8 +21,8 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersClientRequest;
-import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.ReadableEntity;
@@ -32,15 +32,15 @@ import io.helidon.nima.http.media.ReadableEntityBase;
  * Client response rentity.
  */
 public final class ClientResponseEntity extends ReadableEntityBase implements ReadableEntity {
-    private final HeadersClientRequest requestHeaders;
-    private final HeadersClientResponse responseHeaders;
+    private final ClientRequestHeaders requestHeaders;
+    private final ClientResponseHeaders responseHeaders;
     private final MediaContext mediaContext;
 
     private ClientResponseEntity(Function<InputStream, InputStream> decoder,
                                  Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable,
-                                 HeadersClientRequest requestHeaders,
-                                 HeadersClientResponse responseHeaders,
+                                 ClientRequestHeaders requestHeaders,
+                                 ClientResponseHeaders responseHeaders,
                                  MediaContext mediaContext) {
         super(decoder, readEntityFunction, entityProcessedRunnable);
 
@@ -63,8 +63,8 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
     public static ClientResponseEntity create(ContentDecoder decoder,
                                               Function<Integer, BufferData> readEntityFunction,
                                               Runnable entityProcessedRunnable,
-                                              HeadersClientRequest requestHeaders,
-                                              HeadersClientResponse responseHeaders,
+                                              ClientRequestHeaders requestHeaders,
+                                              ClientResponseHeaders responseHeaders,
                                               MediaContext mediaContext) {
         return new ClientResponseEntity(decoder,
                                         readEntityFunction,

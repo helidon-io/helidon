@@ -25,9 +25,9 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
@@ -82,7 +82,7 @@ public class GzipEncodingProvider implements ContentEncodingProvider, Weighted {
             }
 
             @Override
-            public void headers(HeadersWritable<?> headers) {
+            public void headers(WritableHeaders<?> headers) {
                 headers.add(CONTENT_ENCODING_GZIP);
                 headers.remove(CONTENT_LENGTH);
             }

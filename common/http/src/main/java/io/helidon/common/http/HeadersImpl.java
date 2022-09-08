@@ -32,7 +32,7 @@ import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValueWriteable;
 
 @SuppressWarnings("unchecked")
-class HeadersImpl<T extends HeadersWritable<T>> implements HeadersWritable<T> {
+class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     static final int KNOWN_HEADER_SIZE = HeaderEnum.values().length;
     /*
      Optimization for most commonly used header names

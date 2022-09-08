@@ -25,11 +25,11 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RequestException;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http2.FlowControl;
@@ -274,7 +274,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                                       e.responseHeaders(),
                                                                       e);
 
-            HeadersServerResponse headers = response.headers();
+            ServerResponseHeaders headers = response.headers();
             byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
             if (message.length != 0) {
                 headers.set(HeaderValue.create(Header.CONTENT_LENGTH, String.valueOf(message.length)));

@@ -21,10 +21,10 @@ import java.util.Base64;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -51,7 +51,7 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
     @Override
     public ServerConnection upgrade(ConnectionContext ctx,
                                     HttpPrologue prologue,
-                                    HeadersWritable<?> headers) {
+                                    WritableHeaders<?> headers) {
         Http2Connection connection = new Http2Connection(ctx);
         if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
             connection.clientSettings(Http2Settings.create(BufferData.create(BASE_64_DECODER.decode(headers.get(

@@ -19,9 +19,9 @@ package io.helidon.nima.http.media.jsonb;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
@@ -61,7 +61,7 @@ public class JsonbMediaSupportProvider implements MediaSupportProvider, Weighted
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
-                                        HeadersWritable<?> responseHeaders) {
+                                        WritableHeaders<?> responseHeaders) {
         if (JSON_OBJECT_TYPE.equals(type)) {
             return WriterResponse.unsupported();
         }
@@ -103,7 +103,7 @@ public class JsonbMediaSupportProvider implements MediaSupportProvider, Weighted
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         if (type.equals(JSON_OBJECT_TYPE)) {
             return WriterResponse.unsupported();
         }

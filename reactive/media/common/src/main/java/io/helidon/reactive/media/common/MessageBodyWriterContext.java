@@ -28,10 +28,10 @@ import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.reactive.Multi;
@@ -52,7 +52,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private final HeadersWritable<?> headers;
+    private final WritableHeaders<?> headers;
     private final List<HttpMediaType> acceptedTypes;
     private final MessageBodyOperators<MessageBodyWriter<?>> writers;
     private final MessageBodyOperators<MessageBodyStreamWriter<?>> swriters;
@@ -66,7 +66,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private MessageBodyWriterContext(MessageBodyWriterContext parent,
                                      EventListener eventListener,
-                                     HeadersWritable<?> headers,
+                                     WritableHeaders<?> headers,
                                      List<HttpMediaType> acceptedTypes) {
 
         super(parent, eventListener);
@@ -90,7 +90,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * Create a new standalone (non parented) context.
      * @param headers backing headers, may not be {@code null}
      */
-    private MessageBodyWriterContext(HeadersWritable<?> headers) {
+    private MessageBodyWriterContext(WritableHeaders<?> headers) {
         super(null, null);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
@@ -104,7 +104,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private MessageBodyWriterContext() {
         super(null, null);
-        this.headers = HeadersWritable.create();
+        this.headers = WritableHeaders.create();
         this.writers = new MessageBodyOperators<>();
         this.swriters = new MessageBodyOperators<>();
         this.acceptedTypes = List.of();
@@ -114,7 +114,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.charsetCached = true;
     }
 
-    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, HeadersWritable<?> headers) {
+    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, WritableHeaders<?> headers) {
         super(writerContext);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
@@ -140,7 +140,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public static MessageBodyWriterContext create(MediaContext mediaContext,
                                                   EventListener eventListener,
-                                                  HeadersWritable<?> headers,
+                                                  WritableHeaders<?> headers,
                                                   List<HttpMediaType> acceptedTypes) {
 
         if (mediaContext == null) {
@@ -160,7 +160,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create(MessageBodyWriterContext parent, EventListener eventListener,
-                                                  HeadersWritable<?> headers, List<HttpMediaType> acceptedTypes) {
+                                                  WritableHeaders<?> headers, List<HttpMediaType> acceptedTypes) {
 
         return new MessageBodyWriterContext(parent, eventListener, headers, acceptedTypes);
     }
@@ -170,7 +170,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param headers headers
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(HeadersWritable<?> headers) {
+    public static MessageBodyWriterContext create(WritableHeaders<?> headers) {
         return new MessageBodyWriterContext(headers);
     }
 
@@ -191,7 +191,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param headers headers
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, HeadersWritable<?> headers) {
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, WritableHeaders<?> headers) {
         return new MessageBodyWriterContext(parent, headers);
     }
 
@@ -202,7 +202,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create() {
-        return new MessageBodyWriterContext(HeadersWritable.create());
+        return new MessageBodyWriterContext(WritableHeaders.create());
     }
 
     @Override
@@ -330,7 +330,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      *
      * @return Parameters, never {@code null}
      */
-    public HeadersWritable<?> headers() {
+    public WritableHeaders<?> headers() {
         return headers;
     }
 

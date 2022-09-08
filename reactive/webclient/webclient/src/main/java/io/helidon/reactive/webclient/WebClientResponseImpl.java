@@ -21,9 +21,9 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.media.common.MessageBodyReadableContent;
 import io.helidon.reactive.media.common.MessageBodyReaderContext;
@@ -97,7 +97,7 @@ final class WebClientResponseImpl implements WebClientResponse {
      */
     static class Builder implements io.helidon.common.Builder<Builder, WebClientResponseImpl> {
 
-        private final HeadersWritable<?> headers = HeadersWritable.create();
+        private final WritableHeaders<?> headers = WritableHeaders.create();
 
         private Flow.Publisher<DataChunk> publisher;
         private Http.Status status = Http.Status.INTERNAL_SERVER_ERROR_500;

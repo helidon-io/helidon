@@ -20,10 +20,10 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
@@ -40,7 +40,7 @@ class Http2ServerRequest implements RoutingRequest {
     private static final Runnable NO_OP_RUNNABLE = () -> {
     };
     private final Http2Headers http2Headers;
-    private final HeadersServerRequest headers;
+    private final ServerRequestHeaders headers;
     private final ConnectionContext ctx;
     private final HttpPrologue originalPrologue;
     private final int requestId;
@@ -49,7 +49,7 @@ class Http2ServerRequest implements RoutingRequest {
 
     private HttpPrologue prologue;
     private RoutedPath path;
-    private HeadersWritable<?> writable;
+    private WritableHeaders<?> writable;
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpPrologue prologue,
@@ -60,7 +60,7 @@ class Http2ServerRequest implements RoutingRequest {
         this.ctx = ctx;
         this.originalPrologue = prologue;
         this.http2Headers = headers;
-        this.headers = HeadersServerRequest.create(headers.httpHeaders());
+        this.headers = ServerRequestHeaders.create(headers.httpHeaders());
         this.requestId = requestId;
         this.authority = headers.authority();
 
@@ -111,7 +111,7 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public HeadersServerRequest headers() {
+    public ServerRequestHeaders headers() {
         return headers;
     }
 
@@ -138,7 +138,7 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public void header(HeaderValue header) {
         if (writable == null) {
-            writable = HeadersWritable.create(headers);
+            writable = WritableHeaders.create(headers);
         }
         writable.set(header);
     }

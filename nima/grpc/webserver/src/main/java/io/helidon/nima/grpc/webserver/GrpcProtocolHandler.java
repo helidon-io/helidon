@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2Flag;
 import io.helidon.nima.http2.Http2FrameData;
@@ -145,7 +145,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolProvider.SubProto
             @Override
             public void sendHeaders(Metadata headers) {
                 // todo ignoring headers, just sending required response headers
-                HeadersWritable<?> writable = HeadersWritable.create();
+                WritableHeaders<?> writable = WritableHeaders.create();
                 writable.set(GRPC_CONTENT_TYPE);
                 writable.set(GRPC_ENCODING_IDENTITY);
 
@@ -184,7 +184,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolProvider.SubProto
             @Override
             public void close(Status status, Metadata trailers) {
                 // todo ignoring trailers
-                HeadersWritable<?> writable = HeadersWritable.create();
+                WritableHeaders<?> writable = WritableHeaders.create();
                 writable.set(GrpcStatus.OK);
                 Http2Headers http2Headers = Http2Headers.create(writable);
                 streamWriter.writeHeaders(http2Headers,

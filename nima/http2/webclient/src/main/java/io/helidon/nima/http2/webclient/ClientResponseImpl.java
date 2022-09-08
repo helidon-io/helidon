@@ -16,20 +16,20 @@
 
 package io.helidon.nima.http2.webclient;
 
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
 
 class ClientResponseImpl implements Http2ClientResponse {
     private final Http.Status responseStatus;
-    private final HeadersClientResponse responseHeaders;
+    private final ClientResponseHeaders responseHeaders;
     private Http2ClientStream stream;
 
     ClientResponseImpl(Http2Headers headers, Http2ClientStream stream) {
         this.responseStatus = headers.status();
-        this.responseHeaders = HeadersClientResponse.create(headers.httpHeaders());
+        this.responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
         this.stream = stream;
     }
 

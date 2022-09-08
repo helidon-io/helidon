@@ -18,9 +18,9 @@ package io.helidon.nima.webserver.http;
 
 import java.io.OutputStream;
 
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.uri.UriQuery;
 
 /**
@@ -161,7 +161,7 @@ public interface ServerResponse {
      *
      * @return headers
      */
-    HeadersServerResponse headers();
+    ServerResponseHeaders headers();
 
     /**
      * Description of the result of output stream processing.

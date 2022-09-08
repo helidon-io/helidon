@@ -16,9 +16,9 @@
 
 package io.helidon.nima.webserver.http;
 
-import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -40,7 +40,7 @@ public interface HttpRequest {
      *
      * @return HTTP headers
      */
-    HeadersServerRequest headers();
+    ServerRequestHeaders headers();
 
     /**
      * Path of the request, with methods to get path parameters.

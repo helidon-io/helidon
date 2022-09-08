@@ -19,8 +19,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersClientRequest;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 
@@ -28,7 +28,7 @@ import io.helidon.common.http.HttpMediaType;
  * Headers that can be modified (until request is sent) for
  * outbound request.
  */
-public interface WebClientRequestHeaders extends HeadersClientRequest {
+public interface WebClientRequestHeaders extends ClientRequestHeaders {
 
     /**
      * Remove a header if set.

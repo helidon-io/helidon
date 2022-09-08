@@ -26,14 +26,14 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.EventType;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.RequestException;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.ServerResponseHeaders;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -117,7 +117,7 @@ public class Http1Connection implements ServerConnection {
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
 
-                HeadersWritable<?> headers = http1headers.readHeaders(prologue);
+                WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 recvListener.headers(ctx, headers);
 
                 if (canUpgrade) {
@@ -160,7 +160,7 @@ public class Http1Connection implements ServerConnection {
         }
     }
 
-    private BufferData readEntityFromPipeline(HttpPrologue prologue, HeadersWritable<?> headers) {
+    private BufferData readEntityFromPipeline(HttpPrologue prologue, WritableHeaders<?> headers) {
         if (currentEntitySize == -1) {
             // chunked
             return readNextChunk(prologue, headers);
@@ -170,7 +170,7 @@ public class Http1Connection implements ServerConnection {
         }
     }
 
-    private BufferData readNextChunk(HttpPrologue prologue, HeadersWritable<?> headers) {
+    private BufferData readNextChunk(HttpPrologue prologue, WritableHeaders<?> headers) {
         // chunk length processing
         String hex = reader.readLine();
         int chunkLength = Integer.parseUnsignedInt(hex, 16);
@@ -213,7 +213,7 @@ public class Http1Connection implements ServerConnection {
         return buffer;
     }
 
-    private void route(HttpPrologue prologue, HeadersWritable<?> headers) {
+    private void route(HttpPrologue prologue, WritableHeaders<?> headers) {
         EntityStyle entity = EntityStyle.NONE;
 
         if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
@@ -293,7 +293,7 @@ public class Http1Connection implements ServerConnection {
         CountDownLatch entityReadLatch = new CountDownLatch(1);
         Http1ServerRequest request = Http1ServerRequest.create(ctx,
                                                                prologue,
-                                                               HeadersServerRequest.create(headers),
+                                                               ServerRequestHeaders.create(headers),
                                                                decoder,
                                                                requestId,
                                                                entityReadLatch,
@@ -347,7 +347,7 @@ public class Http1Connection implements ServerConnection {
                                                                   e);
 
         BufferData buffer = BufferData.growing(128);
-        HeadersServerResponse headers = response.headers();
+        ServerResponseHeaders headers = response.headers();
         if (!e.keepAlive()) {
             headers.set(HeaderValues.CONNECTION_CLOSE);
         }

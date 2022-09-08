@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersServerRequest;
+import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.ReadableEntity;
@@ -31,13 +31,13 @@ import io.helidon.nima.http.media.ReadableEntityBase;
  * Server request entity.
  */
 public final class ServerRequestEntity extends ReadableEntityBase implements ReadableEntity {
-    private final HeadersServerRequest requestHeaders;
+    private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
 
     private ServerRequestEntity(Function<InputStream, InputStream> decoder,
                                 Function<Integer, BufferData> readEntityFunction,
                                 Runnable entityProcessedRunnable,
-                                HeadersServerRequest requestHeaders,
+                                ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext) {
         super(decoder, readEntityFunction, entityProcessedRunnable);
 
@@ -59,7 +59,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     public static ServerRequestEntity create(ContentDecoder decoder,
                                              Function<Integer, BufferData> readEntityFunction,
                                              Runnable entityProcessedRunnable,
-                                             HeadersServerRequest requestHeaders,
+                                             ServerRequestHeaders requestHeaders,
                                              MediaContext mediaContext) {
         return new ServerRequestEntity(decoder, readEntityFunction, entityProcessedRunnable, requestHeaders, mediaContext);
     }

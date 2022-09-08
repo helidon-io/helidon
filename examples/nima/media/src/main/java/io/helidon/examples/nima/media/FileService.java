@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import io.helidon.common.http.ContentDisposition;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.multipart.MultiPart;
 import io.helidon.nima.http.media.multipart.ReadablePart;
@@ -119,7 +119,7 @@ final class FileService implements HttpService {
             res.status(BAD_REQUEST_400).send("Not a file");
             return;
         }
-        HeadersServerResponse headers = res.headers();
+        ServerResponseHeaders headers = res.headers();
         headers.contentType(MediaTypes.APPLICATION_OCTET_STREAM);
         headers.set(ContentDisposition.builder()
                             .filename(filePath.getFileName().toString())

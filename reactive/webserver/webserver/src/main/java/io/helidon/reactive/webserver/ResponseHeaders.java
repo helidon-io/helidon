@@ -18,11 +18,11 @@ package io.helidon.reactive.webserver;
 
 import java.util.function.Consumer;
 
-import io.helidon.common.http.HeadersServerResponse;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.reactive.Single;
 
 /**
- * Extends {@link io.helidon.common.http.HeadersServerResponse} interface by adding HTTP response headers oriented constants and
+ * Extends {@link io.helidon.common.http.ServerResponseHeaders} interface by adding HTTP response headers oriented constants and
  * convenient methods.
  * Use constants located in {@link io.helidon.common.http.Http.Header} as standard header names.
  *
@@ -34,7 +34,7 @@ import io.helidon.common.reactive.Single;
  *
  * @see io.helidon.common.http.Http.Header
  */
-public interface ResponseHeaders extends HeadersServerResponse {
+public interface ResponseHeaders extends ServerResponseHeaders {
     /**
      * Register a {@link Consumer} which is executed just before headers are send. {@code Consumer} can made 'last minute
      * changes' in headers.

@@ -27,8 +27,8 @@ import java.util.concurrent.Flow.Publisher;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -77,7 +77,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     private MessageBodyReaderContext() {
         super(null, null);
-        this.headers = HeadersWritable.create();
+        this.headers = WritableHeaders.create();
         this.contentType = Optional.empty();
         this.readers = new MessageBodyOperators<>();
         this.sreaders = new MessageBodyOperators<>();

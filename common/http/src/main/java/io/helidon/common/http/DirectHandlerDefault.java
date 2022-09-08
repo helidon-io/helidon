@@ -26,7 +26,7 @@ final class DirectHandlerDefault implements DirectHandler {
     public TransportResponse handle(TransportRequest request,
                                     EventType eventType,
                                     Http.Status defaultStatus,
-                                    HeadersServerResponse headers,
+                                    ServerResponseHeaders headers,
                                     String message) {
         return TransportResponse.builder()
                 .status(defaultStatus)

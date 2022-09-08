@@ -21,7 +21,7 @@ import java.io.InputStream;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.MediaContext;
 
 class ReadablePartLength extends ReadablePartAbstract {
@@ -32,7 +32,7 @@ class ReadablePartLength extends ReadablePartAbstract {
     private PartInputStream inputStream;
 
     ReadablePartLength(MediaContext context,
-                       HeadersWritable<?> headers,
+                       WritableHeaders<?> headers,
                        DataReader dataReader,
                        int index,
                        long partLength) {

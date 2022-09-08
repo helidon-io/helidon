@@ -33,10 +33,10 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
@@ -76,7 +76,7 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
-                                        HeadersWritable<?> responseHeaders) {
+                                        WritableHeaders<?> responseHeaders) {
 
         if (!type.equals(Parameters.GENERIC_TYPE)) {
             return WriterResponse.unsupported();
@@ -121,7 +121,7 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         if (!type.equals(Parameters.GENERIC_TYPE)) {
             return WriterResponse.unsupported();
         }
@@ -177,7 +177,7 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
                           Parameters object,
                           OutputStream outputStream,
                           Headers requestHeaders,
-                          HeadersWritable<?> responseHeaders) {
+                          WritableHeaders<?> responseHeaders) {
             write(object, outputStream, responseHeaders);
         }
 
@@ -185,13 +185,13 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
         public void write(GenericType<Parameters> type,
                           Parameters object,
                           OutputStream outputStream,
-                          HeadersWritable<?> headers) {
+                          WritableHeaders<?> headers) {
             write(object, outputStream, headers);
         }
 
         private void write(Parameters toWrite,
                            OutputStream outputStream,
-                           HeadersWritable<?> writableHeaders) {
+                           WritableHeaders<?> writableHeaders) {
 
             Charset charset;
             if (writableHeaders.contains(Http.Header.CONTENT_TYPE)) {

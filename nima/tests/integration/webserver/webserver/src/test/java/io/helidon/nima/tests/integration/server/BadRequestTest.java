@@ -18,11 +18,11 @@ package io.helidon.nima.tests.integration.server;
 
 import java.util.List;
 
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.DirectHandler;
-import io.helidon.common.http.HeadersClientResponse;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -98,7 +98,7 @@ class BadRequestTest {
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
 
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(response);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         assertThat(headers, hasHeader(LOCATION_ERROR_PAGE));
     }
 
@@ -145,7 +145,7 @@ class BadRequestTest {
     private static DirectHandler.TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
                                                                      DirectHandler.EventType eventType,
                                                                      Http.Status httpStatus,
-                                                                     HeadersServerResponse responseHeaders,
+                                                                     ServerResponseHeaders responseHeaders,
                                                                      String message) {
         if (request.path().equals("/redirect")) {
             return DirectHandler.TransportResponse.builder()

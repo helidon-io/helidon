@@ -29,12 +29,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersClientRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
@@ -47,7 +47,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     private static final DateTimeFormatter FORMATTER = Http.DateTime.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
 
-    private final HeadersClientRequest headers = HeadersClientRequest.create(HeadersWritable.create());
+    private final ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
 
     WebClientRequestHeadersImpl() {
     }

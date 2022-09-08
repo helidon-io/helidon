@@ -23,7 +23,7 @@ import java.util.Map;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.media.common.MessageBodyOperator;
 import io.helidon.reactive.media.common.MessageBodyWriterContext;
@@ -49,7 +49,7 @@ public class JsonpStreamWriterTest {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final JsonReaderFactory JSON_PARSER = Json.createReaderFactory(Map.of());
 
-    private static final MessageBodyWriterContext CONTEXT = MessageBodyWriterContext.create(HeadersWritable.create());
+    private static final MessageBodyWriterContext CONTEXT = MessageBodyWriterContext.create(WritableHeaders.create());
     private static final JsonpBodyStreamWriter WRITER = (JsonpBodyStreamWriter) JsonpSupport.streamWriter();
     private static final GenericType<JsonObject> JSON_OBJECT = GenericType.create(JsonObject.class);
     private static final GenericType<JsonArray> JSON_ARRAY = GenericType.create(JsonArray.class);

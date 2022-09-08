@@ -17,7 +17,7 @@
 package io.helidon.nima.grpc.webserver;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2Flag;
 import io.helidon.nima.http2.Http2FrameHeader;
@@ -44,7 +44,7 @@ class GrpcProtocolHandlerNotFound implements Http2SubProtocolProvider.SubProtoco
 
     @Override
     public void init() {
-        HeadersWritable<?> writable = HeadersWritable.create();
+        WritableHeaders<?> writable = WritableHeaders.create();
         writable.set(GrpcStatus.NOT_FOUND);
         Http2Headers http2Headers = Http2Headers.create(writable);
         streamWriter.writeHeaders(http2Headers,

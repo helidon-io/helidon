@@ -25,14 +25,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.RequestException;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.PathMatchers;
@@ -63,7 +63,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @param responseHeaders an HTTP response headers
      * @throws io.helidon.common.http.RequestException if ETag is checked
      */
-    static void processEtag(String etag, HeadersServerRequest requestHeaders, HeadersServerResponse responseHeaders) {
+    static void processEtag(String etag, ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
         if (etag == null || etag.isEmpty()) {
             return;
         }
@@ -111,8 +111,8 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * @throws io.helidon.common.http.RequestException if (un)modify since header is checked
      */
     static void processModifyHeaders(Instant modified,
-                                     HeadersServerRequest requestHeaders,
-                                     HeadersServerResponse responseHeaders) {
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders) {
         if (modified == null) {
             return;
         }

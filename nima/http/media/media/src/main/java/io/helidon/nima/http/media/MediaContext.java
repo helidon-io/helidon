@@ -18,7 +18,7 @@ package io.helidon.nima.http.media;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 
 /**
  * Media context to obtain readers and writers of various supported content types.
@@ -54,7 +54,7 @@ public interface MediaContext {
      */
     <T> EntityWriter<T> writer(GenericType<T> type,
                                Headers requestHeaders,
-                               HeadersWritable<?> responseHeaders);
+                               WritableHeaders<?> responseHeaders);
 
     /**
      * Reader for client response entity.
@@ -78,5 +78,5 @@ public interface MediaContext {
      * @return entity writer for the type, or a writer that will fail if none found
      */
     <T> EntityWriter<T> writer(GenericType<T> type,
-                               HeadersWritable<?> requestHeaders);
+                               WritableHeaders<?> requestHeaders);
 }

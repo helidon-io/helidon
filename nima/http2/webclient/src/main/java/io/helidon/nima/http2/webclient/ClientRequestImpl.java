@@ -26,10 +26,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
@@ -41,7 +41,7 @@ import io.helidon.nima.webclient.UriHelper;
 class ClientRequestImpl implements Http2ClientRequest {
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
-    private final HeadersWritable<?> explicitHeaders = HeadersWritable.create();
+    private final WritableHeaders<?> explicitHeaders = WritableHeaders.create();
 
     private final Http2ClientImpl client;
 
@@ -107,7 +107,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     public Http2ClientResponse submit(Object entity) {
         // todo validate request ok
 
-        HeadersWritable<?> headers = HeadersWritable.create(explicitHeaders);
+        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
 
         Http2ClientStream stream = reserveStream();
 
@@ -132,7 +132,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     public Http2ClientResponse outputStream(ClientRequest.OutputStreamHandler streamHandler) {
         // todo validate request ok
 
-        HeadersWritable<?> headers = HeadersWritable.create(explicitHeaders);
+        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
 
         Http2ClientStream stream = reserveStream();
 
@@ -202,7 +202,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         throw new IllegalArgumentException("Only string and byte array supported now");
     }
 
-    private Http2Headers prepareHeaders(HeadersWritable<?> headers) {
+    private Http2Headers prepareHeaders(WritableHeaders<?> headers) {
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.method(this.method);
         http2Headers.authority(this.uri.authority());

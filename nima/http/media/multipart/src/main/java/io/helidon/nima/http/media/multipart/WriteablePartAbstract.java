@@ -26,9 +26,9 @@ import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -76,7 +76,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
         outputStream.write('\n');
     }
 
-    protected void send(OutputStream outputStream, HeadersWritable<?> headers, byte[] bytes) {
+    protected void send(OutputStream outputStream, WritableHeaders<?> headers, byte[] bytes) {
         headers.set(Http.Header.CONTENT_LENGTH.withValue(true, false, String.valueOf(bytes.length)));
 
         try (outputStream) {
@@ -89,7 +89,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
         }
     }
 
-    void contentType(HeadersWritable<?> headers) {
+    void contentType(WritableHeaders<?> headers) {
         // we support form-data and byte-ranges, falling back to form data if unknown
         if (contentType().test(MediaTypes.MULTIPART_BYTERANGES)) {
             headers.remove(Http.Header.CONTENT_DISPOSITION);

@@ -16,10 +16,10 @@
 
 package io.helidon.nima.tests.integration.server;
 
-import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
@@ -144,7 +144,7 @@ class ConfiguredLimitsTest {
     }
 
     private static void handleRequest(ServerRequest request, ServerResponse response) {
-        HeadersServerRequest headers = request.headers();
+        ServerRequestHeaders headers = request.headers();
         if (headers.contains(CUSTOM_HEADER)) {
             response.send(headers.get(CUSTOM_HEADER).value());
             return;

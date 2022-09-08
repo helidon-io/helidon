@@ -21,11 +21,11 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2Flag;
 import io.helidon.nima.http2.Http2Flag.DataFlags;
@@ -44,7 +44,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private final ConnectionContext ctx;
     private final Http2StreamWriter writer;
     private final int streamId;
-    private final HeadersServerResponse headers;
+    private final ServerResponseHeaders headers;
     private final FlowControl flowControl;
 
     private boolean isSent;
@@ -62,7 +62,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         this.writer = writer;
         this.streamId = streamId;
         this.flowControl = flowControl;
-        this.headers = HeadersServerResponse.create();
+        this.headers = ServerResponseHeaders.create();
     }
 
     @Override
@@ -141,7 +141,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
-    public HeadersServerResponse headers() {
+    public ServerResponseHeaders headers() {
         return headers;
     }
 
@@ -157,7 +157,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     private static class BlockingOutputStream extends OutputStream {
 
-        private final HeadersServerResponse headers;
+        private final ServerResponseHeaders headers;
         private final Http2StreamWriter writer;
         private final int streamId;
         private final FlowControl flowControl;
@@ -169,7 +169,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private boolean firstByte = true;
         private long bytesWritten;
 
-        private BlockingOutputStream(HeadersServerResponse headers,
+        private BlockingOutputStream(ServerResponseHeaders headers,
                                      Http2StreamWriter writer,
                                      int streamId,
                                      FlowControl flowControl,

@@ -43,8 +43,8 @@ public final class Http1HeadersParser {
      * @param validate       whether to validate headers
      * @return a new mutable headers instance containing all headers parsed from reader
      */
-    public static HeadersWritable<?> readHeaders(DataReader reader, int maxHeadersSize, boolean validate) {
-        HeadersWritable<?> headers = HeadersWritable.create();
+    public static WritableHeaders<?> readHeaders(DataReader reader, int maxHeadersSize, boolean validate) {
+        WritableHeaders<?> headers = WritableHeaders.create();
         int maxLength = maxHeadersSize;
 
         while (true) {
@@ -72,7 +72,7 @@ public final class Http1HeadersParser {
     }
 
     private static Http.HeaderName readHeaderName(DataReader reader,
-                                                  HeadersWritable<?> headers,
+                                                  WritableHeaders<?> headers,
                                                   int maxLength,
                                                   boolean validate) {
         switch (reader.lookup()) {

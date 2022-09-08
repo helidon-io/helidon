@@ -23,9 +23,9 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http1HeadersParser;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.MediaContext;
 
 class MultiPartImpl extends MultiPart {
@@ -82,7 +82,7 @@ class MultiPartImpl extends MultiPart {
         String probablyBoundary = dataReader.readAsciiString(newLine);
         if (probablyBoundary.equals(boundary)) {
             dataReader.skip(2); // skip the new line after boundary
-            HeadersWritable<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
+            WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
             if (headers.contains(Header.CONTENT_LENGTH)) {
                 next = new ReadablePartLength(context,
                                               headers,

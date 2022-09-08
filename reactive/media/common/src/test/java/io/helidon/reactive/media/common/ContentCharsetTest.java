@@ -20,8 +20,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Optional;
 
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 
 import org.junit.jupiter.api.Test;
 
@@ -79,6 +79,6 @@ public class ContentCharsetTest {
             contentType = Optional.of(HttpMediaType.create(contentTypeValue));
         }
         return MessageBodyReaderContext.create((MediaContext) null, null,
-                                               HeadersWritable.create(), contentType);
+                                               WritableHeaders.create(), contentType);
     }
 }

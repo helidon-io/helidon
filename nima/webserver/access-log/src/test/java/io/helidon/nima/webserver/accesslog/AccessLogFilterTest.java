@@ -19,10 +19,10 @@ package io.helidon.nima.webserver.accesslog;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
@@ -147,13 +147,13 @@ class AccessLogFilterTest {
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());
-        HeadersWritable<?> headers = HeadersWritable.create();
+        WritableHeaders<?> headers = WritableHeaders.create();
         headers.set(REFERER_HEADER);
 
         when(pi.host()).thenReturn(REMOTE_IP);
         when(request.remotePeer()).thenReturn(pi);
         when(request.prologue()).thenReturn(prologue);
-        when(request.headers()).thenReturn(HeadersServerRequest.create(headers));
+        when(request.headers()).thenReturn(ServerRequestHeaders.create(headers));
 
         RoutingResponse response = mock(RoutingResponse.class);
         when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);

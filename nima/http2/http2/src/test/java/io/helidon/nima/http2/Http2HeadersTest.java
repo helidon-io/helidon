@@ -20,10 +20,10 @@ import java.util.HexFormat;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http2.Http2Headers.DynamicTable;
 import io.helidon.nima.http2.Http2Headers.HeaderRecord;
 
@@ -163,7 +163,7 @@ class Http2HeadersTest {
     @Test
     void testC_4_toBytes() {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
-        HeadersWritable headers = HeadersWritable.create();
+        WritableHeaders headers = WritableHeaders.create();
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.method(Http.Method.GET);
         http2Headers.scheme("http");

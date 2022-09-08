@@ -21,19 +21,19 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.ContentDisposition;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 
 /**
  * Writeable body part headers.
  */
-public final class WriteableBodyPartHeaders implements BodyPartHeaders, HeadersWritable<WriteableBodyPartHeaders> {
+public final class WriteableBodyPartHeaders implements BodyPartHeaders, WritableHeaders<WriteableBodyPartHeaders> {
 
-    private final HeadersWritable<?> delegate;
+    private final WritableHeaders<?> delegate;
 
-    private WriteableBodyPartHeaders(HeadersWritable<?> delegate) {
+    private WriteableBodyPartHeaders(WritableHeaders<?> delegate) {
         this.delegate = delegate;
     }
 
@@ -53,7 +53,7 @@ public final class WriteableBodyPartHeaders implements BodyPartHeaders, HeadersW
      * @return WriteableBodyPartHeaders
      */
     public static WriteableBodyPartHeaders create() {
-        return new WriteableBodyPartHeaders(HeadersWritable.create());
+        return new WriteableBodyPartHeaders(WritableHeaders.create());
     }
 
     @Override
@@ -160,7 +160,7 @@ public final class WriteableBodyPartHeaders implements BodyPartHeaders, HeadersW
         /**
          * The headers map.
          */
-        private final HeadersWritable<?> headers = HeadersWritable.create();
+        private final WritableHeaders<?> headers = WritableHeaders.create();
         private String name;
         private String fileName;
 

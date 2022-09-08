@@ -16,11 +16,11 @@
 
 package io.helidon.common.http;
 
-record DirectHandlerEmptyRequest(String protocolVersion, String method, String path, HeadersServerRequest headers)
+record DirectHandlerEmptyRequest(String protocolVersion, String method, String path, ServerRequestHeaders headers)
         implements DirectHandler.TransportRequest {
     static final DirectHandlerEmptyRequest INSTANCE =
             new DirectHandlerEmptyRequest("",
                                           "",
                                           "",
-                                          HeadersServerRequest.create(HeadersWritable.create()));
+                                          ServerRequestHeaders.create(WritableHeaders.create()));
 }

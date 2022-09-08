@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
 import io.helidon.nima.http.media.spi.MediaSupportProvider.ReaderResponse;
 import io.helidon.nima.http.media.spi.MediaSupportProvider.WriterResponse;
@@ -74,7 +74,7 @@ class MediaContextImpl implements MediaContext {
     @Override
     public <T> EntityWriter<T> writer(GenericType<T> type,
                                       Headers requestHeaders,
-                                      HeadersWritable<?> responseHeaders) {
+                                      WritableHeaders<?> responseHeaders) {
         WriterResponse<T> compatible = null;
         for (MediaSupportProvider provider : providers) {
             WriterResponse<T> response = provider.writer(type, requestHeaders, responseHeaders);
@@ -114,7 +114,7 @@ class MediaContextImpl implements MediaContext {
     }
 
     @Override
-    public <T> EntityWriter<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    public <T> EntityWriter<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         WriterResponse<T> compatible = null;
         for (MediaSupportProvider provider : providers) {
             WriterResponse<T> response = provider.writer(type, requestHeaders);
@@ -153,7 +153,7 @@ class MediaContextImpl implements MediaContext {
                           Object object,
                           OutputStream outputStream,
                           Headers requestHeaders,
-                          HeadersWritable responseHeaders) {
+                          WritableHeaders responseHeaders) {
             if (LOGGED_WRITERS.computeIfAbsent(type, it -> new AtomicBoolean()).compareAndSet(false, true)) {
                 LOGGER.log(System.Logger.Level.WARNING, "There is no media writer configured for " + type);
             }
@@ -165,7 +165,7 @@ class MediaContextImpl implements MediaContext {
         public void write(GenericType type,
                           Object object,
                           OutputStream outputStream,
-                          HeadersWritable headers) {
+                          WritableHeaders headers) {
 
             if (LOGGED_WRITERS.computeIfAbsent(type, it -> new AtomicBoolean()).compareAndSet(false, true)) {
                 LOGGER.log(System.Logger.Level.WARNING, "There is no media writer configured for " + type);
@@ -246,7 +246,7 @@ class MediaContextImpl implements MediaContext {
                           Object object,
                           OutputStream outputStream,
                           Headers requestHeaders,
-                          HeadersWritable responseHeaders) {
+                          WritableHeaders responseHeaders) {
             delegate.write(type, object, outputStream, requestHeaders, responseHeaders);
         }
 
@@ -254,7 +254,7 @@ class MediaContextImpl implements MediaContext {
         public void write(GenericType type,
                           Object object,
                           OutputStream outputStream,
-                          HeadersWritable headers) {
+                          WritableHeaders headers) {
             delegate.write(type,
                            object,
                            outputStream,

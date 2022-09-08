@@ -20,7 +20,7 @@ import java.io.OutputStream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 
 /**
  * Writer of entity into bytes.
@@ -41,7 +41,7 @@ public interface EntityWriter<T> {
                T object,
                OutputStream outputStream,
                Headers requestHeaders,
-               HeadersWritable<?> responseHeaders);
+               WritableHeaders<?> responseHeaders);
 
     /**
      * Write client request entity and close the stream.
@@ -54,5 +54,5 @@ public interface EntityWriter<T> {
     void write(GenericType<T> type,
                T object,
                OutputStream outputStream,
-               HeadersWritable<?> headers);
+               WritableHeaders<?> headers);
 }

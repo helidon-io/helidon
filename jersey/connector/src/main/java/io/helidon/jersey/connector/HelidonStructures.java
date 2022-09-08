@@ -27,8 +27,8 @@ import java.util.Optional;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.config.Config;
 import io.helidon.reactive.media.common.DefaultMediaSupport;
 import io.helidon.reactive.media.common.MessageBodyReader;
@@ -51,7 +51,7 @@ class HelidonStructures {
     }
 
     static Headers createHeaders(Map<String, List<String>> data) {
-        HeadersWritable<?> headers = HeadersWritable.create();
+        WritableHeaders<?> headers = WritableHeaders.create();
         data.forEach((key, value) -> headers.set(Http.Header.create(key), value));
         return headers;
     }

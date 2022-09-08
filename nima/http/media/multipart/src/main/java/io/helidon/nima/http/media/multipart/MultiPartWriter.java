@@ -24,9 +24,9 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 
@@ -46,7 +46,7 @@ class MultiPartWriter implements EntityWriter<WriteableMultiPart> {
                       WriteableMultiPart multiPart,
                       OutputStream os,
                       Headers requestHeaders,
-                      HeadersWritable<?> responseHeaders) {
+                      WritableHeaders<?> responseHeaders) {
 
         try (BufferedOutputStream outputStream = new BufferedOutputStream(os, 512)) {
             responseHeaders.set(contentType);
@@ -75,7 +75,7 @@ class MultiPartWriter implements EntityWriter<WriteableMultiPart> {
     public void write(GenericType<WriteableMultiPart> type,
                       WriteableMultiPart multiPart,
                       OutputStream outputStream,
-                      HeadersWritable<?> headers) {
+                      WritableHeaders<?> headers) {
 
         try (outputStream) {
             headers.set(contentType);

@@ -33,16 +33,16 @@ import static io.helidon.common.http.Http.Header.LOCATION;
 /**
  * Mutable headers of a server response.
  */
-public interface HeadersServerResponse extends HeadersClientResponse,
-                                               HeadersWritable<HeadersServerResponse> {
+public interface ServerResponseHeaders extends ClientResponseHeaders,
+                                               WritableHeaders<ServerResponseHeaders> {
 
     /**
      * Create a new instance of mutable server response headers.
      *
      * @return new server response headers
      */
-    static HeadersServerResponse create() {
-        return new HeadersServerResponseImpl();
+    static ServerResponseHeaders create() {
+        return new ServerResponseHeadersImpl();
     }
 
     /**
@@ -51,8 +51,8 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param existing headers to add to these response headers
      * @return new server response headers
      */
-    static HeadersServerResponse create(Headers existing) {
-        return new HeadersServerResponseImpl(existing);
+    static ServerResponseHeaders create(Headers existing) {
+        return new ServerResponseHeadersImpl(existing);
     }
 
     /**
@@ -62,7 +62,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param acceptableMediaTypes media types to add.
      * @return this instance
      */
-    default HeadersServerResponse addAcceptPatches(HttpMediaType... acceptableMediaTypes) {
+    default ServerResponseHeaders addAcceptPatches(HttpMediaType... acceptableMediaTypes) {
         String[] values = new String[acceptableMediaTypes.length];
         for (int i = 0; i < acceptableMediaTypes.length; i++) {
             HttpMediaType acceptableMediaType = acceptableMediaTypes[i];
@@ -79,7 +79,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param acceptableMediaTypes media types to add.
      * @return this instance
      */
-    default HeadersServerResponse addAcceptPatches(MediaType... acceptableMediaTypes) {
+    default ServerResponseHeaders addAcceptPatches(MediaType... acceptableMediaTypes) {
         String[] values = new String[acceptableMediaTypes.length];
         for (int i = 0; i < acceptableMediaTypes.length; i++) {
             MediaType acceptableMediaType = acceptableMediaTypes[i];
@@ -95,7 +95,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param cookie a cookie definition
      * @return this instance
      */
-    HeadersServerResponse addCookie(SetCookie cookie);
+    ServerResponseHeaders addCookie(SetCookie cookie);
 
     /**
      * Adds {@code Set-Cookie} header based on <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a> with {@code Max-Age}
@@ -106,7 +106,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param maxAge {@code Max-Age} cookie parameter
      * @return this instance
      */
-    default HeadersServerResponse addCookie(String name, String value, Duration maxAge) {
+    default ServerResponseHeaders addCookie(String name, String value, Duration maxAge) {
         return addCookie(SetCookie.builder(name, value)
                                  .maxAge(maxAge)
                                  .build());
@@ -119,7 +119,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param value value of the cookie
      * @return this instance
      */
-    default HeadersServerResponse addCookie(String name, String value) {
+    default ServerResponseHeaders addCookie(String name, String value) {
         return addCookie(SetCookie.create(name, value));
     }
 
@@ -129,7 +129,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param name name of the cookie.
      * @return this instance
      */
-    HeadersServerResponse clearCookie(String name);
+    ServerResponseHeaders clearCookie(String name);
 
     /**
      * Sets the value of {@link Header#LAST_MODIFIED} header.
@@ -139,7 +139,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param modified Last modified date/time.
      * @return this instance
      */
-    default HeadersServerResponse lastModified(Instant modified) {
+    default ServerResponseHeaders lastModified(Instant modified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
         return set(HeaderValue.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
@@ -152,7 +152,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param modified Last modified date/time.
      * @return this instance
      */
-    default HeadersServerResponse lastModified(ZonedDateTime modified) {
+    default ServerResponseHeaders lastModified(ZonedDateTime modified) {
         return set(HeaderValue.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
@@ -164,7 +164,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param location Location header value.
      * @return updated headers
      */
-    default HeadersServerResponse location(URI location) {
+    default ServerResponseHeaders location(URI location) {
         return set(HeaderValue.create(LOCATION, true, false, location.toASCIIString()));
     }
 
@@ -176,7 +176,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param dateTime Expires date/time.
      * @return updated headers
      */
-    default HeadersServerResponse expires(ZonedDateTime dateTime) {
+    default ServerResponseHeaders expires(ZonedDateTime dateTime) {
         return set(HeaderValue.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
@@ -188,7 +188,7 @@ public interface HeadersServerResponse extends HeadersClientResponse,
      * @param dateTime Expires date/time.
      * @return updated headers
      */
-    default HeadersServerResponse expires(Instant dateTime) {
+    default ServerResponseHeaders expires(Instant dateTime) {
         return set(HeaderValue.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
                 .format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
