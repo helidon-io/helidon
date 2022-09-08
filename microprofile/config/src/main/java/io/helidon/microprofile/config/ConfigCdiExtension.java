@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,11 @@ public class ConfigCdiExtension implements Extension {
                         if (qualifier instanceof ConfigProperty) {
                             ips.add(beanInjectionPoint);
                         }
+                        if (qualifier instanceof ConfigProperties) {
+                            Class<?> t = (Class<?>) beanInjectionPoint.getType();
+                            ConfigProperties annotation = t.getDeclaredAnnotation(ConfigProperties.class);
+                            configBeans.put(t, ConfigBeanDescriptor.create(t, annotation));
+                        }
                     }
                 }
             }
@@ -128,7 +133,8 @@ public class ConfigCdiExtension implements Extension {
             // ignore classes that do not have this annotation on class level
             return;
         }
-        configBeans.put(annotatedType.getJavaClass(), ConfigBeanDescriptor.create(annotatedType, configProperties));
+        configBeans.put(annotatedType.getJavaClass(),
+                ConfigBeanDescriptor.create(annotatedType.getJavaClass(), configProperties));
         // we must veto this annotated type, as we need to create a custom bean to create an instance
         event.veto();
     }
