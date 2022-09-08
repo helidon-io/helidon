@@ -19,11 +19,11 @@ package io.helidon.nima.tests.benchmark.h2;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;

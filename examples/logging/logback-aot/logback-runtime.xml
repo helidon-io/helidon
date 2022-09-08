@@ -1,5 +1,5 @@
 <!--
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
     limitations under the License.
   -->
 <configuration scan="true" scanPeriod="30 seconds" packagingData="true">
-    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+    <shutdownHook class="ch.qos.logback.core.hook.DefaultShutdownHook"/>
     <property name="defaultPattern" value="[%date] [%highlight(%-5level)] [%class{50}.%method:%line] %msg%rootException %X{name}%n" />
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">

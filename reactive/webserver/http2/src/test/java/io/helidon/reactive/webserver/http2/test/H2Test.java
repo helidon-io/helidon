@@ -22,8 +22,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webserver.Http1Route;

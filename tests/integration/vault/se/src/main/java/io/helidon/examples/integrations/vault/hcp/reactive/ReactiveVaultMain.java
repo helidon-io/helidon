@@ -18,7 +18,6 @@ package io.helidon.examples.integrations.vault.hcp.reactive;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.reactive.CompletionAwaitable;
 import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
@@ -27,6 +26,7 @@ import io.helidon.integrations.vault.secrets.kv1.Kv1SecretsRx;
 import io.helidon.integrations.vault.secrets.kv2.Kv2SecretsRx;
 import io.helidon.integrations.vault.secrets.transit.TransitSecretsRx;
 import io.helidon.integrations.vault.sys.SysRx;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 

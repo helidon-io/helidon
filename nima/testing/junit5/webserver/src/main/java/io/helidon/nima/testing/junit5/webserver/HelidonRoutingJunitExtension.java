@@ -22,7 +22,7 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedList;
 import java.util.function.Consumer;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
 

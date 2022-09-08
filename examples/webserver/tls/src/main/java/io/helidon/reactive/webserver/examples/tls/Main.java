@@ -18,10 +18,10 @@ package io.helidon.reactive.webserver.examples.tls;
 
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.WebServerTls;

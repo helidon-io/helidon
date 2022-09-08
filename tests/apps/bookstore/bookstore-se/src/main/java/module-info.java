@@ -31,6 +31,8 @@ module io.helidon.tests.apps.bookstore.se {
     requires io.helidon.reactive.media.jsonb;
     requires io.helidon.reactive.media.jackson;
     requires io.helidon.tests.apps.bookstore.common;
+    requires io.helidon.logging.common;
+    requires io.helidon.logging.jul;
 
     exports io.helidon.tests.apps.bookstore.se;
 }

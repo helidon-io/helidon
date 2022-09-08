@@ -30,7 +30,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.websocket.WebSocketRouting;
 

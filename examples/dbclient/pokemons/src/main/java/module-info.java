@@ -32,6 +32,8 @@ module io.helidon.examples.dbclient.pokemons.jdbc {
     requires io.helidon.tracing;
     requires io.helidon.reactive.dbclient;
     requires io.helidon.reactive.webserver;
+    requires io.helidon.logging.common;
+    requires io.helidon.logging.jul;
 
     provides DbMapperProvider with io.helidon.examples.dbclient.pokemons.PokemonMapperProvider;
 

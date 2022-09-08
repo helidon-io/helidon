@@ -35,14 +35,13 @@ import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * Main class of the example, runnable from command line.
  */
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-    private static final java.util.logging.Logger JUL_LOGGER = java.util.logging.Logger.getLogger(Main.class.getName());
+    private static final System.Logger SYSTEM_LOGGER = System.getLogger(Main.class.getName());
 
     private Main() {
     }
@@ -82,9 +81,6 @@ public final class Main {
         location = (location == null) ? "logback-runtime.xml" : location;
         // we cannot use anything that starts threads at build time, must re-configure here
         resetLogging(location);
-
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
     }
 
     private static void resetLogging(String location) {
@@ -117,7 +113,7 @@ public final class Main {
     private static void logging() {
         HelidonMdc.set("name", "startup");
         LOGGER.info("Starting up");
-        JUL_LOGGER.info("Using JUL logger");
+        SYSTEM_LOGGER.log(System.Logger.Level.INFO, "Using System logger");
 
         // now let's see propagation across executor service boundary, we can also use Log4j's ThreadContext
         MDC.put("name", "propagated");

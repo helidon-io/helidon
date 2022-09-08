@@ -18,9 +18,9 @@ package io.helidon.security.examples.webserver.digest;
 
 import java.util.Optional;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.security.SecurityContext;

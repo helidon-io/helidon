@@ -13,11 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.helidon.nima {
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.config.yaml;
-    requires io.helidon.logging.common;
 
-    exports io.helidon.nima;
+package io.helidon.logging.slf4j;
+
+import io.helidon.logging.common.spi.LoggingProvider;
+
+import org.slf4j.LoggerFactory;
+
+/**
+ * Slf4j logging provider.
+ */
+public class Slf4jProvider implements LoggingProvider {
+    @Override
+    public void initialization() {
+        LoggerFactory.getLogger(Slf4jProvider.class)
+                .info("Logging initialization.");
+    }
+
+    @Override
+    public void runTime() {
+        LoggerFactory.getLogger(Slf4jProvider.class)
+                .info("Logging runtime.");
+    }
 }

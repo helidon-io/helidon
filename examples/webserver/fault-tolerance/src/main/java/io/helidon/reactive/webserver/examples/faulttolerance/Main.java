@@ -18,9 +18,9 @@ package io.helidon.reactive.webserver.examples.faulttolerance;
 
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.faulttolerance.BulkheadException;
 import io.helidon.reactive.faulttolerance.CircuitBreakerOpenException;
 import io.helidon.reactive.webserver.Routing;

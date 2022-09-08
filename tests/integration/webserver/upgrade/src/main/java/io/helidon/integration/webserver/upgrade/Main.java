@@ -16,10 +16,10 @@
 
 package io.helidon.integration.webserver.upgrade;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.common.reactive.Single;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Http1Route;
 import io.helidon.reactive.webserver.PathMatcher;
 import io.helidon.reactive.webserver.WebServer;

@@ -16,8 +16,8 @@
 
 package io.helidon.examples.messaging.se;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
 import io.helidon.reactive.webserver.websocket.WebSocketRouting;

@@ -15,9 +15,9 @@
  */
 package io.helidon.examples.media.multipart;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.media.multipart.MultiPartSupport;
 import io.helidon.reactive.webserver.Routing;

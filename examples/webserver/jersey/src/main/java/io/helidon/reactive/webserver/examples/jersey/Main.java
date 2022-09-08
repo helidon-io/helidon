@@ -18,7 +18,7 @@ package io.helidon.reactive.webserver.examples.jersey;
 
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.jersey.JerseySupport;

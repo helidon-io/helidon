@@ -18,10 +18,10 @@ package io.helidon.tests.integration.nativeimage.nima1;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthCheckResponse;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveSupport;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.observe.health.HealthService;

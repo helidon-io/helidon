@@ -33,9 +33,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.HelidonFeatures;
-import io.helidon.common.LogConfig;
 import io.helidon.common.Reflected;
 import io.helidon.config.mp.MpConfigProviderResolver;
+import io.helidon.logging.common.LogConfig;
 
 import com.oracle.svm.core.jdk.Resources;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;

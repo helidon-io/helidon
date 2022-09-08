@@ -16,11 +16,11 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jackson.JacksonSupport;

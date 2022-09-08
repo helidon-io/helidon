@@ -25,8 +25,8 @@ import java.util.LinkedList;
 import java.util.function.BiConsumer;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.LogConfig;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.ListenerConfiguration;

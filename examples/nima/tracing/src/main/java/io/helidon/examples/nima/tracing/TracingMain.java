@@ -16,7 +16,7 @@
 
 package io.helidon.examples.nima.tracing;
 
-import io.helidon.common.LogConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;

@@ -28,4 +28,6 @@ module io.helidon.examples.dbclient.jdbc {
     requires io.helidon.metrics.serviceapi;
     requires io.helidon.tracing;
     requires io.helidon.examples.dbclient.common;
+    requires io.helidon.logging.common;
+    requires io.helidon.logging.jul;
 }

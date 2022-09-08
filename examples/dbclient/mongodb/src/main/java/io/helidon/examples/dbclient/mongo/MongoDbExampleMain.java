@@ -16,8 +16,8 @@
 
 package io.helidon.examples.dbclient.mongo;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.DbStatementType;

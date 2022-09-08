@@ -19,8 +19,8 @@ package io.helidon.nima;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 
 /**
  * Application main entry point.

@@ -16,7 +16,6 @@
 
 package io.helidon.grpc.examples.opentracing;
 
-import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.StringService;
@@ -25,6 +24,7 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcTracingConfig;
 import io.helidon.grpc.server.ServerRequestAttribute;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 

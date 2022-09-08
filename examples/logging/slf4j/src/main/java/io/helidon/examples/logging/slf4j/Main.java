@@ -24,20 +24,20 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * Main class of the example, runnable from command line.
  */
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-    private static final java.util.logging.Logger JUL_LOGGER = java.util.logging.Logger.getLogger(Main.class.getName());
+    private static final System.Logger SYSTEM_LOGGER = System.getLogger(Main.class.getName());
 
     private Main() {
     }
@@ -48,8 +48,7 @@ public final class Main {
      * @param args not used
      */
     public static void main(String[] args) {
-        // use slf4j for JUL as well
-        setupLogging();
+        LogConfig.configureRuntime();
 
         // the Helidon context is used to propagate MDC across threads
         // if running within Helidon WebServer, you do not need to runInContext, as that is already
@@ -70,15 +69,10 @@ public final class Main {
                 .await(10, TimeUnit.SECONDS);
     }
 
-    private static void setupLogging() {
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
-    }
-
     private static void logging() {
         HelidonMdc.set("name", "startup");
         LOGGER.info("Starting up");
-        JUL_LOGGER.info("Using JUL logger");
+        SYSTEM_LOGGER.log(System.Logger.Level.INFO, "Using System logger");
 
         // now let's see propagation across executor service boundary, we can also use Log4j's ThreadContext
         MDC.put("name", "propagated");
