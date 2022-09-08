@@ -4949,9 +4949,9 @@ The Apache Software Foundation (http://www.apache.org/).
 </attribution>
         </dependency>
         <dependency>
-            <id>87965</id>
+            <id>129548</id>
             <name>SnakeYAML</name>
-            <version>1.27</version>
+            <version>1.31</version>
             <licensor>SnakeYAML.org</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
