@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.reactive.webserver.WebServer;
 
 /**
@@ -34,7 +34,7 @@ import io.helidon.reactive.webserver.WebServer;
 public class TestResponse {
 
     private final Http.Status status;
-    private final HeadersWritable<?> headers;
+    private final WritableHeaders<?> headers;
     // todo Needs much better solution.
     private final TestClient.TestBareResponse bareResponse;
 
@@ -49,7 +49,7 @@ public class TestResponse {
                  Map<String, List<String>> headers,
                  TestClient.TestBareResponse bareResponse) {
         this.status = status;
-        this.headers = HeadersWritable.create();
+        this.headers = WritableHeaders.create();
         headers.forEach((key, value) -> this.headers.set(Http.Header.create(key), value));
         this.bareResponse = bareResponse;
     }

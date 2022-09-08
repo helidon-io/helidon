@@ -25,10 +25,10 @@ import java.util.List;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentEncoder;
@@ -45,7 +45,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final HttpPrologue requestPrologue;
-    private final HeadersServerRequest requestHeaders;
+    private final ServerRequestHeaders requestHeaders;
     private final List<Runnable> whenSent = new ArrayList<>(5);
 
     private Http.Status status;

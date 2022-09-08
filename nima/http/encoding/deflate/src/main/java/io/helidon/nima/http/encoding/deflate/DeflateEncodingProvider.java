@@ -22,8 +22,8 @@ import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
@@ -67,7 +67,7 @@ public class DeflateEncodingProvider implements ContentEncodingProvider {
             }
 
             @Override
-            public void headers(HeadersWritable<?> headers) {
+            public void headers(WritableHeaders<?> headers) {
                 headers.add(CONTENT_ENCODING_DEFLATE);
                 headers.remove(Http.Header.CONTENT_LENGTH);
             }

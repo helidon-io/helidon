@@ -24,12 +24,11 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.RequestException;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
@@ -59,44 +58,44 @@ class StaticContentHandlerTest {
 
     @Test
     void etag_InNoneMatch_NotAccept() {
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
         when(req.get(IF_NONE_MATCH)).thenReturn(IF_NONE_MATCH.withValue("\"ccc\"", "\"ddd\""));
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(ETAG.withValue("\"aaa\""));
     }
 
     @Test
     void etag_InNoneMatch_Accept() {
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
         when(req.get(IF_NONE_MATCH)).thenReturn(IF_NONE_MATCH.withValue("\"ccc\"", "W/\"aaa\""));
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
         verify(res).set(ETAG.withValue("\"aaa\""));
     }
 
     @Test
     void etag_InMatch_NotAccept() {
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
         when(req.get(IF_MATCH)).thenReturn(IF_MATCH.withValue("\"ccc\"", "\"ddd\""));
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
         verify(res).set(ETAG.withValue("\"aaa\""));
     }
 
     @Test
     void etag_InMatch_Accept() {
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
         when(req.get(IF_MATCH)).thenReturn(IF_MATCH.withValue("\"ccc\"", "\"aaa\""));
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(ETAG.withValue("\"aaa\""));
     }
@@ -104,20 +103,20 @@ class StaticContentHandlerTest {
     @Test
     void ifModifySince_Accept() {
         ZonedDateTime modified = ZonedDateTime.now();
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         Mockito.doReturn(Optional.of(modified.minusSeconds(60))).when(req).ifModifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifUnmodifiedSince();
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res);
     }
 
     @Test
     void ifModifySince_NotAccept() {
         ZonedDateTime modified = ZonedDateTime.now();
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         Mockito.doReturn(Optional.of(modified)).when(req).ifModifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifUnmodifiedSince();
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
                             Http.Status.NOT_MODIFIED_304);
     }
@@ -125,27 +124,27 @@ class StaticContentHandlerTest {
     @Test
     void ifUnmodifySince_Accept() {
         ZonedDateTime modified = ZonedDateTime.now();
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         Mockito.doReturn(Optional.of(modified)).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res);
     }
 
     @Test
     void ifUnmodifySince_NotAccept() {
         ZonedDateTime modified = ZonedDateTime.now();
-        HeadersServerRequest req = mock(HeadersServerRequest.class);
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         Mockito.doReturn(Optional.of(modified.minusSeconds(60))).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
-        HeadersServerResponse res = mock(HeadersServerResponse.class);
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
                             Http.Status.PRECONDITION_FAILED_412);
     }
 
     @Test
     void redirect() {
-        HeadersServerResponse resh = mock(HeadersServerResponse.class);
+        ServerResponseHeaders resh = mock(ServerResponseHeaders.class);
         ServerResponse res = mock(ServerResponse.class);
         ServerRequest req = mock(ServerRequest.class);
         when(res.headers()).thenReturn(resh);

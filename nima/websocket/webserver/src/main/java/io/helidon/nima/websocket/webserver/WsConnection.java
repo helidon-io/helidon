@@ -21,8 +21,8 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.spi.ServerConnection;
@@ -35,7 +35,7 @@ class WsConnection implements ServerConnection, WsSession {
 
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
-    private final HeadersWritable<?> headers;
+    private final WritableHeaders<?> headers;
     private final String wsKey;
     private final WsListener listener;
 
@@ -48,7 +48,7 @@ class WsConnection implements ServerConnection, WsSession {
 
     WsConnection(ConnectionContext ctx,
                  HttpPrologue prologue,
-                 HeadersWritable<?> headers,
+                 WritableHeaders<?> headers,
                  String wsKey,
                  WebSocket wsRoute) {
         this.ctx = ctx;

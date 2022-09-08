@@ -21,9 +21,9 @@ import java.util.function.Supplier;
 
 import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 
 /**
  * Readable body part headers.
@@ -117,7 +117,7 @@ public final class ReadableBodyPartHeaders implements BodyPartHeaders {
         /**
          * The headers map.
          */
-        private final HeadersWritable<?> headers = HeadersWritable.create();
+        private final WritableHeaders<?> headers = WritableHeaders.create();
 
         /**
          * Force the use of {@link ReadableBodyPartHeaders#builder() }.

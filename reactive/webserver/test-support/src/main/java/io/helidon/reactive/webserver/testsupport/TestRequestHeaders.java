@@ -21,16 +21,16 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.reactive.webserver.RequestHeaders;
 
-class TestRequestHeaders implements RequestHeaders, HeadersWritable<TestRequestHeaders> {
-    private final HeadersWritable<?> delegate;
+class TestRequestHeaders implements RequestHeaders, WritableHeaders<TestRequestHeaders> {
+    private final WritableHeaders<?> delegate;
 
     TestRequestHeaders() {
-        this.delegate = HeadersWritable.create();
+        this.delegate = WritableHeaders.create();
     }
 
     @Override

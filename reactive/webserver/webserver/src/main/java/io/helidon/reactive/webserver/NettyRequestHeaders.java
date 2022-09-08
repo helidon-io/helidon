@@ -20,22 +20,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.WritableHeaders;
 
 import io.netty.handler.codec.http.HttpHeaders;
 
 class NettyRequestHeaders implements RequestHeaders {
-    private final HeadersServerRequest delegate;
+    private final ServerRequestHeaders delegate;
 
     NettyRequestHeaders(HttpHeaders nettyHeaders) {
-        HeadersWritable<?> hw = HeadersWritable.create();
+        WritableHeaders<?> hw = WritableHeaders.create();
         for (String name : nettyHeaders.names()) {
             hw.set(Http.HeaderValue.create(Http.Header.create(name), nettyHeaders.getAll(name)));
         }
-        this.delegate = HeadersServerRequest.create(hw);
+        this.delegate = ServerRequestHeaders.create(hw);
     }
 
     @Override

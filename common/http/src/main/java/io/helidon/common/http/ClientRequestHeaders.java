@@ -19,8 +19,8 @@ package io.helidon.common.http;
 /**
  * Mutable headers of a client request.
  */
-public interface HeadersClientRequest extends HeadersServerRequest,
-                                              HeadersWritable<HeadersClientRequest> {
+public interface ClientRequestHeaders extends ServerRequestHeaders,
+                                              WritableHeaders<ClientRequestHeaders> {
 
     /**
      * Create client request headers from writable headers.
@@ -28,8 +28,8 @@ public interface HeadersClientRequest extends HeadersServerRequest,
      * @param delegate headers
      * @return client request headers
      */
-    static HeadersClientRequest create(HeadersWritable<?> delegate) {
-        return new HeadersClientRequestImpl(delegate);
+    static ClientRequestHeaders create(WritableHeaders<?> delegate) {
+        return new ClientRequestHeadersImpl(delegate);
     }
 
     /**
@@ -38,8 +38,8 @@ public interface HeadersClientRequest extends HeadersServerRequest,
      * @param headers headers
      * @return client request headers
      */
-    static HeadersClientRequest create(Headers headers) {
-        return new HeadersClientRequestImpl(HeadersWritable.create(headers));
+    static ClientRequestHeaders create(Headers headers) {
+        return new ClientRequestHeadersImpl(WritableHeaders.create(headers));
     }
 
     /**
@@ -48,7 +48,7 @@ public interface HeadersClientRequest extends HeadersServerRequest,
      * @param accepted media types to accept
      * @return updated headers
      */
-    default HeadersClientRequest accept(HttpMediaType... accepted) {
+    default ClientRequestHeaders accept(HttpMediaType... accepted) {
         String[] values = new String[accepted.length];
         for (int i = 0; i < accepted.length; i++) {
             HttpMediaType mediaType = accepted[i];

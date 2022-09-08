@@ -19,7 +19,7 @@ package io.helidon.nima.http.media.multipart;
 import java.io.OutputStream;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.MediaContext;
 
 class WriteablePartBytes extends WriteablePartAbstract {
@@ -32,15 +32,15 @@ class WriteablePartBytes extends WriteablePartAbstract {
 
     @Override
     public void writeServerResponse(MediaContext context, OutputStream outputStream, Headers requestHeaders) {
-        write(outputStream, HeadersWritable.create(headers()));
+        write(outputStream, WritableHeaders.create(headers()));
     }
 
     @Override
     public void writeClientRequest(MediaContext context, OutputStream outputStream) {
-        write(outputStream, HeadersWritable.create(headers()));
+        write(outputStream, WritableHeaders.create(headers()));
     }
 
-    private void write(OutputStream outputStream, HeadersWritable<?> headers) {
+    private void write(OutputStream outputStream, WritableHeaders<?> headers) {
         // we support form-data and byte-ranges, falling back to form data if unknown
         contentType(headers);
         send(outputStream, headers, bytes);

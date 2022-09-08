@@ -26,8 +26,8 @@ import java.nio.file.Path;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
@@ -49,7 +49,7 @@ public class PathSupportProvider implements MediaSupportProvider {
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
-                                        HeadersWritable<?> responseHeaders) {
+                                        WritableHeaders<?> responseHeaders) {
         if (Path.class.isAssignableFrom(type.rawType())) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, PathSupportProvider::writer);
         }
@@ -64,7 +64,7 @@ public class PathSupportProvider implements MediaSupportProvider {
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         if (Path.class.isAssignableFrom(type.rawType())) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, PathSupportProvider::writer);
         }
@@ -81,7 +81,7 @@ public class PathSupportProvider implements MediaSupportProvider {
                           Path object,
                           OutputStream outputStream,
                           Headers requestHeaders,
-                          HeadersWritable<?> responseHeaders) {
+                          WritableHeaders<?> responseHeaders) {
             write(object, outputStream, responseHeaders);
         }
 
@@ -89,13 +89,13 @@ public class PathSupportProvider implements MediaSupportProvider {
         public void write(GenericType<Path> type,
                           Path object,
                           OutputStream outputStream,
-                          HeadersWritable<?> headers) {
+                          WritableHeaders<?> headers) {
             write(object, outputStream, headers);
         }
 
         private void write(Path toWrite,
                            OutputStream outputStream,
-                           HeadersWritable<?> writableHeaders) {
+                           WritableHeaders<?> writableHeaders) {
 
             if (!writableHeaders.contains(Http.Header.CONTENT_TYPE)) {
                 MediaType mediaType = MediaTypes.detectType(toWrite).orElse(MediaTypes.APPLICATION_OCTET_STREAM);

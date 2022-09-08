@@ -35,10 +35,10 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.TransportResponse;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersServerResponse;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.ServerResponseHeaders;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.reactive.webserver.ByteBufRequestChunk.DataChunkHoldingQueue;
 import io.helidon.reactive.webserver.ReferenceHoldingQueue.IndirectReference;
@@ -509,7 +509,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.BAD_REQUEST,
                         Http.Status.BAD_REQUEST_400,
-                        HeadersServerResponse.create(),
+                        ServerResponseHeaders.create(),
                         t);
 
         FullHttpResponse response = toNettyResponse(handlerResponse);
@@ -532,7 +532,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.PAYLOAD_TOO_LARGE,
                         Http.Status.REQUEST_ENTITY_TOO_LARGE_413,
-                        HeadersServerResponse.create(),
+                        ServerResponseHeaders.create(),
                         "");
 
         FullHttpResponse response = toNettyResponse(transportResponse);
@@ -548,7 +548,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private FullHttpResponse toNettyResponse(TransportResponse handlerResponse) {
         Optional<byte[]> entity = handlerResponse.entity();
         Http.Status status = handlerResponse.status();
-        HeadersServerResponse headers = handlerResponse.headers();
+        ServerResponseHeaders headers = handlerResponse.headers();
 
         HttpResponseStatus nettyStatus = HttpResponseStatus.valueOf(status.code(), status.reasonPhrase());
 
@@ -595,17 +595,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         private final String protocolVersion;
         private final String uri;
         private final String method;
-        private final HeadersServerRequest headers;
+        private final ServerRequestHeaders headers;
 
         private DirectHandlerRequest(HttpRequest request) {
             protocolVersion = request.protocolVersion().text();
             uri = request.uri();
             method = request.method().name();
-            HeadersWritable<?> result = HeadersWritable.create();
+            WritableHeaders<?> result = WritableHeaders.create();
             for (String name : request.headers().names()) {
                 result.add(Http.HeaderValue.create(Http.Header.create(name), request.headers().getAll(name)));
             }
-            headers = HeadersServerRequest.create(result);
+            headers = ServerRequestHeaders.create(result);
         }
 
         @Override
@@ -624,7 +624,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
 
         @Override
-        public HeadersServerRequest headers() {
+        public ServerRequestHeaders headers() {
             return headers;
         }
     }

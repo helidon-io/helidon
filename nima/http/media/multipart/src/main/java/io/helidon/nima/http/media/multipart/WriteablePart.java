@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.http.media.MediaContext;
 
@@ -90,7 +90,7 @@ public interface WriteablePart {
      * Fluent API builder for {@link WriteablePart}.
      */
     class Builder implements io.helidon.common.Builder<Builder, WriteablePart> {
-        private final HeadersWritable<?> headers = HeadersWritable.create();
+        private final WritableHeaders<?> headers = WritableHeaders.create();
 
         private final String partName;
         private String fileName;

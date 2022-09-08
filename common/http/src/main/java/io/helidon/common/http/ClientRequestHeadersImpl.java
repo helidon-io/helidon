@@ -30,12 +30,12 @@ import io.helidon.common.http.Http.HeaderValue;
 /**
  * Client request headers.
  */
-class HeadersClientRequestImpl implements HeadersClientRequest {
-    private final HeadersWritable<?> delegate;
+class ClientRequestHeadersImpl implements ClientRequestHeaders {
+    private final WritableHeaders<?> delegate;
 
     private List<HttpMediaType> mediaTypes;
 
-    HeadersClientRequestImpl(HeadersWritable<?> delegate) {
+    ClientRequestHeadersImpl(WritableHeaders<?> delegate) {
         this.delegate = delegate;
     }
 
@@ -85,31 +85,31 @@ class HeadersClientRequestImpl implements HeadersClientRequest {
     }
 
     @Override
-    public HeadersClientRequest setIfAbsent(HeaderValue header) {
+    public ClientRequestHeaders setIfAbsent(HeaderValue header) {
         delegate.setIfAbsent(header);
         return this;
     }
 
     @Override
-    public HeadersClientRequest add(HeaderValue header) {
+    public ClientRequestHeaders add(HeaderValue header) {
         delegate.add(header);
         return this;
     }
 
     @Override
-    public HeadersClientRequest remove(HeaderName name) {
+    public ClientRequestHeaders remove(HeaderName name) {
         delegate.remove(name);
         return this;
     }
 
     @Override
-    public HeadersClientRequest remove(HeaderName name, Consumer<HeaderValue> removedConsumer) {
+    public ClientRequestHeaders remove(HeaderName name, Consumer<HeaderValue> removedConsumer) {
         delegate.remove(name, removedConsumer);
         return this;
     }
 
     @Override
-    public HeadersClientRequest set(HeaderValue header) {
+    public ClientRequestHeaders set(HeaderValue header) {
         delegate.set(header);
         return this;
     }
@@ -125,7 +125,7 @@ class HeadersClientRequestImpl implements HeadersClientRequest {
     }
 
     @Override
-    public HeadersClientRequest clear() {
+    public ClientRequestHeaders clear() {
         delegate.clear();
         return this;
     }

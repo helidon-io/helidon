@@ -29,7 +29,7 @@ import io.helidon.common.parameters.Parameters;
 /**
  * HTTP headers of a server request.
  */
-public interface HeadersServerRequest extends Headers {
+public interface ServerRequestHeaders extends Headers {
     /**
      * Header value of the non compliant {@code Accept} header sent by
      * {@link java.net.HttpURLConnection} when none is set.
@@ -56,8 +56,8 @@ public interface HeadersServerRequest extends Headers {
      * @param headers headers parsed from server request
      * @return immutable instance of request headers
      */
-    static HeadersServerRequest create(Headers headers) {
-        return new HeadersServerRequestImpl(headers);
+    static ServerRequestHeaders create(Headers headers) {
+        return new ServerRequestHeadersImpl(headers);
     }
 
     /**
@@ -65,8 +65,8 @@ public interface HeadersServerRequest extends Headers {
      *
      * @return empty headers
      */
-    static HeadersServerRequest create() {
-        return new HeadersServerRequestImpl(HeadersWritable.create());
+    static ServerRequestHeaders create() {
+        return new ServerRequestHeadersImpl(WritableHeaders.create());
     }
 
     /**

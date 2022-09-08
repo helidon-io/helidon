@@ -33,13 +33,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.http.ForbiddenException;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -74,8 +74,8 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
      * @param responseHeaders an HTTP response headers
      */
     void processContentType(String filename,
-                            HeadersServerRequest requestHeaders,
-                            HeadersServerResponse responseHeaders) {
+                            ServerRequestHeaders requestHeaders,
+                            ServerResponseHeaders responseHeaders) {
         // Try to get Content-Type
         responseHeaders.contentType(detectType(filename, requestHeaders));
     }
@@ -143,7 +143,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
-    void processContentLength(Path path, HeadersServerResponse headers) {
+    void processContentLength(Path path, ServerResponseHeaders headers) {
         headers.set(Header.CONTENT_LENGTH.withValue(String.valueOf(contentLength(path))));
     }
 
@@ -156,7 +156,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     void send(ServerRequest request, ServerResponse response, Path path) throws IOException {
-        HeadersServerRequest headers = request.headers();
+        ServerRequestHeaders headers = request.headers();
         if (headers.contains(Header.RANGE)) {
             long contentLength = contentLength(path);
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
@@ -216,7 +216,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return result;
     }
 
-    private MediaType detectType(String fileName, HeadersServerRequest requestHeaders) {
+    private MediaType detectType(String fileName, ServerRequestHeaders requestHeaders) {
         Objects.requireNonNull(fileName);
         Objects.requireNonNull(requestHeaders);
 

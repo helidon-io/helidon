@@ -26,13 +26,13 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.parameters.Parameters;
 
-class HeadersServerRequestImpl implements HeadersServerRequest {
+class ServerRequestHeadersImpl implements ServerRequestHeaders {
     private final Headers headers;
     private List<HttpMediaType> cachedAccepted;
     private Parameters cacheCookies;
     private Optional<HttpMediaType> cacheContentType;
 
-    HeadersServerRequestImpl(Headers headers) {
+    ServerRequestHeadersImpl(Headers headers) {
         this.headers = headers;
     }
 
@@ -60,7 +60,7 @@ class HeadersServerRequestImpl implements HeadersServerRequest {
     @Override
     public Optional<HttpMediaType> contentType() {
         if (cacheContentType == null) {
-            cacheContentType = HeadersServerRequest.super.contentType();
+            cacheContentType = ServerRequestHeaders.super.contentType();
         }
         return cacheContentType;
     }
@@ -109,7 +109,7 @@ class HeadersServerRequestImpl implements HeadersServerRequest {
     @Override
     public Parameters cookies() {
         if (cacheCookies == null) {
-            cacheCookies = HeadersServerRequest.super.cookies();
+            cacheCookies = ServerRequestHeaders.super.cookies();
         }
         return cacheCookies;
     }

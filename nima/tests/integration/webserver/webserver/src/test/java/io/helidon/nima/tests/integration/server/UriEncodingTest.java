@@ -16,11 +16,11 @@
 
 package io.helidon.nima.tests.integration.server;
 
-import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 @ServerTest
 class UriEncodingTest {
@@ -51,7 +50,7 @@ class UriEncodingTest {
     void testEncodedUrl() {
         String s = socketHttpClient.sendAndReceive("/f%6F%6F", Http.Method.GET, null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("It works!"));
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
@@ -62,7 +61,7 @@ class UriEncodingTest {
     void testEncodedUrlParams() {
         String s = socketHttpClient.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("bar"));
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 }

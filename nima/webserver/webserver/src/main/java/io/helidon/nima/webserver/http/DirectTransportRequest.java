@@ -18,9 +18,9 @@ package io.helidon.nima.webserver.http;
 
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.WritableHeaders;
 
 /**
  * Simple request to use with {@link io.helidon.common.http.RequestException}.
@@ -29,12 +29,12 @@ public class DirectTransportRequest implements DirectHandler.TransportRequest {
     private final String version;
     private final String method;
     private final String path;
-    private final HeadersServerRequest headers;
+    private final ServerRequestHeaders headers;
 
     private DirectTransportRequest(String version,
                                    String method,
                                    String path,
-                                   HeadersServerRequest headers) {
+                                   ServerRequestHeaders headers) {
         this.version = version;
         this.method = method;
         this.path = path;
@@ -55,7 +55,7 @@ public class DirectTransportRequest implements DirectHandler.TransportRequest {
         return new DirectTransportRequest(protocolAndVersion,
                                           method,
                                           path,
-                                          HeadersServerRequest.create(HeadersWritable.create()));
+                                          ServerRequestHeaders.create(WritableHeaders.create()));
     }
 
     /**
@@ -69,7 +69,7 @@ public class DirectTransportRequest implements DirectHandler.TransportRequest {
         return new DirectTransportRequest(prologue.protocol() + "/" + prologue.protocolVersion(),
                                           prologue.method().text(),
                                           prologue.uriPath().rawPathNoParams(),
-                                          HeadersServerRequest.create(headers));
+                                          ServerRequestHeaders.create(headers));
     }
 
     @Override
@@ -88,7 +88,7 @@ public class DirectTransportRequest implements DirectHandler.TransportRequest {
     }
 
     @Override
-    public HeadersServerRequest headers() {
+    public ServerRequestHeaders headers() {
         return headers;
     }
 }

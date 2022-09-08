@@ -21,8 +21,8 @@ import java.util.Map;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
@@ -75,7 +75,7 @@ public class JsonpMediaSupportProvider implements MediaSupportProvider {
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
-                                        HeadersWritable<?> responseHeaders) {
+                                        WritableHeaders<?> responseHeaders) {
 
         if (isSupportedType(type)) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
@@ -105,7 +105,7 @@ public class JsonpMediaSupportProvider implements MediaSupportProvider {
     }
 
     @Override
-    public <T> WriterResponse<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         // if the type is JsonStructure, we support it and do not care about content type
         // you provide json, you get json...
         if (isSupportedType(type)) {

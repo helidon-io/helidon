@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.http.HeadersClientResponse;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -110,8 +110,8 @@ public class SocketHttpClient implements AutoCloseable {
      * @param response full HTTP response
      * @return headers map
      */
-    public static HeadersClientResponse headersFromResponse(String response) {
-        HeadersWritable<?> headers = HeadersWritable.create();
+    public static ClientResponseHeaders headersFromResponse(String response) {
+        WritableHeaders<?> headers = WritableHeaders.create();
 
         assertThat(response, notNullValue());
         int index = response.indexOf("\n\n");
@@ -121,7 +121,7 @@ public class SocketHttpClient implements AutoCloseable {
         String hdrsPart = response.substring(0, index);
         String[] lines = hdrsPart.split("\\n");
         if (lines.length <= 1) {
-            return HeadersClientResponse.create(headers);
+            return ClientResponseHeaders.create(headers);
         }
 
         boolean first = true;
@@ -136,7 +136,7 @@ public class SocketHttpClient implements AutoCloseable {
             }
             headers.add(Http.Header.create(line.substring(0, i).trim()), line.substring(i + 1).trim());
         }
-        return HeadersClientResponse.create(headers);
+        return ClientResponseHeaders.create(headers);
     }
 
     /**

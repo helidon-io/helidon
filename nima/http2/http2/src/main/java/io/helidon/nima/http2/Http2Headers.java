@@ -27,12 +27,12 @@ import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.WritableHeaders;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -116,7 +116,7 @@ public class Http2Headers {
                                       Http2FrameData... frames) {
 
         if (frames.length == 0) {
-            return create(HeadersServerRequest.create(HeadersWritable.create()),
+            return create(ServerRequestHeaders.create(WritableHeaders.create()),
                           new PseudoHeaders());
         }
 
@@ -135,7 +135,7 @@ public class Http2Headers {
             stream.priority(priority);
         }
 
-        HeadersWritable<?> headers = HeadersWritable.create();
+        WritableHeaders<?> headers = WritableHeaders.create();
 
         BufferData[] buffers = new BufferData[frames.length];
         for (int i = 0; i < frames.length; i++) {
@@ -151,7 +151,7 @@ public class Http2Headers {
                 if (padLength > 0) {
                     data.skip(padLength);
                 }
-                return create(HeadersServerRequest.create(headers), pseudoHeaders);
+                return create(ServerRequestHeaders.create(headers), pseudoHeaders);
             }
 
             if (data.available() == 0) {
@@ -169,10 +169,10 @@ public class Http2Headers {
      * @return new HTTP/2 headers
      */
     public static Http2Headers create(Headers headers) {
-        if (headers instanceof HeadersWritable) {
-            return createFromWritable((HeadersWritable<?>) headers);
+        if (headers instanceof WritableHeaders) {
+            return createFromWritable((WritableHeaders<?>) headers);
         }
-        return createFromWritable(HeadersWritable.create(headers));
+        return createFromWritable(WritableHeaders.create(headers));
     }
 
     /**
@@ -181,7 +181,7 @@ public class Http2Headers {
      * @param writableHeaders header to use
      * @return new HTTP/2 headers
      */
-    public static Http2Headers create(HeadersWritable<?> writableHeaders) {
+    public static Http2Headers create(WritableHeaders<?> writableHeaders) {
         return createFromWritable(writableHeaders);
     }
 
@@ -440,11 +440,11 @@ public class Http2Headers {
         }
     }
 
-    private static Http2Headers create(HeadersServerRequest httpHeaders, PseudoHeaders pseudoHeaders) {
+    private static Http2Headers create(ServerRequestHeaders httpHeaders, PseudoHeaders pseudoHeaders) {
         return new Http2Headers(httpHeaders, pseudoHeaders);
     }
 
-    private static boolean readHeader(HeadersWritable<?> headers,
+    private static boolean readHeader(WritableHeaders<?> headers,
                                       PseudoHeaders pseudoHeaders,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
@@ -597,7 +597,7 @@ public class Http2Headers {
         setter.accept(value);
     }
 
-    private static Http2Headers createFromWritable(HeadersWritable<?> headers) {
+    private static Http2Headers createFromWritable(WritableHeaders<?> headers) {
         PseudoHeaders pseudoHeaders = new PseudoHeaders();
         removeFromHeadersAddToPseudo(headers, pseudoHeaders::status, STATUS_NAME);
         removeFromHeadersAddToPseudo(headers, pseudoHeaders::path, PATH_NAME);
@@ -644,7 +644,7 @@ public class Http2Headers {
       PRIORITY flag is set.
      */
 
-    private static void removeFromHeadersAddToPseudo(HeadersWritable<?> headers,
+    private static void removeFromHeadersAddToPseudo(WritableHeaders<?> headers,
                                                      Consumer<String> valueConsumer,
                                                      HeaderName pseudoHeader) {
         headers.remove(pseudoHeader, it -> valueConsumer.accept(it.value()));

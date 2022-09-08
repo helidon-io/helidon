@@ -27,12 +27,12 @@ import java.util.Set;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.DirectHandler;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RequestException;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
@@ -88,7 +88,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     }
 
     @Override
-    public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, HeadersWritable<?> headers) {
+    public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
         String wsKey;
         if (headers.contains(WS_KEY)) {
             wsKey = headers.get(WS_KEY).value();

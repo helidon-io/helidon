@@ -21,7 +21,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.HeadersClientResponse;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.reactive.webclient.WebClient;
@@ -106,7 +106,7 @@ class CompressionV2ApiTest {
                                         Http.Method.GET, null,
                                         requestHeaders);
 
-            HeadersClientResponse responseHeaders = SocketHttpClient.headersFromResponse(s);
+            ClientResponseHeaders responseHeaders = SocketHttpClient.headersFromResponse(s);
             assertThat(responseHeaders, hasHeader(Http.HeaderValue.create(Http.Header.CONTENT_ENCODING, "gzip")));
         }
     }
@@ -126,7 +126,7 @@ class CompressionV2ApiTest {
                                         Http.Method.GET, null,
                                         requestHeaders);
 
-            HeadersClientResponse responseHeaders = SocketHttpClient.headersFromResponse(s);
+            ClientResponseHeaders responseHeaders = SocketHttpClient.headersFromResponse(s);
             assertThat(responseHeaders, hasHeader(Http.HeaderValue.create(Http.Header.CONTENT_ENCODING, "deflate")));
         }
     }

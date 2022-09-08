@@ -26,9 +26,9 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.EntityWriter;
 
@@ -46,7 +46,7 @@ class JsonbWriter<T> implements EntityWriter<T> {
                       T object,
                       OutputStream outputStream,
                       Headers requestHeaders,
-                      HeadersWritable<?> responseHeaders) {
+                      WritableHeaders<?> responseHeaders) {
 
         responseHeaders.setIfAbsent(Http.HeaderValues.CONTENT_TYPE_JSON);
 
@@ -67,7 +67,7 @@ class JsonbWriter<T> implements EntityWriter<T> {
     }
 
     @Override
-    public void write(GenericType<T> type, T object, OutputStream outputStream, HeadersWritable<?> headers) {
+    public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
         headers.setIfAbsent(Http.HeaderValues.CONTENT_TYPE_JSON);
         write(type, object, outputStream);
     }

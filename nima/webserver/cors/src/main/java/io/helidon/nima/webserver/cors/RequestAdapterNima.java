@@ -18,8 +18,8 @@ package io.helidon.nima.webserver.cors;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.http.HeadersServerRequest;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -30,7 +30,7 @@ class RequestAdapterNima implements CorsSupportBase.RequestAdapter<ServerRequest
 
     private final ServerRequest request;
     private final ServerResponse response;
-    private final HeadersServerRequest headers;
+    private final ServerRequestHeaders headers;
 
     RequestAdapterNima(ServerRequest req, ServerResponse res) {
         this.request = req;

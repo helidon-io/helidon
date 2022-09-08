@@ -28,13 +28,13 @@ import io.helidon.common.media.type.MediaType;
  *
  * @param <B> type of the headers (for inheritance)
  */
-public interface HeadersWritable<B extends HeadersWritable<B>> extends Headers {
+public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
     /**
      * Create a new instance of writable headers.
      *
      * @return mutable HTTP headers
      */
-    static HeadersWritable<?> create() {
+    static WritableHeaders<?> create() {
         return new HeadersImpl<>();
     }
 
@@ -44,7 +44,7 @@ public interface HeadersWritable<B extends HeadersWritable<B>> extends Headers {
      * @param headers headers to add to the new mutable instance
      * @return mutable HTTP headers
      */
-    static HeadersWritable<?> create(Headers headers) {
+    static WritableHeaders<?> create(Headers headers) {
         return new HeadersImpl<>(headers);
     }
 

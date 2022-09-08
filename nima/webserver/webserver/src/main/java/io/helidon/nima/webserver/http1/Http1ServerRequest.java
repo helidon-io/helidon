@@ -21,10 +21,10 @@ import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersServerRequest;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
@@ -36,13 +36,13 @@ import io.helidon.nima.webserver.http.RoutingRequest;
  * Http 1 server request base.
  */
 abstract class Http1ServerRequest implements RoutingRequest {
-    private final HeadersServerRequest headers;
+    private final ServerRequestHeaders headers;
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
     private final int requestId;
 
     private RoutedPath path;
-    private HeadersWritable<?> writable;
+    private WritableHeaders<?> writable;
 
     private HttpPrologue newPrologue;
 
@@ -52,7 +52,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                        int requestId) {
         this.ctx = ctx;
         this.prologue = prologue;
-        this.headers = HeadersServerRequest.create(headers);
+        this.headers = ServerRequestHeaders.create(headers);
         this.requestId = requestId;
         this.newPrologue = prologue;
     }
@@ -82,7 +82,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
      */
     static Http1ServerRequest create(ConnectionContext ctx,
                                      HttpPrologue prologue,
-                                     HeadersServerRequest headers,
+                                     ServerRequestHeaders headers,
                                      ContentDecoder decoder,
                                      int requestContext,
                                      CountDownLatch entityReadLatch,
@@ -122,8 +122,8 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public HeadersServerRequest headers() {
-        return writable == null ? headers : HeadersServerRequest.create(writable);
+    public ServerRequestHeaders headers() {
+        return writable == null ? headers : ServerRequestHeaders.create(writable);
     }
 
     @Override
@@ -149,7 +149,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     @Override
     public void header(Http.HeaderValue header) {
         if (writable == null) {
-            writable = HeadersWritable.create(headers);
+            writable = WritableHeaders.create(headers);
         }
         writable.set(header);
     }

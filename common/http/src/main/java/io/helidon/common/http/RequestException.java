@@ -26,7 +26,7 @@ public class RequestException extends RuntimeException {
     private final Http.Status status;
     private final DirectHandler.TransportRequest transportRequest;
     private final boolean keepAlive;
-    private final HeadersServerResponse responseHeaders;
+    private final ServerResponseHeaders responseHeaders;
 
     /**
      * A new exception with a predefined status, even type.
@@ -93,7 +93,7 @@ public class RequestException extends RuntimeException {
      *
      * @return response headers
      */
-    public HeadersServerResponse responseHeaders() {
+    public ServerResponseHeaders responseHeaders() {
         return responseHeaders;
     }
 
@@ -107,7 +107,7 @@ public class RequestException extends RuntimeException {
         private DirectHandler.EventType type;
         private Http.Status status;
         private Boolean keepAlive;
-        private final HeadersServerResponse responseHeaders = HeadersServerResponse.create();
+        private final ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
 
         private Builder() {
         }

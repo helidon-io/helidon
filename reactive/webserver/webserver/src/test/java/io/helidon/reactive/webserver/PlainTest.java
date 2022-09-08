@@ -29,8 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HeadersClientResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
@@ -161,7 +161,7 @@ class PlainTest {
     @Test
     void getTest() {
         String s = client.sendAndReceive(Http.Method.GET, null);
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
         assertThat(SocketHttpClient.entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
     }
@@ -420,7 +420,7 @@ class PlainTest {
                                          Http.Method.GET,
                                          null,
                                          List.of("Connection: close"));
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, noHeader(Http.Header.CONNECTION));
         assertThat(headers, hasHeader(TRANSFER_ENCODING_CHUNKED));
 
@@ -433,7 +433,7 @@ class PlainTest {
                                          Http.Method.GET,
                                          null,
                                          List.of("Connection: close"));
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, noHeader(Http.Header.CONNECTION));
         assertThat(SocketHttpClient.entityFromResponse(s, false), is("9\nIt works!\n0\n\n"));
     }
@@ -445,7 +445,7 @@ class PlainTest {
                                          null,
                                          List.of("Connection: close"));
         assertThat(s, containsString("400 Bad Request"));
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.Header.CONTENT_TYPE));
         assertThat(headers, hasHeader(Http.Header.CONTENT_LENGTH));
     }
@@ -457,7 +457,7 @@ class PlainTest {
                                          null,
                                          List.of("Content-Type: %", "Connection: close"));
         assertThat(s, containsString("400 Bad Request"));
-        HeadersClientResponse headers = SocketHttpClient.headersFromResponse(s);
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.Header.CONTENT_TYPE));
         assertThat(headers, hasHeader(Http.Header.CONTENT_LENGTH));
     }

@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -62,7 +62,7 @@ public interface MediaSupportProvider {
      */
     default <T> WriterResponse<T> writer(GenericType<T> type,
                                          Headers requestHeaders,
-                                         HeadersWritable<?> responseHeaders) {
+                                         WritableHeaders<?> responseHeaders) {
         return WriterResponse.unsupported();
     }
 
@@ -89,7 +89,7 @@ public interface MediaSupportProvider {
      * @param <T>            type
      * @return writer response, whether this type is supported or not
      */
-    default <T> WriterResponse<T> writer(GenericType<T> type, HeadersWritable<?> requestHeaders) {
+    default <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
         return WriterResponse.unsupported();
     }
 

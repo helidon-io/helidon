@@ -18,7 +18,7 @@ package io.helidon.nima.http.encoding;
 
 import java.io.OutputStream;
 
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 
 /**
  * Content encoder.
@@ -42,6 +42,6 @@ public interface ContentEncoder {
      *
      * @param headers headers to update
      */
-    default void headers(HeadersWritable<?> headers) {
+    default void headers(WritableHeaders<?> headers) {
     }
 }

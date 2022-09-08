@@ -22,14 +22,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersClientRequest;
-import io.helidon.common.http.HeadersClientResponse;
-import io.helidon.common.http.HeadersWritable;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.Http1HeadersParser;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -48,8 +48,8 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final AtomicBoolean closed = new AtomicBoolean();
 
     private final Http.Status responseStatus;
-    private final HeadersClientRequest requestHeaders;
-    private final HeadersClientResponse responseHeaders;
+    private final ClientRequestHeaders requestHeaders;
+    private final ClientResponseHeaders responseHeaders;
     private final DataReader reader;
     // todo configurable
     private final ContentEncodingContext encodingSupport = ContentEncodingContext.create();
@@ -61,11 +61,11 @@ class ClientResponseImpl implements Http1ClientResponse {
     private ClientConnection connection;
     private long entityLength;
     private boolean entityFullyRead;
-    private HeadersWritable<?> trailers;
+    private WritableHeaders<?> trailers;
 
     ClientResponseImpl(Http.Status responseStatus,
-                       HeadersClientRequest requestHeaders,
-                       HeadersClientResponse responseHeaders,
+                       ClientRequestHeaders requestHeaders,
+                       ClientResponseHeaders responseHeaders,
                        ClientConnection connection,
                        DataReader reader) {
         this.responseStatus = responseStatus;
@@ -122,8 +122,8 @@ class ClientResponseImpl implements Http1ClientResponse {
         }
     }
 
-    private ReadableEntity entity(HeadersClientRequest requestHeaders,
-                                  HeadersClientResponse responseHeaders) {
+    private ReadableEntity entity(ClientRequestHeaders requestHeaders,
+                                  ClientResponseHeaders responseHeaders) {
         ContentDecoder decoder;
 
         if (encodingSupport.contentDecodingEnabled()) {

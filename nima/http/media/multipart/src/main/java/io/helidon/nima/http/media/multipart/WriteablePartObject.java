@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 
@@ -40,7 +40,7 @@ class WriteablePartObject extends WriteablePartAbstract {
 
     @Override
     public void writeServerResponse(MediaContext context, OutputStream outputStream, Headers requestHeaders) {
-        HeadersWritable<?> headers = HeadersWritable.create(headers());
+        WritableHeaders<?> headers = WritableHeaders.create(headers());
         contentType(headers);
 
         // I am making an assumption here, that the object fits into memory, otherwise stream should be used
@@ -57,7 +57,7 @@ class WriteablePartObject extends WriteablePartAbstract {
 
     @Override
     public void writeClientRequest(MediaContext context, OutputStream outputStream) {
-        HeadersWritable<?> headers = HeadersWritable.create(headers());
+        WritableHeaders<?> headers = WritableHeaders.create(headers());
         contentType(headers);
 
         // I am making an assumption here, that the object fits into memory, otherwise stream should be used

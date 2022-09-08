@@ -21,7 +21,7 @@ import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.reactive.media.common.MessageBodyWriterContext;
@@ -188,7 +188,7 @@ public final class WriteableBodyPart implements BodyPart {
 
         private final Object entity;
         private final GenericType<Object> type;
-        private final HeadersWritable<?> headers;
+        private final WritableHeaders<?> headers;
         private Publisher<DataChunk> publisher;
 
         EntityBodyPartContent(Object entity, WriteableBodyPartHeaders headers) {
@@ -218,10 +218,10 @@ public final class WriteableBodyPart implements BodyPart {
 
         private final Publisher<T> stream;
         private final GenericType<T> type;
-        private final HeadersWritable<?> headers;
+        private final WritableHeaders<?> headers;
         private Publisher<DataChunk> publisher;
 
-        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, HeadersWritable<?> headers) {
+        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, WritableHeaders<?> headers) {
             this.stream = Objects.requireNonNull(stream, "entity cannot be null!");
             this.type = Objects.requireNonNull(type, "type cannot be null!");
             this.headers = Objects.requireNonNull(headers, "headers cannot be null");

@@ -23,7 +23,7 @@ import java.io.UncheckedIOException;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HeadersWritable;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.MediaContext;
 
 class WriteablePartStream extends WriteablePartAbstract {
@@ -36,15 +36,15 @@ class WriteablePartStream extends WriteablePartAbstract {
 
     @Override
     public void writeServerResponse(MediaContext context, OutputStream outputStream, Headers requestHeaders) {
-        write(outputStream, HeadersWritable.create(headers()));
+        write(outputStream, WritableHeaders.create(headers()));
     }
 
     @Override
     public void writeClientRequest(MediaContext context, OutputStream outputStream) {
-        write(outputStream, HeadersWritable.create(headers()));
+        write(outputStream, WritableHeaders.create(headers()));
     }
 
-    private void write(OutputStream outputStream, HeadersWritable<?> headers) {
+    private void write(OutputStream outputStream, WritableHeaders<?> headers) {
         contentType(headers);
 
         try (outputStream) {

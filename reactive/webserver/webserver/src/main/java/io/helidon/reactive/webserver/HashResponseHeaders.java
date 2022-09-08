@@ -31,9 +31,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.HeadersServerResponse;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.reactive.Single;
 
@@ -51,7 +51,7 @@ class HashResponseHeaders implements ResponseHeaders {
     private volatile Http.Status httpStatus;
     private final CompletionSupport completable;
     private final CompletableFuture<ResponseHeaders> completionStage = new CompletableFuture<>();
-    private final HeadersServerResponse headers = HeadersServerResponse.create();
+    private final ServerResponseHeaders headers = ServerResponseHeaders.create();
 
     /**
      * Creates a new instance.
@@ -154,43 +154,43 @@ class HashResponseHeaders implements ResponseHeaders {
     }
 
     @Override
-    public HeadersServerResponse addCookie(SetCookie cookie) {
+    public ServerResponseHeaders addCookie(SetCookie cookie) {
         completable.runIfNotCompleted(() -> headers.addCookie(cookie), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HeadersServerResponse clearCookie(String name) {
+    public ServerResponseHeaders clearCookie(String name) {
         completable.runIfNotCompleted(() -> headers.clearCookie(name), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HeadersServerResponse setIfAbsent(Http.HeaderValue header) {
+    public ServerResponseHeaders setIfAbsent(Http.HeaderValue header) {
         completable.runIfNotCompleted(() -> headers.setIfAbsent(header), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HeadersServerResponse add(Http.HeaderValue header) {
+    public ServerResponseHeaders add(Http.HeaderValue header) {
         completable.runIfNotCompleted(() -> headers.add(header), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HeadersServerResponse remove(Http.HeaderName name) {
+    public ServerResponseHeaders remove(Http.HeaderName name) {
         completable.runIfNotCompleted(() -> headers.remove(name), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HeadersServerResponse remove(Http.HeaderName name, Consumer<Http.HeaderValue> removedConsumer) {
+    public ServerResponseHeaders remove(Http.HeaderName name, Consumer<Http.HeaderValue> removedConsumer) {
         completable.runIfNotCompleted(() -> headers.remove(name, removedConsumer), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }
 
     @Override
-    public HeadersServerResponse set(Http.HeaderValue header) {
+    public ServerResponseHeaders set(Http.HeaderValue header) {
         completable.runIfNotCompleted(() -> headers.set(header), COMPLETED_EXCEPTION_MESSAGE);
         return this;
     }

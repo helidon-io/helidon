@@ -16,7 +16,7 @@
 
 package io.helidon.reactive.webserver;
 
-import io.helidon.common.http.HeadersServerRequest;
+import io.helidon.common.http.ServerRequestHeaders;
 
 /**
  * Extends {@link io.helidon.common.http.Headers} interface by adding HTTP request headers oriented convenient methods.
@@ -24,5 +24,5 @@ import io.helidon.common.http.HeadersServerRequest;
  *
  * @see io.helidon.common.http.Http.Header
  */
-public interface RequestHeaders extends HeadersServerRequest {
+public interface RequestHeaders extends ServerRequestHeaders {
 }

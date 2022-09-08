@@ -56,7 +56,7 @@ public interface DirectHandler {
     default TransportResponse handle(TransportRequest request,
                                      EventType eventType,
                                      Http.Status defaultStatus,
-                                     HeadersServerResponse responseHeaders,
+                                     ServerResponseHeaders responseHeaders,
                                      Throwable thrown) {
         return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
     }
@@ -79,7 +79,7 @@ public interface DirectHandler {
     TransportResponse handle(TransportRequest request,
                              EventType eventType,
                              Http.Status defaultStatus,
-                             HeadersServerResponse responseHeaders,
+                             ServerResponseHeaders responseHeaders,
                              String message);
 
     /**
@@ -123,7 +123,7 @@ public interface DirectHandler {
          *
          * @return headers or an empty map
          */
-        HeadersServerRequest headers();
+        ServerRequestHeaders headers();
     }
 
     /**
@@ -185,7 +185,7 @@ public interface DirectHandler {
      */
     class TransportResponse {
         private final Http.Status status;
-        private final HeadersServerResponse headers;
+        private final ServerResponseHeaders headers;
         private final byte[] entity;
         private final boolean keepAlive;
 
@@ -219,7 +219,7 @@ public interface DirectHandler {
          *
          * @return headers
          */
-        public HeadersServerResponse headers() {
+        public ServerResponseHeaders headers() {
             return headers;
         }
 
@@ -247,7 +247,7 @@ public interface DirectHandler {
         public static class Builder implements io.helidon.common.Builder<Builder, TransportResponse> {
             private Http.Status status = Http.Status.BAD_REQUEST_400;
             private byte[] entity;
-            private HeadersServerResponse headers = HeadersServerResponse.create();
+            private ServerResponseHeaders headers = ServerResponseHeaders.create();
             private boolean keepAlive = true;
 
             private Builder() {
@@ -275,7 +275,7 @@ public interface DirectHandler {
              * @param headers headers to use
              * @return updated builder
              */
-            public Builder headers(HeadersServerResponse headers) {
+            public Builder headers(ServerResponseHeaders headers) {
                 this.headers = headers;
                 return this;
             }
