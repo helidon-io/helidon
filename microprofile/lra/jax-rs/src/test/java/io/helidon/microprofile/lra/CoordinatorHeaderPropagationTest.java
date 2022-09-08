@@ -101,9 +101,11 @@ import static org.hamcrest.Matchers.not;
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".0", value = "Xxx-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".1", value = "xbb-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".2", value = "xcc-tmm-")
+@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT, value = "5")
+@AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_TIMEOUT_UNIT, value = "SECONDS")
 class CoordinatorHeaderPropagationTest {
 
-    private static final long TIMEOUT_SEC = 10L;
+    private static final long TIMEOUT_SEC = 60L;
     private static final String PROPAGATED_HEADER = "xxx-tmm-propagated-header";
     private static final String EXTRA_COORDINATOR_PROPAGATED_HEADER = "xBb-tmm-extra-start-header";
     private static final String NOT_PROPAGATED_HEADER = "non-propagated-header";
@@ -160,9 +162,12 @@ class CoordinatorHeaderPropagationTest {
                     if (lraMap.get(lraId).get("complete") == null) {
                         //no complete resource
                         // after lra
-                        if (lraMap.get(lraId).get("after") != null) {
+                        URI afterPartUri = lraMap.get(lraId).get("after");
+                        if (afterPartUri != null) {
                             WebClient.builder()
-                                    .baseUri(lraMap.get(lraId).get("after").toASCIIString())
+                                    .baseUri(afterPartUri.toASCIIString())
+                                    .readTimeout(TIMEOUT_SEC, TimeUnit.SECONDS)
+                                    .connectTimeout(TIMEOUT_SEC, TimeUnit.SECONDS)
                                     .build()
                                     .put()
                                     .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
@@ -172,7 +177,9 @@ class CoordinatorHeaderPropagationTest {
                                         return reqHeaders;
                                     })
                                     .submit(LRAStatus.Closing.name())
-                                    .onError(res::send)
+                                    .onError(t ->
+                                            res.send(new RuntimeException("Coordinator close-after call failed "
+                                                    + afterPartUri.toASCIIString(), t)))
                                     .forSingle(wcr2 -> {
                                         res.send();
                                     });
@@ -183,8 +190,9 @@ class CoordinatorHeaderPropagationTest {
                         return;
                     }
 
+                    URI completePartUri = lraMap.get(lraId).get("complete");
                     WebClient.builder()
-                            .baseUri(lraMap.get(lraId).get("complete").toASCIIString())
+                            .baseUri(completePartUri.toASCIIString())
                             .build()
                             .put()
                             .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
@@ -194,7 +202,9 @@ class CoordinatorHeaderPropagationTest {
                                 return reqHeaders;
                             })
                             .submit()
-                            .onError(res::send)
+                            .onError(t ->
+                                    res.send(new RuntimeException("Coordinator close-complete call failed "
+                                            + completePartUri.toASCIIString(), t)))
                             .forSingle(wcr1 -> res.send());
                 })
                 .put("/{lraId}/cancel", (req, res) -> {
