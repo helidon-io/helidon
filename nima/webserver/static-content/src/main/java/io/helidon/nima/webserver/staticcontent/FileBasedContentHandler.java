@@ -144,7 +144,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     void processContentLength(Path path, ServerResponseHeaders headers) {
-        headers.set(Header.CONTENT_LENGTH.withValue(String.valueOf(contentLength(path))));
+        headers.set(Header.create(Header.CONTENT_LENGTH, contentLength(path)));
     }
 
     long contentLength(Path path) {

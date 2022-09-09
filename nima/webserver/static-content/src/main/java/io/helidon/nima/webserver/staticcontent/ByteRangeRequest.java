@@ -73,16 +73,16 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         // Content-Range: bytes 0-1023/146515
         // Content-Length: 1024
         long last = (offset + length) - 1;
-        response.header(Header.CONTENT_RANGE.withValue(true,
+        response.header(Header.create(Header.CONTENT_RANGE, true,
                                                        false,
                                                        "bytes " + offset + "-" + last + "/" + fileLength));
-        response.header(Header.CONTENT_LENGTH.withValue(true, false, String.valueOf(length)));
+        response.contentLength(length);
         response.status(Http.Status.PARTIAL_CONTENT_206);
     }
 
     private static ByteRangeRequest create(ServerRequest req, ServerResponse res, long offset, long last, long fileLength) {
         if (offset >= fileLength || last < offset) {
-            res.header(Header.CONTENT_RANGE.withValue("*/" + fileLength));
+            res.header(Header.CONTENT_RANGE, "*/" + fileLength);
             throw new HttpException("Wrong range", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 

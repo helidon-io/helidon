@@ -49,7 +49,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE.withValue("image/x-icon")));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "image/x-icon"));
         }
     }
 }

@@ -820,69 +820,6 @@ public final class Http {
         default boolean isPseudoHeader() {
             return lowerCase().charAt(0) == ':';
         }
-
-        /**
-         * Create a new header with this name and the provided value.
-         * The header is considered not sensitive and not changing.
-         *
-         * @param value value of the header
-         * @return a new cached HTTP header
-         * @see #withValue(boolean, boolean, String)
-         */
-        default HeaderValue withValue(String value) {
-            return HeaderValue.createCached(this, value);
-        }
-
-        /**
-         * Create a new header with this name and the provided value.
-         * The header is considered not sensitive and not changing.
-         *
-         * @param value value of the header
-         * @return a new cached HTTP header
-         */
-        default HeaderValue withValue(int value) {
-            return HeaderValue.createCached(this, String.valueOf(value));
-        }
-
-        /**
-         * Create a new header with this name and the provided value.
-         * The header is considered not sensitive and not changing.
-         *
-         * @param value value(s) of the header
-         * @return a new HTTP header
-         * @see #withValue(boolean, boolean, String...)
-         */
-        default HeaderValue withValue(String... value) {
-            return HeaderValue.create(this, value);
-        }
-
-        /**
-         * Create a new header with this name and the provided value.
-         *
-         * @param changing  is this a header that changes value often (e.g. with every request); important for HTTP/2, where
-         *                  changing
-         *                  headers do not cache values
-         * @param sensitive is this a sensitive header, where we should not cache the value ever (such as security token)
-         * @param value     value of the header
-         * @return a new cached HTTP header
-         */
-        default HeaderValue withValue(boolean changing, boolean sensitive, String value) {
-            return HeaderValue.createCached(this, changing, sensitive, value);
-        }
-
-        /**
-         * Create a new header with this name and the provided value.
-         *
-         * @param changing  is this a header that changes value often (e.g. with every request); important for HTTP/2, where
-         *                  changing
-         *                  headers do not cache values
-         * @param sensitive is this a sensitive header, where we should not cache the value ever (such as security token)
-         * @param value     value(s) of the header
-         * @return a new HTTP header
-         */
-        default HeaderValue withValue(boolean changing, boolean sensitive, String... value) {
-            return HeaderValue.create(this, changing, sensitive, value);
-        }
     }
 
     /**
@@ -891,98 +828,6 @@ public final class Http {
      * @see io.helidon.common.http.Http.HeaderValues
      */
     public interface HeaderValue {
-        /**
-         * Create and cache byte value.
-         * Use this method if the header value is stored in a constant, or used repeatedly.
-         *
-         * @param name  header name
-         * @param value value of the header
-         * @return a new header
-         */
-        static HeaderValue createCached(HeaderName name, String value) {
-            return new HeaderValueCached(name, false,
-                                         false,
-                                         value.getBytes(StandardCharsets.US_ASCII),
-                                         value);
-        }
-
-        /**
-         * Create a new header with a single value. This header is considered unchanging and not sensitive.
-         *
-         * @param name  name of the header
-         * @param value lazy string with the value
-         * @return a new header
-         * @see #create(HeaderName, boolean, boolean, String...)
-         */
-        static HeaderValue create(HeaderName name, LazyString value) {
-            return new HeaderValueLazy(name, false, false, value);
-        }
-
-        /**
-         * Create a new header with a single value. This header is considered unchanging and not sensitive.
-         *
-         * @param name  name of the header
-         * @param value value of the header
-         * @return a new header
-         * @see #create(HeaderName, boolean, boolean, String...)
-         */
-        static HeaderValue create(HeaderName name, String value) {
-            return new HeaderValueSingle(name,
-                                         false,
-                                         false,
-                                         value);
-        }
-
-        /**
-         * Create a new header. This header is considered unchanging and not sensitive.
-         *
-         * @param name   name of the header*
-         * @param values values of the header
-         * @return a new header
-         * @see #create(HeaderName, boolean, boolean, String...)
-         */
-        static HeaderValue create(HeaderName name, String... values) {
-            return new HeaderValueArray(name, false, false, values);
-        }
-
-        /**
-         * Create a new header. This header is considered unchanging and not sensitive.
-         *
-         * @param name   name of the header
-         * @param values values of the header
-         * @return a new header
-         * @see #create(HeaderName, boolean, boolean, String...)
-         */
-        static HeaderValue create(HeaderName name, List<String> values) {
-            return new HeaderValueList(name, false, false, values);
-        }
-
-        /**
-         * Create and cache byte value.
-         * Use this method if the header value is stored in a constant, or used repeatedly.
-         *
-         * @param name      header name
-         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
-         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
-         * @param value     value of the header
-         * @return a new header
-         */
-        static HeaderValue createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
-            return new HeaderValueCached(name, changing, sensitive, value.getBytes(StandardCharsets.UTF_8), value);
-        }
-
-        /**
-         * Create a new header.
-         *
-         * @param name      name of the header
-         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
-         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
-         * @param values    value(s) of the header
-         * @return a new header
-         */
-        static HeaderValue create(HeaderName name, boolean changing, boolean sensitive, String... values) {
-            return new HeaderValueArray(name, changing, sensitive, values);
-        }
 
         /**
          * Name of the header as configured by user
@@ -1533,7 +1378,7 @@ public final class Http {
          * @param defaultCase default case to use for custom header names (header names not known by Helidon)
          * @return header name instance
          */
-        public static HeaderName create(String lowerCase, String defaultCase) {
+        public static HeaderName createName(String lowerCase, String defaultCase) {
             HeaderName headerName = HeaderEnum.byName(lowerCase);
             if (headerName == null) {
                 return new HeaderImpl(lowerCase, defaultCase);
@@ -1559,6 +1404,147 @@ public final class Http {
                 return headerName;
             }
         }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static HeaderValue createCached(String name, String value) {
+            return createCached(create(name), value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static HeaderValue createCached(HeaderName name, String value) {
+            return new HeaderValueCached(name, false,
+                                         false,
+                                         value.getBytes(StandardCharsets.US_ASCII),
+                                         value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static HeaderValue createCached(HeaderName name, int value) {
+            return createCached(name, String.valueOf(value));
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value lazy string with the value
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static HeaderValue create(HeaderName name, LazyString value) {
+            return new HeaderValueLazy(name, false, false, value);
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value integer value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static HeaderValue create(HeaderName name, int value) {
+            return new HeaderValueSingle(name, false, false, String.valueOf(value));
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value long value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static HeaderValue create(HeaderName name, long value) {
+            return new HeaderValueSingle(name, false, false, String.valueOf(value));
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static HeaderValue create(HeaderName name, String value) {
+            return new HeaderValueSingle(name,
+                                         false,
+                                         false,
+                                         value);
+        }
+
+        /**
+         * Create a new header. This header is considered unchanging and not sensitive.
+         *
+         * @param name   name of the header*
+         * @param values values of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static HeaderValue create(HeaderName name, String... values) {
+            return new HeaderValueArray(name, false, false, values);
+        }
+
+        /**
+         * Create a new header. This header is considered unchanging and not sensitive.
+         *
+         * @param name   name of the header
+         * @param values values of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static HeaderValue create(HeaderName name, List<String> values) {
+            return new HeaderValueList(name, false, false, values);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name      header name
+         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+         * @param value     value of the header
+         * @return a new header
+         */
+        public static HeaderValue createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
+            return new HeaderValueCached(name, changing, sensitive, value.getBytes(StandardCharsets.UTF_8), value);
+        }
+
+        /**
+         * Create a new header.
+         *
+         * @param name      name of the header
+         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+         * @param values    value(s) of the header
+         * @return a new header
+         */
+        public static HeaderValue create(HeaderName name, boolean changing, boolean sensitive, String... values) {
+            return new HeaderValueArray(name, changing, sensitive, values);
+        }
     }
 
     /**
@@ -1568,55 +1554,55 @@ public final class Http {
         /**
          * Accept byte ranges for file download.
          */
-        public static final HeaderValue ACCEPT_RANGES_BYTES = HeaderValue.createCached(Header.ACCEPT_RANGES, "bytes");
+        public static final HeaderValue ACCEPT_RANGES_BYTES = Header.createCached(Header.ACCEPT_RANGES, "bytes");
         /**
          * Not accepting byte ranges for file download.
          */
-        public static final HeaderValue ACCEPT_RANGES_NONE = HeaderValue.createCached(Header.ACCEPT_RANGES, "none");
+        public static final HeaderValue ACCEPT_RANGES_NONE = Header.createCached(Header.ACCEPT_RANGES, "none");
         /**
          * Chunked transfer encoding.
          * Used in {@code HTTP/1}.
          */
-        public static final HeaderValue TRANSFER_ENCODING_CHUNKED = HeaderValue.createCached(Header.TRANSFER_ENCODING, "chunked");
+        public static final HeaderValue TRANSFER_ENCODING_CHUNKED = Header.createCached(Header.TRANSFER_ENCODING, "chunked");
         /**
          * Connection keep-alive.
          * Used in {@code HTTP/1}.
          */
-        public static final HeaderValue CONNECTION_KEEP_ALIVE = HeaderValue.createCached(Header.CONNECTION, "keep-alive");
+        public static final HeaderValue CONNECTION_KEEP_ALIVE = Header.createCached(Header.CONNECTION, "keep-alive");
         /**
          * Connection close.
          * Used in {@code HTTP/1}.
          */
-        public static final HeaderValue CONNECTION_CLOSE = HeaderValue.createCached(Header.CONNECTION, "close");
+        public static final HeaderValue CONNECTION_CLOSE = Header.createCached(Header.CONNECTION, "close");
         /**
          * Content type application/json with no charset.
          */
-        public static final HeaderValue CONTENT_TYPE_JSON = HeaderValue.createCached(Header.CONTENT_TYPE, "application/json");
+        public static final HeaderValue CONTENT_TYPE_JSON = Header.createCached(Header.CONTENT_TYPE, "application/json");
         /**
          * Content type text plain with no charset.
          */
-        public static final HeaderValue CONTENT_TYPE_TEXT_PLAIN = HeaderValue.createCached(Header.CONTENT_TYPE, "text/plain");
+        public static final HeaderValue CONTENT_TYPE_TEXT_PLAIN = Header.createCached(Header.CONTENT_TYPE, "text/plain");
         /**
          * Content type octet stream.
          */
-        public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = HeaderValue.createCached(Header.CONTENT_TYPE,
-                                                                                             "application/octet-stream");
+        public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = Header.createCached(Header.CONTENT_TYPE,
+                                                                                        "application/octet-stream");
         /**
          * Accept application/json.
          */
-        public static final HeaderValue ACCEPT_JSON = HeaderValue.createCached(Header.ACCEPT, "application/json");
+        public static final HeaderValue ACCEPT_JSON = Header.createCached(Header.ACCEPT, "application/json");
         /**
          * Accept text/plain with UTF-8.
          */
-        public static final HeaderValue ACCEPT_TEXT = HeaderValue.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
+        public static final HeaderValue ACCEPT_TEXT = Header.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
         /**
          * Expect 100 header.
          */
-        public static final HeaderValue EXPECT_100 = HeaderValue.createCached(Header.EXPECT, "100-continue");
+        public static final HeaderValue EXPECT_100 = Header.createCached(Header.EXPECT, "100-continue");
         /**
          * Content length with 0 value.
          */
-        public static final HeaderValue CONTENT_LENGTH_ZERO = HeaderValue.createCached(Header.CONTENT_LENGTH, "0");
+        public static final HeaderValue CONTENT_LENGTH_ZERO = Header.createCached(Header.CONTENT_LENGTH, "0");
 
         private HeaderValues() {
         }

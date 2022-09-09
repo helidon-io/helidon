@@ -53,7 +53,7 @@ class Http2ServerTest {
     public static final String MESSAGE = "Hello World!";
     private static final String TEST_HEADER_NAME = "custom_header";
     private static final String TEST_HEADER_VALUE = "as!fd";
-    private static final HeaderValue TEST_HEADER = HeaderValue.create(Header.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
+    private static final HeaderValue TEST_HEADER = Header.create(Header.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
     private final int plainPort;
     private final int tlsPort;
     private final Http1Client http1Client;

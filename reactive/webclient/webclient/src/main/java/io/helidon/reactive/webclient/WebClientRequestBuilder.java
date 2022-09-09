@@ -201,7 +201,7 @@ public interface WebClientRequestBuilder {
      * @return updated builder
      */
     default WebClientRequestBuilder addHeader(Http.HeaderName name, String... values) {
-        headers().add(Http.HeaderValue.create(name, values));
+        headers().add(Http.Header.create(name, values));
         return this;
     }
 
@@ -213,7 +213,7 @@ public interface WebClientRequestBuilder {
      * @return updated builder
      */
     default WebClientRequestBuilder addHeader(Http.HeaderName name, List<String> values) {
-        headers().add(Http.HeaderValue.create(name, values));
+        headers().add(Http.Header.create(name, values));
         return this;
     }
 

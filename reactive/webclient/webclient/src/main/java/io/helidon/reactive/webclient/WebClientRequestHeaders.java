@@ -194,7 +194,7 @@ public interface WebClientRequestHeaders extends ClientRequestHeaders {
      * @return updated headers
      */
     default WebClientRequestHeaders add(Http.HeaderName key, String... values) {
-        add(Http.HeaderValue.create(key, values));
+        add(Http.Header.create(key, values));
         return this;
     }
 

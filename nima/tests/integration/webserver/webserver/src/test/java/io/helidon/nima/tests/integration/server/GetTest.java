@@ -48,11 +48,12 @@ class GetTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final HeaderValue REQUEST_HEADER_VALUE = HeaderValue.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderValue REQUEST_HEADER_VALUE = Header.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = HeaderValue.create(RESPONSE_HEADER_NAME,
-                                                                                RESPONSE_HEADER_VALUE_STRING);
+    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
+                                                                           RESPONSE_HEADER_VALUE_STRING);
+    public static final HeaderValue CONTENT_LENGTH_5 = Header.create(CONTENT_LENGTH, "5");
 
     static {
         Random random = new Random();
@@ -83,7 +84,7 @@ class GetTest {
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             Headers headers = response.headers();
-            assertThat(headers, hasHeader(CONTENT_LENGTH.withValue("5")));
+            assertThat(headers, hasHeader(CONTENT_LENGTH_5));
             assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
@@ -97,7 +98,7 @@ class GetTest {
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
             Headers headers = response.headers();
-            assertThat(headers, hasHeader(CONTENT_LENGTH.withValue(String.valueOf(BYTES.length))));
+            assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
             assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
@@ -131,7 +132,7 @@ class GetTest {
 
             assertThat("Should contain echoed request header", headers, hasHeader(REQUEST_HEADER_VALUE));
             assertThat("Should contain configured response header", headers, hasHeader(RESPONSE_HEADER_VALUE));
-            assertThat(headers, hasHeader(CONTENT_LENGTH.withValue("5")));
+            assertThat(headers, hasHeader(CONTENT_LENGTH_5));
             assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
@@ -145,7 +146,7 @@ class GetTest {
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             Headers headers = response.headers();
-            assertThat(headers, hasHeader(CONTENT_LENGTH.withValue("5")));
+            assertThat(headers, hasHeader(CONTENT_LENGTH_5));
             assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
         }
     }

@@ -33,10 +33,10 @@ import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
  */
 public class DeflateEncodingProvider implements ContentEncodingProvider {
     private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE =
-            Http.HeaderValue.createCached(Http.Header.CONTENT_ENCODING,
-                                          false,
-                                          false,
-                                          "deflate");
+            Http.Header.createCached(Http.Header.CONTENT_ENCODING,
+                                     false,
+                                     false,
+                                     "deflate");
 
     @Override
     public Set<String> ids() {

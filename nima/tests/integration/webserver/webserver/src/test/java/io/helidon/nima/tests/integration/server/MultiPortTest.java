@@ -147,11 +147,11 @@ class MultiPortTest {
                     router.addRouting(HttpRouting.builder()
                                               .any((req, res) -> {
                                                   res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                                          .header(Header.LOCATION.withValue(
+                                                          .header(Header.LOCATION,
                                                                   String.format("http://%s:%s%s",
                                                                                 host(req.authority()),
                                                                                 server.port(),
-                                                                                req.path().absolute().rawPathNoParams())))
+                                                                                req.path().absolute().rawPathNoParams()))
                                                           .send();
                                               }));
                 })
@@ -163,7 +163,7 @@ class MultiPortTest {
                 .request()) {
             assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(),
-                       hasHeader(Header.LOCATION.withValue("http://localhost:" + server.port() + "/foo")));
+                       hasHeader(Header.create(Header.LOCATION, "http://localhost:" + server.port() + "/foo")));
         }
     }
 

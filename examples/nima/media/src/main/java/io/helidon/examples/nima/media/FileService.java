@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.multipart.MultiPart;
@@ -47,7 +48,7 @@ import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
  * File service.
  */
 final class FileService implements HttpService {
-    private static final Http.HeaderValue UI_LOCATION = Http.Header.LOCATION.withValue("/ui");
+    private static final Http.HeaderValue UI_LOCATION = Header.createCached(Header.LOCATION, "/ui");
     private final JsonBuilderFactory jsonFactory;
     private final Path storage;
 

@@ -51,11 +51,11 @@ class PostTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final HeaderValue REQUEST_HEADER_VALUE = HeaderValue.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderValue REQUEST_HEADER_VALUE = Header.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = HeaderValue.create(RESPONSE_HEADER_NAME,
-                                                                                RESPONSE_HEADER_VALUE_STRING);
+    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
+                                                                           RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -89,7 +89,7 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(CONTENT_LENGTH.withValue("5")));
+        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, "5")));
         assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
@@ -105,7 +105,7 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(CONTENT_LENGTH.withValue(String.valueOf(BYTES.length))));
+        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
         assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
@@ -142,7 +142,7 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(CONTENT_LENGTH.withValue("5")));
+        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, "5")));
         assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));

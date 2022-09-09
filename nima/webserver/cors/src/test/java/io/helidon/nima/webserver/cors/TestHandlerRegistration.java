@@ -48,14 +48,14 @@ class TestHandlerRegistration extends CorsRouting {
     void test4PreFlightAllowedHeaders2() {
         try (ClientResponse response = client.method(Http.Method.OPTIONS)
                 .uri(CORS4_CONTEXT_ROOT)
-                .header(ORIGIN.withValue("http://foo.bar"))
-                .header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"))
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo, X-bar"))
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_HEADERS));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).values(), containsString("X-foo"));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).values(), containsString("X-bar"));

@@ -29,7 +29,6 @@ import java.util.function.Predicate;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.mapper.Mapper;
@@ -367,7 +366,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public void contentType(HttpMediaType contentType) {
         Objects.requireNonNull(contentType);
-        headers.setIfAbsent(HeaderValue.create(Http.Header.CONTENT_TYPE, false, false, contentType.text()));
+        headers.setIfAbsent(Http.Header.create(Http.Header.CONTENT_TYPE, false, false, contentType.text()));
     }
 
     /**
@@ -379,7 +378,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public void contentType(MediaType mediaType) {
         Objects.requireNonNull(mediaType);
-        headers.setIfAbsent(HeaderValue.create(Http.Header.CONTENT_TYPE, false, false, mediaType.fullType()));
+        headers.setIfAbsent(Http.Header.create(Http.Header.CONTENT_TYPE, false, false, mediaType.fullType()));
     }
 
     /**
@@ -391,7 +390,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public void contentLength(long contentLength) {
         if (contentLength >= 0) {
-            headers.setIfAbsent(HeaderValue.create(Http.Header.CONTENT_LENGTH, true, false,
+            headers.setIfAbsent(Http.Header.create(Http.Header.CONTENT_LENGTH, true, false,
                                                    String.valueOf(contentLength)));
         }
     }

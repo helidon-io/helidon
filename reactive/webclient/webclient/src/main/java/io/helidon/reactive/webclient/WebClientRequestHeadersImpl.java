@@ -66,7 +66,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public WebClientRequestHeaders addCookie(String name, String value) {
-        headers.add(HeaderValue.create(Http.Header.COOKIE, ClientCookieEncoder.STRICT.encode(new DefaultCookie(name, value))));
+        headers.add(Http.Header.create(Http.Header.COOKIE, ClientCookieEncoder.STRICT.encode(new DefaultCookie(name, value))));
         return this;
     }
 
@@ -84,13 +84,13 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public WebClientRequestHeaders addAccept(HttpMediaType mediaType) {
-        headers.add(HeaderValue.create(Http.Header.ACCEPT, mediaType.text()));
+        headers.add(Http.Header.create(Http.Header.ACCEPT, mediaType.text()));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifModifiedSince(ZonedDateTime time) {
-        headers.set(HeaderValue.create(Http.Header.IF_MODIFIED_SINCE,
+        headers.set(Http.Header.create(Http.Header.IF_MODIFIED_SINCE,
                                        true,
                                        false,
                                        time.format(FORMATTER)));
@@ -99,7 +99,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public WebClientRequestHeaders ifUnmodifiedSince(ZonedDateTime time) {
-        headers.set(HeaderValue.create(Http.Header.IF_UNMODIFIED_SINCE,
+        headers.set(Http.Header.create(Http.Header.IF_UNMODIFIED_SINCE,
                                        true,
                                        false,
                                        time.format(FORMATTER)));
@@ -108,25 +108,25 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public WebClientRequestHeaders ifNoneMatch(String... etags) {
-        headers.set(HeaderValue.create(Http.Header.IF_NONE_MATCH, processEtags(etags)));
+        headers.set(Http.Header.create(Http.Header.IF_NONE_MATCH, processEtags(etags)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifMatch(String... etags) {
-        headers.set(HeaderValue.create(Http.Header.IF_MATCH, processEtags(etags)));
+        headers.set(Http.Header.create(Http.Header.IF_MATCH, processEtags(etags)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifRange(ZonedDateTime time) {
-        headers.set(HeaderValue.create(Http.Header.IF_RANGE, time.format(FORMATTER)));
+        headers.set(Http.Header.create(Http.Header.IF_RANGE, time.format(FORMATTER)));
         return this;
     }
 
     @Override
     public WebClientRequestHeaders ifRange(String etag) {
-        headers.set(HeaderValue.create(Http.Header.IF_RANGE, processEtags(etag)));
+        headers.set(Http.Header.create(Http.Header.IF_RANGE, processEtags(etag)));
         return this;
     }
 
@@ -271,7 +271,7 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public WebClientRequestHeaders add(String key, String... values) {
-        headers.add(HeaderValue.create(Http.Header.create(key), values));
+        headers.add(Http.Header.create(Http.Header.create(key), values));
         return this;
     }
 

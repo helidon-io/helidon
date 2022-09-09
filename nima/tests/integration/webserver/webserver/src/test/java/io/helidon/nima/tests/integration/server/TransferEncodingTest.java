@@ -39,7 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class TransferEncodingTest {
-    private static final Http.HeaderValue CONTENT_LENGTH_NINE = Http.HeaderValue.create(Header.CONTENT_LENGTH, "9");
+    private static final Http.HeaderValue CONTENT_LENGTH_NINE = Header.create(Header.CONTENT_LENGTH, "9");
     private final SocketHttpClient socketHttpClient;
 
     TransferEncodingTest(SocketHttpClient socketHttpClient) {
@@ -50,7 +50,7 @@ class TransferEncodingTest {
     static void routing(HttpRules rules) {
         rules.get("/length", (req, res) -> {
                     String payload = "It works!";
-                    res.headers().add(Header.CONTENT_LENGTH.withValue(payload.length()));
+                    res.contentLength(payload.length());
                     res.send(payload);
                 })
                 .get("/chunked", (req, res) -> {

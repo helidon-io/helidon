@@ -28,7 +28,7 @@ import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public final class Main {
-    private static final Http.HeaderValue REDIRECT_LOCATION = Http.HeaderValue.createCached(Http.Header.LOCATION, "/ui");
+    private static final Http.HeaderValue REDIRECT_LOCATION = Http.Header.createCached(Http.Header.LOCATION, "/ui");
 
     private Main() {
     }

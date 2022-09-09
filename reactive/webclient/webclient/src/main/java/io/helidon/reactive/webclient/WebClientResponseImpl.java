@@ -163,7 +163,7 @@ final class WebClientResponseImpl implements WebClientResponse {
          * @return updated builder instance
          */
         Builder addHeader(String name, List<String> values) {
-            this.headers.set(Http.HeaderValue.create(Http.Header.create(name), values));
+            this.headers.set(Http.Header.create(Http.Header.create(name), values));
             return this;
         }
 

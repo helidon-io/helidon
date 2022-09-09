@@ -419,7 +419,7 @@ abstract class Response implements ServerResponse {
             if (headers != null && !sent) {
                 status(500);
                 //We are not using CombinedHttpHeaders
-                headers().add(Http.HeaderValue.create(Http.Header.TRAILER, STREAM_STATUS + "," + STREAM_RESULT));
+                headers().add(Http.Header.create(Http.Header.TRAILER, STREAM_STATUS + "," + STREAM_RESULT));
                 sent = true;
                 headers.send();
             }

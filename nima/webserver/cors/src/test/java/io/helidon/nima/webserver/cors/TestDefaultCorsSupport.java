@@ -84,12 +84,12 @@ class TestDefaultCorsSupport {
                     .build();
 
             try (ClientResponse response = client.get("/greet")
-                    .header(Header.ORIGIN.withValue("http://foo.com"))
-                    .header(Header.HOST.withValue("bar.com"))
+                    .header(Header.ORIGIN, "http://foo.com")
+                    .header(Header.HOST, "bar.com")
                     .request()) {
 
                 Headers headers = response.headers();
-                assertThat(headers, hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("*")));
+                assertThat(headers, hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
             }
         } finally {
             if (server != null) {
@@ -111,8 +111,8 @@ class TestDefaultCorsSupport {
                     .build();
 
             try (ClientResponse response = client.get("/greet")
-                    .header(Header.ORIGIN.withValue("http://foo.com"))
-                    .header(Header.HOST.withValue("bar.com"))
+                    .header(Header.ORIGIN, "http://foo.com")
+                    .header(Header.HOST, "bar.com")
                     .request()) {
 
                 assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_ORIGIN));

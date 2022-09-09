@@ -77,7 +77,7 @@ class MaxPayloadSizeTest {
     @Test
     void testContentLengthExceeded() {
         try (Http1ClientResponse response = client.method(Http.Method.POST)
-                .header(Header.CONTENT_LENGTH.withValue("512"))
+                .header(Header.CONTENT_LENGTH, "512")
                 .path("/maxpayload")
                 .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .request()) {

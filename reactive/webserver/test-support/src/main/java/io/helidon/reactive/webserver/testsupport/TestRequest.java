@@ -91,7 +91,7 @@ public class TestRequest {
     public TestRequest header(Http.HeaderName name, String value) {
         Objects.requireNonNull(name, "Parameter 'name' is null!");
         Objects.requireNonNull(name, "Parameter 'value' is null!");
-        headers.setIfAbsent(Http.HeaderValue.create(name, value));
+        headers.setIfAbsent(Http.Header.create(name, value));
         return this;
     }
 

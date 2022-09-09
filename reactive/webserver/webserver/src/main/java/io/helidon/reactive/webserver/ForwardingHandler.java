@@ -603,7 +603,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             method = request.method().name();
             WritableHeaders<?> result = WritableHeaders.create();
             for (String name : request.headers().names()) {
-                result.add(Http.HeaderValue.create(Http.Header.create(name), request.headers().getAll(name)));
+                result.add(Http.Header.create(Http.Header.create(name), request.headers().getAll(name)));
             }
             headers = ServerRequestHeaders.create(result);
         }

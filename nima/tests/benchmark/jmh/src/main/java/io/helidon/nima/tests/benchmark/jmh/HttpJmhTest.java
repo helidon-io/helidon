@@ -43,10 +43,10 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
 public class HttpJmhTest {
-    private static final HeaderValue CONTENT_TYPE = HeaderValue.createCached(Header.CONTENT_TYPE,
-                                                                             "text/plain; charset=UTF-8");
-    private static final HeaderValue CONTENT_LENGTH = HeaderValue.createCached(Header.CONTENT_LENGTH, "13");
-    private static final HeaderValue SERVER = HeaderValue.createCached(Header.SERVER, "Nima");
+    private static final HeaderValue CONTENT_TYPE = Header.createCached(Header.CONTENT_TYPE,
+                                                                        "text/plain; charset=UTF-8");
+    private static final HeaderValue CONTENT_LENGTH = Header.createCached(Header.CONTENT_LENGTH, "13");
+    private static final HeaderValue SERVER = Header.createCached(Header.SERVER, "Nima");
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
     private WebServer server;
     private int serverPort;

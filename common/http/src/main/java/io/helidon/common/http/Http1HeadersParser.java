@@ -64,7 +64,7 @@ public final class Http1HeadersParser {
             reader.skip(2);
             maxLength -= eol + 1;
 
-            headers.add(Http.HeaderValue.create(header, value));
+            headers.add(Http.Header.create(header, value));
             if (maxLength < 0) {
                 throw new IllegalStateException("Header size exceeded");
             }

@@ -79,10 +79,10 @@ public final class TechEmpowerMain {
     }
 
     static class PlaintextHandler implements Handler {
-        static final HeaderValue CONTENT_TYPE = HeaderValue.createCached(Header.CONTENT_TYPE,
-                                                                         "text/plain; charset=UTF-8");
-        static final HeaderValue CONTENT_LENGTH = HeaderValue.createCached(Header.CONTENT_LENGTH, "13");
-        static final HeaderValue SERVER = HeaderValue.createCached(Header.SERVER, "Nima");
+        static final HeaderValue CONTENT_TYPE = Header.createCached(Header.CONTENT_TYPE,
+                                                                    "text/plain; charset=UTF-8");
+        static final HeaderValue CONTENT_LENGTH = Header.createCached(Header.CONTENT_LENGTH, "13");
+        static final HeaderValue SERVER = Header.createCached(Header.SERVER, "Nima");
 
         private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
 
@@ -96,11 +96,11 @@ public final class TechEmpowerMain {
     }
 
     static class JsonHandler implements Handler {
-        static final HeaderValue SERVER = HeaderValue.createCached(Header.SERVER, "Nima");
+        static final HeaderValue SERVER = Header.createCached(Header.SERVER, "Nima");
         private static final String MESSAGE = "Hello, World!";
         private static final int JSON_LENGTH = serializeMsg(new Message(MESSAGE)).length;
-        static final HeaderValue CONTENT_LENGTH = HeaderValue.createCached(Header.CONTENT_LENGTH,
-                                                                           String.valueOf(JSON_LENGTH));
+        static final HeaderValue CONTENT_LENGTH = Header.createCached(Header.CONTENT_LENGTH,
+                                                                      String.valueOf(JSON_LENGTH));
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
@@ -116,15 +116,15 @@ public final class TechEmpowerMain {
     }
 
     static class JsonKHandler implements Handler {
-        static final HeaderValue SERVER = HeaderValue.createCached(Header.SERVER, "Nima");
+        static final HeaderValue SERVER = Header.createCached(Header.SERVER, "Nima");
         private final HeaderValue contentLength;
         private final String message;
 
         JsonKHandler(int kilobytes) {
             this.message = "a".repeat(1024 * kilobytes);
             int length = serializeMsg(new Message(message)).length;
-            this.contentLength = HeaderValue.createCached(Header.CONTENT_LENGTH,
-                                                          String.valueOf(length));
+            this.contentLength = Header.createCached(Header.CONTENT_LENGTH,
+                                                     String.valueOf(length));
         }
 
         @Override

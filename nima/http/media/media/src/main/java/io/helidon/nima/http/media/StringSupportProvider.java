@@ -88,7 +88,7 @@ public class StringSupportProvider implements MediaSupportProvider {
 
     private static final class StringWriter implements EntityWriter<String> {
 
-        private static final HeaderValue HEADER_PLAIN_TEXT = HeaderValue.createCached(Http.Header.CONTENT_TYPE,
+        private static final HeaderValue HEADER_PLAIN_TEXT = Http.Header.createCached(Http.Header.CONTENT_TYPE,
                                                                                       HttpMediaType.PLAINTEXT_UTF_8.text());
 
         @Override

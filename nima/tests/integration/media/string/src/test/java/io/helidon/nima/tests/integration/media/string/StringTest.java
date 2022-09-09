@@ -39,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class StringTest {
     private static final HttpMediaType TEXT_ISO_8859_2 = HttpMediaType.create(MediaTypes.TEXT_PLAIN)
             .withCharset("ISO-8859-2");
-    private static final HeaderValue ISO_8859_CONTENT_TYPE = HeaderValue.create(Header.CONTENT_TYPE,
-                                                                                TEXT_ISO_8859_2.text());
+    private static final HeaderValue ISO_8859_CONTENT_TYPE = Header.create(Header.CONTENT_TYPE,
+                                                                           TEXT_ISO_8859_2.text());
     private static final String UTF_8_TEXT = "český řízný text";
 
     private final Http1Client client;

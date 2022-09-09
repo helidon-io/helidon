@@ -66,10 +66,10 @@ class CorsTest extends AbstractCorsTest {
         ClientResponse response = runTest1PreFlightAllowedOrigin();
 
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue(origin)));
-        assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
+        assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, origin));
+        assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
         assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_HEADERS));
-        assertThat(response.headers(), hasHeader(ACCESS_CONTROL_MAX_AGE.withValue("3600")));
+        assertThat(response.headers(), hasHeader(ACCESS_CONTROL_MAX_AGE, "3600"));
         assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_ORIGIN).allValues().size(), is(1));
     }
 }

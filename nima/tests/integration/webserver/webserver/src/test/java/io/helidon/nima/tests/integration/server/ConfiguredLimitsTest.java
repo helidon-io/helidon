@@ -126,7 +126,7 @@ class ConfiguredLimitsTest {
         String headerValue = "m".repeat(size);
 
         try (Http1ClientResponse response = client.get("any")
-                .header(CUSTOM_HEADER.withValue(headerValue))
+                .header(Header.create(CUSTOM_HEADER, headerValue))
                 .request()) {
             if (success) {
                 assertThat("Header of size " + size + " should have passed",

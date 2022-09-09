@@ -36,7 +36,7 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
      */
-    HeaderValue HUC_ACCEPT_DEFAULT = HeaderValue.create(Http.Header.ACCEPT,
+    HeaderValue HUC_ACCEPT_DEFAULT = Http.Header.create(Http.Header.ACCEPT,
                                                         "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
 
     /**

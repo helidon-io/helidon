@@ -55,7 +55,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             + "Sec-WebSocket-Accept: ";
     private static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
     private static final String SUPPORTED_VERSION = "13";
-    private static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Http.HeaderValue.create(WS_VERSION, SUPPORTED_VERSION);
+    private static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
 
     private final Set<String> origins;
     private final boolean anyOrigin;
