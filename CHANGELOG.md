@@ -7,11 +7,81 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.5.2-SNAPSHOT]
+## [2.5.4-SNAPSHOT]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
 
 ### CHANGES
+
+## [2.5.3]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.5.3 is API compatible with 2.4.0.
+
+### CHANGES
+
+- Config: Injection of Map from configuration now honors prefix (backport) [4659](https://github.com/oracle/helidon/pull/4659)
+- Config: Obtaining parent dir for watcher service fixed [4666](https://github.com/oracle/helidon/pull/4666)
+- Config: Unescape the keys when config is returned as a map [4678](https://github.com/oracle/helidon/pull/4678)
+- Dependencies: Upgrade snakeyaml to 1.31 [4849](https://github.com/oracle/helidon/pull/4849)
+- Dependencies: Upgrades OCI to 2.41.0 [4812](https://github.com/oracle/helidon/pull/4812)
+- Docs: Fix K8s deployment yaml [4761](https://github.com/oracle/helidon/pull/4761)
+- Grpc: Upgrade protobuf to support osx-aarch_64 architecture [4630](https://github.com/oracle/helidon/pull/4630)
+- JAX-RS: Make Application subclasses available via our context during Feature executions [4745](https://github.com/oracle/helidon/pull/4745)
+- LRA: 4749 LRA fixes backport [4824](https://github.com/oracle/helidon/pull/4824)
+- MicroProfile: MP path based static content should use index.html [4735](https://github.com/oracle/helidon/pull/4735)
+- Native image: Issue #4741 - Upgrade Postgre driver to 42.4.1 [4780](https://github.com/oracle/helidon/pull/4780)
+- Security: Access token refresh [4758](https://github.com/oracle/helidon/pull/4758)
+- Security: Configuration parameter 'cookie-encryption-password' takes only a single character rather than a string (#4512) [4657](https://github.com/oracle/helidon/pull/4657)
+- Tests: Intermittent test fix, using random port for tests [4801](https://github.com/oracle/helidon/pull/4801)
+- WebClient: DNS resolver should not be possible to set per request [4815](https://github.com/oracle/helidon/pull/4815)
+- WebClient: Dns resolver type method on webclient builder [4839](https://github.com/oracle/helidon/pull/4839)
+- WebClient: Round Robin added as DNS resolver option [4806](https://github.com/oracle/helidon/pull/4806)
+- WebServer: WebServerTls parts should not be initialized when disabled [4651](https://github.com/oracle/helidon/pull/4651)
+
+## [2.5.2]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.5.2 is API compatible with 2.4.0.
+
+### CHANGES
+
+- CORS: Correct return of path from MP CORS request adapter; add test (2.x) [4434](https://github.com/oracle/helidon/pull/4434)
+- CORS: Preserve order of mapped cross-origin config path entries from config; add test (2.x) [4432](https://github.com/oracle/helidon/pull/4432)
+- Common: Completed @Deprecated annotation and fixed Javadoc [4389](https://github.com/oracle/helidon/pull/4389)
+- Common: Completed @Deprecated annotations in common configurable [4395](https://github.com/oracle/helidon/pull/4395)
+- Common: Update `@Deprecated` anno in 2.x `service-common/rest` [4392](https://github.com/oracle/helidon/pull/4392)
+- Config: Add helidon-config-yaml-mp as a dependency in helidon-microprofile-config. (#4379) [4394](https://github.com/oracle/helidon/pull/4394)
+- Docs: Add documentation for hocon/json support and meta-config extensibility on MP [4391](https://github.com/oracle/helidon/pull/4391)
+- Docs: Fix MP references in SE metrics guide [4648](https://github.com/oracle/helidon/pull/4648)
+- Examples: Add examples for SE and MP to update counters of HTTP response status ranges (1xx, 2xx, etc.) for 2.x [4616](https://github.com/oracle/helidon/pull/4616)
+- Examples: Fix gRPC examples that are failing. (#4585) [4635](https://github.com/oracle/helidon/pull/4635)
+- Examples: OCI Integration Examples Update 2.x [4502](https://github.com/oracle/helidon/pull/4502)
+- Examples: Uses lowercase for database column names in se … [4274](https://github.com/oracle/helidon/pull/4274)
+- FT: Added config support for bulkheads, breakers, timeouts and retries [4337](https://github.com/oracle/helidon/pull/4337)
+- FT: Changes to FT implementation to support interception of proxy methods [4641](https://github.com/oracle/helidon/pull/4641)
+- JAX-RS: Change log level to fine for exception caught while intercepting [4632](https://github.com/oracle/helidon/pull/4632)
+- LRA: Coordinator test fix #4544 backport [4611](https://github.com/oracle/helidon/pull/4611)
+- LRA: Deprecations cleanup 2.x [4450](https://github.com/oracle/helidon/pull/4450)
+- Metrics: Fix deprecation annotations in metrics; update doc; revise examples (2.x) [4396](https://github.com/oracle/helidon/pull/4396)
+- Metrics: Remove unneeded dependency [4378](https://github.com/oracle/helidon/pull/4378)
+- Native Image: Add module info to native image extensions. [4588](https://github.com/oracle/helidon/pull/4588)
+- Native Image: Removed final from proxied types [4586](https://github.com/oracle/helidon/pull/4586)
+- Security: Added X509 certificate context key when client certificate is present and pem trust store configuration [4226](https://github.com/oracle/helidon/pull/4226)
+- Security: JEP-290 2.x [4587](https://github.com/oracle/helidon/pull/4587)
+- Test: Removed usage of deprecated method. [4401](https://github.com/oracle/helidon/pull/4401)
+- Tracing: Cleanup of E2E test for tracing. [4589](https://github.com/oracle/helidon/pull/4589)
+- Tracing: Update for Jaeger tracing. [4631](https://github.com/oracle/helidon/pull/4631)
+- WebClient: Context propagation across HTTP. [4612](https://github.com/oracle/helidon/pull/4612)
+- WebClient: Set executor of CompletableFuture for response with no content. (#4540) [4596](https://github.com/oracle/helidon/pull/4596)
+- WebServer: Updated TyrusSupport to correctly propagate query params from webserver [4624](https://github.com/oracle/helidon/pull/4624)
+- WebServer: Wrong Http/2 version 2x [4629](https://github.com/oracle/helidon/pull/4629)
 
 ## [2.5.1]
 
@@ -1901,7 +1971,9 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.5.2-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.5.1...helidon-2.x
+[2.5.4-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.5.3...helidon-2.x
+[2.5.3]: https://github.com/oracle/helidon/compare/2.5.2...2.5.3
+[2.5.2]: https://github.com/oracle/helidon/compare/2.5.1...2.5.2
 [2.5.1]: https://github.com/oracle/helidon/compare/2.5.0...2.5.1
 [2.5.0]: https://github.com/oracle/helidon/compare/2.4.2...2.5.0
 [2.4.2]: https://github.com/oracle/helidon/compare/2.4.1...2.4.2
