@@ -111,7 +111,7 @@ pools:
 
 1. https://github.com/brettwooldridge/HikariCP[HikariCP]
 
-2. link:{oracle-ucp-doc-base-url}index.html[Oracle Universal
+2. link:{oracle-ucp-doc-base-url}/index.html[Oracle Universal
    Connection Pool]
 
 You can choose to use either, but not both.
@@ -146,7 +146,7 @@ managed]
 
 ====== Maven Coordinates (Oracle Universal Connection Pool) [[DS-UCP-Maven-Coordinates]]
 
-To include the link:{oracle-ucp-doc-base-url}index.html[Oracle
+To include the link:{oracle-ucp-doc-base-url}/index.html[Oracle
 Universal Connection Pool] in your Helidon MP application:
 
 * xref:../about/managing-dependencies.adoc[Ensure your dependencies are
