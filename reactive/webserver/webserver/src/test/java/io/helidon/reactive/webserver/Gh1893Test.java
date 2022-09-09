@@ -155,7 +155,7 @@ class Gh1893Test {
         assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
-        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.HeaderValue.create(Http.Header.LOCATION, "/errorPage")));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.Header.create(Http.Header.LOCATION, "/errorPage")));
     }
 
     @Test

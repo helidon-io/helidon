@@ -119,7 +119,7 @@ public class KeepAliveTest {
             assertThat(res.status().code(), is(expectedStatus));
             if (expectedConnectionHeader != null) {
                 assertThat(res.headers(),
-                           hasHeader(Http.HeaderValue.create(Http.Header.CONNECTION, expectedConnectionHeader.toString())));
+                           hasHeader(Http.Header.create(Http.Header.CONNECTION, expectedConnectionHeader.toString())));
             } else {
                 assertThat(res.headers(), noHeader(Http.Header.CONNECTION));
             }

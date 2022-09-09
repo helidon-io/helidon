@@ -72,16 +72,16 @@ abstract class AbstractCorsTest extends CorsRouting {
     void test1PreFlightAllowedHeaders1() {
         try (Http1ClientResponse response = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_1))
-                .header(ORIGIN.withValue("http://foo.bar"))
-                .header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"))
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo"))
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_HEADERS.withValue("X-foo")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_MAX_AGE.withValue("3600")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_HEADERS, "X-foo"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_MAX_AGE, "3600"));
         }
     }
 
@@ -89,18 +89,18 @@ abstract class AbstractCorsTest extends CorsRouting {
     void test1PreFlightAllowedHeaders2() {
         try (Http1ClientResponse response = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_1))
-                .header(ORIGIN.withValue("http://foo.bar"))
-                .header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"))
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo, X-bar"))
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_HEADERS));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).values(), containsString("X-foo"));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).values(), containsString("X-bar"));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_MAX_AGE.withValue("3600")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_MAX_AGE, "3600"));
         }
     }
 
@@ -109,8 +109,8 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http.Status status;
         try (Http1ClientResponse response = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2))
-                .header(ORIGIN.withValue("http://not.allowed"))
-                .header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"))
+                .header(ORIGIN, "http://not.allowed")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .request()) {
 
             status = response.status();
@@ -124,15 +124,15 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
+        request.header(ORIGIN, "http://foo.bar");
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         try (Http1ClientResponse response = request.request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS.withValue("true")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_HEADERS));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_HEADERS));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
@@ -144,8 +144,8 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("POST"));
+        request.header(ORIGIN, "http://foo.bar");
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "POST");
 
         Http.Status status;
         try (Http1ClientResponse response = request.request()) {
@@ -160,9 +160,9 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo, X-bar, X-oops"));
+        request.header(ORIGIN, "http://foo.bar");
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar, X-oops");
 
         try (Http1ClientResponse response = request.request()) {
             Http.Status status = response.status();
@@ -176,9 +176,9 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(contextRoot(), SERVICE_2));
 
-        request.header(ORIGIN.withValue(fooOrigin()));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS.withValue(fooHeader()));
+        request.header(ORIGIN, fooOrigin());
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, fooHeader());
 
         try (Http1ClientResponse response = request.request()) {
 
@@ -200,16 +200,16 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo, X-bar"));
+        request.header(ORIGIN, "http://foo.bar");
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
 
         try (Http1ClientResponse response = request.request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS.withValue("true")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-foo"));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-bar"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
@@ -221,17 +221,17 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo, X-bar"));
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS.withValue("X-foo, X-bar"));
+        request.header(ORIGIN, "http://foo.bar");
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
 
         try (Http1ClientResponse response = request.request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS.withValue("true")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS.withValue("PUT")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-foo"));
             assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-bar"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
@@ -244,13 +244,13 @@ abstract class AbstractCorsTest extends CorsRouting {
                 .uri(TestUtil.path(SERVICE_1))
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
+        request.header(ORIGIN, "http://foo.bar");
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         try (ClientResponse response = request.submit("")) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("*")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
         }
     }
 
@@ -260,13 +260,13 @@ abstract class AbstractCorsTest extends CorsRouting {
                 .uri(TestUtil.path(SERVICE_2))
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
+        request.header(ORIGIN, "http://foo.bar");
 
         try (ClientResponse response = request.submit("")) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN.withValue("http://foo.bar")));
-            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS.withValue("true")));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
+            assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
         }
     }
 
@@ -275,7 +275,7 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().get(TestUtil.path(SERVICE_2) + "/notfound")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
 
-        request.header(ORIGIN.withValue("http://foo.bar"));
+        request.header(ORIGIN, "http://foo.bar");
 
         try (ClientResponse response = request.request()) {
 
@@ -288,8 +288,8 @@ abstract class AbstractCorsTest extends CorsRouting {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(contextRoot(), SERVICE_1));
 
-        request.header(ORIGIN.withValue(fooOrigin()));
-        request.header(ACCESS_CONTROL_REQUEST_METHOD.withValue("PUT"));
+        request.header(ORIGIN, fooOrigin());
+        request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         return request.request();
     }

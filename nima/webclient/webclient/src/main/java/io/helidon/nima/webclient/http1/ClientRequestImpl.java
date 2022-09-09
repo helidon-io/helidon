@@ -154,7 +154,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         // I have a valid connection
         prologue(writeBuffer);
 
-        headers.setIfAbsent(HeaderValue.create(Header.HOST, uri.authority()));
+        headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
 
         byte[] entityBytes;
         if (entity == BufferData.EMPTY_BYTES) {
@@ -163,7 +163,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             entityBytes = entityBytes(entity, headers);
         }
 
-        headers.setIfAbsent(HeaderValue.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
+        headers.setIfAbsent(Header.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
 
         writeHeaders(headers, writeBuffer);
         if (entityBytes.length > 0) {
@@ -189,7 +189,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         writeBuffer.clear();
         prologue(writeBuffer);
 
-        headers.setIfAbsent(HeaderValue.create(Header.HOST, uri.authority()));
+        headers.setIfAbsent(Header.create(Header.HOST, uri.authority()));
         // hardcoded chunked encoding, as we have an output stream
         // todo we may optimize small amounts
         boolean chunked = false;

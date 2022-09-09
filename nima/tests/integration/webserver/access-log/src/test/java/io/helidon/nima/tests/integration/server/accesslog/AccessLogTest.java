@@ -81,7 +81,7 @@ class AccessLogTest {
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
 
         response = client.get("/access")
-                .header(Http.HeaderValue.create(Http.Header.CONTENT_LENGTH, "47a"))
+                .header(Http.Header.create(Http.Header.CONTENT_LENGTH, "47a"))
                 .request();
 
         assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));

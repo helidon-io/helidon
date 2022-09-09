@@ -103,7 +103,7 @@ class CompressionTest {
                                         requestHeaders);
 
             ClientResponseHeaders responseHeaders = SocketHttpClient.headersFromResponse(s);
-            assertThat(responseHeaders, hasHeader(Http.HeaderValue.create(Http.Header.CONTENT_ENCODING, "gzip")));
+            assertThat(responseHeaders, hasHeader(Http.Header.create(Http.Header.CONTENT_ENCODING, "gzip")));
         }
     }
 
@@ -123,7 +123,7 @@ class CompressionTest {
                                         requestHeaders);
 
             ClientResponseHeaders responseHeaders = SocketHttpClient.headersFromResponse(s);
-            assertThat(responseHeaders, hasHeader(Http.HeaderValue.create(Http.Header.CONTENT_ENCODING, "deflate")));
+            assertThat(responseHeaders, hasHeader(Http.Header.create(Http.Header.CONTENT_ENCODING, "deflate")));
         }
     }
 

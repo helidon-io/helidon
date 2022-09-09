@@ -27,7 +27,7 @@ import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
  * on the WEB page.
  */
 public class Main {
-    private static final Http.HeaderValue UI_REDIRECT = Http.HeaderValue.createCached(Http.Header.LOCATION, "/ui");
+    private static final Http.HeaderValue UI_REDIRECT = Http.Header.createCached(Http.Header.LOCATION, "/ui");
 
     private Main() {
     }

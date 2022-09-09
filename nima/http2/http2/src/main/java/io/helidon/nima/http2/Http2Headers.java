@@ -551,10 +551,10 @@ public class Http2Headers {
             }
 
             if (!isPseudoHeader) {
-                headers.add(HeaderValue.create(headerName,
-                                               !approach.addToIndex,
-                                               approach.neverIndex,
-                                               value));
+                headers.add(Header.create(headerName,
+                                          !approach.addToIndex,
+                                          approach.neverIndex,
+                                          value));
             }
             return isPseudoHeader;
         }

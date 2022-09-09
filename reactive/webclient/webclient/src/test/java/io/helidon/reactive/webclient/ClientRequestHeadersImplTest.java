@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 
@@ -62,7 +61,7 @@ class ClientRequestHeadersImplTest {
         List<HttpMediaType> expectedTypes = List.of(HttpMediaType.PLAINTEXT_UTF_8, HttpMediaType.JSON_UTF_8);
 
         clientRequestHeaders.addAccept(HttpMediaType.PLAINTEXT_UTF_8);
-        clientRequestHeaders.add(HeaderValue.create(Header.ACCEPT, HttpMediaType.JSON_UTF_8.text()));
+        clientRequestHeaders.add(Header.create(Header.ACCEPT, HttpMediaType.JSON_UTF_8.text()));
 
         assertThat(clientRequestHeaders.acceptedTypes(), is(expectedTypes));
     }
@@ -101,7 +100,7 @@ class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifModifiedSince(ifModifiedSince);
 
-        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_MODIFIED_SINCE, template)));
+        assertThat(clientRequestHeaders, hasHeader(Header.create(IF_MODIFIED_SINCE, template)));
         assertThat(clientRequestHeaders.ifModifiedSince(), is(Optional.of(zonedDateTemplate)));
     }
 
@@ -117,7 +116,7 @@ class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifUnmodifiedSince(ifUnmodifiedSince);
 
-        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_UNMODIFIED_SINCE, template)));
+        assertThat(clientRequestHeaders, hasHeader(Header.create(IF_UNMODIFIED_SINCE, template)));
         assertThat(clientRequestHeaders.ifUnmodifiedSince(), is(Optional.of(zonedDateTemplate)));
     }
 
@@ -131,11 +130,11 @@ class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifNoneMatch(unquotedTemplate.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifNoneMatch(), is(unquotedTemplate));
-        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_NONE_MATCH, quotedTemplate)));
+        assertThat(clientRequestHeaders, hasHeader(Header.create(IF_NONE_MATCH, quotedTemplate)));
 
         clientRequestHeaders.ifNoneMatch(star.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifNoneMatch(), is(star));
-        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_NONE_MATCH, star)));
+        assertThat(clientRequestHeaders, hasHeader(Header.create(IF_NONE_MATCH, star)));
     }
 
     @Test
@@ -148,11 +147,11 @@ class ClientRequestHeadersImplTest {
 
         clientRequestHeaders.ifMatch(unquotedTemplate.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifMatch(), is(unquotedTemplate));
-        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_MATCH, quotedTemplate)));
+        assertThat(clientRequestHeaders, hasHeader(Header.create(IF_MATCH, quotedTemplate)));
 
         clientRequestHeaders.ifMatch(star.toArray(new String[0]));
         assertThat(clientRequestHeaders.ifMatch(), is(star));
-        assertThat(clientRequestHeaders, hasHeader(HeaderValue.create(IF_MATCH, star)));
+        assertThat(clientRequestHeaders, hasHeader(Header.create(IF_MATCH, star)));
     }
 
     @Test

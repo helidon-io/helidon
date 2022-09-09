@@ -148,7 +148,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      */
     @Deprecated
     default ServerResponse addHeader(String name, List<String> values) {
-        headers().add(Http.HeaderValue.create(Http.Header.create(name), values));
+        headers().add(Http.Header.create(Http.Header.create(name), values));
         return this;
     }
 
@@ -163,7 +163,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @see Http.Header header names constants
      */
     default ServerResponse addHeader(Http.HeaderName name, String... values) {
-        headers().add(Http.HeaderValue.create(name, values));
+        headers().add(Http.Header.create(name, values));
         return this;
     }
 

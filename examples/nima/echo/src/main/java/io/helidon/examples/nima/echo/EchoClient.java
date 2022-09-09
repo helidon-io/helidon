@@ -17,7 +17,7 @@
 package io.helidon.examples.nima.echo;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -28,8 +28,8 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
  * A client that invokes the echo server.
  */
 public class EchoClient {
-    private static final HeaderValue HEADER = Http.Header.create("MY-HEADER").withValue("header-value");
-    private static final HeaderValue HEADERS = Http.Header.create("MY-HEADERS").withValue("ha", "hb", "hc");
+    private static final HeaderValue HEADER = Header.create(Header.create("MY-HEADER"), "header-value");
+    private static final HeaderValue HEADERS = Header.create(Header.create("MY-HEADERS"), "ha", "hb", "hc");
 
     private EchoClient() {
     }

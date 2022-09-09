@@ -50,8 +50,8 @@ class GetTest {
     private static final String REQUEST_HEADER_VALUE = "some nice value";
     private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = HeaderValue.create(RESPONSE_HEADER_NAME,
-                                                                                RESPONSE_HEADER_VALUE_STRING);
+    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
+                                                                           RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();

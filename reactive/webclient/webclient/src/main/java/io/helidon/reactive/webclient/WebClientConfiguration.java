@@ -738,10 +738,10 @@ class WebClientConfiguration {
             configHeaders.asNodeList()
                     .ifPresent(headers -> headers
                             .forEach(header ->
-                                             defaultHeader(HeaderValue.create(Header.create(header.get("name")
+                                             defaultHeader(Header.create(Header.create(header.get("name")
                                                                                                     .asString()
                                                                                                     .get()),
-                                                                                header.get("value")
+                                                                         header.get("value")
                                                                                         .asList(String.class)
                                                                                         .get()))));
         }

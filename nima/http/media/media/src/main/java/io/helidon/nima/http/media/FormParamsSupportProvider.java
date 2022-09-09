@@ -220,7 +220,7 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
 
     private static class FormParamsUrlWriter extends FormParamsWriter {
         private static final HeaderValue CONTENT_TYPE_URL_ENCODED =
-                HeaderValue.createCached(Http.Header.CONTENT_TYPE,
+                Http.Header.createCached(Http.Header.CONTENT_TYPE,
                                          HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
                                                  .withCharset("utf-8")
                                                  .text());
@@ -235,7 +235,7 @@ public class FormParamsSupportProvider implements MediaSupportProvider {
 
     private static class FormParamsPlaintextWriter extends FormParamsWriter {
         private static final HeaderValue CONTENT_TYPE_TEXT =
-                HeaderValue.createCached(Http.Header.CONTENT_TYPE,
+                Http.Header.createCached(Http.Header.CONTENT_TYPE,
                                          HttpMediaType.create(MediaTypes.TEXT_PLAIN)
                                                  .withCharset("utf-8")
                                                  .text());

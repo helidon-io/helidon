@@ -19,6 +19,7 @@ import java.util.List;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 
 import org.hamcrest.Description;
@@ -57,7 +58,8 @@ public final class HttpHeaderMatcher {
      * </pre>
      *
      * @param name header name
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header regardless of its value(s)
+     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header regardless of its
+     *         value(s)
      */
     public static Matcher<Headers> hasHeader(HeaderName name) {
         return new HasHeaderMatcher(name);
@@ -73,10 +75,27 @@ public final class HttpHeaderMatcher {
      * </pre>
      *
      * @param header http header with values
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header regardless of its value(s)
+     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
      */
     public static Matcher<Headers> hasHeader(Http.HeaderValue header) {
         return new HasValueMatcher(header);
+    }
+
+    /**
+     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is present and has the defined
+     * value(s).
+     * <p>
+     * Usage example:
+     * <pre>
+     *     assertThat(httpHeaders, hasHeader(HeaderValues.REDIRECT, "/location"));
+     * </pre>
+     *
+     * @param name  http header name
+     * @param value value(s) of the header
+     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
+     */
+    public static Matcher<Headers> hasHeader(Http.HeaderName name, String... value) {
+        return new HasValueMatcher(Header.create(name, value));
     }
 
     /**
@@ -105,8 +124,8 @@ public final class HttpHeaderMatcher {
      *     assertThat(httpHeaders, hasHeaderValue(HeaderNames.CONNECTION, startsWith("c")));
      * </pre>
      *
-     * @param name          header name
-     * @param valueMatcher  matcher to validate the value is OK
+     * @param name         header name
+     * @param valueMatcher matcher to validate the value is OK
      * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the expected value
      */
     public static Matcher<Headers> hasHeaderValue(HeaderName name, Matcher<String> valueMatcher) {

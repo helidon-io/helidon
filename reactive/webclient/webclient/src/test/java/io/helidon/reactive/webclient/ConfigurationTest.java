@@ -55,7 +55,7 @@ class ConfigurationTest {
                 .followRedirects(true)
                 .maxRedirects(10)
                 .userAgent("HelidonTest")
-                .defaultHeader(Http.HeaderValue.create(Http.Header.ACCEPT, List.of("application/json", "text/plain")))
+                .defaultHeader(Http.Header.create(Http.Header.ACCEPT, List.of("application/json", "text/plain")))
                 .build();
         validateConfiguration(wcc);
     }

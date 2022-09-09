@@ -27,7 +27,6 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.media.type.MediaTypes;
@@ -152,14 +151,14 @@ class HashResponseHeadersTest {
     void immutableWhenCompleted() throws Exception {
         HashResponseHeaders h = new HashResponseHeaders(mockBareResponse());
         h.set(HEADER_A, "b");
-        h.add(HeaderValue.create(HEADER_A, "b"));
-        h.setIfAbsent(HeaderValue.create(HEADER_A, "b"));
+        h.add(Header.create(HEADER_A, "b"));
+        h.setIfAbsent(Header.create(HEADER_A, "b"));
         h.remove(HEADER_A);
 
         h.send().toCompletableFuture().get();
         assertException(() -> h.set(HEADER_A, "b"), AlreadyCompletedException.class);
-        assertException(() -> h.add(HeaderValue.create(HEADER_A, "b")), AlreadyCompletedException.class);
-        assertException(() -> h.setIfAbsent(HeaderValue.create(HEADER_A, "b")), AlreadyCompletedException.class);
+        assertException(() -> h.add(Header.create(HEADER_A, "b")), AlreadyCompletedException.class);
+        assertException(() -> h.setIfAbsent(Header.create(HEADER_A, "b")), AlreadyCompletedException.class);
         assertException(() -> h.remove(HEADER_A), AlreadyCompletedException.class);
     }
 

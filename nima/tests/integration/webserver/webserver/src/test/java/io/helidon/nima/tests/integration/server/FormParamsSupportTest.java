@@ -62,7 +62,7 @@ class FormParamsSupportTest {
     void urlEncodedTest() {
         String result = client.method(Http.Method.PUT)
                 .path("/params")
-                .header(Header.CONTENT_TYPE.withValue(MediaTypes.APPLICATION_FORM_URLENCODED.fullType()))
+                .header(Header.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
                 .submit("key1=val+1&key2=val2_1&key2=val2_2")
                 .as(String.class);
 

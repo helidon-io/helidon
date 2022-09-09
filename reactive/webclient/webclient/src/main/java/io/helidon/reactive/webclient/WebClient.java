@@ -319,7 +319,7 @@ public interface WebClient {
          */
         @Deprecated(forRemoval = true)
         public Builder addHeader(String header, String... value) {
-            configuration.defaultHeader(Http.HeaderValue.create(Http.Header.create(header), value));
+            configuration.defaultHeader(Http.Header.create(Http.Header.create(header), value));
             return this;
         }
 
@@ -331,7 +331,7 @@ public interface WebClient {
          * @return updated builder instance
          */
         public Builder addHeader(Http.HeaderName header, String... value) {
-            configuration.defaultHeader(Http.HeaderValue.create(header, value));
+            configuration.defaultHeader(Http.Header.create(header, value));
             return this;
         }
 

@@ -23,7 +23,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.MediaType;
 
 import static io.helidon.common.http.Http.Header.EXPIRES;
@@ -68,8 +67,8 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             HttpMediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(HeaderValue.create(Header.ACCEPT_PATCH,
-                                      values));
+        return add(Header.create(Header.ACCEPT_PATCH,
+                                 values));
     }
 
     /**
@@ -85,8 +84,8 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             MediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(HeaderValue.create(Header.ACCEPT_PATCH,
-                                      values));
+        return add(Header.create(Header.ACCEPT_PATCH,
+                                 values));
     }
 
     /**
@@ -141,7 +140,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      */
     default ServerResponseHeaders lastModified(Instant modified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
-        return set(HeaderValue.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Header.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -153,7 +152,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return this instance
      */
     default ServerResponseHeaders lastModified(ZonedDateTime modified) {
-        return set(HeaderValue.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Header.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -165,7 +164,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders location(URI location) {
-        return set(HeaderValue.create(LOCATION, true, false, location.toASCIIString()));
+        return set(Header.create(LOCATION, true, false, location.toASCIIString()));
     }
 
     /**
@@ -177,7 +176,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(ZonedDateTime dateTime) {
-        return set(HeaderValue.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Header.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -189,7 +188,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(Instant dateTime) {
-        return set(HeaderValue.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
+        return set(Header.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
                 .format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 }

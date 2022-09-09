@@ -38,7 +38,7 @@ import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
  * Support for gzip content encoding.
  */
 public class GzipEncodingProvider implements ContentEncodingProvider, Weighted {
-    private static final HeaderValue CONTENT_ENCODING_GZIP = HeaderValue.createCached(Http.Header.CONTENT_ENCODING,
+    private static final HeaderValue CONTENT_ENCODING_GZIP = Http.Header.createCached(Http.Header.CONTENT_ENCODING,
                                                                                       false,
                                                                                       false,
                                                                                       "gzip");

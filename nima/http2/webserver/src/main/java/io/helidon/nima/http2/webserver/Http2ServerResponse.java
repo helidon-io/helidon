@@ -85,11 +85,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         // handle content encoding
         byte[] bytes = entityBytes(entityBytes);
 
-        headers.setIfAbsent(HeaderValue.create(Header.CONTENT_LENGTH,
-                                               true,
-                                               false,
-                                               String.valueOf(bytes.length)));
-        headers.setIfAbsent(HeaderValue.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
+        headers.setIfAbsent(Header.create(Header.CONTENT_LENGTH,
+                                          true,
+                                          false,
+                                          String.valueOf(bytes.length)));
+        headers.setIfAbsent(Header.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
 
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.status(status());
@@ -242,13 +242,13 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(HeaderValue.create(Header.CONTENT_LENGTH,
-                                               true,
-                                               false,
-                                               String.valueOf(firstBuffer.available())));
+                headers.set(Header.create(Header.CONTENT_LENGTH,
+                                          true,
+                                          false,
+                                          String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
-            headers.setIfAbsent(HeaderValue.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(Header.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
@@ -278,7 +278,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void sendHeadersAndPrepare() {
-            headers.setIfAbsent(HeaderValue.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(Header.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.validateResponse();

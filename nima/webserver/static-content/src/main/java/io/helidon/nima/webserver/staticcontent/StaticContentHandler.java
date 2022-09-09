@@ -69,7 +69,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         }
         etag = unquoteETag(etag);
         // Put ETag into the response
-        responseHeaders.set(Header.ETAG.withValue('"' + etag + '"'));
+        responseHeaders.set(Header.ETAG, '"' + etag + '"');
         // Process If-None-Match header
         if (requestHeaders.contains(Header.IF_NONE_MATCH)) {
             List<String> ifNoneMatches = requestHeaders.get(Header.IF_NONE_MATCH).allValues();
@@ -163,7 +163,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
         }
 
         response.status(Http.Status.MOVED_PERMANENTLY_301);
-        response.header(Header.LOCATION.withValue(locationWithQuery));
+        response.header(Header.LOCATION, locationWithQuery);
         response.send();
     }
 

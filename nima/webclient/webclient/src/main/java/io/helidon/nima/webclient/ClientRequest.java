@@ -77,6 +77,17 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B header(Http.HeaderValue header);
 
     /**
+     * Set an HTTP header.
+     *
+     * @param name  header name
+     * @param value header value
+     * @return updated request
+     */
+    default B header(Http.HeaderName name, String value) {
+        return header(Http.Header.create(name, true, false, value));
+    }
+
+    /**
      * Replace a placeholder in URI with an actual value.
      *
      * @param name  name of parameter

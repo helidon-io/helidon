@@ -23,7 +23,6 @@ import java.io.InputStream;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
@@ -48,9 +47,8 @@ import io.grpc.Status;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolProvider.SubProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(GrpcProtocolHandler.class.getName());
-    private static final HeaderValue GRPC_CONTENT_TYPE = Header.CONTENT_TYPE.withValue("application/grpc");
-    private static final HeaderName GRPC_ENCODING = Header.create("grpc-encoding");
-    private static final HeaderValue GRPC_ENCODING_IDENTITY = GRPC_ENCODING.withValue("identity");
+    private static final HeaderValue GRPC_CONTENT_TYPE = Header.createCached(Header.CONTENT_TYPE, "application/grpc");
+    private static final HeaderValue GRPC_ENCODING_IDENTITY = Header.createCached("grpc-encoding", "identity");
 
     private final HttpPrologue prologue;
     private final Http2Headers headers;

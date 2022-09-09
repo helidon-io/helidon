@@ -33,7 +33,7 @@ class NettyRequestHeaders implements RequestHeaders {
     NettyRequestHeaders(HttpHeaders nettyHeaders) {
         WritableHeaders<?> hw = WritableHeaders.create();
         for (String name : nettyHeaders.names()) {
-            hw.set(Http.HeaderValue.create(Http.Header.create(name), nettyHeaders.getAll(name)));
+            hw.set(Http.Header.create(Http.Header.create(name), nettyHeaders.getAll(name)));
         }
         this.delegate = ServerRequestHeaders.create(hw);
     }

@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class ReroutingAndNextingTest {
-    private static final HeaderValue NEXTED_HEADER = Header.create("NEXTED").withValue("yes");
+    private static final HeaderValue NEXTED_HEADER = Header.create(Header.create("NEXTED"), "yes");
 
     private final Http1Client client;
 

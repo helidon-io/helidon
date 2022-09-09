@@ -117,7 +117,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         } else {
             entityBytes = entityBytes(entity);
         }
-        headers.setIfAbsent(HeaderValue.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
+        headers.setIfAbsent(Header.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
 
         Http2Headers http2Headers = prepareHeaders(headers);
         stream.write(http2Headers, entityBytes.length == 0);

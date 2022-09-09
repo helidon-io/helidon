@@ -51,7 +51,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final HeaderName STREAM_STATUS_NAME = Http.Header.create("stream-status");
     private static final HeaderName STREAM_RESULT_NAME = Http.Header.create("stream-result");
     private static final HeaderValue STREAM_TRAILERS =
-            HeaderValue.create(Http.Header.TRAILER, STREAM_STATUS_NAME.defaultCase()
+            Http.Header.create(Http.Header.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
     private final ConnectionContext ctx;
@@ -213,7 +213,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
         if (!headers.contains(Http.Header.CONTENT_LENGTH)) {
-            headers.set(HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(bytes.length)));
+            headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, String.valueOf(bytes.length)));
         }
 
         sendListener.headers(ctx, headers);
@@ -313,8 +313,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             if (isChunked || forcedChunked) {
                 // not optimized, we need to write trailers
-                trailers.set(STREAM_STATUS_NAME.withValue(status.get().code()));
-                trailers.set(STREAM_RESULT_NAME.withValue(streamResult.get()));
+                trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
+                trailers.set(STREAM_RESULT_NAME, streamResult.get());
                 BufferData buffer = BufferData.growing(128);
                 writeHeaders(trailers, buffer);
                 buffer.write('\r');        // "\r\n" - empty line after headers
@@ -383,7 +383,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(HeaderValue.create(Http.Header.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
+                headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
             isChunked = false;

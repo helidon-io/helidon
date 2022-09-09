@@ -160,8 +160,8 @@ public class CommentService implements Service {
     }
 
     private static final class CommentWriter implements MessageBodyWriter<List<Comment>> {
-        private static final Http.HeaderValue CONTENT_TYPE_UTF_8 = Http.HeaderValue.createCached(Http.Header.CONTENT_TYPE,
-                                                                                           HttpMediaType.PLAINTEXT_UTF_8.text());
+        private static final Http.HeaderValue CONTENT_TYPE_UTF_8 = Http.Header.createCached(Http.Header.CONTENT_TYPE,
+                                                                                            HttpMediaType.PLAINTEXT_UTF_8.text());
 
         @Override
         public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {

@@ -27,6 +27,7 @@ import java.util.Optional;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
@@ -77,7 +78,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
     }
 
     protected void send(OutputStream outputStream, WritableHeaders<?> headers, byte[] bytes) {
-        headers.set(Http.Header.CONTENT_LENGTH.withValue(true, false, String.valueOf(bytes.length)));
+        headers.set(Header.create(Header.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
 
         try (outputStream) {
             sendHeaders(outputStream, headers);
@@ -92,16 +93,18 @@ abstract class WriteablePartAbstract implements WriteablePart {
     void contentType(WritableHeaders<?> headers) {
         // we support form-data and byte-ranges, falling back to form data if unknown
         if (contentType().test(MediaTypes.MULTIPART_BYTERANGES)) {
-            headers.remove(Http.Header.CONTENT_DISPOSITION);
+            headers.remove(Header.CONTENT_DISPOSITION);
         } else {
-            if (!headers.contains(Http.Header.CONTENT_DISPOSITION)) {
+            if (!headers.contains(Header.CONTENT_DISPOSITION)) {
                 List<String> disposition = new LinkedList<>();
                 disposition.add("form-data");
                 disposition.add("name=\"" + URLEncoder.encode(name(), UTF_8) + "\"");
                 fileName().ifPresent(it -> disposition.add("filename=\"" + URLEncoder.encode(it, UTF_8) + "\""));
-                headers.setIfAbsent(Http.Header.CONTENT_DISPOSITION.withValue(String.join("; ", disposition)));
+                headers.setIfAbsent(Header.create(Header.CONTENT_DISPOSITION, String.join("; ", disposition)));
             }
         }
-        headers.setIfAbsent(Http.Header.CONTENT_TYPE.withValue(contentType().text()));
+        if (!headers.contains(Header.CONTENT_TYPE)) {
+            headers.set(Header.CONTENT_TYPE, contentType().text());
+        }
     }
 }

@@ -33,7 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ByteRangeRequestTest {
     @Test
     void testFromUntilEnd() {
-        HeaderValue header = Header.RANGE.withValue("bytes=49-");
+        HeaderValue header = Header.create(Header.RANGE, "bytes=49-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -48,7 +48,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testFromUntil() {
-        HeaderValue header = Header.RANGE.withValue("bytes=49-49");
+        HeaderValue header = Header.create(Header.RANGE, "bytes=49-49");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -63,7 +63,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testLast() {
-        HeaderValue header = Header.RANGE.withValue("bytes=-1");
+        HeaderValue header = Header.create(Header.RANGE, "bytes=-1");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -78,7 +78,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeMultiValue() {
-        HeaderValue header = Header.RANGE.withValue("bytes=-1", "bytes=47-48", "bytes=0-");
+        HeaderValue header = Header.create(Header.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -103,7 +103,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeSingleValue() {
-        HeaderValue header = Header.RANGE.withValue("bytes=-1, bytes=47-48, s bytes=0-");
+        HeaderValue header = Header.create(Header.RANGE, "bytes=-1, bytes=47-48, s bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 

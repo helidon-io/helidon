@@ -20,6 +20,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
@@ -52,7 +53,7 @@ class AccessLogFilterTest {
     private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "0";
     private static final long TIME_TAKEN_MICROS = 1140000;
-    private static final Http.HeaderValue REFERER_HEADER = Http.Header.REFERER.withValue("first", "second");
+    private static final Http.HeaderValue REFERER_HEADER = Header.create(Header.REFERER, "first", "second");
 
     @Test
     void testHelidonFormat() {
