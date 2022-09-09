@@ -174,7 +174,7 @@ public class FaultToleranceExtension implements Extension {
         final Config config = ConfigProvider.getConfig();
         Optional<Integer> priority = config.getOptionalValue(MP_FT_INTERCEPTOR_PRIORITY, Integer.class);
         priority.ifPresent(v -> event.configureAnnotatedType()
-                .remove(a -> a instanceof Priority)
+                .remove(Priority.class::isInstance)
                 .add(new LiteralPriority(v)));
     }
 

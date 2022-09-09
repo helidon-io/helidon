@@ -277,7 +277,7 @@ public class ServerCdiExtension implements Extension {
                         .forEach(c -> shared.register(Bindings.serviceAsContract(c).to(ParamConverterProvider.class)));
                 instances.stream()
                         .flatMap(i -> i.getSingletons().stream())
-                        .filter(s -> s instanceof ParamConverterProvider)
+                        .filter(ParamConverterProvider.class::isInstance)
                         .forEach(s -> shared.register(Bindings.service(s)));
             }
 
