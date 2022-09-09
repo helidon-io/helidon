@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
@@ -44,11 +46,14 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
+import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
 
 class ServerListener {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
+
+    private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
@@ -122,13 +127,15 @@ class ServerListener {
         if (!running) {
             return;
         }
-        // TODO for graceful shutdown, we should wait until existing channels close
         running = false;
         try {
+            // Attempt to wait until existing channels finish execution
+            shutdownExecutor(readerExecutor);
+            shutdownExecutor(sharedExecutor);
+
             serverSocket.close();
         } catch (IOException e) {
-            // todo handle this
-            e.printStackTrace();
+            LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
         serverThread.interrupt();
         closeFuture.join();
@@ -245,6 +252,8 @@ class ServerListener {
                                                     simpleHandlers);
 
                     readerExecutor.submit(handler);
+                } catch (RejectedExecutionException e) {
+                    LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
                     // we may get an SSL handshake errors, which should only fail one socket, not the listener
                     LOGGER.log(TRACE, "Failed to handle accepted socket", e);
@@ -268,4 +277,22 @@ class ServerListener {
         closeFuture.complete(null);
     }
 
+    /**
+     * Shutdown an executor by waiting for a period of time.
+     *
+     * @param executor executor to shut down
+     */
+    static void shutdownExecutor(ExecutorService executor) {
+        try {
+            boolean terminate = executor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+            if (!terminate) {
+                List<Runnable> running = executor.shutdownNow();
+                if (!running.isEmpty()) {
+                    LOGGER.log(INFO, running.size() + " channel tasks did not terminate gracefully");
+                }
+            }
+        } catch (InterruptedException e) {
+           LOGGER.log(INFO, "InterruptedException caught while shutting down channel tasks");
+        }
+    }
 }
