@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -370,7 +370,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             // @TestInstance(TestInstance.Lifecycle.PER_CLASS) to start correctly the container
             Class<?> testClass = extensionContext.getRequiredTestClass();
             TestInstance testClassAnnotation = testClass.getAnnotation(TestInstance.class);
-            if (testClassAnnotation!=null && testClassAnnotation.value().equals(TestInstance.Lifecycle.PER_CLASS)){
+            if (testClassAnnotation != null && testClassAnnotation.value().equals(TestInstance.Lifecycle.PER_CLASS)){
                 throw new RuntimeException("When a class is annotated with @HelidonTest, "
                         + "it is not compatible with @TestInstance(TestInstance.Lifecycle.PER_CLASS)"
                         + "annotation, as it is a Singleton CDI Bean.");
