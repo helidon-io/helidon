@@ -41,6 +41,7 @@
         <module>cors</module>
         <module>static-content</module>
         <module>tracing</module>
+        <module>context</module>
     </modules>
 
 </project>
