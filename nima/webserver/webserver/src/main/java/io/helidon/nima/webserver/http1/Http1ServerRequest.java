@@ -76,7 +76,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
      *
      * @param prologue
      * @param headers
-     * @param requestContext
+     * @param requestId
      * @param entitySupplier
      * @return
      */
@@ -84,14 +84,14 @@ abstract class Http1ServerRequest implements RoutingRequest {
                                      HttpPrologue prologue,
                                      ServerRequestHeaders headers,
                                      ContentDecoder decoder,
-                                     int requestContext,
+                                     int requestId,
                                      CountDownLatch entityReadLatch,
                                      Supplier<BufferData> entitySupplier) {
         return new Http1ServerRequestWithEntity(ctx,
                                                 prologue,
                                                 headers,
                                                 decoder,
-                                                requestContext,
+                                                requestId,
                                                 entityReadLatch,
                                                 entitySupplier);
     }
@@ -152,6 +152,11 @@ abstract class Http1ServerRequest implements RoutingRequest {
             writable = WritableHeaders.create(headers);
         }
         writable.set(header);
+    }
+
+    @Override
+    public int id() {
+        return requestId;
     }
 
     @Override

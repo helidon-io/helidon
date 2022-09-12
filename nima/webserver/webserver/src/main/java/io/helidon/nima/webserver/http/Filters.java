@@ -24,11 +24,12 @@ import io.helidon.common.http.HttpException;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ServerLifecycle;
 
 /**
  * Handler of HTTP filters.
  */
-public final class Filters {
+public final class Filters implements ServerLifecycle {
     private final ErrorHandlers errorHandlers;
     private final List<Filter> filters;
     private final boolean noFilters;
@@ -48,6 +49,16 @@ public final class Filters {
      */
     public static Filters create(ErrorHandlers errorHandlers, List<Filter> filters) {
         return new Filters(errorHandlers, filters);
+    }
+
+    @Override
+    public void beforeStart() {
+        filters.forEach(Filter::beforeStart);
+    }
+
+    @Override
+    public void afterStop() {
+        filters.forEach(Filter::afterStop);
     }
 
     /**

@@ -16,10 +16,12 @@
 
 package io.helidon.nima.webserver.http;
 
+import io.helidon.nima.webserver.ServerLifecycle;
+
 /**
  * HTTP filter.
  */
-public interface Filter {
+public interface Filter extends ServerLifecycle {
     /**
      * Handle a request.
      * If request processing should be terminated, do not call {@link FilterChain#proceed()}.
