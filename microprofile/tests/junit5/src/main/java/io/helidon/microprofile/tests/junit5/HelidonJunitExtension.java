@@ -55,6 +55,7 @@ import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -204,6 +205,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
     }
 
     private void validatePerClass() {
+
         Method[] methods = testClass.getMethods();
         for (Method method : methods) {
             if (method.getAnnotation(Test.class) != null) {
@@ -363,6 +365,17 @@ class HelidonJunitExtension implements BeforeAllCallback,
         // we need to start container before the test class is instantiated, to honor @BeforeAll that
         // creates a custom MP config
         if (container == null) {
+
+            // at this early stage the class should be checked whether it is annotated with
+            // @TestInstance(TestInstance.Lifecycle.PER_CLASS) to start correctly the container
+            Class<?> testClass = extensionContext.getRequiredTestClass();
+            TestInstance testClassAnnotation = testClass.getAnnotation(TestInstance.class);
+            if (testClassAnnotation!=null && testClassAnnotation.value().equals(TestInstance.Lifecycle.PER_CLASS)){
+                throw new RuntimeException("When a class is annotated with @HelidonTest, "
+                        + "it is not compatible with @TestInstance(TestInstance.Lifecycle.PER_CLASS)"
+                        + "annotation, as it is a Singleton CDI Bean.");
+            }
+
             startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
         }
 
