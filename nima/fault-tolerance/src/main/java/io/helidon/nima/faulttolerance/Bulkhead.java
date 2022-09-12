@@ -162,6 +162,12 @@ public interface Bulkhead extends FtHandler {
             return this;
         }
 
+        /**
+         * Add a queue listener to this bulkhead.
+         *
+         * @param listener a queue listener
+         * @return updated builder instance
+         */
         public Builder addQueueListener(QueueListener listener) {
             listeners.add(listener);
             return this;
