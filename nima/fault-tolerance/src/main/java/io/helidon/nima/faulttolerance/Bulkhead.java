@@ -16,11 +16,9 @@
 
 package io.helidon.nima.faulttolerance;
 
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
-
-import io.helidon.common.LazyValue;
 
 /**
  * Bulkhead protects a resource that cannot serve unlimited parallel
@@ -84,16 +82,40 @@ public interface Bulkhead extends FtHandler {
     }
 
     /**
+     * A Bulkhead listener for queueing operations.
+     */
+    interface QueueListener {
+
+        /**
+         * Called right before blocking on the internal semaphore's queue.
+         *
+         * @param supplier the supplier to be enqueued
+         * @param <T> type of value returned by supplier
+         */
+        default <T> void enqueueing(Supplier<? extends T> supplier) {
+        }
+
+        /**
+         * Called after semaphore is acquired and before supplier is called.
+         *
+         * @param supplier the supplier to execute
+         * @param <T> type of value returned by supplier
+         */
+        default <T> void dequeued(Supplier<? extends T> supplier) {
+        }
+    }
+
+    /**
      * Fluent API builder for {@link io.helidon.nima.faulttolerance.Bulkhead}.
      */
     class Builder implements io.helidon.common.Builder<Builder, Bulkhead> {
         private static final int DEFAULT_LIMIT = 10;
         private static final int DEFAULT_QUEUE_LENGTH = 10;
 
-        private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
         private int limit = DEFAULT_LIMIT;
         private int queueLength = DEFAULT_QUEUE_LENGTH;
         private String name = "Bulkhead-" + System.identityHashCode(this);
+        private List<QueueListener> listeners = new ArrayList<>();
 
         private Builder() {
         }
@@ -103,16 +125,6 @@ public interface Bulkhead extends FtHandler {
             return new BulkheadImpl(this);
         }
 
-        /**
-         * Configure executor service to use for executing tasks asynchronously.
-         *
-         * @param executor executor service supplier
-         * @return updated builder instance
-         */
-        public Builder executor(Supplier<? extends ExecutorService> executor) {
-            this.executor = LazyValue.create(Objects.requireNonNull(executor));
-            return this;
-        }
 
         /**
          * Maximal number of parallel requests going through this bulkhead.
@@ -150,6 +162,11 @@ public interface Bulkhead extends FtHandler {
             return this;
         }
 
+        public Builder addQueueListener(QueueListener listener) {
+            listeners.add(listener);
+            return this;
+        }
+
         int limit() {
             return limit;
         }
@@ -158,12 +175,12 @@ public interface Bulkhead extends FtHandler {
             return queueLength;
         }
 
-        LazyValue<? extends ExecutorService> executor() {
-            return executor;
-        }
-
         String name() {
             return name;
+        }
+
+        List<QueueListener> queueListeners() {
+            return listeners;
         }
     }
 }

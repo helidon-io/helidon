@@ -17,6 +17,7 @@
 package io.helidon.nima.faulttolerance;
 
 import java.lang.System.Logger.Level;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,11 +33,13 @@ class BulkheadImpl implements Bulkhead {
     private final AtomicLong callsAccepted = new AtomicLong(0L);
     private final AtomicLong callsRejected = new AtomicLong(0L);
     private final AtomicInteger enqueued = new AtomicInteger();
+    private final List<QueueListener> listeners;
 
     BulkheadImpl(Builder builder) {
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
         this.maxQueue = builder.queueLength();
+        this.listeners = builder.queueListeners();
     }
 
     @Override
@@ -46,7 +49,7 @@ class BulkheadImpl implements Bulkhead {
 
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
-
+        // execute immediately if semaphore can be acquired
         if (inProgress.tryAcquire()) {
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, name + " invoke immediate " + supplier);
@@ -62,7 +65,11 @@ class BulkheadImpl implements Bulkhead {
         }
         try {
             // block current thread until permit available
+            listeners.forEach(l -> l.enqueueing(supplier));
             inProgress.acquire();
+
+            // unblocked so we can proceed with execution
+            listeners.forEach(l -> l.dequeued(supplier));
             enqueued.decrementAndGet();
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, name + " invoking " + supplier);

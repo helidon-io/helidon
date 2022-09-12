@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import io.helidon.common.LogConfig;
 
@@ -41,6 +42,8 @@ class BulkheadTest {
 
     private static final long WAIT_TIMEOUT_MILLIS = 2000;
 
+    private final CountDownLatch enqueuedSubmitted = new CountDownLatch(1);
+
     @BeforeAll
     static void setupTest() {
         LogConfig.configureRuntime();
@@ -54,6 +57,12 @@ class BulkheadTest {
                 .limit(1)
                 .queueLength(1)
                 .name(name)
+                .addQueueListener(new Bulkhead.QueueListener() {
+                    @Override
+                    public <T> void enqueueing(Supplier<? extends T> supplier) {
+                        enqueuedSubmitted.countDown();
+                    }
+                })
                 .build();
 
         // Submit first inProgress task
@@ -68,11 +77,8 @@ class BulkheadTest {
 
         // Submit new task that should be queued
         Task enqueued = new Task(1);
-        CountDownLatch enqueuedSubmitted = new CountDownLatch(1);
-        CompletableFuture<Integer> enqueuedResult = Async.invokeStatic(() -> {
-            enqueuedSubmitted.countDown();
-            return bulkhead.invoke(enqueued::run);
-        });
+        CompletableFuture<Integer> enqueuedResult = Async.invokeStatic(
+                () -> bulkhead.invoke(enqueued::run));
 
         // Wait until previous task is "likely" queued
         if (!enqueuedSubmitted.await(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
