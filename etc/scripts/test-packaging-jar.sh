@@ -46,17 +46,17 @@ mvn ${MAVEN_ARGS} -e clean install
 #
 cd ${WS_DIR}/tests/integration/native-image/se-1
 # Classpath
-java -Dexit.on.started=! -jar target/helidon-tests-native-image-se-1.jar
+java -Dexit.on.started=! --enable-preview -jar target/helidon-tests-native-image-se-1.jar
 
 #
 # Run MP-1
 #
 cd ${WS_DIR}/tests/integration/native-image/mp-1
 # Classpath
-java -jar target/helidon-tests-native-image-mp-1.jar
+java --enable-preview -jar target/helidon-tests-native-image-mp-1.jar
 
 # Module Path
-java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
+java --enable-preview --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
   --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
 
 #
@@ -64,10 +64,10 @@ java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
 #
 cd ${WS_DIR}/tests/integration/native-image/mp-3
 # Classpath
-java -Dexit.on.started=! -jar target/helidon-tests-native-image-mp-3.jar
+java --enable-preview -Dexit.on.started=! -jar target/helidon-tests-native-image-mp-3.jar
 
 # Module Path
-java -Dexit.on.started=! \
+java --enable-preview -Dexit.on.started=! \
   --module-path target/helidon-tests-native-image-mp-3.jar:target/libs \
   --add-modules helidon.tests.nimage.quickstartmp \
   --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
