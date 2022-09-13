@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 
 /**
  * Point of access to {@link jakarta.ws.rs.client.ClientBuilder} to support Helidon features,
@@ -49,16 +48,16 @@ public final class JaxRsClient {
      * </tr>
      * <tr>
      *     <td>executor</td>
-     *     <td>{@link io.helidon.common.configurable.ThreadPoolSupplier#create(io.helidon.config.Config, String)}</td>
+     *     <td>{@link io.helidon.common.configurable.ThreadPoolSupplier#create(io.helidon.common.config.Config, String)}</td>
      *     <td>Default executor service to use for asynchronous operations. For configuration options
      *      of {@code executor}, please refer to
-     *      {@link io.helidon.common.configurable.ThreadPoolSupplier.Builder#config(io.helidon.config.Config)}</td>
+     *      {@link io.helidon.common.configurable.ThreadPoolSupplier.Builder#config(io.helidon.common.config.Config)}</td>
      * </tr>
      * </table>
      *
      * @param config configuration to use to configure JAX-RS clients defaults
      */
-    public static void configureDefaults(Config config) {
+    public static void configureDefaults(io.helidon.common.config.Config config) {
         EXECUTOR_SUPPLIER.set(ThreadPoolSupplier.create(config, "jaxrs-client-thread-pool"));
     }
 

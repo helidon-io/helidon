@@ -18,6 +18,7 @@ package io.helidon.common.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Immutable tree-structured configuration.
@@ -201,6 +202,17 @@ public interface Config {
      */
     <T> ConfigValue<T> as(Class<T> type);
 
+    /**
+     * Typed value as a {@link ConfigValue} created from factory method.
+     * To convert from String, you can use
+     * {@link #asString() config.asString()}{@link ConfigValue#as(java.util.function.Function) .as(Function)}.
+     *
+     * @param mapper method to create an instance from config
+     * @param <T>    type
+     * @return typed value
+     */
+    <T> ConfigValue<T> map(Function<Config, T> mapper);
+
     // shortcut methods
 
     /**
@@ -220,6 +232,53 @@ public interface Config {
      * @throws io.helidon.common.config.ConfigException in case the node is Type#MISSING.
      */
     ConfigValue<Map<String, String>> asMap() throws ConfigException;
+
+    /**
+     * String typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<String> asString() {
+        return as(String.class);
+    }
+
+    // shortcut methods
+
+    /**
+     * Boolean typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Boolean> asBoolean() {
+        return as(Boolean.class);
+    }
+
+    /**
+     * Integer typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Integer> asInt() {
+        return as(Integer.class);
+    }
+
+    /**
+     * Long typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Long> asLong() {
+        return as(Long.class);
+    }
+
+    /**
+     * Double typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Double> asDouble() {
+        return as(Double.class);
+    }
 
     /**
      * Object represents fully-qualified key of config node.

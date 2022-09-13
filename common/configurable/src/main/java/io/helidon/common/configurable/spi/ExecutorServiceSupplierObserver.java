@@ -15,7 +15,6 @@
  */
 package io.helidon.common.configurable.spi;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -23,19 +22,18 @@ import java.util.function.Supplier;
 /**
  * Behavior for observers of the various executor service suppliers.
  * <p>
- *     This component identifies suppliers to observers using:
- *     <ul>
- *         <li>the supplier itself,</li>
- *         <li>the supplier category (scheduled, server, ad-hoc), and</li>
- *         <li>the index of this supplier among suppliers in the same category.</li>
- *     </ul>
- *     Further, executor services furnished by the suppliers are identified to observers using:
- *     <ul>
- *         <li>the executor service itself, and</li>
- *         <li>the index of the executor service among those from the same supplier.</li>
- *     </ul>
- *     The consuming observers can use this identifying information however makes sense for them.
- *
+ * This component identifies suppliers to observers using:
+ * <ul>
+ *     <li>the supplier itself,</li>
+ *     <li>the supplier category (scheduled, server, ad-hoc), and</li>
+ *     <li>the index of this supplier among suppliers in the same category.</li>
+ * </ul>
+ * Further, executor services furnished by the suppliers are identified to observers using:
+ * <ul>
+ *     <li>the executor service itself, and</li>
+ *     <li>the index of the executor service among those from the same supplier.</li>
+ * </ul>
+ * The consuming observers can use this identifying information however makes sense for them.
  */
 public interface ExecutorServiceSupplierObserver {
 
@@ -43,10 +41,9 @@ public interface ExecutorServiceSupplierObserver {
      * Makes a supplier known to the observer and returns a supplier context for the supplier to use for future interactions
      * with the observer.
      *
-     * @param supplier the executor service supplier registering with the observer
-     * @param supplierIndex unique index across suppliers with the same name
+     * @param supplier         the executor service supplier registering with the observer
+     * @param supplierIndex    unique index across suppliers with the same name
      * @param supplierCategory supplier category for this supplier
-     *
      * @return the {@code SupplierObserverContext} for the supplier
      */
     SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
@@ -58,18 +55,17 @@ public interface ExecutorServiceSupplierObserver {
      * with the observer, using the {@link io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver.MethodInvocation}
      * abstraction for invoking methods to obtain metric values.
      *
-     * @param supplier the executor service supplier registering with the observer
-     * @param supplierIndex unique index across suppliers with the same name
-     * @param supplierCategory the category of supplier registering (e.g., scheduled, server, thread-pool)
+     * @param supplier          the executor service supplier registering with the observer
+     * @param supplierIndex     unique index across suppliers with the same name
+     * @param supplierCategory  the category of supplier registering (e.g., scheduled, server, thread-pool)
      * @param methodInvocations method invocation information for retrieving interesting information from the supplier's
      *                          executor services
-     *
      * @return the {@code SupplierObserverContext} for the supplier
      */
     SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                     int supplierIndex,
-                                                     String supplierCategory,
-                                                     List<MethodInvocation> methodInvocations);
+                                             int supplierIndex,
+                                             String supplierCategory,
+                                             List<MethodInvocation<?>> methodInvocations);
 
     /**
      * Context with which suppliers (or their surrogates) interact with observers.
@@ -80,7 +76,7 @@ public interface ExecutorServiceSupplierObserver {
          * Informs the observer which created the context of a new executor service created by the supplier.
          *
          * @param executorService the new executor service
-         * @param index unique index value for the executor service within its supplier
+         * @param index           unique index value for the executor service within its supplier
          */
         void registerExecutorService(ExecutorService executorService, int index);
 
@@ -95,10 +91,12 @@ public interface ExecutorServiceSupplierObserver {
     /**
      * Information about method invocations to retrieve interesting (e.g., metrics) values from an executor service.
      * <p>
-     *     Used for dealing with {@code ThreadPerTaskExecutor} executor services which might not exist in every JDK we support.
+     * Used for dealing with {@code ThreadPerTaskExecutor} executor services which might not exist in every JDK we support.
      * </p>
+     *
+     * @param <T> type of the provided metric (such as {@code Long})
      */
-    interface MethodInvocation {
+    interface MethodInvocation<T> extends Supplier<T> {
 
         /**
          * Returns a displayable name for the value.
@@ -115,17 +113,10 @@ public interface ExecutorServiceSupplierObserver {
         String description();
 
         /**
-         * Returns the method to invoke to retrieve the value.
-         *
-         * @return {@code Method} which returns the value.
-         */
-        Method method();
-
-        /**
          * Returns the data type of the interesting value.
          *
          * @return the type
          */
-        Class<?> type();
+        Class<T> type();
     }
 }

@@ -741,6 +741,11 @@ public interface Config extends io.helidon.common.config.Config {
      */
     <T> ConfigValue<T> as(Function<Config, T> mapper);
 
+    @Override
+    default <T> io.helidon.common.config.ConfigValue<T> map(Function<io.helidon.common.config.Config, T> mapper) {
+        return as(mapper::apply);
+    }
+
     // shortcut methods
 
     /**

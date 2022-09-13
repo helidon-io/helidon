@@ -53,7 +53,7 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
     public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
                                                     int supplierIndex,
                                                     String supplierCategory,
-                                                    List<MethodInvocation> methodInvocations) {
+                                                    List<MethodInvocation<?>> methodInvocations) {
         return registerSupplier(supplier, supplierIndex, supplierCategory);
     }
 

@@ -23,10 +23,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+
+import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
 
 /**
  * Supplier of a custom thread pool.
@@ -57,8 +59,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final int growthThreshold;
     private final int growthRate;
     private final ThreadPool.RejectionHandler rejectionHandler;
-    private final LazyValue<ExecutorService> lazyValue = LazyValue.create(() -> Contexts.wrap(getThreadPool()));
     private final boolean useVirtualThreads;
+    private final LazyValue<ExecutorService> lazyValue = LazyValue.create(() -> Contexts.wrap(getThreadPool()));
 
     private ThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -72,7 +74,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.growthThreshold = builder.growthThreshold;
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
-        this.useVirtualThreads = builder.useVirtualThreads || builder.virtualThreadsEnforced;
+        this.useVirtualThreads = builder.useVirtualThreads;
         ObserverManager.registerSupplier(this, name, "general", useVirtualThreads);
     }
 
@@ -89,7 +91,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * Load supplier from configuration.
      *
      * @param config config instance
-     * @param name thread pool name
+     * @param name   thread pool name
      * @return a new thread pool supplier configured from config
      */
     public static ThreadPoolSupplier create(Config config, String name) {
@@ -109,12 +111,25 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         return builder().name(name).build();
     }
 
+    @Override
+    public ExecutorService get() {
+        return lazyValue.get();
+    }
+
+    /**
+     * Returns size of core pool.
+     *
+     * @return size of core pool.
+     */
+    public int corePoolSize() {
+        return corePoolSize;
+    }
+
     ExecutorService getThreadPool() {
         if (useVirtualThreads) {
-            if (VirtualExecutorUtil.isVirtualSupported()) {
-                LOGGER.log(System.Logger.Level.TRACE, "Using unbounded virtual executor service for pool " + name);
-                return ObserverManager.registerExecutorService(this, VirtualExecutorUtil.executorService());
-            }
+            LOGGER.log(System.Logger.Level.TRACE, "Using unbounded virtual executor service for pool " + name);
+            return ObserverManager.registerExecutorService(this,
+                                                           new WrappedVirtualExecutor(newVirtualThreadPerTaskExecutor()));
         }
 
         ThreadPool result = ThreadPool.create(name,
@@ -134,20 +149,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         return ObserverManager.registerExecutorService(this, result);
     }
 
-    @Override
-    public ExecutorService get() {
-        return lazyValue.get();
-    }
-
-    /**
-     * Returns size of core pool.
-     *
-     * @return size of core pool.
-     */
-    public int corePoolSize() {
-        return corePoolSize;
-    }
-
     /**
      * A fluent API builder for {@link ThreadPoolSupplier}.
      */
@@ -165,7 +166,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private ThreadPool.RejectionHandler rejectionHandler = DEFAULT_REJECTION_POLICY;
         private String name;
         private boolean useVirtualThreads;
-        private boolean virtualThreadsEnforced;
 
         private Builder() {
         }
@@ -184,13 +184,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
 
             if (rejectionHandler == null) {
                 rejectionHandler = DEFAULT_REJECTION_POLICY;
-            }
-
-            if (virtualThreadsEnforced) {
-                if (!VirtualExecutorUtil.isVirtualSupported()) {
-                    throw new IllegalStateException("Virtual threads are required, yet not available on this JVM. "
-                                                            + "Please use a Loom build.");
-                }
             }
 
             return new ThreadPoolSupplier(this);
@@ -264,38 +257,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          */
         public Builder name(String name) {
             this.name = name;
-            return this;
-        }
-
-        /**
-         * The queue size above which pool growth will be considered if the pool is not fixed size.
-         *
-         * @param growthThreshold the growth threshold
-         * @return updated builder instance
-         */
-        @ConfiguredOption("256")
-        Builder growthThreshold(int growthThreshold) {
-            this.growthThreshold = growthThreshold;
-            return this;
-        }
-
-        /**
-         * The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100. The
-         * rate applies only when all of the following are true:
-         * <ul>
-         * <li>the pool size is below the maximum, and</li>
-         * <li>there are no idle threads, and</li>
-         * <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
-         * </ul>
-         * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
-         * tasks.
-         *
-         * @param growthRate the growth rate
-         * @return updated builder instance
-         */
-        @ConfiguredOption("5")
-        Builder growthRate(int growthRate) {
-            this.growthRate = growthRate;
             return this;
         }
 
@@ -431,21 +392,16 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             config.get("growth-rate").asInt().ifPresent(value -> {
                 warnExperimental("growth-rate");
                 growthRate(value);
-           });
-            config.get("virtual-threads").asBoolean().ifPresent(value -> {
-                warnExperimental("virtual-threads");
-                virtualIfAvailable(value);
             });
+            config.get("virtual-threads").asBoolean().ifPresent(this::virtualThreads);
+
             config.get("virtual-enforced").asBoolean().ifPresent(value -> {
-                warnExperimental("virtual-enforced");
-                virtualEnforced(value);
+                if (value) {
+                    // do not disable if virtual-threads is set to true
+                    virtualThreads(true);
+                }
             });
             return this;
-        }
-
-        private void warnExperimental(String key) {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
         }
 
         /**
@@ -455,10 +411,14 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param enforceVirtualThreads whether to enforce virtual threads, defaults to {@code false}
          * @return updated builder instance
          * @see #virtualIfAvailable(boolean)
+         * @deprecated use {@link #virtualThreads(boolean)}
          */
-        @ConfiguredOption(value = "false", experimental = true)
+        @ConfiguredOption(value = "false", deprecated = true)
+        @Deprecated(forRemoval = true, since = "4.0.0")
         public Builder virtualEnforced(boolean enforceVirtualThreads) {
-            this.virtualThreadsEnforced = enforceVirtualThreads;
+            if (enforceVirtualThreads) {
+                return virtualThreads(true);
+            }
             return this;
         }
 
@@ -471,11 +431,63 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *
          * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
          * @return updated builder instance
+         * @deprecated use {@link #virtualThreads(boolean)}
          */
-        @ConfiguredOption(key = "virtual-threads", value = "false", experimental = true)
+        @Deprecated(forRemoval = true, since = "4.0.0")
         public Builder virtualIfAvailable(boolean useVirtualThreads) {
             this.useVirtualThreads = useVirtualThreads;
             return this;
+        }
+
+        /**
+         * When configured to {@code true}, an unbounded virtual executor service (project Loom) will be used.
+         * <p>
+         * If enabled, all other configuration options of this executor service are ignored!
+         *
+         * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "false")
+        public Builder virtualThreads(boolean useVirtualThreads) {
+            this.useVirtualThreads = useVirtualThreads;
+            return this;
+        }
+
+        /**
+         * The queue size above which pool growth will be considered if the pool is not fixed size.
+         *
+         * @param growthThreshold the growth threshold
+         * @return updated builder instance
+         */
+        @ConfiguredOption("256")
+        Builder growthThreshold(int growthThreshold) {
+            this.growthThreshold = growthThreshold;
+            return this;
+        }
+
+        /**
+         * The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100. The
+         * rate applies only when all of the following are true:
+         * <ul>
+         * <li>the pool size is below the maximum, and</li>
+         * <li>there are no idle threads, and</li>
+         * <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
+         * </ul>
+         * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
+         * tasks.
+         *
+         * @param growthRate the growth rate
+         * @return updated builder instance
+         */
+        @ConfiguredOption("5")
+        Builder growthRate(int growthRate) {
+            this.growthRate = growthRate;
+            return this;
+        }
+
+        private void warnExperimental(String key) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                       String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
         }
     }
 }

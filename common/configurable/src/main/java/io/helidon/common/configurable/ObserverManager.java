@@ -16,7 +16,6 @@
 package io.helidon.common.configurable;
 
 import java.lang.System.Logger.Level;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -32,7 +31,7 @@ import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
 /**
  * Central coordination point between executor service suppliers and observers of them.
  * <p>
- *     Each executor service supplier should:
+ * Each executor service supplier should:
  *     <ul>
  *         <li>from its constructor, register with this class by invoking one of the
  *         {@code #registerSupplier} methods,</li>
@@ -57,21 +56,16 @@ class ObserverManager {
 
     private static final Map<ExecutorService, SupplierInfo> EXECUTOR_SERVICES = new ConcurrentHashMap<>();
 
-    // Defer building list until use to avoid loading problems if this JDK does not support ThreadPerTaskExecutor.
-    private static final LazyValue<List<ExecutorServiceSupplierObserver.MethodInvocation>> METRICS_RELATED_METHOD_INVOCATIONS =
-            LazyValue.create(() -> List.of(
-                    MethodInvocationImpl.create("Thread count", "thread-count", "threadCount")));
-
     private ObserverManager() {
     }
 
     /**
      * Registers a supplier which might provide thread-per-task thread pools.
      *
-     * @param supplier the supplier of {@code ExecutorService} instances
-     * @param supplierCategory category of the supplier (e.g., scheduled, server)
+     * @param supplier                the supplier of {@code ExecutorService} instances
+     * @param supplierCategory        category of the supplier (e.g., scheduled, server)
      * @param executorServiceCategory category of executor services the supplier creates (e.g., ad-hoc)
-     * @param useVirtualThreads whether virtual threads should be used
+     * @param useVirtualThreads       whether virtual threads should be used
      */
     static void registerSupplier(Supplier<? extends ExecutorService> supplier,
                                  String supplierCategory,
@@ -90,8 +84,8 @@ class ObserverManager {
     /**
      * Registers a supplier which will never use thread-per-task thread pools.
      *
-     * @param supplier the supplier of {@code ExecutorService} instances
-     * @param supplierCategory category of the supplier (e.g., server, scheduled)
+     * @param supplier                the supplier of {@code ExecutorService} instances
+     * @param supplierCategory        category of the supplier (e.g., server, scheduled)
      * @param executorServiceCategory category of thread pools which the supplier provides
      */
     static void registerSupplier(Supplier<? extends ExecutorService> supplier,
@@ -103,9 +97,9 @@ class ObserverManager {
     /**
      * Registers an executor service from a supplier.
      *
-     * @param supplier the supplier registering the executor service
+     * @param supplier        the supplier registering the executor service
      * @param executorService the executor service being registered
-     * @param <E> type of the executor service being registered
+     * @param <E>             type of the executor service being registered
      * @return the same executor service being registered
      * @throws IllegalStateException if the supplier has not previously registered itself
      */
@@ -121,9 +115,10 @@ class ObserverManager {
     /**
      * Unregisters a previously-registered executor service that is being shut down.
      * <p>
-     *     During production, the executor service would have been previously registered by a supplier. But during testing that
-     *     is not always the case.
+     * During production, the executor service would have been previously registered by a supplier. But during testing that
+     * is not always the case.
      * </p>
+     *
      * @param executorService the executor service being shut down
      */
     static void unregisterExecutorService(ExecutorService executorService) {
@@ -154,14 +149,6 @@ class ObserverManager {
         private final AtomicInteger nextThreadPoolIndex = new AtomicInteger(0);
         private final List<ExecutorServiceSupplierObserver.SupplierObserverContext> observerContexts;
 
-        private static SupplierInfo create(Supplier<? extends ExecutorService> supplier,
-                                           String executorServiceCategory,
-                                           String supplierCategory,
-                                           int supplierIndex,
-                                           boolean useVirtualThreads) {
-            return new SupplierInfo(supplier, supplierCategory, executorServiceCategory, supplierIndex, useVirtualThreads);
-        }
-
         private SupplierInfo(Supplier<? extends ExecutorService> supplier,
                              String supplierCategory,
                              String executorServiceCategory,
@@ -172,23 +159,7 @@ class ObserverManager {
             this.executorServiceCategory = executorServiceCategory;
             this.supplierIndex = supplierIndex;
             this.useVirtualThreads = useVirtualThreads;
-            observerContexts = collectObserverContexts();
-        }
-
-        private List<ExecutorServiceSupplierObserver.SupplierObserverContext> collectObserverContexts() {
-            return OBSERVERS.get()
-                    .stream()
-                    .map(observer ->
-                                 useVirtualThreads
-                                         ? observer.registerSupplier(supplier,
-                                                                     supplierIndex,
-                                                                     supplierCategory,
-                                                                     METRICS_RELATED_METHOD_INVOCATIONS.get())
-                                         : observer.registerSupplier(supplier,
-                                                                     supplierIndex,
-                                                                     supplierCategory))
-
-                    .collect(Collectors.toList());
+            this.observerContexts = collectObserverContexts();
         }
 
         void registerExecutorService(ExecutorService executorService) {
@@ -203,37 +174,63 @@ class ObserverManager {
                     .forEach(observer -> observer.unregisterExecutorService(executorService));
             EXECUTOR_SERVICES.remove(executorService);
         }
+
+        private static SupplierInfo create(Supplier<? extends ExecutorService> supplier,
+                                           String executorServiceCategory,
+                                           String supplierCategory,
+                                           int supplierIndex,
+                                           boolean useVirtualThreads) {
+            return new SupplierInfo(supplier, supplierCategory, executorServiceCategory, supplierIndex, useVirtualThreads);
+        }
+
+        private List<ExecutorServiceSupplierObserver.SupplierObserverContext> collectObserverContexts() {
+            return OBSERVERS.get()
+                    .stream()
+                    .map(observer ->
+                                 useVirtualThreads
+                                         ? observer.registerSupplier(supplier,
+                                                                     supplierIndex,
+                                                                     supplierCategory,
+                                                                     virtualThreadExecutorMethods(supplier))
+                                         : observer.registerSupplier(supplier,
+                                                                     supplierIndex,
+                                                                     supplierCategory))
+
+                    .collect(Collectors.toList());
+        }
+
+        private List<ExecutorServiceSupplierObserver.MethodInvocation<?>>
+        virtualThreadExecutorMethods(Supplier<? extends ExecutorService> supplier) {
+            return List.of(MethodInvocationImpl.create("Thread count",
+                                                       "thread-count",
+                                                       Long.class,
+                                                       () -> ((WrappedVirtualExecutor) supplier.get()).threads()),
+                           MethodInvocationImpl.create("In progress",
+                                                       "in-progress",
+                                                       Integer.class,
+                                                       () -> ((WrappedVirtualExecutor) supplier.get()).inProgress()));
+        }
     }
 
     /**
      * Encapsulation of information needed to invoke methods on {@code ThreadPerTaskExecutor} and to create metrics from the
      * returned values.
      */
-    private static class MethodInvocationImpl implements ExecutorServiceSupplierObserver.MethodInvocation {
+    private static class MethodInvocationImpl<T> implements ExecutorServiceSupplierObserver.MethodInvocation<T> {
         private final String displayName;
         private final String description;
-        private final Method method;
-        private final Class<?> type;
+        private final Supplier<T> method;
+        private final Class<T> type;
 
-        private static final LazyValue<ExecutorService> VIRTUAL_EXECUTOR_SERVICE = LazyValue
-                .create(VirtualExecutorUtil::executorService);
-
-        static MethodInvocationImpl create(String displayName, String description, String methodName)  {
-            ExecutorService executorService = VIRTUAL_EXECUTOR_SERVICE.get();
-            Method method = null;
-            try {
-                method = executorService.getClass().getDeclaredMethod(methodName);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-            return new MethodInvocationImpl(displayName, description, method);
-        }
-
-        MethodInvocationImpl(String displayName, String description, Method method) {
+        MethodInvocationImpl(String displayName, String description, Class<T> type, Supplier<T> method) {
             this.displayName = displayName;
             this.description = description;
             this.method = method;
-            this.type = method.getReturnType();
+            this.type = type;
+        }
+
+        static <T> MethodInvocationImpl<T> create(String displayName, String description, Class<T> type, Supplier<T> method) {
+            return new MethodInvocationImpl<>(displayName, description, type, method);
         }
 
         @Override
@@ -247,12 +244,12 @@ class ObserverManager {
         }
 
         @Override
-        public Method method() {
-            return method;
+        public T get() {
+            return method.get();
         }
 
         @Override
-        public Class<?> type() {
+        public Class<T> type() {
             return type;
         }
     }

@@ -47,9 +47,8 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
 
 /**
  * TLS configuration - common for server and client.
@@ -561,24 +560,23 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
          * @param config config on the node of SSL configuration
          * @return this builder
          */
-        public Builder config(Config config) {
+        public Builder config(io.helidon.common.config.Config config) {
             config.get("client-auth").asString().as(TlsClientAuth::valueOf).ifPresent(this::tlsClientAuth);
             config.get("private-key")
-                    .ifExists(it -> {
-                        KeyConfig keyConfig = KeyConfig.create(it);
+                    .map(KeyConfig::create)
+                    .ifPresent(keyConfig -> {
                         privateKey(keyConfig.privateKey().get());
                         privateKeyCertChain(keyConfig.certChain());
                     });
 
-            config.get("trust")
-                    .ifExists(it -> trustCertificates(KeyConfig.create(it).certs()));
+            config.get("trust").map(KeyConfig::create)
+                    .map(KeyConfig::certs)
+                    .ifPresent(this::trustCertificates);
 
             config.get("protocols").asList(String.class).ifPresent(this::enabledProtocols);
             config.get("session-cache-size").asInt().ifPresent(this::sessionCacheSize);
             config.get("cipher-suite").asList(String.class).ifPresent(this::enabledCipherSuites);
-            DeprecatedConfig.get(config, "session-timeout-seconds", "session-timeout")
-                    .asInt()
-                    .ifPresent(this::sessionTimeoutSeconds);
+            config.get("session-timeout-seconds").asInt().ifPresent(this::sessionTimeoutSeconds);
 
             config.get("enabled").asBoolean().ifPresent(this::enabled);
 

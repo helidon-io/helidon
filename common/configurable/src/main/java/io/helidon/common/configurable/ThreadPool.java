@@ -416,6 +416,13 @@ public class ThreadPool extends ThreadPoolExecutor {
     public static class RejectionHandler implements RejectedExecutionHandler {
         private final AtomicInteger rejections = new AtomicInteger();
 
+        /**
+         * Creates a new rejection handler that counts rejections when attempting to offer rejected tasks to
+         * thread pool executor.
+         */
+        protected RejectionHandler() {
+        }
+
         @Override
         public void rejectedExecution(Runnable task, ThreadPoolExecutor executor) {
 

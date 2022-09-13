@@ -88,6 +88,7 @@ class ConfigMetadataHandler {
      */
     private TypeMirror builderType;
     private TypeMirror configType;
+    private TypeMirror commonConfigType;
     private TypeMirror erasedListType;
     private TypeMirror erasedIterableType;
     private TypeMirror erasedSetType;
@@ -97,6 +98,17 @@ class ConfigMetadataHandler {
      * Public constructor required for service loader.
      */
     ConfigMetadataHandler() {
+    }
+
+    static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
+        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
+            return typeElement.getEnclosedElements()
+                    .stream()
+                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
+                    .map(element -> new AllowedValue(element.toString(), javadoc(elementUtils.getDocComment(element))))
+                    .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     synchronized void init(ProcessingEnvironment processingEnv) {
@@ -109,7 +121,15 @@ class ConfigMetadataHandler {
         // get the types
         configuredElement = elementUtils.getTypeElement(CONFIGURED_CLASS);
         builderType = elementUtils.getTypeElement("io.helidon.common.Builder").asType();
-        configType = elementUtils.getTypeElement("io.helidon.config.Config").asType();
+        TypeElement configTypeElement = elementUtils.getTypeElement("io.helidon.config.Config");
+        if (configTypeElement != null) {
+            configType = configTypeElement.asType();
+        }
+        TypeElement commonConfigTypeElement = elementUtils.getTypeElement("io.helidon.common.config.Config");
+        if (commonConfigTypeElement != null) {
+            commonConfigType = commonConfigTypeElement.asType();
+        }
+
         erasedListType = typeUtils.erasure(elementUtils.getTypeElement(List.class.getName()).asType());
         erasedSetType = typeUtils.erasure(elementUtils.getTypeElement(Set.class.getName()).asType());
         erasedIterableType = typeUtils.erasure(elementUtils.getTypeElement(Iterable.class.getName()).asType());
@@ -125,6 +145,62 @@ class ConfigMetadataHandler {
             e.printStackTrace();
             return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    List<AnnotationMirror> findConfiguredOptionAnnotations(ExecutableElement element) {
+        Optional<AnnotationMirror> annotation = findAnnotation(element, CONFIGURED_OPTIONS_CLASS);
+
+        if (annotation.isPresent()) {
+            return findValue(annotation.get(), "value", List.class, List.of());
+        }
+
+        annotation = findAnnotation(element, CONFIGURED_OPTION_CLASS);
+
+        return annotation.map(List::of)
+                .orElseGet(List::of);
+    }
+
+    /*
+    Method name is camel case (such as maxInitialLineLength)
+    result is dash separated and lower cased (such as max-initial-line-length)
+     */
+    String toConfigKey(String methodName) {
+        StringBuilder result = new StringBuilder(methodName.length() + 5);
+
+        char[] chars = methodName.toCharArray();
+        for (char aChar : chars) {
+            if (Character.isUpperCase(aChar)) {
+                if (result.length() == 0) {
+                    result.append(Character.toLowerCase(aChar));
+                } else {
+                    result.append('-')
+                            .append(Character.toLowerCase(aChar));
+                }
+            } else {
+                result.append(aChar);
+            }
+        }
+
+        return result.toString();
+    }
+
+    private static String javadoc(String docComment) {
+        if (null == docComment) {
+            return "";
+        }
+
+        String javadoc = docComment;
+        int index = javadoc.indexOf("@param");
+        if (index > -1) {
+            javadoc = docComment.substring(0, index);
+        }
+        // replace all {@code xxx} with 'xxx'
+        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
+        // replace all {@link ...} with just the name
+        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
+
+        return javadoc.trim();
     }
 
     private boolean doProcess(RoundEnvironment roundEnv) {
@@ -392,8 +468,10 @@ class ConfigMetadataHandler {
                 if (typeUtils.isSameType(typeElement.asType(), method.getReturnType())) {
                     validMethods.add(method);
                     List<? extends VariableElement> parameters = method.getParameters();
-                    if (parameters.size() == 1 && typeUtils.isSameType(parameters.get(0).asType(), configType)) {
-                        configCreator = method;
+                    if (parameters.size() == 1) {
+                        if (isConfigType(parameters.get(0).asType())) {
+                            configCreator = method;
+                        }
                     }
                     isTargetType = true;
                 }
@@ -485,6 +563,15 @@ class ConfigMetadataHandler {
         }
     }
 
+    private boolean isConfigType(TypeMirror typeMirror) {
+        if (configType != null && typeUtils.isSameType(typeMirror, configType)) {
+            return true;
+        } else if (commonConfigType != null && typeUtils.isSameType(typeMirror, commonConfigType)) {
+            return true;
+        }
+        return false;
+    }
+
     private String findBuildMethodTarget(TypeElement typeElement) {
         return elementUtils.getAllMembers(typeElement)
                 .stream()
@@ -521,7 +608,7 @@ class ConfigMetadataHandler {
                     if (parameters.size() == 1) {
                         VariableElement parameter = parameters.iterator().next();
                         // public static Me create(...)
-                        return typeUtils.isSameType(configType, parameter.asType());
+                        return isConfigType(parameter.asType());
                     }
                     return false;
                 });
@@ -640,24 +727,6 @@ class ConfigMetadataHandler {
         return annotationValue;
     }
 
-    private static String javadoc(String docComment) {
-        if (null == docComment) {
-            return "";
-        }
-
-        String javadoc = docComment;
-        int index = javadoc.indexOf("@param");
-        if (index > -1) {
-            javadoc = docComment.substring(0, index);
-        }
-        // replace all {@code xxx} with 'xxx'
-        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
-        // replace all {@link ...} with just the name
-        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
-
-        return javadoc.trim();
-    }
-
     private void storeMetadata() {
         try (PrintWriter metaWriter = new PrintWriter(filer.createResource(StandardLocation.CLASS_OUTPUT,
                                                                            "",
@@ -692,55 +761,6 @@ class ConfigMetadataHandler {
         return e.getClass().getName() + ": " + e.getMessage();
     }
 
-    @SuppressWarnings("unchecked")
-    List<AnnotationMirror> findConfiguredOptionAnnotations(ExecutableElement element) {
-        Optional<AnnotationMirror> annotation = findAnnotation(element, CONFIGURED_OPTIONS_CLASS);
-
-        if (annotation.isPresent()) {
-            return findValue(annotation.get(), "value", List.class, List.of());
-        }
-
-        annotation = findAnnotation(element, CONFIGURED_OPTION_CLASS);
-
-        return annotation.map(List::of)
-                .orElseGet(List::of);
-    }
-
-    /*
-    Method name is camel case (such as maxInitialLineLength)
-    result is dash separated and lower cased (such as max-initial-line-length)
-     */
-    String toConfigKey(String methodName) {
-        StringBuilder result = new StringBuilder(methodName.length() + 5);
-
-        char[] chars = methodName.toCharArray();
-        for (char aChar : chars) {
-            if (Character.isUpperCase(aChar)) {
-                if (result.length() == 0) {
-                    result.append(Character.toLowerCase(aChar));
-                } else {
-                    result.append('-')
-                            .append(Character.toLowerCase(aChar));
-                }
-            } else {
-                result.append(aChar);
-            }
-        }
-
-        return result.toString();
-    }
-
-    static List<AllowedValue> allowedValues(Elements elementUtils, TypeElement typeElement) {
-        if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
-            return typeElement.getEnclosedElements()
-                    .stream()
-                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                    .map(element -> new AllowedValue(element.toString(), javadoc(elementUtils.getDocComment(element))))
-                    .collect(Collectors.toList());
-        }
-        return List.of();
-    }
-
     private List<AllowedValue> allowedValues(ConfiguredOptionData annotation, String type) {
         if (type.equals(annotation.type) || !annotation.allowedValues.isEmpty()) {
             // this was already processed due to an explicit type defined in the annotation
@@ -772,6 +792,14 @@ class ConfigMetadataHandler {
             this.description = description;
         }
 
+        String value() {
+            return value;
+        }
+
+        String description() {
+            return description;
+        }
+
         private static AllowedValue create(AnnotationMirror annotationMirror) {
             AllowedValue result = new AllowedValue();
             Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues = annotationMirror.getElementValues();
@@ -788,14 +816,6 @@ class ConfigMetadataHandler {
             }
 
             return result;
-        }
-
-        String value() {
-            return value;
-        }
-
-        String description() {
-            return description;
         }
     }
 
