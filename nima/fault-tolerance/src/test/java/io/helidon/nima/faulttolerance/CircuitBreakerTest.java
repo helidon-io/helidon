@@ -25,6 +25,9 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CircuitBreakerTest {
+
+    private static final long BUSY_WAIT_SLEEP = 100;
+
     @Test
     void testCircuitBreaker() throws InterruptedException {
         CircuitBreaker breaker = CircuitBreaker.builder()
@@ -52,7 +55,7 @@ class CircuitBreakerTest {
         // need to wait until half open
         int count = 0;
         while (count++ < 10) {
-            Thread.sleep(50);
+            Thread.sleep(BUSY_WAIT_SLEEP);
             if (breaker.state() == CircuitBreaker.State.HALF_OPEN) {
                 break;
             }

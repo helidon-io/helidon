@@ -18,23 +18,16 @@ package io.helidon.nima.faulttolerance;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FaultToleranceTest {
 
     @Test
-    @Disabled
-        // TODO fix
-    void testCustomCombination() throws ExecutionException, InterruptedException, TimeoutException {
+    void testCustomCombination() {
         CircuitBreaker breaker = CircuitBreaker.builder()
                 .build();
 
@@ -46,34 +39,32 @@ class FaultToleranceTest {
         FtHandlerTyped<String> faultTolerance = FaultTolerance.builder()
                 .addBreaker(breaker)
                 .addBulkhead(bulkhead)
-                .addTimeout(Timeout.builder().timeout(Duration.ofMillis(100)).build())
+                .addTimeout(Timeout.builder().timeout(Duration.ofMillis(1000)).build())
                 .addFallback(Fallback.<String>builder()
-                                     .fallback(this::fallback)
-                                     .build())
+                        .fallback(this::fallback)
+                        .build())
                 .build();
 
+        // First call should not open breaker and execute call back
         String result = faultTolerance.invoke(this::primary);
-        assertThat(result, is(MyException.class.getName()));
+        assertThat(result, is(MyException.class.getName()));        // callback called
 
+        // Manually open breaker
         breaker.state(CircuitBreaker.State.OPEN);
+        assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
+
+        // Next call should fail on breaker but still execute fallback
         result = faultTolerance.invoke(this::primary);
         assertThat(result, is(CircuitBreakerOpenException.class.getName()));
 
+        // Manually close breaker
         breaker.state(CircuitBreaker.State.CLOSED);
+        assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
 
+        // Second call forces timeout by calling a supplier that blocks indefinitely
         Manual m = new Manual();
-        CompletableFuture<String> mFuture = CompletableFuture.supplyAsync(() -> bulkhead.invoke(m::call));
-
-        assertThrows(BulkheadException.class, () -> faultTolerance.invoke(this::primary));
-
-        m.future.complete("result");
-        mFuture.get(1, TimeUnit.SECONDS);
-
-        //        m = new Manual();
-        //        result = faultTolerance.invoke(m::call);
-        //        assertThat(result.await(1, TimeUnit.SECONDS), is(TimeoutException.class.getName()));
-        //
-        //        m.future.complete("hu");
+        result = faultTolerance.invoke(m::call);
+        assertThat(result, is(TimeoutException.class.getName()));   // callback called
     }
 
     private String primary() {
@@ -81,6 +72,9 @@ class FaultToleranceTest {
     }
 
     private String fallback(Throwable throwable) {
+        if (throwable instanceof RuntimeException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
+        }
         return throwable.getClass().getName();
     }
 
@@ -89,7 +83,7 @@ class FaultToleranceTest {
 
         private String call() {
             try {
-                return future.get();
+                return future.get();        // blocks indefinitely
             } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
@@ -97,7 +91,5 @@ class FaultToleranceTest {
     }
 
     private static class MyException extends RuntimeException {
-
     }
-
 }
