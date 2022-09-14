@@ -48,6 +48,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.UriHelper;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -386,9 +387,13 @@ class ClientRequestImpl implements Http1ClientRequest {
             if (connection == null) {
                 connection = new Http1ClientConnection(channelOptions,
                                                        connectionQueue,
-                                                       uri.host(),
-                                                       uri.port(),
-                                                       tls).connect();
+                                                       new ConnectionKey(uri.scheme(),
+                                                                         uri.authority(),
+                                                                         uri.host(),
+                                                                         uri.port(),
+                                                                         tls,
+                                                                         client.dnsResolver(),
+                                                                         client.dnsAddressLookup())).connect();
             } else {
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
@@ -397,7 +402,13 @@ class ClientRequestImpl implements Http1ClientRequest {
                 }
             }
         } else {
-            connection = new Http1ClientConnection(channelOptions, uri.host(), uri.port(), tls).connect();
+            connection = new Http1ClientConnection(channelOptions, new ConnectionKey(uri.scheme(),
+                                                                                     uri.authority(),
+                                                                                     uri.host(),
+                                                                                     uri.port(),
+                                                                                     tls,
+                                                                                     client.dnsResolver(),
+                                                                                     client.dnsAddressLookup())).connect();
         }
         return connection;
     }

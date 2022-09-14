@@ -23,6 +23,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.http1.Http1;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.spi.DnsResolver;
 import io.helidon.nima.webclient.spi.Protocol;
 
 /**
@@ -61,6 +62,8 @@ public interface WebClient {
         private URI baseUri;
         private Tls tls;
         private SocketOptions channelOptions;
+        private DnsResolver dnsResolver;
+        private DnsAddressLookup dnsAddressLookup;
 
         /**
          * Common builder base for all the client builder.
@@ -127,6 +130,28 @@ public interface WebClient {
         }
 
         /**
+         * DNS resolver to be used by this client.
+         *
+         * @param dnsResolver dns resolver
+         * @return updated builder
+         */
+        public B dnsResolver(DnsResolver dnsResolver) {
+            this.dnsResolver = dnsResolver;
+            return (B) this;
+        }
+
+        /**
+         * DNS address lookup preferences to be used by this client.
+         *
+         * @param dnsAddressLookup dns address lookup strategy
+         * @return updated builder
+         */
+        public B dnsAddressLookup(DnsAddressLookup dnsAddressLookup) {
+            this.dnsAddressLookup = dnsAddressLookup;
+            return (B) this;
+        }
+
+        /**
          * Channel options.
          *
          * @return socket options
@@ -152,5 +177,14 @@ public interface WebClient {
         URI baseUri() {
             return baseUri;
         }
+
+        DnsResolver dnsResolver() {
+            return dnsResolver;
+        }
+
+        DnsAddressLookup dnsAddressLookup() {
+            return dnsAddressLookup;
+        }
+
     }
 }

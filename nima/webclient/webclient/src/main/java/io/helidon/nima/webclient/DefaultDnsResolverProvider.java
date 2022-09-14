@@ -14,12 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.http2.webclient;
+package io.helidon.nima.webclient;
 
-import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webclient.spi.DnsResolver;
+import io.helidon.nima.webclient.spi.DnsResolverProvider;
 
-record ConnectionKey(String scheme,
-                     String authority,
-                     String host,
-                     int port,
-                     Tls tls) { }
+/**
+ * Provider of the {@link DefaultDnsResolver} instance.
+ */
+public class DefaultDnsResolverProvider implements DnsResolverProvider {
+
+    @Override
+    public String resolverName() {
+        return "default";
+    }
+
+    @Override
+    public DnsResolver createDnsResolver() {
+        return new DefaultDnsResolver();
+    }
+}
