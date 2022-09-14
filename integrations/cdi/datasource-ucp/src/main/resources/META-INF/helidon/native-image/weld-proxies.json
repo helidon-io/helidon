@@ -2,6 +2,7 @@
     {
         "bean-class": "io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension",
         "ifaces": [
+            "io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension",
             "oracle.ucp.jdbc.PoolDataSource",
             "javax.sql.DataSource"
         ]
