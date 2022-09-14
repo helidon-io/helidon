@@ -51,7 +51,7 @@ public final class RoundRobinDnsResolver implements DnsResolver {
                 if (processed.length == 0) {
                     throw new RuntimeUnknownHostException("No IP version " + dnsAddressLookup.name() + " found for host " + host);
                 }
-                return new HostnameAddresses(processed);
+                return new HostnameAddresses(new AtomicInteger(), processed);
             } catch (UnknownHostException e) {
                 throw new RuntimeUnknownHostException(e);
             }
@@ -60,11 +60,6 @@ public final class RoundRobinDnsResolver implements DnsResolver {
     }
 
     private record HostnameAddresses(AtomicInteger count, InetAddress[] addresses) {
-
-        public HostnameAddresses(InetAddress[] addresses) {
-            this(new AtomicInteger(), addresses);
-        }
-
     }
 
 }
