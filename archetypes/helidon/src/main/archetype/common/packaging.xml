@@ -29,34 +29,37 @@
                      default="false"
                      optional="true">
                 <output>
+                    <templates engine="mustache" transformations="mustache">
+                        <directory>files</directory>
+                        <includes>
+                            <include>app.yaml.mustache</include>
+                        </includes>
+                    </templates>
                     <model>
-                        <list key="yaml-section">
-                            <value template="mustache"><![CDATA[
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: {{artifactId}}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{artifactId}}
-  template:
-    metadata:
-      labels:
-        app: {{artifactId}}
-        version: v1
-    spec:
-      imagePullSecrets:
-      - name: ocirsecret
-      containers:
-      - name: {{artifactId}}
-        image: {{artifactId}}
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-]]></value>
-                        </list>
+                    <list key="readme-sections">
+                    <value order="50" template="mustache">
+                        <![CDATA[
+## Deploy the application to Kubernetes
+
+```
+kubectl cluster-info                        # Verify which cluster
+kubectl get pods                            # Verify connectivity to cluster
+kubectl create -f app.yaml                  # Deploy application
+kubectl get pods                            # Wait for quickstart pod to be RUNNING
+kubectl get service  {{artifactId}}         # Get service info
+```
+
+Note the PORTs. You can now exercise the application as you did before but use the second
+port number (the NodePort) instead of 8080.
+
+After you’re done, cleanup.
+
+```
+kubectl delete -f app.yaml
+```
+                                ]]>
+                    </value>
+                    </list>
                     </model>
                 </output>
             </boolean>
@@ -66,35 +69,12 @@ spec:
                      default="false"
                      optional="true">
                 <output>
-                    <model>
-                        <list key="yaml-section">
-                            <value template="mustache"><![CDATA[
-kind: Component
-apiVersion: core.oam.dev/v1alpha2
-metadata:
-  name: {{artifactId}}
-spec:
-  workload:
-    apiVersion: oam.verrazzano.io/v1alpha1
-    kind: VerrazzanoHelidonWorkload
-    metadata:
-      name: hello-helidon-workload
-      labels:
-        app: hello-helidon
-  spec:
-      deploymentTemplate:
-        metadata:
-          name: hello-helidon-deployment
-        podSpec:
-          containers:
-            - name: hello-helidon-container
-              image : {{artifactId}}
-              ports:
-                - containerPort: 8080
-                  name: http
-]]></value>
-                        </list>
-                    </model>
+                    <templates engine="mustache" transformations="mustache">
+                        <directory>files</directory>
+                        <includes>
+                            <include>v8o.yaml.mustache</include>
+                        </includes>
+                    </templates>
                 </output>
             </boolean>
         </inputs>
