@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.common;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for class {@link GenericTypeUtil}.
@@ -34,14 +34,14 @@ public class GenericTypeUtilTest{
   public void testRawClass() {
       Class<?> claszResult = GenericTypeUtil.rawClass(Object.class);
 
-      assertFalse(claszResult.isInterface());
-      assertFalse(claszResult.isArray());
-      assertEquals("class java.lang.Object", claszResult.toString());
-      assertEquals(1, claszResult.getModifiers());
-      assertFalse(claszResult.isEnum());
-      assertFalse(claszResult.isSynthetic());
-      assertFalse(claszResult.isAnnotation());
-      assertFalse(claszResult.isPrimitive());
+      assertThat(claszResult.isInterface(), is(false));
+      assertThat(claszResult.isArray(), is(false));
+      assertThat(claszResult.toString(), is("class java.lang.Object"));
+      assertThat(claszResult.getModifiers(), is(1));
+      assertThat(claszResult.isEnum(), is(false));
+      assertThat(claszResult.isSynthetic(), is(false));
+      assertThat(claszResult.isAnnotation(), is(false));
+      assertThat(claszResult.isPrimitive(), is(false));
   }
 
   @Test
