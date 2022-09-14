@@ -17,8 +17,7 @@ import {{.}};
 import {{.}};
 {{/MainTest-static-imports}}
 
-@TestMethodOrder(MethodOrderer.MethodName.class)
-public class MainTest {
+class MainTest {
 
 {{#MainTest-static-fields}}
 {{.}}
@@ -28,7 +27,7 @@ public class MainTest {
     private static WebClient webClient;
 
     @BeforeAll
-    public static void startTheServer() {
+    static void startTheServer() {
         webServer = Main.startServer().await();
 
         webClient = WebClient.builder()
@@ -40,7 +39,7 @@ public class MainTest {
     }
 
     @AfterAll
-    public static void stopServer() throws Exception {
+    static void stopServer() throws ExecutionException, InterruptedException, TimeoutException {
         if (webServer != null) {
             webServer.shutdown()
                     .toCompletableFuture()
