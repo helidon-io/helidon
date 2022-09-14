@@ -13,44 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.data.pokemons.model;
+package io.helidon.examples.data.pokemons.utils;
 
+import io.helidon.common.reactive.Collector;
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 
-/**
- * Pokemon type entity.
- */
-@Entity
-public class Type {
+public final class JsonArrayCollector implements Collector<JsonObject, JsonArray> {
 
-    @Id
-    private int id;
-    private String name;
+    private final JsonArrayBuilder targetArrayBuilder;
 
-    public int getId() {
-        return id;
+    public JsonArrayCollector() {
+        this.targetArrayBuilder = Json.createArrayBuilder();
     }
 
-    public void setId(int id) {
-        this.id = id;
+
+    @Override
+    public void collect(JsonObject item) {
+        targetArrayBuilder.add(item);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public JsonObject toJson() {
-        return Json.createObjectBuilder()
-                .add("id", id)
-                .add("name", name)
-                .build();
+    @Override
+    public JsonArray value() {
+        return targetArrayBuilder.build();
     }
 
 }

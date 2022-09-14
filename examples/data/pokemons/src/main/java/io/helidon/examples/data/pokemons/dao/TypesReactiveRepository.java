@@ -15,19 +15,17 @@
  */
 package io.helidon.examples.data.pokemons.dao;
 
-import io.helidon.data.annotation.Repository;
-import io.helidon.data.repository.CrudRepository;
+import io.helidon.data.repository.reactive.ReactiveCrudRepository;
 import io.helidon.examples.data.pokemons.model.Type;
-import jakarta.persistence.EntityManager;
+import io.helidon.reactive.dbclient.DbClient;
 
-@Repository
-public abstract class TypesRepository implements CrudRepository<Type, Integer>  {
+public abstract class TypesReactiveRepository implements ReactiveCrudRepository<Type, Integer> {
 
     // TODO: Initialization - manual for SE/Pico, @Inject for MP
-    private final EntityManager entityManager;
+    private final DbClient dbClient;
 
-    public TypesRepository(EntityManager entityManager) {
-        this.entityManager = entityManager;
+    public TypesReactiveRepository(DbClient dbClient) {
+        this.dbClient = dbClient;
     }
 
 }

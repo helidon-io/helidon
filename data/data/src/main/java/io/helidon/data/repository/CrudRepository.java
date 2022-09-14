@@ -15,9 +15,9 @@
  */
 package io.helidon.data.repository;
 
-import java.util.Optional;
-
 import io.helidon.data.RepositoryException;
+
+import java.util.Optional;
 
 // TODO: Blocking operations. Consider marking interface woth some @Blocking annotation.
 /**

@@ -15,33 +15,30 @@
  */
 package io.helidon.examples.data.pokemons.dao;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.data.annotation.Query;
 import io.helidon.data.annotation.QueryMethod;
 import io.helidon.data.annotation.Repository;
-import io.helidon.data.repository.CrudRepository;
+import io.helidon.data.repository.reactive.ReactiveCrudRepository;
 import io.helidon.examples.data.pokemons.model.Pokemon;
-import jakarta.persistence.EntityManager;
+import io.helidon.reactive.dbclient.DbClient;
 
-import java.util.List;
-
-// Micronaut marks those interfaces/abstract classes with annotation. It may help with processing.
-// But it's not mandatory - all have GenericRepository as parent interface.
 @Repository
-public abstract class PokemonRepository implements CrudRepository<Pokemon, Integer> {
+public abstract class PokemonReactiveRepository implements ReactiveCrudRepository<Pokemon, Integer> {
 
     // TODO: Initialization - manual for SE/Pico, @Inject for MP
-    private final EntityManager entityManager;
+    private final DbClient dbClient;
 
-    public PokemonRepository(EntityManager entityManager) {
-        this.entityManager = entityManager;
+    public PokemonReactiveRepository(DbClient dbClient) {
+        this.dbClient = dbClient;
     }
 
     // Query defined by method name
     @QueryMethod
-    public abstract List<Pokemon> findByName(String name);
+    public abstract Multi<Pokemon> findByName(String name);
 
     // Query defined by annotation
     @Query("SELECT p FROM Pokemon p WHERE p.type.name = :typeName")
-    public abstract List<Pokemon> pokemonsByType(String typeName);
+    public abstract Multi<Pokemon> pokemonsByType(String typeName);
 
 }
