@@ -50,8 +50,8 @@ class Http1ClientConnection implements ClientConnection {
     private final Queue<Http1ClientConnection> connectionQueue;
     private final ConnectionKey connectionKey;
     private final io.helidon.common.socket.SocketOptions options;
+    private final boolean keepAlive;
     private String channelId;
-    private boolean keepAlive;
     private Socket socket;
     private HelidonSocket helidonSocket;
     private DataReader reader;
@@ -66,6 +66,7 @@ class Http1ClientConnection implements ClientConnection {
                           ConnectionKey connectionKey) {
         this.options = options;
         this.connectionQueue = connectionQueue;
+        this.keepAlive = (connectionQueue != null);
         this.connectionKey = connectionKey;
     }
 
