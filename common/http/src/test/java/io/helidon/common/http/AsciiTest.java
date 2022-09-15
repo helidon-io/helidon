@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@ package io.helidon.common.http;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for class {@link Ascii}.
@@ -31,19 +30,19 @@ public class AsciiTest {
 
     @Test
     public void testIsLowerCaseOne() {
-        assertFalse(Ascii.isLowerCase('{'));
+        assertThat(Ascii.isLowerCase('{'), is(false));
     }
 
 
     @Test
     public void testIsLowerCaseReturningTrue() {
-        assertTrue(Ascii.isLowerCase('o'));
+        assertThat(Ascii.isLowerCase('o'), is(true));
     }
 
 
     @Test
     public void testIsLowerCaseTwo() {
-        assertFalse(Ascii.isLowerCase('\"'));
+        assertThat(Ascii.isLowerCase('\"'), is(false));
     }
 
 
@@ -51,19 +50,19 @@ public class AsciiTest {
     public void testToLowerCaseTakingCharSequenceOne() {
         StringBuilder stringBuilder = new StringBuilder("uhho^s} b'jdwtym");
 
-        assertEquals("uhho^s} b'jdwtym", Ascii.toLowerCase(stringBuilder));
+        assertThat(Ascii.toLowerCase(stringBuilder), is("uhho^s} b'jdwtym"));
     }
 
 
     @Test
     public void testToLowerCaseTakingCharSequenceTwo() {
-        assertEquals("uhho^s} b'jdwtym", Ascii.toLowerCase((CharSequence) "uHHO^S} b'jDwTYM"));
+        assertThat(Ascii.toLowerCase((CharSequence) "uHHO^S} b'jDwTYM"), is("uhho^s} b'jdwtym"));
     }
 
 
     @Test
     public void testToLowerCaseTakingString() {
-        assertEquals("", Ascii.toLowerCase(""));
+        assertThat(Ascii.toLowerCase(""), is(""));
     }
 
 }
