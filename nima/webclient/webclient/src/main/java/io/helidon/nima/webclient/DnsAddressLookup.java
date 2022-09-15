@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webclient;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -103,7 +104,7 @@ public enum DnsAddressLookup {
         }
     }
 
-    private static final class InetAddressComparator implements Comparator<InetAddress> {
+    private static final class InetAddressComparator implements Comparator<InetAddress>, Serializable {
         @Override
         public int compare(InetAddress o1, InetAddress o2) {
             //sorts IPv4 to be the first by default
