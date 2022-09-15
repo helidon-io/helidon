@@ -196,7 +196,9 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static MediaType findBestAccepted(RequestHeaders headers) {
-        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
+        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN,
+                                                             MediaType.APPLICATION_JSON,
+                                                             MediaType.APPLICATION_OPENMETRICS);
         return mediaType.orElse(null);
     }
 
@@ -221,8 +223,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         MediaType mediaType = findBestAccepted(req.headers());
         if (mediaType == MediaType.APPLICATION_JSON) {
             sendJson(res, toJsonData(registry));
-        } else if (mediaType == MediaType.TEXT_PLAIN) {
-            res.send(toPrometheusData(registry));
+        } else if (mediaType == MediaType.TEXT_PLAIN || mediaType == MediaType.APPLICATION_OPENMETRICS) {
+            sendPrometheus(res, toPrometheusData(registry), mediaType);
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -526,8 +528,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                     MediaType mediaType = findBestAccepted(req.headers());
                     if (mediaType == MediaType.APPLICATION_JSON) {
                         sendJson(res, jsonDataByName(registry, metricName));
-                    } else if (mediaType == MediaType.TEXT_PLAIN) {
-                        res.send(prometheusDataByName(registry, metricName));
+                    } else if (mediaType == MediaType.TEXT_PLAIN || mediaType == MediaType.APPLICATION_OPENMETRICS) {
+                        sendPrometheus(res, prometheusDataByName(registry, metricName), mediaType);
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
                         res.send();
@@ -571,8 +573,8 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         if (mediaType == MediaType.APPLICATION_JSON) {
             sendJson(res, toJsonData(registries));
-        } else if (mediaType == MediaType.TEXT_PLAIN) {
-            res.send(toPrometheusData(registries));
+        } else if (mediaType == MediaType.TEXT_PLAIN || mediaType == MediaType.APPLICATION_OPENMETRICS) {
+            sendPrometheus(res, toPrometheusData(registries), mediaType);
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -609,6 +611,19 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                     res.status(Http.Status.NO_CONTENT_204);
                     res.send();
                 });
+    }
+
+    private static void sendPrometheus(ServerResponse res, String formattedOutput, MediaType requestedMediaType) {
+        MediaType.Builder responseMediaTypeBuilder = MediaType.builder()
+                .type(requestedMediaType.type())
+                .subtype(requestedMediaType.subtype());
+
+        if (requestedMediaType == MediaType.APPLICATION_OPENMETRICS) {
+            responseMediaTypeBuilder.charset("UTF-8")
+                    .addParameter("version", "1.0.0");
+        }
+        res.addHeader("Content-Type", responseMediaTypeBuilder.build().toString());
+        res.send(formattedOutput + "# EOF\n");
     }
 
     /**
