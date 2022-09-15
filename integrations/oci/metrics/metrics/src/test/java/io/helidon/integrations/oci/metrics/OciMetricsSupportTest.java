@@ -17,6 +17,7 @@ package io.helidon.integrations.oci.metrics;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
@@ -52,9 +53,11 @@ public class OciMetricsSupportTest {
     private static final MonitoringClient monitoringClient = mock(MonitoringClient.class);
     private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
 
-    private static volatile int testMetricUpdatePostMetricDataCallCount = 0;
     private static volatile Double testMetricUpdateCounterValue;
     private static volatile int testMetricCount = 0;
+    // Use countDownLatches to signal when to start testing, for example, test only after results has been retrieved.
+    private static CountDownLatch countDownLatch1;
+    private static CountDownLatch countDownLatch2;
 
     private final RegistryFactory rf = RegistryFactory.getInstance();
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
@@ -76,14 +79,21 @@ public class OciMetricsSupportTest {
     }
 
     @Test
-    public void testMetricUpdate() {
-        // mock monitoringClient.postMetricData()
+    public void testMetricUpdate() throws InterruptedException {
+        countDownLatch1 = new CountDownLatch(1);
+        countDownLatch2 = new CountDownLatch(1);
         doAnswer(invocationOnMock -> {
+            if (countDownLatch1.getCount() != 0) {
+                // Wait for 1st signal before we can proceed
+                countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
+            } else {
+                // Give signal that 2nd call has been completed
+                countDownLatch2.countDown();
+            }
             PostMetricDataRequest postMetricDataRequest = invocationOnMock.getArgument(0);
             PostMetricDataDetails postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             List<MetricDataDetails> allMetricDataDetails = postMetricDataDetails.getMetricData();
             testMetricUpdateCounterValue = allMetricDataDetails.get(0).getDatapoints().get(0).getValue();
-            testMetricUpdatePostMetricDataCallCount++;
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -106,19 +116,15 @@ public class OciMetricsSupportTest {
         counter.inc();
         WebServer webServer = createWebServer(routing);
 
-        delay(1000L);
+        // Signal 1st metric update to proceed
+        countDownLatch1.countDown();
         counter.inc();
+        // Wait for 2nd metric update to complete
+        countDownLatch2.await(10, java.util.concurrent.TimeUnit.SECONDS);
 
-        Timer timer = new Timer(10);
-        while (testMetricUpdatePostMetricDataCallCount < 2) {
-            if (timer.expired()) {
-                fail(String.format("Timed out after %d sec. waiting for 2 Monitoring.postMetricData() calls",
-                        timer.getTimeout()));
-            }
-            delay(50L);
-        }
+        webServer.shutdown().await(10, java.util.concurrent.TimeUnit.SECONDS);
+
         assertThat(testMetricUpdateCounterValue.intValue(), is(equalTo(2)));
-        webServer.shutdown();
     }
 
     @Test
@@ -178,7 +184,7 @@ public class OciMetricsSupportTest {
                 .compartmentId("compartmentId")
                 .resourceGroup("resourceGroup")
                 .initialDelay(50L)
-                .delay(20000L)
+                .delay(500L)
                 .schedulingTimeUnit(TimeUnit.MILLISECONDS)
                 .descriptionEnabled(false)
                 .monitoringClient(monitoringClient)
@@ -190,9 +196,9 @@ public class OciMetricsSupportTest {
 
         delay(1000L);
 
+        webServer.shutdown().await(10, java.util.concurrent.TimeUnit.SECONDS);
         // metric count should remain 0 as metrics is disabled
         assertThat(testMetricCount, is(equalTo(0)));
-        webServer.shutdown();
 
     }
 
@@ -202,6 +208,8 @@ public class OciMetricsSupportTest {
             PostMetricDataRequest postMetricDataRequest = invocationOnMock.getArgument(0);
             PostMetricDataDetails postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             testMetricCount = postMetricDataDetails.getMetricData().size();
+            // Give signal that testMetricCount was retrieved
+            countDownLatch1.countDown();
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -214,7 +222,7 @@ public class OciMetricsSupportTest {
                 .port(8888)
                 .routing(routing)
                 .build();
-        webServer.start();
+        webServer.start().await(10L, TimeUnit.SECONDS);
         return webServer;
     }
 
@@ -251,7 +259,7 @@ public class OciMetricsSupportTest {
                 .compartmentId("compartmentId")
                 .resourceGroup("resourceGroup")
                 .initialDelay(50L)
-                .delay(20000L)
+                .delay(2000L)
                 .schedulingTimeUnit(TimeUnit.MILLISECONDS)
                 .descriptionEnabled(false)
                 .scopes(scopes)
@@ -262,45 +270,24 @@ public class OciMetricsSupportTest {
 
     private void validateMetricCount(OciMetricsSupport.Builder ociMetricsSupportBuilder, int expectedMetricCount) {
         testMetricCount = 0;
+        countDownLatch1 = new CountDownLatch(1);
         Routing routing = createRouting(ociMetricsSupportBuilder);
         WebServer webServer = createWebServer(routing);
 
-        Timer timer = new Timer(10);
-        while (testMetricCount <= 0) {
-            if (timer.expired()) {
-                fail(String.format("Timed out after %d sec. waiting for testMetricCount",
-                        timer.getTimeout()));
-            }
-            delay(50L);
+        try {
+            // Wait for signal from metric update that testMetricCount has been retrieved
+            countDownLatch1.await(10, TimeUnit.SECONDS);
+        } catch(InterruptedException e) {
+            fail("Error while waiting for testMetricCount: " + e.getMessage());
         }
-
+        webServer.shutdown().await(10, java.util.concurrent.TimeUnit.SECONDS);
         assertThat(testMetricCount, is(equalTo(expectedMetricCount)));
-        webServer.shutdown();
-    }
-
-    private static class Timer {
-        private final long endTime;
-        private final int timeOut;
-
-        public Timer(int timeOut) {
-            this.timeOut = timeOut;
-            this.endTime = System.nanoTime() + 1_000_000_000L * timeOut;
-        }
-
-        public boolean expired() {
-            return System.nanoTime() >= this.endTime;
-        }
-
-        int getTimeout() {
-            return this.timeOut;
-        }
     }
 
     private static void delay(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ignore) {
-            Thread.currentThread().interrupt();
         }
     }
 }
