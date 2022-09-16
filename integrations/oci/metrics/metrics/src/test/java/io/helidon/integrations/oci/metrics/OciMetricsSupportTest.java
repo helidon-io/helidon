@@ -53,11 +53,12 @@ public class OciMetricsSupportTest {
     private static final MonitoringClient monitoringClient = mock(MonitoringClient.class);
     private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
 
-    private static volatile Double testMetricUpdateCounterValue;
+    private static volatile Double[] testMetricUpdateCounterValue = new Double[2];
     private static volatile int testMetricCount = 0;
     // Use countDownLatches to signal when to start testing, for example, test only after results has been retrieved.
     private static CountDownLatch countDownLatch1;
     private static CountDownLatch countDownLatch2;
+    private static int noOfExecutions;
 
     private final RegistryFactory rf = RegistryFactory.getInstance();
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
@@ -82,18 +83,25 @@ public class OciMetricsSupportTest {
     public void testMetricUpdate() throws InterruptedException {
         countDownLatch1 = new CountDownLatch(1);
         countDownLatch2 = new CountDownLatch(1);
+        noOfExecutions = 0;
+
         doAnswer(invocationOnMock -> {
-            if (countDownLatch1.getCount() != 0) {
-                // Wait for 1st signal before we can proceed
-                countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
-            } else {
-                // Give signal that 2nd call has been completed
-                countDownLatch2.countDown();
-            }
+            noOfExecutions++;
             PostMetricDataRequest postMetricDataRequest = invocationOnMock.getArgument(0);
             PostMetricDataDetails postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             List<MetricDataDetails> allMetricDataDetails = postMetricDataDetails.getMetricData();
-            testMetricUpdateCounterValue = allMetricDataDetails.get(0).getDatapoints().get(0).getValue();
+            // put 1st result in testMetricUpdateCounterValue index 0 and succeeding update in index 1 to ensure
+            // that the 1st update result does not overwrite the 2nd update in rare situations where all metric
+            // updates have already completed before the process to assert results has even started
+            testMetricUpdateCounterValue[noOfExecutions == 1 ? 0 : 1] =
+                    allMetricDataDetails.get(0).getDatapoints().get(0).getValue();
+            if (noOfExecutions == 1) {
+                // Give signal that 1st metric update call has been completed
+                countDownLatch1.countDown();
+            } else {
+                // Give signal that 2nd metric update call has been completed
+                countDownLatch2.countDown();
+            }
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -116,15 +124,17 @@ public class OciMetricsSupportTest {
         counter.inc();
         WebServer webServer = createWebServer(routing);
 
-        // Signal 1st metric update to proceed
-        countDownLatch1.countDown();
+        // Wait for 1st metric update to complete
+        countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(testMetricUpdateCounterValue[0].intValue(), is(equalTo(1)));
+
         counter.inc();
         // Wait for 2nd metric update to complete
         countDownLatch2.await(10, java.util.concurrent.TimeUnit.SECONDS);
 
         webServer.shutdown().await(10, java.util.concurrent.TimeUnit.SECONDS);
 
-        assertThat(testMetricUpdateCounterValue.intValue(), is(equalTo(2)));
+        assertThat(testMetricUpdateCounterValue[1].intValue(), is(equalTo(2)));
     }
 
     @Test
@@ -287,7 +297,8 @@ public class OciMetricsSupportTest {
     private static void delay(long millis) {
         try {
             Thread.sleep(millis);
-        } catch (InterruptedException ignore) {
+        } catch (InterruptedException ie) {
+            fail("InterruptedException received in delay(" + millis + ") with message: " + ie.getMessage());
         }
     }
 }
