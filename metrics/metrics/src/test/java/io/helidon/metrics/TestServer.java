@@ -80,6 +80,8 @@ public class TestServer {
     private static final MediaType EXPECTED_PROMETHEUS_CONTENT_TYPE = MediaType.builder()
             .type(MediaType.TEXT_PLAIN.type())
             .subtype(MediaType.TEXT_PLAIN.subtype())
+            .addParameter("version", "0.0.4")
+            .charset("UTF-8")
             .build();
 
     private WebClient.Builder webClientBuilder;
