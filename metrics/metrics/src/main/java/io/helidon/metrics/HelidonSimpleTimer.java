@@ -101,7 +101,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         SimpleTimerImpl simpleTimerImpl = (delegate instanceof SimpleTimerImpl) ? ((SimpleTimerImpl) delegate) : null;
         Sample.Labeled sample = simpleTimerImpl != null ? simpleTimerImpl.sample : null;
         if (sample != null) {
-            sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), simpleTimerImpl.sample));
+            sb.append(prometheusExemplar(1, sample)); // exemplar always contributes 1 to the count
         }
         sb.append("\n");
 
@@ -113,11 +113,9 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
         sb.append(promName)
                 .append(tags)
                 .append(" ")
-                .append(elapsedTimeInSeconds());
-        if (sample != null) {
-            sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), sample));
-        }
-        sb.append("\n");
+                .append(elapsedTimeInSeconds())
+                .append(exemplarForElapsedTime(sample))
+                .append("\n");
     }
 
     @Override
@@ -133,6 +131,10 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
                 .add(jsonFullKey("count", metricID), getCount())
                 .add(jsonFullKey("elapsedTime", metricID), scaledElapsedTime);
         builder.add(metricID.getName(), myBuilder);
+    }
+
+    private String exemplarForElapsedTime(Sample.Labeled sample) {
+        return sample == null ? "" : prometheusExemplar(sample.value(), sample);
     }
 
     private double elapsedTimeInSeconds() {

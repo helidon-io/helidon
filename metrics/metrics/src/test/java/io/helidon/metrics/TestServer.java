@@ -18,6 +18,9 @@ package io.helidon.metrics;
 
 import javax.json.JsonObject;
 
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +41,7 @@ import io.helidon.webserver.WebServer;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +50,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -61,6 +66,18 @@ public class TestServer {
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
     private static MetricsSupport metricsSupport;
+
+    private static final MediaType EXPECTED_OPENMETRICS_CONTENT_TYPE = MediaType.builder()
+            .type(MediaType.APPLICATION_OPENMETRICS.type())
+            .subtype(MediaType.APPLICATION_OPENMETRICS.subtype())
+            .addParameter("version", "1.0.0")
+            .charset("UTF-8")
+            .build();
+
+    private static final MediaType EXPECTED_PROMETHEUS_CONTENT_TYPE = MediaType.builder()
+            .type(MediaType.TEXT_PLAIN.type())
+            .subtype(MediaType.TEXT_PLAIN.subtype())
+            .build();
 
     private WebClient.Builder webClientBuilder;
 
@@ -240,5 +257,44 @@ public class TestServer {
                     response.headers().values(Http.Header.CACHE_CONTROL),
                     not(containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS)));
     }
+    @Test
+    void testOpenMetricsFormatting() throws IOException {
+        WebClientResponse response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_OPENMETRICS)
+                .path("/metrics")
+                .submit()
+                .await();
 
+        assertThat("Content-Type",
+                   response.headers().values(Http.Header.CONTENT_TYPE),
+                   containsInAnyOrder(EXPECTED_OPENMETRICS_CONTENT_TYPE.toString()));
+
+        String content = response.content().as(String.class).await(10, TimeUnit.SECONDS);
+        assertThat("Terminated content", content, endsWith("EOF\n"));
+
+        LineNumberReader reader = new LineNumberReader(new StringReader(content));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.isBlank()) {
+                Assertions.fail("Found blank line where none is allowed in response: \n" + content);
+            }
+        }
+    }
+
+    @Test
+    void testPrometheusFormatting() {
+        WebClientResponse response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.TEXT_PLAIN)
+                .path("/metrics")
+                .submit()
+                .await();
+
+        assertThat("Content-Type",
+                   response.headers().values(Http.Header.CONTENT_TYPE),
+                   containsInAnyOrder(EXPECTED_PROMETHEUS_CONTENT_TYPE.toString()));
+    }
 }
