@@ -566,7 +566,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private static boolean matches(MediaType candidateMediaType, MediaType... standardTypes) {
         for (MediaType mt : standardTypes) {
-            if (candidateMediaType.test(mt)) {
+            if (mt.test(candidateMediaType)) {
                 return true;
             }
         }
