@@ -50,7 +50,6 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
-import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.UriHelper;
 
 import static java.lang.System.Logger.Level.DEBUG;

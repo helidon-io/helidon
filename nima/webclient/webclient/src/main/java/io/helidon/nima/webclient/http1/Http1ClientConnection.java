@@ -38,7 +38,6 @@ import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.webclient.ClientConnection;
-import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;

@@ -35,7 +35,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final Lock streamLock = new ReentrantLock(true);
     private final SocketContext ctx;
     private final Http2FrameListener listener;
-    private final Http2Headers.DynamicTable responseDynamicTable;
+    private final Http2Headers.DynamicTable outboundDynamicTable;
     private final Http2HuffmanEncoder responseHuffman;
     private final BufferData headerBuffer = BufferData.growing(512);
 
@@ -52,7 +52,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         this.writer = writer;
 
         // initial size is based on our settings, then updated with client settings
-        this.responseDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        this.outboundDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
         this.responseHuffman = new Http2HuffmanEncoder();
     }
 
@@ -73,7 +73,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         return withStreamLock(() -> {
             int written = 0;
             headerBuffer.clear();
-            headers.write(responseDynamicTable, responseHuffman, headerBuffer);
+            headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
             Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
                                                                    Http2FrameTypes.HEADERS,
                                                                    flags,
@@ -101,7 +101,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             int bytesWritten = 0;
 
             headerBuffer.clear();
-            headers.write(responseDynamicTable, responseHuffman, headerBuffer);
+            headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
             bytesWritten += headerBuffer.available();
 
             Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
@@ -127,7 +127,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
      */
     public void updateHeaderTableSize(long newSize) throws InterruptedException {
         withStreamLock(() -> {
-            responseDynamicTable.protocolMaxTableSize(newSize);
+            outboundDynamicTable.protocolMaxTableSize(newSize);
             return null;
         });
     }

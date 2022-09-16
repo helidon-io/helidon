@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.util.Map;
 
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriQuery;
@@ -26,6 +27,11 @@ import io.helidon.common.uri.UriQueryWriteable;
  * Helper for client URI handling.
  */
 public class UriHelper {
+
+    private static final Map<String, Integer> DEFAULT_PORTS = Map.of(
+            "http", 80,
+            "https", 443
+    );
     private final String baseScheme;
     private final String baseAuthority;
     private final String basePath;
@@ -162,6 +168,9 @@ public class UriHelper {
      * @return port
      */
     public int port() {
+        if (this.port == -1) {
+            return DEFAULT_PORTS.getOrDefault(this.scheme, -1);
+        }
         return port;
     }
 

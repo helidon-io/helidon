@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webclient;
+package io.helidon.nima.http2.webclient;
 
+import io.helidon.common.http.Http;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
-/**
- * Connection key instance contains all needed connection related information.
- *
- * @param scheme uri address scheme
- * @param host uri address host
- * @param port uri address port
- * @param tls TLS to be used in connection
- * @param dnsResolver DNS resolver to be used
- * @param dnsAddressLookup DNS address lookup strategy
- */
-public record ConnectionKey(String scheme,
-                            String host,
-                            int port,
-                            Tls tls,
-                            DnsResolver dnsResolver,
-                            DnsAddressLookup dnsAddressLookup) { }
+record ConnectionKey(Http.Method method,
+                     String scheme,
+                     String host,
+                     int port,
+                     boolean priorKnowledge,
+                     Tls tls,
+                     DnsResolver dnsResolver,
+                     DnsAddressLookup dnsAddressLookup) {
+}
