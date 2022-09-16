@@ -36,7 +36,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-The OpenAPI Specification (OAS) defines a standard, language-agnostic interface to RESTful APIs which allows both humans and computers to discover and understand the capabilities of the service without access to source code, documentation, or through network traffic inspection.
+The link:https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md[OpenAPI specification] defines a standard, language-agnostic interface to RESTful APIs which allows both humans and computers to discover and understand the capabilities of the service without access to source code, documentation, or through network traffic inspection.
 When properly defined, a consumer can understand and interact with the remote service with a minimal amount of implementation logic.
 OpenAPI documents allow you to convert the metadata about your API into some other format and OpenAPI Generator helps with that. It allows generating of API client or server stubs.
 With OpenAPI client generator for Helidon MP, user can easily generate MicroProfile Rest Client to interact with any server which exposes an OpenAPI document.
@@ -214,5 +214,7 @@ For example, this Maven plugin can be used to generate/regenerate files (API int
 ----
 
 == Reference
+
 * link:https://openapi-generator.tech[OpenAPI Generator Official Website]
 * link:https://github.com/OpenAPITools/openapi-generator[OpenAPI Generator GitHub Repository]
+* link:https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md[OpenAPI specification]
