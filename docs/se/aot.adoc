@@ -21,7 +21,7 @@
 :keywords: helidon, aot, native, native-image, image, executable, se
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/
+include::{rootdir}/includes/se.adoc[]
 
 Helidon applications can be compiled into a native executable using GraalVM
 native image.
