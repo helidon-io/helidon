@@ -814,6 +814,16 @@ in the order it is registered with WebServer routing.
 This implies that if you register it last and another `Service` or
 `Handler` finishes the request, the service will not be invoked.
 
+To enable Access logging add the following dependency to project's `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-access-log</artifactId>
+</dependency>
+----
+
 
 === Configuring Access Log in your code
 
