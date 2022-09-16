@@ -12,26 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
+package io.helidon.nima.http2.webclient;
 
-/**
- * HTTP/2 WebClient.
- */
-@Feature(value = "HTTP/2",
-        description = "HTTP/2 WebClient",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = {"WebClient","HTTP/2"}
-)
-module io.helidon.nima.http2.webclient {
-    requires static io.helidon.common.features.api;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-    requires transitive io.helidon.nima.http2;
-    requires transitive io.helidon.nima.webclient;
-    requires transitive io.helidon.common.pki;
+class LockingStreamIdSequence {
 
-    exports io.helidon.nima.http2.webclient;
+    private final AtomicInteger streamIdSeq = new AtomicInteger(0);
+    private final Lock lock = new ReentrantLock();
+
+    int lockAndNext() {
+            lock.lock();
+            return streamIdSeq.updateAndGet(o -> o % 2 == 0 ? o + 1 : o + 2);
+    }
+
+    void unlock(){
+        lock.unlock();
+    }
 }

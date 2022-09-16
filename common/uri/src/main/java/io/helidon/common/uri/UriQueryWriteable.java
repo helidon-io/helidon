@@ -42,13 +42,13 @@ public interface UriQueryWriteable extends UriQuery {
     UriQueryWriteable set(String name, String... value);
 
     /**
-     * Add a new query parameter or add a value to existing.
+     * Add a new query parameter or add values to existing.
      *
      * @param name  name of the parameter
-     * @param value additional value of the parameter
+     * @param value additional value(s) of the parameter
      * @return this instance
      */
-    UriQueryWriteable add(String name, String value);
+    UriQueryWriteable add(String name, String... value);
 
     /**
      * Set a query parameter with values, if not already defined.

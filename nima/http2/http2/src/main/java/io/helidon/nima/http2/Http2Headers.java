@@ -782,9 +782,8 @@ public class Http2Headers {
                 if (predefinedHeader.hasValue()) {
                     BY_NAME_VALUE.computeIfAbsent(predefinedHeader.headerName().lowerCase(), it -> new HashMap<>())
                             .put(predefinedHeader.value(), predefinedHeader);
-                } else {
-                    BY_NAME_NO_VALUE.put(predefinedHeader.headerName().lowerCase(), predefinedHeader);
                 }
+                BY_NAME_NO_VALUE.putIfAbsent(predefinedHeader.headerName().lowerCase(), predefinedHeader);
             }
 
             MAX_INDEX = maxIndex;

@@ -23,7 +23,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.nima.webclient.ConnectionKey;
 
 // a representation of a single remote endpoint
 // this may use one or more connections (depending on parallel streams)
@@ -33,16 +32,19 @@ class Http2ClientConnectionHandler {
 
     private final ExecutorService executor;
     private final SocketOptions socketOptions;
+    private String primaryPath;
     private final ConnectionKey connectionKey;
     private final AtomicReference<Http2ClientConnection> activeConnection = new AtomicReference<>();
-    // simple solutio for now
+    // simple solution for now
     private final Semaphore semaphore = new Semaphore(1);
 
     Http2ClientConnectionHandler(ExecutorService executor,
                                  SocketOptions socketOptions,
+                                 String primaryPath,
                                  ConnectionKey connectionKey) {
         this.executor = executor;
         this.socketOptions = socketOptions;
+        this.primaryPath = primaryPath;
         this.connectionKey = connectionKey;
     }
 
@@ -74,7 +76,8 @@ class Http2ClientConnectionHandler {
     }
 
     private Http2ClientConnection createConnection(ConnectionKey connectionKey, boolean priorKnowledge) {
-        Http2ClientConnection conn = new Http2ClientConnection(executor, socketOptions, connectionKey, priorKnowledge);
+        Http2ClientConnection conn =
+                new Http2ClientConnection(executor, socketOptions, connectionKey, primaryPath, priorKnowledge);
         conn.connect();
         activeConnection.set(conn);
         fullConnections.add(conn);

@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.Version;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
@@ -38,10 +39,11 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientRequest;
-import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.UriHelper;
 
 class ClientRequestImpl implements Http2ClientRequest {
+    static final HeaderValue USER_AGENT_HEADER = Header.create(Header.USER_AGENT, "Helidon Nima " + Version.VERSION);
+    //todo Gracefully close connections in channel cache
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
@@ -104,7 +106,8 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     @Override
     public Http2ClientRequest queryParam(String name, String... values) {
-        throw new UnsupportedOperationException("Not implemented");
+        query.add(name, values);
+        return this;
     }
 
     @Override
@@ -127,6 +130,7 @@ class ClientRequestImpl implements Http2ClientRequest {
             entityBytes = entityBytes(entity);
         }
         headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
+        headers.setIfAbsent(USER_AGENT_HEADER);
 
         Http2Headers http2Headers = prepareHeaders(headers);
         stream.write(http2Headers, entityBytes.length == 0);
@@ -226,22 +230,33 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     private Http2ClientStream reserveStream() {
         if (explicitConnection == null) {
-            ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
-                                                            uri.host(),
-                                                            uri.port(),
-                                                            tls,
-                                                            client.dnsResolver(),
-                                                            client.dnsAddressLookup());
+            return newStream(uri);
+        } else {
+            throw new UnsupportedOperationException("Explicit connection not (yet) supported for HTTP/2 client");
+        }
+    }
+
+    private Http2ClientStream newStream(UriHelper uri){
+        try {
+            ConnectionKey connectionKey = new ConnectionKey(method,
+                    uri.scheme(),
+                    uri.host(),
+                    uri.port(),
+                    priorKnowledge,
+                    tls,
+                    client.dnsResolver(),
+                    client.dnsAddressLookup());
 
             // this statement locks all threads - must not do anything complicated (just create a new instance)
             return CHANNEL_CACHE.computeIfAbsent(connectionKey,
-                                                 key -> new Http2ClientConnectionHandler(executor,
-                                                                                         SocketOptions.builder().build(),
-                                                                                         key))
+                            key -> new Http2ClientConnectionHandler(executor,
+                                    SocketOptions.builder().build(),
+                                    uri.path(),
+                                    key))
                     // this statement may block a single connection key
                     .newStream(priorKnowledge, priority);
-        } else {
-            throw new UnsupportedOperationException("Explicit connection not (yet) supported for HTTP/2 client");
+        } catch (UpgradeRedirectException e){
+            return newStream(UriHelper.create(URI.create(e.redirectUri()), UriQueryWriteable.create()));
         }
     }
 

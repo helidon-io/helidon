@@ -12,26 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
+package io.helidon.nima.http2.webclient;
 
-/**
- * HTTP/2 WebClient.
- */
-@Feature(value = "HTTP/2",
-        description = "HTTP/2 WebClient",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = {"WebClient","HTTP/2"}
-)
-module io.helidon.nima.http2.webclient {
-    requires static io.helidon.common.features.api;
+class UpgradeRedirectException extends RuntimeException {
+    private final String redirectUri;
 
-    requires transitive io.helidon.nima.http2;
-    requires transitive io.helidon.nima.webclient;
-    requires transitive io.helidon.common.pki;
+    UpgradeRedirectException(String redirectUri) {
+        this.redirectUri = redirectUri;
+    }
 
-    exports io.helidon.nima.http2.webclient;
+    String redirectUri() {
+        return redirectUri;
+    }
 }

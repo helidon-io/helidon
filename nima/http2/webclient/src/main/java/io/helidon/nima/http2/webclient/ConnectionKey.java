@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
+package io.helidon.nima.http2.webclient;
 
-/**
- * HTTP/2 WebClient.
- */
-@Feature(value = "HTTP/2",
-        description = "HTTP/2 WebClient",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = {"WebClient","HTTP/2"}
-)
-module io.helidon.nima.http2.webclient {
-    requires static io.helidon.common.features.api;
+import io.helidon.common.http.Http;
+import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webclient.DnsAddressLookup;
+import io.helidon.nima.webclient.spi.DnsResolver;
 
-    requires transitive io.helidon.nima.http2;
-    requires transitive io.helidon.nima.webclient;
-    requires transitive io.helidon.common.pki;
-
-    exports io.helidon.nima.http2.webclient;
+record ConnectionKey(Http.Method method, String scheme, String host, int port, boolean priorKnowledge, Tls tls,
+                     DnsResolver dnsResolver, DnsAddressLookup dnsAddressLookup) {
 }
