@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SequentialSubscriberTest {
     int counter = 0;
@@ -98,7 +99,7 @@ public class SequentialSubscriberTest {
         } catch (InterruptedException e) {
             executorService.shutdownNow();
         }
-        assertFalse(errorFound.isPresent(), () -> errorFound.get());
+        assertThat(errorFound.orElse(""), errorFound.isPresent(), is(false));
     }
 
     private void sleep(long millis) {

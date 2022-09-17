@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,11 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class MultiFlatMapPublisherTest {
@@ -153,7 +154,7 @@ public class MultiFlatMapPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Arrays.asList(6));
+        assertThat(ts.getItems(), contains(6));
         assertThat(ts.getLastError(), instanceOf(ArithmeticException.class));
         assertThat(ts.isComplete(), is(false));
     }
@@ -169,7 +170,7 @@ public class MultiFlatMapPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Arrays.asList(6, -6));
+        assertThat(ts.getItems(), contains(6, -6));
         assertThat(ts.getLastError(), instanceOf(ArithmeticException.class));
         assertThat(ts.isComplete(), is(false));
     }
@@ -256,7 +257,7 @@ public class MultiFlatMapPublisherTest {
 
         ts.request1();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
     }
@@ -274,7 +275,7 @@ public class MultiFlatMapPublisherTest {
                 .flatMap(Single::just)
                 .subscribe(ts);
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
     }
@@ -306,12 +307,11 @@ public class MultiFlatMapPublisherTest {
 
     @RepeatedTest(500)
     public void multi() throws ExecutionException, InterruptedException {
-        assertEquals(EXPECTED_EMISSION_COUNT, Multi.create(TEST_DATA)
+        assertThat(Multi.create(TEST_DATA)
                 .flatMap(MultiFlatMapPublisherTest::asyncFlowPublisher, MAX_CONCURRENCY, false, PREFETCH)
                 .distinct()
                 .collectList()
-                .await(800, TimeUnit.MILLISECONDS)
-                .size());
+                .await(800, TimeUnit.MILLISECONDS), hasSize(EXPECTED_EMISSION_COUNT));
     }
 
     private static Flow.Publisher<? extends String> asyncFlowPublisher(Integer i) {
