@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 public class TerminatedFutureTest {
@@ -39,11 +37,11 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.cancel(ref);
 
-        assertSame(ref.get(), TerminatedFuture.CANCELED);
+        assertThat(ref.get(), sameInstance(TerminatedFuture.CANCELED));
 
         TerminatedFuture.cancel(ref);
 
-        assertSame(ref.get(), TerminatedFuture.CANCELED);
+        assertThat(ref.get(), sameInstance(TerminatedFuture.CANCELED));
     }
 
     @Test
@@ -55,9 +53,9 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.cancel(ref);
 
-        assertSame(ref.get(), TerminatedFuture.CANCELED);
+        assertThat(ref.get(), sameInstance(TerminatedFuture.CANCELED));
 
-        assertTrue(cf.isCancelled());
+        assertThat(cf.isCancelled(), is(true));
     }
 
     @Test
@@ -68,7 +66,7 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.setFuture(ref, cf);
 
-        assertSame(ref.get(), cf);
+        assertThat(ref.get(), sameInstance(cf));
     }
 
     @Test
@@ -78,7 +76,7 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.cancel(ref);
 
-        assertSame(ref.get(), TerminatedFuture.FINISHED);
+        assertThat(ref.get(), sameInstance(TerminatedFuture.FINISHED));
     }
 
     @Test
@@ -90,11 +88,11 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.setFuture(ref, cf);
 
-        assertSame(ref.get(), cf);
+        assertThat(ref.get(), sameInstance(cf));
 
         TerminatedFuture.setFuture(ref, cf1);
 
-        assertSame(ref.get(), cf);
+        assertThat(ref.get(), sameInstance(cf));
     }
 
     @Test
@@ -106,7 +104,7 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.setFuture(ref, cf);
 
-        assertSame(ref.get(), TerminatedFuture.FINISHED);
+        assertThat(ref.get(), sameInstance(TerminatedFuture.FINISHED));
     }
 
 
@@ -119,31 +117,31 @@ public class TerminatedFutureTest {
 
         TerminatedFuture.setFuture(ref, cf);
 
-        assertSame(ref.get(), TerminatedFuture.CANCELED);
+        assertThat(ref.get(), sameInstance(TerminatedFuture.CANCELED));
 
-        assertTrue(cf.isCancelled());
+        assertThat(cf.isCancelled(), is(true));
     }
 
     @Test
     public void finishedMethods() {
-        assertFalse(TerminatedFuture.FINISHED.cancel(true));
+        assertThat(TerminatedFuture.FINISHED.cancel(true), is(false));
 
-        assertFalse(TerminatedFuture.FINISHED.isCancelled());
+        assertThat(TerminatedFuture.FINISHED.isCancelled(), is(false));
 
-        assertTrue(TerminatedFuture.FINISHED.isDone());
+        assertThat(TerminatedFuture.FINISHED.isDone(), is(true));
 
-        assertNull(TerminatedFuture.FINISHED.get());
+        assertThat(TerminatedFuture.FINISHED.get(), nullValue());
 
-        assertNull(TerminatedFuture.FINISHED.get(1, TimeUnit.MINUTES));
+        assertThat(TerminatedFuture.FINISHED.get(1, TimeUnit.MINUTES), nullValue());
     }
 
     @Test
     public void canceledMethods() {
-        assertFalse(TerminatedFuture.CANCELED.cancel(true));
+        assertThat(TerminatedFuture.CANCELED.cancel(true), is(false));
 
-        assertTrue(TerminatedFuture.CANCELED.isCancelled());
+        assertThat(TerminatedFuture.CANCELED.isCancelled(), is(true));
 
-        assertTrue(TerminatedFuture.CANCELED.isDone());
+        assertThat(TerminatedFuture.CANCELED.isDone(), is(true));
     }
 
     @Test
