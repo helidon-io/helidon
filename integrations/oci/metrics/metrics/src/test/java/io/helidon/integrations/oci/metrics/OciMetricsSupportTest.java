@@ -55,9 +55,8 @@ public class OciMetricsSupportTest {
 
     private static volatile Double[] testMetricUpdateCounterValue = new Double[2];
     private static volatile int testMetricCount = 0;
-    // Use countDownLatches to signal when to start testing, for example, test only after results has been retrieved.
+    // Use CountDownLatch to signal when to start testing, for example, test only after results has been retrieved.
     private static CountDownLatch countDownLatch1;
-    private static CountDownLatch countDownLatch2;
     private static int noOfExecutions;
 
     private final RegistryFactory rf = RegistryFactory.getInstance();
@@ -81,8 +80,9 @@ public class OciMetricsSupportTest {
 
     @Test
     public void testMetricUpdate() throws InterruptedException {
+        Counter counter = baseMetricRegistry.counter("DummyCounter");
+
         countDownLatch1 = new CountDownLatch(1);
-        countDownLatch2 = new CountDownLatch(1);
         noOfExecutions = 0;
 
         doAnswer(invocationOnMock -> {
@@ -96,18 +96,15 @@ public class OciMetricsSupportTest {
             testMetricUpdateCounterValue[noOfExecutions == 1 ? 0 : 1] =
                     allMetricDataDetails.get(0).getDatapoints().get(0).getValue();
             if (noOfExecutions == 1) {
-                // Give signal that 1st metric update call has been completed
-                countDownLatch1.countDown();
+                counter.inc();
             } else {
-                // Give signal that 2nd metric update call has been completed
-                countDownLatch2.countDown();
+                // Give signal that multiple metric updates have been triggered
+                countDownLatch1.countDown();
             }
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
         }).when(monitoringClient).postMetricData(any());
-
-        Counter counter = baseMetricRegistry.counter("DummyCounter");
 
         OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
                 .compartmentId("compartmentId")
@@ -116,7 +113,6 @@ public class OciMetricsSupportTest {
                 .initialDelay(1L)
                 .delay(2L)
                 .descriptionEnabled(false)
-
                 .monitoringClient(monitoringClient);
 
         Routing routing = createRouting(ociMetricsSupportBuilder);
@@ -124,17 +120,14 @@ public class OciMetricsSupportTest {
         counter.inc();
         WebServer webServer = createWebServer(routing);
 
-        // Wait for 1st metric update to complete
+        // Wait for metric updates to complete
         countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
-        assertThat(testMetricUpdateCounterValue[0].intValue(), is(equalTo(1)));
 
-        counter.inc();
-        // Wait for 2nd metric update to complete
-        countDownLatch2.await(10, java.util.concurrent.TimeUnit.SECONDS);
+        // Test the 1st and 2nd metric counter updates
+        assertThat(testMetricUpdateCounterValue[0].intValue(), is(equalTo(1)));
+        assertThat(testMetricUpdateCounterValue[1].intValue(), is(equalTo(2)));
 
         webServer.shutdown().await(10, java.util.concurrent.TimeUnit.SECONDS);
-
-        assertThat(testMetricUpdateCounterValue[1].intValue(), is(equalTo(2)));
     }
 
     @Test
