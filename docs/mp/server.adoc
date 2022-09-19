@@ -109,8 +109,9 @@ In this example, the configuration is in a file, and it includes Helidon configu
 
 include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag=config]
 
+== Examples
 
-== Access Log
+=== Access Log
 
 Access logging in Helidon is done by a dedicated module that can be
 added to Maven and configured.
