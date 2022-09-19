@@ -30,18 +30,6 @@
     <description>
         Integration with TestNG to support tests with CDI injection
     </description>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>19</source>
-                    <target>19</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <properties>
         <helidon.services.skip>false</helidon.services.skip>

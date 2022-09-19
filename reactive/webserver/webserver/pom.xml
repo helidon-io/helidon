@@ -170,8 +170,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <failOnWarning>true</failOnWarning>
-                    <source>19</source>
-                    <target>19</target>
                 </configuration>
             </plugin>
             <plugin>
