@@ -167,10 +167,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <source>19</source>
-                    <target>19</target>
-                </configuration>
             </plugin>
         </plugins>
     </build>

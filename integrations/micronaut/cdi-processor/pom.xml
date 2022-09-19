@@ -60,8 +60,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgument>-proc:none</compilerArgument>
-                    <source>19</source>
-                    <target>19</target>
                 </configuration>
             </plugin>
         </plugins>
