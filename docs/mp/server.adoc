@@ -111,6 +111,37 @@ include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag
 
 == Examples
 
+=== Access Log
+
+Access logging in Helidon is done by a dedicated module that can be
+added to Maven and configured.
+
+To enable Access logging add the following dependency to project's `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-access-log</artifactId>
+</dependency>
+----
+
+=== Configuring Access Log in a configuration file
+
+Access log can be configured as follows:
+
+[source, properties]
+.Access Log configuration file
+----
+server.port=8080
+server.host=0.0.0.0
+server.access-log.format=helidon
+----
+
+All options shown above are also available programmatically when using builder.
+
+include::{rootdir}/includes/server/access-log-config-common.adoc[leveloffset=+1]
+
 === Configuring TLS
 
 Helidon MP also supports custom TLS configuration.

@@ -814,6 +814,16 @@ in the order it is registered with WebServer routing.
 This implies that if you register it last and another `Service` or
 `Handler` finishes the request, the service will not be invoked.
 
+To enable Access logging add the following dependency to project's `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-access-log</artifactId>
+</dependency>
+----
+
 
 === Configuring Access Log in your code
 
@@ -843,121 +853,8 @@ server:
 
 All options shown above are also available programmatically when using builder.
 
-=== Configuration Options
 
-The following configuration options can be defined:
-
-[cols="2,2,2,5", role="flex, sm10"]
-|===
-|Config key     |Default value      |Builder method     |Description
-
-|`enabled`      |`true`             |`enabled(boolean)`          |When this option is set to `false`, access logging will be disabled
-|`logger-name`  |`io.helidon.webserver.AccessLog` |`loggerName(String)` |Name of the logger to use when writing log entries
-|`format`       |`helidon`          |`helidonLogFormat()`, `commonLogFormat()`, `add(AccessLogEntry entry)` |Configuration of access log output,
-when `helidon` is defined, the Helidon log format (see below) is used.
-Can be configured to explicitly define log entries (see below as well)
-|`exclude-paths`|N/A|`excludePaths(List<String>)` | List of path patterns to exclude from access log. Path pattern syntax is as
-defined in `io.helidon.webserver.PathMatcher`. Can be used to exclude
-paths such as `/health` or `/metrics` to avoid cluttering log.
-
-|===
-
-=== Supported Log Formats
-
-==== Supported Log Entries
-
-The following log entries are supported in Helidon:
-
-[cols="2,2,5",role="flex, sm7"]
-|===
-|Config format  |Class (to use with builder)    |Description
-
-|%h                 |`HostLogEntry`                 |IP address of the remote host
-|%l                 |`UserIdLogEntry`               |Client identity, always undefined in Helidon
-|%u                 |`UserLogEntry`                 |The username of logged-in user (when Security is used)
-|%t                 |`TimestampLogEntry`            |The current timestamp
-|%r                 |`RequestLineLogEntry`          |The request line (method, path and HTTP version)
-|%s                 |`StatusLogEntry`               |The HTTP status returned to the client
-|%b                 |`SizeLogEntry`                 |The response entity size (if available)
-|%D                 |`TimeTakenLogEntry`            |The time taken in microseconds
-|%T                 |`TimeTakenLogEntry`            |The time taken in seconds
-|%{`header-name`}i  |`HeaderLogEntry`               |Value of a header (can have multiple such specification to write
-multiple headers)
-|===
-
-Currently we only support the entries defined above, with NO support for free text.
-
-==== Helidon Log Format
-When format is set to `helidon`, the format used is:
-
-`"%h %u %t %r %s %b %D"`
-
-The entries logged:
-
-1. IP Address
-2. Username of a logged-in user
-3. Timestamp
-4. Request Line
-5. HTTP Status code
-6. Entity size
-7. Time taken (microseconds)
-
-Access log example:
-
-[source, listing]
-----
-192.168.0.104 - [18/Jun/2019:22:28:55 +0200] "GET /greet/test HTTP/1.1" 200 53
-0:0:0:0:0:0:0:1 - [18/Jun/2019:22:29:00 +0200] "GET /metrics/vendor HTTP/1.1" 200 1658
-0:0:0:0:0:0:0:1 jack [18/Jun/2019:22:29:07 +0200] "PUT /greet/greeting HTTP/1.1" 200 21
-0:0:0:0:0:0:0:1 jill [18/Jun/2019:22:29:12 +0200] "PUT /greet/greeting HTTP/1.1" 403 0
-0:0:0:0:0:0:0:1 - [18/Jun/2019:22:29:17 +0200] "PUT /greet/greeting HTTP/1.1" 401 0
-----
-
-==== Common Log Format
-When format is set to `common`, the format used is:
-
-`"%h %l %u %t %r %s %b"`
-
-The entries logged:
-
-1. IP Address
-2. Client identity
-3. Username of a logged-in user
-4. Timestamp
-5. Request Line
-6. HTTP Status code
-7. Entity size
-
-Access log example:
-
-[source, listing]
-----
-192.168.0.104   - - [18/Jun/2019:22:28:55 +0200] "GET /greet/test HTTP/1.1" 200 53
-0:0:0:0:0:0:0:1 - - [18/Jun/2019:22:29:00 +0200] "GET /metrics/vendor HTTP/1.1" 200 1658
-0:0:0:0:0:0:0:1 - jack [18/Jun/2019:22:29:07 +0200] "PUT /greet/greeting HTTP/1.1" 200 21
-0:0:0:0:0:0:0:1 - jill [18/Jun/2019:22:29:12 +0200] "PUT /greet/greeting HTTP/1.1" 403 0
-0:0:0:0:0:0:0:1 - - [18/Jun/2019:22:29:17 +0200] "PUT /greet/greeting HTTP/1.1" 401 0
-----
-
-=== Configuring Access Log with Java util logging
-
-To support a separate file for Access log entries, Helidon provides a custom
-log handler, that extends the `FileHandler`.
-
-To log to a file `access.log` with appending records after restart, you can use the
-following configuration in `logging.properties`:
-
-[source, properties]
-.Logging configuration file
-----
-io.helidon.webserver.accesslog.AccessLogHandler.level=INFO
-io.helidon.webserver.accesslog.AccessLogHandler.pattern=access.log
-io.helidon.webserver.accesslog.AccessLogHandler.append=true
-
-io.helidon.webserver.AccessLog.level=INFO
-io.helidon.webserver.AccessLog.useParentHandlers=false
-io.helidon.webserver.AccessLog.handlers=io.helidon.webserver.accesslog.AccessLogHandler
-----
+include::{rootdir}/includes/server/access-log-config-common.adoc[leveloffset=+1]
 
 == TLS Configuration
 
