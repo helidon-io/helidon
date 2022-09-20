@@ -17,32 +17,26 @@ package io.helidon.examples.data.pokemons;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.examples.data.pokemons.dao.PokemonRepository;
-import io.helidon.examples.data.pokemons.dao.TypesRepository;
+import io.helidon.data.HelidonData;
 import io.helidon.examples.data.pokemons.model.Pokemon;
+import io.helidon.examples.data.pokemons.repository.PokemonRepository;
+import io.helidon.examples.data.pokemons.repository.TypeRepository;
 import io.helidon.reactive.webserver.*;
-import jakarta.json.JsonObject;
-import jakarta.persistence.EntityManager;
-
-import java.util.concurrent.CompletionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.StreamSupport;
 
 /**
- * Example service using a database.
+ * Example Nima service using blocking CRUD data repoository.
  */
 public class PokemonService implements Service {
 
-    private static final Logger LOGGER = Logger.getLogger(PokemonService.class.getName());
+    // Pokemon entity data repository
+    private final PokemonRepository pokemonRepository;
+    // Type entity data repository
+    private final TypeRepository typeRepository;
 
-    final PokemonRepository pokemonDao;
-    final TypesRepository typesDao;
-
-    PokemonService(EntityManager entityManager) {
-        // TODO: Initialization - manual for SE/Pico, @Inject for MP
-        this.pokemonDao = null;
-        this.typesDao = null;
+    PokemonService() {
+        // Initialize data repositories
+        this.pokemonRepository = HelidonData.createRepository(PokemonRepository.class);
+        this.typeRepository = HelidonData.createRepository(TypeRepository.class);
     }
 
     @Override
@@ -90,30 +84,25 @@ public class PokemonService implements Service {
     }
 
     /**
-     * Return JsonArray with all stored types.
-     * Returned JsonArray contains list of all type names.
+     * Return all stored Pokemon types.
      *
      * @param request  the server request
      * @param response the server response
      */
     private void listTypes(ServerRequest request, ServerResponse response) {
-        response.send(
-                StreamSupport.stream(typesDao.findAll().spliterator(), true)
-                        // TODO: This needs to be done better
-                        .map(it -> it.toJson()));
+        // Iterable<E> findAll() is method added from CrudRepository interface
+        response.send(typeRepository.findAll());
     }
 
     /**
-     * Return JsonArray with all stored pokemons.
-     * Returned JsonArray contains list of all pokemons.
+     * Return all stored pokemons.
      *
      * @param request  the server request
      * @param response the server response
      */
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        response.send(
-                StreamSupport.stream(pokemonDao.findAll().spliterator(), true)
-                        .map(it -> it.toJson()));
+        // Iterable<E> findAll() is method added from CrudRepository interface
+        response.send(pokemonRepository.findAll());
     }
 
     /**
@@ -123,16 +112,13 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemonById(ServerRequest request, ServerResponse response) {
-        try {
             int pokemonId = Integer.parseInt(request.path().param("id"));
-            pokemonDao.findById(pokemonId)
+            // Optional<E> findById(ID id) is method added from CrudRepository interface
+            pokemonRepository.findById(pokemonId)
                     .ifPresentOrElse(
-                            it -> response.send(it.toJson()),
-                            () -> response.send(JsonObject.NULL)
+                            it -> response.send(it),
+                            () -> response.status(Http.Status.NOT_FOUND_404).send()
                     );
-        } catch (Throwable t) {
-            sendError(t, response);
-        }
     }
 
     /**
@@ -142,61 +128,67 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
-        try {
-            String pokemonName = request.path().param("name");
-            response.send(
-                    pokemonDao.findByName(pokemonName).stream().map(it -> it.toJson()));
-        } catch (Throwable t) {
-            sendError(t, response);
-        }
+        String pokemonName = request.path().param("name");
+        // Optional<Pokemon> findByName(String name) is method defined as query by method name
+        pokemonRepository.findByName(pokemonName)
+                .ifPresentOrElse(
+                        it -> response.send(it),
+                        () -> response.status(Http.Status.NOT_FOUND_404).send()
+                );
     }
 
     /**
-     * Get a pokemons by type name.
+     * Get all pokemons of given type.
      *
      * @param request  server request
      * @param response server response
      */
     private void getPokemonsByType(ServerRequest request, ServerResponse response) {
-        try {
-            String typeName = request.path().param("name");
-            response.send(
-                    StreamSupport.stream(pokemonDao.pokemonsByType(typeName).spliterator(), true)
-                            .map(it -> it.toJson()));
-        } catch (Throwable t) {
-            sendError(t, response);
-        }
+        String typeName = request.path().param("name");
+        // List<Pokemon> listByTypeName(String typeName) is method defined as query by method name
+        response.send(pokemonRepository.listByTypeName(typeName));
     }
 
     /**
-     * Insert new pokemon with specified name.
+     * Get pokemon of given type and name.
+     *
+     * @param request  server request
+     * @param response server response
+     */
+    private void getPokemonByTypeAndName(ServerRequest request, ServerResponse response) {
+        String typeName = request.path().param("typeName");
+        String pokemonName = request.path().param("pokemonName");
+        // Optional<Pokemon> pokemonsByTypeAndName(String typeName, String pokemonName)
+        // is method defined by custom query annotation
+        pokemonRepository.pokemonsByTypeAndName(typeName, pokemonName)
+                .ifPresentOrElse(
+                        it -> response.send(it),
+                        () -> response.status(Http.Status.NOT_FOUND_404).send()
+                );
+    }
+
+    /**
+     * Insert new pokemon.
      *
      * @param request  the server request
      * @param response the server response
      */
     private void insertPokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
-        try {
-            pokemonDao.save(pokemon);
-            response.send("Inserted Pokemon\n");
-        } catch (Throwable t) {
-            sendError(t, response);
-        }
+        // <T extends E> T save(T entity) is method added from CrudRepository interface
+        pokemonRepository.save(pokemon);
+        response.send(pokemon);
     }
 
     /**
      * Update a pokemon.
-     * Uses a transaction.
      *
      * @param request  the server request
      * @param response the server response
      */
     private void updatePokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
-        try {
-            pokemonDao.update(pokemon);
-            response.send("Updated Pokemon\n");
-        } catch (Throwable t) {
-            sendError(t, response);
-        }
+        // <T extends E> T update(T entity) is method added from CrudRepository interface
+        pokemonRepository.update(pokemon);
+        response.send(pokemon);
     }
 
     /**
@@ -206,13 +198,10 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void deletePokemonById(ServerRequest request, ServerResponse response) {
-        try {
-            int id = Integer.parseInt(request.path().param("id"));
-            pokemonDao.deleteById(id);
-            response.send("Deleted Pokemon\n");
-        } catch (NumberFormatException ex) {
-            sendError(ex, response);
-        }
+        int id = Integer.parseInt(request.path().param("id"));
+        // void deleteById(ID id) is method added from CrudRepository interface
+        pokemonRepository.deleteById(id);
+        response.send();
     }
 
     /**
@@ -222,32 +211,9 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
-        try {
-            pokemonDao.deleteAll();
-            response.send("Deleted all pokemons\n");
-        } catch (NumberFormatException ex) {
-            sendError(ex, response);
-        }
-     }
-
-     /**
-     * Send a 500 response code and a few details.
-     *
-     * @param throwable throwable that caused the issue
-     * @param response server response
-     * @param <T> type of expected response, will be always {@code null}
-     * @return {@code Void} so this method can be registered as a lambda
-     *      with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
-     */
-    private <T> T sendError(Throwable throwable, ServerResponse response) {
-        Throwable realCause = throwable;
-        if (throwable instanceof CompletionException) {
-            realCause = throwable.getCause();
-        }
-        response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-        response.send("Failed to process request: " + realCause.getClass().getName() + "(" + realCause.getMessage() + ")");
-        LOGGER.log(Level.WARNING, "Failed to process request", throwable);
-        return null;
+        // void deleteAll() is method added from CrudRepository interface
+        pokemonRepository.deleteAll();
+        response.send();
     }
 
 }

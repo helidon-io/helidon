@@ -15,8 +15,6 @@
  */
 package io.helidon.examples.data.pokemons.model;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -79,16 +77,6 @@ public class Pokemon {
 
     public void setType(Type idType) {
         this.type = type;
-    }
-
-    public JsonObject toJson() {
-        return Json.createObjectBuilder()
-                .add("id", id)
-                .add("name", name)
-                .add("type", type != null
-                        ? type.toJson()
-                        : null
-                ).build();
     }
 
 }

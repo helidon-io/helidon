@@ -13,31 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.data.pokemons.dao;
+package io.helidon.examples.data.pokemons.repository;
 
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.data.annotation.Query;
-import io.helidon.data.annotation.QueryMethod;
 import io.helidon.data.annotation.Repository;
 import io.helidon.data.repository.reactive.ReactiveCrudRepository;
 import io.helidon.examples.data.pokemons.model.Pokemon;
-import io.helidon.reactive.dbclient.DbClient;
+
+import java.util.Optional;
 
 @Repository
-public abstract class PokemonReactiveRepository implements ReactiveCrudRepository<Pokemon, Integer> {
+public interface PokemonReactiveRepository extends ReactiveCrudRepository<Pokemon, Integer> {
 
-    // TODO: Initialization - manual for SE/Pico, @Inject for MP
-    private final DbClient dbClient;
+    // Query defined by method name: Find pokemon by provided name attribute
+    public abstract Single<Optional<Pokemon>> findByName(String name);
 
-    public PokemonReactiveRepository(DbClient dbClient) {
-        this.dbClient = dbClient;
-    }
-
-    // Query defined by method name
-    @QueryMethod
-    public abstract Multi<Pokemon> findByName(String name);
-
-    // Query defined by annotation
+    // Query defined by annotation: Find pokemon by provided type name
     @Query("SELECT p FROM Pokemon p WHERE p.type.name = :typeName")
     public abstract Multi<Pokemon> pokemonsByType(String typeName);
 

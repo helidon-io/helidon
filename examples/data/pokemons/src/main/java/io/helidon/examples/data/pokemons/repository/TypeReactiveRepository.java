@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.data.pokemons.dao;
+package io.helidon.examples.data.pokemons.repository;
 
 import io.helidon.data.repository.reactive.ReactiveCrudRepository;
 import io.helidon.examples.data.pokemons.model.Type;
-import io.helidon.reactive.dbclient.DbClient;
 
-public abstract class TypesReactiveRepository implements ReactiveCrudRepository<Type, Integer> {
-
-    // TODO: Initialization - manual for SE/Pico, @Inject for MP
-    private final DbClient dbClient;
-
-    public TypesReactiveRepository(DbClient dbClient) {
-        this.dbClient = dbClient;
-    }
+public interface TypeReactiveRepository extends ReactiveCrudRepository<Type, Integer> {
 
 }

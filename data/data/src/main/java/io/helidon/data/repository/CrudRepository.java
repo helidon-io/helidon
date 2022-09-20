@@ -110,6 +110,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      */
     long count();
 
+    // Return type can be changed to long. Returned value can be number od deleted records.
     /**
      * Deletes the entity with the given ID (primary key.
      *
@@ -118,6 +119,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      */
     void deleteById(ID id);
 
+    // Return type can be changed to long. Returned value can be number od deleted records.
     /**
      * Deletes provided entity.
      *
@@ -126,6 +128,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      */
     void delete(E entity);
 
+    // Return type can be changed to long. Returned value can be number od deleted records.
     /**
      * Deletes all provided entities.
      *
@@ -134,6 +137,7 @@ public interface CrudRepository<E, ID> extends GenericRepository<E, ID> {
      */
     void deleteAll(Iterable<? extends E> entities);
 
+    // Return type can be changed to long. Returned value can be number od deleted records.
     /**
      * Deletes all entities of the {@code E} type.
      *

@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.data.pokemons.dao;
+package io.helidon.examples.data.pokemons.repository;
 
 import io.helidon.data.annotation.Query;
-import io.helidon.data.annotation.QueryMethod;
 import io.helidon.data.annotation.Repository;
 import io.helidon.data.repository.CrudRepository;
 import io.helidon.examples.data.pokemons.model.Pokemon;
-import jakarta.persistence.EntityManager;
 
 import java.util.List;
+import java.util.Optional;
 
 // Micronaut marks those interfaces/abstract classes with annotation. It may help with processing.
 // But it's not mandatory - all have GenericRepository as parent interface.
 @Repository
-public abstract class PokemonRepository implements CrudRepository<Pokemon, Integer> {
+public interface PokemonRepository extends CrudRepository<Pokemon, Integer> {
 
-    // TODO: Initialization - manual for SE/Pico, @Inject for MP
-    private final EntityManager entityManager;
+    // Query defined by method name: Find pokemon by provided name attribute
+    public abstract Optional<Pokemon> findByName(String name);
 
-    public PokemonRepository(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
+    // Query defined by method name: List all pokemons with provided type name attribute
+    public abstract List<Pokemon> listByTypeName(String typeName);
 
-    // Query defined by method name
-    @QueryMethod
-    public abstract List<Pokemon> findByName(String name);
 
-    // Query defined by annotation
-    @Query("SELECT p FROM Pokemon p WHERE p.type.name = :typeName")
-    public abstract List<Pokemon> pokemonsByType(String typeName);
+    // Query defined by annotation: Find pokemon by provided type name and name attributes
+    @Query("SELECT p FROM Pokemon p WHERE p.type.name = :typeName AND p.name = :pokemonName")
+    public abstract Optional<Pokemon> pokemonsByTypeAndName(String typeName, String pokemonName);
 
 }

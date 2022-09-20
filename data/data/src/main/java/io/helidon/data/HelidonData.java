@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.data.pokemons.dao;
+package io.helidon.data;
 
-import io.helidon.data.annotation.Repository;
-import io.helidon.data.repository.CrudRepository;
-import io.helidon.examples.data.pokemons.model.Type;
-import jakarta.persistence.EntityManager;
 
-@Repository
-public abstract class TypesRepository implements CrudRepository<Type, Integer>  {
+import io.helidon.data.repository.GenericRepository;
 
-    // TODO: Initialization - manual for SE/Pico, @Inject for MP
-    private final EntityManager entityManager;
+public class HelidonData {
 
-    public TypesRepository(EntityManager entityManager) {
-        this.entityManager = entityManager;
+    /**
+     * Creates an instance of data repository.
+     *
+     * @param repositoryClass data repository interface or abstract class to create
+     * @return new data repository instance
+     * @param <T> target data repository type
+     */
+    public static <T extends GenericRepository> T createRepository(Class <? super T> repositoryClass) {
+        // TODO: Real imlpementation, this is just a placeholder
+        T repository = null;
+        return repository;
     }
 
 }

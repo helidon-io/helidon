@@ -13,35 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.data.pokemons.model;
+package io.helidon.examples.data.pokemons.repository;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import io.helidon.data.annotation.Repository;
+import io.helidon.data.repository.CrudRepository;
+import io.helidon.examples.data.pokemons.model.Type;
 
-/**
- * Pokemon type entity.
- */
-@Entity
-public class Type {
-
-    @Id
-    private int id;
-    private String name;
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+// Micronaut marks those interfaces/abstract classes with annotation. It may help with processing.
+// But it's not mandatory - all have GenericRepository as parent interface.
+@Repository
+public interface TypeRepository extends CrudRepository<Type, Integer>  {
 
 }
