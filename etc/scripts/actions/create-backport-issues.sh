@@ -70,7 +70,7 @@ readonly ISSUE=$(curl -s -X GET \
   "$GET_ISSUE_URL")
 
 # Get issue information
-readonly ISSUE_TITLE=$(echo "$ISSUE" | jq -r ".title")
+ISSUE_TITLE=$(echo "$ISSUE" | jq -r ".title")
 readonly ISSUE_ASSIGNEE=$(echo "$ISSUE" | jq -r ".assignee.login")
 readonly ISSUE_LABELS=$(echo "$ISSUE" | jq -r ".labels") # JSON Array
 
@@ -107,6 +107,9 @@ if [ ${#version_labels[@]} -eq 0 ]; then
     exit 1
   fi
 fi
+
+# Replace all instances of " with ' in the Issue Title to avoid JSON parsing issue
+ISSUE_TITLE=$(sed "s/\"/'/g" <<< "$ISSUE_TITLE")
 
 ############################################################
 # For each version that is not the issue's version, add backport
@@ -152,6 +155,14 @@ for version in ${VERSIONS[@]}; do
 
     new_issue_number=$(echo $new_issue | jq -r ".number")
     new_issue_url=$(echo $new_issue | jq -r ".html_url")
-    echo "Created issue for version ${version}, issue number: ${new_issue_number}, url: ${new_issue_url}"
+
+    # Print out the Github API Server response if unable to parse the issue number. Also display the
+    # json payload that was sent so it can be inspected for problems if such issue occur.
+    if [ "${new_issue_number}" == "null" ]; then
+      echo "Encountered an error while attempting to create an issue: $new_issue"
+      echo "Json payload: $new_issue_json"
+    else
+      echo "Created issue for version ${version}, issue number: ${new_issue_number}, url: ${new_issue_url}"
+    fi
   fi
 done
