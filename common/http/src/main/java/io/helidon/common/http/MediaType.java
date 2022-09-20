@@ -152,6 +152,11 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      */
     public static final MediaType APPLICATION_X_NDJSON;
 
+    /**
+     * A {@link MediaType} constant representing the {@code application/openmetrics-text} media type.
+     */
+    public static final MediaType APPLICATION_OPENMETRICS;
+
     static {
         Map<String, MediaType> knownTypes = new HashMap<>();
 
@@ -220,6 +225,9 @@ public final class MediaType implements AcceptPredicate<MediaType> {
 
         APPLICATION_X_NDJSON = new MediaType("application", "x-ndjson");
         knownTypes.put("application/x-ndjson", APPLICATION_X_NDJSON);
+
+        APPLICATION_OPENMETRICS = new MediaType("application", "openmetrics-text");
+        knownTypes.put("application/openmetrics-text", APPLICATION_OPENMETRICS);
 
         KNOWN_TYPES = Collections.unmodifiableMap(knownTypes);
     }
