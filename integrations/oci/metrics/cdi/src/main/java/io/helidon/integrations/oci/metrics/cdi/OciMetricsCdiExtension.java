@@ -37,7 +37,8 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  */
 public class OciMetricsCdiExtension implements Extension {
 
-    void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv) {
+    // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
+    void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object adv) {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         Config helidonConfig = MpConfig.toHelidonConfig(config).get("ocimetrics");
 

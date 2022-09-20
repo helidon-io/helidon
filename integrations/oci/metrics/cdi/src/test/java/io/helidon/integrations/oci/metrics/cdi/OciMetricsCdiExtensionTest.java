@@ -40,7 +40,9 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -62,29 +64,25 @@ import static org.hamcrest.Matchers.is;
 @AddConfig(key = "ocimetrics.resourceGroup",
         value =  OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
 @AddConfig(key = "ocimetrics.initialDelay", value = "1")
-@AddConfig(key = "ocimetrics.delay", value = "20")
+@AddConfig(key = "ocimetrics.delay", value = "2")
 public class OciMetricsCdiExtensionTest {
     private final RegistryFactory rf = RegistryFactory.getInstance();
     private final MetricRegistry baseMetricRegistry = rf.getRegistry(MetricRegistry.Type.BASE);
     private final MetricRegistry vendorMetricRegistry = rf.getRegistry(MetricRegistry.Type.VENDOR);
     private final MetricRegistry appMetricRegistry = rf.getRegistry(MetricRegistry.Type.APPLICATION);
-    private static int testMetricCount = 0;
+    private static volatile int testMetricCount = 0;
+    // Use countDownLatch1 to signal the test that results to be asserted has been retrieved
+    private static CountDownLatch countDownLatch1 = new CountDownLatch(1);
     private static PostMetricDataDetails postMetricDataDetails;
 
     @Test
-    public void testRegisterOciMetrics() {
+    public void testRegisterOciMetrics() throws InterruptedException {
         baseMetricRegistry.counter("baseDummyCounter").inc();
         vendorMetricRegistry.counter("vendorDummyCounter").inc();
         appMetricRegistry.counter("appDummyCounter").inc();
+        // Wait for signal from metric update that testMetricCount has been retrieved
+        countDownLatch1.await(10, TimeUnit.SECONDS);
 
-        Timer timer = new Timer(10);
-        while (testMetricCount <= 0) {
-            if (timer.expired()) {
-                fail(String.format("Timed out after %d sec. waiting for testMetricCount",
-                        timer.getTimeout()));
-            }
-            delay(50L);
-        }
         assertThat(testMetricCount, is(equalTo(3)));
 
         MetricDataDetails metricDataDetails = postMetricDataDetails.getMetricData().get(0);
@@ -144,6 +142,8 @@ public class OciMetricsCdiExtensionTest {
         public PostMetricDataResponse postMetricData(PostMetricDataRequest postMetricDataRequest) {
             postMetricDataDetails = postMetricDataRequest.getPostMetricDataDetails();
             testMetricCount = postMetricDataDetails.getMetricData().size();
+            // Give signal that testMetricCount was retrieved
+            countDownLatch1.countDown();
             return PostMetricDataResponse.builder()
                     .__httpStatusCode__(200)
                     .build();
@@ -176,24 +176,6 @@ public class OciMetricsCdiExtensionTest {
         String compartmentId = "dummy.compartmentId";
         String namespace = "dummy-namespace";
         String resourceGroup = "dummy_resourceGroup";
-    }
-
-    private static class Timer {
-        private final long endTime;
-        private final int timeOut;
-
-        public Timer(int timeOut) {
-            this.timeOut = timeOut;
-            this.endTime = System.currentTimeMillis() + 1_000L * timeOut;
-        }
-
-        public boolean expired() {
-            return System.currentTimeMillis() >= this.endTime;
-        }
-
-        int getTimeout() {
-            return this.timeOut;
-        }
     }
 
     private static void delay(long millis) {
