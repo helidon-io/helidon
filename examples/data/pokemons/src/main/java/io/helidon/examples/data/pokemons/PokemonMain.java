@@ -16,10 +16,9 @@
 package io.helidon.examples.data.pokemons;
 
 import io.helidon.common.LogConfig;
-import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.tracing.TracerBuilder;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
+
 
 /**
  * Simple Hello World rest application.
@@ -44,44 +43,30 @@ public final class PokemonMain {
     /**
      * Start the server.
      *
-     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
+     * @return the created {@link io.helidon.nima.webserver.WebServer} instance
      */
     static WebServer startServer() {
 
         // Load logging configuration
         LogConfig.configureRuntime();
 
-        // Load service configuration from .yaml file
-        Config config = Config.create();
+        WebServer server = WebServer.builder()
+                .routing(PokemonMain::routing)
+                .start();
 
-        // Prepare routing for the server
-        Routing routing = createRouting(config);
-
-        WebServer server = WebServer.builder(routing)
-                .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
-                .build();
-
-        // Start the server and print some info.
-        server.start()
-                .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
-
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown()
-                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
 
         return server;
     }
 
     /**
-     * Creates new {@link io.helidon.reactive.webserver.Routing}.
+     * Updates HTTP Routing.
      *
-     * @param config configuration of this server
-     * @return routing configured with JSON support, a health check, and a service
+     * @param routing routing builder
      */
-    private static Routing createRouting(Config config) {
-        return Routing.builder()
-                .register("/example", new PokemonService())
+    private static void routing(HttpRouting.Builder routing) {
+        routing.register("/example", new PokemonService())
                 .build();
     }
+
 }

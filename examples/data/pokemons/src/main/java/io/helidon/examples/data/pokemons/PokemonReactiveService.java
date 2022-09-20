@@ -21,7 +21,6 @@ import io.helidon.data.HelidonData;
 import io.helidon.examples.data.pokemons.model.Pokemon;
 import io.helidon.examples.data.pokemons.repository.PokemonReactiveRepository;
 import io.helidon.examples.data.pokemons.repository.TypeReactiveRepository;
-import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.webserver.*;
 
 /**
@@ -35,7 +34,7 @@ public class PokemonReactiveService implements Service {
     // Type entity data repository
     final TypeReactiveRepository typeRepository;
 
-    PokemonReactiveService(DbClient dbClient) {
+    PokemonReactiveService() {
         this.pokemonRepository = HelidonData.createRepository(PokemonReactiveRepository.class);
         this.typeRepository = HelidonData.createRepository(TypeReactiveRepository.class);
     }

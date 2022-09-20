@@ -21,12 +21,12 @@ import io.helidon.data.HelidonData;
 import io.helidon.examples.data.pokemons.model.Pokemon;
 import io.helidon.examples.data.pokemons.repository.PokemonRepository;
 import io.helidon.examples.data.pokemons.repository.TypeRepository;
-import io.helidon.reactive.webserver.*;
+import io.helidon.nima.webserver.http.*;
 
 /**
  * Example Nima service using blocking CRUD data repoository.
  */
-public class PokemonService implements Service {
+public class PokemonService implements HttpService {
 
     // Pokemon entity data repository
     private final PokemonRepository pokemonRepository;
@@ -40,7 +40,7 @@ public class PokemonService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
                 .get("/", this::index)
                 // List all types
@@ -58,7 +58,7 @@ public class PokemonService implements Service {
                 // Update name of existing pokemon
                 .put("/pokemon", Handler.create(Pokemon.class, this::updatePokemon))
                 // Delete pokemon by ID including type relation
-                .delete("/pokemon/{id}", this::deletePokemonById);
+                .delete(Handler.create(this::deletePokemonById));
     }
 
 
@@ -112,7 +112,7 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemonById(ServerRequest request, ServerResponse response) {
-            int pokemonId = Integer.parseInt(request.path().param("id"));
+            int pokemonId = Integer.parseInt(request.path().pathParameters().value("id"));
             // Optional<E> findById(ID id) is method added from CrudRepository interface
             pokemonRepository.findById(pokemonId)
                     .ifPresentOrElse(
@@ -128,7 +128,7 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
-        String pokemonName = request.path().param("name");
+        String pokemonName = request.path().pathParameters().value("name");
         // Optional<Pokemon> findByName(String name) is method defined as query by method name
         pokemonRepository.findByName(pokemonName)
                 .ifPresentOrElse(
@@ -144,7 +144,7 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemonsByType(ServerRequest request, ServerResponse response) {
-        String typeName = request.path().param("name");
+        String typeName = request.path().pathParameters().value("name");
         // List<Pokemon> listByTypeName(String typeName) is method defined as query by method name
         response.send(pokemonRepository.listByTypeName(typeName));
     }
@@ -156,8 +156,8 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemonByTypeAndName(ServerRequest request, ServerResponse response) {
-        String typeName = request.path().param("typeName");
-        String pokemonName = request.path().param("pokemonName");
+        String typeName = request.path().pathParameters().value("typeName");
+        String pokemonName = request.path().pathParameters().value("pokemonName");
         // Optional<Pokemon> pokemonsByTypeAndName(String typeName, String pokemonName)
         // is method defined by custom query annotation
         pokemonRepository.pokemonsByTypeAndName(typeName, pokemonName)
@@ -170,50 +170,34 @@ public class PokemonService implements Service {
     /**
      * Insert new pokemon.
      *
-     * @param request  the server request
-     * @param response the server response
+     * @param pokemon pokemon to insert
      */
-    private void insertPokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
+    private Pokemon insertPokemon(Pokemon pokemon) {
         // <T extends E> T save(T entity) is method added from CrudRepository interface
         pokemonRepository.save(pokemon);
-        response.send(pokemon);
+        return pokemon;
     }
 
     /**
      * Update a pokemon.
      *
-     * @param request  the server request
-     * @param response the server response
+     * @param pokemon pokemon to update
      */
-    private void updatePokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
+    private Pokemon updatePokemon(Pokemon pokemon) {
         // <T extends E> T update(T entity) is method added from CrudRepository interface
         pokemonRepository.update(pokemon);
-        response.send(pokemon);
+        return pokemon;
     }
 
     /**
      * Delete pokemon with specified id (key).
      *
      * @param request  the server request
-     * @param response the server response
      */
-    private void deletePokemonById(ServerRequest request, ServerResponse response) {
-        int id = Integer.parseInt(request.path().param("id"));
+    private void deletePokemonById(ServerRequest request) {
+        int id = Integer.parseInt(request.path().pathParameters().value("id"));
         // void deleteById(ID id) is method added from CrudRepository interface
         pokemonRepository.deleteById(id);
-        response.send();
-    }
-
-    /**
-     * Delete all pokemons.
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
-    private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
-        // void deleteAll() is method added from CrudRepository interface
-        pokemonRepository.deleteAll();
-        response.send();
     }
 
 }
