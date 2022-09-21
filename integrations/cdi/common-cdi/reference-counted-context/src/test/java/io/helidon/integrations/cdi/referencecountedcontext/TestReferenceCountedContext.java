@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 @ApplicationScoped
 final class TestReferenceCountedContext {
@@ -52,7 +53,7 @@ final class TestReferenceCountedContext {
     private final void startContainer() {
         stopContainer();
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         initializer.disableDiscovery();
         initializer.addBeanClasses(this.getClass(), HousingBean.class, Gorp.class);
         initializer.addExtensions(ReferenceCountedExtension.class);
@@ -71,25 +72,25 @@ final class TestReferenceCountedContext {
                                  final RequestContextController controller,
                                  final BeanManager beanManager,
                                  final Gorp gorpAsParameter) {
-        assertNotNull(controller);
-        assertNotNull(beanManager);
-        assertNotNull(gorpAsParameter);
+        assertThat(controller, notNullValue());
+        assertThat(beanManager, notNullValue());
+        assertThat(gorpAsParameter, notNullValue());
 
         final Set<Bean<?>> gorpBeans = beanManager.getBeans(Gorp.class);
-        assertNotNull(gorpBeans);
-        assertEquals(1, gorpBeans.size());
+        assertThat(gorpBeans, notNullValue());
+        assertThat(gorpBeans, hasSize(1));
         @SuppressWarnings("unchecked")
         final Bean<Gorp> gorpBean = (Bean<Gorp>)gorpBeans.iterator().next();
-        assertNotNull(gorpBean);
+        assertThat(gorpBean, notNullValue());
 
         final ReferenceCountedContext context = ReferenceCountedContext.getInstanceFrom(beanManager);
-        assertNotNull(context);
-        assertTrue(context.isActive());
+        assertThat(context, notNullValue());
+        assertThat(context.isActive(), is(true));
 
         // Gorp is @ReferenceCounted.  It is proxied.  Note that we do
         // not dereference the gorpAsParameter proxy yet, so no
         // underlying instance is created.
-        assertEquals(0, context.getReferenceCount(gorpBean));
+        assertThat(context.getReferenceCount(gorpBean), is(0));
 
         Gorp gorp = null;
         try {
@@ -97,20 +98,20 @@ final class TestReferenceCountedContext {
 
             // this.bean is @RequestScoped.  It houses an instance of
             // Gorp.
-            assertNotNull(this.bean);
-            assertEquals(0, context.getReferenceCount(gorpBean));
+            assertThat(this.bean, notNullValue());
+            assertThat(context.getReferenceCount(gorpBean), is(0));
 
             // Here, the gorp acquired is a client proxy.  No
             // contextual instance has been created yet.
             gorp = this.bean.getGorp();
-            assertNotNull(gorp);
-            assertEquals(0, context.getReferenceCount(gorpBean));
+            assertThat(gorp, notNullValue());
+            assertThat(context.getReferenceCount(gorpBean), is(0));
 
             // This will cause the underlying instance to be created.
             // It will be the first Gorp instance created anywhere.
             // The reference count is 1.
-            assertEquals(1, gorp.getId());
-            assertEquals(1, context.getReferenceCount(gorpBean));
+            assertThat(gorp.getId(), is(1));
+            assertThat(context.getReferenceCount(gorpBean), is(1));
 
         } finally {
 
@@ -120,13 +121,13 @@ final class TestReferenceCountedContext {
             // reference count of 0.  This Gorp reference is therefore
             // destroyed.
             controller.deactivate();
-            assertEquals(0, context.getReferenceCount(gorpBean));
+            assertThat(context.getReferenceCount(gorpBean), is(0));
         }
 
         // Now we kick the proxy.  This will cause another instance to
         // be created.  The reference count will bump to 1.
-        assertEquals(2, gorpAsParameter.getId());
-        assertEquals(1, context.getReferenceCount(gorpBean));
+        assertThat(gorpAsParameter.getId(), is(2));
+        assertThat(context.getReferenceCount(gorpBean), is(1));
 
         // Next we refer to the Gorp instance that was referred to by
         // the request-scoped HousingBean.  If Gorp had been
@@ -135,8 +136,8 @@ final class TestReferenceCountedContext {
         // because the gorpParameter dereference above caused the
         // reference count to jump, THIS Gorp instance will now be the
         // same one as gorpAsParameter.
-        assertEquals(2, gorp.getId());
-        assertEquals(2, context.getReferenceCount(gorpBean));
+        assertThat(gorp.getId(), is(2));
+        assertThat(context.getReferenceCount(gorpBean), is(2));
 
     }
 
