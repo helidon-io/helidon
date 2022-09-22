@@ -1,5 +1,6 @@
 package {{package}};
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -172,9 +173,9 @@ class FtServiceTest {
         assertThat(response, is("Slept for 50 ms"));
 
         WebClientResponse clientResponse = client.get()
-                .path("/timeout/105")
+                .path("/timeout/10000")
                 .request()
-                .await(1, TimeUnit.SECONDS);
+                .await(Duration.ofSeconds(11));
 
         response = clientResponse.content().as(String.class).await(1, TimeUnit.SECONDS);
         // error handler specified in Main
