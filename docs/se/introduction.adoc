@@ -199,7 +199,7 @@ Follow step-by-step guides to build your applications using Helidon SE.
 [CARD]
 .Javadocs
 // suppress inspection "AsciiDocLinkResolve"
-[icon=library_books,link={javadoc-base-url}/index.html?overview-summary.html,link-type=url]
+[icon=link,link={javadoc-base-url}/index.html?overview-summary.html,link-type=url]
 --
 Browse the Helidon Javadocs.
 --
