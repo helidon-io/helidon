@@ -316,5 +316,26 @@
    <cve>CVE-2022-37422</cve>
 </suppress>
 
+<!-- False Positive. This CVE is fixed in snakeyaml-1.32 which we use, but CVE has not been updated.
+     See https://github.com/jeremylong/DependencyCheck/issues/4839
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: snakeyaml-1.32.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+   <vulnerabilityName>CVE-2022-38752</vulnerabilityName>
+</suppress>
+
+<!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-graphql-api-2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.graphql/microprofile\-graphql\-api@.*$</packageUrl>
+   <cve>CVE-2022-37734</cve>
+</suppress>
+
 
 </suppressions>
