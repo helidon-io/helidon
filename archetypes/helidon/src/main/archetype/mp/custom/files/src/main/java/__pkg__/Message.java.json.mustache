@@ -1,5 +1,13 @@
 package {{package}};
 
+{{#media-json-jackson}}
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+{{/media-json-jackson}}
+
+{{#media-json-jackson}}
+@JsonInclude(Include.NON_NULL)
+{{/media-json-jackson}}
 public class Message {
 
     private String message;
