@@ -103,7 +103,7 @@ your application can load this as configuration as follows:
 [source,java]
 .Using `directory` config source
 ----
-Config secrets = Config.withSources(
+Config secrets = Config.builder(
         ConfigSources.directory("conf/secrets")) // <1>
         .disableEnvironmentVariablesSource()     // <2>
         .disableSystemPropertiesSource()         // <2>
