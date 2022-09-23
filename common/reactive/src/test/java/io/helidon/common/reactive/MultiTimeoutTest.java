@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MultiTimeoutTest {
 
@@ -127,11 +127,11 @@ public class MultiTimeoutTest {
             Thread.sleep(10);
         }
 
-        assertFalse(sp.hasSubscribers());
+        assertThat(sp.hasSubscribers(), is(false));
 
         ts.assertValuesOnly(1L);
 
-        assertTrue(sp2.hasSubscribers());
+        assertThat(sp2.hasSubscribers(), is(true));
 
         sp2.submit(2L);
         sp2.close();

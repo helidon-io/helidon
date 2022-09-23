@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.Matchers.emptyArray;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MultiRetryTest {
 
@@ -46,7 +48,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(count.get(), 5);
+        assertThat(count.get(), is(5));
     }
 
     @Test
@@ -58,7 +60,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(NullPointerException.class);
-        assertTrue(ts.getLastError().getSuppressed()[0] instanceof IOException, "" + ts.getLastError());
+        assertThat("" + ts.getLastError(), ts.getLastError().getSuppressed()[0], instanceOf(IOException.class));
     }
 
     @Test
@@ -72,7 +74,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertTrue(ts.getLastError().getSuppressed()[0] instanceof IOException, "" + ts.getLastError());
+        assertThat("" + ts.getLastError(), ts.getLastError().getSuppressed()[0], instanceOf(IOException.class));
     }
 
     @Test
@@ -86,7 +88,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(ts.getLastError().getSuppressed().length, 0, "" + ts.getLastError());
+        assertThat("" + ts.getLastError(), ts.getLastError().getSuppressed(), emptyArray());
     }
 
     @Test
@@ -120,7 +122,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(ts.getLastError().getSuppressed().length, 0, "" + ts.getLastError());
+        assertThat("" + ts.getLastError(), ts.getLastError().getSuppressed(), emptyArray());
     }
 
     @Test
@@ -145,7 +147,7 @@ public class MultiRetryTest {
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
-        assertEquals(ts.getLastError().getSuppressed().length, 0, "" + ts.getLastError());
+        assertThat("" + ts.getLastError(), ts.getLastError().getSuppressed(), emptyArray());
     }
 
     @Test
@@ -165,7 +167,7 @@ public class MultiRetryTest {
             ts.awaitDone(5, TimeUnit.SECONDS)
                     .assertResult(1);
 
-            assertEquals(count.get(), 5);
+            assertThat(count.get(), is(5));
         } finally {
             executor.shutdown();
         }
