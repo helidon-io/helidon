@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ApplicationScoped
 public class TestTransactionalAnnotationSupport {
@@ -56,7 +57,7 @@ public class TestTransactionalAnnotationSupport {
     void startCdiContainer() {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(TestTransactionalAnnotationSupport.class);
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
   
@@ -70,23 +71,23 @@ public class TestTransactionalAnnotationSupport {
     private static void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
                                   final TestTransactionalAnnotationSupport self)
         throws SystemException {
-        assertNotNull(event);
-        assertNotNull(self);
+        assertThat(event, notNullValue());
+        assertThat(self, notNullValue());
         self.doSomethingTransactional();
     }
 
     private void onBeginningOfTransactionScope(@Observes @Initialized(TransactionScoped.class) final Object event) {
-        assertTrue(event instanceof Transaction);
+        assertThat(event, instanceOf(Transaction.class));
         this.transactionScopeStarted = true;
     }
 
     @Transactional(Transactional.TxType.REQUIRED)
     void doSomethingTransactional() throws SystemException {
-        assertTrue(this.transactionScopeStarted);
-        assertNotNull(this.userTransaction);
-        assertEquals(Status.STATUS_ACTIVE, this.userTransaction.getStatus());
-        assertNotNull(this.transaction);
-        assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
+        assertThat(this.transactionScopeStarted, is(true));
+        assertThat(this.userTransaction, notNullValue());
+        assertThat(this.userTransaction.getStatus(), is(Status.STATUS_ACTIVE));
+        assertThat(this.transaction, notNullValue());
+        assertThat(this.transaction.getStatus(), is(Status.STATUS_ACTIVE));
     }
 
     @Test
