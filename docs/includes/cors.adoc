@@ -26,9 +26,6 @@ ifndef::h1-prefix[:h1-prefix: SE]
 :basic-table-intro:
 :config-table-methods-column-header: builder method
 :cors-config-key-explanation:
-:allow-origins-method-name: allowOrigins
-:max-age-method-name: maxAgeSeconds
-:enabled-method-name: enabled
 
 = CORS Shared content
 
@@ -135,6 +132,9 @@ endif::[]
 //  enabled-method-name
 //
 // tag::cors-config-table[]
+:allow-origins-method-name: allowOrigins
+:max-age-method-name: maxAgeSeconds
+:enabled-method-name: enabled
 
 ifndef::cors-config-table-exclude-methods+cors-config-table-exclude-keys[]
 [width="100%",options="header",cols="6*"]
@@ -169,7 +169,7 @@ ifndef::cors-config-table-exclude-keys[|`allow-origins`]
 
 ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
 ifndef::cors-config-table-exclude-keys[|`expose-headers`]
-|string[] | |Sets the expose headers. |`Access-Control-Expose-Headers`
+|string[]| {nbsp} |Sets the expose headers. |`Access-Control-Expose-Headers`
 
 ifndef::cors-config-table-exclude-methods[|`{max-age-method-name}`]
 ifndef::cors-config-table-exclude-keys[|`max-age-seconds`]
