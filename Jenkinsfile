@@ -26,43 +26,6 @@ pipeline {
   stages {
     stage('default') {
       parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
-              }
-            }
-          }
-        }
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
-        stage('archetypes'){
-          agent {
-            label "linux"
-          }
-          steps {
-            script {
-              try {
-                sh 'etc/scripts/test-archetypes.sh'
-              } finally {
-                archiveArtifacts artifacts: "archetypes/**/target/**/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
-            }
-          }
-        }
         stage('integration-tests') {
           stages {
             stage('test-vault') {
@@ -77,30 +40,6 @@ pipeline {
                 sh './etc/scripts/test-integ-vault.sh'
                 archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
                 junit testResults: '**/target/surefire-reports/*.xml'
-              }
-            }
-            stage('test-packaging-jar'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-jar.sh'
-              }
-            }
-            stage('test-packaging-jlink'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-jlink.sh'
-              }
-            }
-            stage('test-packaging-native'){
-              agent {
-                label "linux"
-              }
-              steps {
-                sh 'etc/scripts/test-packaging-native.sh'
               }
             }
           }
@@ -119,7 +58,7 @@ pipeline {
         GPG_PASSPHRASE = credentials('helidon-gpg-passphrase')
       }
       steps {
-        sh './etc/scripts/release.sh release_build'
+        sh './etc/scripts/releaetcse.sh release_build'
       }
     }
   }
