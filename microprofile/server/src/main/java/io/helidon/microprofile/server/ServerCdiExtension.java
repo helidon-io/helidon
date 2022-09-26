@@ -45,6 +45,7 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.cdi.InitializationFailed;
 import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.Service;
@@ -123,6 +124,10 @@ public class ServerCdiExtension implements Extension {
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
         this.config = config;
+    }
+
+    private void startupFailed(@Observes @InitializationFailed Object event) {
+        stopServer(event);
     }
 
     // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
@@ -325,7 +330,7 @@ public class ServerCdiExtension implements Extension {
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
         try {
             if (started) {
-                doStop(event);
+                doStop();
             }
         } finally {
             // as there only can be a single CDI in a single JVM, once this CDI is shutting down, we
@@ -334,7 +339,7 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
-    private void doStop(Object event) {
+    private void doStop() {
         if (null == webserver || !started) {
             // nothing to do
             return;

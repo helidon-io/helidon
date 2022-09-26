@@ -209,14 +209,23 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         }
         BeanManagerImpl beanManager = bootstrap.getManager(archives.iterator().next());
 
-        beanManager.getEvent().select(BuildTimeStart.Literal.INSTANCE).fire(id);
+        try {
+            beanManager.getEvent().select(BuildTimeStart.Literal.INSTANCE).fire(id);
 
-        bootstrap.deployBeans();
+            bootstrap.deployBeans();
 
-        cdi = new HelidonCdi(id, bootstrap, deployment);
-        HelidonCdiProvider.setCdi(cdi);
+            cdi = new HelidonCdi(id, bootstrap, deployment);
+            HelidonCdiProvider.setCdi(cdi);
 
-        beanManager.getEvent().select(BuildTimeEnd.Literal.INSTANCE).fire(id);
+            beanManager.getEvent().select(BuildTimeEnd.Literal.INSTANCE).fire(id);
+        } catch (Throwable e) {
+            try {
+                beanManager.getEvent().select(InitializationFailed.Literal.INSTANCE).fire(e);
+            } catch (Exception ex) {
+                e.addSuppressed(ex);
+            }
+            throw e;
+        }
 
         return this;
     }
