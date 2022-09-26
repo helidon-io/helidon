@@ -117,8 +117,6 @@ jobs:
         run: etc/scripts/test-packaging-jar.sh
       - name: JLink packaging
         run: etc/scripts/test-packaging-jlink.sh
-      - name: Native image packaging
-        run: etc/scripts/test-packaging-native.sh
       - name: MP-1 test
         run: tests/integration/native-image/mp-1/test-runtime.sh
       - name: MP-3 test
