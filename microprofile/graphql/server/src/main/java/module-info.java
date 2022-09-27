@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ module io.helidon.microprofile.graphql.server {
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
 
-    requires graphql.java;
+    requires com.graphqljava;
     requires graphql.java.extended.scalars;
     requires microprofile.graphql.api;
     requires microprofile.config.api;
