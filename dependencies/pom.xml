@@ -1270,6 +1270,12 @@
             <!-- END OF Section 2: third party dependencies used by examples -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
+            <!-- Upgrades version pulled in by hibernate -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${version.lib.jaxb-runtime}</version>
+            </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-dns</artifactId>
