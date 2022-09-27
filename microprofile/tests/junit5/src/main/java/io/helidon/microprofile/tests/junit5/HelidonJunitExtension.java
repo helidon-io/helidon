@@ -368,7 +368,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
             // at this early stage the class should be checked whether it is annotated with
             // @TestInstance(TestInstance.Lifecycle.PER_CLASS) to start correctly the container
-            Class<?> testClass = extensionContext.getRequiredTestClass();
             TestInstance testClassAnnotation = testClass.getAnnotation(TestInstance.class);
             if (testClassAnnotation != null && testClassAnnotation.value().equals(TestInstance.Lifecycle.PER_CLASS)){
                 throw new RuntimeException("When a class is annotated with @HelidonTest, "
