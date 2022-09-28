@@ -36,10 +36,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 
 @ApplicationScoped
 class TestDataSourceAcquisition {
@@ -58,7 +58,7 @@ class TestDataSourceAcquisition {
     void startServer() {
         this.stopServer();
         final Server.Builder builder = Server.builder();
-        assertNotNull(builder);
+        assertThat(builder, notNullValue());
         // The Helidon MicroProfile server implementation uses
         // ConfigProviderResolver#getConfig(ClassLoader) directly
         // instead of ConfigProvider#getConfig() so we follow suit
@@ -66,7 +66,7 @@ class TestDataSourceAcquisition {
         builder.config(ConfigProviderResolver.instance().getConfig(Thread.currentThread().getContextClassLoader()));
 
         this.server = builder.build();
-        assertNotNull(this.server);
+        assertThat(this.server, notNullValue());
         this.server.start();
     }
 
@@ -79,15 +79,15 @@ class TestDataSourceAcquisition {
     }
 
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) throws SQLException {
-        assertNotNull(this.test);
-        assertNotNull(this.test.toString());
+        assertThat(this.test, notNullValue());
+        assertThat(this.test.toString(), notNullValue());
         final PoolDataSourceImpl contextualInstance =
             (PoolDataSourceImpl) ((WeldClientProxy) this.test).getMetadata().getContextualInstance();
-        assertEquals("A test datasource", contextualInstance.getDescription());
+        assertThat(contextualInstance.getDescription(), is("A test datasource"));
         Connection connection = null;
         try {
             connection = this.test.getConnection();
-            assertNotNull(connection);
+            assertThat(connection, notNullValue());
         } finally {
             if (connection != null) {
                 connection.close();
@@ -96,15 +96,15 @@ class TestDataSourceAcquisition {
     }
 
     private void configure(@Observes @Named("test") final PoolDataSource pds) throws SQLException {
-        assertEquals("fred", pds.getServiceName());
-        assertNull(pds.getDescription());
-        assertFalse(pds.getClass().isSynthetic());
+        assertThat(pds.getServiceName(), is("fred"));
+        assertThat(pds.getDescription(), nullValue());
+        assertThat(pds.getClass().isSynthetic(), is(false));
         pds.setDescription("A test datasource");
     }
 
     private void configure(@Observes @Named("testxa") final PoolXADataSource pds) throws SQLException {
-        assertNull(pds.getDescription());
-        assertFalse(pds.getClass().isSynthetic());
+        assertThat(pds.getDescription(), nullValue());
+        assertThat(pds.getClass().isSynthetic(), is(false));
         pds.setDescription("A test datasource");
     }
 
