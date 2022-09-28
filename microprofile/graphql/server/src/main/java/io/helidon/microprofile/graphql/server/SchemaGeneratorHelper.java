@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import graphql.scalars.ExtendedScalars;
-import graphql.scalars.object.ObjectScalar;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTransient;
 import org.eclipse.microprofile.graphql.DefaultValue;
@@ -284,7 +283,7 @@ final class SchemaGeneratorHelper {
      */
     static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
         // Object Scalar
-        put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), new ObjectScalar(), null));
+        put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object, null));
 
         // Time scalars
         put(OffsetTime.class.getName(),

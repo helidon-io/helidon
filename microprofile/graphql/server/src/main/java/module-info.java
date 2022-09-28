@@ -37,7 +37,7 @@ module io.helidon.microprofile.graphql.server {
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
 
-    requires graphql.java;
+    requires com.graphqljava;
     requires graphql.java.extended.scalars;
     requires microprofile.graphql.api;
     requires microprofile.config.api;
