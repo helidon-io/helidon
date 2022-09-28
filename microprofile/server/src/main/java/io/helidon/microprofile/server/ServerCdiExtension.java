@@ -43,8 +43,6 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
-import io.helidon.microprofile.cdi.BuildTimeStart;
-import io.helidon.microprofile.cdi.InitializationFailed;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.reactive.webserver.Routing;
@@ -112,22 +110,9 @@ public class ServerCdiExtension implements Extension {
 
     private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
 
-    private void buildTime(@Observes @BuildTimeStart Object event) {
-        // update the status of server, as we may have been started without a builder being used
-        // such as when cdi.Main or SeContainerInitializer are used
-        if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
-            throw new IllegalStateException("There is another builder in progress, or another Server running. "
-                                                    + "You cannot run more than one in parallel");
-        }
-    }
-
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
         this.config = config;
-    }
-
-    private void startupFailed(@Observes @InitializationFailed Object event) {
-        stopServer(event);
     }
 
     // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
@@ -174,6 +159,12 @@ public class ServerCdiExtension implements Extension {
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
+        // update the status of server, as we may have been started without a builder being used
+        // such as when cdi.Main or SeContainerInitializer are used
+        if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
+            throw new IllegalStateException("There is another builder in progress, or another Server running. "
+                                                    + "You cannot run more than one in parallel");
+        }
 
         // make sure all configuration is in place
         if (null == jaxRsExecutorService) {
