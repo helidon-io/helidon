@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,6 +147,9 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
 
     @Override
     public SeContainer initialize() {
+        if (HelidonContainerImpl.isRuntime()) {
+            throw new IllegalStateException("Helidon CDI is already started, cannot create two instances in the same JVM");
+        }
         container.initInContext();
         return container.start();
     }

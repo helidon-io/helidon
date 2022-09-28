@@ -43,7 +43,6 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
-import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.reactive.webserver.Routing;
@@ -111,15 +110,6 @@ public class ServerCdiExtension implements Extension {
 
     private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
 
-    private void buildTime(@Observes @BuildTimeStart Object event) {
-        // update the status of server, as we may have been started without a builder being used
-        // such as when cdi.Main or SeContainerInitializer are used
-        if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
-            throw new IllegalStateException("There is another builder in progress, or another Server running. "
-                                                    + "You cannot run more than one in parallel");
-        }
-    }
-
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
         this.config = config;
@@ -169,6 +159,12 @@ public class ServerCdiExtension implements Extension {
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
+        // update the status of server, as we may have been started without a builder being used
+        // such as when cdi.Main or SeContainerInitializer are used
+        if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
+            throw new IllegalStateException("There is another builder in progress, or another Server running. "
+                                                    + "You cannot run more than one in parallel");
+        }
 
         // make sure all configuration is in place
         if (null == jaxRsExecutorService) {
@@ -325,7 +321,7 @@ public class ServerCdiExtension implements Extension {
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
         try {
             if (started) {
-                doStop(event);
+                doStop();
             }
         } finally {
             // as there only can be a single CDI in a single JVM, once this CDI is shutting down, we
@@ -334,7 +330,7 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
-    private void doStop(Object event) {
+    private void doStop() {
         if (null == webserver || !started) {
             // nothing to do
             return;
