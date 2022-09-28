@@ -58,7 +58,7 @@ pipeline {
         GPG_PASSPHRASE = credentials('helidon-gpg-passphrase')
       }
       steps {
-        sh './etc/scripts/releaetcse.sh release_build'
+        sh './etc/scripts/release.sh release_build'
       }
     }
   }
