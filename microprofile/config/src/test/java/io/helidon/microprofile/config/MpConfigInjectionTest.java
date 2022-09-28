@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.config;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.microprofile.config.Converters.Ctor;
@@ -31,6 +32,8 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import jakarta.inject.Qualifier;
+
+import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +41,7 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -57,8 +61,30 @@ class MpConfigInjectionTest {
     private Bean bean;
 
     @Inject
+    @ConfigProperties
+    private ConfigPropertyNonBean configPropertyNonBean;
+
+    @Inject
+    @ConfigProperties
+    private ConfigPropertyNonBean configPropertyInternalNonBean;
+
+    @Inject
     @Specific
     private SubBean subBean;
+
+    @Test
+    void testConfigPropertiesWithoutBeanDefiningAnnotation() {
+        assertThat(configPropertyNonBean.bikes, is(5));
+        assertThat(configPropertyNonBean.electric, is(true));
+        assertThat(List.of(configPropertyNonBean.colors), contains("blue","white","orange"));
+    }
+
+    @Test
+    void testConfigPropertiesWithoutBeanDefiningAnnotationInternal() {
+        assertThat(configPropertyInternalNonBean.bikes, is(5));
+        assertThat(configPropertyInternalNonBean.electric, is(true));
+        assertThat(List.of(configPropertyInternalNonBean.colors), contains("blue","white","orange"));
+    }
 
     @Test
     void testInjectMapNoPrefix() {
@@ -136,5 +162,12 @@ class MpConfigInjectionTest {
 
     @Specific
     public static class SubBean extends Bean {
+    }
+
+    @ConfigProperties(prefix="vehicles")
+    public static class ConfigPropertyInternalNonBean {
+        public @ConfigProperty(name="motor-bikes") int bikes;
+        public boolean electric;
+        public String[] colors;
     }
 }
