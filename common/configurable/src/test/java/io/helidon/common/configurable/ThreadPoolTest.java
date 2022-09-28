@@ -561,6 +561,7 @@ class ThreadPoolTest {
         };
         pool.submit(task4);
         pool.shutdown();
+        assertThat(pool.awaitTermination(20, SECONDS), is(true));
         assertThat(pool.getCompletedTasks(), is(2));
         assertThat(pool.getFailedTasks(), is(2));
         assertThat(pool.getTotalTasks(), is(pool.getCompletedTasks() + pool.getFailedTasks()));
