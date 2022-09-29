@@ -28,14 +28,5 @@ mvn ${MAVEN_ARGS} --version
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
-    -Dmaven.test.failure.ignore=true \
+    -Dmaven.test.failure.ignore=false \
     -Pexamples,archetypes,javadoc,sources,tck,tests,pipeline
-
-#
-# test running from jar file, and then from module path
-#
-# The first integration test tests all MP features except for JPA/JTA
-# with multiple JAX-RS applications including security
-tests/integration/native-image/mp-1/test-runtime.sh
-# The third integration test tests Helidon Quickstart MP
-tests/integration/native-image/mp-3/test-runtime.sh
