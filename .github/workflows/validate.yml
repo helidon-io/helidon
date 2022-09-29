@@ -96,7 +96,7 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn -B install -e -Dmaven.test.skip=true -DskipTests -Ppipeline
+          mvn -B -e "-Dmaven.test.skip=true" -DskipTests -Ppipeline install 
           cd examples
           mvn -B verify
   mp-tck:
