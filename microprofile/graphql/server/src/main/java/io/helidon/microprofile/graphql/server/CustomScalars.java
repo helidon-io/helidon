@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Date;
 
-import graphql.Scalars;
 import graphql.language.StringValue;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.Coercing;
@@ -36,9 +35,10 @@ import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 
-import static graphql.Scalars.GraphQLBigInteger;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
+import static graphql.scalars.ExtendedScalars.GraphQLBigDecimal;
+import static graphql.scalars.ExtendedScalars.GraphQLBigInteger;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
@@ -208,7 +208,7 @@ class CustomScalars {
      * @return a new custom BigDecimal scalar
      */
     private static GraphQLScalarType newCustomBigDecimalScalar() {
-        GraphQLScalarType originalScalar = Scalars.GraphQLBigDecimal;
+        GraphQLScalarType originalScalar = GraphQLBigDecimal;
 
         return GraphQLScalarType.newScalar()
                 .coercing(new NumberCoercing<BigDecimal>(originalScalar.getCoercing()))
