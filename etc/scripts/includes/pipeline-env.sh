@@ -65,6 +65,14 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
         PATH="${PATH}:${JAVA_HOME}/bin"
     }
 
+    if [ -n "${HELIDON_PIPELINES}" ] ; then
+      export PIPELINE="true"
+      MAVEN_ARGS="${MAVEN_ARGS} -B"
+      export MAVEN_ARGS
+      # temporary fix for copyright plugin (currently fails on big renaming action for Nima)
+      git config diff.renameLimit 32768
+    fi
+
     if [ -n "${JENKINS_HOME}" ] ; then
         export PIPELINE="true"
         export JAVA_HOME="/tools/jdk19"

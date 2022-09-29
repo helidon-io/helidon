@@ -1,0 +1,124 @@
+# Notes
+# - cannot run on windows, as we use shell scripts
+# - removed macos-latest from most jobs to speed up the process
+
+name: "Validate PR"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '19'
+  JAVA_DISTRO: 'temurin'
+  HELIDON_PIPELINES: 'true'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  copyright:
+    runs-on: ubuntu-latest
+    steps:
+     - uses: actions/checkout@v3
+       with:
+         fetch-depth: 0
+     - name: Set up JDK 19
+       uses: actions/setup-java@v3
+       with:
+         distribution: ${{ env.JAVA_DISTRO }}
+         java-version: ${{ env.JAVA_VERSION }}
+         cache: maven
+     - name: Copyright
+       run: etc/scripts/copyright.sh
+  checkstyle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Checkstyle
+        run: etc/scripts/checkstyle.sh
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Docs
+        run: etc/scripts/site.sh
+  spotbugs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Spotbugs
+        run: etc/scripts/spotbugs.sh
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Maven build
+        run: etc/scripts/github-build.sh
+  archetypes:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Test archetypes
+        run: etc/scripts/test-archetypes.sh
+  packaging:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: JAR packaging
+        run: etc/scripts/test-packaging-jar.sh
+      - name: JLink packaging
+        run: etc/scripts/test-packaging-jlink.sh
+      - name: MP-1 test
+        run: tests/integration/native-image/mp-1/test-runtime.sh
+      - name: MP-3 test
+        run: tests/integration/native-image/mp-3/test-runtime.sh
+
