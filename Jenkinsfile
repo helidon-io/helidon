@@ -24,28 +24,6 @@ pipeline {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
   }
   stages {
-    stage('default') {
-      parallel {
-        stage('integration-tests') {
-          stages {
-            stage('test-vault') {
-              agent {
-                kubernetes {
-                  inheritFrom 'k8s-slave'
-                  yamlFile 'etc/pods/vault.yaml'
-                  yamlMergeStrategy merge()
-                }
-              }
-              steps {
-                sh './etc/scripts/test-integ-vault.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
-            }
-          }
-        }
-      }
-    }
     stage('release') {
       when {
         branch '**/release-*'

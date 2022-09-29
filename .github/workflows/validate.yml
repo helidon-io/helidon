@@ -2,13 +2,9 @@
 # - cannot run on windows, as we use shell scripts
 # - removed macos-latest from most jobs to speed up the process
 
-name: "Validate PR"
+name: "Validate"
 
-on:
-  pull_request:
-    branches: [ "main" ]
-
-  workflow_dispatch:
+on: [pull_request, push]
 
 env:
   JAVA_VERSION: '19'
@@ -121,4 +117,3 @@ jobs:
         run: tests/integration/native-image/mp-1/test-runtime.sh
       - name: MP-3 test
         run: tests/integration/native-image/mp-3/test-runtime.sh
-
