@@ -36,11 +36,11 @@ pipeline {
                   yamlMergeStrategy merge()
                 }
               }
-              steps {
-                sh './etc/scripts/test-integ-vault.sh'
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
+              //steps {
+              //  sh './etc/scripts/test-integ-vault.sh'
+              //  archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
+              //  junit testResults: '**/target/surefire-reports/*.xml'
+              //}
             }
           }
         }
