@@ -26,6 +26,12 @@ error_trap_setup
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
-    -DskipTests \
     -Dmaven.test.skip=true \
-    -Pspotbugs,pipeline
+    -DskipTests \
+    -Ppipeline
+
+# Run MicroProfile TCK tests
+cd ${WS_DIR}/microprofile/tests/tck
+
+# Prime build all native-image tests
+mvn ${MAVEN_ARGS} verify -Ptck-ft

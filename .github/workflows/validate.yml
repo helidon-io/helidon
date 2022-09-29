@@ -42,18 +42,6 @@ jobs:
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 19
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Docs
-        run: etc/scripts/site.sh
   spotbugs:
     runs-on: ubuntu-latest
     steps:
@@ -66,6 +54,18 @@ jobs:
           cache: maven
       - name: Spotbugs
         run: etc/scripts/spotbugs.sh
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Docs
+        run: etc/scripts/site.sh
   build:
     strategy:
       matrix:
@@ -81,6 +81,40 @@ jobs:
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
+  examples:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Maven build
+        run: |
+          mvn -B -e "-Dmaven.test.skip=true" -DskipTests -Ppipeline install 
+          cd examples
+          mvn -B verify
+  mp-tck:
+    name: "MicroProfile TCKs"
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Maven build
+        run: etc/scripts/mp-tck.sh
   archetypes:
     strategy:
       matrix:
