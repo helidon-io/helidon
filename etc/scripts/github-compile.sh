@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+#
+# Installs all production modules into local maven repository (compiles all code, both production and test)
+#
+
 # Path to this script
 [ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
@@ -24,9 +28,8 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-mvn ${MAVEN_ARGS} --version
-
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
-    -Dmaven.test.failure.ignore=false \
-    -Pexamples,javadoc,sources,tests,pipeline
+    -DskipTests \
+    -Ppipeline
+

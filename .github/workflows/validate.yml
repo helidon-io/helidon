@@ -42,18 +42,6 @@ jobs:
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 19
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Docs
-        run: etc/scripts/site.sh
   spotbugs:
     runs-on: ubuntu-latest
     steps:
@@ -66,7 +54,33 @@ jobs:
           cache: maven
       - name: Spotbugs
         run: etc/scripts/spotbugs.sh
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Docs
+        run: etc/scripts/site.sh
+  # compile and install to local repo, further jobs depend on this job
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Maven build
+        run: etc/scripts/github-compile.sh
   build:
+    needs: compile
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -81,7 +95,25 @@ jobs:
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
+  mp-tck:
+    needs: compile
+    name: "MicroProfile TCKs"
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 19
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Maven build
+        run: etc/scripts/mp-tck.sh
   archetypes:
+    needs: compile
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -97,6 +129,7 @@ jobs:
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
   packaging:
+    needs: compile
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest]

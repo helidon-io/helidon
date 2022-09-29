@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-mvn ${MAVEN_ARGS} --version
+# Run MicroProfile TCK tests
+cd ${WS_DIR}/microprofile/tests/tck
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    install -e \
-    -Dmaven.test.failure.ignore=false \
-    -Pexamples,javadoc,sources,tests,pipeline
+# Prime build all native-image tests
+mvn ${MAVEN_ARGS} verify -Ptck-ft
