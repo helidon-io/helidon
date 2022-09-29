@@ -29,4 +29,4 @@ mvn ${MAVEN_ARGS} --version
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     install -e \
     -Dmaven.test.failure.ignore=false \
-    -Pexamples,javadoc,sources,tests,pipeline
+    -Pjavadoc,sources,tests,pipeline

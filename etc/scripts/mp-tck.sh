@@ -24,6 +24,12 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+    install -e \
+    -Dmaven.test.skip=true \
+    -DskipTests \
+    -Ppipeline
+
 # Run MicroProfile TCK tests
 cd ${WS_DIR}/microprofile/tests/tck
 
