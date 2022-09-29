@@ -128,4 +128,47 @@ class ZipkinTracerProviderTest {
         values = outboundHeaders.get(ZipkinTracerProvider.X_B3_TRACE_ID);
         assertThat(values, is(List.of(traceId)));
     }
+
+    @Test
+    void testCaseInsensitiveContextInjection() {
+        String mixedB3ParentSpanIdKey = "x-B3-ParentSpanId";
+        String upperB3SpanIdKey = "X-B3-SPANID";
+        String wildB3TraceIdKey = "X-b3-tRaCeiD";
+
+        MockTracer mt = new MockTracer();
+        MockSpan parent = mt.buildSpan("parentOperation").start();
+        MockSpan span = mt.buildSpan("anOperation")
+                .asChildOf(parent)
+                .start();
+
+        String parentSpanId = "51b3b1a413dce011";
+        String spanId = "521c61ede905945f";
+        String traceId = "0000816c055dc421";
+
+        ZipkinTracerProvider provider = new ZipkinTracerProvider();
+        Map<String, List<String>> inboundHeaders = Map.of(
+                ZipkinTracerProvider.X_OT_SPAN_CONTEXT, List.of("0000816c055dc421;0000816c055dc421;0000000000000000;sr"),
+                mixedB3ParentSpanIdKey, List.of(parentSpanId),
+                upperB3SpanIdKey, List.of(spanId),
+                wildB3TraceIdKey, List.of(traceId)
+        );
+        Map<String, List<String>> outboundHeaders = new HashMap<>();
+        provider.updateOutboundHeaders(mt,
+                                       span.context(),
+                                       HeaderProvider.create(inboundHeaders),
+                                       HeaderConsumer.create(outboundHeaders));
+
+        // all should be propagated, X_OT should be fixed
+        List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
+        assertThat(values, is(List.of("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID);
+        assertThat(values, is(List.of(parentSpanId)));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_SPAN_ID);
+        assertThat(values, is(List.of(spanId)));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_TRACE_ID);
+        assertThat(values, is(List.of(traceId)));
+    }
 }
