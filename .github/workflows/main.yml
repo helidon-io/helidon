@@ -4,13 +4,7 @@
 
 name: "Validate PR"
 
-on:
-  pull_request:
-    branches: [ "main" ]
-  push:
-    branches: [ "main" ]
-
-  workflow_dispatch:
+on: [pull_request, push]
 
 env:
   JAVA_VERSION: '19'
