@@ -15,7 +15,10 @@
  */
 package io.helidon.tracing;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -40,7 +43,10 @@ public interface HeaderProvider {
      */
 
     static HeaderProvider create(Map<String, List<String>> inboundHeaders) {
-        return new MapHeaderConsumer(Map.copyOf(inboundHeaders));
+        Map<String, List<String>> result = new HashMap<>();
+        // Normalize to lower-case keys, particularly so B3 headers match correctly.
+        inboundHeaders.forEach((key, value) -> result.put(key.toLowerCase(Locale.ROOT), value));
+        return new MapHeaderConsumer(Collections.unmodifiableMap(result));
     }
 
     /**

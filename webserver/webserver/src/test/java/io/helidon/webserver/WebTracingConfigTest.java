@@ -17,15 +17,21 @@
 package io.helidon.webserver;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.helidon.tracing.config.TracingConfig;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyIterable;
 
 class WebTracingConfigTest {
 
@@ -77,5 +83,31 @@ class WebTracingConfigTest {
         assertThat(healthPathConfigs.get(0).tracedConfig(), is(TracingConfig.DISABLED));
         assertThat(healthPathConfigs.get(1).path(), is("/openapi"));
         assertThat(healthPathConfigs.get(1).tracedConfig(), is(TracingConfig.ENABLED));
+    }
+
+    @Test
+    @Disabled
+    void testHeaderCaseInsensitivity() {
+        String hLower = "x-lower";
+        String hMixed = "x-Mixed";
+        String hUpper = "x-UPPER";
+        String hEmpty = "x-empty";
+
+        Map<String, List<String>> headers = Map.of(hLower, List.of("low1", "low2"),
+                                                   hMixed, List.of("mixed1", "mixed2"),
+                                                   hUpper, List.of("up1"),
+                                                   hEmpty, Collections.emptyList());
+        WebTracingConfig.RequestSpanHandler.TracingHeaderProvider provider =
+                new WebTracingConfig.RequestSpanHandler.TracingHeaderProvider(headers);
+
+        assertThat("Retrieve x-lower", provider.getAll("x-lower"), containsInAnyOrder(headers.get(hLower).toArray()));
+        assertThat("Retrieve x-mixed", provider.getAll("x-mixed"), containsInAnyOrder(headers.get(hMixed).toArray()));
+        assertThat("Retrieve x-upper", provider.getAll("x-upper"), containsInAnyOrder(headers.get(hUpper).toArray()));
+        assertThat("Retrieve x-empty", provider.getAll(hEmpty), emptyIterable());
+
+        assertThat("Contains x-lower", provider.contains("x-lower"), is(true));
+        assertThat("Contains x-mixed", provider.contains("x-mixed"), is(true));
+        assertThat("Contains x-upper", provider.contains("x-upper"), is(true));
+        assertThat("Contains x-empty", provider.contains(hEmpty), is(true));
     }
 }

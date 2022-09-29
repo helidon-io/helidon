@@ -15,8 +15,10 @@
  */
 package io.helidon.webserver;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -339,12 +341,13 @@ public abstract class WebTracingConfig {
                     });
         }
 
-        private static class TracingHeaderProvider implements HeaderProvider {
+        static class TracingHeaderProvider implements HeaderProvider {
 
-            private final Map<String, List<String>> headers;
+            private final Map<String, List<String>> headers = new HashMap<>();
 
             TracingHeaderProvider(Map<String, List<String>> headers) {
-                this.headers = headers;
+                // Normalize to lower-case keys, particularly so B3 headers match correctly.
+                headers.forEach((key, values) -> this.headers.put(key.toLowerCase(Locale.ROOT), values));
             }
 
             @Override
