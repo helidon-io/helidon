@@ -86,7 +86,6 @@ class WebTracingConfigTest {
     }
 
     @Test
-    @Disabled
     void testHeaderCaseInsensitivity() {
         String hLower = "x-lower";
         String hMixed = "x-Mixed";
