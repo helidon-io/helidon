@@ -143,11 +143,9 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
+      - name Build Helidon
+        run etc/scripts/github-compile.sh
       - name: JAR packaging
         run: etc/scripts/test-packaging-jar.sh
       - name: JLink packaging
         run: etc/scripts/test-packaging-jlink.sh
-      - name: MP-1 test
-        run: tests/integration/native-image/mp-1/test-runtime.sh
-      - name: MP-3 test
-        run: tests/integration/native-image/mp-3/test-runtime.sh
