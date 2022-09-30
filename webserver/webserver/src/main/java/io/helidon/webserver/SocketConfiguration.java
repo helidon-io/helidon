@@ -380,12 +380,12 @@ public interface SocketConfiguration {
          * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
          * is returned.
          * <p>
-         * Default is {@code 8192}
+         * Default is {@code 16384}
          *
          * @param size maximal number of bytes of combined header values
          * @return this builder
          */
-        @ConfiguredOption("8192")
+        @ConfiguredOption("16384")
         B maxHeaderSize(int size);
 
         /**

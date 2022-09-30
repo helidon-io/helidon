@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ class TestHttpParseFineTuning {
                                  .any((req, res) -> res.send("any"))
                                  .build())
                 .config(config)
-                .maxHeaderSize(9100)
+                .maxHeaderSize(16400)
                 .maxInitialLineLength(5100)
                 .build()
                 .start()
@@ -87,11 +87,11 @@ class TestHttpParseFineTuning {
                 .validateHeaders(false)
                 .build();
 
-        testHeader(client, 8000, true);
+        testHeader(client, 16000, true);
         testInitialLine(client, 10, true);
 
-        testHeader(client, 8900, true);
-        testHeader(client, 8900, true);
+        testHeader(client, 17000, false);
+        testHeader(client, 17000, false);
 
         // now test with big initial line
         testInitialLine(client, 5000, true);
