@@ -74,8 +74,8 @@ class TestHttpParsingDefaults {
 
     @Test
     void testLongHeader() {
-        testHeader(8900, false);
-        testHeader(8900, false);
+        testHeader(17000, false);
+        testHeader(17000, false);
     }
 
     @Test
