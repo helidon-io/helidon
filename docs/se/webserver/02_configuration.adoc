@@ -77,7 +77,7 @@ Available socket configuration options:
 |`port` |{nbsp} |int |Port to open server socket on, defaults to an available ephemeral port
 |`bind-address` |all local addresses |String |Address to listen on (may be an IPV6 address as well)
 |`backlog` |`1024` |int |Maximum length of the queue of incoming connections on the server socket.
-|`max-header-size` |`8192` |int |Maximal number of bytes of all header values combined. Returns `400` if headers are bigger
+|`max-header-size` |`16384` |int |Maximal number of bytes of all header values combined. Returns `400` if headers are bigger
 |`max-initial-line-length` |`4096` |int |Maximal number of characters in the initial HTTP line. Returns `400` if line is longer
 |`timeout-millis` |no timeout| long |Server socket timeout.
 |`receive-buffer-size` |implementation default |int |Proposed value of the TCP receive window that is advertised to the remote peer on the server socket.

@@ -516,8 +516,9 @@ public interface SocketConfiguration {
         // methods with `name` are removed from server builder (for adding sockets)
         private String name = UNCONFIGURED_NAME;
         private boolean enabled = true;
+        //Header size increased to 16K
+        private int maxHeaderSize = 16384;
         // these values are as defined in Netty implementation
-        private int maxHeaderSize = 8192;
         private int maxInitialLineLength = 4096;
         private int maxChunkSize = 8192;
         private boolean validateHeaders = true;
