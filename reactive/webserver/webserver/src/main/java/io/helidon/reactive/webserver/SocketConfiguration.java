@@ -325,12 +325,12 @@ public interface SocketConfiguration {
          * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
          * is returned.
          * <p>
-         * Default is {@code 8192}
+         * Default is {@code 16384}
          *
          * @param size maximal number of bytes of combined header values
          * @return this builder
          */
-        @ConfiguredOption("8192")
+        @ConfiguredOption("16384")
         B maxHeaderSize(int size);
 
         /**
@@ -445,8 +445,9 @@ public interface SocketConfiguration {
         // methods with `name` are removed from server builder (for adding sockets)
         private String name = UNCONFIGURED_NAME;
         private boolean enabled = true;
+        //Header size increased to 16K
+        private int maxHeaderSize = 16384;
         // these values are as defined in Netty implementation
-        private int maxHeaderSize = 8192;
         private int maxInitialLineLength = 4096;
         private int maxChunkSize = 8192;
         private boolean validateHeaders = true;
