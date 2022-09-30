@@ -38,7 +38,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 public class Http1ConnectionProvider implements ServerConnectionProvider {
     private static final String PROTOCOL = " HTTP/1.1\r";
     private static final int DEFAULT_MAX_PROLOGUE_LENGTH = 2048;
-    private static final int DEFAULT_MAX_HEADERS_SIZE = 8096;
+    private static final int DEFAULT_MAX_HEADERS_SIZE = 16384;
     private static final boolean DEFAULT_VALIDATE_HEADERS = true;
     private static final boolean DEFAULT_VALIDATE_PATH = true;
 

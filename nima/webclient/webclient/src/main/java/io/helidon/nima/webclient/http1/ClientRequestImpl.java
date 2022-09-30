@@ -280,7 +280,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
     private ClientResponseHeaders readHeaders(DataReader reader) {
         // todo configurable max headers and validate headers
-        int maxHeaderSize = 8192;
+        int maxHeaderSize = 16384;
         boolean validateHeaders = true;
 
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
