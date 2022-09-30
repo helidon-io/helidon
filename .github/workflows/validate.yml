@@ -67,6 +67,7 @@ jobs:
       - name: Docs
         run: etc/scripts/site.sh
   build:
+    timeout-minutes: 60
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -82,6 +83,7 @@ jobs:
       - name: Maven build
         run: etc/scripts/github-build.sh
   examples:
+    timeout-minutes: 35
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
@@ -131,6 +133,7 @@ jobs:
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
   packaging:
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest]
@@ -143,8 +146,8 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
-      - name Build Helidon
-        run etc/scripts/github-compile.sh
+      - name: Build Helidon
+        run: etc/scripts/github-compile.sh
       - name: JAR packaging
         run: etc/scripts/test-packaging-jar.sh
       - name: JLink packaging
