@@ -52,6 +52,8 @@ https://github.com/oracle/helidon/tree/master/examples/security/outbound-overrid
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
   - http-basic-auth:
       realm: "helidon"

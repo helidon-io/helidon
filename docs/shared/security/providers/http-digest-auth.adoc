@@ -51,6 +51,8 @@ http-digest-auth
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
   - http-digest-auth:
       realm: "helidon"
