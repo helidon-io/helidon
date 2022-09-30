@@ -43,4 +43,72 @@
         <module>appl</module>
     </modules>
 
+    <profiles>
+        <!-- Profile to trigger integration tests with in memory H2 database. -->
+        <profile>
+            <id>h2</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <db.port>9092</db.port>
+                <db.host>localhost</db.host>
+                <db.database>test</db.database>
+                <db.user>sa</db.user>
+                <db.password></db.password>
+                <db.url>jdbc:h2:mem:test;INIT=SET TRACE_LEVEL_FILE=4</db.url>
+                <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                <db.datasource>org.h2.jdbcx.JdbcDataSource</db.datasource>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>trigger-h2</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>${basedir}/src/main/resources</directory>
+                                            <includes>
+                                                <include>h2.properties</include>
+                                            </includes>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.gmaven</groupId>
+                        <artifactId>groovy-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <source>
+                                        log.info('Running tests with in memory H2 database:')
+                                        log.info(' - URL=${db.url}')
+                                    </source>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- FIXME: Add profiles for additional databases -->
+    </profiles>
+
 </project>

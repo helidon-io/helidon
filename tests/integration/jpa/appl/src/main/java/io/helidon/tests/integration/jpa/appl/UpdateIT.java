@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,6 @@ public class UpdateIT {
         City city = em.find(City.class, cities[0].getId());
         stadium = city.getStadium();
         Trainer trainer = stadium.getTrainer();
-        em.refresh(trainer);
         pokemons = trainer.getPokemons();
         result.assertEquals(trainer.getName(), "Janine");
         for (Pokemon pokemon : pokemons) {

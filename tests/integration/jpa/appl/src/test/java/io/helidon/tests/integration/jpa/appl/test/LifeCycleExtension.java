@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,13 +103,13 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
         final String dbUrl = System.getProperty("db.url");
         boolean connected = false;
         if (dbUser == null) {
-            throw new IllegalStateException("Database user name was not set!");
+            throw new IllegalStateException("Database user name was not set, check db.user property!");
         }
         if (dbPassword == null) {
-            throw new IllegalStateException("Database user password was not set!");
+            throw new IllegalStateException("Database user password was not set, check db.password property!");
         }
         if (dbUrl == null) {
-            throw new IllegalStateException("Database URL was not set!");
+            throw new IllegalStateException("Database URL was not set, check db.url property");
         }
         long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
         while (true) {

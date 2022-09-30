@@ -107,7 +107,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
-            <artifactId>jboss-transaction-spi</artifactId>
+            <artifactId>jboss-transaction-spi-jakarta</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -126,13 +126,6 @@
     <build>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/resources</directory>
-                <excludes>
-                    <exclude>META-INF/microprofile-config.properties</exclude>
-                    <exclude>META-INF/persistence.xml</exclude>
-                </excludes>
-            </resource>
-            <resource>
                 <directory>${basedir}/src/main/resources/META-INF</directory>
                 <targetPath>META-INF</targetPath>
                 <includes>
@@ -140,6 +133,13 @@
                     <include>persistence.xml</include>
                 </includes>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>META-INF/microprofile-config.properties</exclude>
+                    <exclude>META-INF/persistence.xml</exclude>
+                </excludes>
             </resource>
         </resources>
         <pluginManagement>
@@ -324,10 +324,11 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
+                        <!-- Docker container need to start before Helidon application (pre-integration-test phase). -->
                         <executions>
                             <execution>
                                 <id>start</id>
-                                <phase>pre-integration-test</phase>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>start</goal>
                                 </goals>
@@ -344,32 +345,45 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Test with in memory H2 database. Default test profile. -->
         <profile>
             <id>h2</id>
             <activation>
-                <property>
-                    <name>h2</name>
-                </property>
+                <file>
+                    <exists>${basedir}/../target/h2.properties</exists>
+                </file>
             </activation>
-            <properties>
-                <db.port>9092</db.port>
-                <db.host>localhost</db.host>
-                <db.database>pokemon</db.database>
-                <db.user>sa</db.user>
-                <db.password></db.password>
-                <db.roootpw>root</db.roootpw>
-                <db.url>jdbc:h2:tcp://${db.host}:${db.port}/test</db.url>
-                <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
-                <db.datasource>org.h2.jdbcx.JdbcDataSource</db.datasource>
-            </properties>
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.integrations.db</groupId>
                     <artifactId>h2</artifactId>
                 </dependency>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>properties-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>read-project-properties</goal>
+                                </goals>
+                                <configuration>
+                                    <files>
+                                        <file>${basedir}/../target/h2.properties</file>
+                                    </files>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
@@ -382,57 +396,28 @@
                         </configuration>
                     </plugin>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
+                        <groupId>org.codehaus.gmaven</groupId>
+                        <artifactId>groovy-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>start-db</id>
-                                <phase>pre-integration-test</phase>
+                                <phase>validate</phase>
                                 <goals>
-                                    <goal>exec</goal>
+                                    <goal>execute</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>java</executable>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
-                                        <argument>${mainClassH2}</argument>
-                                        <argument>-tcp</argument>
-                                        <argument>-tcpPassword</argument>
-                                        <argument>${h2.db.password}</argument>
-                                        <argument>-tcpPort</argument>
-                                        <argument>${h2.db.port}</argument>
-                                        <argument>-baseDir</argument>
-                                        <argument>${project.build.directory}/h2</argument>
-                                        <argument>-ifNotExists</argument>
-                                    </arguments>
-                                    <async>true</async>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>stop-db</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>java</executable>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
-                                        <argument>${mainClassH2}</argument>
-                                        <argument>-tcpShutdown</argument>
-                                        <argument>tcp://localhost:${h2.db.port}</argument>
-                                        <argument>-tcpPassword</argument>
-                                        <argument>${h2.db.password}</argument>
-                                    </arguments>
+                                    <source>
+                                        log.info('Running tests with in memory H2 database:')
+                                        log.info(' - URL=${db.url}')
+                                        log.info(' - ${basedir}/../target/h2.properties')
+                                    </source>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
-                </plugins>
+                 </plugins>
             </build>
         </profile>
+        <!-- FIXME: Need activation trigger similar to H2 -->
         <profile>
             <id>mysql</id>
             <activation>
@@ -516,6 +501,7 @@
                 </plugins>
             </build>
         </profile>
+        <!-- FIXME: Need activation trigger similar to H2 -->
         <profile>
             <id>pgsql</id>
             <activation>
