@@ -30,7 +30,9 @@
     <artifactId>helidon-tests-integration-vault-project</artifactId>
     <name>Helidon Integration Tests Vault Project</name>
 
-    <description>Tests for Hashicorp Vault, using pod with Vault and mysql to test all options</description>
+    <description>
+        Tests for Hashicorp Vault, requires Vault and mysql to test most options, except for k8s integration
+    </description>
 
     <modules>
         <module>se</module>

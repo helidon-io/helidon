@@ -57,6 +57,7 @@
         <module>mp-bean-validation</module>
         <module>restclient</module>
         <module>native-image</module>
+        <module>vault</module>
     </modules>
 
     <profiles>
@@ -73,12 +74,6 @@
             <id>dbclient-it</id>
             <modules>
                 <module>dbclient</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>vault-it</id>
-            <modules>
-                <module>vault</module>
             </modules>
         </profile>
     </profiles>

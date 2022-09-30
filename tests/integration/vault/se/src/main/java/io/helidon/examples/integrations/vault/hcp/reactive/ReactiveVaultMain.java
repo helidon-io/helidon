@@ -47,13 +47,9 @@ public final class ReactiveVaultMain {
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 
-        // as I cannot share my secret configuration, let's combine the configuration
-        // from my home directory with the one compiled into the jar
-        // when running this example, you can either update the application.yaml in resources directory
-        // or use the same approach
-        Config config = buildConfig();
+        Config config = Config.create();
 
-        // we have three configurations available
+        // we have two configurations available
         // 1. Token based authentication
         Vault tokenVault = Vault.builder()
                 .config(config.get("vault.token"))
@@ -62,15 +58,8 @@ public final class ReactiveVaultMain {
                 .build();
 
         // 2. App role based authentication - must be created after we obtain the role id an token
-        // 3. Kubernetes (k8s) based authentication (requires to run on k8s) - must be created after we create
-        //      the authentication method
-
         // the tokenVault is using the root token and can be used to enable engines and
         // other authentication mechanisms
-
-        CompletionAwaitable<Void> k8sFuture = new K8sExample(tokenVault, config.get("vault.k8s"))
-                .run()
-                .forSingle(System.out::println);
 
         CompletionAwaitable<Void> appRoleFuture = new AppRoleExample(tokenVault, config.get("vault.approle"))
                 .run()
@@ -101,13 +90,6 @@ public final class ReactiveVaultMain {
             e.printStackTrace();
         }
 
-        try {
-            k8sFuture.await();
-        } catch (Exception e) {
-            System.err.println("Kubernetes example failed");
-            e.printStackTrace();
-        }
-
         String baseAddress = "http://localhost:" + webServer.port() + "/";
         System.out.println("Server started on " + baseAddress);
         System.out.println();
@@ -134,15 +116,5 @@ public final class ReactiveVaultMain {
         System.out.println("\t" + baseAddress + "transit/verify/hmac/hmac_text");
         System.out.println("\tcurl -i -X DELETE " + baseAddress + "transit/keys");
         System.out.println("\t" + baseAddress + "transit/disable");
-    }
-
-    private static Config buildConfig() {
-        return Config.builder()
-                .sources(
-                        // you can use this file to override the defaults that are built-in
-                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
-                        // in jar file (see src/main/resources/application.yaml)
-                        classpath("application.yaml"))
-                .build();
     }
 }
