@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -432,14 +432,10 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
                 warnExperimental("growth-rate");
                 growthRate(value);
            });
-            config.get("virtual-threads").asBoolean().ifPresent(value -> {
-                warnExperimental("virtual-threads");
-                virtualIfAvailable(value);
-            });
-            config.get("virtual-enforced").asBoolean().ifPresent(value -> {
-                warnExperimental("virtual-enforced");
-                virtualEnforced(value);
-            });
+
+            config.get("virtual-threads").asBoolean().ifPresent(this::virtualThreads);
+            config.get("virtual-enforced").asBoolean().ifPresent(this::virtualEnforced);
+
             return this;
         }
 
@@ -455,10 +451,14 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param enforceVirtualThreads whether to enforce virtual threads, defaults to {@code false}
          * @return updated builder instance
          * @see #virtualIfAvailable(boolean)
+         * @deprecated use {@link #virtualThreads(boolean)}
          */
-        @ConfiguredOption(value = "false", experimental = true)
+        @ConfiguredOption(value = "false", deprecated = true)
+        @Deprecated(forRemoval = true, since = "4.0.0")
         public Builder virtualEnforced(boolean enforceVirtualThreads) {
-            this.virtualThreadsEnforced = enforceVirtualThreads;
+            if (enforceVirtualThreads) {
+                return virtualThreads(true);
+            }
             return this;
         }
 
@@ -471,9 +471,24 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          *
          * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
          * @return updated builder instance
+         * @deprecated use {@link #virtualThreads(boolean)}
          */
-        @ConfiguredOption(key = "virtual-threads", value = "false", experimental = true)
+        @Deprecated(forRemoval = true, since = "4.0.0")
         public Builder virtualIfAvailable(boolean useVirtualThreads) {
+            this.useVirtualThreads = useVirtualThreads;
+            return this;
+        }
+
+        /**
+         * When configured to {@code true}, an unbounded virtual executor service (project Loom) will be used.
+         * <p>
+         * If enabled, all other configuration options of this executor service are ignored!
+         *
+         * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "false")
+        public Builder virtualThreads(boolean useVirtualThreads) {
             this.useVirtualThreads = useVirtualThreads;
             return this;
         }

@@ -29,7 +29,6 @@ unit:
 resources:
   test-1.resource.path: "src/test/resources/sample.txt"
   test-2.resource.resource-path: "sample.txt"
-  test-3.resource.url: "file:./src/test/resources/sample.txt"
   test-4.resource.content-plain: "content"
   test-5.resource.content: "YWJjZGVmZ8SNxZnFvsO6xa8="
   test-6.reprosuce: "nothing"
