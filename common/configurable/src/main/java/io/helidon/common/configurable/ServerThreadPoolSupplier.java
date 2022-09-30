@@ -19,7 +19,7 @@ package io.helidon.common.configurable;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Supplier of a custom thread pool with defaults appropriate for a thread-per-request server.
