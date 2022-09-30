@@ -74,7 +74,7 @@ class TestHttpParseFineTuning {
                 .host("localhost")
                 .routing(r -> r.any((req, res) -> res.send("any")))
                 .config(config)
-                .maxHeaderSize(9100)
+                .maxHeaderSize(16400)
                 .maxInitialLineLength(5100)
                 .build()
                 .start()
