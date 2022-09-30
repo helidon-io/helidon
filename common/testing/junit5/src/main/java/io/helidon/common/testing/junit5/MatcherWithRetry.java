@@ -30,6 +30,9 @@ public class MatcherWithRetry {
     private static final int RETRY_COUNT = Integer.getInteger("io.helidon.test.retryCount", 10);
     private static final int RETRY_DELAY_MS = Integer.getInteger("io.helidon.test.retryDelayMs", 500);
 
+    private MatcherWithRetry() {
+    }
+
     /**
      * Checks the matcher, possibly multiple times after configured delays, invoking the supplier of the matched value each time,
      * until either the matcher passes or the maximum retry expires.
