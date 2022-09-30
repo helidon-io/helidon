@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
@@ -167,7 +168,7 @@ public class TestServer {
     }
 
     @Test
-    void checkMetricsForExecutorService() {
+    void checkMetricsForExecutorService() throws Exception {
 
         String jsonKeyForCompleteTaskCountInThreadPool =
                 "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
@@ -203,22 +204,25 @@ public class TestServer {
 
         assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
 
-        WebClientResponse secondMetricsResponse = metricsRequestBuilder
-                .submit()
-                .await(CLIENT_TIMEOUT);
+        MatcherWithRetry.retry(() -> {
 
-        assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
+            WebClientResponse secondMetricsResponse = metricsRequestBuilder
+                    .submit()
+                    .await(CLIENT_TIMEOUT);
 
-        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+            assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
 
-        assertThat("JSON metrics results after accessing slow endpoint",
-                   secondMetrics,
-                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
+            JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
 
+            assertThat("JSON metrics results after accessing slow endpoint",
+                       secondMetrics,
+                       hasKey(jsonKeyForCompleteTaskCountInThreadPool));
 
-        int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
+            int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
 
-        assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
+            assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
+            return true;
+        });
     }
 
     @ParameterizedTest

@@ -16,7 +16,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -31,6 +30,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -53,10 +53,11 @@ public class HelloWorldAsyncResponseWithRestRequestTest {
         JsonObject restRequest = getRESTRequestJSON();
 
         // Make sure count is 0 before invoking.
-        JsonNumber getAsyncCount = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
+        long getAsyncCount = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
                                                                                               "count",
-                                                                                              false));
-        assertThat("getAsync count value before invocation", getAsyncCount.longValue(), is(0L));
+                                                                                              false))
+                .longValue();
+        assertThat("getAsync count value before invocation", getAsyncCount, is(0L));
 
         JsonNumber getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
                                                                                              "elapsedTime",
@@ -85,15 +86,21 @@ public class HelloWorldAsyncResponseWithRestRequestTest {
         // Retrieve metrics again and make sure we see an additional count and added time. Don't bother checking the min and
         // max because we'd have to wait up to a minute for those values to change.
 
-        restRequest = getRESTRequestJSON();
+        JsonObject nextRestRequest = getRESTRequestJSON();
 
         try {
-            getAsyncCount = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
-                                                                                       "count",
-                                                                                       false));
-            assertThat("getAsync count value after invocation", getAsyncCount.longValue(), is(1L));
+            // With async endpoints, metrics updates can occur after the server sends the response.
+            // Retry as needed for a little while for the count to change.
 
-            getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
+            assertThatWithRetry("getAsync count value after invocation",
+                                () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest,
+                                                                                             "count",
+                                                                                             false))
+                                    .longValue(),
+                                is(1L));
+
+
+            getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest,
                                                                                       "elapsedTime",
                                                                                       false));
             assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
@@ -124,20 +131,24 @@ public class HelloWorldAsyncResponseWithRestRequestTest {
 
     private JsonValue getRESTRequestValueForGetAsyncMethod(JsonObject restRequestJson,
                                                            String valueName,
-                                                           boolean nullOK) throws NoSuchMethodException {
+                                                           boolean nullOK)  {
         JsonValue getAsyncValue = null;
 
         for (Map.Entry<String, JsonValue> entry : restRequestJson.entrySet()) {
             // Conceivably there could be multiple tags in the metric ID besides the class and method ones, so do not assume
             // the key value in the JSON object has only the class and method tags and only in that order.
-            if (entry.getKey().startsWith(valueName + ";")
-                    && entry.getKey().contains("class=" + HelloWorldResource.class.getName())
-                    && entry.getKey().contains(
-                    "method="
-                            + HelloWorldResource.class.getMethod("getAsync", AsyncResponse.class).getName()
-                            + "_" + AsyncResponse.class.getName())) {
-                getAsyncValue = entry.getValue();
-                break;
+            try {
+                if (entry.getKey().startsWith(valueName + ";")
+                        && entry.getKey().contains("class=" + HelloWorldResource.class.getName())
+                        && entry.getKey().contains(
+                        "method="
+                                + HelloWorldResource.class.getMethod("getAsync", AsyncResponse.class).getName()
+                                + "_" + AsyncResponse.class.getName())) {
+                    getAsyncValue = entry.getValue();
+                    break;
+                }
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
             }
         }
 
