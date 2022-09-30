@@ -69,7 +69,7 @@ class TestHttpParsingDefaults {
 
     @Test
     void testOkHeader() {
-        testHeader(8000, true);
+        testHeader(16000, true);
     }
 
     @Test

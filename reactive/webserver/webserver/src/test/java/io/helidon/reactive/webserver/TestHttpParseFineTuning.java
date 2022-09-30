@@ -53,7 +53,7 @@ class TestHttpParseFineTuning {
                 .validateHeaders(false)
                 .build();
 
-        testHeader(client, 8000, true);
+        testHeader(client, 16000, true);
         testInitialLine(client, 10, true);
 
         testHeader(client, 17000, false);
