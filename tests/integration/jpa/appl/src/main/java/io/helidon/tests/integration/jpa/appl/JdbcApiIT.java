@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,13 @@ public class JdbcApiIT {
         final String dbPassword = config.getProperty("javax.sql.DataSource.test.dataSource.password");
         final String dbUrl = config.getProperty("javax.sql.DataSource.test.dataSource.url");
         if (dbUser == null) {
-            throw new IllegalStateException("Database user name was not set!");
+            throw new IllegalStateException("Database user name was not set, check javax.sql.DataSource.test.dataSource.user property! ");
         }
         if (dbPassword == null) {
-            throw new IllegalStateException("Database user password was not set!");
+            throw new IllegalStateException("Database user password was not set, check javax.sql.DataSource.test.dataSource.password property!");
         }
         if (dbUrl == null) {
-            throw new IllegalStateException("Database URL was not set!");
+            throw new IllegalStateException("Database URL was not set, check javax.sql.DataSource.test.dataSource.url property!");
         }
         try {
             conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);

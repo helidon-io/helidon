@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.tests.integration.jpa.simple.DbUtils;
 import jakarta.persistence.EntityManager;
 
 import io.helidon.tests.integration.jpa.model.Pokemon;
@@ -51,41 +52,12 @@ public class InsertIT {
     @BeforeAll
     public static void setup() {
         pu = PU.getInstance();
+        pu.tx(pu -> DbUtils.dbInit(pu));
     }
 
     @AfterAll
     public static void destroy() {
-        pu.tx(pu -> {
-            final EntityManager em = pu.getEm();
-            // testInsertType cleanup
-            em.createQuery("DELETE FROM Type t WHERE t.id = :id")
-                    .setParameter("id", 20)
-                    .executeUpdate();
-            // Towns cleanup
-            DELETE_TOWNS.forEach((id) -> {
-                em.createQuery("DELETE FROM City c WHERE c.id = :id")
-                        .setParameter("id", id)
-                        .executeUpdate();
-            });
-            // Stadiums cleanup
-            DELETE_STADIUMS.forEach((id) -> {
-                em.createQuery("DELETE FROM Stadium s WHERE s.id = :id")
-                        .setParameter("id", id)
-                        .executeUpdate();
-            });
-            // Pokemons cleanup
-            DELETE_POKEMONS.forEach((id) -> {
-                em.createQuery("DELETE FROM Pokemon p WHERE p.id = :id")
-                        .setParameter("id", id)
-                        .executeUpdate();
-            });
-            // Trainers cleanup
-            DELETE_TRAINERS.forEach((id) -> {
-                em.createQuery("DELETE FROM Trainer t WHERE t.id = :id")
-                        .setParameter("id", id)
-                        .executeUpdate();
-            });
-        });
+        pu.tx(pu -> DbUtils.dbCleanup(pu));
         pu = null;
     }
 

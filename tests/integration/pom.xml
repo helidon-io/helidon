@@ -55,6 +55,7 @@
         <module>mp-gh-4123</module>
         <module>mp-gh-4654</module>
         <module>kafka</module>
+        <module>jpa</module>
         <module>jms</module>
         <module>config</module>
         <module>jep290</module>
@@ -78,15 +79,6 @@
     </dependencyManagement>
 
     <profiles>
-        <profile>
-            <id>native-image</id>
-            <properties>
-                <native-image>true</native-image>
-            </properties>
-            <modules>
-                <module>jpa</module>
-            </modules>
-        </profile>
         <profile>
             <id>dbclient-it</id>
             <modules>

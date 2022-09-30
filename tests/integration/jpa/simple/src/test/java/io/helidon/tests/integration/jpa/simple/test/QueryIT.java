@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,10 @@ import java.util.List;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
-import io.helidon.tests.integration.jpa.model.Stadium;
 import io.helidon.tests.integration.jpa.model.Trainer;
 import io.helidon.tests.integration.jpa.simple.DbUtils;
 import io.helidon.tests.integration.jpa.simple.PU;
@@ -42,16 +40,18 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Verify query operations of ORM.
  */
 public class QueryIT {
-    
+
     private static PU pu;
 
     @BeforeAll
     public static void setup() {
         pu = PU.getInstance();
+        pu.tx(pu -> DbUtils.dbInit(pu));
     }
 
     @AfterAll
     public static void destroy() {
+        pu.tx(pu -> DbUtils.dbCleanup(pu));
         pu = null;
     }
 
@@ -77,7 +77,7 @@ public class QueryIT {
         pu.tx(pu -> {
             final EntityManager em = pu.getCleanEm();
             Trainer ash = em.createQuery(
-                    "SELECT t FROM Trainer t JOIN FETCH t.pokemons p WHERE t.id = :id", Trainer.class)
+                            "SELECT t FROM Trainer t JOIN FETCH t.pokemons p WHERE t.id = :id", Trainer.class)
                     .setParameter("id", DbUtils.ASH_ID)
                     .getSingleResult();
             List<Pokemon> pokemons = ash.getPokemons();
@@ -113,10 +113,10 @@ public class QueryIT {
         pu.tx(pu -> {
             final EntityManager em = pu.getCleanEm();
             City city = em.createQuery(
-                    "SELECT c FROM City c "
-                    + "JOIN FETCH c.stadium s "
-                    + "JOIN FETCH s.trainer t "
-                    + "WHERE c.name = :name", City.class)
+                            "SELECT c FROM City c "
+                                    + "JOIN FETCH c.stadium s "
+                                    + "JOIN FETCH s.trainer t "
+                                    + "WHERE c.name = :name", City.class)
                     .setParameter("name", "Celadon City")
                     .getSingleResult();
             assertEquals(city.getName(), "Celadon City");
