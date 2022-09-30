@@ -45,7 +45,12 @@
                     <value key="artifactId">hamcrest-all</value>
                     <value key="scope">test</value>
                 </map>
-                <map order="0">
+                <map if="!(${extra} contains 'webclient')" order="0">
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
+                    <value key="scope">test</value>
+                </map>
+                <map if="${extra} contains 'webclient'" order="0">
                     <value key="groupId">io.helidon.webclient</value>
                     <value key="artifactId">helidon-webclient</value>
                 </map>
