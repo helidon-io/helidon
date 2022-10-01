@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import java.util.concurrent.Executors;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Test
 public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
@@ -66,6 +69,6 @@ public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<Heli
 
     @Test
     public void hasExecutor() {
-        org.testng.Assert.assertNotNull(executor);
+        assertThat(executor, notNullValue());
     }
 }
