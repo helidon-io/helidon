@@ -32,6 +32,10 @@
 
     <name>Helidon Integration Tests</name>
 
+    <properties>
+        <version.lib.testcontainers>1.17.4</version.lib.testcontainers>
+    </properties>
+
     <modules>
         <module>tools</module>
         <module>zipkin-mp-2.2</module>
@@ -59,6 +63,19 @@
         <module>native-image</module>
         <module>vault</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <!-- testcontainers should only be used in integration tests -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${version.lib.testcontainers}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <profiles>
         <profile>
