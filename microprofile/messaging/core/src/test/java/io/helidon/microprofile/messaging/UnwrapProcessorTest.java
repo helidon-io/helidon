@@ -24,11 +24,11 @@ import java.util.stream.Stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.CoreMatchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.reactivestreams.Subscriber;
@@ -63,7 +63,7 @@ class UnwrapProcessorTest {
         unwrapProcessor.setMethod(method);
         Object unwrappedValue = unwrapProcessor.unwrap(Message.of("test"));
         if (method.getName().endsWith("Message")) {
-            Assertions.assertTrue(MessageUtils.isMessageType(method));
+            assertThat(MessageUtils.isMessageType(method), is(true));
             assertThat(unwrappedValue, instanceOf(Message.class));
         } else {
             assertThat("Expected method param to be a Message type.",
