@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -161,7 +162,10 @@ public final class Mp1Main {
     }
 
     private static void testBean(int port, String jwtToken) {
-        Client client = ClientBuilder.newClient();
+        Client client = ClientBuilder.newBuilder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build();
         WebTarget target = client.target("http://localhost:" + port);
 
         // select a bean

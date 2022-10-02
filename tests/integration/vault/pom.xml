@@ -17,23 +17,101 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>helidon-tests-integration</artifactId>
         <groupId>io.helidon.tests.integration</groupId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-    <packaging>pom</packaging>
 
     <groupId>io.helidon.tests.integration.vault</groupId>
-    <artifactId>helidon-tests-integration-vault-project</artifactId>
-    <name>Helidon Integration Tests Vault Project</name>
+    <artifactId>helidon-tests-integration-vault</artifactId>
+    <name>Helidon Integration Tests Vault</name>
 
-    <description>Tests for Hashicorp Vault, using pod with Vault and mysql to test all options</description>
+    <description>
+        Tests for Hashicorp Vault, requires Vault and mysql to test most options, except for k8s integration.
+        Based on test containers
+    </description>
 
-    <modules>
-        <module>se</module>
-        <module>mp</module>
-    </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.integrations.vault</groupId>
+            <artifactId>helidon-integrations-vault</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.auths</groupId>
+            <artifactId>helidon-integrations-vault-auths-token</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.auths</groupId>
+            <artifactId>helidon-integrations-vault-auths-approle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.secrets</groupId>
+            <artifactId>helidon-integrations-vault-secrets-database</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.vault.sys</groupId>
+            <artifactId>helidon-integrations-vault-sys</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>vault</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

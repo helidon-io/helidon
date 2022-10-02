@@ -1,5 +1,6 @@
+#!/bin/bash -e
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +15,17 @@
 # limitations under the License.
 #
 
-# Send messages to the console
-handlers=io.helidon.logging.jul.HelidonConsoleHandler
+# Path to this script
+[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
 
-# HelidonConsoleHandler uses a SimpleFormatter subclass that replaces "!thread!" with the current thread
-java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
+# Load pipeline environment setup and define WS_DIR
+. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
 
-# Global logging level. Can be overridden by specific loggers
-.level=INFO
+# Setup error handling using default settings (defined in includes/error_handlers.sh)
+error_trap_setup
 
-io.helidon.level=INFO
-io.helidon.integrations.level=INFO
+mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+    install -e \
+    -Dmaven.test.skip=true \
+    -DskipTests \
+    -Ppipeline

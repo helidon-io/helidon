@@ -259,7 +259,17 @@ public interface WebClient {
          * @return updated builder instance
          */
         public Builder connectTimeout(long amount, TimeUnit unit) {
-            configuration.connectTimeout(Duration.of(amount, unit.toChronoUnit()));
+            return connectTimeout(Duration.of(amount, unit.toChronoUnit()));
+        }
+
+        /**
+         * Sets new connection timeout.
+         *
+         * @param timeout connection timeout
+         * @return updated builder instance
+         */
+        public Builder connectTimeout(Duration timeout) {
+            configuration.connectTimeout(timeout);
             return this;
         }
 
@@ -271,7 +281,17 @@ public interface WebClient {
          * @return updated builder instance
          */
         public Builder readTimeout(long amount, TimeUnit unit) {
-            configuration.readTimeout(Duration.of(amount, unit.toChronoUnit()));
+            return readTimeout(Duration.of(amount, unit.toChronoUnit()));
+        }
+
+        /**
+         * Sets new read timeout.
+         *
+         * @param timeout read timeout
+         * @return updated builder instance
+         */
+        public Builder readTimeout(Duration timeout) {
+            configuration.readTimeout(timeout);
             return this;
         }
 
