@@ -86,6 +86,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final HttpRequestDecoder httpRequestDecoder;
     private final long maxPayloadSize;
     private final Runnable clearQueues;
+    private final SocketConfiguration soConfig;
     private final DirectHandlers directHandlers;
 
     // this field is always accessed by the very same thread; as such, it doesn't need to be
@@ -105,16 +106,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                       SSLEngine sslEngine,
                       ReferenceQueue<Object> queues,
                       Runnable clearQueues,
+                      SocketConfiguration soConfig,
                       HttpRequestDecoder httpRequestDecoder,
-                      long maxPayloadSize,
                       DirectHandlers directHandlers) {
         this.routing = routing;
         this.webServer = webServer;
         this.sslEngine = sslEngine;
         this.queues = queues;
         this.httpRequestDecoder = httpRequestDecoder;
-        this.maxPayloadSize = maxPayloadSize;
+        this.maxPayloadSize = soConfig.maxPayloadSize();
         this.clearQueues = clearQueues;
+        this.soConfig = soConfig;
         this.directHandlers = directHandlers;
     }
 
@@ -420,6 +422,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                                      requestContext,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
+                                     soConfig.backpressureBufferSize(),
+                                     soConfig.backpressureStrategy(),
                                      requestId);
         prevRequestFuture = new CompletableFuture<>();
         CompletableFuture<?> thisResp = prevRequestFuture;

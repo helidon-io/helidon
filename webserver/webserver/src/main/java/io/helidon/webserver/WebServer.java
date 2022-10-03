@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -627,6 +627,18 @@ public interface WebServer {
         @Override
         public Builder maxPayloadSize(long size) {
             configurationBuilder.maxPayloadSize(size);
+            return this;
+        }
+
+        @Override
+        public Builder backpressureBufferSize(long backpressureBufferSize) {
+            configurationBuilder.backpressureBufferSize(backpressureBufferSize);
+            return this;
+        }
+
+        @Override
+        public Builder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            configurationBuilder.backpressureStrategy(backpressureStrategy);
             return this;
         }
 

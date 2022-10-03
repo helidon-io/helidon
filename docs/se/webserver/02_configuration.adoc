@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,6 +85,22 @@ Available socket configuration options:
 |`enabled` |`true` |boolean |A socket can be disabled through configuration, in which case it is never opened
 |`max-chunk-size` | `8192` |int |Maximal size of a chunk to read from incoming requests
 |`max-payload-size` | `-1` |long |Maximal size of a request payload in bytes. If exceeded a 413 error is returned. Negative value means no limit.
+|`backpressure-buffer-size` |long |`5242880` |Set a maximum length of the unflushed response data sending buffer can keep without applying backpressure.
+Depends on `backpressure-policy` what happens if max buffer size is reached.
+
+ Default is `5*1024*1024` - 5Mb
+|`backpressure-policy` | String | `LINEAR` |Sets the strategy for applying backpressure to the reactive stream
+of response data.
+
+* LINEAR - Data chunks are requested one-by-one after previous data chunk has been written to Netty's buffer, when
+`backpressure-buffer-size` watermark is reached, new chunks are not requested until buffer size decrease under
+the watermark value.
+* PREFETCH - After first data chunk arrives, expected number of chunks needed to fill the buffer up
+to watermark is calculated and requested.
+* AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested and extra flush is initiated.
+* UNBOUNDED - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
+
+ Default is `LINEAR`
 |`validate-headers` |`true` |boolean |Whether to validate header names, if they contain illegal characters.
 |`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
 |`tls` |{nbsp} |Object |Configuration of TLS, please see our TLS example in repository
