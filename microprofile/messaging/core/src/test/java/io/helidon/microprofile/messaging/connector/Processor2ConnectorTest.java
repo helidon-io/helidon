@@ -54,7 +54,7 @@ import org.reactivestreams.FlowAdapters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @HelidonTest
@@ -89,7 +89,7 @@ public class Processor2ConnectorTest {
         emitter.emit(Message.of("test2"));
         emitter.complete();
         connector.awaitComplete("to-connector-" + channelPostfix);
-        assertEquals(4, resultList.size());
+        assertThat(resultList, hasSize(4));
         assertThat(resultList.stream()
                         .map(Message::getPayload)
                         .collect(Collectors.toList()),
