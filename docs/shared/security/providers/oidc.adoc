@@ -43,6 +43,8 @@ https://github.com/oracle/helidon/tree/master/examples/security/idcs-login[]
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
   - oidc:
       client-id: "client-id-of-this-service"
