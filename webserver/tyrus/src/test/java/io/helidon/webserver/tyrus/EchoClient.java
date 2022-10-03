@@ -33,7 +33,8 @@ import javax.websocket.Session;
 
 import org.glassfish.tyrus.client.ClientManager;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -82,7 +83,7 @@ public class EchoClient {
                             LOGGER.info("Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(equals.apply(messages[index], message));
+                            assertThat(equals.apply(messages[index], message), is(true));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {
