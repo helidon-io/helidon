@@ -666,22 +666,22 @@ Fourth Party Dependencies
 </attribution>
         </dependency>
         <dependency>
-            <id>108817</id>
+            <id>130789</id>
             <name>EclipseLink JPA</name>
-            <version>2.7.9</version>
+            <version>2.7.11</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Multiple Licenses</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-eclipselink</consumer>
             </consumers>
             <attribution>EclipseLink JPA (org.eclipse.persistence:org.eclipse.persistence.jpa)
-  Copyright (c) 1998,2018 Oracle and/or its affiliates, IBM Corporation. All rights reserved.
-  Copyright (c) 1998,2018 IBM and/or its affiliates. All rights reserved.
-  Copyright (c) 1998,2020 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2000, 2015 -2011 INRIA, France Telecom
-  Copyright (c) 1998,2020 IBM Corporation. All rights reserved.
-  Copyright (c) 1998,2019 IBM Corporation and/or its affiliates. All rights reserved.
-  Copyright (c) 1998,2018 Hans Harz, Andrew Rustleund, IBM Corporation. All rights reserved.
+ Copyright (c) 1998,2018 Oracle and/or its affiliates, IBM Corporation. All rights reserved.
+ Copyright (c) 1998,2018 IBM and/or its affiliates. All rights reserved.
+ Copyright (c) 1998,2022 Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2000, 2015 -2011 INRIA, France Telecom
+ Copyright (c) 1998,2019 IBM Corporation and/or its affiliates. All rights reserved.
+ Copyright (c) 1998,2018 Hans Harz, Andrew Rustleund, IBM Corporation. All rights reserved.
+ Copyright (c) 1998,2022 IBM Corporation. All rights reserved.
 --------------------------------------------
 This program and the accompanying materials are made available under
 the terms of the Eclipse Public License v. 2.0 which is available at
@@ -757,22 +757,23 @@ Fourth Party Dependencies
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
 "EclipseLink Core" (org.eclipse.persistence:org.eclipse.persistence.core)
+  Copyright (c) 2009,2022 Markus Karg, SAP. All rights reserved.
   Copyright (c) 2009,2016 SAP, IBM Corporation. All rights reserved.
-  Copyright (c) 1998,2020 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 1998,2019 SAP. All rights reserved.
+  Copyright (c) 2009,2022 Fujitsu Limited. All rights reserved.
+  Copyright (c) 1998,2022 SAP. All rights reserved.
   Copyright (c) 1998,2020 IBM and/or its affiliates. All rights reserved.
-  Copyright (c) 2009,2018 Markus Karg, SAP. All rights reserved.
-  Copyright (c) 1998,2020 IBM Corporation. All rights reserved.
   Copyright (c) 2019 Payara Services Ltd.
-  Copyright (c) 2011,2018 Jenzabar, Inc. All rights reserved.
-  Copyright (c) 1998,2020 IBM Corporation and/or its affiliates. All rights reserved.
+  Copyright (c) 2021 Oracle, IBM and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2022 IBM Corporation. All rights reserved.
+  Copyright (c) 2011,2022 Jenzabar, Inc. All rights reserved.
   Copyright (c) 1998,2015 Sei Syvalta. All rights reserved.
   Copyright (c) 2012,2018 Pervasive Software Inc. All Rights Reserved.
   Copyright (c) 2012,2018 Oracle and/or its affiliates. All Rights Reserved.
-  Copyright (c) 1998,2020 Oracle, IBM Corporation, and/or its affiliates. All rights reserved.
+  Copyright (c) 1998,2021 Oracle, IBM Corporation, and/or its affiliates. All rights reserved.
   Copyright (c) 2010 Frank Schwarz. All rights reserved.
-  Copyright (c) 2009,2018 Fujitsu Limited. All rights reserved.
+  Copyright (c) 1998,2022 Oracle and/or its affiliates. All rights reserved.
   Copyright (c) 2008 Markus KARG(markus-karg@users.sourceforge.net).
+  Copyright (c) 1998,2022 IBM Corporation and/or its affiliates. All rights reserved.
   Eclipse Public License - 2.0
   Eclipse Distribution License - v 1.0 
 --------------------------------------------
@@ -780,15 +781,19 @@ Fourth Party Dependencies
 </attribution>
         </dependency>
         <dependency>
-            <id>89243</id>
-            <name>Extended Scalars for graphql-java</name>
-            <version>15.0.0</version>
-            <licensor>Brad Baker</licensor>
+            <id>130795</id>
+            <name>graphql-java</name>
+            <version>17.4</version>
+            <licensor>Andreas Marek and Contributors</licensor>
             <licenseName>MIT</licenseName>
             <consumers>
-                <consumer>helidon-microprofile-graphql-server</consumer>
+                <consumer>helidon-graphql-server</consumer>
             </consumers>
-            <attribution>Copyright (c) 2018 Brad Baker and Contributors
+            <attribution>graphql-java (com.graphql-java:graphql-java)
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Andreas Marek and Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -807,190 +812,31 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 --------------------------------------------
-"graphql-java" 15.0 (com.graphql-java:graphql-java)
-  Copyright (c) 2015 Andreas Marek and Contributors
-  The MIT License (MIT)
---------------------------------------------
-"java-dataloader" 2.2.3 (com.graphql-java:java-dataloader)
-  Copyright (c) 2016 The original author or authors
-  Apache License Version 2.0
---------------------------------------------
-"OkHttp" 3.2.0 (com.squareup.okhttp3:okhttp)
-  Copyright (C) 2012,2016 Square, Inc.
-  Copyright 2013 Twitter, Inc.
-  Copyright (C) 2010,2012 The Android Open Source Project
-  Apache License Version 2.0
---------------------------------------------
-"Okio" 1.6.0 (com.squareup.okio:okio)
-  Copyright 2014 Square Inc.
-  Copyright (C) 2014,2015 Square, Inc.
-  Apache License Version 2.0
---------------------------------------------
-License Identifier: Apache-2.0
+Fourth Party Dependencies
 --------------------------------------------
 "reactive-streams" (org.reactivestreams:reactive-streams)
 
-/************************************************************************
- * Licensed under Public Domain (CC0)                                    *
- *                                                                       *
- * To the extent possible under law, the person who associated CC0 with  *
- * this code has waived all copyright and related or neighboring         *
- * rights to this code.                                                  *
- *                                                                       *
- * You should have received a copy of the CC0 legalcode along with this  *
- * work. If not, see &lt;http://creativecommons.org/publicdomain/zero/1.0/&gt;.*
- ************************************************************************/
+MIT No Attribution
 
-    CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT
-    PROVIDE LEGAL SERVICES. DISTRIBUTION OF THIS DOCUMENT DOES NOT
-    CREATE AN ATTORNEY-CLIENT RELATIONSHIP. CREATIVE COMMONS PROVIDES
-    THIS INFORMATION ON AN "AS-IS" BASIS. CREATIVE COMMONS MAKES
-    NO WARRANTIES REGARDING THE USE OF THIS DOCUMENT OR THE INFORMATION
-    OR WORKS PROVIDED HEREUNDER, AND DISCLAIMS LIABILITY FOR DAMAGES
-    RESULTING FROM THE USE OF THIS DOCUMENT OR THE INFORMATION OR
-    WORKS PROVIDED HEREUNDER.
+Copyright 2014 Reactive Streams
 
-Statement of Purpose
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 
-The laws of most jurisdictions throughout the world automatically
-confer exclusive Copyright and Related Rights (defined below) upon
-the creator and subsequent owner(s) (each and all, an "owner") of
-an original work of authorship and/or a database (each, a "Work").
-
-Certain owners wish to permanently relinquish those rights to a
-Work for the purpose of contributing to a commons of creative,
-cultural and scientific works ("Commons") that the public can
-reliably and without fear of later claims of infringement build
-upon, modify, incorporate in other works, reuse and redistribute
-as freely as possible in any form whatsoever and for any purposes,
-including without limitation commercial purposes. These owners may
-contribute to the Commons to promote the ideal of a free culture
-and the further production of creative, cultural and scientific
-works, or to gain reputation or greater distribution for their Work
-in part through the use and efforts of others.
-
-For these and/or other purposes and motivations, and without any
-expectation of additional consideration or compensation, the person
-associating CC0 with a Work (the "Affirmer"), to the extent that
-he or she is an owner of Copyright and Related Rights in the Work,
-voluntarily elects to apply CC0 to the Work and publicly distribute
-the Work under its terms, with knowledge of his or her Copyright
-and Related Rights in the Work and the meaning and intended legal
-effect of CC0 on those rights.
-
-1. Copyright and Related Rights. A Work made available under CC0
-may be protected by copyright and related or neighboring rights
-("Copyright and Related Rights"). Copyright and Related Rights
-include, but are not limited to, the following:
-
-    the right to reproduce, adapt, distribute, perform, display,
-    communicate, and translate a Work; moral rights retained by the
-    original author(s) and/or performer(s); publicity and privacy
-    rights pertaining to a person's image or likeness depicted in
-    a Work; rights protecting against unfair competition in regards
-    to a Work, subject to the limitations in paragraph 4(a), below;
-    rights protecting the extraction, dissemination, use and reuse
-    of data in a Work; database rights (such as those arising under
-    Directive 96/9/EC of the European Parliament and of the Council
-    of 11 March 1996 on the legal protection of databases, and under
-    any national implementation thereof, including any amended or
-    successor version of such directive); and other similar,
-    equivalent or corresponding rights throughout the world based
-    on applicable law or treaty, and any national implementations
-    thereof.
-
-2. Waiver. To the greatest extent permitted by, but not in contravention
-of, applicable law, Affirmer hereby overtly, fully, permanently,
-irrevocably and unconditionally waives, abandons, and surrenders
-all of Affirmer's Copyright and Related Rights and associated claims
-and causes of action, whether now known or unknown (including
-existing as well as future claims and causes of action), in the
-Work (i) in all territories worldwide, (ii) for the maximum duration
-provided by applicable law or treaty (including future time
-extensions), (iii) in any current or future medium and for any
-number of copies, and (iv) for any purpose whatsoever, including
-without limitation commercial, advertising or promotional purposes
-(the "Waiver"). Affirmer makes the Waiver for the benefit of each
-member of the public at large and to the detriment of Affirmer's
-heirs and successors, fully intending that such Waiver shall not
-be subject to revocation, rescission, cancellation, termination,
-or any other legal or equitable action to disrupt the quiet enjoyment
-of the Work by the public as contemplated by Affirmer's express
-Statement of Purpose.
-
-3. Public License Fallback. Should any part of the Waiver for any
-reason be judged legally invalid or ineffective under applicable
-law, then the Waiver shall be preserved to the maximum extent
-permitted taking into account Affirmer's express Statement of
-Purpose. In addition, to the extent the Waiver is so judged Affirmer
-hereby grants to each affected person a royalty-free, non transferable,
-non sublicensable, non exclusive, irrevocable and unconditional
-license to exercise Affirmer's Copyright and Related Rights in the
-Work (i) in all territories worldwide, (ii) for the maximum duration
-provided by applicable law or treaty (including future time
-extensions), (iii) in any current or future medium and for any
-number of copies, and (iv) for any purpose whatsoever, including
-without limitation commercial, advertising or promotional purposes
-(the "License"). The License shall be deemed effective as of the
-date CC0 was applied by Affirmer to the Work. Should any part of
-the License for any reason be judged legally invalid or ineffective
-under applicable law, such partial invalidity or ineffectiveness
-shall not invalidate the remainder of the License, and in such case
-Affirmer hereby affirms that he or she will not (i) exercise any
-of his or her remaining Copyright and Related Rights in the Work
-or (ii) assert any associated claims and causes of action with
-respect to the Work, in either case contrary to Affirmer's express
-Statement of Purpose.
-
-4. Limitations and Disclaimers.
-
-    No trademark or patent rights held by Affirmer are waived,
-    abandoned, surrendered, licensed or otherwise affected by this
-    document.  Affirmer offers the Work as-is and makes no
-    representations or warranties of any kind concerning the Work,
-    express, implied, statutory or otherwise, including without
-    limitation warranties of title, merchantability, fitness for a
-    particular purpose, non infringement, or the absence of latent
-    or other defects, accuracy, or the present or absence of errors,
-    whether or not discoverable, all to the greatest extent permissible
-    under applicable law.  Affirmer disclaims responsibility for
-    clearing rights of other persons that may apply to the Work or
-    any use thereof, including without limitation any person's
-    Copyright and Related Rights in the Work. Further, Affirmer
-    disclaims responsibility for obtaining any necessary consents,
-    permissions or other rights required for any use of the Work.
-    Affirmer understands and acknowledges that Creative Commons is
-    not a party to this document and has no duty or obligation with
-    respect to this CC0 or use of the Work.
---------------------------------------------
-"SLF4J API Module" (org.slf4j:slf4j-api)
-Copyright (c) 2004-2017 QOS.ch
-
-All rights reserved.
-
-Permission is hereby granted, free  of charge, to any person obtaining
-a  copy  of this  software  and  associated  documentation files  (the
-"Software"), to  deal in  the Software without  restriction, including
-without limitation  the rights to  use, copy, modify,  merge, publish,
-distribute,  sublicense, and/or sell  copies of  the Software,  and to
-permit persons to whom the Software  is furnished to do so, subject to
-the following conditions:
-
-The  above  copyright  notice  and  this permission  notice  shall  be
-included in all copies or substantial portions of the Software.
-
-THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
-EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
-MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 "ANTLR 4 Runtime" (org.antlr:antlr4-runtime)
-Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+  Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -1015,8 +861,176 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-   
---------------------------------------------</attribution>
+
+--------------------------------------------
+"SLF4J API Module" (org.slf4j:slf4j-api)
+  Copyright (c) 2004-2011 QOS.ch
+
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------
+"java-dataloader" (com.graphql-java:java-dataloader)
+  Copyright (c) 2016 The original author or authors
+License Identifier: Apache-2.0
+--------------------------------------------
+</attribution>
+        </dependency>
+        <dependency>
+            <id>130796</id>
+            <name>graphql-java-extended-scalars</name>
+            <version>17.1</version>
+            <licensor>Brad Baker</licensor>
+            <licenseName>MIT</licenseName>
+            <consumers>
+                <consumer>helidon-microprofile-graphql-server</consumer>
+            </consumers>
+            <attribution>graphql-java-extended-scalars (com.graphql-java:graphql-java-extended-scalars)
+
+The MIT License (MIT)
+
+Copyright (c) 2018 Brad Baker and Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"reactive-streams" (org.reactivestreams:reactive-streams)
+
+MIT No Attribution
+
+Copyright 2014 Reactive Streams
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--------------------------------------------
+"ANTLR 4 Runtime" (org.antlr:antlr4-runtime)
+  Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. Neither the name of the copyright holder nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------
+"SLF4J API Module" (org.slf4j:slf4j-api)
+  Copyright (c) 2004-2011 QOS.ch
+
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------
+"graphql-java" (com.graphql-java:graphql-java)
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Andreas Marek and Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------
+"java-dataloader" (com.graphql-java:java-dataloader)
+  Copyright (c) 2016 The original author or authors
+License Identifier: Apache-2.0
+--------------------------------------------
+</attribution>
         </dependency>
         <dependency>
             <id>110686</id>
@@ -1161,48 +1175,15 @@ commons-codec:commons-codec
 </attribution>
         </dependency>
         <dependency>
-            <id>108770</id>
-            <name>Hibernate ORM</name>
-            <version>5.5.7</version>
-            <licensor>Red Hat, Inc.</licensor>
+            <id>130569</id>
+            <name>hibernate-core</name>
+            <version>5.6.11.Final</version>
+            <licensor>Red Hat Middleware LLC</licensor>
             <licenseName>LGPL v.2.1</licenseName>
             <consumers>
                 <consumer>helidon-integrations-cdi-hibernate</consumer>
             </consumers>
-            <attribution>
-You are receiving a copy of Hibernate ORM in both source and object code in the following JAR
-(hibernate-*.jar). The terms of the Oracle license do NOT apply to the Hibernate ORM program;
-it is licensed under the following license, separately from the Oracle programs you receive. 
--------------------------------------------------------------------------------- 
-Written Offer for Source Code
-For third party technology that you receive from Oracle in binary form which is licensed under
-an open source license that gives you the right to receive the source code for that binary,
-you can obtain a copy of the applicable source code from this page:
-http://www.oracle.com/goto/opensourcecode
-If the source code for the technology was not provided to you with the binary, you can also
-receive a copy of the source code on physical media by submitting a written request to:
-Oracle America, Inc. 
-Attn: Associate General Counsel, 
-Development and Engineering Legal 
-500 Oracle Parkway, 10th Floor 
-Redwood Shores, CA 94065
-Or, you may send an email to Oracle using the form at:
-http://www.oracle.com/goto/opensourcecode/request
-Your request should include:
-•         The name of the component or binary file(s) for which you are requesting the source code
-•         The name and version number of the Oracle product containing the binary
-•         The date you received the Oracle product
-•         Your name
-•         Your company name (if applicable)
-•         Your return mailing address and email and 
-•         A telephone number in the event we need to reach you.
-We may charge you a fee to cover the cost of physical media and processing. Your request
-must be sent (i) within three (3) years of the date you received the Oracle product that
-included the component or binary file(s) that are the subject of your request, or (ii)
-in the case of code licensed under the GPL v3, for as long as Oracle offers spare parts or
-customer support for that product model.
-
-Hibernate ORM - hibernate-core (org.hibernate:hibernate-core)
+            <attribution>Hibernate ORM - hibernate-core (org.hibernate.orm:hibernate-core)
   Copyright (c) 2001-2021 Red Hat, Inc. All Rights Reserved.
   Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors
   indicated by the @author tags or express copyright attribution
@@ -1218,8 +1199,9 @@ Hibernate ORM - hibernate-core (org.hibernate:hibernate-core)
   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   for more details.
 --------------------------------------------
+
 GNU LESSER GENERAL PUBLIC LICENSE
-Version 2.1, February 1999
+                       Version 2.1, February 1999
 
  Copyright (C) 1991, 1999 Free Software Foundation, Inc.
  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -1676,10 +1658,20 @@ SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGES.
 
                      END OF TERMS AND CONDITIONS
+
+
 --------------------------------------------
-Fourth Party Runtime Dependencies
+Fourth Party Dependencies
 --------------------------------------------
-"AntLR Parser Generator" 2.7.7 (antlr:antlr)
+"Hibernate Commons Annotations" (org.hibernate.common:hibernate-commons-annotations)
+  Copyright (c) 2001-2021 Red Hat, Inc. All Rights Reserved.
+  Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors
+  LGPL 2.1
+--------------------------------------------
+"ANTLR Parser Generator" (org.antlr:antlr)
+  Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
+  The BSD License
+
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.
 
@@ -1705,47 +1697,180 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-----------------------------------------------------------------------------
-"Hibernate Commons Annotations" (org.hibernate.common:hibernate-commons-annotations)
-  Copyright (c) 2008, Red Hat Middleware LLC or third-party contributors as
-This software and its documentation are distributed under the terms of the
-GNU Lesser General Public License v2.1 or later 
 --------------------------------------------
-"fastinfoset" (com.sun.xml.fastinfoset:FastInfoset)
-  Copyright (c) 1999-2004 The Apache Software Foundation.  All rights
-  Copyright (c) 2004-2013 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 2001-2005 freebxml.org.  All rights reserved.
-Apache License Version 2.0
+"Jakarta Persistence API" (jakarta.persistence:jakarta.persistence-api)
+  Copyright &amp;#169; 2019, 2020 Eclipse Foundation. All rights reserved.&lt;br&gt;
+  Copyright (c) 2008,2020 Oracle and/or its affiliates. All rights reserved.
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Public License v. 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0, or the Eclipse Distribution License v. 1.0
+which is available at http://www.eclipse.org/org/documents/edl-v10.php.
+--------------------------------------------
+Eclipse Distribution License - v 1.0
+Copyright (c) 2007, Eclipse Foundation, Inc. and its licensors.
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the following
+conditions are met:
+
+- Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+- Redistributions in binary form must reproduce the above
+  copyright notice, this list of conditions and the following
+  disclaimer in the documentation and/or other materials provided
+  with the distribution.
+
+- Neither the name of the Eclipse Foundation, Inc. nor the
+  names of its contributors may be used to endorse or promote
+  products derived from this software without specific prior
+  written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------
+License Identifier: EPL-2.0
+--------------------------------------------
+"Jakarta Activation" (com.sun.activation:jakarta.activation)
+  Copyright (c) 1997,2021 Oracle and/or its affiliates. All rights reserved.
+  Eclipse Distribution License v. 1.0
+--------------------------------------------
+"JAXB Runtime" (org.glassfish.jaxb:jaxb-runtime)
+  Copyright (c) 1997,2021 Oracle and/or its affiliates. All rights reserved.
+  Eclipse Distribution License v. 1.0
+--------------------------------------------
+"JAXB Core" (org.glassfish.jaxb:jaxb-core)
+  Copyright (c) 1997,2021 Oracle and/or its affiliates. All rights reserved.
+  Eclipse Distribution License v. 1.0
+--------------------------------------------
+"TXW2 Runtime" (org.glassfish.jaxb:txw2)
+  Copyright (c) 2005,2021 Oracle and/or its affiliates. All rights reserved.
+  Eclipse Distribution License v. 1.0
+--------------------------------------------
+"istack common utility code runtime" (com.sun.istack:istack-commons-runtime)
+  Copyright (c) 1997,2021 Oracle and/or its affiliates. All rights reserved.
+  Eclipse Distribution License v. 1.0
+--------------------------------------------
+"Jakarta XML Binding API" (jakarta.xml.bind:jakarta.xml.bind-api)
+  Copyright &amp;#169; 2019, 2021 Eclipse Foundation. All rights reserved.&lt;br&gt;
+  Copyright (c) 2003,2021 Oracle and/or its affiliates. All rights reserved.
+  Eclipse Distribution License - v 1.0
+--------------------------------------------
+"jakarta.transaction API" (jakarta.transaction:jakarta.transaction-api)
+  Copyright (c) 1997,2020 Oracle and/or its affiliates. All rights reserved.
+  EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+--------------------------------------------
+License Identifier: GPLv2-CPE
 --------------------------------------------
 "JBoss Logging 3" (org.jboss.logging:jboss-logging)
   Copyright 2010,2011 Red Hat, Inc., and individual contributors
   Copyright 2010,2019 Red Hat, Inc.
-Apache License Version 2.0
+  Apache License 2.0
+--------------------------------------------
+"Java Annotation Indexer" (org.jboss:jandex)
+  Copyright 2013,2021 Red Hat, Inc., and individual contributors
+  Apache License 2.0
+--------------------------------------------
+"ClassMate" (com.fasterxml:classmate)
+  Copyright: (C) FasterXML, LLC and Tatu Saloranta
+  Apache License 2.0
+  Java ClassMate library was originally written by Tatu Saloranta (tatu.saloranta@iki.fi)
+
+  Other developers who have contributed code are:
+
+  * Brian Langel
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+  file except in compliance with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+  ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
 --------------------------------------------
 "Byte Buddy (without dependencies)" (net.bytebuddy:byte-buddy)
   Copyright (c) 2000-2011 INRIA, France Telecom
   Copyright 2014- Present Rafael Winterhalter
-Apache License Version 2.0
+  Apache License 2.0
 --------------------------------------------
-"Java Annotation Indexer" (org.jboss:jandex)
-  Copyright 2013,2020 Red Hat, Inc., and individual contributors
-Apache License Version 2.0
---------------------------------------------
-"ClassMate" (com.fasterxml:classmate)
-  Copyright © 2012–2015 fasterxml.com. All rights reserved.
-Apache License Version 2.0
---------------------------------------------
-"Javassist" (org.javassist:javassist)
-  Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
-  Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.&lt;/i&gt;]]&gt;&lt;/bottom&gt;
-  Copyright (C) 2004 Bill Burke. All Rights Reserved.
-This software is distributed under the Mozilla Public License Version 1.1,
-the GNU Lesser General Public License Version 2.1 or later,
-or the Apache License Version 2.0.
+"Jakarta Dependency Injection" (jakarta.inject:jakarta.inject-api)
+  Copyright (C) 2009 The JSR-330 Expert Group
+  Copyright &amp;#169; 2018,2020 Eclipse Foundation.&lt;br&gt;
+  Apache License 2.0
 --------------------------------------------
 License Identifier: Apache-2.0
 </attribution>
         </dependency>
+        <dependency>
+            <id>130799</id>
+            <name>hibernate-validator-cdi</name>
+            <version>6.2.5.Final</version>
+            <licensor>Red Hat, Inc.</licensor>
+            <licenseName>Apache 2.0</licenseName>
+            <consumers>
+                <consumer>helidon-microprofile-bean-validation</consumer>
+            </consumers>
+            <attribution>Hibernate Validator Portable Extension (org.hibernate.validator:hibernate-validator-cdi)
+  Copyright 2007-2022 Red Hat, Inc. All Rights Reserved
+  Copyright 2009 IIZUKA Software Technologies Ltd
+--------------------------------------------
+License Identifier: Apache-2.0
+--------------------------------------------
+Fourth Party Dependencies
+--------------------------------------------
+"Hibernate Validator Engine" (org.hibernate.validator:hibernate-validator)
+  Copyright 2009 IIZUKA Software Technologies Ltd
+  Apache License 2.0
+--------------------------------------------
+"Jakarta Bean Validation API" (jakarta.validation:jakarta.validation-api)
+  Copyright 2019 Eclipse Foundation.
+  Apache License 2.0
+--------------------------------------------
+"JBoss Logging 3" (org.jboss.logging:jboss-logging)
+  Copyright 2010,2011 Red Hat, Inc., and individual contributors
+  Copyright 2010,2019 Red Hat, Inc.
+  Apache License 2.0
+--------------------------------------------
+"ClassMate"  (com.fasterxml:classmate)
+  Copyright: (C) FasterXML, LLC and Tatu Saloranta
+  Apache License 2.0
+  Java ClassMate library was originally written by Tatu Saloranta (tatu.saloranta@iki.fi)
+
+  Other developers who have contributed code are:
+
+  * Brian Langel
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+  file except in compliance with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+  ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License.
+  Apache License 2.0
+--------------------------------------------
+</attribution>
+        </dependency>
+
         <dependency>
             <id>106050</id>
             <name>HikariCP</name>
@@ -2191,9 +2316,9 @@ License Identifier: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
-            <id>80294</id>
+            <id>130863</id>
             <name>Jakarta Expression Language (EL)</name>
-            <version>3.0.3</version>
+            <version>3.0.4</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
@@ -2211,7 +2336,9 @@ License Identifier: Apache-2.0
 3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
     License are offered by Oracle alone and not by any other party.
 _______________________________________________
- Copyright (c) 1997,2018 Oracle and/or its affiliates and others.
+Jakarta Expression Language API (EL) (jakarta.el:jakarta.el-api)
+Jakarta Expression Language Impl  (org.glassfish:jakarta.el)
+  Copyright (c) 1997,2021 Oracle and/or its affiliates and others.
   Copyright 2019 Eclipse Foundation. All rights reserved.
   Copyright 2004 The Apache Software Foundation
 -------------------------------------------------------------------------
@@ -2257,9 +2384,8 @@ please check the country's laws, regulations and policies concerning the import,
 possession, or use, and re-export of encryption software, to see if this is
 permitted.
 -------------------------------------------------------------------------
-License Identifier: EPL-2.0
+License Identifier: EPL-2.0-plus-GPLv2-CPE
 -------------------------------------------------------------------------
-
                    </attribution>
         </dependency>
         <dependency>
@@ -3794,102 +3920,24 @@ The below fourth party dependencies are used only by the Reactive Messaging TCKs
   Apache License Version 2.0
 --------------------------------------------
 "reactive-streams" (org.reactivestreams:reactive-streams)
-  Creative Commons (CC0)
 
-Statement of Purpose The laws of most jurisdictions throughout the world
-automatically confer exclusive Copyright and Related Rights (defined below) upon
-the creator and subsequent owner(s) (each and all, an "owner") of an original
-work of authorship and/or a database (each, a "Work").
+MIT No Attribution
 
-Certain owners wish to permanently relinquish those rights to a Work for the
-purpose of contributing to a commons of creative, cultural and scientific works
-("Commons") that the public can reliably and without fear of later claims of
-infringement build upon, modify, incorporate in other works, reuse and
-redistribute as freely as possible in any form whatsoever and for any purposes,
-including without limitation commercial purposes. These owners may contribute to
-the Commons to promote the ideal of a free culture and the further production of
-creative, cultural and scientific works, or to gain reputation or greater
-distribution for their Work in part through the use and efforts of others.
+Copyright 2014 Reactive Streams
 
-For these and/or other purposes and motivations, and without any expectation of
-additional consideration or compensation, the person associating CC0 with a Work
-(the "Affirmer"), to the extent that he or she is an owner of Copyright and
-Related Rights in the Work, voluntarily elects to apply CC0 to the Work and
-publicly distribute the Work under its terms, with knowledge of his or her
-Copyright and Related Rights in the Work and the meaning and intended legal
-effect of CC0 on those rights.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 
-1. Copyright and Related Rights. A Work made available under CC0 may be
-protected by copyright and related or neighboring rights ("Copyright and Related
-Rights"). Copyright and Related Rights include, but are not limited to, the
-following:
-
-the right to reproduce, adapt, distribute, perform, display, communicate, and
-translate a Work; moral rights retained by the original author(s) and/or
-performer(s); publicity and privacy rights pertaining to a person's image or
-likeness depicted in a Work; rights protecting against unfair competition in
-regards to a Work, subject to the limitations in paragraph 4(a), below; rights
-protecting the extraction, dissemination, use and reuse of data in a Work;
-database rights (such as those arising under Directive 96/9/EC of the European
-Parliament and of the Council of 11 March 1996 on the legal protection of
-databases, and under any national implementation thereof, including any amended
-or successor version of such directive); and other similar, equivalent or
-corresponding rights throughout the world based on applicable law or treaty, and
-any national implementations thereof. 2. Waiver. To the greatest extent
-permitted by, but not in contravention of, applicable law, Affirmer hereby
-overtly, fully, permanently, irrevocably and unconditionally waives, abandons,
-and surrenders all of Affirmer's Copyright and Related Rights and associated
-claims and causes of action, whether now known or unknown (including existing as
-well as future claims and causes of action), in the Work (i) in all territories
-worldwide, (ii) for the maximum duration provided by applicable law or treaty
-(including future time extensions), (iii) in any current or future medium and
-for any number of copies, and (iv) for any purpose whatsoever, including without
-limitation commercial, advertising or promotional purposes (the "Waiver").
-Affirmer makes the Waiver for the benefit of each member of the public at large
-and to the detriment of Affirmer's heirs and successors, fully intending that
-such Waiver shall not be subject to revocation, rescission, cancellation,
-termination, or any other legal or equitable action to disrupt the quiet
-enjoyment of the Work by the public as contemplated by Affirmer's express
-Statement of Purpose.
-
-3. Public License Fallback. Should any part of the Waiver for any reason be
-judged legally invalid or ineffective under applicable law, then the Waiver
-shall be preserved to the maximum extent permitted taking into account
-Affirmer's express Statement of Purpose. In addition, to the extent the Waiver
-is so judged Affirmer hereby grants to each affected person a royalty-free, non
-transferable, non sublicensable, non exclusive, irrevocable and unconditional
-license to exercise Affirmer's Copyright and Related Rights in the Work (i) in
-all territories worldwide, (ii) for the maximum duration provided by applicable
-law or treaty (including future time extensions), (iii) in any current or future
-medium and for any number of copies, and (iv) for any purpose whatsoever,
-including without limitation commercial, advertising or promotional purposes
-(the "License"). The License shall be deemed effective as of the date CC0 was
-applied by Affirmer to the Work. Should any part of the License for any reason
-be judged legally invalid or ineffective under applicable law, such partial
-invalidity or ineffectiveness shall not invalidate the remainder of the License,
-and in such case Affirmer hereby affirms that he or she will not (i) exercise
-any of his or her remaining Copyright and Related Rights in the Work or (ii)
-assert any associated claims and causes of action with respect to the Work, in
-either case contrary to Affirmer's express Statement of Purpose.
-
-4. Limitations and Disclaimers.
-
-No trademark or patent rights held by Affirmer are waived, abandoned,
-surrendered, licensed or otherwise affected by this document. Affirmer offers
-the Work as-is and makes no representations or warranties of any kind concerning
-the Work, express, implied, statutory or otherwise, including without limitation
-warranties of title, merchantability, fitness for a particular purpose, non
-infringement, or the absence of latent or other defects, accuracy, or the
-present or absence of errors, whether or not discoverable, all to the greatest
-extent permissible under applicable law. Affirmer disclaims responsibility for
-clearing rights of other persons that may apply to the Work or any use thereof,
-including without limitation any person's Copyright and Related Rights in the
-Work. Further, Affirmer disclaims responsibility for obtaining any necessary
-consents, permissions or other rights required for any use of the Work. Affirmer
-understands and acknowledges that Creative Commons is not a party to this
-document and has no duty or obligation with respect to this CC0 or use of the
-Work.
-
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 "JUnit" (junit:junit)
   Copyright (c) JUnit. All Rights Reserved.
@@ -4171,110 +4219,25 @@ OSGi Versioning Annotations
   Copyright (c) OSGi Alliance (2013). All Rights Reserved.
   Apache License Version 2.0
 --------------------------------------------
-Reactive Streams (org.reactivestreams:reactive-streams)
+"reactive-streams" (org.reactivestreams:reactive-streams)
 
-Licensed under Public Domain (CC0)
+MIT No Attribution
 
-To the extent possible under law, the person who associated CC0 with
-this code has waived all copyright and related or neighboring
-rights to this code.
+Copyright 2014 Reactive Streams
 
-Statement of Purpose The laws of most jurisdictions throughout the world
-automatically confer exclusive Copyright and Related Rights (defined below) upon
-the creator and subsequent owner(s) (each and all, an "owner") of an original
-work of authorship and/or a database (each, a "Work").
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 
-Certain owners wish to permanently relinquish those rights to a Work for the
-purpose of contributing to a commons of creative, cultural and scientific works
-("Commons") that the public can reliably and without fear of later claims of
-infringement build upon, modify, incorporate in other works, reuse and
-redistribute as freely as possible in any form whatsoever and for any purposes,
-including without limitation commercial purposes. These owners may contribute to
-the Commons to promote the ideal of a free culture and the further production of
-creative, cultural and scientific works, or to gain reputation or greater
-distribution for their Work in part through the use and efforts of others.
-
-For these and/or other purposes and motivations, and without any expectation of
-additional consideration or compensation, the person associating CC0 with a Work
-(the "Affirmer"), to the extent that he or she is an owner of Copyright and
-Related Rights in the Work, voluntarily elects to apply CC0 to the Work and
-publicly distribute the Work under its terms, with knowledge of his or her
-Copyright and Related Rights in the Work and the meaning and intended legal
-effect of CC0 on those rights.
-
-1. Copyright and Related Rights. A Work made available under CC0 may be
-protected by copyright and related or neighboring rights ("Copyright and Related
-Rights"). Copyright and Related Rights include, but are not limited to, the
-following:
-
-the right to reproduce, adapt, distribute, perform, display, communicate, and
-translate a Work; moral rights retained by the original author(s) and/or
-performer(s); publicity and privacy rights pertaining to a person's image or
-likeness depicted in a Work; rights protecting against unfair competition in
-regards to a Work, subject to the limitations in paragraph 4(a), below; rights
-protecting the extraction, dissemination, use and reuse of data in a Work;
-database rights (such as those arising under Directive 96/9/EC of the European
-Parliament and of the Council of 11 March 1996 on the legal protection of
-databases, and under any national implementation thereof, including any amended
-or successor version of such directive); and other similar, equivalent or
-corresponding rights throughout the world based on applicable law or treaty, and
-any national implementations thereof. 
-
-2. Waiver. To the greatest extent
-permitted by, but not in contravention of, applicable law, Affirmer hereby
-overtly, fully, permanently, irrevocably and unconditionally waives, abandons,
-and surrenders all of Affirmer's Copyright and Related Rights and associated
-claims and causes of action, whether now known or unknown (including existing as
-well as future claims and causes of action), in the Work (i) in all territories
-worldwide, (ii) for the maximum duration provided by applicable law or treaty
-(including future time extensions), (iii) in any current or future medium and
-for any number of copies, and (iv) for any purpose whatsoever, including without
-limitation commercial, advertising or promotional purposes (the "Waiver").
-Affirmer makes the Waiver for the benefit of each member of the public at large
-and to the detriment of Affirmer's heirs and successors, fully intending that
-such Waiver shall not be subject to revocation, rescission, cancellation,
-termination, or any other legal or equitable action to disrupt the quiet
-enjoyment of the Work by the public as contemplated by Affirmer's express
-Statement of Purpose.
-
-3. Public License Fallback. Should any part of the Waiver for any reason be
-judged legally invalid or ineffective under applicable law, then the Waiver
-shall be preserved to the maximum extent permitted taking into account
-Affirmer's express Statement of Purpose. In addition, to the extent the Waiver
-is so judged Affirmer hereby grants to each affected person a royalty-free, non
-transferable, non sublicensable, non exclusive, irrevocable and unconditional
-license to exercise Affirmer's Copyright and Related Rights in the Work (i) in
-all territories worldwide, (ii) for the maximum duration provided by applicable
-law or treaty (including future time extensions), (iii) in any current or future
-medium and for any number of copies, and (iv) for any purpose whatsoever,
-including without limitation commercial, advertising or promotional purposes
-(the "License"). The License shall be deemed effective as of the date CC0 was
-applied by Affirmer to the Work. Should any part of the License for any reason
-be judged legally invalid or ineffective under applicable law, such partial
-invalidity or ineffectiveness shall not invalidate the remainder of the License,
-and in such case Affirmer hereby affirms that he or she will not (i) exercise
-any of his or her remaining Copyright and Related Rights in the Work or (ii)
-assert any associated claims and causes of action with respect to the Work, in
-either case contrary to Affirmer's express Statement of Purpose.
-
-4. Limitations and Disclaimers.
-
-No trademark or patent rights held by Affirmer are waived, abandoned,
-surrendered, licensed or otherwise affected by this document. Affirmer offers
-the Work as-is and makes no representations or warranties of any kind concerning
-the Work, express, implied, statutory or otherwise, including without limitation
-warranties of title, merchantability, fitness for a particular purpose, non
-infringement, or the absence of latent or other defects, accuracy, or the
-present or absence of errors, whether or not discoverable, all to the greatest
-extent permissible under applicable law. Affirmer disclaims responsibility for
-clearing rights of other persons that may apply to the Work or any use thereof,
-including without limitation any person's Copyright and Related Rights in the
-Work. Further, Affirmer disclaims responsibility for obtaining any necessary
-consents, permissions or other rights required for any use of the Work. Affirmer
-understands and acknowledges that Creative Commons is not a party to this
-document and has no duty or obligation with respect to this CC0 or use of the
-Work.
-
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </attribution>
         </dependency>
         <dependency>
@@ -4352,101 +4315,24 @@ Fourth Party Dependencies
   Apache License Version 2
 --------------------------------------------
 "reactive-streams" (org.reactivestreams:reactive-streams)
-  Creative Commons (CC0)
 
-Statement of Purpose The laws of most jurisdictions throughout the world
-automatically confer exclusive Copyright and Related Rights (defined below) upon
-the creator and subsequent owner(s) (each and all, an "owner") of an original
-work of authorship and/or a database (each, a "Work").
+MIT No Attribution
 
-Certain owners wish to permanently relinquish those rights to a Work for the
-purpose of contributing to a commons of creative, cultural and scientific works
-("Commons") that the public can reliably and without fear of later claims of
-infringement build upon, modify, incorporate in other works, reuse and
-redistribute as freely as possible in any form whatsoever and for any purposes,
-including without limitation commercial purposes. These owners may contribute to
-the Commons to promote the ideal of a free culture and the further production of
-creative, cultural and scientific works, or to gain reputation or greater
-distribution for their Work in part through the use and efforts of others.
+Copyright 2014 Reactive Streams
 
-For these and/or other purposes and motivations, and without any expectation of
-additional consideration or compensation, the person associating CC0 with a Work
-(the "Affirmer"), to the extent that he or she is an owner of Copyright and
-Related Rights in the Work, voluntarily elects to apply CC0 to the Work and
-publicly distribute the Work under its terms, with knowledge of his or her
-Copyright and Related Rights in the Work and the meaning and intended legal
-effect of CC0 on those rights.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 
-1. Copyright and Related Rights. A Work made available under CC0 may be
-protected by copyright and related or neighboring rights ("Copyright and Related
-Rights"). Copyright and Related Rights include, but are not limited to, the
-following:
-
-the right to reproduce, adapt, distribute, perform, display, communicate, and
-translate a Work; moral rights retained by the original author(s) and/or
-performer(s); publicity and privacy rights pertaining to a person's image or
-likeness depicted in a Work; rights protecting against unfair competition in
-regards to a Work, subject to the limitations in paragraph 4(a), below; rights
-protecting the extraction, dissemination, use and reuse of data in a Work;
-database rights (such as those arising under Directive 96/9/EC of the European
-Parliament and of the Council of 11 March 1996 on the legal protection of
-databases, and under any national implementation thereof, including any amended
-or successor version of such directive); and other similar, equivalent or
-corresponding rights throughout the world based on applicable law or treaty, and
-any national implementations thereof. 2. Waiver. To the greatest extent
-permitted by, but not in contravention of, applicable law, Affirmer hereby
-overtly, fully, permanently, irrevocably and unconditionally waives, abandons,
-and surrenders all of Affirmer's Copyright and Related Rights and associated
-claims and causes of action, whether now known or unknown (including existing as
-well as future claims and causes of action), in the Work (i) in all territories
-worldwide, (ii) for the maximum duration provided by applicable law or treaty
-(including future time extensions), (iii) in any current or future medium and
-for any number of copies, and (iv) for any purpose whatsoever, including without
-limitation commercial, advertising or promotional purposes (the "Waiver").
-Affirmer makes the Waiver for the benefit of each member of the public at large
-and to the detriment of Affirmer's heirs and successors, fully intending that
-such Waiver shall not be subject to revocation, rescission, cancellation,
-termination, or any other legal or equitable action to disrupt the quiet
-enjoyment of the Work by the public as contemplated by Affirmer's express
-Statement of Purpose.
-
-3. Public License Fallback. Should any part of the Waiver for any reason be
-judged legally invalid or ineffective under applicable law, then the Waiver
-shall be preserved to the maximum extent permitted taking into account
-Affirmer's express Statement of Purpose. In addition, to the extent the Waiver
-is so judged Affirmer hereby grants to each affected person a royalty-free, non
-transferable, non sublicensable, non exclusive, irrevocable and unconditional
-license to exercise Affirmer's Copyright and Related Rights in the Work (i) in
-all territories worldwide, (ii) for the maximum duration provided by applicable
-law or treaty (including future time extensions), (iii) in any current or future
-medium and for any number of copies, and (iv) for any purpose whatsoever,
-including without limitation commercial, advertising or promotional purposes
-(the "License"). The License shall be deemed effective as of the date CC0 was
-applied by Affirmer to the Work. Should any part of the License for any reason
-be judged legally invalid or ineffective under applicable law, such partial
-invalidity or ineffectiveness shall not invalidate the remainder of the License,
-and in such case Affirmer hereby affirms that he or she will not (i) exercise
-any of his or her remaining Copyright and Related Rights in the Work or (ii)
-assert any associated claims and causes of action with respect to the Work, in
-either case contrary to Affirmer's express Statement of Purpose.
-
-4. Limitations and Disclaimers.
-
-No trademark or patent rights held by Affirmer are waived, abandoned,
-surrendered, licensed or otherwise affected by this document. Affirmer offers
-the Work as-is and makes no representations or warranties of any kind concerning
-the Work, express, implied, statutory or otherwise, including without limitation
-warranties of title, merchantability, fitness for a particular purpose, non
-infringement, or the absence of latent or other defects, accuracy, or the
-present or absence of errors, whether or not discoverable, all to the greatest
-extent permissible under applicable law. Affirmer disclaims responsibility for
-clearing rights of other persons that may apply to the Work or any use thereof,
-including without limitation any person's Copyright and Related Rights in the
-Work. Further, Affirmer disclaims responsibility for obtaining any necessary
-consents, permissions or other rights required for any use of the Work. Affirmer
-understands and acknowledges that Creative Commons is not a party to this
-document and has no duty or obligation with respect to this CC0 or use of the
-Work.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------
 "SLF4J API Module" (org.slf4j:slf4j-api)
@@ -10863,110 +10749,23 @@ Fourth Party Dependencies
 --------------------------------------------
 "reactive-streams" (org.reactivestreams:reactive-streams)
 
-/************************************************************************
- * Licensed under Public Domain (CC0)                                    *
- *                                                                       *
- * To the extent possible under law, the person who associated CC0 with  *
- * this code has waived all copyright and related or neighboring         *
- * rights to this code.                                                  *
- *                                                                       *
- * You should have received a copy of the CC0 legalcode along with this  *
- * work. If not, see &lt;http://creativecommons.org/publicdomain/zero/1.0/&gt;.*
- ************************************************************************/
+MIT No Attribution
 
-Statement of Purpose The laws of most jurisdictions throughout the world
-automatically confer exclusive Copyright and Related Rights (defined below) upon
-the creator and subsequent owner(s) (each and all, an "owner") of an original
-work of authorship and/or a database (each, a "Work").
+Copyright 2014 Reactive Streams
 
-Certain owners wish to permanently relinquish those rights to a Work for the
-purpose of contributing to a commons of creative, cultural and scientific works
-("Commons") that the public can reliably and without fear of later claims of
-infringement build upon, modify, incorporate in other works, reuse and
-redistribute as freely as possible in any form whatsoever and for any purposes,
-including without limitation commercial purposes. These owners may contribute to
-the Commons to promote the ideal of a free culture and the further production of
-creative, cultural and scientific works, or to gain reputation or greater
-distribution for their Work in part through the use and efforts of others.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 
-For these and/or other purposes and motivations, and without any expectation of
-additional consideration or compensation, the person associating CC0 with a Work
-(the "Affirmer"), to the extent that he or she is an owner of Copyright and
-Related Rights in the Work, voluntarily elects to apply CC0 to the Work and
-publicly distribute the Work under its terms, with knowledge of his or her
-Copyright and Related Rights in the Work and the meaning and intended legal
-effect of CC0 on those rights.
-
-1. Copyright and Related Rights. A Work made available under CC0 may be
-protected by copyright and related or neighboring rights ("Copyright and Related
-Rights"). Copyright and Related Rights include, but are not limited to, the
-following:
-
-the right to reproduce, adapt, distribute, perform, display, communicate, and
-translate a Work; moral rights retained by the original author(s) and/or
-performer(s); publicity and privacy rights pertaining to a person's image or
-likeness depicted in a Work; rights protecting against unfair competition in
-regards to a Work, subject to the limitations in paragraph 4(a), below; rights
-protecting the extraction, dissemination, use and reuse of data in a Work;
-database rights (such as those arising under Directive 96/9/EC of the European
-Parliament and of the Council of 11 March 1996 on the legal protection of
-databases, and under any national implementation thereof, including any amended
-or successor version of such directive); and other similar, equivalent or
-corresponding rights throughout the world based on applicable law or treaty, and
-any national implementations thereof. 2. Waiver. To the greatest extent
-permitted by, but not in contravention of, applicable law, Affirmer hereby
-overtly, fully, permanently, irrevocably and unconditionally waives, abandons,
-and surrenders all of Affirmer's Copyright and Related Rights and associated
-claims and causes of action, whether now known or unknown (including existing as
-well as future claims and causes of action), in the Work (i) in all territories
-worldwide, (ii) for the maximum duration provided by applicable law or treaty
-(including future time extensions), (iii) in any current or future medium and
-for any number of copies, and (iv) for any purpose whatsoever, including without
-limitation commercial, advertising or promotional purposes (the "Waiver").
-Affirmer makes the Waiver for the benefit of each member of the public at large
-and to the detriment of Affirmer's heirs and successors, fully intending that
-such Waiver shall not be subject to revocation, rescission, cancellation,
-termination, or any other legal or equitable action to disrupt the quiet
-enjoyment of the Work by the public as contemplated by Affirmer's express
-Statement of Purpose.
-
-3. Public License Fallback. Should any part of the Waiver for any reason be
-judged legally invalid or ineffective under applicable law, then the Waiver
-shall be preserved to the maximum extent permitted taking into account
-Affirmer's express Statement of Purpose. In addition, to the extent the Waiver
-is so judged Affirmer hereby grants to each affected person a royalty-free, non
-transferable, non sublicensable, non exclusive, irrevocable and unconditional
-license to exercise Affirmer's Copyright and Related Rights in the Work (i) in
-all territories worldwide, (ii) for the maximum duration provided by applicable
-law or treaty (including future time extensions), (iii) in any current or future
-medium and for any number of copies, and (iv) for any purpose whatsoever,
-including without limitation commercial, advertising or promotional purposes
-(the "License"). The License shall be deemed effective as of the date CC0 was
-applied by Affirmer to the Work. Should any part of the License for any reason
-be judged legally invalid or ineffective under applicable law, such partial
-invalidity or ineffectiveness shall not invalidate the remainder of the License,
-and in such case Affirmer hereby affirms that he or she will not (i) exercise
-any of his or her remaining Copyright and Related Rights in the Work or (ii)
-assert any associated claims and causes of action with respect to the Work, in
-either case contrary to Affirmer's express Statement of Purpose.
-
-4. Limitations and Disclaimers.
-
-No trademark or patent rights held by Affirmer are waived, abandoned,
-surrendered, licensed or otherwise affected by this document. Affirmer offers
-the Work as-is and makes no representations or warranties of any kind concerning
-the Work, express, implied, statutory or otherwise, including without limitation
-warranties of title, merchantability, fitness for a particular purpose, non
-infringement, or the absence of latent or other defects, accuracy, or the
-present or absence of errors, whether or not discoverable, all to the greatest
-extent permissible under applicable law. Affirmer disclaims responsibility for
-clearing rights of other persons that may apply to the Work or any use thereof,
-including without limitation any person's Copyright and Related Rights in the
-Work. Further, Affirmer disclaims responsibility for obtaining any necessary
-consents, permissions or other rights required for any use of the Work. Affirmer
-understands and acknowledges that Creative Commons is not a party to this
-document and has no duty or obligation with respect to this CC0 or use of the
-Work.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --------------------------------------------
 "SLF4J API Module" (org.slf4j:slf4j-api)
   Copyright (c) 2004-2011 QOS.ch
@@ -11015,9 +10814,9 @@ Copyright (c) 2019-Present Pivotal Software Inc, All Rights Reserved.
 --------------------------------------------</attribution>
         </dependency>
         <dependency>
-            <id>97851</id>
+            <id>126692</id>
             <name>netty</name>
-            <version>4.1.63.Final</version>
+            <version>4.1.77.Final</version>
             <licensor>The Netty Project</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
@@ -11817,6 +11616,25 @@ License Identifier: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
+            <id>129267</id>
+            <name>reactive-streams</name>
+            <version>1.0.4</version>
+            <licensor>Reactive Streams</licensor>
+            <licenseName>MIT</licenseName>
+            <consumers>
+                <consumer>helidon-dbclient-mongodb</consumer>
+                <consumer>helidon-microprofile-reactive-streams</consumer>
+            </consumers>
+            <attribution>MIT No Attribution
+
+Copyright 2014 Reactive Streams
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+</attribution>
+        </dependency>
+        <dependency>
             <id>106772</id>
             <name>smallrye-open-api</name>
             <version>2.0.26</version>
@@ -11927,77 +11745,6 @@ Fourth Party Runtime Dependencies
   from the source code management (SCM) system project uses.
 --------------------------------------------
 </attribution>
-        </dependency>
-        <dependency>
-            <id>111054</id>
-            <name>Reactive Streams</name>
-            <version>1.0.3</version>
-            <licensor>Public Domain</licensor>
-            <licenseName>CC0</licenseName>
-            <consumers>
-                <consumer>helidon-dbclient-mongodb</consumer>
-                <consumer>helidon-microprofile-reactive-streams</consumer>
-            </consumers>
-            <attribution>Licensed under Public Domain (CC0)
-
-To the extent possible under law, the person who associated CC0 with
-this code has waived all copyright and related or neighboring
-rights to this code.
-
-You should have received a copy of the CC0 legalcode along with this
-work. If not, see http://creativecommons.org/publicdomain/zero/1.0/.
-
-
-The same license text is available at: http://creativecommons.org/publicdomain/zero/1.0/
-
-
-CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE LEGAL SERVICES. DISTRIBUTION OF THIS DOCUMENT DOES NOT CREATE AN ATTORNEY-CLIENT RELATIONSHIP. CREATIVE COMMONS PROVIDES THIS INFORMATION ON AN "AS-IS" BASIS. CREATIVE COMMONS MAKES NO WARRANTIES REGARDING THE USE OF THIS DOCUMENT OR THE INFORMATION OR WORKS PROVIDED HEREUNDER, AND DISCLAIMS LIABILITY FOR DAMAGES RESULTING FROM THE USE OF THIS DOCUMENT OR THE INFORMATION OR WORKS PROVIDED HEREUNDER.
-Statement of Purpose
-
-The laws of most jurisdictions throughout the world automatically confer exclusive Copyright and Related Rights (defined below) upon the creator and subsequent owner(s) (each and all, an "owner") of an original work of authorship and/or a database (each, a "Work").
-
-Certain owners wish to permanently relinquish those rights to a Work for the purpose of contributing to a commons of creative, cultural and scientific works ("Commons") that the public can reliably and without fear of later claims of infringement build upon, modify, incorporate in other works, reuse and redistribute as freely as possible in any form whatsoever and for any purposes, including without limitation commercial purposes. These owners may contribute to the Commons to promote the ideal of a free culture and the further production of creative, cultural and scientific works, or to gain reputation or greater distribution for their Work in part through the use and efforts of others.
-
-For these and/or other purposes and motivations, and without any expectation of additional consideration or compensation, the person associating CC0 with a Work (the "Affirmer"), to the extent that he or she is an owner of Copyright and Related Rights in the Work, voluntarily elects to apply CC0 to the Work and publicly distribute the Work under its terms, with knowledge of his or her Copyright and Related Rights in the Work and the meaning and intended legal effect of CC0 on those rights.
-
-1. Copyright and Related Rights. A Work made available under CC0 may be protected by copyright and related or neighboring rights ("Copyright and Related Rights"). Copyright and Related Rights include, but are not limited to, the following:
-
-the right to reproduce, adapt, distribute, perform, display, communicate, and translate a Work;
-moral rights retained by the original author(s) and/or performer(s);
-publicity and privacy rights pertaining to a person's image or likeness depicted in a Work;
-rights protecting against unfair competition in regards to a Work, subject to the limitations in paragraph 4(a), below;
-rights protecting the extraction, dissemination, use and reuse of data in a Work;
-database rights (such as those arising under Directive 96/9/EC of the European Parliament and of the Council of 11 March 1996 on the legal protection of databases, and under any national implementation thereof, including any amended or successor version of such directive); and
-other similar, equivalent or corresponding rights throughout the world based on applicable law or treaty, and any national implementations thereof.
-2. Waiver. To the greatest extent permitted by, but not in contravention of, applicable law, Affirmer hereby overtly, fully, permanently, irrevocably and unconditionally waives, abandons, and surrenders all of Affirmer's Copyright and Related Rights and associated claims and causes of action, whether now known or unknown (including existing as well as future claims and causes of action), in the Work (i) in all territories worldwide, (ii) for the maximum duration provided by applicable law or treaty (including future time extensions), (iii) in any current or future medium and for any number of copies, and (iv) for any purpose whatsoever, including without limitation commercial, advertising or promotional purposes (the "Waiver"). Affirmer makes the Waiver for the benefit of each member of the public at large and to the detriment of Affirmer's heirs and successors, fully intending that such Waiver shall not be subject to revocation, rescission, cancellation, termination, or any other legal or equitable action to disrupt the quiet enjoyment of the Work by the public as contemplated by Affirmer's express Statement of Purpose.
-
-3. Public License Fallback. Should any part of the Waiver for any reason be judged legally invalid or ineffective under applicable law, then the Waiver shall be preserved to the maximum extent permitted taking into account Affirmer's express Statement of Purpose. In addition, to the extent the Waiver is so judged Affirmer hereby grants to each affected person a royalty-free, non transferable, non sublicensable, non exclusive, irrevocable and unconditional license to exercise Affirmer's Copyright and Related Rights in the Work (i) in all territories worldwide, (ii) for the maximum duration provided by applicable law or treaty (including future time extensions), (iii) in any current or future medium and for any number of copies, and (iv) for any purpose whatsoever, including without limitation commercial, advertising or promotional purposes (the "License"). The License shall be deemed effective as of the date CC0 was applied by Affirmer to the Work. Should any part of the License for any reason be judged legally invalid or ineffective under applicable law, such partial invalidity or ineffectiveness shall not invalidate the remainder of the License, and in such case Affirmer hereby affirms that he or she will not (i) exercise any of his or her remaining Copyright and Related Rights in the Work or (ii) assert any associated claims and causes of action with respect to the Work, in either case contrary to Affirmer's express Statement of Purpose.
-
-4. Limitations and Disclaimers.
-
-No trademark or patent rights held by Affirmer are waived, abandoned, surrendered, licensed or otherwise affected by this document.
-Affirmer offers the Work as-is and makes no representations or warranties of any kind concerning the Work, express, implied, statutory or otherwise, including without limitation warranties of title, merchantability, fitness for a particular purpose, non infringement, or the absence of latent or other defects, accuracy, or the present or absence of errors, whether or not discoverable, all to the greatest extent permissible under applicable law.
-Affirmer disclaims responsibility for clearing rights of other persons that may apply to the Work or any use thereof, including without limitation any person's Copyright and Related Rights in the Work. Further, Affirmer disclaims responsibility for obtaining any necessary consents, permissions or other rights required for any use of the Work.
-Affirmer understands and acknowledges that Creative Commons is not a party to this document and has no duty or obligation with respect to this CC0 or use of the Work.
-Additional languages available: français, Nederlands, polski, suomeksi, 日本語. Please read the FAQ for more information about official translations.
-
-
-The top of each source file contains the following.  There are no specific copyright notices.  The CCO license is above and point #1 refers to the copyright.   
-
-/************************************************************************
- * Licensed under Public Domain (CC0)                                    *
- *                                                                       *
- * To the extent possible under law, the person who associated CC0 with  *
- * this code has waived all copyright and related or neighboring         *
- * rights to this code.                                                  *
- *                                                                       *
- * You should have received a copy of the CC0 legalcode along with this  *
- * work. If not, see http://creativecommons.org/publicdomain/zero/1.0/.*
- ************************************************************************/
-
-------------------------------------------------------------------------------------------------------------------------------
-
-            </attribution>
         </dependency>
     </dependencies>
     <licenses>
