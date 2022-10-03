@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for beans whose methods are protected by bulkheads.
@@ -86,10 +85,10 @@ class BulkheadTest extends FaultToleranceTest {
         CompletableFuture<String> f1 = bean.executeCancelInQueue(1000);
         CompletableFuture<String> f2 = bean.executeCancelInQueue(2000);    // should never run
         boolean b = f2.cancel(true);
-        assertTrue(b);
-        assertTrue(f2.isCancelled());
+        assertThat(b, is(true));
+        assertThat(f2.isCancelled(), is(true));
         assertThrows(CancellationException.class, f2::get);
-        assertNotNull(f1.get());
+        assertThat(f1.get(), notNullValue());
     }
 
     @Test
