@@ -17,8 +17,6 @@
 package io.helidon.webserver.jersey;
 
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -694,9 +692,7 @@ public class JerseySupport implements Service {
 
         @Override
         public Response toResponse(InternalServerErrorException e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            LOGGER.fine(sw.toString());
+            LOGGER.log(Level.FINE, "Internal error thrown by Jersey", e);
             return Response.status(500).build();
         }
     }
