@@ -38,6 +38,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.MatcherWithRetry.assertThatWithRetry;
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_SIMPLE_TIMER;
@@ -117,9 +118,9 @@ public class HelloWorldAsyncResponseTest {
 
         Duration minDuration = Duration.ofMillis(HelloWorldResource.SLOW_DELAY_MS);
 
-        assertThat("Change in count for explicit SimpleTimer",
-                explicitSimpleTimer.getCount() - explicitSimpleTimerCountBefore, is(1L));
-        long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
+        assertThatWithRetry("Change in count for explicit SimpleTimer",
+                            () -> explicitSimpleTimer.getCount() - explicitSimpleTimerCountBefore,
+                            is(1L));long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
         assertThat("Change in elapsed time for explicit SimpleTimer", explicitDiffNanos, is(greaterThan(minDuration.toNanos())));
 
         long syntheticDiffNanos = simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos();
