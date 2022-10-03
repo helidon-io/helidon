@@ -172,6 +172,10 @@ class CircuitBreakerImpl implements CircuitBreaker {
                              }, delayMillis, TimeUnit.MILLISECONDS));
     }
 
+    ScheduledFuture<Boolean> schedule() {
+        return schedule.get();
+    }
+
     private void resetCounters() {
         results.reset();
         successCounter.set(0);
