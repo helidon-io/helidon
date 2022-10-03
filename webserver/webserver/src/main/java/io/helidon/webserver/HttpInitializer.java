@@ -189,7 +189,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                     sslEngine,
                     queues,
                     this::clearQueues,
-                    soConfig.maxPayloadSize(),
+                    soConfig,
                     directHandlers));
         }
 
