@@ -24,7 +24,7 @@ module io.helidon.integrations.micrometer {
     requires static jakarta.annotation;
 
     requires io.helidon.common.http;
-    requires io.helidon.servicecommon.rest;
+    requires io.helidon.reactive.servicecommon;
     requires io.helidon.config;
     requires io.helidon.reactive.webserver.cors;
 

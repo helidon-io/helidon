@@ -75,8 +75,8 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service-common</groupId>
-            <artifactId>helidon-service-common-rest</artifactId>
+            <groupId>io.helidon.reactive.service-common</groupId>
+            <artifactId>helidon-reactive-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.reactive.webclient</groupId>

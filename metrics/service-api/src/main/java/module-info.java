@@ -22,7 +22,7 @@ module io.helidon.metrics.serviceapi {
 
     requires io.helidon.reactive.webserver;
     requires static io.helidon.config.metadata;
-    requires io.helidon.servicecommon.rest;
+    requires io.helidon.reactive.servicecommon;
     requires io.helidon.metrics.api;
 
     exports io.helidon.metrics.serviceapi;

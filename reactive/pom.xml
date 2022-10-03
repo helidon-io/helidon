@@ -42,6 +42,7 @@
         <module>dbclient</module>
         <module>webclient</module>
         <module>webserver</module>
+        <module>service-common</module>
     </modules>
 
     <profiles>

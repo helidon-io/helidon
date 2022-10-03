@@ -19,10 +19,10 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.reactive.servicecommon.RestServiceSettings;
+import io.helidon.reactive.servicecommon.RestServiceSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.Service;
-import io.helidon.servicecommon.rest.RestServiceSettings;
-import io.helidon.servicecommon.rest.RestServiceSupport;
 
 /**
  * Behavior for supporting metrics for the Helidon Web Server.
@@ -38,8 +38,8 @@ import io.helidon.servicecommon.rest.RestServiceSupport;
  * }</pre>
  * <p>
  * This class supports finer-grained settings using {@link io.helidon.metrics.api.MetricsSettings} and
- * {@link io.helidon.servicecommon.rest.RestServiceSettings} and Helidon Config via
- * {@link #create(io.helidon.metrics.api.MetricsSettings, io.helidon.servicecommon.rest.RestServiceSettings)}.
+ * {@link io.helidon.reactive.servicecommon.RestServiceSettings} and Helidon Config via
+ * {@link #create(io.helidon.metrics.api.MetricsSettings, io.helidon.reactive.servicecommon.RestServiceSettings)}.
  * <p>
  * During request handling the application metrics registry is then available as follows:
  * <pre>{@code
@@ -102,7 +102,7 @@ public interface MetricsSupport extends RestServiceSupport, Service {
     }
 
     /**
-     * Prepares a {@link io.helidon.servicecommon.rest.RestServiceSettings.Builder} instance for metrics with the default
+     * Prepares a {@link io.helidon.reactive.servicecommon.RestServiceSettings.Builder} instance for metrics with the default
      * settings.
      *
      * @return the prepared builder

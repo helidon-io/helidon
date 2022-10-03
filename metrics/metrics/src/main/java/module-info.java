@@ -29,7 +29,7 @@ module io.helidon.metrics {
     requires transitive io.helidon.reactive.webserver; // webserver/webserver/Context is a public return value
     requires io.helidon.reactive.media.jsonp;
     requires jakarta.json;
-    requires io.helidon.servicecommon.rest;
+    requires io.helidon.reactive.servicecommon;
 
     exports io.helidon.metrics;
 

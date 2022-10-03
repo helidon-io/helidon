@@ -17,7 +17,7 @@ package io.helidon.metrics;
 
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
-import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.reactive.servicecommon.RestServiceSettings;
 
 /**
  * Provider which furnishes a builder for {@link MetricsSupport} instances.

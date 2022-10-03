@@ -27,7 +27,7 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpService;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -143,28 +143,28 @@ public class ProducedRouteTest {
         @ApplicationScoped
         @RoutingName(value = "wrong", required = true)
         @RoutingPath("wrong")
-        Service coolestFieldProducedService = rules -> rules.any((req, res) -> {
+        HttpService coolestFieldProducedService = rules -> rules.any((req, res) -> {
             res.headers().set(COOLEST_HEADER_NAME, COOLEST_VALUE);
-            req.next();
+            res.next();
         });
 
 
         @Produces
         @ApplicationScoped
         @RoutingName(RoutingName.DEFAULT_NAME)
-        public Service coolTestService() {
+        public HttpService coolTestService() {
             return rules -> rules.any((req, res) -> {
                 res.headers().set(COOL_HEADER_NAME, COOL_VALUE);
-                req.next();
+                res.next();
             });
         }
 
         @Produces
         @ApplicationScoped
-        public Service coolerTestService() {
+        public HttpService coolerTestService() {
             return rules -> rules.any((req, res) -> {
                 res.headers().set(COOLER_HEADER_NAME, COOLER_VALUE);
-                req.next();
+                res.next();
             });
         }
 

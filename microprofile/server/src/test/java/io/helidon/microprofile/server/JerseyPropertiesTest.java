@@ -15,16 +15,13 @@
  */
 package io.helidon.microprofile.server;
 
-import io.helidon.config.Config;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.reactive.webserver.jersey.JerseySupport;
 
-import jakarta.inject.Inject;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.glassfish.jersey.client.ClientProperties.IGNORE_EXCEPTION_RESPONSE;
@@ -34,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test that it is possible to override {@code IGNORE_EXCEPTION_RESPONSE} in
- * Jersey using config. See {@link io.helidon.reactive.webserver.jersey.JerseySupport}
+ * Jersey using config. See {@link io.helidon.microprofile.server.JaxRsHandler}
  * for more information.
  */
 @HelidonTest
@@ -43,15 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
 @AddExtension(ConfigCdiExtension.class)
-@AddConfig(key = IGNORE_EXCEPTION_RESPONSE, value = "false")
 class JerseyPropertiesTest {
-
-    @Inject
-    Config config;
-
     @Test
     void testIgnoreExceptionResponseOverride() {
-        JerseySupport jerseySupport = JerseySupport.builder().config(config).build();
+        JaxRsHandler jerseySupport = JaxRsHandler.create(new ResourceConfig().property(IGNORE_EXCEPTION_RESPONSE, "false"),
+                                                         null);
         assertNotNull(jerseySupport);
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("false"));
     }

@@ -20,8 +20,8 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.ComponentMetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.reactive.servicecommon.HelidonRestServiceSupport;
 import io.helidon.reactive.webserver.Routing;
-import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;

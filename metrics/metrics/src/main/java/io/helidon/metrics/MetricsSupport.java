@@ -48,14 +48,14 @@ import io.helidon.metrics.serviceapi.MinimalMetricsSupport;
 import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
 import io.helidon.reactive.media.common.MessageBodyWriter;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.servicecommon.HelidonRestServiceSupport;
+import io.helidon.reactive.servicecommon.RestServiceSettings;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.reactive.webserver.RequestHeaders;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
-import io.helidon.servicecommon.rest.RestServiceSettings;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;

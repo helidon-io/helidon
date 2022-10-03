@@ -20,10 +20,10 @@ import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.reactive.servicecommon.HelidonRestServiceSupport;
+import io.helidon.reactive.servicecommon.RestServiceSettings;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.Routing;
-import io.helidon.servicecommon.rest.HelidonRestServiceSupport;
-import io.helidon.servicecommon.rest.RestServiceSettings;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 

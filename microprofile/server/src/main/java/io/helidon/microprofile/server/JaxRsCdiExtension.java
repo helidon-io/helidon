@@ -23,15 +23,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.jersey.JerseySupport;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -42,7 +36,6 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -65,6 +58,12 @@ public class JaxRsCdiExtension implements Extension {
     private final Set<Class<?>> resources = new HashSet<>();
     private final Set<Class<?>> providers = new HashSet<>();
     private final AtomicBoolean setInStone = new AtomicBoolean(false);
+
+    /**
+     * Default constructor is required by {@link java.util.ServiceLoader}.
+     */
+    public JaxRsCdiExtension() {
+    }
 
     private void collectApplications(@Observes ProcessManagedBean<? extends Application> processManagedBean) {
         applications.add(processManagedBean.getAnnotatedBeanClass().getJavaClass());
@@ -136,7 +135,7 @@ public class JaxRsCdiExtension implements Extension {
                                                 .applicationClass(appClass)
                                                 .config(ResourceConfig.forApplicationClass(appClass, allClasses))
                                                 .build())
-                                        .collect(Collectors.toList()));
+                                        .toList());
 
         applications.clear();
         resources.clear();
@@ -272,26 +271,20 @@ public class JaxRsCdiExtension implements Extension {
                                           .build());
     }
 
-    JerseySupport toJerseySupport(Supplier<? extends ExecutorService> defaultExecutorService,
-                                  JaxRsApplication jaxRsApplication,
-                                  InjectionManager injectionManager) {
-        JerseySupport.Builder builder = JerseySupport.builder(jaxRsApplication.resourceConfig());
-        builder.config(((io.helidon.config.Config) ConfigProvider.getConfig()).get("server.jersey"));
-        builder.executorService(jaxRsApplication.executorService().orElseGet(defaultExecutorService));
-        builder.register(CatchAllExceptionMapper.class);
-        builder.injectionManager(injectionManager);
-        return builder.build();
+    JaxRsHandler toJerseySupport(JaxRsApplication jaxRsApplication,
+                                 InjectionManager injectionManager) {
+
+        ResourceConfig resourceConfig = jaxRsApplication.resourceConfig();
+        resourceConfig.register(new CatchAllExceptionMapper());
+
+        return JaxRsHandler.create(resourceConfig,
+                                   injectionManager);
     }
 
     @Provider
     private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
-
-        @Context
-        private ServerRequest serverRequest;
-
         @Override
         public Response toResponse(Exception exception) {
-            serverRequest.context().register("unmappedException", exception);
             if (exception instanceof WebApplicationException) {
                 return ((WebApplicationException) exception).getResponse();
             } else {

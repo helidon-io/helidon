@@ -23,7 +23,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
-import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.reactive.servicecommon.RestServiceSettings;
 
 /**
  * Loads the highest-priority implementation of {@link MetricsSupportProvider} via service loading or, if none is found, uses a

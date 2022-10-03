@@ -50,8 +50,8 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service-common</groupId>
-            <artifactId>helidon-service-common-rest-cdi</artifactId>
+            <groupId>io.helidon.microprofile.service-common</groupId>
+            <artifactId>helidon-microprofile-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>

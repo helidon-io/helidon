@@ -15,28 +15,28 @@
  */
 package io.helidon.microprofile.server;
 
-import io.helidon.reactive.webserver.Routing;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * Package-private implementation of the {@code RoutingBuilders} interface.
  */
 class RoutingBuildersImpl implements RoutingBuilders {
 
-    private final Routing.Builder defaultBuilder;
-    private final Routing.Builder effectiveBuilder;
+    private final HttpRouting.Builder defaultBuilder;
+    private final HttpRouting.Builder effectiveBuilder;
 
-    RoutingBuildersImpl(Routing.Builder defaultBuilder, Routing.Builder effectiveBuilder) {
+    RoutingBuildersImpl(HttpRouting.Builder defaultBuilder, HttpRouting.Builder effectiveBuilder) {
         this.defaultBuilder = defaultBuilder;
         this.effectiveBuilder = effectiveBuilder;
     }
 
     @Override
-    public Routing.Builder defaultRoutingBuilder() {
+    public HttpRouting.Builder defaultRoutingBuilder() {
         return defaultBuilder;
     }
 
     @Override
-    public Routing.Builder routingBuilder() {
+    public HttpRouting.Builder routingBuilder() {
         return effectiveBuilder;
     }
 }

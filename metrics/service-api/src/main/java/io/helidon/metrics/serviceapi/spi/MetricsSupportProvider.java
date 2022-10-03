@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.metrics.serviceapi.spi;
 
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.serviceapi.MetricsSupport;
-import io.helidon.servicecommon.rest.RestServiceSettings;
+import io.helidon.reactive.servicecommon.RestServiceSettings;
 
 /**
  * Provider behavior for {@link io.helidon.metrics.serviceapi.MetricsSupport.Builder} instances (and, indirectly, for {@link io.helidon.metrics.serviceapi.MetricsSupport} instances).

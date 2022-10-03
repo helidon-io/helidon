@@ -27,16 +27,15 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
+import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+import io.helidon.nima.observe.health.HealthService;
+import io.helidon.nima.webserver.http.HttpRules;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -45,12 +44,15 @@ import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
 import org.eclipse.microprofile.health.Startup;
 
+import static io.helidon.health.HealthCheckType.LIVENESS;
+import static io.helidon.health.HealthCheckType.READINESS;
+import static io.helidon.health.HealthCheckType.STARTUP;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Health extension.
  */
-public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
+public class HealthCdiExtension extends HelidonRestCdiExtension<HealthService> {
     private static final BuiltInHealthCheck BUILT_IN_HEALTH_CHECK_LITERAL = new BuiltInHealthCheck() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -64,20 +66,15 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
      * Creates a new instance of the health CDI extension.
      */
     public HealthCdiExtension() {
-        super(LOGGER, HEALTH_SUPPORT_FACTORY, HealthSupport.Builder.HEALTH_CONFIG_KEY);
-    }
-
-    void registerProducers(@Observes BeforeBeanDiscovery bbd) {
-        bbd.addAnnotatedType(JvmRuntimeProducers.class, "health.JvmRuntimeProducers")
-                .add(ApplicationScoped.Literal.INSTANCE);
+        super(LOGGER, HEALTH_SUPPORT_FACTORY, "health");
     }
 
     @Override
-    public Routing.Builder registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+    public HttpRules registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
                                                       Object adv,
-                                              BeanManager bm,
-                                              ServerCdiExtension server) {
-        Routing.Builder defaultRouting = super.registerService(adv, bm, server);
+                                        BeanManager bm,
+                                        ServerCdiExtension server) {
+        HttpRules defaultRouting = super.registerService(adv, bm, server);
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
@@ -86,11 +83,17 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
         return defaultRouting;
     }
 
-    private static final Function<Config, HealthSupport> HEALTH_SUPPORT_FACTORY = (Config helidonConfig) -> {
+    @Override
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+        // Annotated sites are handled in registerHealth.
+    }
+
+    private static final Function<Config, HealthService> HEALTH_SUPPORT_FACTORY = (Config helidonConfig) -> {
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
-        HealthSupport.Builder builder = HealthSupport.builder()
+        HealthService.Builder builder = HealthService.builder()
+                .details(true)
                 .config(helidonConfig);
 
         CDI<Object> cdi = CDI.current();
@@ -105,7 +108,7 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
                     .asList()
                     .stream()
                     .flatMap(it -> it.healthChecks(helidonConfig).stream())
-                    .forEach(builder::add);
+                    .forEach(builder::addCheck);
         }
 
         List<HealthCheck> builtInHealthChecks = disableDefaults.map(
@@ -117,33 +120,26 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthSupport> {
         cdi.select(HealthCheck.class, Liveness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
-                .forEach(builder::addLiveness);
+                .forEach(it -> builder.addCheck(MpCheckWrapper.create(LIVENESS, it)));
 
         cdi.select(HealthCheck.class, Readiness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
-                .forEach(builder::addReadiness);
+                .forEach(it -> builder.addCheck(MpCheckWrapper.create(READINESS, it)));
 
         cdi.select(HealthCheck.class, Startup.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
-                .forEach(builder::addStartup);
+                .forEach(it -> builder.addCheck(MpCheckWrapper.create(STARTUP, it)));
 
         HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
                 .forEach(healthCheckProvider -> {
-                    healthCheckProvider.livenessChecks().forEach(builder::addLiveness);
-                    healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
-                    healthCheckProvider.startupChecks().forEach(builder::addStartup);
+                    healthCheckProvider.livenessChecks().forEach(it -> builder.addCheck(MpCheckWrapper.create(LIVENESS, it)));
+                    healthCheckProvider.readinessChecks().forEach(it -> builder.addCheck(MpCheckWrapper.create(READINESS, it)));
+                    healthCheckProvider.startupChecks().forEach(it -> builder.addCheck(MpCheckWrapper.create(STARTUP, it)));
                 });
 
         return builder.build();
         };
-
-
-    @Override
-    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
-        // Annotated sites are handled in registerHealth.
-    }
-
 
 }

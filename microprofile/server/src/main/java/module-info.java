@@ -19,8 +19,7 @@
  * runs an HTTP server.
  */
 module io.helidon.microprofile.server {
-    requires transitive io.helidon.reactive.webserver;
-    requires transitive io.helidon.reactive.webserver.jersey;
+    requires transitive io.helidon.nima.webserver;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.jersey.server;
 
@@ -35,7 +34,8 @@ module io.helidon.microprofile.server {
     requires io.helidon.jersey.media.jsonp;
 
     requires java.logging;
-    requires io.helidon.reactive.webserver.staticcontent;
+    requires io.helidon.nima.webserver.staticcontent;
+    requires transitive io.helidon.nima.webserver.context;
 
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;

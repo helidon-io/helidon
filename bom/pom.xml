@@ -529,6 +529,11 @@
                 <artifactId>helidon-microprofile-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.service-common</groupId>
+                <artifactId>helidon-microprofile-service-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- metrics -->
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
@@ -622,16 +627,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.service-common</groupId>
-                <artifactId>helidon-service-common-rest</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.service-common</groupId>
-                <artifactId>helidon-service-common-rest-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-crypto</artifactId>
                 <version>${helidon.version}</version>
@@ -664,6 +659,11 @@
             <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-http-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.reactive.service-common</groupId>
+                <artifactId>helidon-reactive-service-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -1263,6 +1263,11 @@
             <dependency>
                 <groupId>io.helidon.nima.webserver</groupId>
                 <artifactId>helidon-nima-webserver-access-log</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webserver</groupId>
+                <artifactId>helidon-nima-webserver-context</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

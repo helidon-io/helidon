@@ -158,6 +158,9 @@ public final class JaxRsApplication {
         private boolean routingNameRequired;
         private boolean synthetic = false;
 
+        private Builder() {
+        }
+
         /**
          * Configure an explicit context root for this application.
          *
