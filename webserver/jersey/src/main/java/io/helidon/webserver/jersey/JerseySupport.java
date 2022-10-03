@@ -17,6 +17,8 @@
 package io.helidon.webserver.jersey;
 
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,11 +34,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.Priorities;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Configurable;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.ext.ExceptionMapper;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
@@ -138,6 +145,9 @@ public class JerseySupport implements Service {
         // Prevents reads/writes after Netty event loops are shutdown
         serviceShutdownHook = new Thread(service::shutdownNow);
         Runtime.getRuntime().addShutdownHook(serviceShutdownHook);
+
+        // Register an error mapper to log internal exceptions in Jersey
+        builder.resourceConfig.register(InternalErrorMapper.class);
 
         // make sure we have a wrapped async executor as well
         if (builder.asyncExecutorService == null) {
@@ -506,6 +516,15 @@ public class JerseySupport implements Service {
         }
 
         /**
+         * This method is used for testing only.
+         *
+         * @return underlying resource config.
+         */
+        ResourceConfig resourceConfig() {
+            return resourceConfig;
+        }
+
+        /**
          * Jersey Module builder class for convenient creating {@link JerseySupport}.
          *
          * @return built module
@@ -662,6 +681,23 @@ public class JerseySupport implements Service {
         public void reload(ResourceConfig configuration) {
             // no op
             throw new UnsupportedOperationException("Reloading is not supported in Helidon");
+        }
+    }
+
+    /**
+     * A low priority mapper to catch internal exceptions in Jersey and log them.
+     * Otherwise, these errors can get lost and never reported by Helidon. One example
+     * is a {@code ClassNotFoundException} exception in Jersey's code.
+     */
+    @Priority(Priorities.USER + 1000)
+    static class InternalErrorMapper implements ExceptionMapper<InternalServerErrorException> {
+
+        @Override
+        public Response toResponse(InternalServerErrorException e) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            LOGGER.fine(sw.toString());
+            return Response.status(500).build();
         }
     }
 }
