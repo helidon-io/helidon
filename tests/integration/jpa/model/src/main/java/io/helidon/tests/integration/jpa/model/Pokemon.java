@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 
 /**
  * Pokemon entity.
@@ -39,7 +32,7 @@ public class Pokemon implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(Pokemon.class.getName());
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.TABLE)
     private int id;
 
     @ManyToOne
