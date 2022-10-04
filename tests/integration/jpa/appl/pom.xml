@@ -232,6 +232,9 @@
                     <threadCount>10</threadCount>
                     <systemPropertyVariables>
                         <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                        <db.user>${db.user}</db.user>
+                        <db.password>${db.password}</db.password>
+                        <db.url>${db.url}</db.url>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
@@ -346,14 +349,24 @@
             </build>
         </profile>
 
-        <!-- Test with in memory H2 database. Default test profile. -->
+        <!-- Test with in memory H2 database. Default test profile. Active until db property is set. -->
         <profile>
             <id>h2</id>
             <activation>
-                <file>
-                    <exists>${basedir}/../target/h2.properties</exists>
-                </file>
+                <property>
+                    <name>!db</name>
+                </property>
             </activation>
+            <properties>
+                <db.port>9092</db.port>
+                <db.host>localhost</db.host>
+                <db.database>test</db.database>
+                <db.user>sa</db.user>
+                <db.password></db.password>
+                <db.url>jdbc:h2:mem:test;INIT=SET TRACE_LEVEL_FILE=4</db.url>
+                <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                <db.datasource>org.h2.jdbcx.JdbcDataSource</db.datasource>
+            </properties>
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.integrations.db</groupId>
@@ -365,64 +378,13 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>properties-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>read-project-properties</goal>
-                                </goals>
-                                <configuration>
-                                    <files>
-                                        <file>${basedir}/../target/h2.properties</file>
-                                    </files>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.gmaven</groupId>
-                        <artifactId>groovy-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <configuration>
-                                    <source>
-                                        log.info('Running tests with in memory H2 database:')
-                                        log.info(' - URL=${db.url}')
-                                        log.info(' - ${basedir}/../target/h2.properties')
-                                    </source>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                 </plugins>
-            </build>
         </profile>
-        <!-- FIXME: Need activation trigger similar to H2 -->
         <profile>
             <id>mysql</id>
             <activation>
                 <property>
-                    <name>mysql</name>
+                    <name>db</name>
+                    <value>mysql</value>
                 </property>
             </activation>
             <properties>
@@ -434,7 +396,7 @@
                 <db.password>password</db.password>
                 <db.roootpw>root</db.roootpw>
                 <db.url>jdbc:mysql://${db.host}:${db.port}/${db.database}?${db.args}</db.url>
-                <hibernate.dialect>org.hibernate.dialect.MySQL5Dialect</hibernate.dialect>
+                <hibernate.dialect>org.hibernate.dialect.MySQL8Dialect</hibernate.dialect>
                 <db.datasource>com.mysql.cj.jdbc.MysqlDataSource</db.datasource>
                 <db.driver>com.mysql.cj.jdbc.Driver</db.driver>
             </properties>
@@ -452,17 +414,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
@@ -483,13 +434,14 @@
                                             <port>${db.host}:${db.port}:3306</port>
                                         </ports>
                                         <wait>
-                                            <tcp>
+                                            <!--tcp>
                                                 <host>127.0.0.1</host>
                                                 <ports>
                                                     <port>${db.port}</port>
                                                 </ports>
-                                            </tcp>
+                                            </tcp-->
                                             <time>120000</time>
+                                            <log>MySQL init process done. Ready for start up.</log>
                                         </wait>
                                     </run>
                                 </image>
@@ -501,12 +453,12 @@
                 </plugins>
             </build>
         </profile>
-        <!-- FIXME: Need activation trigger similar to H2 -->
         <profile>
             <id>pgsql</id>
             <activation>
                 <property>
-                    <name>pgsql</name>
+                    <name>db</name>
+                    <value>pgsql</value>
                 </property>
             </activation>
             <properties>
@@ -516,8 +468,8 @@
                 <db.user>user</db.user>
                 <db.password>password</db.password>
                 <db.url>jdbc:postgresql://${db.host}:${db.port}/${db.database}</db.url>
-                <hibernate.dialect>org.hibernate.dialect.PostgreSQL10Dialect</hibernate.dialect>
-                <db.datasource>org.postgresql.jdbc3.Jdbc3PoolingDataSource</db.datasource>
+                <hibernate.dialect>org.hibernate.dialect.PostgreSQLDialect</hibernate.dialect>
+                <db.datasource>org.postgresql.ds.PGSimpleDataSource</db.datasource>
                 <db.driver>org.postgresql.Driver</db.driver>
             </properties>
             <dependencies>
@@ -534,17 +486,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
                    <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>

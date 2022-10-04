@@ -27,7 +27,6 @@ import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.dao.Create;
-import io.helidon.tests.integration.jpa.dao.Delete;
 import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
 import io.helidon.tests.integration.jpa.model.Stadium;
@@ -54,6 +53,7 @@ public class UpdateIT {
         pu = PU.getInstance();
         pu.tx(pu -> {
             final EntityManager em = pu.getEm();
+            DbUtils.dbInit(pu);
             Create.dbInsertBrock(em);
             Create.dbInsertSaffron(em);
         });
@@ -61,12 +61,8 @@ public class UpdateIT {
 
     @AfterAll
     public static void destroy() {
-        pu.tx(pu -> {
-            final EntityManager em = pu.getEm();
-            Delete.dbDeleteBrock(em);
-            Delete.dbDeleteSaffron(em);
-            pu = null;
-        });
+        pu.tx(pu -> DbUtils.dbCleanup(pu));
+        pu = null;
     }
 
     /**
