@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TestMultiJandex {
 
@@ -42,9 +43,9 @@ public class TestMultiJandex {
         DotName testApp2Name = DotName.createSimple(TestApp2.class.getName());
 
         ClassInfo testAppInfo = indexView.getClassByName(testAppName);
-        assertNotNull(testAppInfo, "Expected index entry for TestApp not found");
+        assertThat("Expected index entry for TestApp not found", testAppInfo, notNullValue());
 
         ClassInfo testApp2Info = indexView.getClassByName(testApp2Name);
-        assertNotNull(testApp2Info, "Expected index entry for TestApp2 not found");
+        assertThat("Expected index entry for TestApp2 not found", testApp2Info, notNullValue());
     }
 }
