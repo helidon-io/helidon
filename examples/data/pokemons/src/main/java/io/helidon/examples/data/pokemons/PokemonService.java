@@ -58,7 +58,7 @@ public class PokemonService implements HttpService {
                 // Update name of existing pokemon
                 .put("/pokemon", Handler.create(Pokemon.class, this::updatePokemon))
                 // Delete pokemon by ID including type relation
-                .delete(Handler.create(this::deletePokemonById));
+                .delete(/*"/pokemon", */Handler.create(this::deletePokemonById));
     }
 
 
@@ -129,8 +129,8 @@ public class PokemonService implements HttpService {
      */
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
         String pokemonName = request.path().pathParameters().value("name");
-        // Optional<Pokemon> findByName(String name) is method defined as query by method name
-        pokemonRepository.findByName(pokemonName)
+        // Optional<Pokemon> getByName(String name) is method defined as query by method name
+        pokemonRepository.getByName(pokemonName)
                 .ifPresentOrElse(
                         it -> response.send(it),
                         () -> response.status(Http.Status.NOT_FOUND_404).send()
@@ -145,8 +145,8 @@ public class PokemonService implements HttpService {
      */
     private void getPokemonsByType(ServerRequest request, ServerResponse response) {
         String typeName = request.path().pathParameters().value("name");
-        // List<Pokemon> listByTypeName(String typeName) is method defined as query by method name
-        response.send(pokemonRepository.listByTypeName(typeName));
+        // List<Pokemon> findByTypeName(String typeName) is method defined as query by method name
+        response.send(pokemonRepository.findByTypeName(typeName));
     }
 
     /**
@@ -160,7 +160,7 @@ public class PokemonService implements HttpService {
         String pokemonName = request.path().pathParameters().value("pokemonName");
         // Optional<Pokemon> pokemonsByTypeAndName(String typeName, String pokemonName)
         // is method defined by custom query annotation
-        pokemonRepository.pokemonsByTypeAndName(typeName, pokemonName)
+        pokemonRepository.pokemonByTypeAndName(typeName, pokemonName)
                 .ifPresentOrElse(
                         it -> response.send(it),
                         () -> response.status(Http.Status.NOT_FOUND_404).send()

@@ -15,18 +15,29 @@
  */
 package io.helidon.examples.data.pokemons.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 /**
  * Pokemon type entity.
  */
 @Entity
+@Table(name = "TYPE")
 public class Type {
 
     @Id
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+    @Column(name = "NAME")
     private String name;
+
+    /**
+     * Create empty Type with all values set to {@code null}.
+     */
+    public Type() {
+        this.id = -1;
+        this.name = null;
+    }
 
     public int getId() {
         return id;

@@ -15,44 +15,52 @@
  */
 package io.helidon.examples.data.pokemons.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 /**
  * Pokemon entity.
  */
+// ResultSet mapping of [PokemonRepository]::pokemonByTypeAndName3 method query
+@SqlResultSetMapping(
+        name = "PokemonByTypeAndNameRSMapping",
+        entities = {
+                @EntityResult(
+                        entityClass = Type.class,
+                        fields = {
+                                @FieldResult(name = "id", column = "t.ID"),
+                                @FieldResult(name = "name", column = "t.NAME")
+                        }
+                ),
+                @EntityResult(
+                        entityClass = Pokemon.class,
+                        fields = {
+                                @FieldResult(name = "id", column = "p.ID"),
+                                @FieldResult(name = "name", column = "p.NAME"),
+                                @FieldResult(name = "type", column = "p.ID_TYPE")
+                        }
+                )
+})
 @Entity
+@Table(name = "POKEMON")
 public class Pokemon {
     @Id
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+    @Column(name = "NAME")
     private String name;
     @ManyToOne()
     @JoinColumn(name = "idType")
+    @Column(name = "ID_TYPE")
     private Type type;
 
     /**
      * Create empty Pokemon with all values set to {@code null}.
-
      */
     public Pokemon() {
         this.id = -1;
         this.name = null;
         this.type = null;
-    }
-
-    /**
-     * Create pokemon with name and type.
-     *
-     * @param id id of the beast
-     * @param name name of the beast
-     * @param type id of beast type
-     */
-    public Pokemon(int id, String name, Type type) {
-        this.id = id;
-        this.name = name;
-        this.type = type;
     }
 
     public int getId() {

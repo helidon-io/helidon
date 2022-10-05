@@ -18,13 +18,13 @@ package io.helidon.data.annotation;
 import java.lang.annotation.*;
 
 /**
- * Defines abstract query string such as JPQL that should be executed.
+ * Defines database specific query string such as SQL that should be executed.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Documented
 @Inherited
-public @interface Query {
+public @interface NativeQuery {
 
     /**
      * @return The query string configuration key.
@@ -35,5 +35,10 @@ public @interface Query {
      * @return The raw query string.
      */
     String value() default "";
+
+    /**
+     * @return JPA ResultSet mapping name.
+     */
+    String resultSetMapping() default "";
 
 }

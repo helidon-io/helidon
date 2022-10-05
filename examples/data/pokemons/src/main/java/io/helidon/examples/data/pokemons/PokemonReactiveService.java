@@ -113,7 +113,7 @@ public class PokemonReactiveService implements Service {
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         int pokemonId = Integer.parseInt(request.path().param("id"));
         // Single<Optional<E>> findById(ID id) is method added from ReactiveCrudRepository interface
-        pokemonRepository.findById(pokemonId).thenAccept(
+        pokemonRepository.findById(pokemonId).forSingle(
                 it -> it.ifPresentOrElse(
                         pokemon -> response.send(pokemon),
                         () -> response.status(Http.Status.NOT_FOUND_404).send()

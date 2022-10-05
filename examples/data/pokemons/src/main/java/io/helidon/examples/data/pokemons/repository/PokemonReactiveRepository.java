@@ -28,10 +28,10 @@ import java.util.Optional;
 public interface PokemonReactiveRepository extends ReactiveCrudRepository<Pokemon, Integer> {
 
     // Query defined by method name: Find pokemon by provided name attribute
-    public abstract Single<Optional<Pokemon>> findByName(String name);
+    Single<Optional<Pokemon>> findByName(String name);
 
     // Query defined by annotation: Find pokemon by provided type name
     @Query("SELECT p FROM Pokemon p WHERE p.type.name = :typeName")
-    public abstract Multi<Pokemon> pokemonsByType(String typeName);
+    Multi<Pokemon> pokemonsByType(String typeName);
 
 }

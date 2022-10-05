@@ -15,6 +15,7 @@
  */
 package io.helidon.examples.data.pokemons.repository;
 
+import io.helidon.data.annotation.NativeQuery;
 import io.helidon.data.annotation.Query;
 import io.helidon.data.annotation.Repository;
 import io.helidon.data.repository.CrudRepository;
@@ -29,14 +30,29 @@ import java.util.Optional;
 public interface PokemonRepository extends CrudRepository<Pokemon, Integer> {
 
     // Query defined by method name: Find pokemon by provided name attribute
-    public abstract Optional<Pokemon> findByName(String name);
+    Optional<Pokemon> getByName(String name);
 
     // Query defined by method name: List all pokemons with provided type name attribute
-    public abstract List<Pokemon> listByTypeName(String typeName);
-
+    List<Pokemon> findByTypeName(String typeName);
 
     // Query defined by annotation: Find pokemon by provided type name and name attributes
-    @Query("SELECT p FROM Pokemon p WHERE p.type.name = :typeName AND p.name = :pokemonName")
-    public abstract Optional<Pokemon> pokemonsByTypeAndName(String typeName, String pokemonName);
+    @Query(value="SELECT p FROM Pokemon p WHERE p.type.name = :typeName AND p.name = :pokemonName")
+    Optional<Pokemon> pokemonByTypeAndName(String typeName, String pokemonName);
+
+    // Query defined by annotation: Find pokemon by provided type name and name attributes
+    @Query(key="pokemons.jpql.by-type-and-name")
+    Optional<Pokemon> pokemonByTypeAndName2(String typeName, String pokemonName);
+
+    // Query defined by annotation: Find pokemon by provided type name and name attributes
+    // ResultSet to Pokemon/Type mapping is defined by JPA @SqlResultSetMapping on entity.
+    @NativeQuery(
+            value = "SELECT p.ID, p.NAME, p.ID_TYPE, t.ID, t.NAME " +
+                            "FROM POKEMON p INNER JOIN TYPE t ON p.ID_TYPE = t.ID " +
+                            "WHERE t.NAME = :typeName AND p.NAME = :pokemonName",
+            resultSetMapping = "PokemonByTypeAndNameRSMapping")
+    Optional<Pokemon> pokemonByTypeAndName3(String typeName, String pokemonName);
+
+    @NativeQuery(key="pokemons.native.by-type-and-name", resultSetMapping = "PokemonByTypeAndNameRSMapping")
+    Optional<Pokemon> pokemonByTypeAndName4(String typeName, String pokemonName);
 
 }
