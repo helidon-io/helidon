@@ -72,14 +72,6 @@
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate.enhance}</version>
-                    <dependencies>
-                        <dependency>
-                            <!-- used by hibernate plugin - requires update for Java 17 -->
-                            <groupId>net.bytebuddy</groupId>
-                            <artifactId>byte-buddy</artifactId>
-                            <version>${version.lib.byte-buddy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
