@@ -37,5 +37,8 @@ module io.helidon.microprofile.messaging {
 
     exports io.helidon.microprofile.messaging;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.messaging to weld.core.impl, io.helidon.microprofile.cdi;
+
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.messaging.MessagingCdiExtension;
 }
