@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.testing.junit5.MatcherWithRetry;
+import io.helidon.reactive.faulttolerance.Retry;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
@@ -54,7 +54,8 @@ import static org.hamcrest.Matchers.not;
 public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
-
+    private static final int RETRY_COUNT = Integer.getInteger("io.helidon.test.retryCount", 10);
+    private static final int RETRY_DELAY_MS = Integer.getInteger("io.helidon.test.retryDelayMs", 500);
     private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate", "no-transform"};
 
     private static WebServer webServer;
@@ -64,7 +65,7 @@ public class TestServer {
     private static MetricsSupport metricsSupport;
 
     private static final Duration CLIENT_TIMEOUT = Duration.ofSeconds(5);
-
+    private static Retry retry;
     private WebClient.Builder webClientBuilder;
 
     @BeforeAll
@@ -75,6 +76,13 @@ public class TestServer {
 
     @BeforeEach
     public void prepareWebClientBuilder() {
+        retry = Retry.builder()
+                .overallTimeout(Duration.ofSeconds(20))
+                .retryPolicy(Retry.JitterRetryPolicy.builder()
+                        .calls(RETRY_COUNT)
+                        .delay(Duration.ofMillis(RETRY_DELAY_MS))
+                        .build())
+                .build();
         webClientBuilder = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/")
                 .addMediaSupport(JsonpSupport.create());
@@ -204,25 +212,16 @@ public class TestServer {
 
         assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
 
-        MatcherWithRetry.retry(() -> {
-
-            WebClientResponse secondMetricsResponse = metricsRequestBuilder
-                    .submit()
-                    .await(CLIENT_TIMEOUT);
-
-            assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
-
-            JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
-
-            assertThat("JSON metrics results after accessing slow endpoint",
-                       secondMetrics,
-                       hasKey(jsonKeyForCompleteTaskCountInThreadPool));
-
-            int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
-
-            assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
-            return true;
-        });
+        retry.invoke(() -> metricsRequestBuilder
+                        .submit()
+                        .peek(res -> assertThat("Second access to metrics", res.status().code(), is(200)))
+                        .flatMapSingle(res -> res.content().as(JsonObject.class))
+                        .peek(json -> assertThat("JSON metrics results after accessing slow endpoint",
+                                json, hasKey(jsonKeyForCompleteTaskCountInThreadPool)))
+                        .map(json -> json.getInt(jsonKeyForCompleteTaskCountInThreadPool))
+                        .forSingle(secCompletedTaskCnt ->
+                                assertThat("Completed task count after accessing slow endpoint", secCompletedTaskCnt, is(1))))
+                .await(CLIENT_TIMEOUT);
     }
 
     @ParameterizedTest
@@ -236,7 +235,7 @@ public class TestServer {
                 .accept(MediaTypes.APPLICATION_JSON)
                 .path(requestPath)
                 .submit()
-                .await();
+                .await(CLIENT_TIMEOUT);
 
         assertThat("Headers suppressing caching",
                    response.headers().values(Http.Header.CACHE_CONTROL),
@@ -248,7 +247,7 @@ public class TestServer {
                 .accept(MediaTypes.APPLICATION_JSON)
                 .path(requestPath)
                 .submit()
-                .await();
+                .await(CLIENT_TIMEOUT);
 
         assertThat ("Headers suppressing caching in OPTIONS request",
                     response.headers().values(Http.Header.CACHE_CONTROL),

@@ -15,7 +15,6 @@
  */
 package io.helidon.common.testing.junit5;
 
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import org.hamcrest.Description;
@@ -63,20 +62,5 @@ public class MatcherWithRetry {
         matcher.describeMismatch(actual, description);
 
         throw new AssertionError(description.toString());
-    }
-
-    /**
-     * Retries the specified work until successful or retry limit is exceeded.
-     *
-     * @param work the work to perform; returned boolean indicates if the work was successful
-     * @throws Exception exception from the work or from the sleep being interrupted
-     */
-    public static void retry(Callable<Boolean> work) throws Exception {
-        for (int i = 0; i < RETRY_COUNT; i++) {
-            if (work.call()) {
-                return;
-            }
-            Thread.sleep(RETRY_DELAY_MS);
-        }
     }
 }
