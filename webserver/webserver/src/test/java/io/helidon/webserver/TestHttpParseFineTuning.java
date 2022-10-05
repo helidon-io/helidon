@@ -35,7 +35,7 @@ class TestHttpParseFineTuning {
 
     @Test
     void testDefaults() {
-        // default is 8Kb for headers
+        // default is 16Kb for headers
         // and 4096 for initial line
         WebServer ws = WebServer.builder()
                 .host("localhost")
@@ -76,7 +76,7 @@ class TestHttpParseFineTuning {
                                  .any((req, res) -> res.send("any"))
                                  .build())
                 .config(config)
-                .maxHeaderSize(16400)
+                .maxHeaderSize(17100)
                 .maxInitialLineLength(5100)
                 .build()
                 .start()
@@ -90,8 +90,8 @@ class TestHttpParseFineTuning {
         testHeader(client, 16000, true);
         testInitialLine(client, 10, true);
 
-        testHeader(client, 17000, false);
-        testHeader(client, 17000, false);
+        testHeader(client, 16900, true);
+        testHeader(client, 16900, true);
 
         // now test with big initial line
         testInitialLine(client, 5000, true);
