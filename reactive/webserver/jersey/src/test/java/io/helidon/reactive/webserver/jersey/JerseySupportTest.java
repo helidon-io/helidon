@@ -40,7 +40,9 @@ import static io.helidon.reactive.webserver.jersey.JerseySupport.IGNORE_EXCEPTIO
 import static io.helidon.reactive.webserver.jersey.JerseySupport.basePath;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -336,6 +338,14 @@ public class JerseySupportTest {
     public void testJerseyProperties() {
         assertThat(System.getProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER), is("true"));
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("true"));
+    }
+
+    @Test
+    public void testInternalErrorMapper() {
+        JerseySupport.Builder builder = JerseySupport.builder();
+        JerseySupport jerseySupport = builder.build();
+        assertThat(jerseySupport, is(notNullValue()));
+        assertThat(builder.resourceConfig().getClasses(), contains(JerseySupport.InternalErrorMapper.class));
     }
 
     static class PathMockup implements ServerRequest.Path {
