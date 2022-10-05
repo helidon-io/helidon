@@ -281,6 +281,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.setIfAbsent(Header.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
+            http2Headers.status(status);
             http2Headers.validateResponse();
             int written = writer.writeHeaders(http2Headers,
                                               streamId,

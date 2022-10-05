@@ -762,7 +762,9 @@ public class Http2Headers {
         USER_AGENT(58, Header.USER_AGENT),
         VARY(59, Header.VARY),
         VIA(60, Header.VIA),
-        WWW_AUTHENTICATE(61, Header.WWW_AUTHENTICATE);
+        WWW_AUTHENTICATE(61, Header.WWW_AUTHENTICATE),
+        PATH(62, PATH_NAME, true),
+        METHOD(63, METHOD_NAME, true);
 
         /**
          * Maximal index of the static table of headers.
