@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+=======
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+>>>>>>> 8496afdea... Use lazy values to initialized HealthSupport FT handlers (#5106)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +30,9 @@ import io.helidon.common.http.Http;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+
+import io.helidon.faulttolerance.FaultTolerance;
+
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -213,6 +220,13 @@ class HealthSupportTest {
         final JsonObject json = response.json();
         assertThat(json.getJsonArray("checks"), notNullValue());
         assertThat(json.getJsonArray("checks"), hasSize(brokenChecks.size()));
+    }
+
+    @Test
+    void checkLazyFaultToleranceInitialization() {
+        HealthSupport support = HealthSupport.create();
+        assertThat(support, notNullValue());
+        assertThat(FaultTolerance.initialized(), is(false));
     }
 
     private static final class GoodHealthCheck implements HealthCheck {
