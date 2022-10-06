@@ -133,7 +133,35 @@ public interface WebServer {
                 HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
         Builder(Config rootConfig) {
-            Config config = rootConfig.get("server");
+            config(rootConfig.get("server"));
+        }
+
+        private Builder() {
+            // let's use the configuration
+            this(Config.create());
+        }
+
+        @Override
+        public WebServer build() {
+            return new LoomServer(this, simpleHandlers.build());
+        }
+
+        /**
+         * Build and start the server.
+         *
+         * @return started server instance
+         */
+        public WebServer start() {
+            return build().start();
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config configuration to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
             config.get("host").asString().ifPresent(this::host);
             config.get("port").asInt().ifPresent(this::port);
 
@@ -170,25 +198,7 @@ public interface WebServer {
                             connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
                         });
                     });
-        }
-
-        private Builder() {
-            // let's use the configuration
-            this(Config.create());
-        }
-
-        @Override
-        public WebServer build() {
-            return new LoomServer(this, simpleHandlers.build());
-        }
-
-        /**
-         * Build and start the server.
-         *
-         * @return started server instance
-         */
-        public WebServer start() {
-            return build().start();
+            return this;
         }
 
         /**

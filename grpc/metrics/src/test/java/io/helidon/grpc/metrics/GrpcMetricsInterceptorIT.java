@@ -30,7 +30,7 @@ import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 
 import io.grpc.Context;

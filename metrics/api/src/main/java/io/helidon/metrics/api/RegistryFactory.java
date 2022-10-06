@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.metrics.api;
 
 import io.helidon.config.Config;
@@ -118,7 +119,7 @@ public interface RegistryFactory {
      * @param type {@link MetricRegistry.Type} of the registry to be returned
      * @return the {@code MetricRegistry} of the requested type
      */
-    MetricRegistry getRegistry(Type type);
+    Registry getRegistry(Type type);
 
     /**
      * Updates the metrics settings for the {@code RegistryFactory}.
@@ -127,5 +128,24 @@ public interface RegistryFactory {
      * @param metricsSettings metrics settings to use in updating the factory
      */
     default void update(MetricsSettings metricsSettings) {
+    }
+
+    /**
+     * Is this factory enabled (backed by a real implementation).
+     *
+     * @return whether this factory is enabled, disabled factory may only do no-ops (and produce no-op metrics)
+     */
+    boolean enabled();
+
+    /**
+     * Called to start required background tasks of a factory (if any).
+     */
+    default void start() {
+    }
+
+    /**
+     * Called to stop required background tasks of a factory (if any).
+     */
+    default void stop() {
     }
 }

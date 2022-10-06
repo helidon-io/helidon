@@ -22,6 +22,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MetricStoreTests {
@@ -43,13 +44,12 @@ class MetricStoreTests {
 
         NoOpMetricRegistry registry = NoOpMetricRegistry.create(MetricRegistry.Type.APPLICATION);
 
-        MetricStore<NoOpMetric> store = MetricStore.create(REGISTRY_SETTINGS,
-                                                           NoOpMetricRegistry.NO_OP_METRIC_FACTORIES,
-                                                           null,
-                                                           null,
-                                                           MetricRegistry.Type.APPLICATION,
-                                                           NoOpMetric.class,
-                                                           registry::toImpl);
+        MetricStore store = MetricStore.create(REGISTRY_SETTINGS,
+                                               NoOpMetricRegistry.NO_OP_METRIC_FACTORIES,
+                                               null,
+                                               null,
+                                               MetricRegistry.Type.APPLICATION,
+                                               registry::toImpl);
 
         store.getOrRegisterMetric(meta1, SimpleTimer.class, NO_TAGS);
 

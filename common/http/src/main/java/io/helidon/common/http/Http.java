@@ -1603,6 +1603,17 @@ public final class Http {
          * Content length with 0 value.
          */
         public static final HeaderValue CONTENT_LENGTH_ZERO = Header.createCached(Header.CONTENT_LENGTH, "0");
+        /**
+         * Cache control without any caching.
+         */
+        public static final HeaderValue CACHE_NO_CACHE = Header.create(Header.CACHE_CONTROL, "no-cache",
+                                                                       "no-store",
+                                                                       "must-revalidate",
+                                                                       "no-transform");
+        /**
+         * Cache control that allows caching with no transform.
+         */
+        public static final HeaderValue CACHE_NORMAL = Header.createCached(Header.CACHE_CONTROL, "no-transform");
 
         private HeaderValues() {
         }

@@ -29,9 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;
-import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -121,9 +121,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
     @Context
     private SecurityContext securityContext;
-
-    @Context
-    private ServerRequest serverRequest;
 
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
 
@@ -389,7 +386,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         Class<?> definitionClass = getRealClass(obtainedClass);
 
         // Get the application for this request in case there's more than one
-        Application appInstance = serverRequest.context().get(Application.class).get();
+        Application appInstance = Contexts.context().flatMap(it -> it.get(Application.class)).get();
 
         // Create and cache security definition for application
         Class<?> appRealClass = getRealClass(appInstance.getClass());

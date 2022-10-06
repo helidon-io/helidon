@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.nima.webserver.http.ServerRequest;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -36,6 +38,7 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -283,8 +286,12 @@ public class JaxRsCdiExtension implements Extension {
 
     @Provider
     private static class CatchAllExceptionMapper implements ExceptionMapper<Exception> {
+        @Context
+        private ServerRequest serverRequest;
+
         @Override
         public Response toResponse(Exception exception) {
+            serverRequest.context().register("unmappedException", exception);
             if (exception instanceof WebApplicationException) {
                 return ((WebApplicationException) exception).getResponse();
             } else {

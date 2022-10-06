@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,18 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.smallrye.openapi.runtime.io.Format;
+import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -43,23 +47,24 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class SerializerTest {
-
-    private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper;
+    private static final JsonReaderFactory JSON_READER_FACTORY
+            = Json.createReaderFactory(Collections.emptyMap());
+    private static ParserHelper<ExpandedTypeDescription> helper;
 
     private static Map<Class<?>, ExpandedTypeDescription> implsToTypes;
 
     @BeforeAll
-    public static void prepareHelper() {
-        helper = OpenAPISupport.helper();
-        implsToTypes = OpenAPISupport.buildImplsToTypes(helper);
+    static void prepareHelper() {
+        helper = ParserHelper.create(ExpandedTypeDescription::create);
+        implsToTypes = ExpandedTypeDescription.buildImplsToTypes(helper);
     }
 
     @Test
     public void testJSONSerialization() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml");
         Writer writer = new StringWriter();
         Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.JSON, writer);
-        JsonStructure json = TestUtil.jsonFromReader(new StringReader(writer.toString()));
+        JsonStructure json = jsonFromReader(new StringReader(writer.toString()));
 
         assertThat(json.getValue("/x-my-personal-map/owner/last").toString(), is("\"Myself\""));
         JsonValue otherItem = json.getValue("/x-other-item");
@@ -132,11 +137,11 @@ class SerializerTest {
 
     @Test
     public void testYAMLSerialization() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/openapi-greeting.yml");
         Writer writer = new StringWriter();
         Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.YAML, writer);
         try (Reader reader = new StringReader(writer.toString())) {
-            openAPI = OpenAPIParser.parse(helper.types(), reader, OpenAPISupport.OpenAPIMediaType.JSON);
+            openAPI = OpenAPIParser.parse(helper.types(), reader);
         }
         Object candidateMap = openAPI.getExtensions()
                 .get("x-my-personal-map");
@@ -161,12 +166,12 @@ class SerializerTest {
 
     @Test
     void testRefSerializationAsOpenAPI() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/petstore.yaml");
         Writer writer = new StringWriter();
         Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.YAML, writer);
 
         try (Reader reader = new StringReader(writer.toString())) {
-            openAPI = OpenAPIParser.parse(helper.types(), reader, OpenAPISupport.OpenAPIMediaType.JSON);
+            openAPI = OpenAPIParser.parse(helper.types(), reader);
         }
 
         String ref = openAPI.getPaths()
@@ -188,7 +193,7 @@ class SerializerTest {
         // compensating bugs in the parsing and the serialization.
         Pattern refPattern = Pattern.compile("\\s\\$ref\\: '([^']+)");
 
-        OpenAPI openAPI = ParserTest.parse(helper, "/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/petstore.yaml");
         Writer writer = new StringWriter();
         Serializer.serialize(helper.types(), implsToTypes, openAPI, Format.YAML, writer);
 
@@ -201,5 +206,12 @@ class SerializerTest {
                 }
             }
         }
+    }
+
+    private static JsonStructure jsonFromReader(Reader reader) {
+        JsonReader jsonReader = JSON_READER_FACTORY.createReader(reader);
+        JsonStructure result = jsonReader.read();
+        jsonReader.close();
+        return result;
     }
 }

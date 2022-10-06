@@ -97,6 +97,7 @@ public final class MeterRegistryFactory {
 
     private final CompositeMeterRegistry compositeMeterRegistry;
     private final List<Enrollment> registryEnrollments;
+    private final List<NimaEnrollment> nimaRegistryEnrollments;
 
     // for testing
     private final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
@@ -162,6 +163,7 @@ public final class MeterRegistryFactory {
         });
         registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
 
+        nimaRegistryEnrollments = builder.nimaRegistryEnrollments();
     }
 
     /**
@@ -237,12 +239,25 @@ public final class MeterRegistryFactory {
                         .send(NO_MATCHING_REGISTRY_ERROR_MESSAGE));
     }
 
+    io.helidon.nima.webserver.http.Handler matchingHandler(io.helidon.nima.webserver.http.ServerRequest serverRequest,
+                                                           io.helidon.nima.webserver.http.ServerResponse serverResponse) {
+        return nimaRegistryEnrollments.stream()
+                .map(e -> e.handlerFn().apply(serverRequest))
+                .findFirst()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .orElse((req, res) -> res
+                        .status(Http.Status.NOT_ACCEPTABLE_406)
+                        .send(NO_MATCHING_REGISTRY_ERROR_MESSAGE));
+    }
+
     /**
      * Builder for constructing {@code MeterRegistryFactory} instances.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, MeterRegistryFactory> {
 
         private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
+        private final List<NimaEnrollment> explicitNimaRegistryEnrollments = new ArrayList<>();
 
         private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
@@ -311,6 +326,21 @@ public final class MeterRegistryFactory {
             return this;
         }
 
+        /**
+         * Records a {@code MetricRegistry} to be managed by {@code MicrometerSupport}, along with the function that returns an
+         * {@code Optional} of a {@code Handler} for processing a given request to the Micrometer endpoint.
+         *
+         * @param meterRegistry the registry to enroll
+         * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
+         * @return updated builder instance
+         */
+        public Builder enrollRegistryNima(MeterRegistry meterRegistry,
+                                          Function<io.helidon.nima.webserver.http.ServerRequest,
+                                                  Optional<io.helidon.nima.webserver.http.Handler>> handlerFunction) {
+            explicitNimaRegistryEnrollments.add(new NimaEnrollment(meterRegistry, handlerFunction));
+            return this;
+        }
+
         // For testing
         List<LogRecord> logRecords() {
             return logRecords;
@@ -322,6 +352,16 @@ public final class MeterRegistryFactory {
                 MeterRegistry meterRegistry = builtInRegistrySupport.registry();
                 result.add(new Enrollment(meterRegistry,
                         builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
+            });
+            return result;
+        }
+
+        List<NimaEnrollment> nimaRegistryEnrollments() {
+            List<NimaEnrollment> result = new ArrayList<>(explicitNimaRegistryEnrollments);
+            builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
+                MeterRegistry meterRegistry = builtInRegistrySupport.registry();
+                result.add(new NimaEnrollment(meterRegistry,
+                                          builtInRegistrySupport.requestNimaToHandlerFn(meterRegistry)));
             });
             return result;
         }
@@ -409,6 +449,29 @@ public final class MeterRegistryFactory {
         }
 
         private Function<ServerRequest, Optional<Handler>> handlerFn() {
+            return handlerFn;
+        }
+    }
+
+    private static class NimaEnrollment {
+
+        private final MeterRegistry meterRegistry;
+        private final Function<io.helidon.nima.webserver.http.ServerRequest,
+                Optional<io.helidon.nima.webserver.http.Handler>> handlerFn;
+
+        private NimaEnrollment(MeterRegistry meterRegistry,
+                               Function<io.helidon.nima.webserver.http.ServerRequest,
+                                       Optional<io.helidon.nima.webserver.http.Handler>> handlerFn) {
+            this.meterRegistry = meterRegistry;
+            this.handlerFn = handlerFn;
+        }
+
+        private MeterRegistry meterRegistry() {
+            return meterRegistry;
+        }
+
+        private Function<io.helidon.nima.webserver.http.ServerRequest,
+                Optional<io.helidon.nima.webserver.http.Handler>> handlerFn() {
             return handlerFn;
         }
     }

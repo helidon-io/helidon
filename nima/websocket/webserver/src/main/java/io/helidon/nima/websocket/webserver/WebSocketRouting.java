@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.http.PathMatchers;
 import io.helidon.nima.websocket.WsListener;
 
 /**

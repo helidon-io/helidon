@@ -17,7 +17,6 @@ package io.helidon.metrics;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -25,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.AbstractRegistry;
+import io.helidon.metrics.api.MetricInstance;
 import io.helidon.metrics.api.RegistrySettings;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
@@ -42,7 +42,7 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Metrics registry.
  */
-public class Registry extends AbstractRegistry<HelidonMetric> {
+public class Registry extends AbstractRegistry {
 
     private final AtomicReference<RegistrySettings> registrySettings = new AtomicReference<>();
 
@@ -64,12 +64,12 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     }
 
     @Override
-    protected boolean isMetricEnabled(String metricName) {
+    public boolean enabled(String metricName) {
         return registrySettings.get().isMetricEnabled(metricName);
     }
 
     @Override
-    protected <T extends Metric> HelidonMetric toImpl(Metadata metadata, T metric) {
+    protected HelidonMetric toImpl(Metadata metadata, Metric metric) {
 
         MetricType metricType = deriveType(metadata.getTypeRaw(), metric);
         switch (metricType) {
@@ -101,12 +101,12 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
      * @param registrySettings registry settings to influence the created registry
      */
     protected Registry(Type type, RegistrySettings registrySettings) {
-        super(type, HelidonMetric.class, registrySettings);
+        super(type, registrySettings);
         this.registrySettings.set(registrySettings);
     }
 
     @Override
-    protected Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap() {
+    protected Map<Class<? extends io.helidon.metrics.api.HelidonMetric>, MetricType> prepareMetricToTypeMap() {
         return Map.of(
                 HelidonConcurrentGauge.class, MetricType.CONCURRENT_GAUGE,
                 HelidonCounter.class, MetricType.COUNTER,
@@ -123,7 +123,7 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
     }
 
     @Override
-    protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> prepareMetricFactories() {
+    protected Map<MetricType, BiFunction<String, Metadata, io.helidon.metrics.api.HelidonMetric>> prepareMetricFactories() {
         // Omit gauge because creating a gauge requires an existing delegate instance.
         // These factory methods do not use delegates.
         return Map.of(MetricType.COUNTER, HelidonCounter::create,
@@ -141,19 +141,13 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         return HelidonGauge.create(type(), metadata, object, func);
     }
 
-    // -- declarations which let us keep the methods in the superclass protected; we do not want them public.
     @Override
-    protected Optional<Map.Entry<MetricID, HelidonMetric>> getOptionalMetricEntry(String metricName) {
-        return super.getOptionalMetricEntry(metricName);
-    }
-
-    @Override
-    protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories() {
+    protected Map<MetricType, BiFunction<String, Metadata, io.helidon.metrics.api.HelidonMetric>> metricFactories() {
         return super.metricFactories();
     }
 
     @Override
-    protected Stream<Map.Entry<MetricID, HelidonMetric>> stream() {
+    public Stream<MetricInstance> stream() {
         return super.stream();
     }
 
@@ -162,8 +156,4 @@ public class Registry extends AbstractRegistry<HelidonMetric> {
         return super.metricIDsForName(metricName);
     }
 
-    @Override
-    protected List<Map.Entry<MetricID, HelidonMetric>> getMetricsByName(String metricName) {
-        return super.getMetricsByName(metricName);
-    }
 }

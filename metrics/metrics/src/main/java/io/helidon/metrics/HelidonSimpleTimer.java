@@ -17,17 +17,15 @@ package io.helidon.metrics;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import jakarta.json.JsonObjectBuilder;
+import io.helidon.metrics.api.Sample;
+
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 
 /**
@@ -91,93 +89,6 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     @Override
     public Duration getElapsedTime() {
         return delegate.getElapsedTime();
-    }
-
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        String promName;
-        String name = metricID.getName();
-        String tags = prometheusTags(metricID.getTags());
-        promName = prometheusName(name) + "_total";
-        if (withHelpType) {
-            prometheusType(sb, promName, "counter");
-            prometheusHelp(sb, promName);
-        }
-        sb.append(promName)
-                .append(tags)
-                .append(" ")
-                .append(getCount());
-
-        SimpleTimerImpl simpleTimerImpl = (delegate instanceof SimpleTimerImpl) ? ((SimpleTimerImpl) delegate) : null;
-        Sample.Labeled sample = simpleTimerImpl != null ? simpleTimerImpl.sample : null;
-        if (sample != null) {
-            sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), simpleTimerImpl.sample));
-        }
-        sb.append("\n");
-
-        promName = prometheusNameWithUnits(name + "_elapsedTime", Optional.of(MetricUnits.SECONDS));
-        if (withHelpType) {
-            prometheusType(sb, promName, "gauge");
-            // By spec, no help for the elapsedTime part of SimpleTimer.
-        }
-        sb.append(promName)
-                .append(tags)
-                .append(" ")
-                .append(elapsedTimeInSeconds())
-                .append("\n");
-
-        promName = prometheusNameWithUnits(name + "_maxTimeDuration", Optional.of(MetricUnits.SECONDS));
-        if (withHelpType) {
-            prometheusType(sb, promName, "gauge");
-        }
-        sb.append(promName)
-                .append(tags)
-                .append(" ")
-                .append(durationPrometheusOutput(getMaxTimeDuration()))
-                .append("\n");
-
-        promName = prometheusNameWithUnits(name + "_minTimeDuration", Optional.of(MetricUnits.SECONDS));
-        if (withHelpType) {
-            prometheusType(sb, promName, "gauge");
-        }
-        sb.append(promName)
-                .append(tags)
-                .append(" ")
-                .append(durationPrometheusOutput(getMinTimeDuration()))
-                .append("\n");
-
-
-        if (sample != null) {
-            sb.append(prometheusExemplar(elapsedTimeInSeconds(sample.value()), sample));
-        }
-        sb.append("\n");
-    }
-
-    @Override
-    public String prometheusValue() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("elapsedTime", metricID), jsonDuration(getElapsedTime()))
-                .add(jsonFullKey("maxTimeDuration", metricID), jsonDuration(getMaxTimeDuration()))
-                .add(jsonFullKey("minTimeDuration", metricID), jsonDuration(getMinTimeDuration()));
-        builder.add(metricID.getName(), myBuilder);
-    }
-
-    private static String durationPrometheusOutput(Duration duration) {
-        return duration == null ? "NaN" : Double.toString(((double) duration.toNanos()) / 1000.0 / 1000.0 / 1000.0);
-    }
-
-    private double elapsedTimeInSeconds() {
-        return elapsedTimeInSeconds(getElapsedTime().toNanos());
-    }
-
-    private double elapsedTimeInSeconds(long nanos) {
-        return nanos / (1000.0 * 1000.0 * 1000.0);
     }
 
     private static final class ContextImpl implements Context {

@@ -18,7 +18,7 @@ package io.helidon.reactive.servicecommon;
 import java.util.Objects;
 
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
+import io.helidon.cors.CrossOriginConfig;
 
 /**
  * Implementation of {@link RestServiceSettings}.

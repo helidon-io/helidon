@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,12 @@ import static org.hamcrest.Matchers.nullValue;
 
 class TestAdditionalProperties {
 
-    private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = OpenAPISupport.helper();
+    private static ParserHelper<ExpandedTypeDescription> helper = ParserHelper.create(ExpandedTypeDescription::create);
 
 
     @Test
     void checkParsingBooleanAdditionalProperties() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/withBooleanAddlProps.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/withBooleanAddlProps.yml");
         Schema itemSchema = openAPI.getComponents().getSchemas().get("item");
 
         Schema additionalPropertiesSchema = itemSchema.getAdditionalPropertiesSchema();
@@ -54,7 +54,7 @@ class TestAdditionalProperties {
 
     @Test
     void checkParsingSchemaAdditionalProperties() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/withSchemaAddlProps.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/withSchemaAddlProps.yml");
         Schema itemSchema = openAPI.getComponents().getSchemas().get("item");
 
         Schema additionalPropertiesSchema = itemSchema.getAdditionalPropertiesSchema();
@@ -70,7 +70,7 @@ class TestAdditionalProperties {
 
     @Test
     void checkWritingSchemaAdditionalProperties() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/withSchemaAddlProps.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/withSchemaAddlProps.yml");
         String document = formatModel(openAPI);
 
         /*
@@ -103,7 +103,7 @@ class TestAdditionalProperties {
 
     @Test
     void checkWritingBooleanAdditionalProperties() throws IOException {
-        OpenAPI openAPI = ParserTest.parse(helper, "/withBooleanAddlProps.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = ParserTest.parse(helper, "/withBooleanAddlProps.yml");
         String document = formatModel(openAPI);
 
         /*
@@ -116,7 +116,7 @@ class TestAdditionalProperties {
 
     private String formatModel(OpenAPI model) {
         StringWriter sw = new StringWriter();
-        Map<Class<?>, ExpandedTypeDescription> implsToTypes = OpenAPISupport.buildImplsToTypes(helper);
+        Map<Class<?>, ExpandedTypeDescription> implsToTypes = ExpandedTypeDescription.buildImplsToTypes(helper);
         Serializer.serialize(helper.types(), implsToTypes, model, Format.YAML, sw);
         return sw.toString();
     }

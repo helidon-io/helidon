@@ -22,6 +22,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 
 class ServiceRules implements HttpRules {
     private static final Predicate<Http.Method> ALWAYS_PREDICATE = new TruePredicate();

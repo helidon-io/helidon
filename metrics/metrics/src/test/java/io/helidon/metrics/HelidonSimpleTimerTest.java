@@ -16,16 +16,8 @@
 package io.helidon.metrics;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -33,14 +25,9 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.platform.commons.JUnitException;
 
-import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 class HelidonSimpleTimerTest {
@@ -157,146 +144,6 @@ class HelidonSimpleTimerTest {
         assertThat(timer.getCount(), is(1L));
         assertThat(timer.getElapsedTime(), is(Duration.ofSeconds(1)));
         checkMinAndMaxDurations(timer, toSeconds, toSeconds);
-    }
-
-    @Test
-    void testJson() {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        ensureDataSetTimerClockAdvanced();
-        dataSetTimer.jsonData(builder, dataSetTimerID);
-
-        JsonObject json = builder.build();
-        JsonObject metricData = json.getJsonObject("response_time");
-
-        assertThat(metricData, notNullValue());
-        assertThat("count", metricData.getJsonNumber("count").longValue(), is(200L));
-        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime"), notNullValue());
-        assertThat("maxTimeDuration", metricData.getJsonNumber("maxTimeDuration").longValue(), is(0L));
-        assertThat("minTimeDuration", metricData.getJsonNumber("minTimeDuration").longValue(), is(0L));
-
-        // Because the batch of test data does not give a non-zero min or max, do a separate test to check the min and max.
-        TestClock clock = TestClock.create();
-        HelidonSimpleTimer simpleTimer = HelidonSimpleTimer.create("application", meta, clock);
-
-        simpleTimer.update(Duration.ofSeconds(4));
-        simpleTimer.update(Duration.ofSeconds(3));
-
-        clock.add(1, TimeUnit.MINUTES);
-        builder = Json.createObjectBuilder();
-        simpleTimer.jsonData(builder, dataSetTimerID);
-
-        json = builder.build();
-        metricData = json.getJsonObject("response_time");
-
-        assertThat(metricData, notNullValue());
-        assertThat("count", metricData.getJsonNumber("count").longValue(), is(2L));
-        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime").doubleValue(), is(7.0D));
-        assertThat("maxTimeDuration", metricData.getJsonNumber("maxTimeDuration").longValue(), is(4L));
-        assertThat("minTimeDuration", metricData.getJsonNumber("minTimeDuration").longValue(), is(3L));
-
-
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {MetricUnits.SECONDS, MetricUnits.NANOSECONDS, MetricUnits.MILLISECONDS, MetricUnits.MICROSECONDS})
-    void testJsonNonDefaultUnits(String metricUnits) {
-        Metadata metadataWithUnits = Metadata.builder(meta)
-                .withUnit(metricUnits)
-                .build();
-        TestClock clock = TestClock.create();
-        HelidonSimpleTimer simpleTimer = HelidonSimpleTimer.create("application", metadataWithUnits, clock);
-
-        Duration longInterval = Duration.ofSeconds(4);
-        Duration shortInterval = Duration.ofSeconds(3);
-        Duration overallInterval = Duration.of(longInterval.toNanos() + shortInterval.toNanos(), ChronoUnit.NANOS);
-
-        simpleTimer.update(longInterval);
-        simpleTimer.update(shortInterval);
-        clock.add(1, TimeUnit.MINUTES);
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        simpleTimer.jsonData(builder, new MetricID("simpleTimerWithExplicitUnits"));
-        JsonObject json = builder.build();
-
-        JsonObject metricData = json.getJsonObject("simpleTimerWithExplicitUnits");
-        assertThat(metricData, notNullValue());
-        assertThat("elapsedTime",
-                   metricData.getJsonNumber("elapsedTime").longValue(),
-                   is(TestUtils.secondsToMetricUnits(metricUnits, overallInterval)));
-        assertThat("maxTimeDuration",
-                   metricData.getJsonNumber("maxTimeDuration").longValue(),
-                   is(TestUtils.secondsToMetricUnits(metricUnits, longInterval)));
-        assertThat("maxTimeDuration",
-                   metricData.getJsonNumber("minTimeDuration").longValue(),
-                   is(TestUtils.secondsToMetricUnits(metricUnits, shortInterval)));
-    }
-
-    @Test
-    void testPrometheus() {
-        Pattern responseTimePattern =
-                Pattern.compile("""
-                                        # TYPE application_response_time_total counter
-                                        # HELP application_response_time_total Server response time for /index.html
-                                        application_response_time_total (\\S*)
-                                        # TYPE application_response_time_elapsedTime_seconds gauge
-                                        application_response_time_elapsedTime_seconds (\\S*)
-                                        # TYPE application_response_time_maxTimeDuration_seconds gauge
-                                        application_response_time_maxTimeDuration_seconds (\\S*)
-                                        # TYPE application_response_time_minTimeDuration_seconds gauge
-                                        application_response_time_minTimeDuration_seconds (\\S*)
-                                        """, Pattern.MULTILINE);
-        StringBuilder sb = new StringBuilder();
-        ensureDataSetTimerClockAdvanced();
-        dataSetTimer.prometheusData(sb, dataSetTimerID, true);
-        String prometheusData = sb.toString();
-        Matcher m = responseTimePattern.matcher(prometheusData);
-        if (!m.find()) {
-            throw new JUnitException("Could not match Prometheus output " + prometheusData
-                                             + " to expected pattern " + responseTimePattern);
-        }
-        assertThat("total", Integer.parseInt(m.group(1)), is(200));
-        assertThat("elapsedTime", Double.parseDouble(m.group(2)), is(withinTolerance(1.0127E-4, 1.2E-6)));
-        assertThat("max", Double.parseDouble(m.group(3)), is(withinTolerance(9.9E-7, 1.2E-9)));
-        assertThat("min", Double.parseDouble(m.group(4)), is(withinTolerance(0.0, 0.012)));
-
-        // Because the batch of test data does not give non-zero min and max, do a separate test to check those.
-        TestClock clock = TestClock.create();
-        HelidonSimpleTimer simpleTimer = HelidonSimpleTimer.create("application", meta, clock);
-
-        simpleTimer.update(Duration.ofSeconds(4));
-        simpleTimer.update(Duration.ofSeconds(3));
-
-        clock.add(1, TimeUnit.MINUTES);
-        sb = new StringBuilder();
-        simpleTimer.prometheusData(sb, dataSetTimerID, true);
-        prometheusData = sb.toString();
-
-        m = responseTimePattern.matcher(prometheusData);
-        if (!m.find()) {
-            throw new JUnitException("Could not match Prometheus output " + prometheusData
-                                             + " to expected pattern" + responseTimePattern);
-        }
-        assertThat("total", Integer.parseInt(m.group(1)), is(2));
-        assertThat("elapsedTime", Double.parseDouble(m.group(2)), is(withinTolerance(7.0D, 0.012)));
-        assertThat("max", Double.parseDouble(m.group(3)), is(withinTolerance(4.0D, 0.012)));
-        assertThat("min", Double.parseDouble(m.group(4)), is(withinTolerance(3.0D, 0.012)));
-    }
-
-    @Test
-    void testNoUpdatesJson() {
-        TestClock clock = TestClock.create();
-        HelidonSimpleTimer simpleTimer = HelidonSimpleTimer.create("application", meta, clock);
-
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        simpleTimer.jsonData(builder, dataSetTimerID);
-
-        JsonObject json = builder.build();
-        JsonObject metricData = json.getJsonObject("response_time");
-
-        assertThat(metricData, notNullValue());
-        assertThat("count", metricData.getJsonNumber("count").longValue(), is(0L));
-        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime").doubleValue(), is(0.0D));
-        assertThat("maxTimeDuration", metricData.get("maxTimeDuration").getValueType(), is(JsonValue.ValueType.NULL));
-        assertThat("minTimeDuration", metricData.get("minTimeDuration").getValueType(), is(JsonValue.ValueType.NULL));
     }
 
     @Test

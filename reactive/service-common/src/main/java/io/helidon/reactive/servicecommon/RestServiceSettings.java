@@ -18,8 +18,8 @@ package io.helidon.reactive.servicecommon;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 /**
  * Common settings across REST services.

@@ -68,5 +68,14 @@
     <!-- builder brings no benefit, all parameters always needed -->
     <suppress files="nima/http2/webserver/src/main/java/io/helidon/nima/http2/webserver/spi/Http2SubProtocolProvider.java"
             checks="ParameterNumber"/>
+
+    <!-- builder brings no benefit, all parameters always needed, and a private method -->
+    <suppress files="src/main/java/io/helidon/metrics/serviceapi/PrometheusFormat.java"
+            checks="ParameterNumber"/>
+
+    <!-- builder brings no benefit, all parameters always needed, and a private method -->
+    <suppress files="microprofile/lra/jax-rs/src/main/java/io/helidon/microprofile/lra/NonJaxRsResource.java"
+            checks="ParameterNumber"/>
+
 </suppressions>
 

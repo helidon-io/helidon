@@ -33,7 +33,6 @@ import io.micrometer.prometheus.PrometheusConfig;
  * Framework for supporting Micrometer registry types.
  */
 abstract class MicrometerBuiltInRegistrySupport {
-
     abstract static class AbstractMeterRegistryConfig implements MeterRegistryConfig {
         private final Map<String, String> settings;
 
@@ -94,6 +93,11 @@ abstract class MicrometerBuiltInRegistrySupport {
     abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
 
     abstract Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry);
+
+    abstract Function<io.helidon.nima.webserver.http.ServerRequest,
+            Optional<io.helidon.nima.webserver.http.Handler>> requestNimaToHandlerFn(
+            MeterRegistry meterRegistry);
+
 
     MeterRegistry registry() {
         return registry;

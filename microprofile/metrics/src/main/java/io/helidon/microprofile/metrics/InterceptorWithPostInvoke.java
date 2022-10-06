@@ -17,7 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 
-import io.helidon.servicecommon.restcdi.HelidonInterceptor;
+import io.helidon.microprofile.servicecommon.HelidonInterceptor;
 
 import jakarta.inject.Inject;
 import jakarta.interceptor.InvocationContext;

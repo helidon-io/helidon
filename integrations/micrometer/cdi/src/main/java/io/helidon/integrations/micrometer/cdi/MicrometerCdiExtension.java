@@ -25,10 +25,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import io.helidon.integrations.micrometer.MicrometerSupport;
+import io.helidon.integrations.micrometer.MicrometerService;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
+import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+import io.helidon.nima.webserver.http.HttpRules;
 
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
@@ -60,7 +60,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * CDI extension for handling Micrometer artifacts.
  */
-public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSupport> {
+public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerService> {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerCdiExtension.class.getName());
 
@@ -75,7 +75,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
      * Creates new extension instance.
      */
     public MicrometerCdiExtension() {
-        super(LOGGER, MicrometerSupport::create, "micrometer");
+        super(LOGGER, MicrometerService::create, "micrometer");
     }
 
     MeterRegistry meterRegistry() {
@@ -122,10 +122,10 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSu
      * @return default routing
      */
     @Override
-    public Routing.Builder registerService(
+    public HttpRules registerService(
             @Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
             BeanManager bm, ServerCdiExtension serverCdiExtension) {
-        Routing.Builder result = super.registerService(adv, bm, serverCdiExtension);
+        HttpRules result = super.registerService(adv, bm, serverCdiExtension);
 
         MeterRegistry meterRegistry = serviceSupport().registry();
 

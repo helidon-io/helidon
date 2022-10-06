@@ -34,7 +34,7 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.RoutingBuilders;
-import io.helidon.openapi.OpenAPISupport;
+import io.helidon.nima.openapi.OpenApiService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -102,7 +102,7 @@ public class OpenApiCdiExtension implements Extension {
     }
 
     void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event) {
-        Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
+        Config openapiNode = config.get(OpenApiService.Builder.CONFIG_KEY);
         openApiSupport = new MPOpenAPIBuilder()
                 .config(mpConfig)
                 .singleIndexViewSupplier(this::indexView)

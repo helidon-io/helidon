@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestServerWithConfig {
+class TestServerWithConfig {
 
     private static final String ALTERNATE_OPENAPI_PATH = "/otheropenapi";
 

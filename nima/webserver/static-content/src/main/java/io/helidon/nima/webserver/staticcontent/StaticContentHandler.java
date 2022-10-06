@@ -30,12 +30,12 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.NotFoundException;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.PathMatchers;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 

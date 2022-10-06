@@ -21,10 +21,10 @@ import java.time.Duration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.metrics.serviceapi.PostRequestMetricsSupport;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.servicecommon.restcdi.HelidonInterceptor;
+import io.helidon.microprofile.servicecommon.HelidonInterceptor;
+import io.helidon.nima.observe.metrics.PostRequestMetricsSupport;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;

@@ -37,7 +37,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.reactive.media.jsonp;
     requires io.helidon.common.crypto;
     requires static io.helidon.config.metadata;
-    requires io.helidon.reactive.webserver.cors;
+    requires io.helidon.cors;
 
     // these are deprecated and will be removed in 3.x
     requires jersey.client;

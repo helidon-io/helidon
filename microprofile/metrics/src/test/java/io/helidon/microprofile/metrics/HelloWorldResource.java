@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -137,8 +137,7 @@ public class HelloWorldResource {
             ar.resume(new RuntimeException("slowRequestInProgress was unexpectedly null"));
             return;
         }
-        serverResponse.whenSent()
-                .thenAccept(r -> slowRequestResponseSent.countDown());
+        serverResponse.whenSent(() -> slowRequestResponseSent.countDown());
 
         long uponEntry = inflightRequestsCount();
 

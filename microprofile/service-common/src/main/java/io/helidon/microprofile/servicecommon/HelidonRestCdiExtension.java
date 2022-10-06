@@ -33,7 +33,7 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.servicecommon.RestServiceSupport;
+import io.helidon.nima.servicecommon.FeatureSupport;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import jakarta.annotation.Priority;
@@ -64,7 +64,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * </p>
  * <p>
  *     Each CDI extension is presumed to layer on an SE-style service support class which itself is a subclass of
- *     {@link io.helidon.nima.servicecommon.HelidonRestServiceSupport} with an associated {@code Builder} class.
+ *     {@link io.helidon.nima.servicecommon.HelidonFeatureSupport} with an associated {@code Builder} class.
  *     The service support base class and its builder are both type parameters to this class.
  * </p>
  * <p>
@@ -80,7 +80,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *
  * @param <T> type of {@code RestServiceSupport} used
  */
-public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> implements Extension {
+public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
@@ -246,7 +246,7 @@ public abstract class HelidonRestCdiExtension<T extends RestServiceSupport> impl
         RoutingBuilders routingBuilders = RoutingBuilders.create(config);
 
         if (serviceSupport.enabled()) {
-            routingBuilders.defaultRoutingBuilder().register(serviceSupport.context(), serviceSupport);
+            serviceSupport.setup(routingBuilders.defaultRoutingBuilder());
         }
 
         return routingBuilders.defaultRoutingBuilder();

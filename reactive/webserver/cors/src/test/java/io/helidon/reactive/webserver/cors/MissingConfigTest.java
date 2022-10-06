@@ -24,8 +24,10 @@ import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
 import io.helidon.config.Config;
+import io.helidon.cors.Aggregator;
+import io.helidon.cors.CorsSupportBase;
+import io.helidon.cors.CrossOriginConfig;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -78,7 +80,7 @@ class MissingConfigTest {
         Aggregator aggregator = cs.helper().aggregator();
         assertThat(aggregator.isActive(), is(true));
         Optional<CrossOriginConfig> cocOpt = aggregator.lookupCrossOrigin("/any/path", "GET", () -> Optional.empty());
-        MatcherAssert.assertThat(cocOpt, CustomMatchers.present());
+        assertThat(cocOpt, CustomMatchers.present());
         checkCrossOriginConfig(cocOpt.get());
     }
 

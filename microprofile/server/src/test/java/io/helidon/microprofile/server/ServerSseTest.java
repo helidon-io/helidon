@@ -39,6 +39,7 @@ import jakarta.ws.rs.sse.SseEventSink;
 import jakarta.ws.rs.sse.SseEventSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Unit test for {@link ServerImpl} SSE.
  */
+@Disabled
 class ServerSseTest {
     private static Client client;
 

@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * API, SPI, and minimal implementation of metrics service.
+ * Tools for implementing metrics service endpoints.
  */
 module io.helidon.metrics.serviceapi {
 
     requires java.logging;
 
-    requires io.helidon.reactive.webserver;
-    requires static io.helidon.config.metadata;
-    requires io.helidon.reactive.servicecommon;
     requires io.helidon.metrics.api;
+    requires jakarta.json;
 
     exports io.helidon.metrics.serviceapi;
-    exports io.helidon.metrics.serviceapi.spi;
-
-    uses io.helidon.metrics.serviceapi.spi.MetricsSupportProvider;
 }

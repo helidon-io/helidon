@@ -22,11 +22,11 @@ import java.util.Set;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.RoutedPath;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 

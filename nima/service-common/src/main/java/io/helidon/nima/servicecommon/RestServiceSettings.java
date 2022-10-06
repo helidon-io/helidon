@@ -18,8 +18,8 @@ package io.helidon.nima.servicecommon;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.nima.webserver.cors.CrossOriginConfig;
 
 /**
  * Common settings across REST services.

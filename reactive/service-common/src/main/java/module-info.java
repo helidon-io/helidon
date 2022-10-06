@@ -23,6 +23,7 @@ module io.helidon.reactive.servicecommon {
 
     requires transitive io.helidon.config;
     requires static io.helidon.config.metadata;
+    requires transitive io.helidon.cors;
     requires transitive io.helidon.reactive.webserver;
     requires transitive io.helidon.reactive.webserver.cors;
 

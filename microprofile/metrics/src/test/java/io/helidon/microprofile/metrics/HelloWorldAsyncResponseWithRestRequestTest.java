@@ -41,14 +41,13 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
-
-public class HelloWorldAsyncResponseWithRestRequestTest {
+class HelloWorldAsyncResponseWithRestRequestTest {
 
     @Inject
     WebTarget webTarget;
 
     @Test
-    void checkForAsyncMethodRESTRequestMetric() throws NoSuchMethodException {
+    void checkForAsyncMethodRESTRequestMetric() {
 
         JsonObject restRequest = getRESTRequestJSON();
 

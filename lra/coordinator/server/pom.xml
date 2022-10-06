@@ -60,8 +60,8 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <groupId>io.helidon.reactive.metrics</groupId>
+            <artifactId>helidon-reactive-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.reactive.health</groupId>

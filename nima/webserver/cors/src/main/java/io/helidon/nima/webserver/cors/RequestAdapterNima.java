@@ -20,13 +20,14 @@ import java.util.Optional;
 
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.ServerRequestHeaders;
+import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
- * Helidon Níma implementation of {@link CorsSupportBase.RequestAdapter}.
+ * Helidon Níma implementation of {@link io.helidon.cors.CorsRequestAdapter}.
  */
-class RequestAdapterNima implements CorsSupportBase.RequestAdapter<ServerRequest> {
+class RequestAdapterNima implements CorsRequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
     private final ServerResponse response;

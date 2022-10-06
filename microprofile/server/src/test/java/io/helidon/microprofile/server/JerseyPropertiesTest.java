@@ -22,6 +22,7 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.glassfish.jersey.client.ClientProperties.IGNORE_EXCEPTION_RESPONSE;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
 @AddExtension(ConfigCdiExtension.class)
+@Disabled
 class JerseyPropertiesTest {
     @Test
     void testIgnoreExceptionResponseOverride() {

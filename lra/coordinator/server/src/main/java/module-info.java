@@ -23,7 +23,8 @@ module io.helidon.lra.coordinator {
     requires microprofile.lra.api;
     requires io.helidon.common.reactive;
     requires io.helidon.reactive.webclient;
-    requires io.helidon.metrics;
+    requires io.helidon.reactive.webserver;
+    requires io.helidon.reactive.metrics;
     requires io.helidon.scheduling;
     requires io.helidon.reactive.dbclient;
     requires io.helidon.reactive.dbclient.jdbc;
@@ -31,4 +32,5 @@ module io.helidon.lra.coordinator {
     requires io.helidon.reactive.health;
     requires io.helidon.health.checks;
     requires io.helidon.logging.common;
+    requires io.helidon.metrics.api;
 }

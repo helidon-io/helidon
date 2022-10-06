@@ -18,6 +18,10 @@ package io.helidon.nima.webserver.cors;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.cors.CorsRequestAdapter;
+import io.helidon.cors.CorsResponseAdapter;
+import io.helidon.cors.CorsSupportBase;
+import io.helidon.cors.CorsSupportHelper;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
@@ -87,8 +91,8 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
             res.next();
             return;
         }
-        RequestAdapter<ServerRequest> requestAdapter = new RequestAdapterNima(req, res);
-        ResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(res);
+        CorsRequestAdapter<ServerRequest> requestAdapter = new RequestAdapterNima(req, res);
+        CorsResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterNima(res);
 
         Optional<ServerResponse> responseOpt = helper().processRequest(requestAdapter, responseAdapter);
 
@@ -100,11 +104,16 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
         return String.format("CorsSupport[%s]{%s}", name(), describe());
     }
 
-    private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
-                                                ResponseAdapter<ServerResponse> responseAdapter) {
+    private void prepareCORSResponseAndContinue(CorsRequestAdapter<ServerRequest> requestAdapter,
+                                                CorsResponseAdapter<ServerResponse> responseAdapter) {
         helper().prepareResponse(requestAdapter, responseAdapter);
 
         requestAdapter.next();
+    }
+
+    @Override
+    protected CorsSupportHelper<ServerRequest, ServerResponse> helper() {
+        return super.helper();
     }
 
     /**
@@ -115,7 +124,7 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
         private static int builderCount = 0; // To help distinguish otherwise-unnamed CorsSupport instances in log messages
 
         Builder() {
-            name("SE " + builderCount++); // Initial name. The developer can (should) provide a more descriptive one.
+            name("Nima " + builderCount++); // Initial name. The developer can (should) provide a more descriptive one.
             requestDefaultBehaviorIfNone();
         }
 

@@ -110,7 +110,7 @@
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.reactive.webserver.cors.CorsSupport</value>
-                                <value>io.helidon.reactive.webserver.cors.CrossOriginConfig</value>
+                                <value>io.helidon.cors.CrossOriginConfig</value>
                             </list>
                             <list key="Main-createRouting" if="${flavor} == 'se'">
                                 <value><![CDATA[

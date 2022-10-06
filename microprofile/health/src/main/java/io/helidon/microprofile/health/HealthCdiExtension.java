@@ -28,7 +28,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
-import io.helidon.nima.observe.health.HealthService;
+import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import jakarta.annotation.Priority;
@@ -52,7 +52,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * Health extension.
  */
-public class HealthCdiExtension extends HelidonRestCdiExtension<HealthService> {
+public class HealthCdiExtension extends HelidonRestCdiExtension<HealthFeature> {
     private static final BuiltInHealthCheck BUILT_IN_HEALTH_CHECK_LITERAL = new BuiltInHealthCheck() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -61,38 +61,11 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthService> {
     };
 
     private static final Logger LOGGER = Logger.getLogger(HealthCdiExtension.class.getName());
-
-    /**
-     * Creates a new instance of the health CDI extension.
-     */
-    public HealthCdiExtension() {
-        super(LOGGER, HEALTH_SUPPORT_FACTORY, "health");
-    }
-
-    @Override
-    public HttpRules registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
-                                                      Object adv,
-                                        BeanManager bm,
-                                        ServerCdiExtension server) {
-        HttpRules defaultRouting = super.registerService(adv, bm, server);
-
-        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
-            LOGGER.finest("Health support is disabled in configuration");
-        }
-        return defaultRouting;
-    }
-
-    @Override
-    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
-        // Annotated sites are handled in registerHealth.
-    }
-
-    private static final Function<Config, HealthService> HEALTH_SUPPORT_FACTORY = (Config helidonConfig) -> {
+    private static final Function<Config, HealthFeature> HEALTH_SUPPORT_FACTORY = (Config helidonConfig) -> {
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
-        HealthService.Builder builder = HealthService.builder()
+        HealthFeature.Builder builder = HealthFeature.builder()
                 .details(true)
                 .config(helidonConfig);
 
@@ -112,9 +85,9 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthService> {
         }
 
         List<HealthCheck> builtInHealthChecks = disableDefaults.map(
-                b -> b ? cdi.select(HealthCheck.class, BUILT_IN_HEALTH_CHECK_LITERAL)
-                        .stream()
-                        .collect(Collectors.toList()) : Collections.<HealthCheck>emptyList())
+                        b -> b ? cdi.select(HealthCheck.class, BUILT_IN_HEALTH_CHECK_LITERAL)
+                                .stream()
+                                .collect(Collectors.toList()) : Collections.<HealthCheck>emptyList())
                 .orElse(Collections.emptyList());
 
         cdi.select(HealthCheck.class, Liveness.Literal.INSTANCE)
@@ -140,6 +113,32 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthService> {
                 });
 
         return builder.build();
-        };
+    };
+
+    /**
+     * Creates a new instance of the health CDI extension.
+     */
+    public HealthCdiExtension() {
+        super(LOGGER, HEALTH_SUPPORT_FACTORY, "health");
+    }
+
+    @Override
+    protected void processManagedBean(ProcessManagedBean<?> processManagedBean) {
+        // Annotated sites are handled in registerHealth.
+    }
+
+    @Override
+    public HttpRules registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                                     Object adv,
+                                     BeanManager bm,
+                                     ServerCdiExtension server) {
+        HttpRules defaultRouting = super.registerService(adv, bm, server);
+
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
+            LOGGER.finest("Health support is disabled in configuration");
+        }
+        return defaultRouting;
+    }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,12 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /*
  * This class is inspired by:
@@ -59,107 +56,6 @@ final class HelidonMeter extends MetricImpl implements Meter {
 
     static HelidonMeter create(String type, Metadata metadata, Meter delegate) {
         return new HelidonMeter(type, metadata, delegate);
-    }
-
-    /*
-    From spec:
-    # TYPE application:requests_total counter
-    # HELP application:requests_total Tracks the number of requests to the server
-    application:requests_total 29382
-    # TYPE application:requests_rate_per_second gauge
-    application:requests_rate_per_second 12.223
-    # TYPE application:requests_one_min_rate_per_second gauge
-    application:requests_one_min_rate_per_second 12.563
-    # TYPE application:requests_five_min_rate_per_second gauge
-    application:requests_five_min_rate_per_second 12.364
-    # TYPE application:requests_fifteen_min_rate_per_second gauge
-    application:requests_fifteen_min_rate_per_second 12.126
-    */
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        String name = metricID.getName();
-        String nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_total";
-        String tags = prometheusTags(metricID.getTags());
-
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "counter");
-            prometheusHelp(sb, nameUnits);
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getCount())
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getMeanRate())
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_one_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getOneMinuteRate())
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_five_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getFiveMinuteRate())
-                .append("\n");
-
-        nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_fifteen_min_rate_per_second";
-        if (withHelpType) {
-            prometheusType(sb, nameUnits, "gauge");
-        }
-        sb.append(nameUnits)
-                .append(tags)
-                .append(" ")
-                .append(getFifteenMinuteRate())
-                .append("\n");
-    }
-
-    @Override
-    public String prometheusValue() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    /*
-    From spec:
-    {
-      "requests": {
-      "count": 29382,
-      "meanRate": 12.223,
-      "oneMinRate": 12.563,
-      "fiveMinRate": 12.364,
-      "fifteenMinRate": 12.126,
-      }
-    }
-    */
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("meanRate", metricID), getMeanRate())
-                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
-                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
-                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
-
-        builder.add(metricID.getName(), myBuilder);
     }
 
     @Override

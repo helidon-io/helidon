@@ -22,6 +22,7 @@ module io.helidon.reactive.webserver.cors {
 
     requires io.helidon.common;
     requires io.helidon.config;
+    requires io.helidon.cors;
     requires io.helidon.reactive.webserver;
 
     requires static io.helidon.config.metadata;

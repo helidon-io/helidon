@@ -23,7 +23,6 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.webserver.WebTracingConfig;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentelemetry.opentracingshim.OpenTracingShim;
@@ -103,16 +102,14 @@ public class TracingCdiExtension implements Extension {
         Contexts.globalContext().register(tracer);
         Contexts.globalContext().register(helidonTracer);
 
-        server.serverBuilder()
-                .tracer(helidonTracer);
-
         Contexts.context()
                 .ifPresent(ctx -> ctx.register(tracer));
 
 
 
-        server.serverRoutingBuilder()
-                .register(WebTracingConfig.create(config));
+        // TODO Helidon Níma
+//        server.serverRoutingBuilder()
+//                .register(WebTracingConfig.create(config));
 
         jaxRsApps
                 .forEach(app -> app.resourceConfig().register(MpTracingFilter.class));

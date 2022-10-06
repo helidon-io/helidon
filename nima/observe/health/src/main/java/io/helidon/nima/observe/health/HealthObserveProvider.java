@@ -25,12 +25,12 @@ import io.helidon.nima.webserver.http.HttpRouting;
  * {@link java.util.ServiceLoader} provider implementation for health observe provider.
  */
 public class HealthObserveProvider implements ObserveProvider {
-    private final HealthService explicitService;
+    private final HealthFeature explicitService;
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}. Do not use.
      *
-     * @deprecated use {@link #create(io.helidon.nima.observe.health.HealthService)} or
+     * @deprecated use {@link #create(HealthFeature)} or
      *         {@link #create()} instead.
      */
     @Deprecated
@@ -38,7 +38,7 @@ public class HealthObserveProvider implements ObserveProvider {
         this(null);
     }
 
-    private HealthObserveProvider(HealthService explicitService) {
+    private HealthObserveProvider(HealthFeature explicitService) {
         this.explicitService = explicitService;
     }
 
@@ -48,7 +48,7 @@ public class HealthObserveProvider implements ObserveProvider {
      * @return a new provider
      */
     public static ObserveProvider create() {
-        return create(HealthService.create());
+        return create(HealthFeature.create());
     }
 
     /**
@@ -59,7 +59,7 @@ public class HealthObserveProvider implements ObserveProvider {
      * @param service service to use
      * @return a new provider based on the observer
      */
-    public static ObserveProvider create(HealthService service) {
+    public static ObserveProvider create(HealthFeature service) {
         return new HealthObserveProvider(service);
     }
 
@@ -75,12 +75,12 @@ public class HealthObserveProvider implements ObserveProvider {
 
     @Override
     public void register(Config config, String componentPath, HttpRouting.Builder routing) {
-        HealthService observer = explicitService == null
-                ? HealthService.builder().config(config).build()
+        HealthFeature observer = explicitService == null
+                ? HealthFeature.builder().webContext(componentPath).config(config).build()
                 : explicitService;
 
         if (observer.enabled()) {
-            routing.register(componentPath, observer);
+            routing.addFeature(observer);
         } else {
             routing.get(componentPath + "/*", (req, res) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503)
                     .send());

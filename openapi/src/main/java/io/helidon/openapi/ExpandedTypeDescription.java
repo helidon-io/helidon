@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.media.Schema;
@@ -72,22 +74,27 @@ import org.yaml.snakeyaml.nodes.Tag;
  *     We use this expanded version of {@code TypeDescription} with the generated SnakeYAMLParserHelper class.
  * </p>
  */
-class ExpandedTypeDescription extends TypeDescription {
-
-    private static final String EXTENSION_PROPERTY_PREFIX = "x-";
+public class ExpandedTypeDescription extends TypeDescription {
 
     static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
 
+    private static final String EXTENSION_PROPERTY_PREFIX = "x-";
+
     private final Class<?> impl;
+
+    private ExpandedTypeDescription(Class<?> clazz, Class<?> impl) {
+        super(clazz, null, impl);
+        this.impl = impl;
+    }
 
     /**
      * Factory method for ease of chaining other method invocations.
      *
      * @param clazz interface type to describe
-     * @param impl implementation class for the interface
+     * @param impl  implementation class for the interface
      * @return resulting TypeDescription
      */
-    static ExpandedTypeDescription create(Class<?> clazz, Class<?> impl) {
+    public static ExpandedTypeDescription create(Class<?> clazz, Class<?> impl) {
 
         ExpandedTypeDescription result;
         if (clazz.equals(Schema.class)) {
@@ -105,9 +112,18 @@ class ExpandedTypeDescription extends TypeDescription {
         return result;
     }
 
-    private ExpandedTypeDescription(Class<?> clazz, Class<?> impl) {
-        super(clazz, null, impl);
-        this.impl = impl;
+    /**
+     * Build a map of implementations to types.
+     *
+     * @param helper parser helper
+     * @return map of implementation classes to descriptions
+     */
+    public static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(ParserHelper<ExpandedTypeDescription> helper) {
+        return Collections.unmodifiableMap(helper.entrySet()
+                                                   .stream()
+                                                   .map(Map.Entry::getValue)
+                                                   .collect(Collectors.toMap(ExpandedTypeDescription::impl,
+                                                                             Function.identity())));
     }
 
     /**
@@ -115,7 +131,7 @@ class ExpandedTypeDescription extends TypeDescription {
      *
      * @return this type description
      */
-    ExpandedTypeDescription addRef() {
+    public ExpandedTypeDescription addRef() {
         PropertySubstitute sub = new PropertySubstitute("ref", String.class, "getRef", "setRef");
         sub.setTargetType(impl);
         substituteProperty(sub);
@@ -127,7 +143,7 @@ class ExpandedTypeDescription extends TypeDescription {
      *
      * @return this type description
      */
-    ExpandedTypeDescription addExtensions() {
+    public ExpandedTypeDescription addExtensions() {
         PropertySubstitute sub = new PropertySubstitute("extensions", Map.class, "getExtensions", "setExtensions");
         sub.setTargetType(impl);
         substituteProperty(sub);
@@ -145,16 +161,9 @@ class ExpandedTypeDescription extends TypeDescription {
         return super.getProperty(name);
     }
 
-    Property getPropertyNoEx(String name) {
-        try {
-            Property p = getProperty("defaultValue");
-            return p;
-        } catch (YAMLException ex) {
-            if (ex.getMessage().startsWith("Unable to find property")) {
-                return null;
-            }
-            throw ex;
-        }
+    @Override
+    public boolean setupPropertyType(String key, Node valueNode) {
+        return setupExtensionType(key, valueNode) || super.setupPropertyType(key, valueNode);
     }
 
     @Override
@@ -173,14 +182,14 @@ class ExpandedTypeDescription extends TypeDescription {
         return super.newInstance(propertyName, node);
     }
 
-    @Override
-    public boolean setupPropertyType(String key, Node valueNode) {
-        return setupExtensionType(key, valueNode) || super.setupPropertyType(key, valueNode);
-    }
-
-    void addExcludes(String... propNames) {
+    /**
+     * Add property names excludes.
+     *
+     * @param propNames names to exclude
+     */
+    public void addExcludes(String... propNames) {
         if (excludes == Collections.<String>emptySet()) {
-            excludes = new HashSet<String>();
+            excludes = new HashSet<>();
         }
         for (String propName : propNames) {
             excludes.add(propName);
@@ -192,12 +201,29 @@ class ExpandedTypeDescription extends TypeDescription {
      *
      * @return implementation class
      */
-    Class<?> impl() {
+    public Class<?> impl() {
         return impl;
     }
 
-    boolean hasDefaultProperty() {
+    /**
+     * Whether a default value exists.
+     *
+     * @return {@code true} if default value property is defined
+     */
+    public boolean hasDefaultProperty() {
         return getPropertyNoEx("defaultValue") != null;
+    }
+
+    Property getPropertyNoEx(String name) {
+        try {
+            Property p = getProperty("defaultValue");
+            return p;
+        } catch (YAMLException ex) {
+            if (ex.getMessage().startsWith("Unable to find property")) {
+                return null;
+            }
+            throw ex;
+        }
     }
 
     private static boolean setupExtensionType(String key, Node valueNode) {
@@ -207,21 +233,21 @@ class ExpandedTypeDescription extends TypeDescription {
              * Extensible we need to set the node's type if the extension is a List or Map.
              */
             switch (valueNode.getNodeId()) {
-                case sequence:
-                    valueNode.setType(List.class);
-                    return true;
+            case sequence:
+                valueNode.setType(List.class);
+                return true;
 
-                case anchor:
-                    break;
+            case anchor:
+                break;
 
-                case mapping:
-                    valueNode.setType(Map.class);
-                    return true;
+            case mapping:
+                valueNode.setType(Map.class);
+                return true;
 
-                case scalar:
-                    break;
+            case scalar:
+                break;
 
-                default:
+            default:
 
             }
         }
@@ -239,12 +265,14 @@ class ExpandedTypeDescription extends TypeDescription {
     /**
      * Specific type description for {@code Schema}.
      * <p>
-     *     The {@code Schema} node allows the {@code additionalProperties} subnode to be either
-     *     {@code Boolean} or another {@code Schema}, and the {@code Schema} class exposes getters and setters for
-     *     {@code additionalPropertiesBoolean}, and {@code additionalPropertiesSchema}.
-     *     This type description customizes the handling of {@code additionalProperties} to account for all that.
+     * The {@code Schema} node allows the {@code additionalProperties} subnode to be either
+     * {@code Boolean} or another {@code Schema}, and the {@code Schema} class exposes getters and setters for
+     * {@code additionalPropertiesBoolean}, and {@code additionalPropertiesSchema}.
+     * This type description customizes the handling of {@code additionalProperties} to account for all that.
      * </p>
-     * @see io.helidon.openapi.Serializer (specifically doRepresentJavaBeanProperty) for output handling for additionalProperties
+     *
+     * @see io.helidon.openapi.Serializer (specifically doRepresentJavaBeanProperty) for output handling for
+     *         additionalProperties
      */
     static final class SchemaTypeDescription extends ExpandedTypeDescription {
 
@@ -271,18 +299,13 @@ class ExpandedTypeDescription extends TypeDescription {
                     }
                 };
 
-        private static PropertyDescriptor preparePropertyDescriptor() {
-            /*
-             * The PropertyDescriptor here is just a placeholder. We will not know until we are mapping a node in the model
-             * whether the additionalProperties is a boolean or a Schema. That is handled explicitly in setProperty below.
-             */
-            try {
-                return new PropertyDescriptor("additionalProperties",
-                                              Schema.class.getMethod("getAdditionalPropertiesSchema"),
-                                              Schema.class.getMethod("setAdditionalPropertiesSchema", Schema.class));
-            } catch (IntrospectionException | NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
+        private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
+            super(clazz, impl);
+        }
+
+        @Override
+        public Property getProperty(String name) {
+            return name.equals("additionalProperties") ? ADDL_PROPS_PROPERTY : super.getProperty(name);
         }
 
         @Override
@@ -292,11 +315,6 @@ class ExpandedTypeDescription extends TypeDescription {
                 return true;
             }
             return super.setupPropertyType(key, valueNode);
-        }
-
-        @Override
-        public Property getProperty(String name) {
-            return name.equals("additionalProperties") ? ADDL_PROPS_PROPERTY : super.getProperty(name);
         }
 
         @Override
@@ -315,8 +333,18 @@ class ExpandedTypeDescription extends TypeDescription {
             return true;
         }
 
-        private SchemaTypeDescription(Class<?> clazz, Class<?> impl) {
-            super(clazz, impl);
+        private static PropertyDescriptor preparePropertyDescriptor() {
+            /*
+             * The PropertyDescriptor here is just a placeholder. We will not know until we are mapping a node in the model
+             * whether the additionalProperties is a boolean or a Schema. That is handled explicitly in setProperty below.
+             */
+            try {
+                return new PropertyDescriptor("additionalProperties",
+                                              Schema.class.getMethod("getAdditionalPropertiesSchema"),
+                                              Schema.class.getMethod("setAdditionalPropertiesSchema", Schema.class));
+            } catch (IntrospectionException | NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -332,13 +360,6 @@ class ExpandedTypeDescription extends TypeDescription {
         private final Class<C> childType;
         private final CustomConstructor.ChildAdder<P, C> childAdder;
 
-        static <P, C> MapLikeTypeDescription<P, C> create(Class<P> parentType,
-                                                          Class<?> impl,
-                                                          Class<C> childType,
-                                                          CustomConstructor.ChildAdder<P, C> childAdder) {
-            return new MapLikeTypeDescription<>(parentType, impl, childType, childAdder);
-        }
-
         MapLikeTypeDescription(Class<P> parentType,
                                Class<?> impl,
                                Class<C> childType,
@@ -347,6 +368,13 @@ class ExpandedTypeDescription extends TypeDescription {
             this.childType = childType;
             this.parentType = parentType;
             this.childAdder = childAdder;
+        }
+
+        static <P, C> MapLikeTypeDescription<P, C> create(Class<P> parentType,
+                                                          Class<?> impl,
+                                                          Class<C> childType,
+                                                          CustomConstructor.ChildAdder<P, C> childAdder) {
+            return new MapLikeTypeDescription<>(parentType, impl, childType, childAdder);
         }
 
         @Override
@@ -375,6 +403,17 @@ class ExpandedTypeDescription extends TypeDescription {
         private final CustomConstructor.ChildNameAdder<P> childNameAdder;
         private final CustomConstructor.ChildListAdder<P, C> childListAdder;
 
+        private ListMapLikeTypeDescription(Class<P> parentType,
+                                           Class<?> impl,
+                                           Class<C> childType,
+                                           CustomConstructor.ChildAdder<P, C> childAdder,
+                                           CustomConstructor.ChildNameAdder<P> childNameAdder,
+                                           CustomConstructor.ChildListAdder<P, C> childListAdder) {
+            super(parentType, impl, childType, childAdder);
+            this.childNameAdder = childNameAdder;
+            this.childListAdder = childListAdder;
+        }
+
         static <P, C> ListMapLikeTypeDescription<P, C> create(Class<P> parentType,
                                                               Class<?> impl,
                                                               Class<C> childType,
@@ -382,17 +421,6 @@ class ExpandedTypeDescription extends TypeDescription {
                                                               CustomConstructor.ChildNameAdder<P> childNameAdder,
                                                               CustomConstructor.ChildListAdder<P, C> childListAdder) {
             return new ListMapLikeTypeDescription<>(parentType, impl, childType, childAdder, childNameAdder, childListAdder);
-        }
-
-        private ListMapLikeTypeDescription(Class<P> parentType,
-                                   Class<?> impl,
-                                   Class<C> childType,
-                                   CustomConstructor.ChildAdder<P, C> childAdder,
-                                   CustomConstructor.ChildNameAdder<P> childNameAdder,
-                                   CustomConstructor.ChildListAdder<P, C> childListAdder) {
-            super(parentType, impl, childType, childAdder);
-            this.childNameAdder = childNameAdder;
-            this.childListAdder = childListAdder;
         }
 
         @Override

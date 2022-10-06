@@ -22,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.jersey.common.InvokedResource;
-import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.AbstractTracingFilter;
 
 import jakarta.annotation.PostConstruct;
@@ -99,11 +98,6 @@ public class MpTracingFilter extends AbstractTracingFilter {
                 .map(Traced::operationName)
                 .filter(str -> !str.isEmpty())
                 .orElseGet(() -> utils.operationName(context));
-    }
-
-    @Override
-    protected void configureSpan(Span.Builder spanBuilder) {
-
     }
 
     @Override

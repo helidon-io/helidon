@@ -18,7 +18,7 @@ package io.helidon.microprofile.accesslog;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.webserver.accesslog.AccessLogSupport;
+import io.helidon.nima.webserver.accesslog.AccessLogFilter;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
@@ -34,10 +34,9 @@ public class AccessLogCdiExtension implements Extension {
     private void setUpAccessLog(@Observes @Priority(PLATFORM_BEFORE + 10) @RuntimeStart Config config,
                                 BeanManager beanManager) {
         Config alConfig = config.get("server.access-log");
-        AccessLogSupport accessLogSupport = AccessLogSupport.create(alConfig);
 
         beanManager.getExtension(ServerCdiExtension.class)
                 .serverRoutingBuilder()
-                .register(accessLogSupport);
+                .addFilter(AccessLogFilter.create(alConfig));
     }
 }

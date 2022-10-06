@@ -198,6 +198,7 @@
         <module>scheduling</module>
         <module>nima</module>
         <module>reactive</module>
+        <module>cors</module>
         <module>pico</module>
     </modules>
 

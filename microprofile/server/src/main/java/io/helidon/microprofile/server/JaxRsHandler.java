@@ -26,8 +26,10 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
@@ -38,6 +40,7 @@ import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.uri.UriPath;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
+import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
@@ -132,8 +135,7 @@ class JaxRsHandler implements Handler {
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        Context ctx = Context.builder().id("[" + req.serverSocketId() + " " + req.socketId() + "]").build();
-        Contexts.runInContext(ctx, () -> doHandle(ctx, req, res));
+        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
     }
 
     @Override
@@ -209,7 +211,8 @@ class JaxRsHandler implements Handler {
             ij.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
         });
 
-        // TODO add KPI support
+        Optional<KeyPerformanceIndicatorSupport.DeferrableRequestContext> kpiMetricsContext =
+                req.context().get(KeyPerformanceIndicatorSupport.DeferrableRequestContext.class);
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "[" + req.serverSocketId() + " " + req.socketId() + "] Handling in Jersey started");
         }
@@ -219,7 +222,9 @@ class JaxRsHandler implements Handler {
         ctx.register(application);
 
         try {
+            kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
+            writer.await();
         } catch (Exception e) {
             if (e instanceof NotFoundException) {
                 res.next();
@@ -282,6 +287,7 @@ class JaxRsHandler implements Handler {
     }
 
     private static class JaxRsResponseWriter implements ContainerResponseWriter {
+        private final CountDownLatch cdl = new CountDownLatch(1);
         private final ServerResponse res;
         private OutputStream outputStream;
 
@@ -336,7 +342,9 @@ class JaxRsHandler implements Handler {
             if (outputStream != null) {
                 try {
                     outputStream.close();
+                    cdl.countDown();
                 } catch (IOException e) {
+                    cdl.countDown();
                     throw new UncheckedIOException(e);
                 }
             }
@@ -344,6 +352,8 @@ class JaxRsHandler implements Handler {
 
         @Override
         public void failure(Throwable throwable) {
+            cdl.countDown();
+
             if (throwable instanceof RuntimeException) {
                 throw (RuntimeException) throwable;
             }
@@ -354,6 +364,14 @@ class JaxRsHandler implements Handler {
         public boolean enableResponseBuffering() {
             // Jersey should not try to do the buffering
             return false;
+        }
+
+        public void await() {
+            try {
+                cdl.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Failed to wait for Jersey to write response");
+            }
         }
     }
 }

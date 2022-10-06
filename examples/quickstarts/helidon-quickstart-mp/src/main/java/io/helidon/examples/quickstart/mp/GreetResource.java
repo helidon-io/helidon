@@ -18,6 +18,8 @@ package io.helidon.examples.quickstart.mp;
 
 import java.util.Collections;
 
+import io.helidon.security.SecurityException;
+
 import jakarta.inject.Inject;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -93,7 +95,8 @@ public class GreetResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getMessage(@PathParam("name") String name) {
-        return createResponse(name);
+        throw new SecurityException("Failed to process");
+        // return createResponse(name);
     }
 
     /**

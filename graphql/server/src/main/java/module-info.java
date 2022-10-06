@@ -20,18 +20,8 @@
 module io.helidon.graphql.server {
     requires java.logging;
 
-    requires jakarta.json.bind;
-    requires org.eclipse.yasson;
-
-    requires io.helidon.common.configurable;
-    requires io.helidon.common.http;
-    requires io.helidon.reactive.media.common;
-    requires io.helidon.reactive.media.jsonb;
-    requires io.helidon.reactive.webserver;
-
-    requires transitive io.helidon.reactive.webserver.cors;
-    requires transitive io.helidon.config;
     requires transitive com.graphqljava;
+    requires io.helidon.config;
 
     exports io.helidon.graphql.server;
 }

@@ -48,6 +48,8 @@
         <module>fault-tolerance</module>
         <module>testing</module>
         <module>service-common</module>
+        <module>openapi</module>
+        <module>graphql</module>
     </modules>
 
     <profiles>

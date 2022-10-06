@@ -37,12 +37,15 @@
 
     <modules>
         <module>health</module>
+        <module>metrics</module>
         <module>fault-tolerance</module>
         <module>media</module>
         <module>dbclient</module>
         <module>webclient</module>
         <module>webserver</module>
         <module>service-common</module>
+        <module>openapi</module>
+        <module>graphql</module>
     </modules>
 
     <profiles>

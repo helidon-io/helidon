@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ParserTest {
 
-    private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = OpenAPISupport.helper();
+    private static ParserHelper<ExpandedTypeDescription> helper = ParserHelper.create(ExpandedTypeDescription::create);
 
     @Test
     public void testParserUsingYAML() throws IOException {
-        OpenAPI openAPI = parse(helper,"/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = parse(helper, "/petstore.yaml");
         assertThat(openAPI.getOpenapi(), is("3.0.0"));
         assertThat(openAPI.getPaths().getPathItem("/pets").getGET().getParameters().get(0).getIn(),
                 is(Parameter.In.QUERY));
@@ -44,7 +44,7 @@ class ParserTest {
 
     @Test
     public void testExtensions() throws IOException {
-        OpenAPI openAPI = parse(helper,"/openapi-greeting.yml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = parse(helper, "/openapi-greeting.yml");
         Object xMyPersonalMap = openAPI.getExtensions().get("x-my-personal-map");
         assertThat(xMyPersonalMap, is(instanceOf(Map.class)));
         Map<?,?> map = (Map<?,?>) xMyPersonalMap;
@@ -81,7 +81,7 @@ class ParserTest {
 
     @Test
     void testYamlRef() throws IOException {
-        OpenAPI openAPI = parse(helper, "/petstore.yaml", OpenAPISupport.OpenAPIMediaType.YAML);
+        OpenAPI openAPI = parse(helper, "/petstore.yaml");
         Paths paths = openAPI.getPaths();
         String ref = paths.getPathItem("/pets")
                 .getGET()
@@ -97,7 +97,7 @@ class ParserTest {
 
     @Test
     void testJsonRef() throws IOException {
-        OpenAPI openAPI = parse(helper, "/petstore.json", OpenAPISupport.OpenAPIMediaType.JSON);
+        OpenAPI openAPI = parse(helper, "/petstore.json");
         Paths paths = openAPI.getPaths();
         String ref = paths.getPathItem("/user")
                 .getPOST()
@@ -112,17 +112,16 @@ class ParserTest {
 
     @Test
     public void testParserUsingJSON() throws IOException {
-        OpenAPI openAPI = parse(helper,"/petstore.json", OpenAPISupport.OpenAPIMediaType.JSON);
+        OpenAPI openAPI = parse(helper, "/petstore.json");
         assertThat(openAPI.getOpenapi(), is("3.0.0"));
 // TODO - uncomment the following once full $ref support is in place
 //        assertThat(openAPI.getPaths().getPathItem("/pet").getPUT().getRequestBody().getDescription(),
 //                containsString("needs to be added to the store"));
     }
 
-    static OpenAPI parse(SnakeYAMLParserHelper<ExpandedTypeDescription> helper, String path,
-            OpenAPISupport.OpenAPIMediaType mediaType) throws IOException {
+    static OpenAPI parse(ParserHelper<ExpandedTypeDescription> helper, String path) throws IOException {
         try (InputStream is = ParserTest.class.getResourceAsStream(path)) {
-            return OpenAPIParser.parse(helper.types(), is, mediaType);
+            return OpenAPIParser.parse(helper.types(), is);
         }
     }
 }

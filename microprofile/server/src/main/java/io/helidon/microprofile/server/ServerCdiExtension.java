@@ -39,6 +39,7 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.context.ContextFilter;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -84,6 +85,7 @@ public class ServerCdiExtension implements Extension {
 
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
     private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
+    private final List<HttpRouting.Builder> routingsWithKPIMetrics = new ArrayList<>();
     private String basePath;
     private Config config;
 
@@ -248,8 +250,7 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
-        // todo Níma add explicit config support for server
-        // serverBuilder.config(config.get("server"));
+        serverBuilder.config(config.get("server"));
         this.config = config;
     }
 
@@ -282,12 +283,11 @@ public class ServerCdiExtension implements Extension {
 
     private void registerKpiMetricsDeferrableRequestContextSetterHandler(JaxRsCdiExtension jaxRs,
                                                                          JaxRsApplication applicationMeta) {
-        /*
-        TODO Níma - not yet ready
+
         Optional<String> namedRouting = jaxRs.findNamedRouting(config, applicationMeta);
         boolean routingNameRequired = jaxRs.isNamedRoutingRequired(config, applicationMeta);
 
-        Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
+        HttpRouting.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
         if (!routingsWithKPIMetrics.contains(routing)) {
             routingsWithKPIMetrics.add(routing);
@@ -295,7 +295,6 @@ public class ServerCdiExtension implements Extension {
             LOGGER.finer(() -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'",
                                              namedRouting.orElse("<unnamed>")));
         }
-        */
     }
 
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 100) @Initialized(ApplicationScoped.class) Object event,
@@ -329,7 +328,7 @@ public class ServerCdiExtension implements Extension {
                                                              .id("helidon-mp")
                                                              .build());
         }
-        namedRoutings.forEach((name, value) -> value.addFilter(ContextFilter.builder().parent(this.context).build()));
+        namedRoutings.forEach((name, value) -> value.addFilter(ContextFilter.create()));
         webserver = serverBuilder.build();
 
         try {
@@ -504,7 +503,12 @@ public class ServerCdiExtension implements Extension {
         if (contextRoot.isPresent()) {
             String contextRootString = contextRoot.get();
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '" + contextRootString + "'");
-            routing.any(contextRootString + "/*", jerseySupport);
+            if (contextRootString.endsWith("/")) {
+                routing.any(contextRootString + "*", jerseySupport);
+            } else {
+                routing.any(contextRootString + "/*", jerseySupport);
+            }
+
         } else {
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '/'");
             routing.any("/*", jerseySupport);

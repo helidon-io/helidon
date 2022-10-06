@@ -41,20 +41,16 @@
             <artifactId>helidon-jersey-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-jersey</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-cors</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver-cors</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -64,6 +60,10 @@
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -83,6 +83,11 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-http-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -16,22 +16,12 @@
 
 package io.helidon.metrics;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.DoubleAccumulator;
-import java.util.concurrent.atomic.DoubleAdder;
-import java.util.concurrent.atomic.LongAccumulator;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Gauge implementation.
@@ -65,56 +55,6 @@ final class HelidonGauge<T extends Number> extends MetricImpl implements Gauge<T
     @Override
     public T getValue() {
         return value.get();
-    }
-
-    @Override
-    public String prometheusNameWithUnits(MetricID metricID) {
-        return prometheusNameWithUnits(metricID.getName(), getUnits().getPrometheusUnit());
-    }
-
-    @Override
-    public String prometheusValue() {
-        return getUnits().convert(getValue()).toString();
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        T value = getValue();
-        String nameWithTags = jsonFullKey(metricID);
-
-
-        if (value instanceof AtomicInteger) {
-            builder.add(nameWithTags, value.doubleValue());
-        } else if (value instanceof AtomicLong) {
-            builder.add(nameWithTags, value.longValue());
-        } else if (value instanceof BigDecimal) {
-            builder.add(nameWithTags, (BigDecimal) value);
-        } else if (value instanceof BigInteger) {
-            builder.add(nameWithTags, (BigInteger) value);
-        } else if (value instanceof Byte) {
-            builder.add(nameWithTags, value.intValue());
-        } else if (value instanceof Double) {
-            builder.add(nameWithTags, (Double) value);
-        } else if (value instanceof DoubleAccumulator) {
-            builder.add(nameWithTags, value.doubleValue());
-        } else if (value instanceof DoubleAdder) {
-            builder.add(nameWithTags, value.doubleValue());
-        } else if (value instanceof Float) {
-            builder.add(nameWithTags, value.floatValue());
-        } else if (value instanceof Integer) {
-            builder.add(nameWithTags, (Integer) value);
-        } else if (value instanceof Long) {
-            builder.add(nameWithTags, (Long) value);
-        } else if (value instanceof LongAccumulator) {
-            builder.add(nameWithTags, value.longValue());
-        } else if (value instanceof LongAdder) {
-            builder.add(nameWithTags, value.longValue());
-        } else if (value instanceof Short) {
-            builder.add(nameWithTags, value.intValue());
-        } else {
-            // Might be a developer-provided class which extends Number.
-            builder.add(nameWithTags, value.doubleValue());
-        }
     }
 
     @Override

@@ -19,10 +19,10 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.Service;
 import io.helidon.reactive.webserver.cors.CorsEnabledServiceHelper;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 /**
  * Common base implementation for {@linkplain Service service} support classes which involve REST endpoints.

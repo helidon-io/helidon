@@ -294,7 +294,7 @@ public abstract class WebTracingConfig {
             if (inboundSpanContext != null) {
                 // register as parent span
                 context.register(inboundSpanContext);
-                context.register(ServerRequest.class, inboundSpanContext);
+                context.register(TracingConfig.class, inboundSpanContext);
             }
 
             if (!spanConfig.enabled()) {
@@ -321,7 +321,7 @@ public abstract class WebTracingConfig {
             Span span = spanBuilder.start();
 
             context.register(span.context());
-            context.register(ServerRequest.class, span.context());
+            context.register(TracingConfig.class, span.context());
 
             res.whenSent()
                     .thenRun(() -> {

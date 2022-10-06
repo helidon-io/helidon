@@ -34,5 +34,6 @@
         <module>health</module>
         <module>config</module>
         <module>info</module>
+        <module>metrics</module>
     </modules>
 </project>

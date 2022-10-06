@@ -15,15 +15,16 @@
  */
 package io.helidon.microprofile.servicecommon;
 
+import java.util.Optional;
+
 import io.helidon.config.Config;
-import io.helidon.nima.servicecommon.HelidonRestServiceSupport;
-import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.servicecommon.HelidonFeatureSupport;
+import io.helidon.nima.webserver.http.HttpService;
 
 /**
  * Test SE service which does not really expose its own endpoint but does use config to set an "importance" value.
  */
-public class ConfiguredTestSupport extends HelidonRestServiceSupport {
-
+public class ConfiguredTestSupport extends HelidonFeatureSupport {
 
     static final String ENDPOINT_PATH = "/testendpoint";
 
@@ -32,7 +33,7 @@ public class ConfiguredTestSupport extends HelidonRestServiceSupport {
     /**
      * Initialization.
      *
-     * @param builder     builder for the service support instance.
+     * @param builder builder for the service support instance.
      */
     private ConfiguredTestSupport(Builder builder) {
         super(System.getLogger(ConfiguredTestSupport.class.getName()), builder, "testservice");
@@ -44,22 +45,17 @@ public class ConfiguredTestSupport extends HelidonRestServiceSupport {
     }
 
     @Override
-    protected void postConfigureEndpoint(HttpRules defaultRules, HttpRules serviceEndpointRoutingRules) {
-        // We are not exposing a service-specific endpoint, nor do we need to add handling to normal requests in the test.
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        configureEndpoint(rules, rules);
+    public Optional<HttpService> service() {
+        return Optional.of(rules -> {
+        });
     }
 
     int importance() {
         return importance;
     }
 
-    static class Builder extends HelidonRestServiceSupport.Builder<Builder, ConfiguredTestSupport>
+    static class Builder extends HelidonFeatureSupport.Builder<Builder, ConfiguredTestSupport>
             implements io.helidon.common.Builder<Builder, ConfiguredTestSupport> {
-
 
         private int importance;
 
