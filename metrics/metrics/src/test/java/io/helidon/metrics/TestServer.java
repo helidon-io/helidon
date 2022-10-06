@@ -17,9 +17,6 @@ package io.helidon.metrics;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +36,6 @@ import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -55,7 +51,9 @@ public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
     private static final int RETRY_COUNT = Integer.getInteger("io.helidon.test.retryCount", 10);
-    private static final int RETRY_DELAY_MS = Integer.getInteger("io.helidon.test.retryDelayMs", 500);
+    private static final Duration RETRY_DELAY = Duration.ofMillis(Integer.getInteger("io.helidon.test.retryDelayMs", 500));
+    private static final Duration CLIENT_TIMEOUT = Duration.ofSeconds(Integer.getInteger("io.helidon.test.clientTimeoutSec", 10));
+    private static final Duration RETRY_TIMEOUT = Duration.ofSeconds(Integer.getInteger("io.helidon.test.retryTimeoutSec", 60));
     private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate", "no-transform"};
 
     private static WebServer webServer;
@@ -63,29 +61,22 @@ public class TestServer {
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
     private static MetricsSupport metricsSupport;
-
-    private static final Duration CLIENT_TIMEOUT = Duration.ofSeconds(5);
-    private static Retry retry;
-    private WebClient.Builder webClientBuilder;
+    private static Retry.Builder retry;
+    private static WebClient.Builder webClientBuilder;
 
     @BeforeAll
-    public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
+    public static void startup() {
         metricsSupport = NORMAL_BUILDER.build();
         webServer = startServer(metricsSupport, new GreetService());
-    }
-
-    @BeforeEach
-    public void prepareWebClientBuilder() {
-        retry = Retry.builder()
-                .overallTimeout(Duration.ofSeconds(20))
-                .retryPolicy(Retry.JitterRetryPolicy.builder()
-                        .calls(RETRY_COUNT)
-                        .delay(Duration.ofMillis(RETRY_DELAY_MS))
-                        .build())
-                .build();
         webClientBuilder = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/")
                 .addMediaSupport(JsonpSupport.create());
+        retry = Retry.builder()
+                .overallTimeout(RETRY_TIMEOUT)
+                .retryPolicy(Retry.JitterRetryPolicy.builder()
+                        .calls(RETRY_COUNT)
+                        .delay(RETRY_DELAY)
+                        .build());
     }
 
     @AfterAll
@@ -93,20 +84,17 @@ public class TestServer {
         shutdownServer(webServer);
     }
 
-    static WebServer startServer(
-            Service... services) throws
-            InterruptedException, ExecutionException, TimeoutException {
-        WebServer result = WebServer.builder(
+    static WebServer startServer(Service... services) {
+        WebServer server = WebServer.builder(
                 Routing.builder()
                     .register(services)
                     .build())
                 .port(0)
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
-        LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", result.port());
-        return result;
+                .await(Duration.ofSeconds(20));
+        LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", server.port());
+        return server;
     }
 
     static void shutdownServer(WebServer server) {
@@ -114,7 +102,7 @@ public class TestServer {
     }
 
     @Test
-    public void checkNormalURL() throws ExecutionException, InterruptedException {
+    public void checkNormalURL() {
         WebClientResponse response = webClientBuilder
                 .build()
                 .get()
@@ -176,7 +164,7 @@ public class TestServer {
     }
 
     @Test
-    void checkMetricsForExecutorService() throws Exception {
+    void checkMetricsForExecutorService() {
 
         String jsonKeyForCompleteTaskCountInThreadPool =
                 "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
@@ -212,7 +200,8 @@ public class TestServer {
 
         assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
 
-        retry.invoke(() -> metricsRequestBuilder
+        retry.build()
+                .invoke(() -> metricsRequestBuilder
                         .submit()
                         .peek(res -> assertThat("Second access to metrics", res.status().code(), is(200)))
                         .flatMapSingle(res -> res.content().as(JsonObject.class))
