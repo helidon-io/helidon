@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -58,6 +59,7 @@ public final class FaultTolerance {
             new AtomicReference<>();
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
+    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
     static {
         SCHEDULED_EXECUTOR.set(LazyValue.create(ScheduledThreadPoolSupplier.builder()
@@ -106,11 +108,23 @@ public final class FaultTolerance {
     }
 
     static LazyValue<? extends ExecutorService> executor() {
+        INITIALIZED.set(true);
         return EXECUTOR.get();
     }
 
     static LazyValue<? extends ScheduledExecutorService> scheduledExecutor() {
+        INITIALIZED.set(true);
         return SCHEDULED_EXECUTOR.get();
+    }
+
+    /**
+     * Mostly used for testing. This class is considered to be initialized if any of its
+     * (lazy valued) executors were returned.
+     *
+     * @return boolean indicating whether init took place
+     */
+    public static boolean initialized() {
+        return INITIALIZED.get();
     }
 
     /**
