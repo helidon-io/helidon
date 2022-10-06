@@ -20,8 +20,8 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <model>
-            <list if="${tracing}" key="application-yaml-entries">
+        <model if="${tracing}">
+            <list key="application-yaml-entries">
                 <value if="${tracing.provider} == 'jaeger'"><![CDATA[
 tracing:
     service: "helidon-full-http"
@@ -49,8 +49,6 @@ tracing:
     int-tags:
       tag5: 145           # JAEGER_TAGS
       tag6: 741           # JAEGER_TAGS]]></value>
-            </list>
-            <list if="${tracing}" key="application-yaml-entries">
                 <value if="${tracing.provider} == 'zipkin'"><![CDATA[
 tracing:
   zipkin:

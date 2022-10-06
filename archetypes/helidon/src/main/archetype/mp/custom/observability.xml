@@ -20,30 +20,31 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <model>
-            <list if="${tracing}" key="dependencies">
+        <model if="${tracing}">
+            <list key="dependencies">
                 <map order="800">
                     <value key="groupId">io.helidon.microprofile.tracing</value>
                     <value key="artifactId">helidon-microprofile-tracing</value>
                 </map>
             </list>
-            <list if="${tracing}" key="microprofile-config-entries">
+            <list key="microprofile-config-entries">
                 <value>tracing.service=helidon-service</value>
-                <value>tracing.protocol=https</value>
                 <value>tracing.components.web-server.spans.0.name="HTTP Request"</value>
             </list>
-            <list if="${tracing}" key="microprofile-config-entries">
-                <value if="${tracing.provider} == 'jaeger'">tracing.host=192.168.1.3</value>
-                <value if="${tracing.provider} == 'jaeger'">tracing.port=14240</value>
-                <value if="${tracing.provider} == 'jaeger'">tracing.path=/api/traces/mine</value>
-                <value if="${tracing.provider} == 'jaeger'">tracing.token=token</value>
-                <value if="${tracing.provider} == 'jaeger'">tracing.propagation=jaeger</value>
+            <list if="${tracing.provider} == 'jaeger'" key="microprofile-config-entries">
+                <value>tracing.protocol=http</value>
+                <value>tracing.host=localhost</value>
+                <value>tracing.port=14250</value>
+                <value>tracing.path=/api/traces/mine</value>
+                <value>tracing.token=token</value>
+                <value>tracing.propagation=jaeger</value>
             </list>
-            <list if="${tracing}" key="microprofile-config-entries">
-                <value if="${tracing.provider} == 'zipkin'">tracing.host=192.168.1.1</value>
-                <value if="${tracing.provider} == 'zipkin'">tracing.port=9987</value>
-                <value if="${tracing.provider} == 'zipkin'">tracing.path=/api/v2/spans</value>
-                <value if="${tracing.provider} == 'zipkin'">tracing.api-version=1</value>
+            <list if="${tracing.provider} == 'zipkin'" key="microprofile-config-entries">
+                <value>tracing.protocol=https</value>
+                <value>tracing.host=192.168.1.1</value>
+                <value>tracing.port=9987</value>
+                <value>tracing.path=/api/v2/spans</value>
+                <value>tracing.api-version=1</value>
             </list>
         </model>
     </output>
