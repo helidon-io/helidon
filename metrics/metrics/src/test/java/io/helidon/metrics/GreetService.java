@@ -15,13 +15,17 @@
  */
 package io.helidon.metrics;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -35,22 +39,13 @@ class GreetService implements Service {
     static final String GREETING_RESPONSE = "Hello World!";
 
     static CountDownLatch slowRequestInProgress = null;
-    static CountDownLatch slowRequestExecutorCompleted = null;
-
-    private static final int EXECUTOR_COMPLETION_WAIT_TIME_MILLIS =
-            Integer.getInteger("io.helidon.test.metrics.executorCompletionWaitTimeMillis", 500);
 
     static void initSlowRequest() {
         slowRequestInProgress = new CountDownLatch(1);
-        slowRequestExecutorCompleted = new CountDownLatch(1);
     }
 
     static void awaitSlowRequestStarted() throws InterruptedException {
         slowRequestInProgress.await();
-    }
-
-    static void awaitSlowRequestExecutorCompleted() throws InterruptedException {
-        slowRequestExecutorCompleted.await();
     }
 
     private final ExecutorService executorService;
@@ -69,23 +64,16 @@ class GreetService implements Service {
     }
 
     private void greetSlow(ServerRequest request, ServerResponse response) {
-        long executorWaitTimeMillis = SLOW_DELAY_SECS * 1000 + EXECUTOR_COMPLETION_WAIT_TIME_MILLIS;
-        try {
-            executorService.submit(() -> {
-                if (slowRequestInProgress != null) {
-                    slowRequestInProgress.countDown();
-                }
-                try {
-                    TimeUnit.SECONDS.sleep(SLOW_DELAY_SECS);
-                } catch (InterruptedException e) {
-                    //absorb silently
-                }
-                response.send(GREETING_RESPONSE);
-
-            }).get(executorWaitTimeMillis, TimeUnit.MILLISECONDS);
-            slowRequestExecutorCompleted.countDown();
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException(e);
-        }
+        executorService.submit(() -> {
+            if (slowRequestInProgress != null) {
+                slowRequestInProgress.countDown();
+            }
+            try {
+                TimeUnit.SECONDS.sleep(SLOW_DELAY_SECS);
+            } catch (InterruptedException e) {
+                //absorb silently
+            }
+            response.send(GREETING_RESPONSE);
+        });
     }
 }
