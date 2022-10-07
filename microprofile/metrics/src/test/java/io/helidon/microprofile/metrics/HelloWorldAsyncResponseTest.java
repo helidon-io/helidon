@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
@@ -140,10 +139,9 @@ public class HelloWorldAsyncResponseTest {
                         .request(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
 
-        // Make sure server has a chance to update the metrics, which happens just after it sends the response.
-        TimeUnit.MILLISECONDS.sleep(500L);
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
-        assertThat("Synthetic SimpleTimer count", syntheticSimpleTimer.getCount(), is(3L));
+        // Give the server a chance to update the metrics, which happens just after it sends each response.
+        assertThatWithRetry("Synthetic SimpleTimer count", syntheticSimpleTimer::getCount, is(3L));
     }
 
     SimpleTimer getSyntheticSimpleTimer() {
@@ -158,6 +156,7 @@ public class HelloWorldAsyncResponseTest {
 
         SortedMap<MetricID, SimpleTimer> simpleTimers = syntheticSimpleTimerRegistry.getSimpleTimers();
         SimpleTimer syntheticSimpleTimer = simpleTimers.get(metricID);
+        // We should not need to retry here. Annotation processing creates the synthetic simple timers long before tests run.
         assertThat("Synthetic simple timer "
                         + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME,
                 syntheticSimpleTimer, is(notNullValue()));
@@ -193,16 +192,13 @@ public class HelloWorldAsyncResponseTest {
             // The response might arrive here before the server-side code which updates the inflight metric has run. So wait.
             HelloWorldResource.awaitResponseSent();
 
-            // Make sure server has a chance to update the metrics, which happens just after it sends the response.
-            TimeUnit.MILLISECONDS.sleep(500L);
-
-            long afterRequest = inflightRequestsCount();
-
             assertThat("Slow response", response, containsString(SLOW_RESPONSE));
             assertThat("Change in inflight from before (" + beforeRequest + ") to during (" + duringRequest
                             + ") the slow request", duringRequest - beforeRequest, is(1L));
-            assertThat("Change in inflight from before (" + beforeRequest + ") to after (" + afterRequest
-                            + ") the slow request", afterRequest - beforeRequest, is(0L));
+            // The update to the in-flight count occurs after the response completes, so retry a bit until the value returns to 0.
+            assertThatWithRetry("Change in inflight from before (" + beforeRequest + ") to after the slow request",
+                                () -> inflightRequestsCount() - beforeRequest,
+                                is(0L));
         }
     }
 
