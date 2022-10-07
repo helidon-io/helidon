@@ -157,7 +157,7 @@ public class TestServer {
 
         // Because ThreadPoolExecutor methods are documented as reporting approximations of task counts, etc., we should
         // not depend on the values changing in a reasonable time period...or at all. So this test simply makes sure that
-        // an expected metrics is present.
+        // an expected metric is present.
         String jsonKeyForCompleteTaskCountInThreadPool =
                 "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
 
