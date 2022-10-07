@@ -24,6 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.Service;
@@ -41,6 +42,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -148,6 +150,34 @@ public class TestServer {
                         .values().stream()
                         .findAny();
         assertThat("In-flight concurrent gauge metric exists", inflightRequests.isPresent(), is(isKPIEnabled));
+    }
+
+    @Test
+    void checkMetricsForExecutorService() throws InterruptedException {
+
+        // Because ThreadPoolExecutor methods are documented as reporting approximations of task counts, etc., we should
+        // not depend on the values changing in a reasonable time period...or at all. So this test simply makes sure that
+        // an expected metrics is present.
+        String jsonKeyForCompleteTaskCountInThreadPool =
+                "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
+
+        WebClientRequestBuilder metricsRequestBuilder = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaTypes.APPLICATION_JSON)
+                .path("metrics/vendor");
+
+        WebClientResponse response = metricsRequestBuilder
+                .submit()
+                .await(CLIENT_TIMEOUT);
+
+        assertThat("Normal metrics/vendor URL HTTP response", response.status().code(), is(200));
+
+        JsonObject metrics = response.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
+
+        assertThat("JSON metrics results before accessing slow endpoint",
+                   metrics,
+                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
     }
 
     @ParameterizedTest
