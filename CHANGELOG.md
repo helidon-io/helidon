@@ -113,4 +113,5 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
 
+[4.0.0-ALPHA2]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA1...4.0.0-ALPHA2
 [4.0.0-ALPHA1]: https://github.com/oracle/helidon/compare/main...4.0.0-ALPHA1
