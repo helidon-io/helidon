@@ -16,6 +16,8 @@
 
 package io.helidon.nima.tests.integration.server.accesslog;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,8 +88,14 @@ class AccessLogTest {
 
         assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
 
-        List<String> lines = Files.readAllLines(ACCESS_LOG);
-        assertThat(lines, contains("127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
-                                   "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"));
+        try (FileOutputStream fos = new FileOutputStream(ACCESS_LOG.toString(), true)) {
+            fos.getFD().sync();     // force buffer sync
+            List<String> lines = Files.readAllLines(ACCESS_LOG);
+            System.out.println("=== BEGIN access.log ===");
+            lines.forEach(System.out::println);
+            System.out.println("=== END access.log ===");
+            assertThat(lines, contains("127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
+                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"));
+        }
     }
 }

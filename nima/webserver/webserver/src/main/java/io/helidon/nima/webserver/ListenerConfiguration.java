@@ -153,7 +153,7 @@ public final class ListenerConfiguration {
         private int backlog = 1024;
         private Tls tls;
         private SocketOptions connectionOptions;
-        private int writeQueueLength = 32;
+        private int writeQueueLength = 0;
         private long maxPayloadSize = -1;
 
         private Builder(String socketName) {
@@ -257,7 +257,7 @@ public final class ListenerConfiguration {
         /**
          * Number of buffers queued for write operations.
          *
-         * @param writeQueueLength maximal number of queued writes, defaults to 32
+         * @param writeQueueLength maximal number of queued writes, defaults to 0
          * @return updated builder
          */
         public Builder writeQueueLength(int writeQueueLength) {
