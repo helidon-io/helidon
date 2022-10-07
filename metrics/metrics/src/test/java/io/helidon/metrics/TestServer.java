@@ -224,7 +224,7 @@ public class TestServer {
 
         assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
 
-        GreetService.awaitSlowRequestStarted();
+        GreetService.awaitSlowRequestExecutorCompleted();
 
         WebClientResponse secondMetricsResponse = metricsRequestBuilder
                 .submit()
