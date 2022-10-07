@@ -123,9 +123,9 @@ public class HelloWorldAsyncResponseTest {
         long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
         assertThat("Change in elapsed time for explicit SimpleTimer", explicitDiffNanos, is(greaterThan(minDuration.toNanos())));
 
-        long syntheticDiffNanos = simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos();
-        assertThat("Change in synthetic SimpleTimer elapsed time", syntheticDiffNanos,
-                is(greaterThan(minDuration.toNanos())));
+        assertThatWithRetry("Change in synthetic SimpleTimer elapsed time",
+                            () -> simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos(),
+                            is(greaterThan(minDuration.toNanos())));
 
         assertThat("Change in timer count", timer.getCount() - slowMessageTimerCountBefore, is(1L));
         assertThat("Timer mean rate", timer.getMeanRate(), is(greaterThan(0.0)));
