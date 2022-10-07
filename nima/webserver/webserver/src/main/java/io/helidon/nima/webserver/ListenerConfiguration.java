@@ -153,7 +153,7 @@ public final class ListenerConfiguration {
         private int backlog = 1024;
         private Tls tls;
         private SocketOptions connectionOptions;
-        private int writeQueueLength = 32;
+        private int writeQueueLength = 0;
         private long maxPayloadSize = -1;
 
         private Builder(String socketName) {
