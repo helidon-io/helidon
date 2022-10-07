@@ -85,11 +85,11 @@ Helidon provides such an implementation for:
 [source,java]
 .Configuring OpenTracing `Tracer`
 ----
-ServerConfiguration.builder()
-                   .tracer(TracerBuilder.create("my-application")                    // <1>
-                                 .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
-                                 .build())
-                   .build()
+WebServer.builder()
+         .tracer(TracerBuilder.create("my-application")                    // <1>
+                       .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
+                       .build())
+         .build()
 ----
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
