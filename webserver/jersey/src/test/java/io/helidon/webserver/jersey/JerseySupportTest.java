@@ -43,8 +43,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * The JerseySupportTest.
@@ -224,7 +222,7 @@ public class JerseySupportTest {
             // in this case the test is a no-op.
             return;
         }
-        assertNotNull(response);
+        assertThat(response, notNullValue());
         doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
@@ -309,8 +307,9 @@ public class JerseySupportTest {
         Response response = webTarget.path("jersey/first/streamingOutput")
                 .request()
                 .get();
-        assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
-                "Unexpected error: " + response.getStatus());
+
+        assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
+
         try (InputStream is = response.readEntity(InputStream.class)) {
             byte[] buffer = new byte[32];
             int n = is.read(buffer);        // should read only first chunk
@@ -407,12 +406,9 @@ public class JerseySupportTest {
     }
 
     private void doAssert(Response response, String expected) {
-        try {
-            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
-                    "Unexpected error: " + response.getStatus());
-            assertEquals(expected, response.readEntity(String.class));
-        } finally {
-            response.close();
+        try (response) {
+            assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
+            assertThat(response.readEntity(String.class), is(expected));
         }
     }
 
@@ -421,14 +417,11 @@ public class JerseySupportTest {
     }
 
     private void doAssert(Response response, String expectedContent, int expectedStatusCode) {
-        try {
-            assertEquals(expectedStatusCode, response.getStatus(),
-                    "Unexpected error: " + response.getStatus());
+        try (response) {
+            assertThat(response.getStatus(), is(expectedStatusCode));
             if (expectedContent != null) {
-                assertEquals(expectedContent, response.readEntity(String.class));
+                assertThat(response.readEntity(String.class), is(expectedContent));
             }
-        } finally {
-            response.close();
         }
     }
 }
