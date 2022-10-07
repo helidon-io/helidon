@@ -7,11 +7,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.5.4-SNAPSHOT]
+## [2.5.5]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
 
 ### CHANGES
+
+## [2.5.4]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- CORS: Fix CORS annotation handling error in certain cases [5102](https://github.com/helidon-io/helidon/pull/5102)
+- DBClient: Helidon DBClient does not trigger an Exception when no sane DB connection can be obtained [4772](https://github.com/helidon-io/helidon/pull/4772)
+- Examples: Remove module-info files from examples [4893](https://github.com/helidon-io/helidon/pull/4893)
+- JAX-RS: Register a low-priority exception mapper to log internal errors [5059](https://github.com/helidon-io/helidon/pull/5059)
+- Metrics: OpenMetrics formatting issue; add tests [4901](https://github.com/helidon-io/helidon/pull/4901)
+- MicroProfile: Fix identification of parallel startup of CDI [4994](https://github.com/helidon-io/helidon/pull/4994)
+- WebClient: WebClient uses DataPropagationProvider to module-info [4916](https://github.com/helidon-io/helidon/pull/4916)
+- WebServer: Default header size increased to 16K Helidon Server and docs [5018](https://github.com/helidon-io/helidon/pull/5018)
+- WebServer: Watermarked response backpressure [5062](https://github.com/helidon-io/helidon/pull/5062)
+- Dependencies: Update graphql-java to 17.4 [4992](https://github.com/helidon-io/helidon/pull/4992)
+- Dependencies: Upgrade build-tools to 2.3.6 [5099](https://github.com/helidon-io/helidon/pull/5099)
+- Dependencies: Upgrade eclipselink to 2.7.11 [4974](https://github.com/helidon-io/helidon/pull/4974)
+- Dependencies: Upgrade hibernate to 5.6.11.Final [4965](https://github.com/helidon-io/helidon/pull/4965)
+- Dependencies: Upgrade reactive-sreams to 1.0.4 [5044](https://github.com/helidon-io/helidon/pull/5044)
+- Dependencies: Upgrade snakeyaml to 1.32 [4921](https://github.com/helidon-io/helidon/pull/4921)
+- Dependencies: upgrade hibernate validator to 6.2.5 [5037](https://github.com/helidon-io/helidon/pull/5037)
+- Docs: Fix invalid example in se/config/advanced-configuration.adoc (#4775) [4943](https://github.com/helidon-io/helidon/pull/4943)
+- Docs: Sec provider 4810 [5034](https://github.com/helidon-io/helidon/pull/5034)
+- Test: EchoServiceTest timeout [5006](https://github.com/helidon-io/helidon/pull/5006)
+- Test: Fixed race condition in the OCI Metrics integration test between retrieval of metrics from registry and asserting that from expected results [4897](https://github.com/helidon-io/helidon/pull/4897)
+- Test: MultiFromBlockingInputStream RC fix [5061](https://github.com/helidon-io/helidon/pull/5061)
+- Test: Rest Client timeout test exclusion [5077](https://github.com/helidon-io/helidon/pull/5077)
+- Test: ThreadPoolTest [4988](https://github.com/helidon-io/helidon/pull/4988)
+- Test: Use Hamcrest assertions instead of JUnit (#1749) [5087](https://github.com/helidon-io/helidon/pull/5087) and others
 
 ## [2.5.3]
 
@@ -1971,7 +2002,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.5.4-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.5.3...helidon-2.x
+[2.5.5]: https://github.com/oracle/helidon/compare/2.5.4...2.5.5
+[2.5.4]: https://github.com/oracle/helidon/compare/2.5.3...2.5.4
 [2.5.3]: https://github.com/oracle/helidon/compare/2.5.2...2.5.3
 [2.5.2]: https://github.com/oracle/helidon/compare/2.5.1...2.5.2
 [2.5.1]: https://github.com/oracle/helidon/compare/2.5.0...2.5.1
