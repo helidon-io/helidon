@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
@@ -68,6 +69,7 @@ class GreetService implements Service {
     }
 
     private void greetSlow(ServerRequest request, ServerResponse response) {
+        long executorWaitTimeMillis = SLOW_DELAY_SECS * 1000 + EXECUTOR_COMPLETION_WAIT_TIME_MILLIS;
         try {
             executorService.submit(() -> {
                 if (slowRequestInProgress != null) {
@@ -80,9 +82,9 @@ class GreetService implements Service {
                 }
                 response.send(GREETING_RESPONSE);
 
-            }).get();
+            }).get(executorWaitTimeMillis, TimeUnit.MILLISECONDS);
             slowRequestExecutorCompleted.countDown();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
     }
