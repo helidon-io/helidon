@@ -42,7 +42,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * The JerseySupportTest.
@@ -222,7 +221,7 @@ public class JerseySupportTest {
             // in this case the test is a no-op.
             return;
         }
-        assertNotNull(response);
+        assertThat(response, notNullValue());
         doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
