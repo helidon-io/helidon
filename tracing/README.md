@@ -59,7 +59,7 @@ pom.xml:
 
 code using config:
 ```java
-return ServerConfiguration.builder()
+return WebServer.builder()
                 .config(config.get("webserver"))
                 .tracer(TracerBuilder.create(config.get("tracing"))
                                         .buildAndRegister())
