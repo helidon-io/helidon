@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,11 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MainTest {
 
@@ -58,7 +60,7 @@ public class MainTest {
                 .request()
                 .thenAccept(response -> {
                     response.close();
-                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                    assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
                 })
                 .await();
 
@@ -67,7 +69,7 @@ public class MainTest {
                 .request()
                 .thenAccept(response -> {
                     response.close();
-                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                    assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
                 })
                 .await();
 
@@ -76,7 +78,7 @@ public class MainTest {
                 .request()
                 .thenAccept(response -> {
                     response.close();
-                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                    assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
                 })
                 .await();
     }
