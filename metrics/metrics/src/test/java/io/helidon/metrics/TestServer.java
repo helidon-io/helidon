@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.reactive.faulttolerance.Retry;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
@@ -50,10 +49,7 @@ import static org.hamcrest.Matchers.not;
 public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
-    private static final int RETRY_COUNT = Integer.getInteger("io.helidon.test.retryCount", 10);
-    private static final Duration RETRY_DELAY = Duration.ofMillis(Integer.getInteger("io.helidon.test.retryDelayMs", 500));
     private static final Duration CLIENT_TIMEOUT = Duration.ofSeconds(Integer.getInteger("io.helidon.test.clientTimeoutSec", 10));
-    private static final Duration RETRY_TIMEOUT = Duration.ofSeconds(Integer.getInteger("io.helidon.test.retryTimeoutSec", 60));
     private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate", "no-transform"};
 
     private static WebServer webServer;
@@ -61,7 +57,6 @@ public class TestServer {
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
     private static MetricsSupport metricsSupport;
-    private static Retry.Builder retry;
     private static WebClient.Builder webClientBuilder;
 
     @BeforeAll
@@ -71,12 +66,6 @@ public class TestServer {
         webClientBuilder = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/")
                 .addMediaSupport(JsonpSupport.create());
-        retry = Retry.builder()
-                .overallTimeout(RETRY_TIMEOUT)
-                .retryPolicy(Retry.JitterRetryPolicy.builder()
-                        .calls(RETRY_COUNT)
-                        .delay(RETRY_DELAY)
-                        .build());
     }
 
     @AfterAll
@@ -164,8 +153,11 @@ public class TestServer {
     }
 
     @Test
-    void checkMetricsForExecutorService() {
+    void checkMetricsForExecutorService() throws InterruptedException {
 
+        // Because ThreadPoolExecutor methods are documented as reporting approximations of task counts, etc., we should
+        // not depend on the values changing in a reasonable time period...or at all. So this test simply makes sure that
+        // an expected metric is present.
         String jsonKeyForCompleteTaskCountInThreadPool =
                 "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
 
@@ -186,31 +178,6 @@ public class TestServer {
         assertThat("JSON metrics results before accessing slow endpoint",
                    metrics,
                    hasKey(jsonKeyForCompleteTaskCountInThreadPool));
-
-        int completedTaskCount = metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
-        assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
-
-        WebClientResponse slowGreetResponse = webClientBuilder
-                .build()
-                .get()
-                .accept(MediaTypes.TEXT_PLAIN)
-                .path("greet/slow")
-                .submit()
-                .await(CLIENT_TIMEOUT);
-
-        assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
-
-        retry.build()
-                .invoke(() -> metricsRequestBuilder
-                        .submit()
-                        .peek(res -> assertThat("Second access to metrics", res.status().code(), is(200)))
-                        .flatMapSingle(res -> res.content().as(JsonObject.class))
-                        .peek(json -> assertThat("JSON metrics results after accessing slow endpoint",
-                                json, hasKey(jsonKeyForCompleteTaskCountInThreadPool)))
-                        .map(json -> json.getInt(jsonKeyForCompleteTaskCountInThreadPool))
-                        .forSingle(secCompletedTaskCnt ->
-                                assertThat("Completed task count after accessing slow endpoint", secCompletedTaskCnt, is(1))))
-                .await(CLIENT_TIMEOUT);
     }
 
     @ParameterizedTest
@@ -242,5 +209,4 @@ public class TestServer {
                     response.headers().values(Http.Header.CACHE_CONTROL),
                     not(containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS)));
     }
-
 }

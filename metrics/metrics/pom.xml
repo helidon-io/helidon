@@ -103,11 +103,6 @@
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.fault-tolerance</groupId>
-            <artifactId>helidon-reactive-fault-tolerance</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
