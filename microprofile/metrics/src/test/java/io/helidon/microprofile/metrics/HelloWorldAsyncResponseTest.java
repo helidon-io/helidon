@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.MatcherWithRetry.assertThatWithRetry;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_SIMPLE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_TIMER;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_RESPONSE;
@@ -76,7 +77,7 @@ public class HelloWorldAsyncResponseTest {
     private MetricRegistry vendorRegistry;
 
     @Test
-    public void test() throws NoSuchMethodException {
+    public void test() throws NoSuchMethodException, InterruptedException {
         MetricID metricID = MetricsCdiExtension.syntheticSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
                 AsyncResponse.class, ServerResponse.class));
 
@@ -122,16 +123,16 @@ public class HelloWorldAsyncResponseTest {
         long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
         assertThat("Change in elapsed time for explicit SimpleTimer", explicitDiffNanos, is(greaterThan(minDuration.toNanos())));
 
-        long syntheticDiffNanos = simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos();
-        assertThat("Change in synthetic SimpleTimer elapsed time", syntheticDiffNanos,
-                is(greaterThan(minDuration.toNanos())));
+        assertThatWithRetry("Change in synthetic SimpleTimer elapsed time",
+                            () -> simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos(),
+                            is(greaterThan(minDuration.toNanos())));
 
         assertThat("Change in timer count", timer.getCount() - slowMessageTimerCountBefore, is(1L));
         assertThat("Timer mean rate", timer.getMeanRate(), is(greaterThan(0.0)));
     }
 
     @Test
-    public void testAsyncWithArg() {
+    public void testAsyncWithArg() throws InterruptedException {
         LongStream.range(0, 3).forEach(
                 i -> webTarget
                         .path("helloworld/slowWithArg/Johan")
@@ -139,7 +140,8 @@ public class HelloWorldAsyncResponseTest {
                         .get(String.class));
 
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
-        assertThat("Synthetic SimpleTimer count", syntheticSimpleTimer.getCount(), is(3L));
+        // Give the server a chance to update the metrics, which happens just after it sends each response.
+        assertThatWithRetry("Synthetic SimpleTimer count", syntheticSimpleTimer::getCount, is(3L));
     }
 
     SimpleTimer getSyntheticSimpleTimer() {
@@ -153,6 +155,7 @@ public class HelloWorldAsyncResponseTest {
 
         SortedMap<MetricID, SimpleTimer> simpleTimers = syntheticSimpleTimerRegistry.getSimpleTimers();
         SimpleTimer syntheticSimpleTimer = simpleTimers.get(metricID);
+        // We should not need to retry here. Annotation processing creates the synthetic simple timers long before tests run.
         assertThat("Synthetic simple timer "
                         + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME,
                 syntheticSimpleTimer, is(notNullValue()));
@@ -192,8 +195,10 @@ public class HelloWorldAsyncResponseTest {
             assertThat("Slow response", response, containsString(SLOW_RESPONSE));
             assertThat("Change in inflight from before (" + beforeRequest + ") to during (" + duringRequest
                             + ") the slow request", duringRequest - beforeRequest, is(1L));
-            assertThat("Change in inflight from before (" + beforeRequest + ") to after (" + afterRequest
-                            + ") the slow request", afterRequest - beforeRequest, is(0L));
+            // The update to the in-flight count occurs after the response completes, so retry a bit until the value returns to 0.
+            assertThatWithRetry("Change in inflight from before (" + beforeRequest + ") to after the slow request",
+                                () -> inflightRequestsCount() - beforeRequest,
+                                is(0L));
         }
     }
 
