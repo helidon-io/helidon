@@ -65,6 +65,7 @@ public interface AnnotationAndValue {
     /**
      * Helper method to determine if the value is present (i.e., non-null and non-blank).
      *
+     * @param val the value to check
      * @return true if the value provided is non-null and non-blank.
      */
     static boolean hasValue(String val) {
