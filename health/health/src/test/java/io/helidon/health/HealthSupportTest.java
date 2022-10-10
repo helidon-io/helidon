@@ -31,8 +31,6 @@ import io.helidon.common.http.Http;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 
-import io.helidon.faulttolerance.FaultTolerance;
-
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -220,13 +218,6 @@ class HealthSupportTest {
         final JsonObject json = response.json();
         assertThat(json.getJsonArray("checks"), notNullValue());
         assertThat(json.getJsonArray("checks"), hasSize(brokenChecks.size()));
-    }
-
-    @Test
-    void checkLazyFaultToleranceInitialization() {
-        HealthSupport support = HealthSupport.create();
-        assertThat(support, notNullValue());
-        assertThat(FaultTolerance.initialized(), is(false));
     }
 
     private static final class GoodHealthCheck implements HealthCheck {
