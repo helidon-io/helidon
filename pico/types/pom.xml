@@ -28,7 +28,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-types</artifactId>
-    <name>Helidon Pico (runtime) Types</name>
+    <name>Helidon Pico Types</name>
+    <description>Provides the runtime types (a subset of SPI) useful for Pico</description>
 
     <dependencies>
         <dependency>
