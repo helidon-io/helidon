@@ -44,6 +44,7 @@ module io.helidon.microprofile.faulttolerance {
     requires weld.spi;
 
     exports io.helidon.microprofile.faulttolerance;
+    exports io.helidon.microprofile.faulttolerance.retrypolicy;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.faulttolerance to weld.core.impl, io.helidon.microprofile.cdi;

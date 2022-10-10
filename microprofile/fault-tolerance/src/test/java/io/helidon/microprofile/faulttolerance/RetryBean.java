@@ -94,6 +94,12 @@ class RetryBean {
                     "success " + System.currentTimeMillis());
     }
 
+    @Retry
+    String retryDelayingPolicy(){
+        invocations.incrementAndGet();
+        return "fallback";
+    }
+
     @Asynchronous
     @Retry(maxRetries = 2)
     CompletionStage<String> retryWithException() {

@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.is;
  */
 @AddBean(RetryBean.class)
 @AddBean(SyntheticRetryBean.class)
-@Disabled("3.0.0-JAKARTA")
+//@Disabled("3.0.0-JAKARTA")
 public class RetryTest extends FaultToleranceTest {
 
     static Stream<Arguments> createBeans() {
@@ -62,6 +62,16 @@ public class RetryTest extends FaultToleranceTest {
         assertThat(bean.getInvocations(), is(0));
         String value = bean.retryWithFallback();
         assertThat(bean.getInvocations(), is(2));
+        assertThat(value, is("fallback"));
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("createBeans")
+    public void testRetryPolicy(RetryBean bean, String unused) {
+        bean.reset();
+        //assertThat(bean.getInvocations(), is(1));
+        String value = bean.retryDelayingPolicy();
+        //assertThat(bean.getInvocations(), is(1));
         assertThat(value, is("fallback"));
     }
 

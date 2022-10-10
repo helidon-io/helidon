@@ -505,7 +505,7 @@ public interface Retry extends FtHandler {
             this.calls = builder.calls;
             this.delayMillis = builder.delay.toMillis();
             long jitter = builder.jitter.toMillis();
-            int jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
+            int jitterMillis = (jitter > Long.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
             if (jitterMillis == 0) {
                 randomJitter = () -> 0;
             } else {
@@ -639,6 +639,198 @@ public interface Retry extends FtHandler {
             }
         }
     }
+
+
+
+
+    class FibonacciRetryPolicy implements RetryPolicy {
+        private final long initialDelayInMillis;
+        private final long maxDelayInMillis;
+        private final Supplier<Long> randomJitter;
+
+        private long lastDelayA;
+        private long lastDelayB;
+
+        private FibonacciRetryPolicy(Builder builder) {
+            initialDelayInMillis = builder.initialDelayInMillis;
+            maxDelayInMillis = builder.maxDelayInMillis;
+            long jitter = builder.randomJitter;
+            long jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
+            if (jitterMillis == 0L) {
+                randomJitter = () -> 0L;
+            } else {
+                Random random = new Random();
+                // need a number [-jitterMillis,+jitterMillis]
+                randomJitter = () -> random.nextLong(jitterMillis * 2) - jitterMillis;
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+
+        @Override
+        public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
+            if (lastDelayA == 0) {
+                lastDelayA = initialDelayInMillis;
+                return Optional.of(lastDelayA + randomJitter.get());
+            }
+
+            if (lastDelayB == 0) {
+                lastDelayB = initialDelayInMillis << 1; // 2 * initialDelayInMillis
+                return Optional.of(lastDelayB + randomJitter.get());
+            }
+
+            long delay = lastDelayA + lastDelayB;
+            lastDelayA = lastDelayB;
+            lastDelayB = delay;
+
+            return Optional.of(delay+randomJitter.get());
+        }
+
+        /**
+         * Fluent API builder for {@link io.helidon.faulttolerance.Retry.DelayingRetryPolicy}.
+         */
+        @Configured(provides = RetryPolicy.class, description = "A retry policy that prolongs the delays between retries by "
+                + "a defined factor.")
+        public static class Builder implements io.helidon.common.Builder<Builder, FibonacciRetryPolicy> {
+
+            private long initialDelayInMillis;
+            private long maxDelayInMillis;
+            private long randomJitter;
+
+            @Override
+            public FibonacciRetryPolicy build() {
+                return new FibonacciRetryPolicy(this);
+            }
+
+
+            @ConfiguredOption("3")
+            public Builder initialDelayInMillis(long initialDelayInMillis) {
+                this.initialDelayInMillis = initialDelayInMillis;
+                return this;
+            }
+
+            @ConfiguredOption("4")
+            public Builder maxDelayInMillis(long maxDelayInMillis) {
+                this.maxDelayInMillis = maxDelayInMillis;
+                return this;
+            }
+
+
+            @ConfiguredOption("5")
+            public Builder jitter(long jitter) {
+                this.randomJitter = jitter;
+                return this;
+            }
+
+            public Builder config(Config config) {
+                config.get("initialDelayInMillis").asLong().ifPresent(this::initialDelayInMillis);
+                config.get("maxDelayInMillis").asLong().ifPresent(this::maxDelayInMillis);
+                config.get("random-jitter").asLong().ifPresent(this::jitter);
+                return this;
+            }
+        }
+    }
+
+
+    class ExponentialRetryPolicy implements RetryPolicy {
+        private final long initialDelayInMillis;
+        private final long maxDelayInMillis;
+
+        private final int factor;
+        private final Supplier<Long> randomJitter;
+
+        private long accumulateDelay;
+
+
+        private ExponentialRetryPolicy(Builder builder) {
+            initialDelayInMillis = builder.initialDelayInMillis;
+            maxDelayInMillis = builder.maxDelayInMillis;
+            factor = builder.factor;
+
+            long jitter = builder.randomJitter;
+            long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : (long) jitter;
+            if (jitterMillis == 0L) {
+                randomJitter = () -> 0L;
+            } else {
+                Random random = new Random();
+                // need a number [-jitterMillis,+jitterMillis]
+                randomJitter = () -> random.nextLong(jitterMillis * 2) - jitterMillis;
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+
+        @Override
+        public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
+            if (lastDelay == 0) {
+                lastDelay = initialDelayInMillis;
+                return Optional.of(lastDelay + randomJitter.get());
+            }
+
+            accumulateDelay = accumulateDelay * factor;
+
+            return Optional.of(lastDelay + randomJitter.get());
+        }
+
+
+        @Configured(provides = RetryPolicy.class, description = "A retry policy that prolongs the delays between retries by "
+                + "a defined factor.")
+        public static class Builder implements io.helidon.common.Builder<Builder, ExponentialRetryPolicy> {
+
+            private long initialDelayInMillis;
+            private long maxDelayInMillis;
+
+            private int factor;
+
+            private long randomJitter;
+
+            @Override
+            public ExponentialRetryPolicy build() {
+                return new ExponentialRetryPolicy(this);
+            }
+
+
+            @ConfiguredOption("3")
+            public Builder initialDelayInMillis(long initialDelayInMillis) {
+                this.initialDelayInMillis = initialDelayInMillis;
+                return this;
+            }
+
+            @ConfiguredOption("3")
+            public Builder factor(int factor) {
+                this.factor = factor;
+                return this;
+            }
+
+            @ConfiguredOption("4")
+            public Builder maxDelayInMillis(long maxDelayInMillis) {
+                this.maxDelayInMillis = maxDelayInMillis;
+                return this;
+            }
+
+
+            @ConfiguredOption("5")
+            public Builder jitter(long jitter) {
+                this.randomJitter = jitter;
+                return this;
+            }
+
+            public Builder config(Config config) {
+                config.get("initialDelayInMillis").asLong().ifPresent(this::initialDelayInMillis);
+                config.get("maxDelayInMillis").asLong().ifPresent(this::maxDelayInMillis);
+                config.get("factor").asInt().ifPresent(this::factor);
+                config.get("random-jitter").asLong().ifPresent(this::jitter);
+                return this;
+            }
+        }
+    }
+
 
     /**
      * Number of times a method called has been retried. This is a monotonically
