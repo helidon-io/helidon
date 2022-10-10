@@ -32,9 +32,9 @@ public interface AnnotationAndValue {
     TypeName getTypeName();
 
     /**
-     * The value.
+     * The value property.
      *
-     * @return The string value of (all attributes of) the annotation (expressed as toString()), or null if no value is present
+     * @return The string value of value property, or null if no value is present
      */
     String getValue();
 
@@ -54,9 +54,9 @@ public interface AnnotationAndValue {
     Map<String, String> getValues();
 
     /**
-     * Determines whether the value is set to a non-null and non-blank value.
+     * Determines whether the {@link #getValue()} is a non-null and non-blank value.
      *
-     * @return true if the value provided is non-null and non-blank.
+     * @return true if the value provided is non-null and non-blank (i.e., {@link String#isBlank()})
      */
     default boolean hasValue() {
         return hasValue(getValue());
