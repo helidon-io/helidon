@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.health;
+package io.helidon.reactive.health;
 
-import io.helidon.faulttolerance.FaultTolerance;
+import io.helidon.reactive.faulttolerance.FaultTolerance;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
