@@ -18,8 +18,5 @@
  * Pico API module.
  */
 module io.helidon.pico.api {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-
     exports io.helidon.pico.api;
 }

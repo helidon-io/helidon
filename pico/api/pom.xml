@@ -30,17 +30,4 @@
     <artifactId>helidon-pico-api</artifactId>
     <name>Helidon Pico API</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
 </project>

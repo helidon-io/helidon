@@ -15,6 +15,11 @@
  */
 
 /**
- * Types that are Pico API / consumer facing. These types are generally only needed at compile time.
+ * Types that are Pico API/consumer facing. The Pico API provide types that are generally useful at compile time
+ * to assign special meaning to the type. In this way it also helps with readability and intentions of the code itself.
+ * <p>
+ * <li> {@link io.helidon.pico.api.Contract} - signifies that the type can be used for lookup in the service registry.
+ * <li> {@link io.helidon.pico.api.ExternalContracts} - same as Contract, but applied to the implementation class instead.
+ * <li> {@link io.helidon.pico.api.RunLevel} - ascribes meaning for when the service should start.
  */
 package io.helidon.pico.api;
