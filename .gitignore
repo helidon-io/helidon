@@ -23,7 +23,6 @@
 hs_err_pid*
 # Java Flight Recorder
 *.jfr
-javac.*.args
 
 # Maven
 target/
