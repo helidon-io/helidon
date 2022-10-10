@@ -16,6 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -37,7 +38,6 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
@@ -86,21 +86,23 @@ public class HelloWorldAsyncResponseWithRestRequestTest {
         // Retrieve metrics again and make sure we see an additional count and added time. Don't bother checking the min and
         // max because we'd have to wait up to a minute for those values to change.
 
-        JsonObject nextRestRequest = getRESTRequestJSON();
-
+        AtomicReference<JsonObject> nextRestRequest = new AtomicReference<>();
         try {
             // With async endpoints, metrics updates can occur after the server sends the response.
-            // Retry as needed for a little while for the count to change.
+            // Retry as needed (including fetching the metrics again) for a little while for the count to change.
 
             assertThatWithRetry("getAsync count value after invocation",
-                                () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest,
-                                                                                             "count",
-                                                                                             false))
-                                    .longValue(),
+                                () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(
+                                        // Set the reference using fresh metrics and get that newly-set JSON object, then
+                                        // extract the 'count' field cast as a number.
+                                                nextRestRequest.updateAndGet(old -> getRESTRequestJSON()),
+                                                "count",
+                                                false))
+                                        .longValue(),
                                 is(1L));
 
-
-            getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest,
+            // Reuse (no need to update the atomic reference again) the freshly-fetched metrics JSON.
+            getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest.get(),
                                                                                       "elapsedTime",
                                                                                       false));
             assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
