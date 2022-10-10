@@ -48,7 +48,7 @@
         <module>api</module>
 <!--        <module>spi</module>-->
         <module>types</module>
-<!--        <module>builder</module>-->
+        <module>builder</module>
 <!--        <module>config</module>-->
 <!--        <module>pico</module>-->
 <!--        <module>tck</module>-->
