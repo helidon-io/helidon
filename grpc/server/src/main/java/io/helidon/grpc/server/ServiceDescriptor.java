@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,6 +129,22 @@ public class ServiceDescriptor {
      */
     public Descriptors.FileDescriptor proto() {
         return proto;
+    }
+
+    /**
+     * Returns the service name prefixed with package directive if one exists.
+     */
+    String getFullName() {
+        return getPackagedName(proto, name);
+    }
+
+    static String getPackagedName(Descriptors.FileDescriptor proto, String name) {
+        String pkg = proto == null ? "" : proto.getPackage();
+        String serviceName = name;
+        if (!pkg.isEmpty() && !serviceName.startsWith(pkg + ".")) {
+            serviceName = pkg + "." + serviceName;
+        }
+        return serviceName;
     }
 
     BindableService bindableService(PriorityBag<ServerInterceptor> interceptors) {
@@ -641,7 +657,9 @@ public class ServiceDescriptor {
             Map<String, MethodDescriptor> methods = new LinkedHashMap<>();
 
             for (Map.Entry<String, MethodDescriptor.Builder> entry : methodBuilders.entrySet()) {
-                methods.put(entry.getKey(), entry.getValue().build());
+                String methodName = entry.getKey();
+                String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(getFullName(), methodName);
+                methods.put(methodName, entry.getValue().fullname(fullMethodName).build());
             }
 
             return new ServiceDescriptor(name, methods, interceptors, context, healthCheck, proto);
@@ -661,7 +679,7 @@ public class ServiceDescriptor {
                 MethodDescriptor.Configurer<ReqT, ResT> configurer) {
 
             io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
-                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(this.name, methodName))
+                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(getFullName(), methodName))
                     .setType(methodType)
                     .setSampledToLocalTracing(true);
 
@@ -671,7 +689,8 @@ public class ServiceDescriptor {
             MethodDescriptor.Builder<ReqT, ResT> builder = MethodDescriptor.builder(this.name, methodName, grpcDesc, callHandler)
                     .defaultMarshallerSupplier(marshallerSupplier)
                     .requestType(requestType)
-                    .responseType(responseType);
+                    .responseType(responseType)
+                    .fullname(getFullName());
 
             if (configurer != null) {
                 configurer.configure(builder);
@@ -702,7 +721,7 @@ public class ServiceDescriptor {
 
             // make sure that any nested protobuf class names are converted
             // into a proper Java binary class name
-            String className = pkg + "." + outerClass + type.getFullName().replace('.', '$');
+            String className = pkg + "." + outerClass + type.getName();
 
             // the assumption here is that the protobuf generated classes can always
             // be loaded by the same class loader that loaded the service class,
@@ -717,6 +736,13 @@ public class ServiceDescriptor {
         private String getPackageName() {
             String pkg = proto.getOptions().getJavaPackage();
             return "".equals(pkg) ? proto.getPackage() : pkg;
+        }
+
+        /**
+         * Returns the service name prefixed with package directive if one exists.
+         */
+        private String getFullName() {
+            return getPackagedName(proto, name);
         }
 
         private String getOuterClassName() {
