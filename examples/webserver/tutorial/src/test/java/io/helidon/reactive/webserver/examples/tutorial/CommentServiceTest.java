@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,10 @@ import io.helidon.reactive.webserver.testsupport.TestResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 
 /**
@@ -45,17 +48,17 @@ class CommentServiceTest {
     @Test
     void addAndGetComments() throws Exception {
         CommentService service = new CommentService();
-        assertEquals(0, service.getComments("one").size());
-        assertEquals(0, service.getComments("two").size());
+        assertThat(service.getComments("one"), empty());
+        assertThat(service.getComments("two"), empty());
         service.addComment("one", null, "aaa");
-        assertEquals(1, service.getComments("one").size());
-        assertEquals(0, service.getComments("two").size());
+        assertThat(service.getComments("one"), hasSize(1));
+        assertThat(service.getComments("two"), empty());
         service.addComment("one", null, "bbb");
-        assertEquals(2, service.getComments("one").size());
-        assertEquals(0, service.getComments("two").size());
+        assertThat(service.getComments("one"), hasSize(2));
+        assertThat(service.getComments("two"), empty());
         service.addComment("two", null, "bbb");
-        assertEquals(2, service.getComments("one").size());
-        assertEquals(1, service.getComments("two").size());
+        assertThat(service.getComments("one"), hasSize(2));
+        assertThat(service.getComments("two"), hasSize(1));
     }
 
     @Test
@@ -66,30 +69,30 @@ class CommentServiceTest {
         TestResponse response = TestClient.create(routing)
                                         .path("one")
                                         .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
 
         // Add first comment
         response = TestClient.create(routing)
                 .path("one")
                 .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "aaa"));
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
         response = TestClient.create(routing)
                 .path("one")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
         byte[] data = response.asBytes().toCompletableFuture().get();
-        assertEquals("anonymous: aaa\n", new String(data, StandardCharsets.UTF_8));
+        assertThat(new String(data, StandardCharsets.UTF_8), is("anonymous: aaa\n"));
 
         // Add second comment
         response = TestClient.create(routing)
                 .path("one")
                 .post(MediaPublisher.create(HttpMediaType.TEXT_PLAIN, "bbb"));
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
         response = TestClient.create(routing)
                 .path("one")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
         data = response.asBytes().toCompletableFuture().get();
-        assertEquals("anonymous: aaa\nanonymous: bbb\n", new String(data, StandardCharsets.UTF_8));
+        assertThat(new String(data, StandardCharsets.UTF_8), is("anonymous: aaa\nanonymous: bbb\n"));
     }
 }
