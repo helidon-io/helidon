@@ -25,6 +25,8 @@ import java.time.temporal.ChronoUnit;
 @Target({ ElementType.METHOD, ElementType.TYPE })
 public @interface RetryFibonacciBackoff {
 
+    long initialDelay() default 0;
+
     long maxDelay() default 60_000;
 
 }

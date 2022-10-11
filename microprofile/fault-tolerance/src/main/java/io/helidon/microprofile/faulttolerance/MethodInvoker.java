@@ -523,8 +523,8 @@ class MethodInvoker implements FtSupplier<Object> {
             if (introspector.hasRetryExponentialBackoff()){
                 methodState.retry = Retry.builder()
                         .retryPolicy(Retry.ExponentialRetryPolicy.builder()
+                                .initialDelayInMillis(introspector.getRetryExponentialBackoff().initialDelay())
                                 .maxDelayInMillis(introspector.getRetryExponentialBackoff().maxDelay())
-                                .initialDelayInMillis(introspector.getRetry().delay())
                                 .factor(introspector.getRetryExponentialBackoff().factor())
                                 .jitter(introspector.getRetry().jitter())
                                 .build())
@@ -537,8 +537,8 @@ class MethodInvoker implements FtSupplier<Object> {
             } else if (introspector.hasRetryFibonacciBackoff()){
                 methodState.retry = Retry.builder()
                         .retryPolicy(Retry.FibonacciRetryPolicy.builder()
-                                .maxDelayInMillis(introspector.getRetryExponentialBackoff().maxDelay())
-                                .initialDelayInMillis(introspector.getRetry().delay())
+                                .initialDelayInMillis(introspector.getRetryFibonacciBackoff().initialDelay())
+                                .maxDelayInMillis(introspector.getRetryFibonacciBackoff().maxDelay())
                                 .jitter(introspector.getRetry().jitter())
                                 .build())
                         .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),

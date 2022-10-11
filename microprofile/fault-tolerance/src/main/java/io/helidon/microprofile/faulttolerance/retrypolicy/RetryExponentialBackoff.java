@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance.retrypolicy;
 
 import java.lang.annotation.*;
-import java.time.temporal.ChronoUnit;
 
 @Inherited
 @Documented
@@ -27,5 +26,8 @@ public @interface RetryExponentialBackoff {
 
     int factor() default 2;
 
+    long initialDelay() default 0;
+
     long maxDelay() default 60_000;
+
 }

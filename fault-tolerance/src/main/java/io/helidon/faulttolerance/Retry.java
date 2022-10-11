@@ -640,22 +640,19 @@ public interface Retry extends FtHandler {
         }
     }
 
-
-
-
     class FibonacciRetryPolicy implements RetryPolicy {
         private final long initialDelayInMillis;
         private final long maxDelayInMillis;
         private final Supplier<Long> randomJitter;
 
-        private long lastDelayA;
-        private long lastDelayB;
+        private long delayA;
+        private long delayB;
 
         private FibonacciRetryPolicy(Builder builder) {
             initialDelayInMillis = builder.initialDelayInMillis;
             maxDelayInMillis = builder.maxDelayInMillis;
             long jitter = builder.randomJitter;
-            long jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
+            long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : jitter;
             if (jitterMillis == 0L) {
                 randomJitter = () -> 0L;
             } else {
@@ -672,33 +669,33 @@ public interface Retry extends FtHandler {
 
         @Override
         public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
-            if (lastDelayA == 0) {
-                lastDelayA = initialDelayInMillis;
-                return Optional.of(lastDelayA + randomJitter.get());
+
+            if (delayA == 0) {
+                delayA = initialDelayInMillis;
+                return Optional.of(delayA + randomJitter.get());
             }
 
-            if (lastDelayB == 0) {
-                lastDelayB = initialDelayInMillis << 1; // 2 * initialDelayInMillis
-                return Optional.of(lastDelayB + randomJitter.get());
+            if (delayB == 0) {
+                delayB = initialDelayInMillis << 1;
+                return Optional.of(delayB + randomJitter.get());
             }
 
-            long delay = lastDelayA + lastDelayB;
-            lastDelayA = lastDelayB;
-            lastDelayB = delay;
+            long delay = delayA + delayB;
+            delayA = delayB;
+            delayB = delay;
+
+            if (delay >= maxDelayInMillis){
+                return Optional.empty();
+            }
 
             return Optional.of(delay+randomJitter.get());
         }
 
-        /**
-         * Fluent API builder for {@link io.helidon.faulttolerance.Retry.DelayingRetryPolicy}.
-         */
-        @Configured(provides = RetryPolicy.class, description = "A retry policy that prolongs the delays between retries by "
-                + "a defined factor.")
         public static class Builder implements io.helidon.common.Builder<Builder, FibonacciRetryPolicy> {
 
-            private long initialDelayInMillis;
-            private long maxDelayInMillis;
-            private long randomJitter;
+            private long initialDelayInMillis = 0;
+            private long maxDelayInMillis = 60_000L;
+            private long randomJitter = 0;
 
             @Override
             public FibonacciRetryPolicy build() {
@@ -738,7 +735,6 @@ public interface Retry extends FtHandler {
     class ExponentialRetryPolicy implements RetryPolicy {
         private final long initialDelayInMillis;
         private final long maxDelayInMillis;
-
         private final int factor;
         private final Supplier<Long> randomJitter;
 
@@ -768,27 +764,27 @@ public interface Retry extends FtHandler {
 
         @Override
         public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
-            if (lastDelay == 0) {
-                lastDelay = initialDelayInMillis;
-                return Optional.of(lastDelay + randomJitter.get());
+            if (accumulateDelay == 0) {
+                accumulateDelay = initialDelayInMillis;
+                return Optional.of(accumulateDelay + randomJitter.get());
             }
 
             accumulateDelay = accumulateDelay * factor;
 
-            return Optional.of(lastDelay + randomJitter.get());
+            if (accumulateDelay >= maxDelayInMillis){
+                return Optional.empty();
+            }
+
+            return Optional.of(accumulateDelay + randomJitter.get());
         }
 
 
-        @Configured(provides = RetryPolicy.class, description = "A retry policy that prolongs the delays between retries by "
-                + "a defined factor.")
         public static class Builder implements io.helidon.common.Builder<Builder, ExponentialRetryPolicy> {
 
-            private long initialDelayInMillis;
-            private long maxDelayInMillis;
-
-            private int factor;
-
-            private long randomJitter;
+            private long initialDelayInMillis = 0;
+            private long maxDelayInMillis = 60_000L;
+            private int factor = 2;
+            private long randomJitter = 0;
 
             @Override
             public ExponentialRetryPolicy build() {
