@@ -53,6 +53,7 @@ public class ServiceDescriptor {
             Context.key("Helidon.ServiceDescriptor");
 
     private final String name;
+    private final String fullName;
     private final Map<String, MethodDescriptor> methods;
     private final PriorityBag<ServerInterceptor> interceptors;
     private final Map<Context.Key<?>, Object> context;
@@ -60,12 +61,14 @@ public class ServiceDescriptor {
     private final Descriptors.FileDescriptor proto;
 
     private ServiceDescriptor(String name,
+                              String fullName,
                               Map<String, MethodDescriptor> methods,
                               PriorityBag<ServerInterceptor> interceptors,
                               Map<Context.Key<?>, Object> context,
                               HealthCheck healthCheck,
                               Descriptors.FileDescriptor proto) {
         this.name = Objects.requireNonNull(name);
+        this.fullName = fullName;
         this.methods = methods;
         this.context = Collections.unmodifiableMap(context);
         this.healthCheck = healthCheck;
@@ -135,16 +138,7 @@ public class ServiceDescriptor {
      * Returns the service name prefixed with package directive if one exists.
      */
     String getFullName() {
-        return getPackagedName(proto, name);
-    }
-
-    static String getPackagedName(Descriptors.FileDescriptor proto, String name) {
-        String pkg = proto == null ? "" : proto.getPackage();
-        String serviceName = name;
-        if (!pkg.isEmpty() && !serviceName.startsWith(pkg + ".")) {
-            serviceName = pkg + "." + serviceName;
-        }
-        return serviceName;
+        return fullName;
     }
 
     BindableService bindableService(PriorityBag<ServerInterceptor> interceptors) {
@@ -656,13 +650,14 @@ public class ServiceDescriptor {
         public ServiceDescriptor build() {
             Map<String, MethodDescriptor> methods = new LinkedHashMap<>();
 
+            String fullName = getFullName();
             for (Map.Entry<String, MethodDescriptor.Builder> entry : methodBuilders.entrySet()) {
                 String methodName = entry.getKey();
-                String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(getFullName(), methodName);
+                String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(fullName, methodName);
                 methods.put(methodName, entry.getValue().fullname(fullMethodName).build());
             }
 
-            return new ServiceDescriptor(name, methods, interceptors, context, healthCheck, proto);
+            return new ServiceDescriptor(name, fullName, methods, interceptors, context, healthCheck, proto);
         }
 
         @Override
@@ -742,7 +737,12 @@ public class ServiceDescriptor {
          * Returns the service name prefixed with package directive if one exists.
          */
         private String getFullName() {
-            return getPackagedName(proto, name);
+            String pkg = proto == null ? "" : proto.getPackage();
+            String serviceName = name;
+            if (!pkg.isEmpty() && !serviceName.startsWith(pkg + ".")) {
+                serviceName = pkg + "." + serviceName;
+            }
+            return serviceName;
         }
 
         private String getOuterClassName() {
