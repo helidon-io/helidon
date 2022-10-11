@@ -21,9 +21,9 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
-
 import io.helidon.microprofile.faulttolerance.retrypolicy.RetryExponentialBackoff;
 import io.helidon.microprofile.faulttolerance.retrypolicy.RetryFibonacciBackoff;
+
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -164,7 +164,9 @@ class MethodIntrospector {
      *
      * @return Outcome of test.
      */
-    boolean hasRetryExponentialBackoff() { return retryExponentialBackoff != null; }
+    boolean hasRetryExponentialBackoff() {
+        return retryExponentialBackoff != null;
+    }
 
     RetryExponentialBackoff getRetryExponentialBackoff() {
         return retryExponentialBackoff;
@@ -175,7 +177,9 @@ class MethodIntrospector {
      *
      * @return Outcome of test.
      */
-    boolean hasRetryFibonacciBackoff() { return retryFibonacciBackoff != null; }
+    boolean hasRetryFibonacciBackoff() {
+        return retryFibonacciBackoff != null;
+    }
 
     RetryFibonacciBackoff getRetryFibonacciBackoff() {
         return retryFibonacciBackoff;

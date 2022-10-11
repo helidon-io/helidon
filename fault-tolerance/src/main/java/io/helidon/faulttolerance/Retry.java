@@ -301,8 +301,8 @@ public interface Retry extends FtHandler {
          * Return next delay in milliseconds, or an empty optional to finish retries.
          *
          * @param firstCallMillis milliseconds recorded before the first call using {@link System#currentTimeMillis()}
-         * @param lastDelay last delay that was used (0 for the first failed call)
-         * @param call call index (0 for the first failed call)
+         * @param lastDelay       last delay that was used (0 for the first failed call)
+         * @param call            call index (0 for the first failed call)
          * @return how long to wait before trying again, or empty to notify this is the end of retries
          */
         Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call);
@@ -565,6 +565,7 @@ public interface Retry extends FtHandler {
 
             /**
              * Total number of calls (first + retries).
+             *
              * @param calls how many times to call the method
              * @return updated builder instance
              */
@@ -623,7 +624,7 @@ public interface Retry extends FtHandler {
              * </tr>
              * <tr>
              *     <td>jitter</td>
-             *     <td>50 millis</td>
+             *     <td>50 milliseconds</td>
              *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
              * </tr>
              * </table>
@@ -640,6 +641,12 @@ public interface Retry extends FtHandler {
         }
     }
 
+    /**
+     * A retry policy that increases the delay time following the Fibonacci sequence.
+     * Allowed elements that are also annotated with {@code @Retry}.
+     * Expected sequence: initial delay, 2 * initial delay + jitter, 3 * initial delay + jitter,
+     * 5 * initial delay + jitter, etc. {@code maxDelayInMillis} is used to prevent endless waiting.
+     */
     class FibonacciRetryPolicy implements RetryPolicy {
         private final long initialDelayInMillis;
         private final long maxDelayInMillis;
@@ -662,6 +669,11 @@ public interface Retry extends FtHandler {
             }
         }
 
+        /**
+         * A new fluent API builder to configure instances of {@link io.helidon.faulttolerance.Retry}.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
@@ -684,18 +696,22 @@ public interface Retry extends FtHandler {
             delayA = delayB;
             delayB = delay;
 
-            if (delay >= maxDelayInMillis){
+            if (delay >= maxDelayInMillis) {
                 return Optional.empty();
             }
 
-            return Optional.of(delay+randomJitter.get());
+            return Optional.of(delay + randomJitter.get());
         }
 
+        /**
+         * Fluent API builder for {@link io.helidon.faulttolerance.Retry.FibonacciRetryPolicy}.
+         */
+        @Configured(provides = RetryPolicy.class)
         public static class Builder implements io.helidon.common.Builder<Builder, FibonacciRetryPolicy> {
 
             private long initialDelayInMillis = 0;
             private long maxDelayInMillis = 60_000L;
-            private long randomJitter = 0;
+            private long randomJitter = 50;
 
             @Override
             public FibonacciRetryPolicy build() {
@@ -703,28 +719,79 @@ public interface Retry extends FtHandler {
             }
 
 
-            @ConfiguredOption("3")
+            /**
+             * Initial Delay in Milliseconds.
+             *
+             * @param initialDelayInMillis long
+             * @return updated builder instance
+             */
+            @ConfiguredOption("0")
             public Builder initialDelayInMillis(long initialDelayInMillis) {
                 this.initialDelayInMillis = initialDelayInMillis;
                 return this;
             }
 
-            @ConfiguredOption("4")
+            /**
+             * Max Delay in Milliseconds.
+             *
+             * @param maxDelayInMillis long
+             * @return updated builder instance
+             */
+            @ConfiguredOption("60000")
             public Builder maxDelayInMillis(long maxDelayInMillis) {
                 this.maxDelayInMillis = maxDelayInMillis;
                 return this;
             }
 
 
-            @ConfiguredOption("5")
+            /**
+             * Random part of the delay.
+             * A number between {@code [-jitter,+jitter]} is applied to delay each time
+             * delay is calculated.
+             *
+             * @param jitter jitter duration
+             * @return updated builder instance
+             */
+            @ConfiguredOption("50")
             public Builder jitter(long jitter) {
                 this.randomJitter = jitter;
                 return this;
             }
 
+            /**
+             * <p>
+             * Load all properties for this Retry Policy from configuration.
+             * </p>
+             * <table class="config">
+             * <caption>Configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>default value</th>
+             *     <th>description</th>
+             * </tr>
+             * <tr>
+             *     <td>initial-delay</td>
+             *     <td>0</td>
+             *     <td>Initial delay</td>
+             * </tr>
+             * <tr>
+             *     <td>max-delay</td>
+             *     <td>1 minute</td>
+             *     <td>Maximum delay</td>
+             * </tr>
+             * <tr>
+             *     <td>random-jitter</td>
+             *     <td>50 milliseconds</td>
+             *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
+             * </tr>
+             * </table>
+             *
+             * @param config the config node to use
+             * @return updated builder instance
+             */
             public Builder config(Config config) {
-                config.get("initialDelayInMillis").asLong().ifPresent(this::initialDelayInMillis);
-                config.get("maxDelayInMillis").asLong().ifPresent(this::maxDelayInMillis);
+                config.get("initial-delay").asLong().ifPresent(this::initialDelayInMillis);
+                config.get("max-delay").asLong().ifPresent(this::maxDelayInMillis);
                 config.get("random-jitter").asLong().ifPresent(this::jitter);
                 return this;
             }
@@ -732,6 +799,12 @@ public interface Retry extends FtHandler {
     }
 
 
+    /**
+     * A retry policy that increases the delay time following an exponential sequence.
+     * Allowed elements that are also annotated with {@code @Retry}.
+     * Expected sequence: initial delay, 2 * initial delay + jitter, 4 * initial delay + jitter,
+     * 8 * initial delay + jitter, etc. {@code maxDelayInMillis} is used to prevent endless waiting.
+     */
     class ExponentialRetryPolicy implements RetryPolicy {
         private final long initialDelayInMillis;
         private final long maxDelayInMillis;
@@ -747,7 +820,7 @@ public interface Retry extends FtHandler {
             factor = builder.factor;
 
             long jitter = builder.randomJitter;
-            long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : (long) jitter;
+            long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : jitter;
             if (jitterMillis == 0L) {
                 randomJitter = () -> 0L;
             } else {
@@ -757,6 +830,11 @@ public interface Retry extends FtHandler {
             }
         }
 
+        /**
+         * A new fluent API builder to configure instances of {@link io.helidon.faulttolerance.Retry}.
+         *
+         * @return a new builder
+         */
         public static Builder builder() {
             return new Builder();
         }
@@ -771,20 +849,23 @@ public interface Retry extends FtHandler {
 
             accumulateDelay = accumulateDelay * factor;
 
-            if (accumulateDelay >= maxDelayInMillis){
+            if (accumulateDelay >= maxDelayInMillis) {
                 return Optional.empty();
             }
 
             return Optional.of(accumulateDelay + randomJitter.get());
         }
 
-
+        /**
+         * Fluent API builder for {@link io.helidon.faulttolerance.Retry.ExponentialRetryPolicy}.
+         */
+        @Configured(provides = RetryPolicy.class)
         public static class Builder implements io.helidon.common.Builder<Builder, ExponentialRetryPolicy> {
 
             private long initialDelayInMillis = 0;
             private long maxDelayInMillis = 60_000L;
             private int factor = 2;
-            private long randomJitter = 0;
+            private long randomJitter = 50;
 
             @Override
             public ExponentialRetryPolicy build() {
@@ -792,36 +873,98 @@ public interface Retry extends FtHandler {
             }
 
 
-            @ConfiguredOption("3")
+            /**
+             * Initial Delay in Milliseconds.
+             *
+             * @param initialDelayInMillis long
+             * @return updated builder instance
+             */
+            @ConfiguredOption("0")
             public Builder initialDelayInMillis(long initialDelayInMillis) {
                 this.initialDelayInMillis = initialDelayInMillis;
                 return this;
             }
 
-            @ConfiguredOption("3")
-            public Builder factor(int factor) {
-                this.factor = factor;
-                return this;
-            }
-
-            @ConfiguredOption("4")
+            /**
+             * Max Delay in Milliseconds.
+             *
+             * @param maxDelayInMillis long
+             * @return updated builder instance
+             */
+            @ConfiguredOption("60000")
             public Builder maxDelayInMillis(long maxDelayInMillis) {
                 this.maxDelayInMillis = maxDelayInMillis;
                 return this;
             }
 
+            /**
+             * Multiplication factor.
+             *
+             * @param factor multiplication factor
+             * @return updated builder instance
+             */
+            @ConfiguredOption("2")
+            public Builder factor(int factor) {
+                this.factor = factor;
+                return this;
+            }
 
-            @ConfiguredOption("5")
-            public Builder jitter(long jitter) {
+            /**
+             * Random part of the delay.
+             * A number between {@code [-jitter,+jitter]} is applied to delay each time
+             * delay is calculated.
+             *
+             * @param jitter jitter duration
+             * @return updated builder instance
+             */
+            @ConfiguredOption("50")
+            public Builder randomJitter(long jitter) {
                 this.randomJitter = jitter;
                 return this;
             }
 
+
+            /**
+             * <p>
+             * Load all properties for this Retry Policy from configuration.
+             * </p>
+             * <table class="config">
+             * <caption>Configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>default value</th>
+             *     <th>description</th>
+             * </tr>
+             * <tr>
+             *     <td>initial-delay</td>
+             *     <td>0</td>
+             *     <td>Initial delay</td>
+             * </tr>
+             * <tr>
+             *     <td>max-delay</td>
+             *     <td>1 minute</td>
+             *     <td>Maximum delay</td>
+             * </tr>
+             * <tr>
+             *     <td>factor</td>
+             *     <td>2</td>
+             *     <td>Multiplication factor</td>
+             * </tr>
+             * <tr>
+             *     <td>random-jitter</td>
+             *     <td>50 milliseconds</td>
+             *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
+             * </tr>
+             * </table>
+             *
+             * @param config the config node to use
+             * @return updated builder instance
+             */
             public Builder config(Config config) {
-                config.get("initialDelayInMillis").asLong().ifPresent(this::initialDelayInMillis);
-                config.get("maxDelayInMillis").asLong().ifPresent(this::maxDelayInMillis);
+                config.get("initial-delay").asLong().ifPresent(this::initialDelayInMillis);
+                config.get("max-delay").asLong().ifPresent(this::maxDelayInMillis);
                 config.get("factor").asInt().ifPresent(this::factor);
-                config.get("random-jitter").asLong().ifPresent(this::jitter);
+                config.get("random-jitter").asLong().ifPresent(this::randomJitter);
                 return this;
             }
         }
