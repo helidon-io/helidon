@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The Jersey Client based example that tests the {@link HelloWorld} resource
@@ -63,8 +64,8 @@ public class HelloWorldTest {
                                       .path("jersey/hello")
                                       .request()
                                       .get()) {
-            assertEquals("Hello World!", response.readEntity(String.class),
-                    "Unexpected response; status: " + response.getStatus());
+            assertThat("Unexpected response; status: " + response.getStatus(),
+                    response.readEntity(String.class), is("Hello World!"));
         } finally {
             client.close();
         }
