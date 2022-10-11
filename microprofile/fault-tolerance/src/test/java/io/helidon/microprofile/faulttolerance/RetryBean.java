@@ -21,6 +21,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.microprofile.faulttolerance.retrypolicy.RetryExponentialBackoff;
+import io.helidon.microprofile.faulttolerance.retrypolicy.RetryFibonacciBackoff;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -94,11 +96,6 @@ class RetryBean {
                     "success " + System.currentTimeMillis());
     }
 
-    @Retry
-    String retryDelayingPolicy(){
-        invocations.incrementAndGet();
-        return "fallback";
-    }
 
     @Asynchronous
     @Retry(maxRetries = 2)
@@ -128,4 +125,43 @@ class RetryBean {
         }
         return future;
     }
+
+    @Retry
+    @RetryExponentialBackoff(maxDelay = 2000)
+    void retryExponentialBackoff() {
+        if (invocations.incrementAndGet() <= 4) {
+            printStatus("RetryBean::retryExponentialBackoff()",
+                    "failure " + System.currentTimeMillis());
+            throw new RuntimeException("Oops");
+        }
+        printStatus("RetryBean::retryExponentialBackoff()",
+                "success " + System.currentTimeMillis());
+    }
+
+    @Retry
+    @RetryExponentialBackoff(maxDelay = 5000)
+    void retryExponentialBackoffTimeOut() {
+        //just keep incrementing
+        invocations.incrementAndGet();
+    }
+
+    @Retry
+    @RetryFibonacciBackoff(maxDelay = 2000)
+    void retryFibonacciBackoff() {
+        if (invocations.incrementAndGet() <= 4) {
+            printStatus("RetryBean::retryFibonacciBackoff()",
+                    "failure " + System.currentTimeMillis());
+            throw new RuntimeException("Oops");
+        }
+        printStatus("RetryBean::retryFibonacciBackoff()",
+                "success " + System.currentTimeMillis());
+    }
+
+    @Retry
+    @RetryFibonacciBackoff(maxDelay = 5000)
+    void retryRetryFibonacciBackoffTimeOut() {
+        //just keep incrementing
+        invocations.incrementAndGet();
+    }
+
 }
