@@ -49,13 +49,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class SerializerTest {
     private static final JsonReaderFactory JSON_READER_FACTORY
             = Json.createReaderFactory(Collections.emptyMap());
-    private static ParserHelper<ExpandedTypeDescription> helper;
+    private static ParserHelper helper;
 
     private static Map<Class<?>, ExpandedTypeDescription> implsToTypes;
 
     @BeforeAll
     static void prepareHelper() {
-        helper = ParserHelper.create(ExpandedTypeDescription::create);
+        helper = ParserHelper.create();
         implsToTypes = ExpandedTypeDescription.buildImplsToTypes(helper);
     }
 

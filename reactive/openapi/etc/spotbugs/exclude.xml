@@ -24,13 +24,13 @@
 
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.openapi.OpenAPISupport$Builder"/>
+        <Class name="io.helidon.reactive.openapi.OpenAPISupport$Builder"/>
         <Method name="getExplicitStaticFile"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- Path comes from config or code -->
-        <Class name="io.helidon.openapi.OpenAPISupport$Builder"/>
+        <Class name="io.helidon.reactive.openapi.OpenAPISupport$Builder"/>
         <Method name="getDefaultStaticFile"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>

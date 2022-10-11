@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
@@ -47,7 +48,6 @@ import static org.eclipse.yasson.YassonConfig.ZERO_TIME_PARSE_DEFAULTING;
  * Support for GraphQL for Helidon WebServer.
  */
 public class GraphQlService implements HttpService {
-    private static final Logger LOGGER = Logger.getLogger(GraphQlService.class.getName());
     private static final Jsonb JSONB = JsonbBuilder.newBuilder()
             .withConfig(new JsonbConfig()
                                 .setProperty(ZERO_TIME_PARSE_DEFAULTING, true)
@@ -106,7 +106,7 @@ public class GraphQlService implements HttpService {
 
     // handle POST request for GraphQL endpoint
     private void graphQlPost(ServerRequest req, ServerResponse res) {
-        LinkedHashMap entity = req.content().as(LINKED_HASH_MAP_GENERIC_TYPE);
+        LinkedHashMap entity = JSONB.fromJson(req.content().inputStream(), LINKED_HASH_MAP_GENERIC_TYPE.type());
         processRequest(res,
                        (String) entity.get("query"),
                        (String) entity.get("operationName"),
@@ -135,7 +135,8 @@ public class GraphQlService implements HttpService {
                                 String operationName,
                                 Map<String, Object> variables) {
 
-        res.send(invocationHandler.execute(query, operationName, variables));
+        res.headers().contentType(HttpMediaType.APPLICATION_JSON);
+        res.send(JSONB.toJson(invocationHandler.execute(query, operationName, variables)));
     }
 
     private Map<String, Object> toVariableMap(Object variables) {

@@ -24,9 +24,6 @@ import org.eclipse.microprofile.metrics.Metadata;
  * Base for our implementations of various metrics.
  */
 abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
-    // Efficient check from interceptors to see if the metric is still valid
-    private boolean isDeleted;
-
     MetricImpl(String registryType, Metadata metadata) {
         super(registryType, metadata);
     }

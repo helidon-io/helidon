@@ -23,11 +23,10 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.SocketConfiguration;
-import io.helidon.reactive.webserver.WebServer;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
@@ -65,16 +64,13 @@ public class CoordinatorTest {
                 .build();
         server = WebServer.builder()
                 .host("localhost")
-                .addSocket(SocketConfiguration.builder()
-                        .name(COORDINATOR_ROUTING_NAME)
-                        .port(8077)
-                        .build())
-                .addNamedRouting(COORDINATOR_ROUTING_NAME, Routing.builder()
-                        .register("/lra-coordinator", coordinatorService)
-                        .build())
-                .routing(r -> r.register(CONTEXT_PATH, rules -> rules.put((req, res) -> res.send())))
+                .routing(r -> r.register(CONTEXT_PATH, () -> rules -> rules.put((req, res) -> res.send())))
+                .socket(COORDINATOR_ROUTING_NAME, (socket, routing) -> {
+                    socket.port(0);
+                    routing.addRouting(HttpRouting.builder().register("/lra-coordinator", coordinatorService));
+                })
                 .build();
-        server.start().await(TIMEOUT);
+        server.start();
         serverUrl = "http://localhost:" + server.port();
         webClient = WebClient.builder()
                 .keepAlive(false)
@@ -85,7 +81,7 @@ public class CoordinatorTest {
     @AfterAll
     static void afterAll() {
         if (server != null) {
-            server.shutdown();
+            server.stop();
         }
         if (coordinatorService != null) {
             coordinatorService.shutdown();

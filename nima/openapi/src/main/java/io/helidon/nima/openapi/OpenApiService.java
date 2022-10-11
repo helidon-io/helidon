@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,15 +77,8 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
-import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.Operation;
-import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.Reference;
-import org.eclipse.microprofile.openapi.models.media.Schema;
-import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.IndexView;
-import org.yaml.snakeyaml.TypeDescription;
 
 import static io.helidon.nima.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
@@ -118,11 +110,7 @@ public class OpenApiService implements HttpService {
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
     private static final String FEATURE_NAME = "OpenAPI";
     private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
-    private static final LazyValue<ParserHelper<ExpandedTypeDescription>> HELPER = LazyValue.create(() -> {
-        var helper = ParserHelper.create(ExpandedTypeDescription::create);
-        adjustTypeDescriptions(helper.types());
-        return helper;
-    });
+    private static final LazyValue<ParserHelper> HELPER = LazyValue.create(ParserHelper::create);
 
     private final String webContext;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
@@ -238,74 +226,6 @@ public class OpenApiService implements HttpService {
                                                             return r;
                                                         });
         return result;
-    }
-
-    private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {
-        /*
-         * We need to adjust the {@code TypeDescription} objects set up by the generated {@code SnakeYAMLParserHelper} class
-         * because there are some OpenAPI-specific issues that the general-purpose helper generator cannot know about.
-         */
-
-        /*
-         * In the OpenAPI document, HTTP methods are expressed in lower-case. But the associated Java methods on the PathItem
-         * class use the HTTP method names in upper-case. So for each HTTP method, "add" a property to PathItem's type
-         * description using the lower-case name but upper-case Java methods and exclude the upper-case property that
-         * SnakeYAML's automatic analysis of the class already created.
-         */
-        ExpandedTypeDescription pathItemTD = types.get(PathItem.class);
-        for (PathItem.HttpMethod m : PathItem.HttpMethod.values()) {
-            pathItemTD.substituteProperty(m.name().toLowerCase(), Operation.class, getter(m), setter(m));
-            pathItemTD.addExcludes(m.name());
-        }
-
-        /*
-         * An OpenAPI document can contain a property named "enum" for Schema and ServerVariable, but the related Java methods
-         * use "enumeration".
-         */
-        Set.<Class<?>>of(Schema.class, ServerVariable.class).forEach(c -> {
-            ExpandedTypeDescription tdWithEnumeration = types.get(c);
-            tdWithEnumeration.substituteProperty("enum", List.class, "getEnumeration", "setEnumeration");
-            tdWithEnumeration.addPropertyParameters("enum", String.class);
-            tdWithEnumeration.addExcludes("enumeration");
-        });
-
-        /*
-         * SnakeYAML derives properties only from methods declared directly by each OpenAPI interface, not from methods defined
-         *  on other interfaces which the original one extends. Those we have to handle explicitly.
-         */
-        for (ExpandedTypeDescription td : types.values()) {
-            if (Extensible.class.isAssignableFrom(td.getType())) {
-                td.addExtensions();
-            }
-            if (td.hasDefaultProperty()) {
-                td.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
-                td.addExcludes("defaultValue");
-            }
-            if (isRef(td)) {
-                td.addRef();
-            }
-        }
-    }
-
-    private static boolean isRef(TypeDescription td) {
-        for (Class<?> c : td.getType().getInterfaces()) {
-            if (c.equals(Reference.class)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static String getter(PathItem.HttpMethod method) {
-        return methodName("get", method);
-    }
-
-    private static String setter(PathItem.HttpMethod method) {
-        return methodName("set", method);
-    }
-
-    private static String methodName(String operation, PathItem.HttpMethod method) {
-        return operation + method.name();
     }
 
     private static ClassLoader getContextClassLoader() {

@@ -17,7 +17,7 @@
 server:
   port: 9998
   sockets:
-    admin:
+    - name: "admin"
       port: 9999
 
 io.helidon.tests.integration.mp.ws.services:

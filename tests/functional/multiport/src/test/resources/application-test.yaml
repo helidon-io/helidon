@@ -17,9 +17,9 @@
 server:
   port: 0
   sockets:
-    health:
+    - name: "health"
       port: 0
-    metrics:
+    - name: "metrics"
       port: 0
-    nothing:
+    - name: "nothing"
       port: 0

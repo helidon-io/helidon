@@ -318,6 +318,10 @@ public class ServerCdiExtension implements Extension {
         // JAX-RS applications (and resources)
         registerJaxRsApplications(beanManager);
 
+        // support for Helidon common Context
+        routingBuilder.addFilter(ContextFilter.create());
+        namedRoutings.forEach((name, value) -> value.addFilter(ContextFilter.create()));
+
         // start the webserver
         serverBuilder.routerBuilder(WebServer.DEFAULT_SOCKET_NAME).addRouting(routingBuilder.build());
 
@@ -328,7 +332,6 @@ public class ServerCdiExtension implements Extension {
                                                              .id("helidon-mp")
                                                              .build());
         }
-        namedRoutings.forEach((name, value) -> value.addFilter(ContextFilter.create()));
         webserver = serverBuilder.build();
 
         try {
@@ -420,9 +423,10 @@ public class ServerCdiExtension implements Extension {
         StaticContentSupport.FileSystemBuilder pBuilder = StaticContentSupport.builder(config.get("location")
                                                                                                .as(Path.class)
                                                                                                .get());
-        config.get("welcome")
-                .asString()
-                .ifPresent(pBuilder::welcomeFileName);
+        pBuilder.welcomeFileName(config.get("welcome")
+                                          .asString()
+                                          .orElse("index.html"));
+
         StaticContentSupport staticContent = pBuilder.build();
 
         if (context.exists()) {

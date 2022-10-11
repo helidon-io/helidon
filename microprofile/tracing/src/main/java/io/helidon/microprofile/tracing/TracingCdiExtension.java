@@ -58,7 +58,6 @@ public class TracingCdiExtension implements Extension {
     private void prepareTracer(@Observes @Priority(PLATFORM_BEFORE + 1) @Initialized(ApplicationScoped.class) Object event,
                                BeanManager bm) {
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
-        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 
         Config config = ((Config) ConfigProvider.getConfig()).get("tracing");
 

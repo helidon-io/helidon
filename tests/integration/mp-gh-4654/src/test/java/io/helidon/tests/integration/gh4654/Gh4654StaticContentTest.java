@@ -21,9 +21,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.config.mp.MpConfigSources;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.server.Server;
-import io.helidon.reactive.webserver.testsupport.TemporaryFolder;
-import io.helidon.reactive.webserver.testsupport.TemporaryFolderExtension;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -32,27 +31,18 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(TemporaryFolderExtension.class)
 class Gh4654StaticContentTest {
     private static Client client;
-    private TemporaryFolder folder;
-    private Server server;
-    private WebTarget target;
-
-    @BeforeAll
-    static void setupAll() {
-        client = ClientBuilder.newClient();
-    }
+    private static Server server;
+    private static WebTarget target;
 
     @AfterAll
     static void cleanupAll() {
@@ -60,19 +50,18 @@ class Gh4654StaticContentTest {
         client = null;
     }
 
-    @BeforeEach
-    void setup() throws IOException {
-        // cannot use @HelidonTest, as the tmp folder extension requires to be run beforeEach
+    @BeforeAll
+    static void setup(@TempDir Path root) throws IOException {
+        LogConfig.configureRuntime();
 
         // root
-        Path root = folder.root().toPath();
         Files.writeString(root.resolve("index.html"), "Root Index HTML");
         Files.writeString(root.resolve("foo.txt"), "Foo TXT");
         // css
-        Path cssDir = folder.newFolder("css").toPath();
+        Path cssDir = Files.createDirectory(root.resolve("css"));
         Files.writeString(cssDir.resolve("a.css"), "A CSS");
         // bar
-        Path other = folder.newFolder("other").toPath();
+        Path other = Files.createDirectory(root.resolve("other"));
         Files.writeString(other.resolve("index.html"), "Other Index");
 
         ConfigProviderResolver cpr = ConfigProviderResolver.instance();
@@ -80,7 +69,7 @@ class Gh4654StaticContentTest {
                 .withSources(MpConfigSources.create(Map.of(
                         "server.host", "localhost",
                         "server.port", "0",
-                        "server.static.path.location", folder.root().getAbsolutePath(),
+                        "server.static.path.location", root.toAbsolutePath().toString(),
                         "server.static.path.context", "/static",
                         "server.static.classpath.location", "/static",
                         "server.static.classpath.context", "/static"
@@ -91,14 +80,18 @@ class Gh4654StaticContentTest {
         server = Server.create()
                 .start();
 
+        client = ClientBuilder.newBuilder()
+                .property("client.AutoRedirect", "false")
+                .build();
         target = client.target("http://localhost:" + server.port() + "/static");
 
     }
 
-    @AfterEach
-    void cleanup() {
-        server.stop();
-        target = null;
+    @AfterAll
+    static void cleanup() {
+        if (server != null) {
+            server.stop();
+        }
     }
 
     @ParameterizedTest(name = "\"{0}\" - {2}")

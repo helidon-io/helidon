@@ -99,10 +99,11 @@ class JaxRsHandler implements Handler {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
 
-        InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
+        // TODO Níma - this fails in Jersey
+        // InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
                                                                new WebServerBinder(),
-                                                               ij);
+                                                               injectionManager);
         Container container = new HelidonJerseyContainer(appHandler);
         Config config = ConfigProvider.getConfig();
 
@@ -192,8 +193,7 @@ class JaxRsHandler implements Handler {
                                                                baseUri.resolve(req.path().rawPath() + "?" + req.query()
                                                                        .rawValue()),
                                                                req.prologue().method().text(),
-                                                               new HelidonMpSecurityContext(),
-                                                               new MapPropertiesDelegate(),
+                                                               new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);
 
         for (HeaderValue header : req.headers()) {
@@ -225,12 +225,13 @@ class JaxRsHandler implements Handler {
             kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
             writer.await();
+        } catch (UncheckedIOException e) {
+            throw e;
+        } catch (io.helidon.common.http.NotFoundException | NotFoundException e) {
+            // continue execution, maybe there is a non-JAX-RS route (such as static content)
+            res.next();
         } catch (Exception e) {
-            if (e instanceof NotFoundException) {
-                res.next();
-            } else {
-                throw new InternalServerException("Internal excepetion in JAX-RS processing", e);
-            }
+            throw new InternalServerException("Internal exception in JAX-RS processing", e);
         }
     }
 

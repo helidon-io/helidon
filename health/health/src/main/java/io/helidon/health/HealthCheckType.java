@@ -34,7 +34,7 @@ public enum HealthCheckType {
      * Startup health check.
      * Indicates that mandatory start operation has been executed.
      */
-    STARTUP("startup");
+    STARTUP("started");
     private final String defaultPath;
 
     HealthCheckType(String defaultPath) {

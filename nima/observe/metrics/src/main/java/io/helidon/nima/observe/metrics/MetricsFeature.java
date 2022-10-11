@@ -143,7 +143,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
      * @param rules     rules to use
      */
     public void configureVendorMetrics(HttpRouting.Builder rules) {
-        String metricPrefix = "";
+        String metricPrefix = "requests.";
 
         KeyPerformanceIndicatorSupport.Metrics kpiMetrics =
                 KeyPerformanceIndicatorMetricsImpls.get(metricPrefix,

@@ -16,8 +16,8 @@
 package io.helidon.tests.integration.nativeimage.mp3;
 
 import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.security.Security;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,15 +29,15 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 @RoutingPath("/reactive")
-public class ReactiveService implements Service {
+public class NimaService implements HttpService {
     private Security security;
     @Inject
-    public ReactiveService(Security security) {
+    public NimaService(Security security) {
         this.security = security;
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/", (req, res) -> res.send("Security: " + security));
     }
 }

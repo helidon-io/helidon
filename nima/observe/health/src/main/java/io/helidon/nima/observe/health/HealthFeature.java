@@ -16,8 +16,10 @@
 
 package io.helidon.nima.observe.health;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -48,10 +50,10 @@ public class HealthFeature extends HelidonFeatureSupport {
     private static final System.Logger LOGGER = System.getLogger(HealthFeature.class.getName());
 
     private final boolean details;
-    private final Map<String, HealthCheck> all;
-    private final Map<String, HealthCheck> ready;
-    private final Map<String, HealthCheck> live;
-    private final Map<String, HealthCheck> start;
+    private final List<HealthCheck> all;
+    private final List<HealthCheck> ready;
+    private final List<HealthCheck> live;
+    private final List<HealthCheck> start;
     private final boolean enabled;
 
     private HealthFeature(Builder builder) {
@@ -60,10 +62,10 @@ public class HealthFeature extends HelidonFeatureSupport {
         this.details = builder.details;
         this.enabled = builder.enabled;
 
-        this.all = new LinkedHashMap<>(builder.allChecks);
-        this.ready = new LinkedHashMap<>(builder.readyChecks);
-        this.live = new LinkedHashMap<>(builder.liveChecks);
-        this.start = new LinkedHashMap<>(builder.startChecks);
+        this.all = new ArrayList<>(builder.allChecks);
+        this.ready = new ArrayList<>(builder.readyChecks);
+        this.live = new ArrayList<>(builder.liveChecks);
+        this.start = new ArrayList<>(builder.startChecks);
     }
 
     /**
@@ -102,6 +104,10 @@ public class HealthFeature extends HelidonFeatureSupport {
         }
     }
 
+    protected void context(String componentPath) {
+        super.context(componentPath);
+    }
+
     private void configureRoutes(HttpRules rules) {
         EntityWriter<JsonObject> entityWriter = JsonpMediaSupportProvider.serverResponseWriter();
 
@@ -130,10 +136,10 @@ public class HealthFeature extends HelidonFeatureSupport {
     public static class Builder extends HelidonFeatureSupport.Builder<Builder, HealthFeature> {
         private final HelidonServiceLoader.Builder<HealthCheckProvider> providers =
                 HelidonServiceLoader.builder(ServiceLoader.load(HealthCheckProvider.class));
-        private final Map<String, HealthCheck> allChecks = new LinkedHashMap<>();
-        private final Map<String, HealthCheck> readyChecks = new LinkedHashMap<>();
-        private final Map<String, HealthCheck> liveChecks = new LinkedHashMap<>();
-        private final Map<String, HealthCheck> startChecks = new LinkedHashMap<>();
+        private final List<HealthCheck> allChecks = new ArrayList<>();
+        private final List<HealthCheck> readyChecks = new ArrayList<>();
+        private final List<HealthCheck> liveChecks = new ArrayList<>();
+        private final List<HealthCheck> startChecks = new ArrayList<>();
 
         private boolean enabled = true;
         private boolean details = false;
@@ -150,7 +156,7 @@ public class HealthFeature extends HelidonFeatureSupport {
                     // TODO use configuration
                     .map(provider -> provider.healthChecks(Config.empty()))
                     .flatMap(Collection::stream)
-                    .forEach(it -> addCheck(it, it.type(), false));
+                    .forEach(it -> addCheck(it, it.type()));
             return new HealthFeature(this);
         }
 
@@ -217,7 +223,15 @@ public class HealthFeature extends HelidonFeatureSupport {
          * @return updated builder
          */
         public Builder addCheck(HealthCheck healthCheck, HealthCheckType type) {
-            return addCheck(healthCheck, type, true);
+            this.allChecks.add(healthCheck);
+            List<HealthCheck> checks = switch (type) {
+                case READINESS -> readyChecks;
+                case LIVENESS -> liveChecks;
+                case STARTUP -> startChecks;
+            };
+
+            checks.add(healthCheck);
+            return this;
         }
 
         /**
@@ -228,22 +242,6 @@ public class HealthFeature extends HelidonFeatureSupport {
          */
         public Builder useSystemServices(boolean useServices) {
             providers.useSystemServiceLoader(useServices);
-            return this;
-        }
-
-        private Builder addCheck(HealthCheck healthCheck, HealthCheckType type, boolean replace) {
-            this.allChecks.put(healthCheck.name(), healthCheck);
-            Map<String, HealthCheck> map = switch (type) {
-                case READINESS -> readyChecks;
-                case LIVENESS -> liveChecks;
-                case STARTUP -> startChecks;
-            };
-
-            if (replace) {
-                map.put(healthCheck.name(), healthCheck);
-            } else {
-                map.putIfAbsent(healthCheck.name(), healthCheck);
-            }
             return this;
         }
     }

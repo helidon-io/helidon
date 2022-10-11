@@ -18,7 +18,7 @@ package io.helidon.examples.graphql.basics;
 
 import java.util.List;
 
-import io.helidon.graphql.server.GraphQlSupport;
+import io.helidon.reactive.graphql.server.GraphQlSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 

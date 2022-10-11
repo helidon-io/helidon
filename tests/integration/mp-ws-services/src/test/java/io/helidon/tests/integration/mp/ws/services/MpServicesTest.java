@@ -28,6 +28,7 @@ import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 /**
  * Unit test for {@link MpServicesMain}.
  */
+@Disabled
 class MpServicesTest {
     private static Server server;
     // I must use an HTTP client that is not integrated with Helidon

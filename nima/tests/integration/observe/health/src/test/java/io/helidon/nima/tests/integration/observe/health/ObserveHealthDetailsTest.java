@@ -139,7 +139,7 @@ class ObserveHealthDetailsTest {
 
     @Test
     void testHealthStart() {
-        try (Http1ClientResponse response = httpClient.get("/observe/health/startup")
+        try (Http1ClientResponse response = httpClient.get("/observe/health/started")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
@@ -151,7 +151,7 @@ class ObserveHealthDetailsTest {
         }
 
         healthCheck.status(DOWN);
-        try (Http1ClientResponse response = httpClient.get("/observe/health/startup")
+        try (Http1ClientResponse response = httpClient.get("/observe/health/started")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));

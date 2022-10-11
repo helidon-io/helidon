@@ -40,11 +40,11 @@ import io.helidon.nima.webserver.http.HttpService;
  */
 public abstract class HelidonFeatureSupport implements FeatureSupport {
 
-    private final String context;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final System.Logger logger;
     private final String configuredContext;
     private final boolean enabled;
+    private String context;
 
     /**
      * Shared initialization for new service support instances.
@@ -100,6 +100,10 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
     @Override
     public boolean enabled() {
         return enabled;
+    }
+
+    protected void context(String context) {
+        this.context = context;
     }
 
     /**

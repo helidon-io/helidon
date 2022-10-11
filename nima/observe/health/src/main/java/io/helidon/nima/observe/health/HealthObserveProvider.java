@@ -80,6 +80,8 @@ public class HealthObserveProvider implements ObserveProvider {
                 : explicitService;
 
         if (observer.enabled()) {
+            // when created as part of observer, we need to use component path
+            observer.context(componentPath);
             routing.addFeature(observer);
         } else {
             routing.get(componentPath + "/*", (req, res) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503)

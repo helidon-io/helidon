@@ -121,11 +121,7 @@ public class OpenAPISupport implements Service {
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
     private static final String FEATURE_NAME = "OpenAPI";
     private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
-    private static final LazyValue<ParserHelper<ExpandedTypeDescription>> HELPER = LazyValue.create(() -> {
-        var helper = ParserHelper.create(ExpandedTypeDescription::create);
-        adjustTypeDescriptions(helper.types());
-        return helper;
-    });
+    private static final LazyValue<ParserHelper> HELPER = LazyValue.create(ParserHelper::create);
 
     private final String webContext;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
@@ -811,7 +807,8 @@ public class OpenAPISupport implements Service {
                                                            + " is not one of recognized types: "
                                                            + OpenAPIMediaType.recognizedFileTypes()));
 
-            try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
+            try {
+                InputStream is = new BufferedInputStream(Files.newInputStream(path));
                 LOGGER.log(Level.FINE,
                            () -> String.format(
                                    OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,

@@ -164,6 +164,7 @@ public final class MeterRegistryFactory {
         registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
 
         nimaRegistryEnrollments = builder.nimaRegistryEnrollments();
+        nimaRegistryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
     }
 
     /**

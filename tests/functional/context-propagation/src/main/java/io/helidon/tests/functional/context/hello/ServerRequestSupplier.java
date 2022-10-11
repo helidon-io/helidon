@@ -18,7 +18,7 @@ package io.helidon.tests.functional.context.hello;
 
 import java.util.function.Supplier;
 
-import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.nima.webserver.http.ServerRequest;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.core.Context;

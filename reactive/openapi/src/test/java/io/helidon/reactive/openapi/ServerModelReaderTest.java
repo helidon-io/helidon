@@ -29,6 +29,7 @@ import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,6 +61,7 @@ public class ServerModelReaderTest {
     }
 
     @Test
+    @Disabled
     public void checkCustomModelReader() throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
                 webServer.port(),

@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -39,6 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link Main}.
  */
 @HelidonTest
+@Disabled
 class MainTest {
     private static final String BIZ_URI = "/hello";
     private static final String BIZ_EXPECTED = "Hello World";
@@ -54,7 +56,7 @@ class MainTest {
     @Inject
     MainTest(ServerCdiExtension server) {
         this.server = server;
-        client = ClientBuilder.newClient();
+        this.client = ClientBuilder.newClient();
     }
 
     @BeforeAll

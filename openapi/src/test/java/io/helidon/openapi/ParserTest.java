@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ParserTest {
 
-    private static ParserHelper<ExpandedTypeDescription> helper = ParserHelper.create(ExpandedTypeDescription::create);
+    private static ParserHelper helper = ParserHelper.create();
 
     @Test
     public void testParserUsingYAML() throws IOException {
@@ -119,7 +119,7 @@ class ParserTest {
 //                containsString("needs to be added to the store"));
     }
 
-    static OpenAPI parse(ParserHelper<ExpandedTypeDescription> helper, String path) throws IOException {
+    static OpenAPI parse(ParserHelper helper, String path) throws IOException {
         try (InputStream is = ParserTest.class.getResourceAsStream(path)) {
             return OpenAPIParser.parse(helper.types(), is);
         }

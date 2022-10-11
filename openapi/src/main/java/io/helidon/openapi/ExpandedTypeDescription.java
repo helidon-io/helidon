@@ -118,7 +118,7 @@ public class ExpandedTypeDescription extends TypeDescription {
      * @param helper parser helper
      * @return map of implementation classes to descriptions
      */
-    public static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(ParserHelper<ExpandedTypeDescription> helper) {
+    public static Map<Class<?>, ExpandedTypeDescription> buildImplsToTypes(ParserHelper helper) {
         return Collections.unmodifiableMap(helper.entrySet()
                                                    .stream()
                                                    .map(Map.Entry::getValue)

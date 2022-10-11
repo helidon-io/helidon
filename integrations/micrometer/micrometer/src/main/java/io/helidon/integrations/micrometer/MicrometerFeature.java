@@ -32,7 +32,7 @@ import io.micrometer.core.instrument.MeterRegistry;
  * Implements simple Micrometer support.
  * <p>
  * Developers create Micrometer {@code MeterRegistry} objects and enroll them with
- * {@link io.helidon.integrations.micrometer.MicrometerService.Builder}, providing with each enrollment a Helidon {@code Handler} for expressing the registry's
+ * {@link MicrometerFeature.Builder}, providing with each enrollment a Helidon {@code Handler} for expressing the registry's
  * data in an HTTP response.
  * </p>
  * <p>Alternatively, developers can enroll any of the built-in registries represented by
@@ -43,15 +43,15 @@ import io.micrometer.core.instrument.MeterRegistry;
  * MeterRegistry} to create or locate meters.
  * </p>
  */
-public class MicrometerService extends HelidonFeatureSupport {
+public class MicrometerFeature extends HelidonFeatureSupport {
 
     static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
 
     private final MeterRegistryFactory meterRegistryFactory;
 
-    private MicrometerService(Builder builder) {
-        super(System.getLogger(MicrometerService.class.getName()), builder, SERVICE_NAME);
+    private MicrometerFeature(Builder builder) {
+        super(System.getLogger(MicrometerFeature.class.getName()), builder, SERVICE_NAME);
 
         meterRegistryFactory = builder.meterRegistryFactorySupplier.get();
     }
@@ -70,7 +70,7 @@ public class MicrometerService extends HelidonFeatureSupport {
      *
      * @return default MicrometerSupport
      */
-    public static MicrometerService create() {
+    public static MicrometerFeature create() {
         return builder().build();
     }
 
@@ -80,7 +80,7 @@ public class MicrometerService extends HelidonFeatureSupport {
      * @param config Config settings for Micrometer set-up
      * @return newly-created MicrometerSupport
      */
-    public static MicrometerService create(Config config) {
+    public static MicrometerFeature create(Config config) {
         return builder().config(config).build();
     }
 
@@ -94,14 +94,8 @@ public class MicrometerService extends HelidonFeatureSupport {
     }
 
     @Override
-    public void routing(HttpRules rules) {
-        throw new IllegalArgumentException("Cannot register service directly, please use one of the configureEndpoint "
-                                                   + "methods on this instance");
-    }
-
-    @Override
-    protected void postSetup(HttpRouting.Builder defaultRules, HttpRules serviceEndpointRoutingRules) {
-        defaultRules
+    protected void postSetup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
+        defaultRouting
                 .get(context(), this::getOrOptions)
                 .options(context(), this::getOrOptions);
     }
@@ -126,8 +120,8 @@ public class MicrometerService extends HelidonFeatureSupport {
      * Fluid builder for {@code MicrometerSupport} objects.
      */
     @Configured(prefix = "micrometer")
-    public static class Builder extends HelidonFeatureSupport.Builder<Builder, MicrometerService>
-            implements io.helidon.common.Builder<Builder, MicrometerService> {
+    public static class Builder extends HelidonFeatureSupport.Builder<Builder, MicrometerFeature>
+            implements io.helidon.common.Builder<Builder, MicrometerFeature> {
 
         private Supplier<MeterRegistryFactory> meterRegistryFactorySupplier = null;
 
@@ -136,12 +130,12 @@ public class MicrometerService extends HelidonFeatureSupport {
         }
 
         @Override
-        public MicrometerService build() {
+        public MicrometerFeature build() {
             if (null == meterRegistryFactorySupplier) {
                 meterRegistryFactorySupplier = () -> MeterRegistryFactory.getInstance(
                         MeterRegistryFactory.builder().config(config()));
             }
-            return new MicrometerService(this);
+            return new MicrometerFeature(this);
         }
 
         /**

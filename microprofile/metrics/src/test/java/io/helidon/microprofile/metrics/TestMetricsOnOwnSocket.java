@@ -27,6 +27,7 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ import static org.hamcrest.Matchers.is;
 @AddConfig(key = "metrics.routing", value = "metrics")
 @AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled
 public class TestMetricsOnOwnSocket {
 
     private Invocation metricsInvocation= null;

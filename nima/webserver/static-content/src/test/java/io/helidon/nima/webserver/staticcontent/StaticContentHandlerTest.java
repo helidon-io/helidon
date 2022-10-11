@@ -150,6 +150,7 @@ class StaticContentHandlerTest {
         ServerResponse res = mock(ServerResponse.class);
         ServerRequest req = mock(ServerRequest.class);
         when(res.headers()).thenReturn(resh);
+        when(req.query()).thenReturn(UriQuery.empty());
         StaticContentHandler.redirect(req, res, "/foo/");
         verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
         verify(res).header(LOCATION, "/foo/");

@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import io.helidon.integrations.micrometer.MicrometerService;
+import io.helidon.integrations.micrometer.MicrometerFeature;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
 import io.helidon.nima.webserver.http.HttpRules;
@@ -60,7 +60,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 /**
  * CDI extension for handling Micrometer artifacts.
  */
-public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerService> {
+public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFeature> {
 
     private static final Logger LOGGER = Logger.getLogger(MicrometerCdiExtension.class.getName());
 
@@ -75,7 +75,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerSe
      * Creates new extension instance.
      */
     public MicrometerCdiExtension() {
-        super(LOGGER, MicrometerService::create, "micrometer");
+        super(LOGGER, MicrometerFeature::create, "micrometer");
     }
 
     MeterRegistry meterRegistry() {

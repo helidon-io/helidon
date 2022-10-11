@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class TestAdditionalProperties {
 
-    private static ParserHelper<ExpandedTypeDescription> helper = ParserHelper.create(ExpandedTypeDescription::create);
+    private static ParserHelper helper = ParserHelper.create();
 
 
     @Test
