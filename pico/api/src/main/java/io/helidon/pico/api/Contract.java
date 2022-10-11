@@ -29,7 +29,6 @@ import java.lang.annotation.Target;
  *
  * If the developer does not have access to the source to place this annotation on the interface definition then consider using
  * {@link ExternalContracts} instead - this annotation can be placed on the implementation class implementing the given interface.
- *
  * See io.helidon.pico.spi.ServiceInfo#getContractsImplemented()
  */
 @Documented

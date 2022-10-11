@@ -25,18 +25,18 @@ import java.util.Objects;
 public interface AnnotationAndValue {
 
     /**
-     * The type name, e.g., {@link jakarta.inject.Named} -> "jakarta.inject.Named".
+     * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
      *
      * @return the annotation type name
      */
-    TypeName getTypeName();
+    TypeName typeName();
 
     /**
      * The value property.
      *
      * @return The string value of value property, or null if no value is present
      */
-    String getValue();
+    String value();
 
     /**
      * Get a value of an annotation property.
@@ -44,22 +44,22 @@ public interface AnnotationAndValue {
      * @param name name of the annotation property
      * @return string value of the property
      */
-    String getValue(String name);
+    String valueOf(String name);
 
     /**
      * Get a key-value of all the annotation properties.
      *
      * @return key-value pairs of all the properties present
      */
-    Map<String, String> getValues();
+    Map<String, String> values();
 
     /**
-     * Determines whether the {@link #getValue()} is a non-null and non-blank value.
+     * Determines whether the {@link #value()} is a non-null and non-blank value.
      *
      * @return true if the value provided is non-null and non-blank (i.e., {@link String#isBlank()})
      */
-    default boolean hasValue() {
-        return hasValue(getValue());
+    default boolean hasNonBlankValue() {
+        return hasNonBlankValue(value());
     }
 
     /**
@@ -68,7 +68,7 @@ public interface AnnotationAndValue {
      * @param val the value to check
      * @return true if the value provided is non-null and non-blank.
      */
-    static boolean hasValue(String val) {
+    static boolean hasNonBlankValue(String val) {
         return Objects.nonNull(val) && !val.isBlank();
     }
 

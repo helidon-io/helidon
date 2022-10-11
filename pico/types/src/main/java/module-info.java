@@ -18,7 +18,5 @@
  * Pico minimal (spi) types module.
  */
 module io.helidon.pico.types {
-    requires static com.fasterxml.jackson.annotation;
-
     exports io.helidon.pico.types;
 }

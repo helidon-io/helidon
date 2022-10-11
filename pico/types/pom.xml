@@ -31,13 +31,4 @@
     <name>Helidon Pico Types</name>
     <description>Provides the runtime types (a subset of SPI) useful for Pico</description>
 
-    <dependencies>
-        <dependency>
-            <!-- for @JsonIgnore use only -->
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
 </project>

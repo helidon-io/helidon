@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Placed on the implementation of a service as an alternative to using a {@link Contract}.
- *
+ * <p>
  * Use this annotation when it is impossible to place an annotation on the interface itself - for instance of the interface comes
  * from a 3rd party library/provider.
  */
