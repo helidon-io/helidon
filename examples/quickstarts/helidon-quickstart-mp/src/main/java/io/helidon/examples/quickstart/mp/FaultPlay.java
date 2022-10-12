@@ -33,8 +33,8 @@ public class FaultPlay {
     }
 
     @GET
-    @Retry(retryOn = RuntimeException.class)
-    //@RetryExponentialBackoff(initialDelay = 50, maxDelay = 10_000)
+    @Retry(maxDuration = 200, maxRetries = 200)
+    @RetryFibonacciBackoff
     public String getSomething(){
         retryer();
         return null;

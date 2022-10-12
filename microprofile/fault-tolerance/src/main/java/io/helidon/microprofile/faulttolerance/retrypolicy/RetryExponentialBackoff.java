@@ -40,14 +40,7 @@ public @interface RetryExponentialBackoff {
      *
      * @return Milliseconds long
      */
-    long initialDelay() default 0;
-
-    /**
-     * Maximum Delay in Milliseconds. Default is 1 min.
-     *
-     * @return Milliseconds long
-     */
-    long maxDelay() default 60_000;
+    long initialDelay() default 2;
 
     /**
      * Multiplication factor. Default is 2.

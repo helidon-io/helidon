@@ -524,11 +524,13 @@ class MethodInvoker implements FtSupplier<Object> {
             if (introspector.hasRetryExponentialBackoff()) {
                 methodState.retry = Retry.builder()
                         .retryPolicy(Retry.ExponentialRetryPolicy.builder()
+                                .calls(introspector.getRetry().maxRetries())
                                 .initialDelayInMillis(introspector.getRetryExponentialBackoff().initialDelay())
-                                .maxDelayInMillis(introspector.getRetryExponentialBackoff().maxDelay())
+                                .maxDelayInMillis(introspector.getRetry().maxDuration())
                                 .factor(introspector.getRetryExponentialBackoff().factor())
                                 .randomJitter(introspector.getRetry().jitter())
                                 .build())
+                        .overallTimeout(Duration.ofMillis(introspector.getRetry().maxDuration()))
                         .applyOn(mapTypes(introspector.getRetry().retryOn()))
                         .skipOn(mapTypes(introspector.getRetry().abortOn()))
                         .build();
@@ -536,10 +538,12 @@ class MethodInvoker implements FtSupplier<Object> {
             } else if (introspector.hasRetryFibonacciBackoff()) {
                 methodState.retry = Retry.builder()
                         .retryPolicy(Retry.FibonacciRetryPolicy.builder()
+                                .calls(introspector.getRetry().maxRetries())
                                 .initialDelayInMillis(introspector.getRetryFibonacciBackoff().initialDelay())
-                                .maxDelayInMillis(introspector.getRetryFibonacciBackoff().maxDelay())
+                                .maxDelayInMillis(introspector.getRetry().maxDuration())
                                 .jitter(introspector.getRetry().jitter())
                                 .build())
+                        .overallTimeout(Duration.ofMillis(introspector.getRetry().maxDuration()))
                         .applyOn(mapTypes(introspector.getRetry().retryOn()))
                         .skipOn(mapTypes(introspector.getRetry().abortOn()))
                         .build();

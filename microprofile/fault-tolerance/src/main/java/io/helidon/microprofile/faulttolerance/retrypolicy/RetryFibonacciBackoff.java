@@ -36,16 +36,10 @@ import java.lang.annotation.Target;
 public @interface RetryFibonacciBackoff {
 
     /**
-     * Initial Delay in Milliseconds. Default is 0.
+     * Initial Delay in Milliseconds. Default is 2.
      *
      * @return Milliseconds long
      */
-    long initialDelay() default 0;
+    long initialDelay() default 2;
 
-    /**
-     * Maximum Delay in Milliseconds. Default is 1 min.
-     *
-     * @return Milliseconds long
-     */
-    long maxDelay() default 60_000;
 }

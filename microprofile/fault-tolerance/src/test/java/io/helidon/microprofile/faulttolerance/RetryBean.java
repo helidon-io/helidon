@@ -126,10 +126,10 @@ class RetryBean {
         return future;
     }
 
-    @Retry
-    @RetryExponentialBackoff(maxDelay = 2000)
+    @Retry(maxDuration = 200, maxRetries = 5, jitter = 0)
+    @RetryExponentialBackoff
     void retryExponentialBackoff() {
-        if (invocations.incrementAndGet() <= 4) {
+        if (invocations.incrementAndGet() <= 3) {
             printStatus("RetryBean::retryExponentialBackoff()",
                     "failure " + System.currentTimeMillis());
             throw new RuntimeException("Oops");
@@ -138,17 +138,17 @@ class RetryBean {
                 "success " + System.currentTimeMillis());
     }
 
-    @Retry
-    @RetryExponentialBackoff(maxDelay = 5000)
+    @Retry(maxDuration = 200,maxRetries = 10)
+    @RetryExponentialBackoff
     void retryExponentialBackoffTimeOut() {
         //just keep incrementing
         invocations.incrementAndGet();
     }
 
-    @Retry
-    @RetryFibonacciBackoff(maxDelay = 2000)
+    @Retry(maxDuration = 200, maxRetries = 4, jitter = 0)
+    @RetryFibonacciBackoff
     void retryFibonacciBackoff() {
-        if (invocations.incrementAndGet() <= 4) {
+        if (invocations.incrementAndGet() <= 3) {
             printStatus("RetryBean::retryFibonacciBackoff()",
                     "failure " + System.currentTimeMillis());
             throw new RuntimeException("Oops");
@@ -157,8 +157,8 @@ class RetryBean {
                 "success " + System.currentTimeMillis());
     }
 
-    @Retry
-    @RetryFibonacciBackoff(maxDelay = 5000)
+    @Retry(maxDuration = 200, maxRetries = 10)
+    @RetryFibonacciBackoff
     void retryRetryFibonacciBackoffTimeOut() {
         //just keep incrementing
         invocations.incrementAndGet();

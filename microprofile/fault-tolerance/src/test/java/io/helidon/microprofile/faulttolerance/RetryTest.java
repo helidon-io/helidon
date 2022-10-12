@@ -112,7 +112,7 @@ public class RetryTest extends FaultToleranceTest {
         bean.reset();
         assertThat(bean.getInvocations(), is(0));
         bean.retryExponentialBackoff();
-        assertThat(bean.getInvocations(), is(5));
+        assertThat(bean.getInvocations(), is(4));
     }
 
     @ParameterizedTest(name = "{1}")
@@ -131,7 +131,7 @@ public class RetryTest extends FaultToleranceTest {
         bean.reset();
         assertThat(bean.getInvocations(), is(0));
         bean.retryFibonacciBackoff();
-        assertThat(bean.getInvocations(), is(5));
+        assertThat(bean.getInvocations(), is(4));
     }
 
     @ParameterizedTest(name = "{1}")
