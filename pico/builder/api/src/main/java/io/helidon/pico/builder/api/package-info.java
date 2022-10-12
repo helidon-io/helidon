@@ -15,6 +15,7 @@
  */
 
 /**
- * Compile-time builder support annotations.
+ * The Builder API consists of several annotations that are typically used only for compile-time processing.
+ *
  */
 package io.helidon.pico.builder.api;
