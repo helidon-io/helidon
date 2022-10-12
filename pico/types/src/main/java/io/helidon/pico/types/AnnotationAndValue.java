@@ -18,6 +18,7 @@ package io.helidon.pico.types;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents an annotation along with its value(s).
@@ -36,7 +37,7 @@ public interface AnnotationAndValue {
      *
      * @return The string value of value property
      */
-    String value();
+    Optional<String> value();
 
     /**
      * Get a value of an annotation property.
@@ -44,7 +45,7 @@ public interface AnnotationAndValue {
      * @param name name of the annotation property
      * @return string value of the property
      */
-    String value(String name);
+    Optional<String> value(String name);
 
     /**
      * Get a key-value of all the annotation properties.
@@ -54,12 +55,13 @@ public interface AnnotationAndValue {
     Map<String, String> values();
 
     /**
-     * Determines whether the {@link #value()} is a non-null and non-blank value.
+     * Determines whether the {@link #value()} is present and a non-blank String (see {@link String#isBlank()}.
      *
-     * @return true if the value provided is non-null and non-blank (i.e., {@link String#isBlank()})
+     * @return true if our value is present and non-blank
      */
     default boolean hasNonBlankValue() {
-        return hasNonBlankValue(value());
+        Optional<String> val = value();
+        return val.isPresent() && hasNonBlankValue(val.get());
     }
 
     /**
