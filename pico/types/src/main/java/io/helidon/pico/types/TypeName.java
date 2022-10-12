@@ -19,7 +19,7 @@ package io.helidon.pico.types;
 import java.util.List;
 
 /**
- * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #getName()} returns the package +
+ * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
  * class name tuple for the given type (i.e., the canonical type name).
  * <p>
  *
@@ -98,6 +98,6 @@ public interface TypeName extends Comparable<TypeName> {
     /**
      * @return the base type name given the set package and class name, but not including the generics/parameterized types.
      */
-    String getName();
+    String name();
 
 }

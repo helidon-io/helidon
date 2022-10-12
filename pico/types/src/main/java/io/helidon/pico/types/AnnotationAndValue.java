@@ -34,7 +34,7 @@ public interface AnnotationAndValue {
     /**
      * The value property.
      *
-     * @return The string value of value property, or null if no value is present
+     * @return The string value of value property
      */
     String value();
 
@@ -44,7 +44,7 @@ public interface AnnotationAndValue {
      * @param name name of the annotation property
      * @return string value of the property
      */
-    String valueOf(String name);
+    String value(String name);
 
     /**
      * Get a key-value of all the annotation properties.
