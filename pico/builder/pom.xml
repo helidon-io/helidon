@@ -31,7 +31,7 @@
     <groupId>io.helidon.pico.builder</groupId>
     <artifactId>helidon-pico-builder-project</artifactId>
 
-    <name>Helidon Pico Builder</name>
+    <name>Helidon Pico Builder Project</name>
     <packaging>pom</packaging>
 
     <properties>

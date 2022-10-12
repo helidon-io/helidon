@@ -29,6 +29,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-builder-api</artifactId>
-    <name>Helidon Pico Builder : API</name>
+    <name>Helidon Pico Builder API</name>
 
 </project>
