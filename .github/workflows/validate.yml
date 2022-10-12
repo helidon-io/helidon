@@ -10,6 +10,7 @@ env:
   JAVA_VERSION: '19'
   JAVA_DISTRO: 'temurin'
   HELIDON_PIPELINES: 'true'
+  MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -102,7 +103,7 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn -B -e "-Dmaven.test.skip=true" -DskipTests -Ppipeline install 
+          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
           cd examples
           mvn -B verify
   mp-tck:

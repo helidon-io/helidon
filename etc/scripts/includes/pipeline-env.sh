@@ -67,7 +67,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
 
     if [ -n "${HELIDON_PIPELINES}" ] ; then
       export PIPELINE="true"
-      MAVEN_ARGS="${MAVEN_ARGS} -B"
+      MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
       export MAVEN_ARGS
       # temporary fix for copyright plugin (currently fails on big renaming action for Nima)
       git config diff.renameLimit 32768
