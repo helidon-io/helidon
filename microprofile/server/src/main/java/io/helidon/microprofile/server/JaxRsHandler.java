@@ -81,17 +81,14 @@ class JaxRsHandler implements Handler {
     private final ApplicationHandler appHandler;
     private final ResourceConfig resourceConfig;
     private final Container container;
-    private final InjectionManager injectionManager;
     private final Application application;
 
     private JaxRsHandler(ResourceConfig resourceConfig,
                          ApplicationHandler appHandler,
-                         Container container,
-                         InjectionManager injectionManager) {
+                         Container container) {
         this.resourceConfig = resourceConfig;
         this.appHandler = appHandler;
         this.container = container;
-        this.injectionManager = injectionManager;
         this.application = getApplication(resourceConfig);
     }
 
@@ -99,11 +96,10 @@ class JaxRsHandler implements Handler {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
 
-        // TODO Níma - this fails in Jersey
-        // InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
+        InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
                                                                new WebServerBinder(),
-                                                               injectionManager);
+                                                               ij);
         Container container = new HelidonJerseyContainer(appHandler);
         Config config = ConfigProvider.getConfig();
 
@@ -117,7 +113,7 @@ class JaxRsHandler implements Handler {
             System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore);
         }
 
-        return new JaxRsHandler(resourceConfig, appHandler, container, injectionManager);
+        return new JaxRsHandler(resourceConfig, appHandler, container);
     }
 
     static String basePath(UriPath path) {

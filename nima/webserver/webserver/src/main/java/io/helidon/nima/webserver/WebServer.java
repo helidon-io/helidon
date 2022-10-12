@@ -164,6 +164,7 @@ public interface WebServer {
         public Builder config(Config config) {
             config.get("host").asString().ifPresent(this::host);
             config.get("port").asInt().ifPresent(this::port);
+            config.get("tls").as(Tls::create).ifPresent(this::tls);
 
             // now let's configure the sockets
             config.get("sockets")

@@ -209,7 +209,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             }
 
             return forApplicationList.size() == 0 ? sharedList
-                    : Stream.concat(sharedList.stream(), forApplicationList.stream()).collect(Collectors.toList());
+                    : Stream.concat(sharedList.stream(), forApplicationList.stream()).toList();
         }
 
         @Override
@@ -256,7 +256,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             return Stream.concat(
                             shared.<T>getAllInstances(contractOrImpl).stream(),
                             forApplication.<T>getAllInstances(contractOrImpl).stream())
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         @Override
@@ -264,7 +264,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             try {
                 shared.inject(injectMe);
             } catch (Throwable t) {
-                LOGGER.warning(() -> "Injection failed for " + injectMe + " using shared");
+                LOGGER.log(Level.WARNING, "Injection failed for " + injectMe + " using shared", t);
                 forApplication.inject(injectMe);
             }
         }
@@ -274,7 +274,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             try {
                 shared.inject(injectMe, classAnalyzer);
             } catch (Throwable t) {
-                LOGGER.warning(() -> "Injection failed for " + injectMe + " using shared");
+                LOGGER.log(Level.WARNING, "Injection failed for " + injectMe + " using shared", t);
                 forApplication.inject(injectMe, classAnalyzer);
             }
         }
