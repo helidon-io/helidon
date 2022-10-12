@@ -15,6 +15,7 @@
  */
 
 /**
- * Subset of Pico's SPI types that are useful for runtime. Used in the Pico Config builder, etc.
+ * Subset of Pico's SPI types that are useful for runtime. Used in the Pico Config builder, etc., that require a minimal set of
+ * types present at runtime.
  */
 package io.helidon.pico.types;

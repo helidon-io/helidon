@@ -74,4 +74,14 @@ public interface AnnotationAndValue {
         return Objects.nonNull(val) && !val.isBlank();
     }
 
+    /**
+     * Helper method to determine if the value is present and non-blank.
+     *
+     * @param val the optional string value to check
+     * @return true if the value provided is present and non-blank.
+     */
+    static boolean hasNonBlankValue(Optional<String> val) {
+        return val.isPresent() && !val.get().isBlank();
+    }
+
 }
