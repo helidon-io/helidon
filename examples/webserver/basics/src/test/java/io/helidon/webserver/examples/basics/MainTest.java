@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,10 @@ import io.helidon.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MainTest {
 
@@ -38,21 +39,21 @@ public class MainTest {
     public void firstRouting() throws Exception {
         // POST
         TestResponse response = createClient(Main::firstRouting).path("/post-endpoint").post();
-        assertEquals(201, response.status().code());
+        assertThat(response.status().code(), is(201));
         // GET
         response = createClient(Main::firstRouting).path("/get-endpoint").get();
-        assertEquals(204, response.status().code());
-        assertEquals("Hello World!", response.asString().get());
+        assertThat(response.status().code(), is(204));
+        assertThat(response.asString().get(), is("Hello World!"));
     }
 
     @Test
     public void routingAsFilter() throws Exception {
         // POST
         TestResponse response = createClient(Main::routingAsFilter).path("/post-endpoint").post();
-        assertEquals(201, response.status().code());
+        assertThat(response.status().code(), is(201));
         // GET
         response = createClient(Main::routingAsFilter).path("/get-endpoint").get();
-        assertEquals(204, response.status().code());
+        assertThat(response.status().code(), is(204));
     }
 
     @Test
@@ -61,23 +62,23 @@ public class MainTest {
                                                                        .queryParameter("bar", "bbb")
                                                                        .header("foo", "ccc")
                                                                        .get();
-        assertEquals(200, response.status().code());
+        assertThat(response.status().code(), is(200));
         String s = response.asString().get();
-        assertTrue(s.contains("id: aaa"));
-        assertTrue(s.contains("bar: bbb"));
-        assertTrue(s.contains("foo: ccc"));
+        assertThat(s, containsString("id: aaa"));
+        assertThat(s, containsString("bar: bbb"));
+        assertThat(s, containsString("foo: ccc"));
     }
 
     @Test
     public void organiseCode() throws Exception {
         // List
         TestResponse response = createClient(Main::organiseCode).path("/catalog-context-path").get();
-        assertEquals(200, response.status().code());
-        assertEquals("1, 2, 3, 4, 5", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("1, 2, 3, 4, 5"));
         // Get by id
         response = createClient(Main::organiseCode).path("/catalog-context-path/aaa").get();
-        assertEquals(200, response.status().code());
-        assertEquals("Item: aaa", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("Item: aaa"));
     }
 
     @Test
@@ -86,13 +87,13 @@ public class MainTest {
         TestResponse response
                 = createClient(Main::readContentEntity).path("/foo")
                                                        .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
-        assertEquals(200, response.status().code());
-        assertEquals("aaa", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("aaa"));
         // bar
         response = createClient(Main::readContentEntity).path("/bar")
                                                         .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
-        assertEquals(200, response.status().code());
-        assertEquals("aaa", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("aaa"));
     }
 
     @Test
@@ -100,29 +101,29 @@ public class MainTest {
         TestResponse response = createClient(Main::mediaReader)
                 .path("/create-record")
                 .post(MediaPublisher.create(MediaType.parse("application/name"), "John Smith"));
-        assertEquals(201, response.status().code());
-        assertEquals("John Smith", response.asString().get());
+        assertThat(response.status().code(), is(201));
+        assertThat(response.asString().get(), is("John Smith"));
         // Unsupported Content-Type
         response = createClient(Main::mediaReader)
                 .path("/create-record")
                 .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "John Smith"));
-        assertEquals(500, response.status().code());
+        assertThat(response.status().code(), is(500));
     }
 
     @Test
     public void supports() throws Exception {
         // Jersey
         TestResponse response = createClient(Main::supports).path("/api/hw").get();
-        assertEquals(200, response.status().code());
-        assertEquals("Hello world!", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("Hello world!"));
         // Static content
         response = createClient(Main::supports).path("/index.html").get();
-        assertEquals(200, response.status().code());
-        assertEquals(MediaType.TEXT_HTML.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status().code(), is(200));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_HTML.toString()));
         // JSON
         response = createClient(Main::supports).path("/hello/Europe").get();
-        assertEquals(200, response.status().code());
-        assertEquals("{\"message\":\"Hello Europe\"}", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("{\"message\":\"Hello Europe\"}"));
     }
 
     @Test
@@ -131,24 +132,24 @@ public class MainTest {
         TestResponse response = createClient(Main::errorHandling)
                 .path("/compute")
                 .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "2"));
-        assertEquals(200, response.status().code());
-        assertEquals("100 / 2 = 50", response.asString().get());
+        assertThat(response.status().code(), is(200));
+        assertThat(response.asString().get(), is("100 / 2 = 50"));
         // Zero
         response = createClient(Main::errorHandling)
                 .path("/compute")
                 .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "0"));
-        assertEquals(412, response.status().code());
+        assertThat(response.status().code(), is(412));
         // NaN
         response = createClient(Main::errorHandling)
                 .path("/compute")
                 .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
-        assertEquals(400, response.status().code());
+        assertThat(response.status().code(), is(400));
     }
 
     private TestClient createClient(Consumer<Main> callTestedMethod) {
         TMain tm = new TMain();
         callTestedMethod.accept(tm);
-        assertNotNull(tm.routing);
+        assertThat(tm.routing, notNullValue());
         return TestClient.create(tm.routing, tm.mediaContext);
     }
 
