@@ -17,6 +17,7 @@
 package io.helidon.config.mp;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -378,8 +379,25 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
                 .forEach(it -> targetConfigSources.add(new OrdinalSource(it)));
 
         ServiceLoader.load(ConfigSourceProvider.class)
-                .forEach(it -> it.getConfigSources(classLoader)
-                        .forEach(source -> targetConfigSources.add(new OrdinalSource(source))));
+                .forEach(it ->{
+                    configureProfileIfPresent(it);
+                    it.getConfigSources(classLoader)
+                        .forEach(source -> targetConfigSources.add(new OrdinalSource(source)));
+                });
+    }
+
+    private void configureProfileIfPresent(ConfigSourceProvider configSourceProvider) {
+        try {
+            Field profile = configSourceProvider.getClass()
+                                .getDeclaredField("profile");
+            profile.setAccessible(true);
+            profile.set(configSourceProvider,this.profile);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(String.format("The ConfigSourceProvider %s doesn't use profiles", configSourceProvider.getClass()
+                                                                                                    .getSimpleName()));
+            }
+        }
     }
 
     private void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {

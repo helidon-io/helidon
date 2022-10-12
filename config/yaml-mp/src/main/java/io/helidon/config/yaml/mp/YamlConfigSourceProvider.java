@@ -16,14 +16,7 @@
 
 package io.helidon.config.yaml.mp;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.LinkedList;
-import java.util.List;
-
-import io.helidon.config.ConfigException;
-
+import java.util.Objects;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
@@ -32,21 +25,12 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
  * This class should not be used directly - it is loaded automatically by Java service loader.
  */
 public class YamlConfigSourceProvider implements ConfigSourceProvider {
+
+    private static final String RESOURCE_NAME = "application.yaml";
+    private String profile;
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
-        Enumeration<URL> resources;
-        try {
-            resources = classLoader.getResources("application.yaml");
-        } catch (IOException e) {
-            throw new ConfigException("Failed to read resources from classpath", e);
-        }
-
-        List<ConfigSource> result = new LinkedList<>();
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-            result.add(YamlMpConfigSource.create(url));
-        }
-
-        return result;
+        return Objects.nonNull(profile) && !profile.isBlank() ?
+               YamlMpConfigSource.classPath(RESOURCE_NAME, profile) : YamlMpConfigSource.classPath(RESOURCE_NAME);
     }
 }
