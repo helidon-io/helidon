@@ -700,6 +700,8 @@ public interface Retry extends FtHandler {
                 return Optional.empty();
             }
 
+            System.out.println("Calculated delay >>> " + (delay + randomJitter.get()));
+
             return Optional.of(delay + randomJitter.get());
         }
 
@@ -844,7 +846,6 @@ public interface Retry extends FtHandler {
         public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
             if (accumulateDelay == 0) {
                 accumulateDelay = initialDelayInMillis;
-                return Optional.of(accumulateDelay + randomJitter.get());
             }
 
             accumulateDelay = accumulateDelay * factor;

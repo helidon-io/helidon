@@ -529,8 +529,6 @@ class MethodInvoker implements FtSupplier<Object> {
                                 .factor(introspector.getRetryExponentialBackoff().factor())
                                 .randomJitter(introspector.getRetry().jitter())
                                 .build())
-                        .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
-                                introspector.getRetry().durationUnit()))
                         .applyOn(mapTypes(introspector.getRetry().retryOn()))
                         .skipOn(mapTypes(introspector.getRetry().abortOn()))
                         .build();
@@ -542,8 +540,6 @@ class MethodInvoker implements FtSupplier<Object> {
                                 .maxDelayInMillis(introspector.getRetryFibonacciBackoff().maxDelay())
                                 .jitter(introspector.getRetry().jitter())
                                 .build())
-                        .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
-                                introspector.getRetry().durationUnit()))
                         .applyOn(mapTypes(introspector.getRetry().retryOn()))
                         .skipOn(mapTypes(introspector.getRetry().abortOn()))
                         .build();
