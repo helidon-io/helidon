@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import io.helidon.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isEmptyString;
 
 
 /**
@@ -38,20 +40,20 @@ public class CommentsServiceTest {
     @Test
     public void addAndGetComments() throws Exception {
         CommentsService service = new CommentsService();
-        assertEquals("", service.listComments("one"));
-        assertEquals("", service.listComments("two"));
+        assertThat(service.listComments("one"), isEmptyString());
+        assertThat(service.listComments("two"), isEmptyString());
 
         service.addComment("aaa", null, "one");
-        assertEquals("anonymous: aaa", service.listComments("one"));
-        assertEquals("", service.listComments("two"));
+        assertThat(service.listComments("one"), is("anonymous: aaa"));
+        assertThat(service.listComments("two"), isEmptyString());
 
         service.addComment("bbb", "Foo", "one");
-        assertEquals("anonymous: aaa\nFoo: bbb", service.listComments("one"));
-        assertEquals("", service.listComments("two"));
+        assertThat(service.listComments("one"), is("anonymous: aaa\nFoo: bbb"));
+        assertThat(service.listComments("two"), isEmptyString());
 
         service.addComment("bbb", "Bar", "two");
-        assertEquals("anonymous: aaa\nFoo: bbb", service.listComments("one"));
-        assertEquals("Bar: bbb", service.listComments("two"));
+        assertThat(service.listComments("one"), is("anonymous: aaa\nFoo: bbb"));
+        assertThat(service.listComments("two"), is("Bar: bbb"));
     }
 
     @Test
@@ -62,19 +64,19 @@ public class CommentsServiceTest {
         TestResponse response = TestClient.create(routing)
                 .path("one")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
 
         response = TestClient.create(routing)
                 .path("one")
                 .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
 
         response = TestClient.create(routing)
                 .path("one")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
         byte[] data = response.asBytes().toCompletableFuture().join();
-        assertEquals("anonymous: aaa", new String(data, StandardCharsets.UTF_8));
+        assertThat(new String(data, StandardCharsets.UTF_8), is("anonymous: aaa"));
     }
 
 }
