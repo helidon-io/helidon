@@ -68,41 +68,41 @@ public class TenantConfig {
     private final String serverType;
 
     TenantConfig(BaseBuilder<?, ?> builder) {
-        this.clientId = builder.clientId;
-        this.useParam = builder.useParam;
-        this.paramName = builder.paramName;
-        this.useHeader = builder.useHeader;
-        this.headerHandler = builder.headerHandler;
-        this.baseScopes = builder.baseScopes;
-        this.validateJwtWithJwk = builder.validateJwtWithJwk;
-        this.issuer = builder.issuer;
-        this.audience = builder.audience;
-        this.identityUri = builder.identityUri;
-        this.realm = builder.realm;
-        this.tokenEndpointUri = builder.tokenEndpointUri;
-        this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
-        this.clientTimeout = builder.clientTimeout;
-        this.authorizationEndpointUri = builder.authorizationEndpointUri;
-        this.logoutEndpointUri = builder.logoutEndpointUri;
-        this.useCookie = builder.useCookie;
-        this.oidcMetadataWellKnown = builder.oidcMetadataWellKnown;
-        this.serverType = builder.serverType;
+        this.clientId = builder.clientId();
+        this.useParam = builder.useParam();
+        this.paramName = builder.paramName();
+        this.useHeader = builder.useHeader();
+        this.headerHandler = builder.headerHandler();
+        this.baseScopes = builder.baseScopes();
+        this.validateJwtWithJwk = builder.validateJwtWithJwk();
+        this.issuer = builder.issuer();
+        this.audience = builder.audience();
+        this.identityUri = builder.identityUri();
+        this.realm = builder.realm();
+        this.tokenEndpointUri = builder.tokenEndpointUri();
+        this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication();
+        this.clientTimeout = builder.clientTimeout();
+        this.authorizationEndpointUri = builder.authorizationEndpointUri();
+        this.logoutEndpointUri = builder.logoutEndpointUri();
+        this.useCookie = builder.useCookie();
+        this.oidcMetadataWellKnown = builder.oidcMetadataWellKnown();
+        this.serverType = builder.serverType();
 
-        this.tokenCookieHandler = builder.tokenCookieBuilder.build();
-        this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
-        this.clientSecret = builder.clientSecret;
-        this.signJwk = builder.signJwk;
+        this.tokenCookieHandler = builder.tokenCookieBuilder().build();
+        this.idTokenCookieHandler = builder.idTokenCookieBuilder().build();
+        this.clientSecret = builder.clientSecret();
+        this.signJwk = builder.signJwk();
 
         if (validateJwtWithJwk) {
             this.introspectUri = null;
         } else {
-            this.introspectUri = builder.introspectUri;
+            this.introspectUri = builder.introspectUri();
         }
 
-        if ((builder.scopeAudience == null) || builder.scopeAudience.trim().isEmpty()) {
+        if ((builder.scopeAudience() == null) || builder.scopeAudience().trim().isEmpty()) {
             this.scopeAudience = "";
         } else {
-            String tmp = builder.scopeAudience.trim();
+            String tmp = builder.scopeAudience().trim();
             if (tmp.endsWith("/")) {
                 this.scopeAudience = tmp;
             } else {
@@ -113,6 +113,11 @@ public class TenantConfig {
         LOGGER.finest(() -> "OIDC Scope audience: " + scopeAudience);
     }
 
+    /**
+     * Create new {@link TenantConfig.Builder} instance.
+     *
+     * @return new builder instance
+     */
     public static Builder tenantBuilder() {
         return new Builder();
     }
@@ -411,6 +416,9 @@ public class TenantConfig {
         return serverType;
     }
 
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link TenantConfig}.
+     */
     public static final class Builder extends BaseBuilder<Builder, TenantConfig> {
 
         private Builder() {

@@ -20,6 +20,9 @@ import java.util.Optional;
 
 import io.helidon.security.ProviderRequest;
 
+/**
+ * Finder of the tenant if from the request.
+ */
 public interface TenantIdFinder {
     /**
      * Identify a tenant from the request.

@@ -49,41 +49,39 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @SuppressWarnings("unchecked")
     private final B me = (B) this;
 
-
-    final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
+    private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
             .cookieName(DEFAULT_COOKIE_NAME);
-    final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
+    private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
             .cookieName(DEFAULT_COOKIE_NAME + "_2");
 
-    boolean oidcMetadataWellKnown = true;
-    OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
-    OidcMetadata.Builder oidcMetadata = OidcMetadata.builder();
-    String clientId;
-    String clientSecret;
-    String baseScopes = TenantConfig.DEFAULT_BASE_SCOPES;
-    String realm = TenantConfig.DEFAULT_REALM;
-    String issuer;
-    String audience;
-    String serverType;
-    String paramName = TenantConfig.DEFAULT_PARAM_NAME;
-    boolean useHeader = TenantConfig.DEFAULT_HEADER_USE;
-    URI authorizationEndpointUri;
-    URI logoutEndpointUri;
-    URI identityUri;
-    URI tokenEndpointUri;
-    Duration clientTimeout = Duration.ofSeconds(TenantConfig.DEFAULT_TIMEOUT_SECONDS);
-    JwkKeys signJwk;
-    boolean validateJwtWithJwk = TenantConfig.DEFAULT_JWT_VALIDATE_JWK;
-    boolean useParam = TenantConfig.DEFAULT_PARAM_USE;
-    URI introspectUri;
-    TokenHandler headerHandler = TokenHandler.builder()
+    private boolean oidcMetadataWellKnown = true;
+    private OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
+    private OidcMetadata.Builder oidcMetadata = OidcMetadata.builder();
+    private String clientId;
+    private String clientSecret;
+    private String baseScopes = TenantConfig.DEFAULT_BASE_SCOPES;
+    private String realm = TenantConfig.DEFAULT_REALM;
+    private String issuer;
+    private String audience;
+    private String serverType;
+    private String paramName = TenantConfig.DEFAULT_PARAM_NAME;
+    private boolean useHeader = TenantConfig.DEFAULT_HEADER_USE;
+    private URI authorizationEndpointUri;
+    private URI logoutEndpointUri;
+    private URI identityUri;
+    private URI tokenEndpointUri;
+    private Duration clientTimeout = Duration.ofSeconds(TenantConfig.DEFAULT_TIMEOUT_SECONDS);
+    private JwkKeys signJwk;
+    private boolean validateJwtWithJwk = TenantConfig.DEFAULT_JWT_VALIDATE_JWK;
+    private boolean useParam = TenantConfig.DEFAULT_PARAM_USE;
+    private URI introspectUri;
+    private TokenHandler headerHandler = TokenHandler.builder()
             .tokenHeader("Authorization")
             .tokenPrefix("bearer ")
             .build();
-    boolean useCookie = DEFAULT_COOKIE_USE;
-    boolean cookieSameSiteDefault = true;
-    String scopeAudience;
-
+    private boolean useCookie = DEFAULT_COOKIE_USE;
+    private boolean cookieSameSiteDefault = true;
+    private String scopeAudience;
 
     BaseBuilder() {
     }
@@ -705,4 +703,111 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         this.clientTimeout(Duration.ofMillis(millis));
     }
 
+    OidcCookieHandler.Builder tokenCookieBuilder() {
+        return tokenCookieBuilder;
+    }
+
+    OidcCookieHandler.Builder idTokenCookieBuilder() {
+        return idTokenCookieBuilder;
+    }
+
+    boolean oidcMetadataWellKnown() {
+        return oidcMetadataWellKnown;
+    }
+
+    OidcConfig.ClientAuthentication tokenEndpointAuthentication() {
+        return tokenEndpointAuthentication;
+    }
+
+    OidcMetadata.Builder oidcMetadata() {
+        return oidcMetadata;
+    }
+
+    String clientId() {
+        return clientId;
+    }
+
+    String clientSecret() {
+        return clientSecret;
+    }
+
+    String baseScopes() {
+        return baseScopes;
+    }
+
+    String realm() {
+        return realm;
+    }
+
+    String issuer() {
+        return issuer;
+    }
+
+    String audience() {
+        return audience;
+    }
+
+    String serverType() {
+        return serverType;
+    }
+
+    String paramName() {
+        return paramName;
+    }
+
+    boolean useHeader() {
+        return useHeader;
+    }
+
+    URI authorizationEndpointUri() {
+        return authorizationEndpointUri;
+    }
+
+    URI logoutEndpointUri() {
+        return logoutEndpointUri;
+    }
+
+    URI identityUri() {
+        return identityUri;
+    }
+
+    URI tokenEndpointUri() {
+        return tokenEndpointUri;
+    }
+
+    Duration clientTimeout() {
+        return clientTimeout;
+    }
+
+    JwkKeys signJwk() {
+        return signJwk;
+    }
+
+    boolean validateJwtWithJwk() {
+        return validateJwtWithJwk;
+    }
+
+    boolean useParam() {
+        return useParam;
+    }
+
+    URI introspectUri() {
+        return introspectUri;
+    }
+
+    TokenHandler headerHandler() {
+        return headerHandler;
+    }
+
+    boolean useCookie() {
+        return useCookie;
+    }
+
+    boolean cookieSameSiteDefault() {
+        return cookieSameSiteDefault;
+    }
+
+    String scopeAudience() {
+        return scopeAudience;
+    }
 }

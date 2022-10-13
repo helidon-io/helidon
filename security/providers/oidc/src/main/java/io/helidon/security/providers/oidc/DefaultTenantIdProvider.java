@@ -23,10 +23,11 @@ import javax.annotation.Priority;
 
 import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
-import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
 import io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
 import io.helidon.security.util.TokenHandler;
+
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
  * This is the default tenant id provider.
@@ -35,7 +36,7 @@ import io.helidon.security.util.TokenHandler;
 class DefaultTenantIdProvider implements TenantIdProvider {
 
     static final String DEFAULT_TENANT_ID_STYLE = "host-header";
-    static final Optional<String> DEFAULT_TENANT_ID = Optional.of(OidcConfig.DEFAULT_TENANT_ID);
+    static final Optional<String> DEFAULT_TENANT_ID_VALUE = Optional.of(DEFAULT_TENANT_ID);
 
     @Override
     public TenantIdFinder createTenantIdFinder(Config config) {
@@ -64,7 +65,7 @@ class DefaultTenantIdProvider implements TenantIdProvider {
     private static class NoTenantId implements TenantIdFinder {
         @Override
         public Optional<String> tenantId(ProviderRequest providerRequest) {
-            return DEFAULT_TENANT_ID;
+            return DEFAULT_TENANT_ID_VALUE;
         }
     }
 

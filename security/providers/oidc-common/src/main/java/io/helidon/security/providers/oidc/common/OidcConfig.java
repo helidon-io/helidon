@@ -19,7 +19,6 @@ package io.helidon.security.providers.oidc.common;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -41,9 +40,9 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -333,12 +332,7 @@ public final class OidcConfig extends TenantConfig {
     static final boolean DEFAULT_RELATIVE_URIS = false;
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
-
-    /**
-     * Default tenant id used when requesting configuration for unknown tenant.
-     */
-    public static final String DEFAULT_TENANT_ID = "@default";
-    public static final String TENANT_IDENT = "name";
+    static final String TENANT_IDENT = "name";
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
 
@@ -380,10 +374,10 @@ public final class OidcConfig extends TenantConfig {
         this.generalClient = builder.generalClient;
         this.relativeUris = builder.relativeUris;
 
-        if (builder.validateJwtWithJwk) {
+        if (builder.validateJwtWithJwk()) {
             this.introspectEndpoint = LazyValue.create(Optional.empty());
         } else {
-            this.introspectEndpoint = LazyValue.create(() -> Optional.of(appClient().target(builder.introspectUri)));
+            this.introspectEndpoint = LazyValue.create(() -> Optional.of(appClient().target(builder.introspectUri())));
         }
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
@@ -666,11 +660,12 @@ public final class OidcConfig extends TenantConfig {
     public TenantConfig tenantConfig(String tenantId) {
         TenantConfig tenantConfig = tenantConfigurations.get(tenantId);
         if (tenantConfig == null) {
-            return tenantConfigurations.getOrDefault(DEFAULT_TENANT_ID, this);
+            return tenantConfigurations.getOrDefault(TenantConfigFinder.DEFAULT_TENANT_ID, this);
         }
         return tenantConfig;
     }
 
+    @Override
     public URI tokenEndpointUri() {
         return beforeLazyLoaded(() -> defaultTenant.get().tokenEndpointUri(), super::tokenEndpointUri);
     }
@@ -825,7 +820,7 @@ public final class OidcConfig extends TenantConfig {
             buildConfiguration();
 
             Errors.Collector collector = Errors.collector();
-            if (useCookie && logoutEnabled) {
+            if (useCookie() && logoutEnabled) {
                 if (postLogoutUri == null) {
                     collector.fatal("post-logout-uri must be defined when logout is enabled.");
                 }
@@ -834,31 +829,31 @@ public final class OidcConfig extends TenantConfig {
             // second set of validations
             collector.collect().checkValid();
 
-            if (cookieSameSiteDefault && useCookie) {
+            if (cookieSameSiteDefault() && useCookie()) {
                 // compare frontend and oidc endpoints to see if
                 // we should use lax or strict by default
-                if (identityUri != null) {
-                    String identityHost = identityUri.getHost();
+                if (identityUri() != null) {
+                    String identityHost = identityUri().getHost();
                     if (frontendUri != null) {
                         String frontendHost = URI.create(frontendUri).getHost();
                         if (identityHost.equals(frontendHost)) {
                             LOGGER.info("As frontend host and identity host are equal, setting Same-Site policy to Strict"
                                                 + " this can be overridden using configuration option of OIDC: "
                                                 + "\"cookie-same-site\"");
-                            this.tokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
-                            this.idTokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
+                            this.tokenCookieBuilder().sameSite(SetCookie.SameSite.STRICT);
+                            this.idTokenCookieBuilder().sameSite(SetCookie.SameSite.STRICT);
                         }
                     }
                 }
             }
 
             if (logoutEnabled) {
-                idTokenCookieBuilder.encryptionEnabled(true);
+                idTokenCookieBuilder().encryptionEnabled(true);
             }
 
             this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyHost,
                                                                                 proxyPort,
-                                                                                clientTimeout);
+                                                                                clientTimeout());
             this.jaxrsClientBuilderSupplier = () -> OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
 
             this.generalClient = jaxrsClientBuilderSupplier.get().build();
@@ -912,7 +907,7 @@ public final class OidcConfig extends TenantConfig {
         private void tenantFromConfig(Config defaultConfig, Config tenantConfig) {
             String name = tenantConfig.get(TENANT_IDENT).asString()
                     .orElseThrow(() -> new IllegalStateException("Every tenant need to have \"" + TENANT_IDENT + "\" specified"));
-            tenantConfigurations.put(name, TenantConfig.tenantBuilder().config(defaultConfig).config(tenantConfig).build());
+            addTenantConfig(name, TenantConfig.tenantBuilder().config(defaultConfig).config(tenantConfig).build());
 
         }
 
@@ -1133,6 +1128,13 @@ public final class OidcConfig extends TenantConfig {
             return this;
         }
 
+        /**
+         * Add specific {@link TenantConfig} instance.
+         *
+         * @param tenant tenant name
+         * @param tenantConfig tenant configuration
+         * @return updated builder instance
+         */
         public Builder addTenantConfig(String tenant, TenantConfig tenantConfig) {
             tenantConfigurations.put(tenant, tenantConfig);
             return this;
