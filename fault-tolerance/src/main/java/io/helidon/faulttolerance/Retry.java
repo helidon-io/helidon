@@ -505,7 +505,7 @@ public interface Retry extends FtHandler {
             this.calls = builder.calls;
             this.delayMillis = builder.delay.toMillis();
             long jitter = builder.jitter.toMillis();
-            int jitterMillis = (jitter > Long.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
+            int jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
             if (jitterMillis == 0) {
                 randomJitter = () -> 0;
             } else {
@@ -662,13 +662,13 @@ public interface Retry extends FtHandler {
             initialDelay = builder.initialDelay;
             maxDelay = builder.maxDelay;
             long jitter = builder.randomJitter;
-            long jitterMillis = Math.min(jitter, Long.MAX_VALUE);
+            int jitterMillis = (int) Math.min(jitter, Integer.MAX_VALUE);
             if (jitterMillis == 0L) {
                 randomJitter = () -> 0L;
             } else {
                 Random random = new Random();
                 // need a number [-jitterMillis,+jitterMillis]
-                randomJitter = () -> random.nextLong(jitterMillis * 2) - jitterMillis;
+                randomJitter = () -> Long.valueOf(random.nextInt( jitterMillis * 2) - jitterMillis);
             }
         }
 
@@ -848,13 +848,13 @@ public interface Retry extends FtHandler {
             factor = builder.factor;
 
             long jitter = builder.jitter;
-            long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : jitter;
+            int jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
             if (jitterMillis == 0L) {
                 this.jitter = () -> 0L;
             } else {
                 Random random = new Random();
                 // need a number [-jitterMillis,+jitterMillis]
-                this.jitter = () -> random.nextLong(jitterMillis * 2) - jitterMillis;
+                this.jitter = () -> Long.valueOf(random.nextInt((jitterMillis * 2) - jitterMillis));
             }
         }
 
