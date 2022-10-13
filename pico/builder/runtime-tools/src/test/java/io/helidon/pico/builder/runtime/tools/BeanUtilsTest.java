@@ -16,138 +16,133 @@
 
 package io.helidon.pico.builder.runtime.tools;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.builder.runtime.tools.BeanUtils.isBooleanType;
 import static io.helidon.pico.builder.runtime.tools.BeanUtils.isValidMethodType;
 import static io.helidon.pico.builder.runtime.tools.BeanUtils.validateAndParseMethodName;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BeanUtilsTest {
+class BeanUtilsTest {
 
     @Test
-    public void testIsBooleanType() {
-        assertTrue(isBooleanType(boolean.class));
-        assertTrue(isBooleanType(Boolean.class));
-        assertFalse(isBooleanType(String.class));
-        assertFalse(isBooleanType(""));
+    void testIsBooleanType() {
+        assertThat(isBooleanType(boolean.class), is(true));
+        assertThat(isBooleanType(Boolean.class), is(true));
+        assertThat(isBooleanType(String.class), is(false));
+        assertThat(isBooleanType(""), is(false));
     }
 
     @Test
-    public void testIsValidMethodType() {
-        assertTrue(isValidMethodType(boolean.class.getName()));
-        assertTrue(isValidMethodType(String.class.getName()));
-        assertTrue(isValidMethodType(Object.class.getName()));
-        assertFalse(isValidMethodType(null));
-        assertFalse(isValidMethodType(""));
-        assertFalse(isValidMethodType(Void.class.getName()));
-        assertFalse(isValidMethodType(void.class.getName()));
+    void testIsValidMethodType() {
+        assertThat(isValidMethodType(boolean.class.getName()), is(true));
+        assertThat(isValidMethodType(String.class.getName()), is(true));
+        assertThat(isValidMethodType(Collection.class.getName()), is(true));
+        assertThat(isValidMethodType(Map.class.getName()), is(true));
+        assertThat(isValidMethodType(Set.class.getName()), is(true));
+        assertThat(isValidMethodType(List.class.getName()), is(true));
+        assertThat(isValidMethodType(Object.class.getName()), is(true));
+        assertThat(isValidMethodType(null), is(false));
+        assertThat(isValidMethodType(""), is(false));
+        assertThat(isValidMethodType(void.class.getName()), is(false));
+        assertThat(isValidMethodType(Void.class.getName()), is(false));
     }
 
     @Test
-    public void testValidateAndParseMethodName() {
+    void testValidateAndParseMethodName() {
         AtomicReference<List<String>> attrName = new AtomicReference<>(Collections.emptyList());
-        Supplier<String> messageSupplier = () -> "test message";
 
         RuntimeException e = assertThrows(RuntimeException.class,
                       () -> validateAndParseMethodName("x", "", true, attrName));
-        assertEquals("invalid return type: x", e.getMessage());
-        assertNull(attrName.get());
+        assertThat(e.getMessage(), is("invalid return type: x"));
+        assertThat(attrName.get(), nullValue());
 
-        assertTrue(validateAndParseMethodName("isAlpha", Boolean.class.getName(), false, attrName));
-        assertEquals("[alpha, isAlpha]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("isAlpha", Boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alpha", "isAlpha"));
 
-        assertTrue(validateAndParseMethodName("isAlpha", boolean.class.getName(), false, attrName));
-        assertEquals("[alpha, isAlpha]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("isAlpha", boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alpha", "isAlpha"));
 
-        assertTrue(validateAndParseMethodName("getAlpha", boolean.class.getName(), false, attrName));
-        assertEquals("[alpha]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("getAlpha", boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alpha"));
 
-        assertTrue(validateAndParseMethodName("getAlpha", Boolean.class.getName(), false, attrName));
-        assertEquals("[alpha]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("getAlpha", Boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alpha"));
 
-        assertTrue(validateAndParseMethodName("getAlpha", String.class.getName(), false, attrName));
-        assertEquals("[alpha]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("getAlpha", String.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alpha"));
 
-        assertTrue(validateAndParseMethodName("getAlpha", Object.class.getName(), false, attrName));
-        assertEquals("[alpha]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("getAlpha", Object.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alpha"));
 
-        assertTrue(validateAndParseMethodName("isAlphaNumeric", boolean.class.getName(), false, attrName));
-        assertEquals("[alphaNumeric, isAlphaNumeric]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("isAlphaNumeric", boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alphaNumeric", "isAlphaNumeric"));
 
-        assertTrue(validateAndParseMethodName("isAlphaNumeric", Boolean.class.getName(), false, attrName));
-        assertEquals("[alphaNumeric, isAlphaNumeric]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("getAlphaNumeric", boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("alphaNumeric"));
 
-        assertTrue(validateAndParseMethodName("getAlphaNumeric", boolean.class.getName(), false, attrName));
-        assertEquals("[alphaNumeric]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("isX", boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("x", "isX"));
 
-        assertTrue(validateAndParseMethodName("getAlphaNumeric", Boolean.class.getName(), false, attrName));
-        assertEquals("[alphaNumeric]", String.valueOf(attrName.get()));
-
-        assertTrue(validateAndParseMethodName("getAlphaNumeric", String.class.getName(), false, attrName));
-        assertEquals("[alphaNumeric]", String.valueOf(attrName.get()));
-
-        assertTrue(validateAndParseMethodName("isX", boolean.class.getName(), false, attrName));
-        assertEquals("[x, isX]", String.valueOf(attrName.get()));
-
-        assertTrue(validateAndParseMethodName("getX", boolean.class.getName(), false, attrName));
-        assertEquals("[x]", String.valueOf(attrName.get()));
+        assertThat(validateAndParseMethodName("getX", boolean.class.getName(), false, attrName), is(true));
+        assertThat(attrName.get(), contains("x"));
 
         // negative cases ...
-        assertFalse(validateAndParseMethodName("isAlphaNumeric", String.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("isX", String.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("is_AlphaNumeric", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("is_AlphaNumeric", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("is", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("is", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("is", Boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("is", Boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("get", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("get", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("get", Boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("get", Boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("get1AlphaNumeric", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("get1AlphaNumeric", Boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("getalphaNumeric", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("getalphaNumeric", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("isalphaNumeric", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("isalphaNumeric", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("is9AlphaNumeric", boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("is9alphaNumeric", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("isAlphaNumeric", void.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("isAlphaNumeric", void.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("getAlphaNumeric", Void.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("getAlphaNumeric", Void.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("x", Integer.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("x", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("IsX", Boolean.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("IsX", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
 
-        assertFalse(validateAndParseMethodName("GetX", Integer.class.getName(), false, attrName));
-        assertNull(attrName.get());
+        assertThat(validateAndParseMethodName("GetX", boolean.class.getName(), false, attrName), is(false));
+        assertThat(attrName.get(), nullValue());
     }
-
 
 }

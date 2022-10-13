@@ -24,14 +24,17 @@ import io.helidon.pico.builder.test.testsubjects.ParentOfParentInterfaceIsABuild
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ParentParentChildTest {
+class ParentParentChildTest {
 
     @Test
-    public void collapsedMiddleType() {
-        assertEquals(ParentOfParentInterfaceIsABuilderImpl.class, ChildInterfaceIsABuilderImpl.class.getSuperclass());
+    void collapsedMiddleType() {
+        assertThat(ParentOfParentInterfaceIsABuilderImpl.class,
+                   sameInstance(ChildInterfaceIsABuilderImpl.class.getSuperclass()));
 
         ChildInterfaceIsABuilder child = ChildInterfaceIsABuilderImpl.builder()
                 .childLevel(100)
@@ -39,32 +42,30 @@ public class ParentParentChildTest {
                 .uri(URI.create("http://localhost"))
                 .empty((String) null)
                 .build();
-        assertEquals("override", new String(child.overrideMe()));
-        assertEquals("http://localhost", child.uri().get().toString());
-        assertTrue(child.empty().isEmpty());
-        assertEquals(100, child.childLevel());
-        assertEquals(99, child.parentLevel());
-        assertTrue(child.isChildLevel());
+        assertThat(new String(child.overrideMe()), equalTo("override"));
+        assertThat(child.uri().get().toString(), equalTo("http://localhost"));
+        assertThat(child.empty().isEmpty(), is(true));
+        assertThat(child.childLevel(), is(100L));
+        assertThat(child.parentLevel(), is(99L));
+        assertThat(child.isChildLevel(), is(true));
     }
 
     /**
      * Presumably someone may want to keep a password in the bean, and if so we should not show it to callers in toString().
      */
     @Test
-    public void ensureCharArraysAreHiddenFromToStringOutput() {
+    void ensureCharArraysAreHiddenFromToStringOutput() {
         ChildInterfaceIsABuilderImpl val = ChildInterfaceIsABuilderImpl.builder()
                 .overrideMe("password")
                 .build();
-        assertEquals(
-                "ChildInterfaceIsABuilderImpl(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
-                        + "overrideMe=not-null)",
-                val.toString());
+        assertThat(val.toString(),
+                equalTo("ChildInterfaceIsABuilderImpl(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
+                        + "overrideMe=not-null)"));
 
         val = ChildInterfaceIsABuilderImpl.toBuilder(val).overrideMe((char[]) null).build();
-        assertEquals(
-                "ChildInterfaceIsABuilderImpl(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
-                        + "overrideMe=null)",
-                val.toString());
+        assertThat(val.toString(),
+                equalTo("ChildInterfaceIsABuilderImpl(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
+                        + "overrideMe=null)"));
     }
 
 }

@@ -23,18 +23,20 @@ import io.helidon.pico.builder.test.testsubjects.DefaultAnnotationCaseExt;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
-public class AnnotationCaseTest {
+class AnnotationCaseTest {
 
     @Test
-    public void testIt() {
+    void testIt() {
         DefaultAnnotationCaseExt annotationCase = DefaultAnnotationCaseExt.builder().build();
-        assertEquals(AnnotationCase.class, annotationCase.annotationType());
-        assertSame(annotationCase, annotationCase.get());
-        assertEquals("hello", annotationCase.value());
-        assertEquals("[a, b, c]", Arrays.asList(annotationCase.strArr()).toString());
+        assertThat(annotationCase.annotationType(), sameInstance(AnnotationCase.class));
+        assertThat(annotationCase.get(), sameInstance(annotationCase));
+        assertThat(annotationCase.value(), equalTo("hello"));
+        assertThat(Arrays.asList(annotationCase.strArr()), contains("a", "b", "c"));
     }
 
 }

@@ -22,56 +22,92 @@ import io.helidon.pico.types.TypeName;
  * The default implementation of {@link io.helidon.pico.builder.spi.TypeAndBody}.
  */
 @SuppressWarnings("unchecked")
-public class TypeAndBodyImpl implements TypeAndBody {
+public class DefaultTypeAndBody implements TypeAndBody {
 
     private final TypeName typeName;
     private final String body;
 
-    protected TypeAndBodyImpl(Builder builder) {
+    protected DefaultTypeAndBody(Builder builder) {
         this.typeName = builder.typeName;
         this.body = builder.body;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public TypeName getTypeName() {
+    public TypeName typeName() {
         return typeName;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public String getBody() {
+    public String body() {
         return body;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return getClass().getSimpleName() + "(" + toStringInner() + ")";
     }
 
     protected String toStringInner() {
-        return "typeName=" + getTypeName()
-                + ", body=" + getBody();
+        return "typeName=" + typeName()
+                + ", body=" + body();
     }
 
-    public static Builder<? extends Builder> builder() {
+
+    /**
+     * Creates a new builder for this type.
+     *
+     * @return the fluent builder
+     */
+    public static Builder builder() {
         return new Builder();
     }
 
-    public static class Builder<B extends Builder<B>> {
+
+    /**
+     * Builder for this type.
+     */
+    public static class Builder {
         private TypeName typeName;
         private String body;
 
-        public B typeName(TypeName val) {
+        /**
+         * Sets the typeName to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder typeName(TypeName val) {
             this.typeName = val;
-            return (B) this;
+            return this;
         }
 
-        public B body(String val) {
+        /**
+         * Sets the body to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder body(String val) {
             this.body = val;
-            return (B) this;
+            return this;
         }
 
-        public TypeAndBodyImpl build() {
-            return new TypeAndBodyImpl(this);
+        /**
+         * Builds the instance.
+         *
+         * @return the built instance
+         */
+        public DefaultTypeAndBody build() {
+            return new DefaultTypeAndBody(this);
         }
     }
 

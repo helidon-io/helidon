@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+/**
+ * The Pico Builder annotation processor module.
+ */
 module io.helidon.pico.builder.processor {
     requires java.compiler;
-    requires transitive io.helidon.pico.builder.api;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.pico.builder.tools;
+    requires io.helidon.common;
+    requires io.helidon.pico.builder.api;
+    requires io.helidon.pico.builder.tools;
+    requires io.helidon.pico.builder.spi;
+    requires io.helidon.pico.types;
+
+    uses io.helidon.pico.builder.spi.BuilderCreator;
 
     exports io.helidon.pico.builder.processor;
 

@@ -52,7 +52,7 @@ public class BeanUtils {
     /**
      * Returns true if the return type is valid for a bean (e.g., not void, etc.).
      *
-     * @param typeName the return type name for the method
+     * @param typeName the return type name for the method, represented as a string
      * @return true if valid
      */
     public static boolean isValidMethodType(String typeName) {
@@ -66,7 +66,7 @@ public class BeanUtils {
      * @param methodName                the method name
      * @param methodTypeName            the method type
      * @param throwIfInvalid            flag indicating if an exception should be raised if invalid
-     * @param attributeNameRef          optionally, the reference that will be populated to hold the attribute names - in preferred naming order - or null if not valid
+     * @param attributeNameRef          the reference that will be populated to hold the attribute names - in preferred naming order
      * @return true if the method name represents a valid bean getter/is method
      * @throws java.lang.RuntimeException if the throw message is used and the method name is invalid
      */

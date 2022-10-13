@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-builder-processor</artifactId>
-    <name>Helidon Pico Builder : Annotation Processor</name>
+    <name>Helidon Pico Builder Annotation Processor</name>
 
     <dependencies>
         <dependency>
@@ -39,12 +39,15 @@
         <dependency>
             <groupId>io.helidon.pico.builder</groupId>
             <artifactId>helidon-pico-builder-api</artifactId>
-            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.builder</groupId>
             <artifactId>helidon-pico-builder-tools</artifactId>
-            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

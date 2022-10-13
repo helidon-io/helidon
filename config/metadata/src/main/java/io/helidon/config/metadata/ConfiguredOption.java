@@ -55,6 +55,11 @@ public @interface ConfiguredOption {
     String UNCONFIGURED = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
 
     /**
+     * The default value for {@link #required()} is {@code false}.
+     */
+    boolean DEFAULT_REQUIRED = false;
+
+    /**
      * The key of the configuration option as used in config.
      *
      * @return config key
@@ -85,8 +90,10 @@ public @interface ConfiguredOption {
      * make this option optional (as a default value exists).
      *
      * @return {@code true} for required option, {@code false} for options that are optional.
+     *
+     * @see #DEFAULT_REQUIRED
      */
-    boolean required() default false;
+    boolean required() default DEFAULT_REQUIRED;
 
     /**
      * Default value of this option if not configured explicitly.

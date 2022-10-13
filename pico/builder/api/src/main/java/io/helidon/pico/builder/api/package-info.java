@@ -15,7 +15,20 @@
  */
 
 /**
- * The Builder API consists of several annotations that are typically used only for compile-time processing.
+ * The Builder API consists of a few annotations that can be used to create fluent builders for the types that use
+ * {@link io.helidon.pico.builder.api.Builder}, or otherwise one of its kind. The meta annotation
+ * {@link io.helidon.pico.builder.api.BuilderTrigger} is used to annotate the annotations that trigger custom-style builders.
+ * <p>
+ * The {@link io.helidon.pico.builder.api.Builder} annotation typically is applied to the an interface type, but it can also
+ * be used directly on annotation types as well. When applied, and if the annotation processor is applied for the builder-type
+ * annotation then an implementation class is generated that supports the fluent-builder pattern for that type.
+ * <p>
+ * A few things to note:
+ * <ul>
+ *     <li>The target type that is annotated with the builder annotation should have all getter-like methods.</li>
+ *     <li>Any static or default method will be ignored.</li>
+ * </ul>
  *
+ * @see io.helidon.config.metadata.ConfiguredOption
  */
 package io.helidon.pico.builder.api;

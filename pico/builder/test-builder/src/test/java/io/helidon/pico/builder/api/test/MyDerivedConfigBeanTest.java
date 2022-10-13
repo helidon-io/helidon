@@ -16,28 +16,51 @@
 
 package io.helidon.pico.builder.api.test;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
+
 import io.helidon.pico.builder.test.testsubjects.MyDerivedConfigBean;
 import io.helidon.pico.builder.test.testsubjects.MyDerivedConfigBeanImpl;
-import io.helidon.pico.testsupport.TestUtils;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.sameInstance;
 
-public class MyDerivedConfigBeanTest {
+class MyDerivedConfigBeanTest {
 
     @Test
-    public void testIt() {
-        assertSame(MyDerivedConfigBean.class,
-                     MyDerivedConfigBeanImpl.__getMetaConfigBeanType());
-        assertEquals(
-                "{enabled={key=, type=boolean}, name={key=, required=true, type=class java.lang.String}, "
-                        + "port={key=, type=int}}",
-                     TestUtils.sort(MyDerivedConfigBeanImpl.__getMetaAttributes()).toString());
+    void testIt() {
+        assertThat(MyDerivedConfigBean.class,
+                     sameInstance(MyDerivedConfigBeanImpl.__getMetaConfigBeanType()));
+        assertThat(sort(MyDerivedConfigBeanImpl.__getMetaAttributes()).toString(),
+                   equalTo("{enabled={key=, type=boolean}, name={deprecated=false, experimental=false, key=, kind=VALUE, "
+                        + "mergeWithParent=false, provider=false, required=true, type=io.helidon.config.metadata"
+                        + ".ConfiguredOption, value=io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED}, port={key=, "
+                        + "type=int}}"));
 
         MyDerivedConfigBean cfg = MyDerivedConfigBeanImpl.builder().build();
-        assertEquals("MyDerivedConfigBeanImpl(name=null, enabled=false, port=8080)", cfg.toString());
+        assertThat(cfg.toString(),
+                   equalTo("MyDerivedConfigBeanImpl(name=null, enabled=false, port=8080)"));
+    }
+
+    static Map<String, ?> sort(Map<String, ?> inMap) {
+        Map<String, Object> result = new TreeMap<>();
+        inMap.forEach((key, value) -> {
+            if (value instanceof Map) {
+                Object newVal = new TreeMap<>((Map) value);
+                result.put(key, newVal);
+            } else if (value instanceof Collection) {
+                Object newVal = new ArrayList<>((Collection) value);
+                result.put(key, newVal);
+            } else {
+                result.put(key, value);
+            }
+        });
+        return result;
     }
 
 }

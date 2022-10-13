@@ -47,12 +47,12 @@ import io.helidon.pico.builder.spi.TypeAndBody;
 import io.helidon.pico.builder.spi.TypeInfo;
 import io.helidon.pico.builder.tools.BuilderTypeTools;
 import io.helidon.pico.builder.tools.TypeInfoCreator;
-import io.helidon.pico.spi.DefaultTypeName;
 import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
 /**
- * The processor for handling any annotation with {@link io.helidon.pico.builder.api.BuilderTrigger}.
+ * The processor for handling any annotation having a {@link io.helidon.pico.builder.api.BuilderTrigger}.
  */
 public class BuilderProcessor extends AbstractProcessor {
 
@@ -82,7 +82,7 @@ public class BuilderProcessor extends AbstractProcessor {
                     });
                 });
             });
-            Collections.sort(producers, Weights.weightComparator());
+            producers.sort(Weights.weightComparator());
             producers.forEach(p -> ALL_ANNO_TYPES_HANDLED.addAll(p.getSupportedAnnotationTypes()));
             return producers;
         } catch (Throwable t) {
@@ -174,10 +174,10 @@ public class BuilderProcessor extends AbstractProcessor {
 
         Set<BuilderCreator> creators = getProducersForType(DefaultTypeName.create(annoType));
         Optional<TypeAndBody> result = creators.stream()
-                .map(it -> it.create(typeInfo, builderAnnotation)).findFirst();
+                .map(it -> it.create(typeInfo, builderAnnotation).orElse(null)).findFirst();
         if (result.isEmpty()
-                || Objects.isNull(result.get().getTypeName())
-                || Objects.isNull(result.get().getBody())) {
+                || Objects.isNull(result.get().typeName())
+                || Objects.isNull(result.get().body())) {
             String msg = "Unable to process " + typeName;
             LOGGER.log(System.Logger.Level.WARNING, msg);
             processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg);
@@ -187,9 +187,9 @@ public class BuilderProcessor extends AbstractProcessor {
     }
 
     protected void codegen(TypeAndBody typeAndBody) throws IOException {
-        JavaFileObject javaSrc = processingEnv.getFiler().createSourceFile(typeAndBody.getTypeName().getName());
+        JavaFileObject javaSrc = processingEnv.getFiler().createSourceFile(typeAndBody.typeName().name());
         try (Writer os = javaSrc.openWriter()) {
-            os.write(typeAndBody.getBody());
+            os.write(typeAndBody.body());
         }
     }
 

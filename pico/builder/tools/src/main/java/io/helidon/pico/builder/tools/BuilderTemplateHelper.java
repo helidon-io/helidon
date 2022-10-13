@@ -16,9 +16,12 @@
 
 package io.helidon.pico.builder.tools;
 
-public class BuilderTemplateHelper {
+class BuilderTemplateHelper {
 
-    public static final String getDefaultGeneratedSticker(String generatorClassTypeName) {
+    private BuilderTemplateHelper() {
+    }
+
+    public static String getDefaultGeneratedSticker(String generatorClassTypeName) {
         String[] generatedSticker = new String[] {
                 "generator=" + generatorClassTypeName
         };

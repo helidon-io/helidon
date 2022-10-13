@@ -15,6 +15,6 @@
  */
 
 /**
- * The Pico Builder annotation processing supporting types.
+ * The Pico Builder annotation processing package.
  */
 package io.helidon.pico.builder.processor;

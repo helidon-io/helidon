@@ -15,6 +15,6 @@
  */
 
 /**
- * Builder tooling helpers.
+ * Builder runtime tooling utilities and helpers.
  */
 package io.helidon.pico.builder.runtime.tools;

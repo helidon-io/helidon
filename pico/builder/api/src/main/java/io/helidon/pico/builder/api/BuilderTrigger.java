@@ -23,10 +23,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Meta-annotation that when used will trigger the enclosing service type marked with this annotation to drive the
- * builder-processor.
- *
- * See the Builder SPI module for details.
+ * the meta-annotation will trigger the enclosing service type marked with this annotation to drive the
+ * builder-processor. In another words, this annotation is a means for discovery of other
+ * {@link io.helidon.pico.builder.api.Builder}-like annotations.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

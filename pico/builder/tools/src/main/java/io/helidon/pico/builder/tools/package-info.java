@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.test.testsubjects;
-
-public @interface AnnotationCase {
-
-    String value() default "hello";
-
-    String[] strArr() default {"a", "b", "c"};
-
-}
+/**
+ * The Pico Builder tools package. These are generally only needed by other Helidon modules like the Builder annotation processor, etc.
+ */
+package io.helidon.pico.builder.tools;

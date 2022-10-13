@@ -17,10 +17,11 @@
 package io.helidon.pico.builder.spi;
 
 import java.util.List;
+import java.util.Optional;
 
-import io.helidon.pico.spi.TypedElementName;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.TypeName;
+import io.helidon.pico.types.TypedElementName;
 
 /**
  * Represents the model object for an interface type (e.g., one that was annotated with {@link io.helidon.pico.builder.api.Builder}).
@@ -28,28 +29,38 @@ import io.helidon.pico.types.TypeName;
 public interface TypeInfo {
 
     /**
-     * @return the type name.
+     * The type name.
+     *
+     * @return the type name
      */
-    TypeName getTypeName();
+    TypeName typeName();
 
     /**
-     * @return the type element kind (e.g., "INTERFACE", "ANNOTATION_TYPE", etc.).
+     * The type element kind.
+     *
+     * @return the type element kind (e.g., "INTERFACE", "ANNOTATION_TYPE", etc.)
      */
-    String getTypeKind();
+    String typeKind();
 
     /**
-     * @return the annotations on the type itself.
+     * The annotations on the type.
+     *
+     * @return the annotations on the type
      */
-    List<AnnotationAndValue> getAnnotations();
+    List<AnnotationAndValue> annotations();
 
     /**
-     * @return the elements that make up the type.
+     * The elements that make up the type.
+     *
+     * @return the elements that make up the type
      */
-    List<TypedElementName> getElementInfo();
+    List<TypedElementName> elementInfo();
 
     /**
      * The parent/super class for this type info.
+     *
+     * @return the super type.
      */
-    TypeInfo getSuperTypeInfo();
+    Optional<TypeInfo> superTypeInfo();
 
 }

@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-module helidon.pico.builder.runtime.tools {
+/**
+ * Pico Builder Runtime Tools module.
+ */
+module io.helidon.pico.builder.runtime.tools {
 
     exports io.helidon.pico.builder.runtime.tools;
 

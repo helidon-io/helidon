@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-builder-spi</artifactId>
-    <name>Helidon Pico Builder : SPI</name>
+    <name>Helidon Pico Builder SPI</name>
 
     <dependencies>
         <dependency>
@@ -38,14 +38,16 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico-spi</artifactId>
-            <version>${helidon.version}</version>
+            <artifactId>helidon-pico-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.builder</groupId>
             <artifactId>helidon-pico-builder-api</artifactId>
-            <version>${helidon.version}</version>
-            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

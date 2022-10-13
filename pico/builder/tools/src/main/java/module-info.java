@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
+/**
+ * The Pico Builder tools module.
+ */
 module io.helidon.pico.builder.tools {
     requires java.compiler;
-    requires transitive io.helidon.pico.builder.api;
-    requires transitive io.helidon.pico.builder.spi;
-    requires helidon.pico.builder.runtime.tools;
+    requires io.helidon.pico.types;
+    requires io.helidon.pico.builder.api;
+    requires io.helidon.pico.builder.spi;
+    requires io.helidon.pico.builder.runtime.tools;
+    requires io.helidon.common;
+    requires io.helidon.config.metadata;
+
+    exports io.helidon.pico.builder.tools;
 
     provides io.helidon.pico.builder.spi.BuilderCreator with io.helidon.pico.builder.tools.DefaultBuilderCreator;
     provides io.helidon.pico.builder.tools.TypeInfoCreator with io.helidon.pico.builder.tools.BuilderTypeTools;
-
-    exports io.helidon.pico.builder.tools;
 }

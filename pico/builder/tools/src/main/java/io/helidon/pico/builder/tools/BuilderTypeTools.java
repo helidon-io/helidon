@@ -44,18 +44,20 @@ import javax.tools.Diagnostic;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.pico.builder.spi.DefaultTypeInfo;
 import io.helidon.pico.builder.spi.TypeInfo;
-import io.helidon.pico.builder.spi.TypeInfoImpl;
-import io.helidon.pico.spi.DefaultAnnotationAndValue;
-import io.helidon.pico.spi.DefaultTypeName;
-import io.helidon.pico.spi.DefaultTypedElementName;
-import io.helidon.pico.spi.TypedElementName;
 import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.pico.types.DefaultAnnotationAndValue;
+import io.helidon.pico.types.DefaultTypeName;
+import io.helidon.pico.types.DefaultTypedElementName;
 import io.helidon.pico.types.TypeName;
+import io.helidon.pico.types.TypedElementName;
 
-import static io.helidon.pico.spi.DefaultTypeName.create;
-
-@Weight(Weighted.DEFAULT_WEIGHT)
+/**
+ * The default implementation for {@link io.helidon.pico.builder.tools.TypeInfoCreator}. This also contains an abundance of other
+ * useful methods used for annotation processing.
+ */
+@Weight(Weighted.DEFAULT_WEIGHT - 1)
 public class BuilderTypeTools implements TypeInfoCreator {
 
     private final System.Logger logger = System.getLogger(getClass().getName());
@@ -69,7 +71,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
             throw new IllegalArgumentException();
         }
 
-        if (typeName.getName().equals(Annotation.class.getName())) {
+        if (typeName.name().equals(Annotation.class.getName())) {
             return null;
         }
 
@@ -94,7 +96,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
         }
 
         Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv);
-        return TypeInfoImpl.builder()
+        return DefaultTypeInfo.builder()
                 .typeName(typeName)
                 .typeKind(String.valueOf(element.getKind()))
                 .annotations(BuilderTypeTools.createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils()))
@@ -104,13 +106,12 @@ public class BuilderTypeTools implements TypeInfoCreator {
     }
 
     protected Collection<TypedElementName> toElementInfo(TypeElement element, ProcessingEnvironment processingEnv) {
-        List<TypedElementName> methods = element.getEnclosedElements().stream()
+        return element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
                 .filter(this::canAccept)
                 .map(it -> createTypedElementNameFromElement(it, processingEnv.getElementUtils()))
                 .collect(Collectors.toList());
-        return methods;
     }
 
     protected boolean canAccept(ExecutableElement ee) {
@@ -121,7 +122,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
     private TypeInfo toTypeInfo(AnnotationAndValue annotation, TypeElement element, ProcessingEnvironment processingEnv) {
         List<? extends TypeMirror> ifaces = element.getInterfaces();
         if (ifaces.size() > 1) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "currently only supports one parent interface: " + element);
+            processingEnv.getMessager()
+                    .printMessage(Diagnostic.Kind.ERROR, "currently only supports one parent interface: " + element);
         } else if (ifaces.isEmpty()) {
             return null;
         }
@@ -216,11 +218,11 @@ public class BuilderTypeTools implements TypeInfoCreator {
                 throw new AssertionError("unknown primitive type: " + kind);
             }
 
-            return create(type);
+            return DefaultTypeName.create(type);
         }
 
         if (TypeKind.VOID == kind) {
-            return create(void.class);
+            return DefaultTypeName.create(void.class);
         } else if (TypeKind.TYPEVAR == kind) {
             return null;
         } else if (TypeKind.WILDCARD == kind) {
@@ -266,6 +268,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
      * Creates an instance from an annotation mirror during annotation processing.
      *
      * @param am the annotation mirror
+     * @param elements  the elements
      * @return the new instance
      */
     public static AnnotationAndValue createAnnotationAndValueFromMirror(AnnotationMirror am, Elements elements) {
@@ -276,6 +279,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
      * Creates an instance from a variable element during annotation processing.
      *
      * @param e the variable/type element
+     * @param elements  the elements
      * @return the new instance
      */
     public static List<AnnotationAndValue> createAnnotationAndValueListFromElement(Element e, Elements elements) {
@@ -286,7 +290,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
     /**
      * Extracts values from the annotation mirror value.
      *
-     * @param am the annotation mirror
+     * @param am        the annotation mirror
+     * @param elements  the elements
      * @return the extracted values
      */
     public static Map<String, String> extractValues(AnnotationMirror am, Elements elements) {
@@ -318,13 +323,12 @@ public class BuilderTypeTools implements TypeInfoCreator {
      * Creates an instance of a {@link TypedElementName} given its type and variable element from
      * annotation processing.
      *
-     * @param v the element (from annotation processing)
+     * @param v         the element (from annotation processing)
+     * @param elements  the elements
      * @return the created instance
      */
     public static TypedElementName createTypedElementNameFromElement(Element v, Elements elements) {
         final TypeName type = createTypeNameFromElement(v);
-//        final String typeName = type.getName();
-
         List<TypeName> componentTypeNames = null;
         String defaultValue = null;
         List<AnnotationAndValue> elementTypeAnnotations = Collections.emptyList();
@@ -348,8 +352,6 @@ public class BuilderTypeTools implements TypeInfoCreator {
                                                             .mapEmptyStringToNull(true)
                                                             .mapToSourceDeclaration(true), null);
         }
-
-
 
         return DefaultTypedElementName.builder()
                 .typeName(type)

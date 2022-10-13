@@ -22,8 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Adding this annotation to a {@link Builder}-annotated interface or method causes the value
- * annotation(s) to be added to the codegen'ed output.
+ * Adding this annotation in conjunction with the {@link Builder} on a target interface type or method causes the {@link #value()}
+ * to be added to the generated implementation class and methods respectfully.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
@@ -32,6 +32,6 @@ public @interface Annotated {
     /**
      * @return The annotation to add the method and field names for the given getter name.
      */
-    String[] value() default {};
+    String[] value();
 
 }
