@@ -368,31 +368,72 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return this;
         }
 
+        /**
+         * Whether to allow {@link TenantConfigProvider} service loader discovery.
+         * Default value is {@code true}.
+         *
+         * @param discoverConfigProviders whether to use service loader
+         * @return updated builder instance
+         */
         public Builder discoverTenantConfigProviders(boolean discoverConfigProviders) {
             tenantConfigProviders.useSystemServiceLoader(discoverConfigProviders);
             return this;
         }
 
+        /**
+         * Whether to allow {@link TenantIdFinder} service loader discovery.
+         * Default value is {@code true}.
+         *
+         * @param discoverIdProviders whether to use service loader
+         * @return updated builder instance
+         */
         public Builder discoverTenantIdProviders(boolean discoverIdProviders) {
             tenantIdProviders.useSystemServiceLoader(discoverIdProviders);
             return this;
         }
 
+
+        /**
+         * Add specific {@link TenantConfigFinder} implementation.
+         * Priority {@link #BUILDER_PRIORITY} is used.
+         *
+         * @param configFinder config finder implementation
+         * @return updated builder instance
+         */
         public Builder addTenantConfigFinder(TenantConfigFinder configFinder) {
-            tenantConfigProviders.addService(config -> configFinder, BUILDER_PRIORITY);
-            return this;
+            return addTenantConfigFinder(configFinder, BUILDER_PRIORITY);
         }
 
+        /**
+         * Add specific {@link TenantConfigFinder} implementation with specific priority.
+         *
+         * @param configFinder config finder implementation
+         * @param priority finder priority
+         * @return updated builder instance
+         */
         public Builder addTenantConfigFinder(TenantConfigFinder configFinder, int priority) {
             tenantConfigProviders.addService(config -> configFinder, priority);
             return this;
         }
 
+        /**
+         * Add specific {@link TenantIdFinder} implementation.
+         * Priority {@link #BUILDER_PRIORITY} is used.
+         *
+         * @param idFinder id finder implementation
+         * @return updated builder instance
+         */
         public Builder addTenantConfigFinder(TenantIdFinder idFinder) {
-            tenantIdProviders.addService(config -> idFinder, BUILDER_PRIORITY);
-            return this;
+            return addTenantConfigFinder(idFinder, BUILDER_PRIORITY);
         }
 
+        /**
+         * Add specific {@link TenantIdFinder} implementation with specific priority.
+         *
+         * @param idFinder id finder implementation
+         * @param priority finder priority
+         * @return updated builder instance
+         */
         public Builder addTenantConfigFinder(TenantIdFinder idFinder, int priority) {
             tenantIdProviders.addService(config -> idFinder, priority);
             return this;

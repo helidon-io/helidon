@@ -581,16 +581,36 @@ public final class OidcSupport implements Service {
             return this;
         }
 
+        /**
+         * Whether to allow {@link TenantConfigProvider} service loader discovery.
+         * Default value is {@code true}.
+         *
+         * @param discoverConfigProviders whether to use service loader
+         * @return updated builder instance
+         */
         public Builder discoverTenantConfigProviders(boolean discoverConfigProviders) {
             tenantConfigProviders.useSystemServiceLoader(discoverConfigProviders);
             return this;
         }
 
+        /**
+         * Add specific {@link TenantConfigFinder} implementation.
+         * Priority {@link #BUILDER_PRIORITY} is used.
+         *
+         * @param configFinder config finder implementation
+         * @return updated builder instance
+         */
         public Builder addTenantConfigFinder(TenantConfigFinder configFinder) {
-            tenantConfigProviders.addService(config -> configFinder, BUILDER_PRIORITY);
-            return this;
+            return addTenantConfigFinder(configFinder, BUILDER_PRIORITY);
         }
 
+        /**
+         * Add specific {@link TenantConfigFinder} implementation with specific priority.
+         *
+         * @param configFinder config finder implementation
+         * @param priority finder priority
+         * @return updated builder instance
+         */
         public Builder addTenantConfigFinder(TenantConfigFinder configFinder, int priority) {
             tenantConfigProviders.addService(config -> configFinder, priority);
             return this;

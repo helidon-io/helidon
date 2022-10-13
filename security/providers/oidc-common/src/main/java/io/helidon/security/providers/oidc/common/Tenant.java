@@ -74,8 +74,15 @@ public final class Tenant {
         this.introspectUri = introspectUri;
     }
 
-    public static Tenant create(OidcConfig defaultOidcConfig, TenantConfig tenantConfig) {
-        WebClient webClient = defaultOidcConfig.generalWebClient();
+    /**
+     * Create new instance and resolve all the metadata related values.
+     *
+     * @param oidcConfig overall OIDC config
+     * @param tenantConfig tenant config
+     * @return new instance with resolved OIDC metadata
+     */
+    public static Tenant create(OidcConfig oidcConfig, TenantConfig tenantConfig) {
+        WebClient webClient = oidcConfig.generalWebClient();
 
         Errors.Collector collector = Errors.collector();
         OidcMetadata oidcMetadata = OidcMetadata.builder().webClient(webClient)
@@ -106,8 +113,8 @@ public final class Tenant {
         }
 
         collector.collect().checkValid();
-        WebClient.Builder webClientBuilder = defaultOidcConfig.webClientBuilderSupplier().get();
-        ClientBuilder clientBuilder = defaultOidcConfig.jaxrsClientBuilderSupplier().get();
+        WebClient.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
+        ClientBuilder clientBuilder = oidcConfig.jaxrsClientBuilderSupplier().get();
 
         if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
             HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
