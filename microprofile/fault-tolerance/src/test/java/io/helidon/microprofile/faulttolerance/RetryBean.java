@@ -21,8 +21,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.microprofile.faulttolerance.retrypolicy.RetryExponentialBackoff;
-import io.helidon.microprofile.faulttolerance.retrypolicy.RetryFibonacciBackoff;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;

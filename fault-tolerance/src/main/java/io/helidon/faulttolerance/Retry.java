@@ -650,8 +650,8 @@ public interface Retry extends FtHandler {
     class FibonacciRetryPolicy implements RetryPolicy {
 
         private final int calls;
-        private final long initialDelayInMillis;
-        private final long maxDelayInMillis;
+        private final Duration initialDelay;
+        private final Duration maxDelay;
         private final Supplier<Long> randomJitter;
 
         private long delayA;
@@ -659,10 +659,10 @@ public interface Retry extends FtHandler {
 
         private FibonacciRetryPolicy(Builder builder) {
             calls = builder.calls;
-            initialDelayInMillis = builder.initialDelayInMillis;
-            maxDelayInMillis = builder.maxDelayInMillis;
+            initialDelay = builder.initialDelay;
+            maxDelay = builder.maxDelay;
             long jitter = builder.randomJitter;
-            long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : jitter;
+            long jitterMillis = Math.min(jitter, Long.MAX_VALUE);
             if (jitterMillis == 0L) {
                 randomJitter = () -> 0L;
             } else {
@@ -690,12 +690,12 @@ public interface Retry extends FtHandler {
             }
 
             if (delayA == 0) {
-                delayA = initialDelayInMillis;
+                delayA = initialDelay.toMillis();
                 return Optional.of(delayA + randomJitter.get());
             }
 
             if (delayB == 0) {
-                delayB = initialDelayInMillis << 1;
+                delayB = initialDelay.toMillis() << 1;
                 return Optional.of(delayB + randomJitter.get());
             }
 
@@ -703,7 +703,7 @@ public interface Retry extends FtHandler {
             delayA = delayB;
             delayB = delay;
 
-            if (delay >= maxDelayInMillis) {
+            if (delay >= maxDelay.toMillis()) {
                 return Optional.empty();
             }
 
@@ -717,8 +717,8 @@ public interface Retry extends FtHandler {
         public static class Builder implements io.helidon.common.Builder<Builder, FibonacciRetryPolicy> {
 
             private int calls = 10;
-            private long initialDelayInMillis = 0;
-            private long maxDelayInMillis = 180_000L;
+            private Duration initialDelay = Duration.ofMillis(2);
+            private Duration maxDelay = Duration.ofMillis(180_000);
             private long randomJitter = 50;
 
             @Override
@@ -741,24 +741,24 @@ public interface Retry extends FtHandler {
             /**
              * Initial Delay in Milliseconds.
              *
-             * @param initialDelayInMillis long
+             * @param initialDelay Duration
              * @return updated builder instance
              */
             @ConfiguredOption("0")
-            public Builder initialDelayInMillis(long initialDelayInMillis) {
-                this.initialDelayInMillis = initialDelayInMillis;
+            public Builder initialDelay(Duration initialDelay) {
+                this.initialDelay = initialDelay;
                 return this;
             }
 
             /**
              * Max Delay in Milliseconds.
              *
-             * @param maxDelayInMillis long
+             * @param maxDelay Duration
              * @return updated builder instance
              */
-            @ConfiguredOption("60000")
-            public Builder maxDelayInMillis(long maxDelayInMillis) {
-                this.maxDelayInMillis = maxDelayInMillis;
+            @ConfiguredOption("180000")
+            public Builder maxDelay(Duration maxDelay) {
+                this.maxDelay = maxDelay;
                 return this;
             }
 
@@ -789,17 +789,22 @@ public interface Retry extends FtHandler {
              *     <th>description</th>
              * </tr>
              * <tr>
+             *     <td>calls</td>
+             *     <td>10</td>
+             *     <td>Number of calls</td>
+             * </tr>
+             * <tr>
              *     <td>initial-delay</td>
-             *     <td>0</td>
+             *     <td>2</td>
              *     <td>Initial delay</td>
              * </tr>
              * <tr>
              *     <td>max-delay</td>
-             *     <td>1 minute</td>
+             *     <td>3 minutes</td>
              *     <td>Maximum delay</td>
              * </tr>
              * <tr>
-             *     <td>random-jitter</td>
+             *     <td>jitter</td>
              *     <td>50 milliseconds</td>
              *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
              * </tr>
@@ -809,9 +814,10 @@ public interface Retry extends FtHandler {
              * @return updated builder instance
              */
             public Builder config(Config config) {
-                config.get("initial-delay").asLong().ifPresent(this::initialDelayInMillis);
-                config.get("max-delay").asLong().ifPresent(this::maxDelayInMillis);
-                config.get("random-jitter").asLong().ifPresent(this::jitter);
+                config.get("calls").asInt().ifPresent(this::calls);
+                config.get("initial-delay").as(Duration.class).ifPresent(this::initialDelay);
+                config.get("max-delay").as(Duration.class).ifPresent(this::maxDelay);
+                config.get("jitter").asLong().ifPresent(this::jitter);
                 return this;
             }
         }
@@ -827,28 +833,28 @@ public interface Retry extends FtHandler {
     class ExponentialRetryPolicy implements RetryPolicy {
 
         private final int calls;
-        private final long initialDelayInMillis;
-        private final long maxDelayInMillis;
+        private final Duration initialDelay;
+        private final Duration maxDelay;
         private final int factor;
-        private final Supplier<Long> randomJitter;
+        private final Supplier<Long> jitter;
 
         private long accumulateDelay;
 
 
         private ExponentialRetryPolicy(Builder builder) {
             calls = builder.calls;
-            initialDelayInMillis = builder.initialDelayInMillis;
-            maxDelayInMillis = builder.maxDelayInMillis;
+            initialDelay = builder.initialDelay;
+            maxDelay = builder.maxDelay;
             factor = builder.factor;
 
-            long jitter = builder.randomJitter;
+            long jitter = builder.jitter;
             long jitterMillis = (jitter > Long.MAX_VALUE) ? Long.MAX_VALUE : jitter;
             if (jitterMillis == 0L) {
-                randomJitter = () -> 0L;
+                this.jitter = () -> 0L;
             } else {
                 Random random = new Random();
                 // need a number [-jitterMillis,+jitterMillis]
-                randomJitter = () -> random.nextLong(jitterMillis * 2) - jitterMillis;
+                this.jitter = () -> random.nextLong(jitterMillis * 2) - jitterMillis;
             }
         }
 
@@ -870,17 +876,17 @@ public interface Retry extends FtHandler {
             }
 
             if (accumulateDelay == 0) {
-                accumulateDelay = initialDelayInMillis;
-                return Optional.of(accumulateDelay + randomJitter.get());
+                accumulateDelay = initialDelay.toMillis();
+                return Optional.of(accumulateDelay + jitter.get());
             }
 
             accumulateDelay = accumulateDelay * factor;
 
-            if (accumulateDelay >= maxDelayInMillis) {
+            if (accumulateDelay >= maxDelay.toMillis()) {
                 return Optional.empty();
             }
 
-            return Optional.of(accumulateDelay + randomJitter.get());
+            return Optional.of(accumulateDelay + jitter.get());
         }
 
         /**
@@ -890,10 +896,10 @@ public interface Retry extends FtHandler {
         public static class Builder implements io.helidon.common.Builder<Builder, ExponentialRetryPolicy> {
 
             private int calls = 10;
-            private long initialDelayInMillis = 2;
-            private long maxDelayInMillis = 180_000L;
+            private Duration initialDelay = Duration.ofMillis(2);
+            private Duration maxDelay = Duration.ofMillis(180_000);
             private int factor = 2;
-            private long randomJitter = 5;
+            private long jitter = 50;
 
             @Override
             public ExponentialRetryPolicy build() {
@@ -913,26 +919,26 @@ public interface Retry extends FtHandler {
             }
 
             /**
-             * Initial Delay in Milliseconds.
+             * Initial Delay.
              *
-             * @param initialDelayInMillis long
+             * @param initialDelay Duration
              * @return updated builder instance
              */
-            @ConfiguredOption("0")
-            public Builder initialDelayInMillis(long initialDelayInMillis) {
-                this.initialDelayInMillis = initialDelayInMillis;
+            @ConfiguredOption("2")
+            public Builder initialDelay(Duration initialDelay) {
+                this.initialDelay = initialDelay;
                 return this;
             }
 
             /**
              * Max Delay in Milliseconds.
              *
-             * @param maxDelayInMillis long
+             * @param maxDelay long
              * @return updated builder instance
              */
             @ConfiguredOption("180000")
-            public Builder maxDelayInMillis(long maxDelayInMillis) {
-                this.maxDelayInMillis = maxDelayInMillis;
+            public Builder maxDelay(Duration maxDelay) {
+                this.maxDelay = maxDelay;
                 return this;
             }
 
@@ -957,8 +963,8 @@ public interface Retry extends FtHandler {
              * @return updated builder instance
              */
             @ConfiguredOption("50")
-            public Builder randomJitter(long jitter) {
-                this.randomJitter = jitter;
+            public Builder jitter(long jitter) {
+                this.jitter = jitter;
                 return this;
             }
 
@@ -975,13 +981,18 @@ public interface Retry extends FtHandler {
              *     <th>description</th>
              * </tr>
              * <tr>
+             *     <td>calls</td>
+             *     <td>10</td>
+             *     <td>Number of calls</td>
+             * </tr>
+             * <tr>
              *     <td>initial-delay</td>
-             *     <td>0</td>
+             *     <td>2</td>
              *     <td>Initial delay</td>
              * </tr>
              * <tr>
              *     <td>max-delay</td>
-             *     <td>1 minute</td>
+             *     <td>3 minutes</td>
              *     <td>Maximum delay</td>
              * </tr>
              * <tr>
@@ -990,7 +1001,7 @@ public interface Retry extends FtHandler {
              *     <td>Multiplication factor</td>
              * </tr>
              * <tr>
-             *     <td>random-jitter</td>
+             *     <td>jitter</td>
              *     <td>50 milliseconds</td>
              *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
              * </tr>
@@ -1000,10 +1011,11 @@ public interface Retry extends FtHandler {
              * @return updated builder instance
              */
             public Builder config(Config config) {
-                config.get("initial-delay").asLong().ifPresent(this::initialDelayInMillis);
-                config.get("max-delay").asLong().ifPresent(this::maxDelayInMillis);
+                config.get("calls").asInt().ifPresent(this::calls);
+                config.get("initial-delay").as(Duration.class).ifPresent(this::initialDelay);
+                config.get("max-delay").as(Duration.class).ifPresent(this::maxDelay);
                 config.get("factor").asInt().ifPresent(this::factor);
-                config.get("random-jitter").asLong().ifPresent(this::randomJitter);
+                config.get("jitter").asLong().ifPresent(this::jitter);
                 return this;
             }
         }

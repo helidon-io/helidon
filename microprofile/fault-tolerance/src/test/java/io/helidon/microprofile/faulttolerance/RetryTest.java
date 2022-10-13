@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.*;
  */
 @AddBean(RetryBean.class)
 @AddBean(SyntheticRetryBean.class)
-//@Disabled("3.0.0-JAKARTA")
+@Disabled("3.0.0-JAKARTA")
 public class RetryTest extends FaultToleranceTest {
 
     static Stream<Arguments> createBeans() {

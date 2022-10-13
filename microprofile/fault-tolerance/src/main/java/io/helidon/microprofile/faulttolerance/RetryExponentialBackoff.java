@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.faulttolerance.retrypolicy;
+package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -26,8 +26,8 @@ import java.lang.annotation.Target;
 /**
  * A retry policy that increases the delay time following an exponential sequence.
  * Allowed elements that are also annotated with {@code @Retry}.
- * Expected sequence: initial delay, 2 * initial delay + jitter, 4 * initial delay + jitter,
- * 8 * initial delay + jitter, etc. {@code maxDelayInMillis} is used to prevent endless waiting.
+ * Expected sequence if factor is 2: initial delay, 2 * initial delay + jitter, 4 * initial delay + jitter,
+ * 8 * initial delay + jitter, etc. {@code maxDelay} is used to prevent endless waiting.
  */
 @Inherited
 @Documented
@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
 public @interface RetryExponentialBackoff {
 
     /**
-     * Initial Delay in Milliseconds. Default is 0.
+     * Initial Delay. Default is 0.
      *
      * @return Milliseconds long
      */

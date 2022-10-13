@@ -21,8 +21,6 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
-import io.helidon.microprofile.faulttolerance.retrypolicy.RetryExponentialBackoff;
-import io.helidon.microprofile.faulttolerance.retrypolicy.RetryFibonacciBackoff;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;

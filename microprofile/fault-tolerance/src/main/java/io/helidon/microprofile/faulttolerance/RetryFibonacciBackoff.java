@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.faulttolerance.retrypolicy;
+package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
