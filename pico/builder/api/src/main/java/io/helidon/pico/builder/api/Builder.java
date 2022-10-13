@@ -28,18 +28,27 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Adding this annotation on an interface will cause the builder-processor to create a builder for that interface.
- * <p/>
- * The bean implementation that is generated will not require any "special types" requiring extra modules to be included
- * since the code is a straight Java builder implementation.
+ * Adding this annotation on an interface will cause the Builder's annotation processor to generate an implementation of the
+ * interface that supports the builder pattern.
+ *<p>
+ * Supplemental annotation types that are supported in conjunction with this builder type include:
+ * <ul>
+ *     <li>{@link io.helidon.pico.builder.api.Annotated} - in order to add custom annotations on the implementation.</li>
+ *     <li>{@link io.helidon.pico.builder.api.Singular} - when using lists, maps, and sets on getter methods.</li>
+ *     <li>{@link io.helidon.config.metadata.ConfiguredOption} - for handling default values, policy constraints, etc.</li>
+ * </ul>
+ *
+ * @see io.helidon.pico.builder.api.Annotated
+ * @see io.helidon.pico.builder.api.Singular
  */
+@SuppressWarnings("rawtypes")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
 @BuilderTrigger
 public @interface Builder {
 
     /**
-     * The default prefeix appended to the generated class name.
+     * The default prefix appended to the generated class name.
      */
     String DEFAULT_PREFIX = "Default";
 
@@ -49,68 +58,78 @@ public @interface Builder {
     String DEFAULT_SUFFIX = "";
 
     /**
-     * The default list type.
+     * The default list type used for the generated class implementation for any references to {@link java.util.List} is found
+     * on the methods of the {@link Builder}-annotation interface.
      */
     Class<? extends List> DEFAULT_LIST_TYPE = ArrayList.class;
 
     /**
-     * The default map type.
+     * The default map type used for the generated class implementation for any references to {@link java.util.Map} is found
+     * on the methods of the {@link Builder}-annotation interface.
      */
     Class<? extends Map> DEFAULT_MAP_TYPE = LinkedHashMap.class;
 
     /**
-     * The default set type.
+     * The default set type used for the generated class implementation for any references to {@link java.util.Set} is found
+     * on the methods of the {@link Builder}-annotation interface.
      */
     Class<? extends Set> DEFAULT_SET_TYPE = LinkedHashSet.class;
 
     /**
-     * Whether meta information should be revealed as a map.
+     * Flag indicating whether meta information should be revealed as a map (defaulting to {@code true}).
      */
     boolean DEFAULT_INCLUDE_META_ATTRIBUTES = true;
 
     /**
-     * @return The package name to use. If starts with "." the package name will be relative to the target type. If
-     * left undefined will default to the target type. Default is "", defaulting to the same package as the interface.
+     * The package name to use for the generated class. If the package name starts with "." then the package name will be
+     * relative to the target type. If left undefined (i.e., an empty string) it will default to the target type's
+     * package name.
+     *
+     * @return the package name to use for the generated class
      */
     String packageName() default "";
 
     /**
-     * @return The prefix name that will be assigned to the implementation class that is code generated. Default is "Default".
+     * The prefix name that will be assigned to the implementation class that is code generated. Default is {@link #DEFAULT_PREFIX}.
+     *
+     * @return the prefix name
      */
     String implPrefix() default DEFAULT_PREFIX;
 
     /**
-     * @return The suffix name that will be assigned to the implementation class that is code generated. Default is "".
+     * The suffix name that will be assigned to the implementation class that is code generated. Default is {@link #DEFAULT_SUFFIX}.
+     *
+     * @return the suffix name
      */
     String implSuffix() default DEFAULT_SUFFIX;
 
     /**
-     * @return True to force the use of isX() (for booleans) or getY() (for non booleans). Default is false.
+     * Should bean style be enforced. Set to {@code true} to force the use of isX() (for booleans) or getY() (for non booleans) on the
+     * target type's methods. Default is {@code false}. When enabled then any violation of this will lead to a compile-time error by the
+     * Builder's annotation processor.
+     *
+     * @return true to enforce bean style
      */
     boolean requireBeanStyle() default false;
 
     /**
-     * @return True to expose the set of attributes that are used, carried in a map form.
-     */
-    boolean includeMetaAttributes() default DEFAULT_INCLUDE_META_ATTRIBUTES;
-
-//    /**
-//     * @return True if beans are validated according to {@link io.helidon.pico.builder.api.ConfiguredOption} when built.
-//     */
-//    boolean includeValidation() default true;
-
-    /**
-     * @return If the builder uses {@link java.util.List} on the interface then this will be the implementation class.
+     * The list implementation type to apply, defaulting to {@link #DEFAULT_LIST_TYPE}.
+     *
+     * @return the list type to apply
      */
     Class<? extends List> listImplType() default ArrayList.class;
 
     /**
-     * @return If the builder uses {@link java.util.Map} on the interface then this will be the implementation class.
+     * The map implementation type to apply, defaulting to {@link #DEFAULT_MAP_TYPE}.
+     *
+     * @return the map type to apply
      */
     Class<? extends Map> mapImplType() default LinkedHashMap.class;
 
     /**
-     * @return If the builder uses {@link java.util.Set} on the interface then this will be the implementation class.
+     * The set implementation type to apply, defaulting to {@link #DEFAULT_SET_TYPE}.
+     *
+     * @return the set type to apply
      */
     Class<? extends Set> setImplType() default LinkedHashSet.class;
 

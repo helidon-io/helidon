@@ -18,8 +18,8 @@ package io.helidon.pico.builder.test.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.api.Builder;
-import io.helidon.pico.builder.api.ConfiguredOption;
 
 @Builder
 public interface EdgeCases {

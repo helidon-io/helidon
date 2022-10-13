@@ -22,22 +22,22 @@ import io.helidon.pico.builder.test.testsubjects.ComplexCaseImpl;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ComplexCaseTest {
+class ComplexCaseTest {
 
     @Test
-    public void testIt() {
+    void testIt() {
         ComplexCaseImpl val = ComplexCaseImpl.builder()
                 .name("name")
                 .addConfigBean(null)
                 .addKeyToConfigBean("key", null)
                 .setOfLists(Collections.singleton(Collections.singletonList(null)))
                 .build();
-        assertEquals(
-                "ComplexCaseImpl(name=name, enabled=false, port=8080, mapOfKeyToConfigBeans={key=null}, "
-                        + "listOfConfigBeans=[null], setOfLists=[[null]])",
-                     val.toString());
+        assertThat(val.toString(),
+                   equalTo("ComplexCaseImpl(name=name, enabled=false, port=8080, mapOfKeyToConfigBeans={key=null}, "
+                                   + "listOfConfigBeans=[null], setOfLists=[[null]])"));
     }
 
 }

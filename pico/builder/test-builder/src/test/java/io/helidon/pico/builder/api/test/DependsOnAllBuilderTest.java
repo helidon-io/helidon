@@ -18,14 +18,15 @@ package io.helidon.pico.builder.api.test;
 
 import io.helidon.pico.builder.test.testsubjects.DependsOnAllBuilders;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class DependsOnAllBuilderTest {
+class DependsOnAllBuilderTest {
 
-    public void testIt() {
-        assertNotNull(DependsOnAllBuilders.createCustomNamed());
-        assertNotNull(DependsOnAllBuilders.createLevel2());
-        assertNotNull(DependsOnAllBuilders.createMyConfigBean());
+    void testIt() {
+        assertThat(DependsOnAllBuilders.createCustomNamed(), notNullValue());
+        assertThat(DependsOnAllBuilders.createLevel2(), notNullValue());
+        assertThat(DependsOnAllBuilders.createMyConfigBean(), notNullValue());
     }
 
 }

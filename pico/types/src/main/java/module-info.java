@@ -18,5 +18,7 @@
  * Pico minimal (spi) types module.
  */
 module io.helidon.pico.types {
+    requires io.helidon.common;
+
     exports io.helidon.pico.types;
 }

@@ -16,8 +16,9 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.config.metadata.ConfiguredValue;
 import io.helidon.pico.builder.api.Builder;
-import io.helidon.pico.builder.api.ConfiguredOption;
 
 @Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
 public interface MyConfigBean {
@@ -27,7 +28,9 @@ public interface MyConfigBean {
 
     boolean isEnabled();
 
-    @ConfiguredOption(key = "port", value = "8080", allowedValues = {"8080", "8081", "8082"})
+    @ConfiguredOption(key = "port", value = "8080", allowedValues = {
+            @ConfiguredValue(value = "8080", description = "t1"),
+            @ConfiguredValue(value = "false", description = "t2")})
     int getPort();
 
 }

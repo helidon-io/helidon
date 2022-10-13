@@ -16,8 +16,8 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.api.Builder;
-import io.helidon.pico.builder.api.ConfiguredOption;
 
 @Builder(implPrefix = "", implSuffix = "Impl")
 public interface ChildInterfaceIsABuilder extends ParentInterfaceNotABuilder {

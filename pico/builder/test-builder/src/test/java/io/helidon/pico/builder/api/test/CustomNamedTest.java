@@ -25,29 +25,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class CustomNamedTest {
+class CustomNamedTest {
 
     @Test
-    public void testIt() throws Exception {
+    void testIt() throws Exception {
         DefaultCustomNamed.Builder customNamedBuilder = DefaultCustomNamed.builder()
                 .addStringList("b").addStringList("a").addStringList("b").addStringList("y")
                 .addStringToIntegerMap("b", 1).addStringToIntegerMap("e",2).addStringToIntegerMap("a", 3)
                 .addStringSet("b").addStringSet("a").addStringSet("b").addStringSet("y");
         CustomNamed customNamed = customNamedBuilder.build();
-        assertEquals("DefaultCustomNamed(stringSet=[a, b, y], stringList=[b, a, b, y], stringToIntegerMap={a=3, b=1, e=2})",
-                     customNamed.toString(), "should be ordered since we are using tree list and set");
+        assertThat("should be ordered since we are using tree and ordered/linked",
+                   customNamed.toString(),
+                   equalTo("DefaultCustomNamed(stringSet=[a, b, y], stringList=[b, a, b, y], stringToIntegerMap={a=3, b=1, "
+                                   + "e=2})"));
 
         ObjectMapper mapper = new ObjectMapper()
                 .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
                 .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
         String json = mapper.writer(printer).writeValueAsString(customNamed);
-        assertEquals("{\n"
+        assertThat(json, equalTo("{\n"
                              + "  \"stringSet\" : [ \"a\", \"b\", \"y\" ]\n"
-                             + "}",
-                     json);
+                             + "}"));
     }
 
 }

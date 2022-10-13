@@ -22,45 +22,51 @@ import io.helidon.pico.builder.test.testsubjects.MyConfigBeanManualImpl;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
-public class MyConfigBeanTest {
+class MyConfigBeanTest {
 
     @Test
-    public void manual() {
+    void manual() {
         MyConfigBean val = MyConfigBeanManualImpl.builder().build();
-        assertEquals("MyConfigBeanManualImpl(name=null, enabled=false, port=0)", val.toString());
+        assertThat(val.toString(),
+                   equalTo("MyConfigBeanManualImpl(name=null, enabled=false, port=0)"));
 
         val = MyConfigBeanManualImpl.toBuilder(val)
                 .name("jeff")
                 .enabled(true)
                 .port(80)
                 .build();
-        assertEquals("MyConfigBeanManualImpl(name=jeff, enabled=true, port=80)", val.toString());
+        assertThat(val.toString(), equalTo("MyConfigBeanManualImpl(name=jeff, enabled=true, port=80)"));
     }
 
     @Test
-    public void codeGen() {
+    void codeGen() {
         MyConfigBean val = MyConfigBeanImpl.builder().build();
-        assertEquals("MyConfigBeanImpl(name=null, enabled=false, port=8080)", val.toString());
+        assertThat(val.toString(),
+                   equalTo("MyConfigBeanImpl(name=null, enabled=false, port=8080)"));
 
         val = MyConfigBeanImpl.toBuilder(val)
                 .name("jeff")
                 .enabled(true)
                 .port(80)
                 .build();
-        assertEquals("MyConfigBeanImpl(name=jeff, enabled=true, port=80)", val.toString());
+        assertThat(val.toString(),
+                   equalTo("MyConfigBeanImpl(name=jeff, enabled=true, port=80)"));
     }
 
     @Test
-    public void mixed() {
+    void mixed() {
         MyConfigBean val1 = MyConfigBeanManualImpl.builder().build();
         val1              = MyConfigBeanImpl.toBuilder(val1)
                 .name("jeff")
                 .enabled(true)
                 .port(80)
                 .build();
-        assertEquals("MyConfigBeanImpl(name=jeff, enabled=true, port=80)", val1.toString());
+        assertThat(val1.toString(),
+                   equalTo("MyConfigBeanImpl(name=jeff, enabled=true, port=80)"));
 
         MyConfigBean val2 = MyConfigBeanImpl.builder().build();
         val2              = MyConfigBeanManualImpl.toBuilder(val2)
@@ -68,11 +74,12 @@ public class MyConfigBeanTest {
                 .enabled(true)
                 .port(80)
                 .build();
-        assertEquals("MyConfigBeanManualImpl(name=jeff, enabled=true, port=80)", val2.toString());
+        assertThat(val2.toString(),
+                   equalTo("MyConfigBeanManualImpl(name=jeff, enabled=true, port=80)"));
 
-        assertEquals(val1.hashCode(), val2.hashCode());
-        assertEquals(val1, val2);
-        assertEquals(val2, val1);
+        assertThat(val1.hashCode(), is(val2.hashCode()));
+        assertThat(val1, equalTo(val2));
+        assertThat(val2, equalTo(val1));
     }
 
 }

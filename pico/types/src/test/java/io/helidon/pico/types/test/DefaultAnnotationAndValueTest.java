@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.api.test;
+package io.helidon.pico.types.test;
 
-import io.helidon.pico.builder.test.testsubjects.DefaultEdgeCases;
+import io.helidon.pico.types.DefaultAnnotationAndValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,17 +24,17 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class EdgeCasesTest {
+class DefaultAnnotationAndValueTest {
 
     @Test
-    void testIt() {
-        DefaultEdgeCases val = DefaultEdgeCases.toBuilder(null).build();
-        assertThat(val.optionalIntegerWithDefault().get(), is(-1));
-        assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
+    void sanity() {
+        DefaultAnnotationAndValue val1 = DefaultAnnotationAndValue.create(Test.class);
+        assertThat(val1.typeName().toString(), equalTo("org.junit.jupiter.api.Test"));
+        assertThat(val1.toString(), equalTo("DefaultAnnotationAndValue(typeName=org.junit.jupiter.api.Test, values={})"));
 
-        val = DefaultEdgeCases.toBuilder(val).optionalIntegerWithDefault(-2).build();
-        assertThat(val.optionalIntegerWithDefault().get(), is(-2));
-        assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
+        DefaultAnnotationAndValue val2 = DefaultAnnotationAndValue.create(Test.class);
+        assertThat(val2, equalTo(val1));
+        assertThat(val2.compareTo(val1), is(0));
     }
 
 }

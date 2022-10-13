@@ -27,9 +27,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-builder-runtime-tools</artifactId>
-    <name>Helidon Pico Builder : Runtime Tools</name>
+    <name>Helidon Pico Builder Runtime Tools</name>
 
     <dependencies>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

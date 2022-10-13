@@ -26,7 +26,7 @@ import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
-public class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, Object> {
+class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, Object> {
     private boolean mapVoidToNull;
     private boolean mapFalseToNull;
     private boolean mapEmptyStringToNull;
@@ -175,4 +175,5 @@ public class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<St
     public String visitUnknown(AnnotationValue av, Object o) {
         return null;
     }
+
 }

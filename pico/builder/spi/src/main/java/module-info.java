@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+/**
+ * The Pico Builder SPI module.
+ */
 module io.helidon.pico.builder.spi {
-    requires static io.helidon.pico.builder.api;
-
-    requires transitive io.helidon.pico.spi;
+    requires io.helidon.pico.builder.api;
+    requires io.helidon.pico.types;
+    requires io.helidon.common;
 
     exports io.helidon.pico.builder.spi;
 }

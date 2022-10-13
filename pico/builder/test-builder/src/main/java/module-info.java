@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+/**
+ * Pico Builder test module.
+ */
 module io.helidon.pico.builder.test.builder {
-    requires transitive io.helidon.pico.builder.api;
     requires static com.fasterxml.jackson.annotation;
+    requires static io.helidon.pico.builder.api;
+    requires io.helidon.config.metadata;
 }

@@ -19,8 +19,8 @@ package io.helidon.pico.builder.test.testsubjects;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.api.Builder;
-import io.helidon.pico.builder.api.ConfiguredOption;
 import io.helidon.pico.builder.api.Singular;
 
 @Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")

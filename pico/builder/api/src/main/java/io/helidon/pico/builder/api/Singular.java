@@ -22,15 +22,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Adding this annotation to a {@link Builder}-annotated interface method to also an "add*()"
- * prefixed method for the same type.
+ * Applying this annotation to a {@link Builder}-annotated interface method will cause the generated class to also include
+ * additional "add*()" methods. This will only apply, however, if the method is for a {@link java.util.Map}, {@link java.util.List},
+ * or {@link java.util.Set}.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)
 public @interface Singular {
 
     /**
-     * @return The singular method name to addign.
+     * The optional value specified here will determine the singular form of the method name.
+     * For instance, if we take a method like this:
+     * <pre>{@code
+     * @Singlular("pickle")
+     * List<Pickle> getPickles();
+     * }</pre>
+     * an additional generated method named {@code addPickle(Pickle val)} will be placed on the builder of the generated class.
+     * <p>This annotation only applies to getter methods that return a Map, List, or Set.
+     *
+     * @return The singular name to add.
      */
     String value() default "";
 

@@ -24,13 +24,17 @@ import io.helidon.pico.types.TypeName;
 public interface TypeAndBody {
 
     /**
-     * @return The type name for the source to be generated.
+     * The type name for the source to be generated.
+     *
+     * @return The type name for the source to be generated
      */
-    TypeName getTypeName();
+    TypeName typeName();
 
     /**
-     * @return The body for the source to be generated.
+     * The body for the source to be generated.
+     *
+     * @return The body for the source to be generated
      */
-    String getBody();
+    String body();
 
 }

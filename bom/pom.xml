@@ -26,7 +26,7 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon</groupId>
+
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
     <name>Helidon BOM POM</name>
@@ -1400,6 +1400,33 @@
             <dependency>
                 <groupId>io.helidon.pico</groupId>
                 <artifactId>helidon-pico-types</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Pico Builder -->
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-runtime-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
