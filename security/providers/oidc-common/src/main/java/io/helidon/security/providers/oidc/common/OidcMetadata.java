@@ -28,6 +28,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.webclient.WebClient;
 
 final class OidcMetadata {
