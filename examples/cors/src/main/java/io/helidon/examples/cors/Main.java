@@ -21,15 +21,15 @@ import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.cors.CorsSupport;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 /**
  * Simple Hello World rest application.

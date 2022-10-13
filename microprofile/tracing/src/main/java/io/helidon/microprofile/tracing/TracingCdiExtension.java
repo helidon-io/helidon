@@ -22,7 +22,6 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentelemetry.opentracingshim.OpenTracingShim;

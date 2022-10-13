@@ -19,6 +19,7 @@
  */
 module io.helidon.reactive.graphql.server {
     requires java.logging;
+
     requires io.helidon.common;
     requires io.helidon.common.uri;
     requires io.helidon.common.configurable;
@@ -28,8 +29,10 @@ module io.helidon.reactive.graphql.server {
     requires io.helidon.reactive.media.common;
     requires io.helidon.reactive.media.jsonb;
     requires io.helidon.reactive.webserver;
-    requires org.eclipse.yasson;
     requires io.helidon.reactive.webserver.cors;
+
+    requires com.graphqljava;
+    requires org.eclipse.yasson;
 
     exports io.helidon.reactive.graphql.server;
 }

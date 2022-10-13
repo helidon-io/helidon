@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;

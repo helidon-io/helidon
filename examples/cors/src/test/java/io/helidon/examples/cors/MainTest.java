@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.Headers;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
@@ -30,7 +31,6 @@ import io.helidon.reactive.webclient.WebClientRequestHeaders;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webclient.WebClientResponseHeaders;
 import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
