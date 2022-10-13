@@ -18,12 +18,12 @@ package io.helidon.microprofile.server;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
@@ -253,10 +253,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public <T> List<T> getAllInstances(Type contractOrImpl) {
-            return Stream.concat(
-                            shared.<T>getAllInstances(contractOrImpl).stream(),
-                            forApplication.<T>getAllInstances(contractOrImpl).stream())
-                    .toList();
+            List<T> result = new ArrayList<>();
+            result.addAll(shared.getAllInstances(contractOrImpl));
+            result.addAll(forApplication.getAllInstances(contractOrImpl));
+            return result;
         }
 
         @Override

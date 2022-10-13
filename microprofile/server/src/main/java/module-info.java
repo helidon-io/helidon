@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
+
 /**
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
@@ -48,6 +50,8 @@ module io.helidon.microprofile.server {
     provides jakarta.enterprise.inject.spi.Extension with
             io.helidon.microprofile.server.ServerCdiExtension,
             io.helidon.microprofile.server.JaxRsCdiExtension;
+
+    provides InjectionManagerFactory with io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.server to weld.core.impl, org.glassfish.hk2.utilities, io.helidon.microprofile.cdi;
