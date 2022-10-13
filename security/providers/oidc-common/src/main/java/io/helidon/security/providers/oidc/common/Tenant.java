@@ -85,8 +85,8 @@ public final class Tenant {
         WebClient webClient = oidcConfig.generalWebClient();
 
         Errors.Collector collector = Errors.collector();
-        OidcMetadata oidcMetadata = OidcMetadata.builder().webClient(webClient)
-                .remoteEnabled(tenantConfig.oidcMetadataWellKnown())
+        OidcMetadata oidcMetadata = tenantConfig.oidcMetadata()
+                .webClient(webClient)
                 .identityUri(tenantConfig.identityUri())
                 .collector(collector)
                 .build();

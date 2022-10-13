@@ -64,8 +64,8 @@ public class TenantConfig {
     private final URI introspectUri;
     private final URI logoutEndpointUri;
     private final String scopeAudience;
-    private final boolean oidcMetadataWellKnown;
     private final String serverType;
+    private final OidcMetadata.Builder oidcMetadata;
 
     TenantConfig(BaseBuilder<?, ?> builder) {
         this.clientId = builder.clientId();
@@ -85,13 +85,13 @@ public class TenantConfig {
         this.authorizationEndpointUri = builder.authorizationEndpointUri();
         this.logoutEndpointUri = builder.logoutEndpointUri();
         this.useCookie = builder.useCookie();
-        this.oidcMetadataWellKnown = builder.oidcMetadataWellKnown();
         this.serverType = builder.serverType();
 
         this.tokenCookieHandler = builder.tokenCookieBuilder().build();
         this.idTokenCookieHandler = builder.idTokenCookieBuilder().build();
         this.clientSecret = builder.clientSecret();
         this.signJwk = builder.signJwk();
+        this.oidcMetadata = builder.oidcMetadata();
 
         if (validateJwtWithJwk) {
             this.introspectUri = null;
@@ -370,10 +370,6 @@ public class TenantConfig {
         return tokenEndpointAuthentication;
     }
 
-    boolean oidcMetadataWellKnown() {
-        return oidcMetadataWellKnown;
-    }
-
     /**
      * Update request that uses form params with authentication.
      *
@@ -414,6 +410,10 @@ public class TenantConfig {
 
     String serverType() {
         return serverType;
+    }
+
+    OidcMetadata.Builder oidcMetadata() {
+        return oidcMetadata;
     }
 
     /**

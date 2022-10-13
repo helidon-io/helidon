@@ -192,7 +192,8 @@ class TenantAuthenticationHandler {
             if (tenantConfig.useCookie()) {
                 if (token.isEmpty()) {
                     // only do this for cookies
-                    Optional<Single<String>> cookie = tenantConfig.tokenCookieHandler().findCookie(providerRequest.env().headers());
+                    Optional<Single<String>> cookie = tenantConfig.tokenCookieHandler()
+                            .findCookie(providerRequest.env().headers());
                     if (cookie.isEmpty()) {
                         missingLocations.add("cookie");
                     } else {

@@ -315,7 +315,7 @@ public final class OidcSupport implements Service {
         FormParams.Builder form = FormParams.builder()
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", redirectUri(req)+ "?" + OidcSupport.TENANT_PARAM_NAME + "=" + tenantName);
+                .add("redirect_uri", redirectUri(req) + "?" + OidcSupport.TENANT_PARAM_NAME + "=" + tenantName);
 
         WebClientRequestBuilder post = webClient.post()
                 .uri(tenant.tokenEndpointUri())

@@ -53,10 +53,8 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
             .cookieName(DEFAULT_COOKIE_NAME);
     private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
             .cookieName(DEFAULT_COOKIE_NAME + "_2");
-
-    private boolean oidcMetadataWellKnown = true;
+    private final OidcMetadata.Builder oidcMetadata = OidcMetadata.builder().remoteEnabled(true);
     private OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
-    private OidcMetadata.Builder oidcMetadata = OidcMetadata.builder();
     private String clientId;
     private String clientSecret;
     private String baseScopes = TenantConfig.DEFAULT_BASE_SCOPES;
@@ -357,7 +355,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         return me;
     }
 
-
     /**
      * Resource configuration for OIDC Metadata
      * containing endpoints to various identity services, as well as information about the identity server.
@@ -408,7 +405,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      */
     @ConfiguredOption("true")
     public B oidcMetadataWellKnown(Boolean useWellKnown) {
-        this.oidcMetadataWellKnown = useWellKnown;
+        oidcMetadata.remoteEnabled(useWellKnown);
         return me;
     }
 
@@ -709,10 +706,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
 
     OidcCookieHandler.Builder idTokenCookieBuilder() {
         return idTokenCookieBuilder;
-    }
-
-    boolean oidcMetadataWellKnown() {
-        return oidcMetadataWellKnown;
     }
 
     OidcConfig.ClientAuthentication tokenEndpointAuthentication() {
