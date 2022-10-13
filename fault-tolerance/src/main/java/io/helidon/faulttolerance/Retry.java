@@ -668,7 +668,7 @@ public interface Retry extends FtHandler {
             } else {
                 Random random = new Random();
                 // need a number [-jitterMillis,+jitterMillis]
-                randomJitter = () -> Long.valueOf(random.nextInt( jitterMillis * 2) - jitterMillis);
+                randomJitter = () -> Long.valueOf(random.nextInt(jitterMillis * 2) - jitterMillis);
             }
         }
 
