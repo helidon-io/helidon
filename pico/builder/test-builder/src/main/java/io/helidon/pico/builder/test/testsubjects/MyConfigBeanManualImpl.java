@@ -97,34 +97,6 @@ public class MyConfigBeanManualImpl implements MyConfigBean {
                 + "port=" + getPort();
     }
 
-//    public boolean isValid() {
-//        return hasValidAttributes(null);
-//    }
-//
-//    public boolean hasValidAttributes(Collection<String> reportOfInvalidAttributes) {
-////        boolean result = super.gatherInvalidAttributes(report);
-////        if (!isValid) {
-////            return false;
-////        }
-//
-//        boolean isValid = true;
-//        if (!validate(reportOfInvalidAttributes, "name", getName())) {
-//            isValid = false;
-//        }
-//        if (!validate(reportOfInvalidAttributes, "enabled", isEnabled())) {
-//            isValid = false;
-//        }
-//        if (!validate(reportOfInvalidAttributes, "port", getPort())) {
-//            isValid = false;
-//        }
-//
-//        return isValid;
-//    }
-//
-//    protected boolean validate(Collection<String> reportOfInvalidAttributes, String key, Object value) {
-//        Map<String, Object> metaProps = getAttributesMeta()
-//    }
-
     public static Builder<? extends Builder> builder() {
         return new Builder();
     }
@@ -160,10 +132,7 @@ public class MyConfigBeanManualImpl implements MyConfigBean {
         }
 
         public MyConfigBean build() {
-            MyConfigBeanManualImpl result = new MyConfigBeanManualImpl(this);
-//            List<String> report = new LinkedList<>();
-//            result.validate(report);
-            return result;
+            return new MyConfigBeanManualImpl(this);
         }
     }
 
