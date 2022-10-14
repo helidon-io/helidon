@@ -93,7 +93,9 @@ public final class AccessLogFilter implements Filter {
         try {
             chain.proceed();
         } finally {
-            log(req, res, now, nanoNow);
+            if (enabled) {
+                log(req, res, now, nanoNow);
+            }
         }
     }
 

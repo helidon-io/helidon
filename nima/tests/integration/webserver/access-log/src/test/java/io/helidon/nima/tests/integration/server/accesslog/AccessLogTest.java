@@ -16,16 +16,16 @@
 
 package io.helidon.nima.tests.integration.server.accesslog;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.List;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.LogRecord;
+import java.util.logging.StreamHandler;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -39,16 +39,15 @@ import io.helidon.nima.webserver.accesslog.StatusLogEntry;
 import io.helidon.nima.webserver.accesslog.TimestampLogEntry;
 import io.helidon.nima.webserver.accesslog.UserLogEntry;
 import io.helidon.nima.webserver.http.HttpRouting;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 
 @ServerTest
 class AccessLogTest {
-    private static final Path ACCESS_LOG = Paths.get("access.log");
+    private static final AtomicReference<MemoryLogHandler> LOG_HANDLER = new AtomicReference<>();
+
     private final Http1Client client;
 
     AccessLogTest(Http1Client client) {
@@ -74,7 +73,7 @@ class AccessLogTest {
     // no need for try with resources when we get as an actual type
     @SuppressWarnings("resource")
     @Test
-    void testRequestsAndValidateAccessLog() throws IOException {
+    void testRequestsAndValidateAccessLog() {
         Http1ClientResponse response = client.get("/access").request();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity().as(String.class), is("Hello World!"));
@@ -85,17 +84,33 @@ class AccessLogTest {
         response = client.get("/access")
                 .header(Http.Header.create(Http.Header.CONTENT_LENGTH, "47a"))
                 .request();
-
         assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
 
-        try (FileOutputStream fos = new FileOutputStream(ACCESS_LOG.toString(), true)) {
-            fos.getFD().sync();     // force buffer sync
-            List<String> lines = Files.readAllLines(ACCESS_LOG);
-            System.out.println("=== BEGIN access.log ===");
-            lines.forEach(System.out::println);
-            System.out.println("=== END access.log ===");
-            assertThat(lines, contains("127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
-                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"));
+        assertThat(LOG_HANDLER.get().contains(
+                "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
+                "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
+                is(true));
+    }
+
+    public static class MemoryLogHandler extends StreamHandler {
+
+        private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        public MemoryLogHandler() throws UnsupportedEncodingException {
+            setOutputStream(outputStream);
+            setEncoding(StandardCharsets.UTF_8.name());
+            LOG_HANDLER.set(this);      // store reference
+        }
+
+        @Override
+        public synchronized void publish(LogRecord record) {
+            super.publish(record);
+            flush();        // forces flush on writer
+        }
+
+        public boolean contains(String... s) {
+            String log = outputStream.toString(StandardCharsets.UTF_8);
+            return Arrays.stream(s).allMatch(log::contains);
         }
     }
 }
