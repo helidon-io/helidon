@@ -48,8 +48,8 @@ module io.helidon.microprofile.tracing {
 
     exports io.helidon.microprofile.tracing;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.tracing to weld.core.impl,org.glassfish.hk2.utilities, io.helidon.microprofile.cdi;
+    // this is needed for CDI extensions that use non-public observer methods, and for constructor injection
+    opens io.helidon.microprofile.tracing;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.tracing.TracingCdiExtension;

@@ -41,7 +41,8 @@ import io.helidon.common.http.InternalServerException;
 import io.helidon.common.uri.UriPath;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
-import io.helidon.nima.webserver.http.Handler;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -67,13 +68,13 @@ import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
 import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
 
-class JaxRsHandler implements Handler {
+class JaxRsService implements HttpService {
     /**
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
      */
     static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
 
-    private static final System.Logger LOGGER = System.getLogger(JaxRsHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JaxRsService.class.getName());
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
     private static final Set<InjectionManager> INJECTION_MANAGERS = Collections.newSetFromMap(new WeakHashMap<>());
@@ -83,7 +84,7 @@ class JaxRsHandler implements Handler {
     private final Container container;
     private final Application application;
 
-    private JaxRsHandler(ResourceConfig resourceConfig,
+    private JaxRsService(ResourceConfig resourceConfig,
                          ApplicationHandler appHandler,
                          Container container) {
         this.resourceConfig = resourceConfig;
@@ -92,7 +93,7 @@ class JaxRsHandler implements Handler {
         this.application = getApplication(resourceConfig);
     }
 
-    static JaxRsHandler create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
+    static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
 
@@ -113,7 +114,7 @@ class JaxRsHandler implements Handler {
             System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore);
         }
 
-        return new JaxRsHandler(resourceConfig, appHandler, container);
+        return new JaxRsService(resourceConfig, appHandler, container);
     }
 
     static String basePath(UriPath path) {
@@ -131,7 +132,11 @@ class JaxRsHandler implements Handler {
     }
 
     @Override
-    public void handle(ServerRequest req, ServerResponse res) {
+    public void routing(HttpRules rules) {
+        rules.any(this::handle);
+    }
+
+    private void handle(ServerRequest req, ServerResponse res) {
         Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
     }
 
@@ -184,10 +189,16 @@ class JaxRsHandler implements Handler {
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
         URI baseUri = baseUri(req);
+        URI requestUri;
+
+        if (req.query().isEmpty()) {
+            requestUri = baseUri.resolve(req.path().rawPath());
+        } else {
+            requestUri = baseUri.resolve(req.path().rawPath() + "?" + req.query().rawValue());
+        }
 
         ContainerRequest requestContext = new ContainerRequest(baseUri,
-                                                               baseUri.resolve(req.path().rawPath() + "?" + req.query()
-                                                                       .rawValue()),
+                                                               requestUri,
                                                                req.prologue().method().text(),
                                                                new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);

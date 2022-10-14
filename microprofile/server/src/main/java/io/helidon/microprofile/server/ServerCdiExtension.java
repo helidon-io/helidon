@@ -503,19 +503,19 @@ public class ServerCdiExtension implements Extension {
 
         HttpRouting.Builder routing = routingBuilder(namedRouting, routingNameRequired, applicationMeta.appName());
 
-        JaxRsHandler jerseySupport = jaxRs.toJerseySupport(applicationMeta, injectionManager);
+        JaxRsService jerseyHandler = jaxRs.toJerseySupport(applicationMeta, injectionManager);
         if (contextRoot.isPresent()) {
             String contextRootString = contextRoot.get();
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '" + contextRootString + "'");
             if (contextRootString.endsWith("/")) {
-                routing.any(contextRootString + "*", jerseySupport);
+                routing.register(contextRootString.substring(0, contextRootString.length() - 1), jerseyHandler);
             } else {
-                routing.any(contextRootString + "/*", jerseySupport);
+                routing.register(contextRootString, jerseyHandler);
             }
 
         } else {
             LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '/'");
-            routing.any("/*", jerseySupport);
+            routing.register(jerseyHandler);
         }
     }
 

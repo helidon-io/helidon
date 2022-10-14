@@ -46,11 +46,19 @@ import org.eclipse.microprofile.opentracing.Traced;
 public class MpTracingFilter extends AbstractTracingFilter {
     private static final Pattern LOCALHOST_PATTERN = Pattern.compile("127.0.0.1", Pattern.LITERAL);
 
-    @Context
-    private ResourceInfo resourceInfo;
+    private final ResourceInfo resourceInfo;
 
     private MpTracingHelper utils;
     private Function<String, Boolean> skipPatternFunction;
+
+    /**
+     * Create a new instance by JAX-RS.
+     *
+     * @param resourceInfo injected by JAX-RS implementation
+     */
+    public MpTracingFilter(@Context ResourceInfo resourceInfo) {
+        this.resourceInfo = resourceInfo;
+    }
 
     /**
      * Post construct method, initialization procedures.

@@ -116,18 +116,29 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return appClassCacheEntry(appClass).subResourceMethodSecurity;
     }
 
-    @Context
-    private ServerConfig serverConfig;
+    private final ServerConfig serverConfig;
 
-    @Context
-    private SecurityContext securityContext;
+    private final SecurityContext securityContext;
 
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
 
     /**
-     * Default constructor to be used by Jersey when creating an instance of this class.
+     * Constructor to be used by Jersey when creating an instance, injects all parameters.
+     *
+     * @param security security instance
+     * @param featureConfig feature config
+     * @param serverConfig server config
+     * @param securityContext security context
      */
-    public SecurityFilter() {
+    public SecurityFilter(@Context Security security,
+                          @Context FeatureConfig featureConfig,
+                          @Context ServerConfig serverConfig,
+                          @Context SecurityContext securityContext) {
+        super(security, featureConfig);
+
+        this.serverConfig = serverConfig;
+        this.securityContext = securityContext;
+
         loadAnalyzers();
     }
 

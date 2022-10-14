@@ -31,6 +31,8 @@ module io.helidon.metrics {
 
     exports io.helidon.metrics;
 
+    uses io.helidon.metrics.api.spi.ExemplarService;
+
     provides io.helidon.metrics.api.spi.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
     provides io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver
             with io.helidon.metrics.ExecutorServiceMetricsObserver;

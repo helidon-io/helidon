@@ -53,6 +53,6 @@ module io.helidon.microprofile.server {
 
     provides InjectionManagerFactory with io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory;
 
-    // needed when running with modules - to make private methods accessible
-    opens io.helidon.microprofile.server to weld.core.impl, org.glassfish.hk2.utilities, io.helidon.microprofile.cdi;
+    // needed when running with modules - to make private methods and types accessible
+    opens io.helidon.microprofile.server;
 }

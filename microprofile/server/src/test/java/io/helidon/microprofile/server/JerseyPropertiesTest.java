@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test that it is possible to override {@code IGNORE_EXCEPTION_RESPONSE} in
- * Jersey using config. See {@link io.helidon.microprofile.server.JaxRsHandler}
+ * Jersey using config. See {@link JaxRsService}
  * for more information.
  */
 @HelidonTest
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class JerseyPropertiesTest {
     @Test
     void testIgnoreExceptionResponseOverride() {
-        JaxRsHandler jerseySupport = JaxRsHandler.create(new ResourceConfig().property(IGNORE_EXCEPTION_RESPONSE, "false"),
+        JaxRsService jerseySupport = JaxRsService.create(new ResourceConfig().property(IGNORE_EXCEPTION_RESPONSE, "false"),
                                                          null);
         assertNotNull(jerseySupport);
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("false"));

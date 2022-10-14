@@ -274,13 +274,13 @@ public class JaxRsCdiExtension implements Extension {
                                           .build());
     }
 
-    JaxRsHandler toJerseySupport(JaxRsApplication jaxRsApplication,
+    JaxRsService toJerseySupport(JaxRsApplication jaxRsApplication,
                                  InjectionManager injectionManager) {
 
         ResourceConfig resourceConfig = jaxRsApplication.resourceConfig();
         resourceConfig.register(new CatchAllExceptionMapper());
 
-        return JaxRsHandler.create(resourceConfig,
+        return JaxRsService.create(resourceConfig,
                                    injectionManager);
     }
 

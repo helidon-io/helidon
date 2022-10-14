@@ -48,10 +48,18 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @Priority(Integer.MIN_VALUE)
 @ApplicationScoped
 public class MpTracingContextFilter implements ContainerRequestFilter {
-    @Context
-    private Provider<ServerRequest> request;
+    private final Provider<ServerRequest> request;
 
     private final Config config = ConfigProvider.getConfig();
+
+    /**
+     * Constructor to be used by JAX-RS implementation.
+     *
+     * @param request injected by JAX-RS
+     */
+    public MpTracingContextFilter(@Context Provider<ServerRequest> request) {
+        this.request = request;
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
