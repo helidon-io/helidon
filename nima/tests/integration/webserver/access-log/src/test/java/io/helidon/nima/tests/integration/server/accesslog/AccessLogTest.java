@@ -86,10 +86,17 @@ class AccessLogTest {
                 .request();
         assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
 
-        assertThat(LOG_HANDLER.get().contains(
-                "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
-                "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
-                is(true));
+        try {
+            assertThat(LOG_HANDLER.get().contains(
+                            "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
+                            "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
+                    is(true));
+        } catch (AssertionError e) {
+            System.out.println("-----");
+            System.out.println(LOG_HANDLER.get().logAsString());
+            System.out.println("-----");
+            throw e;
+        }
     }
 
     public static class MemoryLogHandler extends StreamHandler {
@@ -109,8 +116,12 @@ class AccessLogTest {
         }
 
         public boolean contains(String... s) {
-            String log = outputStream.toString(StandardCharsets.UTF_8);
+            String log = logAsString();
             return Arrays.stream(s).allMatch(log::contains);
+        }
+
+        public String logAsString() {
+            return outputStream.toString(StandardCharsets.UTF_8);
         }
     }
 }
