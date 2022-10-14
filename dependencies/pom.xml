@@ -468,12 +468,6 @@
 
             <!-- Dependency convergence. Should align with version used by io.grpc -->
             <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${version.lib.google-protobuf}</version>
-            </dependency>
-            <!-- Dependency convergence. Should align with version used by io.grpc -->
-            <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${version.lib.gson}</version>
@@ -1452,6 +1446,14 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
+            <!-- Force upgrade. Used by grpc -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-bom</artifactId>
+                <version>${version.lib.google-protobuf}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc-bom</artifactId>
