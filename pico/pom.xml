@@ -46,22 +46,22 @@
     <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
         <module>api</module>
-        <module>spi</module>
+<!--        <module>spi</module>-->
         <module>types</module>
         <module>builder</module>
-        <module>config</module>
-        <module>pico</module>
-        <module>tck</module>
-        <module>tools</module>
-        <module>processor</module>
-        <module>maven-plugin</module>
-        <module>test-support</module>
-        <module>test-utils</module>
-        <module>test-resources</module>
-        <module>test-extended-resources</module>
-        <module>test-pico</module>
-        <module>test-tck-jsr330</module>
-        <module>examples</module>
+<!--        <module>config</module>-->
+<!--        <module>pico</module>-->
+<!--        <module>tck</module>-->
+<!--        <module>tools</module>-->
+<!--        <module>processor</module>-->
+<!--        <module>maven-plugin</module>-->
+<!--        <module>test-support</module>-->
+<!--        <module>test-utils</module>-->
+<!--        <module>test-resources</module>-->
+<!--        <module>test-extended-resources</module>-->
+<!--        <module>test-pico</module>-->
+<!--        <module>test-tck-jsr330</module>-->
+<!--        <module>examples</module>-->
     </modules>
 
     <build>
