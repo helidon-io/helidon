@@ -74,7 +74,7 @@ class BindableServiceImpl implements BindableService {
     @Override
     public ServerServiceDefinition bindService() {
         io.grpc.ServiceDescriptor.Builder serviceDescriptorBuilder =
-                io.grpc.ServiceDescriptor.newBuilder(descriptor.getFullName());
+                io.grpc.ServiceDescriptor.newBuilder(descriptor.fullName());
         if (descriptor.proto() != null) {
             serviceDescriptorBuilder.setSchemaDescriptor((ProtoFileDescriptorSupplier) descriptor::proto);
         }

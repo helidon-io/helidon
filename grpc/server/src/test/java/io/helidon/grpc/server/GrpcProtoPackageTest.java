@@ -17,7 +17,9 @@
 package io.helidon.grpc.server;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
@@ -58,7 +60,7 @@ public class GrpcProtoPackageTest {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(service)
                 .name("Foo")
                 .build();
-        assertThat(protoDescriptor.getPackage(), is(descriptor.getPackage()));
+        assertThat(protoDescriptor.getPackage(), is(descriptor.packageName()));
     }
 
     @Test
@@ -91,6 +93,37 @@ public class GrpcProtoPackageTest {
 
         io.grpc.MethodDescriptor methodDescriptor = descriptor.descriptor();
         assertThat(methodDescriptor.getFullMethodName(), is(io.grpc.MethodDescriptor.generateFullMethodName(fullServiceName, "foo")));
+    }
+
+    @Test
+    public void shouldBuildFromBindableService() {
+        BindableService service = new EchoPackageStub();
+        ServerServiceDefinition definition = service.bindService();
+        io.grpc.ServiceDescriptor grpcDescriptor = definition.getServiceDescriptor();
+
+        ServiceDescriptor descriptor = ServiceDescriptor.builder(service).build();
+
+        assertThat(descriptor.fullName(), is(grpcDescriptor.getName()));
+
+        BindableService bindableService = descriptor.bindableService(PriorityBag.create());
+        assertThat(bindableService, is(notNullValue()));
+
+        ServerServiceDefinition ssd = bindableService.bindService();
+        assertThat(ssd, is(notNullValue()));
+
+        io.grpc.ServiceDescriptor actualDescriptor = ssd.getServiceDescriptor();
+        assertThat(actualDescriptor, is(notNullValue()));
+        assertThat(actualDescriptor.getName(), is(grpcDescriptor.getName()));
+
+        Map<String, io.grpc.MethodDescriptor<?, ?>> methods = grpcDescriptor.getMethods()
+                .stream()
+                .collect(Collectors.toMap(io.grpc.MethodDescriptor::getFullMethodName, m -> m));
+
+        Collection<io.grpc.MethodDescriptor<?, ?>> methodsActual = actualDescriptor.getMethods();
+
+        for (io.grpc.MethodDescriptor<?, ?> method : methodsActual) {
+            assertThat(method.toString(), is(methods.get(method.getFullMethodName()).toString()));
+        }
     }
 
     @Test
@@ -136,7 +169,7 @@ public class GrpcProtoPackageTest {
                 .build();
         assertThat(descriptor1.equals(descriptor2), is(true));
         assertThat(descriptor1.hashCode(), is(descriptor2.hashCode()));
-        assertThat(descriptor1.toString().contains(descriptor2.getFullName()), is(true));
+        assertThat(descriptor1.toString().contains(descriptor2.fullName()), is(true));
         assertThat(descriptor1.toString(), is(descriptor2.toString()));
     }
 

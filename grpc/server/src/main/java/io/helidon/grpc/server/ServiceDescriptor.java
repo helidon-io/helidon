@@ -54,7 +54,7 @@ public class ServiceDescriptor {
 
     private final String name;
     private final String fullName;
-    private final String protoPackage;
+    private final String packageName;
     private final Map<String, MethodDescriptor> methods;
     private final PriorityBag<ServerInterceptor> interceptors;
     private final Map<Context.Key<?>, Object> context;
@@ -74,12 +74,14 @@ public class ServiceDescriptor {
         this.interceptors = interceptors.copyMe();
         this.proto = proto;
 
-        protoPackage = proto == null ? "" : proto.getPackage();
-        String servicePrefix = protoPackage + (!protoPackage.isEmpty() ? "." : "");
+        this.packageName = proto == null ? "" : proto.getPackage();
+        String servicePrefix = packageName + (!packageName.isEmpty() ? "." : "");
         if (!servicePrefix.isEmpty() && assignedName.startsWith(servicePrefix)) {
-            // If assignedName is already prefixed with package name, remove the package name part
+            // If assignedName is already prefixed with package name, strip the package name part
+            // so name is in simple format
             this.name = assignedName.replace(servicePrefix, "");
-            this.fullName = this.name;
+            // Use the assigned name as the fullName since it is already prefixed with the package name
+            this.fullName = assignedName;
         } else {
             this.name = assignedName;
             this.fullName = servicePrefix + assignedName;
@@ -98,7 +100,7 @@ public class ServiceDescriptor {
      * Returns the service name prefixed with package directive if one exists.
      * @return service name prefixed with package directive if one exists.
      */
-    public String getFullName() {
+    public String fullName() {
         return fullName;
     }
 
@@ -106,8 +108,8 @@ public class ServiceDescriptor {
      * Returns package name from proto file.
      * @return package name from proto file
      */
-    public String getPackage() {
-        return protoPackage;
+    public String packageName() {
+        return packageName;
     }
 
     /**
