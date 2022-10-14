@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
@@ -88,8 +87,10 @@ class AccessLogTest {
 
         try {
             assertThat(LOG_HANDLER.get().contains(
-                            "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
-                            "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
+                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200"),
+                    is(true));
+            assertThat(LOG_HANDLER.get().contains(
+                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
                     is(true));
         } catch (AssertionError e) {
             throw new AssertionError(
@@ -115,9 +116,8 @@ class AccessLogTest {
             flush();        // forces flush on writer
         }
 
-        public boolean contains(String... s) {
-            String log = logAsString();
-            return Arrays.stream(s).allMatch(log::contains);
+        public boolean contains(String s) {
+            return logAsString().contains(s);
         }
 
         public String logAsString() {
