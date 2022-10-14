@@ -89,13 +89,13 @@ class AccessLogTest {
         try {
             assertThat(LOG_HANDLER.get().contains(
                             "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200",
-                            "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
+                            "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 400"),
                     is(true));
         } catch (AssertionError e) {
-            System.out.println("-----");
-            System.out.println(LOG_HANDLER.get().logAsString());
-            System.out.println("-----");
-            throw e;
+            throw new AssertionError(
+                    "Assertion failed with log:\n-----\n"
+                            + LOG_HANDLER.get().logAsString()
+                            + "-----\n", e);
         }
     }
 
