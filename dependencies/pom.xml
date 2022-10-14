@@ -1446,7 +1446,7 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
-            <!-- Force upgrade -->
+            <!-- Force upgrade. Used by grpc -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
