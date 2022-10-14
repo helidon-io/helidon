@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 
 import io.helidon.integrations.graal.nativeimage.extension.NativeConfig;
 
-import com.oracle.svm.core.annotate.AutomaticFeature;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -51,7 +50,6 @@ import org.jboss.weld.util.Proxies;
  * An automatic feature for native-image to
  *  register Weld specific stuff.
  */
-@AutomaticFeature
 public class WeldFeature implements Feature {
     private static final boolean ENABLED = NativeConfig.option("weld.enable-feature", true);
     private static final boolean TRACE = NativeConfig.option("weld.trace", false);

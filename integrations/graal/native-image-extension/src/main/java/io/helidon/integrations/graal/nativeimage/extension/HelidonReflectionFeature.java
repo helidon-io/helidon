@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.graal.nativeimage.extension;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -37,13 +38,12 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.Reflected;
 import io.helidon.config.mp.MpConfigProviderResolver;
 
-import com.oracle.svm.core.jdk.Resources;
-import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
-import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
+import org.graalvm.nativeimage.hosted.RuntimeProxyCreation;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
+import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
 
 /**
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
@@ -280,7 +280,11 @@ public class HelidonReflectionFeature implements Feature {
             tracer.parsing(() -> "Processing annotated class " + aClass.getName());
             String resourceName = aClass.getName().replace('.', '/') + ".class";
             InputStream resourceStream = aClass.getClassLoader().getResourceAsStream(resourceName);
-            Resources.registerResource(resourceName, resourceStream);
+            try {
+                RuntimeResourceAccess.addResource(aClass.getModule(), resourceName, resourceStream.readAllBytes());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read entity class file", e);
+            }
             for (Field declaredField : aClass.getDeclaredFields()) {
                 if (!Modifier.isPublic(declaredField.getModifiers()) && declaredField.getAnnotations().length == 0) {
                     RuntimeReflection.register(declaredField);
@@ -303,7 +307,6 @@ public class HelidonReflectionFeature implements Feature {
         tracer.parsing(() -> "Looking up annotated by " + AT_REGISTER_REST_CLIENT);
 
         Set<Class<?>> annotatedSet = util.findAnnotated(AT_REGISTER_REST_CLIENT);
-        DynamicProxyRegistry proxyRegistry = ImageSingletons.lookup(DynamicProxyRegistry.class);
         Class<?> autoCloseable = context.access().findClassByName("java.lang.AutoCloseable");
         Class<?> closeable = context.access().findClassByName("java.io.Closeable");
 
@@ -315,7 +318,7 @@ public class HelidonReflectionFeature implements Feature {
                 processClassHierarchy(context, it);
                 // and we also need to create a proxy
                 tracer.parsing(() -> "Registering a proxy for class " + it.getName());
-                proxyRegistry.addProxyClass(it, autoCloseable, closeable);
+                RuntimeProxyCreation.register(it, autoCloseable, closeable);
             }
         });
     }
