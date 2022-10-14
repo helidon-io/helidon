@@ -19,16 +19,17 @@ package io.helidon.metrics;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 
-import jakarta.json.JsonObjectBuilder;
+import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.SnapshotMetric;
+
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
  * Implementation of {@link Histogram}.
  */
-final class HelidonHistogram extends MetricImpl implements Histogram {
+final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMetric {
     private final Histogram delegate;
 
     private HelidonHistogram(String type, Metadata metadata, Histogram delegate) {
@@ -73,20 +74,11 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         return delegate.getSnapshot();
     }
 
-    DisplayableLabeledSnapshot snapshot() {
+    @Override
+    public LabeledSnapshot snapshot() {
         return (delegate instanceof HistogramImpl)
                 ? ((HistogramImpl) delegate).snapshot()
                 : WrappedSnapshot.create(delegate.getSnapshot());
-    }
-
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        appendPrometheusHistogramElements(sb, metricID, withHelpType, getCount(), getSum(), snapshot());
-    }
-
-    @Override
-    public String prometheusValue() {
-        throw new UnsupportedOperationException("Not supported.");
     }
 
     /**
@@ -98,26 +90,6 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         return delegate instanceof HistogramImpl ? (HistogramImpl) delegate
                 : delegate instanceof HelidonHistogram ? ((HelidonHistogram) delegate).getDelegate()
                 : null;
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("sum", metricID), getSum());
-        Snapshot snapshot = getSnapshot();
-        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
-                .add(jsonFullKey("max", metricID), snapshot.getMax())
-                .add(jsonFullKey("mean", metricID), snapshot.getMean())
-                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev())
-                .add(jsonFullKey("p50", metricID), snapshot.getMedian())
-                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile())
-                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile())
-                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile())
-                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile())
-                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
-
-        builder.add(metricID.getName(), myBuilder);
     }
 
     static final class HistogramImpl implements Histogram {

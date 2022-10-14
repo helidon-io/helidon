@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import io.helidon.metrics.MetricsSupport;
+import io.helidon.metrics.api.HelidonMetric;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -35,6 +35,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
+import static io.helidon.metrics.serviceapi.PrometheusFormat.prometheusData;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -178,8 +179,8 @@ public class MetricsTest extends MetricsBaseTest {
         bean.setValue(expectedValue);
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
-        String promData = MetricsSupport.toPrometheusData(
-                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge, true).trim();
+        String promData =
+                prometheusData(new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), (HelidonMetric) gauge, true).trim();
 
         assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
         assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));

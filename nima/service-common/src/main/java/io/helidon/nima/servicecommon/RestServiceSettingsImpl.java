@@ -18,7 +18,7 @@ package io.helidon.nima.servicecommon;
 import java.util.Objects;
 
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.cors.CrossOriginConfig;
+import io.helidon.cors.CrossOriginConfig;
 
 /**
  * Implementation of {@link RestServiceSettings}.

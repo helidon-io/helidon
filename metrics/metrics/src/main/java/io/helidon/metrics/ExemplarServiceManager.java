@@ -24,9 +24,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.metrics.api.spi.ExemplarService;
 
 /**
- * Loads the {@link ExemplarService} instance (if any) with the most urgent priority.
+ * Loads the {@link io.helidon.metrics.api.spi.ExemplarService} instance (if any) with the most urgent priority.
  */
 class ExemplarServiceManager {
 

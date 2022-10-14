@@ -19,6 +19,7 @@ package io.helidon.nima.webserver.cors;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webserver.http.HttpRules;
 

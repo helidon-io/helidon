@@ -20,7 +20,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.nima.observe.ObserveSupport;
 import io.helidon.nima.observe.health.HealthObserveProvider;
-import io.helidon.nima.observe.health.HealthService;
+import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -49,7 +49,7 @@ class ObserveHealthTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
         healthCheck = new MyHealthCheck();
-        routing.update(ObserveSupport.create(HealthObserveProvider.create(HealthService.create(healthCheck))));
+        routing.update(ObserveSupport.create(HealthObserveProvider.create(HealthFeature.create(healthCheck))));
     }
 
     @BeforeEach
@@ -94,7 +94,7 @@ class ObserveHealthTest {
 
     @Test
     void testHealthStart() {
-        try (Http1ClientResponse response = httpClient.get("/observe/health/startup")
+        try (Http1ClientResponse response = httpClient.get("/observe/health/started")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
@@ -102,7 +102,7 @@ class ObserveHealthTest {
         }
 
         healthCheck.status(DOWN);
-        try (Http1ClientResponse response = httpClient.get("/observe/health/startup")
+        try (Http1ClientResponse response = httpClient.get("/observe/health/started")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));

@@ -45,7 +45,7 @@ public final class AccessLogSupport implements Service {
      *
      * @see AccessLogHandler
      */
-    public static final String DEFAULT_LOGGER_NAME = "io.helidon.reactive.webserver.AccessLog";
+    public static final String DEFAULT_LOGGER_NAME = "io.helidon.reactive.webserver.accesslog.AccessLog";
     private static final Pattern HEADER_ENTRY_PATTERN = Pattern.compile("%\\{(.*?)}i");
 
     private final List<AccessLogEntry> logFormat;

@@ -24,7 +24,7 @@ import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.metrics.serviceapi.MetricsSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 

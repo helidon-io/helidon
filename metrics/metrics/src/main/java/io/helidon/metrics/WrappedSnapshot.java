@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  */
 package io.helidon.metrics;
 
-import io.helidon.metrics.Sample.Derived;
-import io.helidon.metrics.Sample.Labeled;
+import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.Sample.Derived;
+import io.helidon.metrics.api.Sample.Labeled;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 
-import static io.helidon.metrics.Sample.derived;
-import static io.helidon.metrics.Sample.labeled;
+import static io.helidon.metrics.api.Sample.derived;
+import static io.helidon.metrics.api.Sample.labeled;
 
-class WrappedSnapshot implements DisplayableLabeledSnapshot {
+class WrappedSnapshot implements LabeledSnapshot {
 
     private final Snapshot delegate;
 

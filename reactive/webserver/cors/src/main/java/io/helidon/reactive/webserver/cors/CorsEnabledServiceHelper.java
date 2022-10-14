@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.webserver.Handler;
 
 /**

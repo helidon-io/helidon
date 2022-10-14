@@ -21,10 +21,11 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jakarta.json.JsonObjectBuilder;
+import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.SnapshotMetric;
+
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
@@ -32,7 +33,7 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Implementation of {@link Timer}.
  */
-final class HelidonTimer extends MetricImpl implements Timer {
+final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
     private final Timer delegate;
 
     private HelidonTimer(String type, Metadata metadata, Timer delegate) {
@@ -107,74 +108,11 @@ final class HelidonTimer extends MetricImpl implements Timer {
         return delegate.getSnapshot();
     }
 
-    DisplayableLabeledSnapshot snapshot(){
+    @Override
+    public LabeledSnapshot snapshot(){
         return (delegate instanceof TimerImpl)
                 ? ((TimerImpl) delegate).histogram.snapshot()
                 : WrappedSnapshot.create(delegate.getSnapshot());
-    }
-
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-
-        // In Prometheus, times are always expressed in seconds. So force the TimeUnits value accordingly, ignoring
-        // whatever units were specified in the timer's metadata.
-        PrometheusName name = PrometheusName.create(this, metricID, TimeUnits.PROMETHEUS_TIMER_CONVERSION_TIME_UNITS);
-
-        appendPrometheusTimerStatElement(sb, name, "rate_per_second", withHelpType, "gauge", getMeanRate());
-        appendPrometheusTimerStatElement(sb, name, "one_min_rate_per_second", withHelpType, "gauge", getOneMinuteRate());
-        appendPrometheusTimerStatElement(sb, name, "five_min_rate_per_second", withHelpType, "gauge", getFiveMinuteRate());
-        appendPrometheusTimerStatElement(sb, name, "fifteen_min_rate_per_second", withHelpType, "gauge", getFifteenMinuteRate());
-
-        DisplayableLabeledSnapshot snap = snapshot();
-        appendPrometheusHistogramElements(sb, name, withHelpType, getCount(), getElapsedTime(), snap);
-    }
-
-    @Override
-    public String prometheusValue() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        Snapshot snapshot = getSnapshot();
-        // Convert snapshot output according to units.
-        long divisor = conversionFactor();
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("elapsedTime", metricID), jsonDuration(getElapsedTime()))
-                .add(jsonFullKey("meanRate", metricID), getMeanRate())
-                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
-                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
-                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate())
-                .add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
-                .add(jsonFullKey("max", metricID), snapshot.getMax() / divisor)
-                .add(jsonFullKey("mean", metricID), snapshot.getMean() / divisor)
-                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev() / divisor)
-                .add(jsonFullKey("p50", metricID), snapshot.getMedian() / divisor)
-                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile() / divisor)
-                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile() / divisor)
-                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile() / divisor)
-                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile() / divisor)
-                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile() / divisor);
-
-        builder.add(metricID.getName(), myBuilder);
-    }
-
-    void appendPrometheusTimerStatElement(StringBuilder sb,
-            PrometheusName name,
-            String statName,
-            boolean withHelpType,
-            String typeName,
-            double value) {
-
-        // For the timer stats output, suppress any units conversion; just emit the value directly.
-        if (withHelpType) {
-            prometheusType(sb, name.nameStat(statName), typeName);
-        }
-        sb.append(name.nameStatTags(statName))
-                .append(" ")
-                .append(value)
-                .append("\n");
     }
 
     private static final class ContextImpl implements Context {

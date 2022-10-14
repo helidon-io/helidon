@@ -37,7 +37,10 @@ module io.helidon.security {
     exports io.helidon.security;
     exports io.helidon.security.spi;
 
-    exports io.helidon.security.internal to io.helidon.security.integration.jersey, io.helidon.security.integration.webserver, io.helidon.security.integration.grpc;
+    exports io.helidon.security.internal to io.helidon.security.integration.jersey,
+            io.helidon.security.integration.webserver,
+            io.helidon.security.integration.nima,
+            io.helidon.security.integration.grpc;
 
     // needed for CDI integration
     opens io.helidon.security to weld.core.impl, io.helidon.microprofile.cdi;

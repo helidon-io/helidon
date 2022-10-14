@@ -20,6 +20,7 @@
 module io.helidon.nima.webserver.cors {
     requires java.logging;
 
+    requires transitive io.helidon.cors;
     requires io.helidon.nima.webserver;
 
     exports io.helidon.nima.webserver.cors;

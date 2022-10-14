@@ -41,12 +41,9 @@ abstract class ContextFilterBase {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        Context myContext = Context.create();
-        myContext.register(ContextFilterBase.class, "fixed-value");
+        Contexts.globalContext().register(ContextFilterBase.class, "fixed-value");
 
-        router.addFilter(ContextFilter.builder()
-                                 .parent(myContext)
-                                 .build())
+        router.addFilter(ContextFilter.create())
                 .get("/*", ContextFilterBase::testingHandler);
     }
 

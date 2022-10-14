@@ -28,12 +28,12 @@ module io.helidon.microprofile.metrics {
     requires static jakarta.annotation;
     requires static jakarta.activation;
 
-    requires io.helidon.servicecommon.restcdi;
+    requires io.helidon.microprofile.servicecommon;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
     requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.metrics.serviceapi;
-    requires io.helidon.reactive.webserver;
+    requires io.helidon.nima.observe.metrics;
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;

@@ -33,12 +33,10 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.reactive.media.common.MessageBodyWriter;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.scheduling.Task;
@@ -48,15 +46,20 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
+import static io.helidon.common.http.Http.Status.CREATED_201;
+import static io.helidon.common.http.Http.Status.GONE_410;
+import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
+import static io.helidon.common.http.Http.Status.OK_200;
+import static io.helidon.common.http.Http.Status.PRECONDITION_FAILED_412;
+
 /**
  * LRA coordinator with Narayana like rest api.
  */
-public class CoordinatorService implements Service {
+public class CoordinatorService implements HttpService {
 
     /**
      * Configuration prefix.
@@ -74,8 +77,6 @@ public class CoordinatorService implements Service {
 
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final MessageBodyWriter<JsonStructure> JSON_WRITER = JsonpSupport.create().writerInstance();
-
     private final AtomicReference<CompletableFuture<Void>> completedRecovery = new AtomicReference<>(new CompletableFuture<>());
 
     private final LraPersistentRegistry lraPersistentRegistry;
@@ -131,7 +132,7 @@ public class CoordinatorService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
                 .get("/", this::get)
                 .get("/recovery", this::recovery)
@@ -153,8 +154,8 @@ public class CoordinatorService implements Service {
      */
     private void start(ServerRequest req, ServerResponse res) {
 
-        long timeLimit = req.queryParams().first(TIME_LIMIT_PARAM_NAME).map(Long::valueOf).orElse(0L);
-        String parentLRA = req.queryParams().first(PARENT_LRA_PARAM_NAME).orElse("");
+        long timeLimit = req.query().first(TIME_LIMIT_PARAM_NAME).map(Long::valueOf).orElse(0L);
+        String parentLRA = req.query().first(PARENT_LRA_PARAM_NAME).orElse("");
 
         String lraUUID = UUID.randomUUID().toString();
         URI lraId = coordinatorUriWithPath(lraUUID);
@@ -173,7 +174,7 @@ public class CoordinatorService implements Service {
         }
 
         res.headers().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
-        res.status(201)
+        res.status(CREATED_201)
                 .send(lraId.toString());
     }
 
@@ -184,19 +185,19 @@ public class CoordinatorService implements Service {
      * @param res HTTP Response
      */
     private void close(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().param("LraId");
+        String lraId = req.path().pathParameters().value("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
-            res.status(404).send();
+            res.status(NOT_FOUND_404).send();
             return;
         }
         if (lra.status().get() != LRAStatus.Active) {
             // Already time-outed
-            res.status(410).send();
+            res.status(GONE_410).send();
             return;
         }
         lra.close();
-        res.status(200).send();
+        res.status(OK_200).send();
     }
 
     /**
@@ -206,14 +207,14 @@ public class CoordinatorService implements Service {
      * @param res HTTP Response
      */
     private void cancel(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().param("LraId");
+        String lraId = req.path().pathParameters().value("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
-            res.status(404).send();
+            res.status(NOT_FOUND_404).send();
             return;
         }
         lra.cancel();
-        res.status(200).send();
+        res.status(OK_200).send();
     }
 
     /**
@@ -224,16 +225,16 @@ public class CoordinatorService implements Service {
      */
     private void join(ServerRequest req, ServerResponse res) {
 
-        String lraId = req.path().param("LraId");
+        String lraId = req.path().pathParameters().value("LraId");
         String compensatorLink = req.headers().first(Http.Header.LINK).orElse("");
 
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
-            res.status(404).send();
+            res.status(NOT_FOUND_404).send();
             return;
         } else if (lra.checkTimeout()) {
             // too late to join
-            res.status(412).send();
+            res.status(PRECONDITION_FAILED_412).send();
             return;
         }
         lra.addParticipant(compensatorLink);
@@ -241,7 +242,7 @@ public class CoordinatorService implements Service {
 
         res.headers().set(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
         res.headers().set(Http.Header.LOCATION, recoveryUrl);
-        res.status(200)
+        res.status(OK_200)
                 .send(recoveryUrl);
     }
 
@@ -252,14 +253,14 @@ public class CoordinatorService implements Service {
      * @param res HTTP Response
      */
     private void status(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().param("LraId");
+        String lraId = req.path().pathParameters().value("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
-            res.status(404).send();
+            res.status(NOT_FOUND_404).send();
             return;
         }
 
-        res.status(200)
+        res.status(OK_200)
                 .send(lra.status().get().name());
     }
 
@@ -271,18 +272,16 @@ public class CoordinatorService implements Service {
      * @param res HTTP Response
      */
     private void leave(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().param("LraId");
-        req.content()
-                .as(String.class)
-                .forSingle(compensatorLinks -> {
-                    Lra lra = lraPersistentRegistry.get(lraId);
-                    if (lra == null) {
-                        res.status(404).send();
-                    } else {
-                        lra.removeParticipant(compensatorLinks);
-                        res.status(200).send();
-                    }
-                }).exceptionally(res::send);
+        String lraId = req.path().pathParameters().value("LraId");
+        String compensatorLinks = req.content().as(String.class);
+
+        Lra lra = lraPersistentRegistry.get(lraId);
+        if (lra == null) {
+            res.status(NOT_FOUND_404).send();
+        } else {
+            lra.removeParticipant(compensatorLinks);
+            res.status(OK_200).send();
+        }
     }
 
     /**
@@ -292,8 +291,8 @@ public class CoordinatorService implements Service {
      * @param res HTTP Response
      */
     private void recovery(ServerRequest req, ServerResponse res) {
-        Optional<String> lraId = req.queryParams().first("lraId")
-                .or(() -> Optional.ofNullable(req.path().param("LraId")));
+        Optional<String> lraId = req.query().first("lraId")
+                .or(() -> req.path().pathParameters().first("LraId"));
 
         if (lraId.isPresent()) {
             Lra lra = lraPersistentRegistry.get(lraId.get());
@@ -310,14 +309,14 @@ public class CoordinatorService implements Service {
                         .first()
                         .onError(res::send)
                         .defaultIfEmpty(JsonValue.EMPTY_JSON_OBJECT)
-                        .forSingle(s -> res.status(200).send(JSON_WRITER.marshall(s)));
+                        .forSingle(s -> res.status(OK_200).send(s));
             } else {
                 nextRecoveryCycle()
                         .map(String::valueOf)
                         .onError(res::send)
                         .map(JsonObject.class::cast)
                         .defaultIfEmpty(JsonValue.EMPTY_JSON_OBJECT)
-                        .forSingle(s -> res.status(404).send());
+                        .forSingle(s -> res.status(NOT_FOUND_404).send());
             }
         } else {
             nextRecoveryCycle()
@@ -335,13 +334,13 @@ public class CoordinatorService implements Service {
                     .first()
                     .onError(res::send)
                     .defaultIfEmpty(JsonArray.EMPTY_JSON_ARRAY)
-                    .forSingle(s -> res.status(200).send(JSON_WRITER.marshall(s)));
+                    .forSingle(s -> res.status(OK_200).send(s));
         }
     }
 
     private void get(ServerRequest req, ServerResponse res) {
-        Optional<String> lraId = Optional.ofNullable(req.path().param("LraId"))
-                .or(() -> req.queryParams().first("lraId"));
+        Optional<String> lraId = req.path().pathParameters().first("LraId")
+                .or(() -> req.query().first("lraId"));
 
         lraPersistentRegistry
                 .stream()
@@ -356,7 +355,7 @@ public class CoordinatorService implements Service {
                 .map(JsonArrayBuilder::build)
                 .onError(res::send)
                 .defaultIfEmpty(JsonArray.EMPTY_JSON_ARRAY)
-                .forSingle(s -> res.status(200).send(JSON_WRITER.marshall(s)));
+                .forSingle(s -> res.status(OK_200).send(s));
     }
 
     private void tick(FixedRateInvocation inv) {

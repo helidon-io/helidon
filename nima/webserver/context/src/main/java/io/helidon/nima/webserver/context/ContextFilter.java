@@ -16,7 +16,6 @@
 
 package io.helidon.nima.webserver.context;
 
-import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.nima.webserver.http.Filter;
 import io.helidon.nima.webserver.http.FilterChain;
@@ -28,10 +27,7 @@ import io.helidon.nima.webserver.http.RoutingResponse;
  * When added to the processing, further processing will be executed in a request specific context.
  */
 public class ContextFilter implements Filter {
-    private final Context parent;
-
-    private ContextFilter(Builder builder) {
-        this.parent = builder.parent;
+    private ContextFilter() {
     }
 
     /**
@@ -40,57 +36,11 @@ public class ContextFilter implements Filter {
      * @return a new filter
      */
     public static ContextFilter create() {
-        return builder().build();
-    }
-
-    /**
-     * Create a new fluent API builder to customize setup of {@link io.helidon.nima.webserver.context.ContextFilter}.
-     *
-     * @return a new builder
-     */
-    public static Builder builder() {
-        return new Builder();
+        return new ContextFilter();
     }
 
     @Override
     public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        Context context = Context.builder()
-                .id(req.serverSocketId() + ":" + req.socketId() + ":" + req.id())
-                .parent(parent)
-                .build();
-
-        Contexts.runInContext(context, chain::proceed);
-    }
-
-    /**
-     * Fluent API builder for {@link io.helidon.nima.webserver.context.ContextFilter}.
-     */
-    public static class Builder implements io.helidon.common.Builder<Builder, ContextFilter> {
-        private Context parent;
-
-        private Builder() {
-        }
-
-        @Override
-        public ContextFilter build() {
-            if (parent == null) {
-                parent = Context.builder()
-                        .id("Níma")
-                        .parent(Contexts.globalContext())
-                        .build();
-            }
-            return new ContextFilter(this);
-        }
-
-        /**
-         * Configure a context that will act as a parent to all request contexts.
-         *
-         * @param parent parent context
-         * @return updated builder
-         */
-        public Builder parent(Context parent) {
-            this.parent = parent;
-            return this;
-        }
+        Contexts.runInContext(req.context(), chain::proceed);
     }
 }

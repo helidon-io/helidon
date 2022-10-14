@@ -16,7 +16,7 @@
 
 package io.helidon.tests.functional.context.hello;
 
-import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.nima.webserver.http.ServerRequest;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -91,6 +91,6 @@ public class HelloResource {
     @CircuitBreaker
     public String getRemoteAddress() {
         ServerRequest serverRequest = supplier.get();
-        return serverRequest.remoteAddress();
+        return serverRequest.remotePeer().host();
     }
 }

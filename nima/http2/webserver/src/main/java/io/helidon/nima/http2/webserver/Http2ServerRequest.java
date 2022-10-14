@@ -20,8 +20,11 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
@@ -30,7 +33,6 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
 /**
@@ -50,6 +52,7 @@ class Http2ServerRequest implements RoutingRequest {
     private HttpPrologue prologue;
     private RoutedPath path;
     private WritableHeaders<?> writable;
+    private Context context;
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpPrologue prologue,
@@ -158,5 +161,15 @@ class Http2ServerRequest implements RoutingRequest {
     public RoutingRequest prologue(HttpPrologue newPrologue) {
         this.prologue = newPrologue;
         return this;
+    }
+
+    @Override
+    public Context context() {
+        if (context == null) {
+            context = Contexts.context().orElseGet(() -> Context.builder()
+                    .id("[" + serverSocketId() + " " + socketId() + "] http/2: " + requestId)
+                    .build());
+        }
+        return context;
     }
 }

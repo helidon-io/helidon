@@ -107,7 +107,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         // we know the file exists, though it may be a directory
         //First doHandle a directory case
         if (Files.isDirectory(path)) {
-            String rawFullPath = request.path().rawPath();
+            String rawFullPath = request.prologue().uriPath().rawPath();
             if (rawFullPath.endsWith("/")) {
                 // Try to found welcome file
                 path = resolveWelcomeFile(path, welcomePage);

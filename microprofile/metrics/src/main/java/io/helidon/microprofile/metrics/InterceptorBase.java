@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.metrics.api.HelidonMetric;
-import io.helidon.servicecommon.restcdi.HelidonInterceptor;
+import io.helidon.microprofile.servicecommon.HelidonInterceptor;
 
 import jakarta.inject.Inject;
 import jakarta.interceptor.InvocationContext;

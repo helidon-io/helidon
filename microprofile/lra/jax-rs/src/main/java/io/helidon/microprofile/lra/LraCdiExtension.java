@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -212,7 +212,7 @@ public class LraCdiExtension implements Extension {
             BeanManager beanManager) {
 
         NonJaxRsResource nonJaxRsResource = resolve(NonJaxRsResource.class, beanManager);
-        Service nonJaxRsParticipantService = nonJaxRsResource.createNonJaxRsParticipantResource();
+        HttpService nonJaxRsParticipantService = nonJaxRsResource.createNonJaxRsParticipantResource();
         beanManager.getExtension(ServerCdiExtension.class)
                 .serverRoutingBuilder()
                 .register(nonJaxRsResource.contextPath(), nonJaxRsParticipantService);

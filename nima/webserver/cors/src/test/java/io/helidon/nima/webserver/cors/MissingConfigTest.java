@@ -24,6 +24,9 @@ import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
 import io.helidon.config.Config;
+import io.helidon.cors.Aggregator;
+import io.helidon.cors.CorsSupportBase;
+import io.helidon.cors.CrossOriginConfig;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

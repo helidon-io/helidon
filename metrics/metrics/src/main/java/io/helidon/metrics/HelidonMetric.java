@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,7 @@
 
 package io.helidon.metrics;
 
-import java.util.List;
-
-import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Helidon Extension of {@link Metric}.
@@ -33,36 +29,4 @@ interface HelidonMetric extends io.helidon.metrics.api.HelidonMetric {
      * @return metric name
      */
     String getName();
-
-    /**
-     * Add this metrics data to the JSON builder.
-     *
-     * @param builder builder of the registry (or of a single metric) result
-     */
-    void jsonData(JsonObjectBuilder builder, MetricID metricID);
-
-    /**
-     * Add this metrics metadata to the JSON builder.
-     *
-     * @param builder builder of the registry (or of a single metric) result
-     * @param metricIDs IDs from which to harvest tags (if present)
-     */
-    void jsonMeta(JsonObjectBuilder builder, List<MetricID> metricIDs);
-
-    /**
-     * Return this metric data in prometheus format.
-     *
-     * @param sb the {@code StringBuilder} used to accumulate the output
-     * @param metricID the {@code MetricID} for the metric to be formatted
-     * @param withHelpType flag to control if TYPE and HELP are to be included
-     */
-    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType);
-
-    /**
-     * Return a name for this metric, possibly including a unit suffix.
-     *
-     * @param metricID the {@code MetricID} for the metric to be formatted
-     * @return Name for metric.
-     */
-    String prometheusNameWithUnits(MetricID metricID);
 }

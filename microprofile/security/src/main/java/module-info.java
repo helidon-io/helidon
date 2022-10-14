@@ -23,7 +23,7 @@ module io.helidon.microprofile.security {
     requires transitive io.helidon.security;
     requires io.helidon.security.providers.abac;
     requires transitive io.helidon.security.integration.jersey;
-    requires transitive io.helidon.security.integration.webserver;
+    requires transitive io.helidon.security.integration.nima;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.cdi;
     requires jakarta.interceptor.api;

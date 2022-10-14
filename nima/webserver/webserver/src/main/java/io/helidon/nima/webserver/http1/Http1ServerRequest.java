@@ -20,16 +20,18 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
 /**
@@ -45,6 +47,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private WritableHeaders<?> writable;
 
     private HttpPrologue newPrologue;
+    private Context context;
 
     Http1ServerRequest(ConnectionContext ctx,
                        HttpPrologue prologue,
@@ -169,5 +172,15 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Http1ServerRequest prologue(HttpPrologue newPrologue) {
         this.newPrologue = newPrologue;
         return this;
+    }
+
+    @Override
+    public Context context() {
+        if (context == null) {
+            context = Contexts.context().orElseGet(() -> Context.builder()
+                    .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
+                    .build());
+        }
+        return context;
     }
 }

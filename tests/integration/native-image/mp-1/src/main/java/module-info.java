@@ -46,10 +46,8 @@ module helidon.tests.nimage.mp {
     exports io.helidon.tests.integration.nativeimage.mp1.other;
 
     // opens is needed to inject private fields, create classes in the same package (proxy)
-    opens io.helidon.tests.integration.nativeimage.mp1 to weld.core.impl, io.helidon.microprofile.cdi,
-            org.glassfish.hk2.utilities;
-    opens io.helidon.tests.integration.nativeimage.mp1.other to weld.core.impl, io.helidon.microprofile.cdi,
-            org.glassfish.hk2.utilities;
+    opens io.helidon.tests.integration.nativeimage.mp1;
+    opens io.helidon.tests.integration.nativeimage.mp1.other;
 
     // we need to open the static resource on classpath directory to everybody, as otherwise
     // static content will not see it

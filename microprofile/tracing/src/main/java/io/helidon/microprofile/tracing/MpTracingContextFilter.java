@@ -18,7 +18,8 @@ package io.helidon.microprofile.tracing;
 import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
@@ -47,17 +48,25 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @Priority(Integer.MIN_VALUE)
 @ApplicationScoped
 public class MpTracingContextFilter implements ContainerRequestFilter {
-    @Context
-    private Provider<ServerRequest> request;
+    private final Provider<ServerRequest> request;
 
     private final Config config = ConfigProvider.getConfig();
+
+    /**
+     * Constructor to be used by JAX-RS implementation.
+     *
+     * @param request injected by JAX-RS
+     */
+    public MpTracingContextFilter(@Context Provider<ServerRequest> request) {
+        this.request = request;
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
         ServerRequest serverRequest = this.request.get();
 
-        Tracer tracer = serverRequest.tracer();
-        Optional<SpanContext> parentSpan = serverRequest.spanContext();
+        Tracer tracer = Tracer.global();
+        Optional<SpanContext> parentSpan = Span.current().map(Span::context);
 
         boolean clientEnabled = config.getOptionalValue("tracing.client.enabled", Boolean.class).orElse(true);
         TracingContext tracingContext = TracingContext.create(tracer, serverRequest.headers().toMap(), clientEnabled);

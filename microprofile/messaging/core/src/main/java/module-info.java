@@ -34,6 +34,7 @@ module io.helidon.microprofile.messaging {
     requires transitive org.reactivestreams;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
+    requires io.helidon.common.reactive;
 
     exports io.helidon.microprofile.messaging;
 

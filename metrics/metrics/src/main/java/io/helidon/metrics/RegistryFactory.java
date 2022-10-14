@@ -23,7 +23,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsSettings;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 /**
@@ -149,7 +148,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return MetricRegistry for the type defined.
      */
     @Override
-    public MetricRegistry getRegistry(Type type) {
+    public Registry getRegistry(Type type) {
         if (type == Type.BASE) {
             ensureBase();
         }
@@ -162,6 +161,21 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
             this.metricsSettings = metricsSettings;
             registries.forEach((key, value) -> value.update(metricsSettings.registrySettings(key)));
         });
+    }
+
+    @Override
+    public boolean enabled() {
+        return true;
+    }
+
+    @Override
+    public void start() {
+        PeriodicExecutor.start();
+    }
+
+    @Override
+    public void stop() {
+        PeriodicExecutor.stop();
     }
 
     private void ensureBase() {

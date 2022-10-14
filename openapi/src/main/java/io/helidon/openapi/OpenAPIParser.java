@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,20 +30,26 @@ import org.yaml.snakeyaml.constructor.Constructor;
 /**
  * Abstraction for SnakeYAML parsing of JSON and YAML.
  */
-final class OpenAPIParser {
+public final class OpenAPIParser {
 
     private OpenAPIParser() {
     }
 
-    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, InputStream inputStream,
-            OpenAPISupport.OpenAPIMediaType openAPIMediaType) throws IOException {
+    /**
+     * Parse open API.
+     *
+     * @param types types
+     * @param inputStream input stream to parse from
+     * @return parsed document
+     * @throws IOException in case of I/O problems
+     */
+    public static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, InputStream inputStream) throws IOException {
         try (Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-            return parse(types, reader, openAPIMediaType);
+            return parse(types, reader);
         }
     }
 
-    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, Reader reader,
-            OpenAPISupport.OpenAPIMediaType openAPIMediaType) {
+    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, Reader reader) {
         TypeDescription openAPITD = types.get(OpenAPI.class);
         Constructor topConstructor = new CustomConstructor(openAPITD);
 

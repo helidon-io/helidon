@@ -22,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.jersey.common.InvokedResource;
-import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.AbstractTracingFilter;
 
 import jakarta.annotation.PostConstruct;
@@ -47,11 +46,19 @@ import org.eclipse.microprofile.opentracing.Traced;
 public class MpTracingFilter extends AbstractTracingFilter {
     private static final Pattern LOCALHOST_PATTERN = Pattern.compile("127.0.0.1", Pattern.LITERAL);
 
-    @Context
-    private ResourceInfo resourceInfo;
+    private final ResourceInfo resourceInfo;
 
     private MpTracingHelper utils;
     private Function<String, Boolean> skipPatternFunction;
+
+    /**
+     * Create a new instance by JAX-RS.
+     *
+     * @param resourceInfo injected by JAX-RS implementation
+     */
+    public MpTracingFilter(@Context ResourceInfo resourceInfo) {
+        this.resourceInfo = resourceInfo;
+    }
 
     /**
      * Post construct method, initialization procedures.
@@ -99,11 +106,6 @@ public class MpTracingFilter extends AbstractTracingFilter {
                 .map(Traced::operationName)
                 .filter(str -> !str.isEmpty())
                 .orElseGet(() -> utils.operationName(context));
-    }
-
-    @Override
-    protected void configureSpan(Span.Builder spanBuilder) {
-
     }
 
     @Override

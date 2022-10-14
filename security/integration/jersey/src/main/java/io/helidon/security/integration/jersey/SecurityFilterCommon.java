@@ -52,18 +52,13 @@ abstract class SecurityFilterCommon {
     private static final List<SecurityResponseMapper> RESPONSE_MAPPERS = HelidonServiceLoader
             .builder(ServiceLoader.load(SecurityResponseMapper.class)).build().asList();
 
-    @Context
-    private Security security;
+    private final Security security;
 
-    @Context
-    private FeatureConfig featureConfig;
-
-    SecurityFilterCommon() {
-    }
+    private final FeatureConfig featureConfig;
 
     // due to a bug in Jersey @Context in constructor injection is failing
     // this method is needed for unit tests
-    SecurityFilterCommon(Security security, FeatureConfig featureConfig) {
+    SecurityFilterCommon(@Context Security security, @Context FeatureConfig featureConfig) {
         this.security = security;
         this.featureConfig = featureConfig;
     }

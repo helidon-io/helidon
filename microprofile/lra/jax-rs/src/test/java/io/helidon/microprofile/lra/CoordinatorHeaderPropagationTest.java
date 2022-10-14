@@ -16,7 +16,7 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.http.Http;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.microprofile.config.ConfigCdiExtension;
@@ -43,8 +43,8 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.Service;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -130,7 +130,7 @@ class CoordinatorHeaderPropagationTest {
     @Produces
     @ApplicationScoped
     @RoutingPath("/lra-coordinator")
-    Service mockCoordinator() {
+    HttpService mockCoordinator() {
         return rules -> rules
                 .post("/start", (req, res) -> {
                     startHeadersCoordinator.putAll(req.headers().toMap());
@@ -141,10 +141,10 @@ class CoordinatorHeaderPropagationTest {
 
                     lraMap.put(lraId, new ConcurrentHashMap<>());
 
-                    res.status(201)
-                            .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
-                            .addHeader(NOT_PROPAGATED_HEADER, "not this extra one!")
-                            .addHeader(EXTRA_COORDINATOR_PROPAGATED_HEADER, "yes extra start header!")
+                    res.status(Http.Status.CREATED_201)
+                            .header(LRA_HTTP_CONTEXT_HEADER, lraId)
+                            .header(NOT_PROPAGATED_HEADER, "not this extra one!")
+                            .header(EXTRA_COORDINATOR_PROPAGATED_HEADER, "yes extra start header!")
                             .send();
                 })
                 .put("/{lraId}/remove", (req, res) -> {
@@ -153,7 +153,9 @@ class CoordinatorHeaderPropagationTest {
                 })
                 .put("/{lraId}/close", (req, res) -> {
                     closeHeadersCoordinator.putAll(req.headers().toMap());
-                    String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path().param("lraId");
+                    String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
+                            .pathParameters()
+                            .value("lraId");
                     if (lraMap.get(lraId).get("complete") == null) {
                         //no complete resource
                         // after lra
@@ -196,7 +198,9 @@ class CoordinatorHeaderPropagationTest {
                 })
                 .put("/{lraId}/cancel", (req, res) -> {
                     closeHeadersCoordinator.putAll(req.headers().toMap());
-                    String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path().param("lraId");
+                    String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
+                            .pathParameters()
+                            .value("lraId");
                     WebClient.builder()
                             .baseUri(lraMap.get(lraId).get("compensate").toASCIIString())
                             .build()
@@ -214,21 +218,20 @@ class CoordinatorHeaderPropagationTest {
                 //join
                 .put("/{lraId}", (req, res) -> {
                     joinHeadersCoordinator.putAll(req.headers().toMap());
-                    String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path().param("lraId");
-                    req.content()
-                            .as(String.class)
-                            .flatMap(s -> Multi.create(Arrays.stream(s.split(","))))
-                            .peek(s -> {
-                                String[] split = s.split(";");
-                                URI uri = URI.create(split[0]
-                                        .replaceAll("^<", "")
-                                        .replaceAll(">$", ""));
-                                String uriType = split[1].replaceAll("rel=\"([a-z]+)\"", "$1");
-                                lraMap.get(lraId).put(uriType.trim(), uri);
-                            })
-                            .onComplete(res::send)
-                            .onError(res::send)
-                            .ignoreElements();
+                    String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
+                            .pathParameters()
+                            .value("lraId");
+                    String content = req.content().as(String.class);
+
+                    for (String part : content.split(",")) {
+                        String[] split = part.split(";");
+                        URI uri = URI.create(split[0]
+                                                     .replaceAll("^<", "")
+                                                     .replaceAll(">$", ""));
+                        String uriType = split[1].replaceAll("rel=\"([a-z]+)\"", "$1");
+                        lraMap.get(lraId).put(uriType.trim(), uri);
+
+                    }
                 });
     }
 
@@ -327,6 +330,8 @@ class CoordinatorHeaderPropagationTest {
         assertThat(closeHeadersCoordinator, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(closeHeadersCoordinator, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
 
+        // TODO this is a bad fix for an intermittent failure, requires better fix
+        Thread.sleep(Duration.ofMillis(100));
         // test after
         assertThat(afterHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(afterHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));

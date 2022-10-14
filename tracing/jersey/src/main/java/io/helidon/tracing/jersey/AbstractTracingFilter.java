@@ -22,13 +22,13 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
@@ -69,7 +69,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         if (spanConfig.enabled()) {
             spanName = spanConfig.newName().orElse(spanName);
             Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
-            SpanContext parentSpan = context.get(ServerRequest.class, SpanContext.class)
+            SpanContext parentSpan = context.get(TracingConfig.class, SpanContext.class)
                     .orElseGet(() -> context.get(SpanContext.class).orElse(null));
 
             Span.Builder spanBuilder = tracer.spanBuilder(spanName)
@@ -198,5 +198,6 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
      *
      * @param spanBuilder builder of the new span
      */
-    protected abstract void configureSpan(Span.Builder spanBuilder);
+    protected void configureSpan(Span.Builder<?> spanBuilder) {
+    }
 }

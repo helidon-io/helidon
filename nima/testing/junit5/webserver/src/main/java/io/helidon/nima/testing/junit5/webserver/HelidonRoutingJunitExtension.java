@@ -26,6 +26,7 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
 
+import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  * JUnit5 extension to support Helidon Níma WebServer in tests.
  */
 class HelidonRoutingJunitExtension implements BeforeAllCallback,
+                                              AfterAllCallback,
                                               InvocationInterceptor,
                                               BeforeEachCallback,
                                               ParameterResolver {
@@ -57,6 +59,11 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
         }
 
         withRoutingMethod(routing -> client = new DirectClient(routing));
+    }
+
+    @Override
+    public void afterAll(ExtensionContext context) {
+        client.close();
     }
 
     @Override

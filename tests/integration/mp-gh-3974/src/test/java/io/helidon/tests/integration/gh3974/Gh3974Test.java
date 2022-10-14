@@ -45,7 +45,6 @@ class Gh3974Test {
                 .get();
 
         assertThat(response.getStatus(), is(404));
-        assertThat("Response entity should not be an empty string", response.readEntity(String.class), not(""));
     }
 
     @Test

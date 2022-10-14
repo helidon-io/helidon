@@ -20,6 +20,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 
 /**
  * HTTP Routing rules, used by both {@link HttpRouting.Builder}
@@ -89,7 +91,7 @@ public interface HttpRules {
      * Add a route.
      *
      * @param methodPredicate method predicate, see {@link Http.Method#predicate(io.helidon.common.http.Http.Method...)}
-     * @param pathMatcher     path matcher, see {@link io.helidon.nima.webserver.http.PathMatchers#create(String)}
+     * @param pathMatcher     path matcher, see {@link io.helidon.common.http.PathMatchers#create(String)}
      * @param handler         handler
      * @return updated rules
      */

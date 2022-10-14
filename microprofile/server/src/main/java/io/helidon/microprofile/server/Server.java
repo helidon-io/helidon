@@ -19,15 +19,11 @@ package io.helidon.microprofile.server;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
 
@@ -47,11 +43,10 @@ public interface Server {
      *
      * @param applications application(s) to use
      * @return Server instance to be started
-     * @throws MpException in case the server fails to be created
      * @see #builder()
      */
     @SafeVarargs
-    static Server create(Application... applications) throws MpException {
+    static Server create(Application... applications) {
         Builder builder = builder();
         Arrays.stream(applications).forEach(builder::addApplication);
         return builder.build();
@@ -62,11 +57,10 @@ public interface Server {
      *
      * @param applicationClasses application class(es) to use
      * @return Server instance to be started
-     * @throws MpException in case the server fails to be created
      * @see #builder()
      */
     @SafeVarargs
-    static Server create(Class<? extends Application>... applicationClasses) throws MpException {
+    static Server create(Class<? extends Application>... applicationClasses) {
         Builder builder = builder();
         Arrays.stream(applicationClasses).forEach(builder::addApplication);
         return builder.build();
@@ -76,10 +70,9 @@ public interface Server {
      * Create a server instance for discovered JAX-RS application (through CDI).
      *
      * @return Server instance to be started
-     * @throws MpException in case the server fails to be created
      * @see #builder()
      */
-    static Server create() throws MpException {
+    static Server create() {
         return builder().build();
     }
 
@@ -97,18 +90,16 @@ public interface Server {
      * This is a blocking call.
      *
      * @return Server instance, started
-     * @throws MpException in case the server fails to start
      */
-    Server start() throws MpException;
+    Server start();
 
     /**
      * Stop this server immediately (can only be used on a started server).
      * This is a blocking call.
      *
      * @return Server instance, stopped
-     * @throws MpException in case the server fails to stop
      */
-    Server stop() throws MpException;
+    Server stop();
 
     /**
      * Get the host this server listens on.
@@ -138,7 +129,6 @@ public interface Server {
         private String host;
         private String basePath;
         private int port = -1;
-        private Supplier<? extends ExecutorService> defaultExecutorService;
         private JaxRsCdiExtension jaxRs;
         private boolean retainDiscovered = false;
 
@@ -170,7 +160,6 @@ public interface Server {
          * Build a server based on this builder.
          *
          * @return Server instance to be started
-         * @throws MpException in case the server fails to be created
          */
         @Override
         public Server build() {
@@ -208,15 +197,6 @@ public interface Server {
                     .getBeanManager()
                     .getExtension(ServerCdiExtension.class);
 
-            if (null == defaultExecutorService) {
-                defaultExecutorService = ServerThreadPoolSupplier.builder()
-                        .name("server")
-                        .config(MpConfig.toHelidonConfig(config)
-                                        .get("server.executor-service"))
-                        .build();
-            }
-
-            server.defaultExecutorService(defaultExecutorService);
             if (null != basePath) {
                 server.basePath(basePath);
             }
@@ -288,20 +268,6 @@ public interface Server {
          */
         public Builder basePath(String basePath) {
             this.basePath = basePath;
-            return this;
-        }
-
-        /**
-         * Set a supplier of an executor service to use for tasks connected with application
-         * processing (JAX-RS).
-         *
-         * @param supplier executor service supplier, only called when an application is configured without its own executor
-         *                 service
-         * @return updated builder instance
-         */
-        @ConfiguredOption(key = "executor-service")
-        public Builder defaultExecutorServiceSupplier(Supplier<? extends ExecutorService> supplier) {
-            this.defaultExecutorService = supplier;
             return this;
         }
 

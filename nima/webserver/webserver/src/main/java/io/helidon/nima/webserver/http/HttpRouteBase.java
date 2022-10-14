@@ -19,6 +19,7 @@ package io.helidon.nima.webserver.http;
 import java.util.List;
 
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatchers;
 
 abstract class HttpRouteBase implements HttpRoute {
     PathMatchers.PrefixMatchResult acceptsPrefix(HttpPrologue prologue) {

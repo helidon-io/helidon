@@ -31,8 +31,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.openapi.OpenAPISupport;
-import io.helidon.openapi.SEOpenAPISupportBuilder;
+import io.helidon.nima.openapi.OpenApiService;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiConfigImpl;
@@ -53,10 +52,10 @@ import org.jboss.jandex.IndexView;
  * Fluent builder for OpenAPISupport in Helidon MP.
  */
 @Configured(prefix = MPOpenAPIBuilder.MP_OPENAPI_CONFIG_PREFIX)
-public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuilder> {
+public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpenAPIBuilder, MPOpenAPISupport> {
 
     // This is the prefix users will use in the config file.
-    static final String MP_OPENAPI_CONFIG_PREFIX = "mp." + SEOpenAPISupportBuilder.CONFIG_KEY;
+    static final String MP_OPENAPI_CONFIG_PREFIX = "mp." + OpenApiService.Builder.CONFIG_KEY;
 
     private static final String USE_JAXRS_SEMANTICS_CONFIG_KEY = "use-jaxrs-semantics";
 
@@ -79,7 +78,7 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
     private Config mpConfig;
 
     @Override
-    public OpenApiConfig openAPIConfig() {
+    protected OpenApiConfig openAPIConfig() {
         return openAPIConfig;
     }
 
@@ -405,12 +404,12 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder<MPOpenAPIBuil
     }
 
     @Override
-    public void validate() throws IllegalStateException {
+    public MPOpenAPIBuilder validate() throws IllegalStateException {
         super.validate();
         if (openAPIConfig == null) {
             throw new IllegalStateException("OpenApiConfig has not been set in MPBuilder");
         }
         Objects.requireNonNull(singleIndexViewSupplier, "singleIndexViewSupplier must be set but was not");
+        return this;
     }
-
 }

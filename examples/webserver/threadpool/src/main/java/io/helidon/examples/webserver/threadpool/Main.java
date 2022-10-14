@@ -20,9 +20,9 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 

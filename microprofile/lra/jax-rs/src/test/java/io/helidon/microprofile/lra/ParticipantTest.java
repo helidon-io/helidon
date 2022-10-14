@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.http.Http;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.lra.resources.DontEnd;
@@ -37,7 +37,7 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -99,21 +99,19 @@ class ParticipantTest {
     @Produces
     @ApplicationScoped
     @RoutingPath("/lra-coordinator")
-    Service mockCoordinator() {
+    HttpService mockCoordinator() {
         return rules -> rules
                 .post("/start", (req, res) -> {
                     String lraId = URI.create("http://localhost:" + port + "/lra-coordinator/xxx-xxx-001").toASCIIString();
-                    res.status(201)
-                            .addHeader(LRA_HTTP_CONTEXT_HEADER, lraId)
+                    res.status(Http.Status.CREATED_201)
+                            .header(LRA_HTTP_CONTEXT_HEADER, lraId)
                             .send();
                 })
                 .put("/{lraId}/close", (req, res) -> {
                     res.send();
                 })
                 .put("/{lraId}", (req, res) -> {
-                    req.content()
-                            .as(String.class)
-                            .flatMap(s -> Multi.create(Arrays.stream(s.split(","))))
+                    Arrays.stream(req.content().as(String.class).split(","))
                             .map(s -> s.split(";")[0])
                             .map(s -> s
                                     .replaceAll("^<", "")
@@ -121,10 +119,9 @@ class ParticipantTest {
                             )
                             .map(URI::create)
                             .map(URI::getPath)
-                            .onComplete(res::send)
-                            .onComplete(() -> completed.complete(null))
-                            .forEach(paths::add)
-                            .exceptionally(res::send);
+                            .forEach(paths::add);
+                    res.send();
+                    completed.complete(null);
                 });
     }
 

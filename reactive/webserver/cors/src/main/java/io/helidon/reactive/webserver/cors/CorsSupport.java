@@ -18,6 +18,10 @@ package io.helidon.reactive.webserver.cors;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.cors.CorsRequestAdapter;
+import io.helidon.cors.CorsResponseAdapter;
+import io.helidon.cors.CorsSupportBase;
+import io.helidon.cors.CorsSupportHelper;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -25,7 +29,7 @@ import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
 
 /**
- * SE implementation of {@link CorsSupportBase}.
+ * SE implementation of {@link io.helidon.cors.CorsSupportBase}.
  */
 public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, CorsSupport, CorsSupport.Builder>
         implements Service, Handler {
@@ -63,16 +67,21 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
             request.next();
             return;
         }
-        RequestAdapter<ServerRequest> requestAdapter = new RequestAdapterSe(request);
-        ResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(response);
+        CorsRequestAdapter<ServerRequest> requestAdapter = new RequestAdapterSe(request);
+        CorsResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(response);
 
         Optional<ServerResponse> responseOpt = helper().processRequest(requestAdapter, responseAdapter);
 
         responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, responseAdapter));
     }
 
-    private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
-            ResponseAdapter<ServerResponse> responseAdapter) {
+    @Override
+    protected CorsSupportHelper<ServerRequest, ServerResponse> helper() {
+        return super.helper();
+    }
+
+    private void prepareCORSResponseAndContinue(CorsRequestAdapter<ServerRequest> requestAdapter,
+                                                CorsResponseAdapter<ServerResponse> responseAdapter) {
         helper().prepareResponse(requestAdapter, responseAdapter);
 
         requestAdapter.next();
@@ -120,11 +129,6 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
         @Override
         public CorsSupport build() {
             return new CorsSupport(this);
-        }
-
-        @Override
-        protected Builder me() {
-            return this;
         }
     }
 }

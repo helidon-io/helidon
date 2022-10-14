@@ -16,19 +16,16 @@
 package io.helidon.integrations.micrometer;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
@@ -69,6 +66,26 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
     }
 
     @Override
+    public Function<io.helidon.nima.webserver.http.ServerRequest,
+            Optional<io.helidon.nima.webserver.http.Handler>> requestNimaToHandlerFn(MeterRegistry registry) {
+        /*
+         * Deal with a request if the MediaType is text/plain or the query parameter "type" specifies "prometheus".
+         */
+        return (io.helidon.nima.webserver.http.ServerRequest req) -> {
+            if (req.headers()
+                    .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
+                    || req.query()
+                    .first("type")
+                    .orElse("")
+                    .equals("prometheus")) {
+                return Optional.of(NimaPrometheusHandler.create(registry));
+            } else {
+                return Optional.empty();
+            }
+        };
+    }
+
+    @Override
     public Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry) {
         /*
          * Deal with a request if the MediaType is text/plain or the query parameter "type" specifies "prometheus".
@@ -80,47 +97,11 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
                     .first("type")
                     .orElse("")
                     .equals("prometheus")) {
-                return Optional.of(PrometheusHandler.create(registry));
+                return Optional.of(ReactivePrometheusHandler.create(registry));
             } else {
                 return Optional.empty();
             }
         };
-    }
-
-    /**
-     * Handler for dealing with HTTP requests to the Micrometer endpoint that specify prometheus as the registry type.
-     */
-    static class PrometheusHandler implements Handler {
-
-        private final PrometheusMeterRegistry registry;
-
-        private PrometheusHandler(PrometheusMeterRegistry registry) {
-            this.registry = registry;
-        }
-
-        static PrometheusHandler create(MeterRegistry registry) {
-            return new PrometheusHandler(PrometheusMeterRegistry.class.cast(registry));
-        }
-
-        @Override
-        public void accept(ServerRequest req, ServerResponse res) {
-            res.headers().contentType(MediaTypes.TEXT_PLAIN);
-            if (req.method() == Http.Method.GET) {
-                res.send(registry.scrape());
-            } else if (req.method() == Http.Method.OPTIONS) {
-                StringWriter writer = new StringWriter();
-                try {
-                    metadata(writer, registry);
-                    res.send(writer.toString());
-                } catch (IOException e) {
-                    res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
-                            .send(e);
-                }
-            } else {
-                res.status(Http.Status.NOT_IMPLEMENTED_501)
-                        .send();
-            }
-        }
     }
 
     static void metadata(Writer writer, PrometheusMeterRegistry registry) throws IOException {

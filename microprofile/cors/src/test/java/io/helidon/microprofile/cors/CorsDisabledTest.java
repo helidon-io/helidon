@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.cors;
 
+import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -27,7 +28,6 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.reactive.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.not;
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
 @AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
 @AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
-@AddConfig(key = "cors.enabled", value="false")
+@AddConfig(key = "cors.enabled", value = "false")
 class CorsDisabledTest {
 
     static {
@@ -58,6 +58,8 @@ class CorsDisabledTest {
                 .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat("Headers from successful response", res.getHeaders().keySet(), not(hasItem(ACCESS_CONTROL_ALLOW_ORIGIN)));
+        assertThat("Headers from successful response",
+                   res.getHeaders().keySet(),
+                   not(hasItem(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase())));
     }
 }

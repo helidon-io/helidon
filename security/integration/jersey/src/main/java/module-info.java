@@ -33,17 +33,13 @@ module io.helidon.security.integration.jersey {
     requires io.helidon.jersey.client;
     requires io.helidon.security.integration.common;
     requires io.helidon.reactive.webclient.jaxrs;
-    requires io.helidon.reactive.webserver;
 
     requires jakarta.inject;
 
     exports io.helidon.security.integration.jersey;
 
-    // needed for jersey injection
-    opens io.helidon.security.integration.jersey to org.glassfish.hk2.utilities,
-            org.glassfish.hk2.locator,
-            weld.core.impl,
-            io.helidon.microprofile.cdi;
+    // needed for injection (uses constructor injection)
+    opens io.helidon.security.integration.jersey;
 
     uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
     uses io.helidon.security.integration.jersey.SecurityResponseMapper;

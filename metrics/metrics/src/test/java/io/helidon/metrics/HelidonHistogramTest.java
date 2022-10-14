@@ -15,29 +15,17 @@
  */
 package io.helidon.metrics;
 
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.StringReader;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonValue;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -52,9 +40,7 @@ import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -215,106 +201,6 @@ class HelidonHistogramTest {
                   () -> assertThat(histoInt.getSum(), is(equalTo(SAMPLE_INT_SUM)))
         );
 
-    }
-
-    @Test
-    void testJson() {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        histoInt.jsonData(builder, new MetricID("file_sizes"));
-
-        JsonObject result = builder.build();
-
-        JsonObject metricData = result.getJsonObject("file_sizes");
-        assertThat(metricData, notNullValue());
-        assertThat(metricData.getJsonNumber("count").longValue(), is(200L));
-        assertThat(metricData.getJsonNumber("min").longValue(), is(0L));
-        assertThat(metricData.getJsonNumber("max").longValue(), is(99L));
-        assertThat("mean", metricData.getJsonNumber("mean").doubleValue(), is(withinTolerance(50.6349)));
-        assertThat("stddev", metricData.getJsonNumber("stddev").doubleValue(),  is(withinTolerance(29.4389)));
-        assertThat("p50", metricData.getJsonNumber("p50").intValue(), is(withinTolerance(48)));
-        assertThat("p75", metricData.getJsonNumber("p75").intValue(), is(withinTolerance(75)));
-        assertThat("p95", metricData.getJsonNumber("p95").intValue(), is(withinTolerance(96)));
-        assertThat("p98", metricData.getJsonNumber("p98").intValue(), is(withinTolerance(98)));
-        assertThat("p99", metricData.getJsonNumber("p99").intValue(), is(withinTolerance(98)));
-        assertThat("p999", metricData.getJsonNumber("p999").intValue(), is(withinTolerance(99)));
-    }
-
-    @Test
-    void testJsonWithTags() {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        histoInt.jsonData(builder, new MetricID("file_sizes", HISTO_INT_TAGS));
-
-        JsonObject result = builder.build();
-
-        JsonObject metricData = result.getJsonObject("file_sizes");
-        assertThat(metricData, notNullValue());
-
-        checkJsonTreeForTags("file_sizes", metricData, HISTO_INT_TAGS_AS_MAP);
-    }
-
-    private static void checkJsonTreeForTags(String key, JsonValue jsonValue, Map<String, String> expectedTags) {
-        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
-            jsonValue.asJsonObject()
-                    .forEach((childKey, childValue) -> checkJsonTreeForTags(key + "." + childKey, childValue, expectedTags));
-        } else {
-            assertThat("Leaf JSON node with key " + key,
-                    tagsFromJsonKey(key),
-                    MetricsCustomMatchers.MapContains.all(HISTO_INT_TAGS_AS_MAP));
-        }
-    }
-
-    private static Map<String, String> tagsFromJsonKey(String jsonKey) {
-        return jsonKey.contains(";")
-                ? tagsFromDelimitedString(jsonKey.substring(jsonKey.indexOf(';') + 1), ";")
-                : Collections.emptyMap();
-    }
-
-    @Test
-    void testPrometheus() throws IOException, ParseException {
-        final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntID, true);
-        parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
-                .forEach(entry -> assertThat("Unexpected value checking " + entry.getKey(),
-                                    EXPECTED_PROMETHEUS_RESULTS.get(entry.getKey()),
-                                    is(withinTolerance(entry.getValue()))));
-    }
-
-    @Test
-    void testPrometheusWithTags() {
-        final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntIDWithTags, true);
-
-        parsePrometheusText(new LineNumberReader(new StringReader(sb.toString())).lines())
-                .forEach(entry -> assertThat("Missing tag labels for " + entry.getKey(),
-                        tagsFromPrometheusKey(entry.getKey()),
-                        MetricsCustomMatchers.MapContains.all(HISTO_INT_TAGS_AS_MAP_PROM)));
-    }
-
-    private static Map<String, String> tagsFromPrometheusKey(String promKey) {
-        // Actual tags will exclude any possible "quantile" settings.
-        List<Tag> result = new ArrayList<>();
-        Matcher m = PROMETHEUS_KEY_PATTERN.matcher(promKey);
-        if (!m.matches()) {
-            fail("Could not parse Prometheus key for tags: " + promKey);
-        }
-        if (m.groupCount() <= 1) {
-            return Collections.emptyMap();
-        }
-
-        String tagExprs = m.group(2);
-        assertThat("Tag expressions from Prometheus key " + promKey, tagExprs, not(isEmptyOrNullString()));
-
-        return tagsFromDelimitedString(m.group(2), ",");
-    }
-
-    private static Map<String, String> tagsFromDelimitedString(String delimitedString, String delimiter) {
-        return Arrays.stream(delimitedString.split(delimiter))
-                .filter(Predicate.not(tagExpr -> tagExpr.startsWith("quantile")))
-                .map(tagExpr -> tagExpr.split("="))
-                .peek(arr -> {
-                    assertThat("Tag expression is name=value giving two segments", arr.length, is(2));
-                })
-                .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
     }
 
     @Test

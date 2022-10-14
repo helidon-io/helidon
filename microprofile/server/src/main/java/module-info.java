@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
+import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
+
 /**
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
  */
 module io.helidon.microprofile.server {
-    requires transitive io.helidon.reactive.webserver;
-    requires transitive io.helidon.reactive.webserver.jersey;
+    requires transitive io.helidon.nima.webserver;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.jersey.server;
+    requires transitive io.helidon.common.configurable;
 
     requires transitive io.helidon.microprofile.cdi;
 
@@ -35,7 +37,8 @@ module io.helidon.microprofile.server {
     requires io.helidon.jersey.media.jsonp;
 
     requires java.logging;
-    requires io.helidon.reactive.webserver.staticcontent;
+    requires io.helidon.nima.webserver.staticcontent;
+    requires transitive io.helidon.nima.webserver.context;
 
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;
@@ -48,6 +51,8 @@ module io.helidon.microprofile.server {
             io.helidon.microprofile.server.ServerCdiExtension,
             io.helidon.microprofile.server.JaxRsCdiExtension;
 
-    // needed when running with modules - to make private methods accessible
-    opens io.helidon.microprofile.server to weld.core.impl, org.glassfish.hk2.utilities, io.helidon.microprofile.cdi;
+    provides InjectionManagerFactory with io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory;
+
+    // needed when running with modules - to make private methods and types accessible
+    opens io.helidon.microprofile.server;
 }

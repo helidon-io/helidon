@@ -20,7 +20,6 @@ import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.metrics.serviceapi.MetricsSupport;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -112,7 +111,7 @@ public class MicrostreamMetricsSupport {
     }
 
     /**
-     * A fluent API builder to build instances of {@link MetricsSupport}.
+     * A fluent API builder to build instances of {@link io.helidon.integrations.microstream.metrics.MicrostreamMetricsSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, MicrostreamMetricsSupport> {
 

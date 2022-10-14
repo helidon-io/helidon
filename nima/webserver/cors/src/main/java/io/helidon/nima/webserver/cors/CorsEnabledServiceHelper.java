@@ -18,6 +18,7 @@ package io.helidon.nima.webserver.cors;
 import java.lang.System.Logger.Level;
 
 import io.helidon.config.Config;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.webserver.http.Handler;
 
 /**

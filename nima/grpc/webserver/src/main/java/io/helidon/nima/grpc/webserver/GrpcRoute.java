@@ -17,8 +17,8 @@
 package io.helidon.nima.grpc.webserver;
 
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Route;
-import io.helidon.nima.webserver.http.PathMatchers;
 
 abstract class GrpcRoute implements Route {
     abstract Grpc<?, ?> toGrpc(HttpPrologue grpcPrologue);

@@ -67,10 +67,15 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <map order="800" if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.metrics</value>
                                             <value key="artifactId">helidon-metrics</value>
+                                            <value key="scope">provided</value>
+                                        </map>
+                                        <map order="800" if="${flavor} == 'se'">
+                                            <value key="groupId">io.helidon.reactive.metrics</value>
+                                            <value key="artifactId">helidon-reactive-metrics</value>
                                         </map>
                                     </list>
                                     <list key="Main-helidon-imports">
-                                        <value>io.helidon.metrics.MetricsSupport</value>
+                                        <value>io.helidon.reactive.metrics.MetricsSupport</value>
                                     </list>
                                     <list key="Main-routingBuilder">
                                         <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]></value>
@@ -331,10 +336,15 @@ allRequests_total 0.0
                                     <map order="800" if="${flavor} == 'se' &amp;&amp; !(${metrics.provider} == 'microprofile')">
                                         <value key="groupId">io.helidon.metrics</value>
                                         <value key="artifactId">helidon-metrics</value>
+                                        <value key="scope">provided</value>
+                                    </map>
+                                    <map order="800" if="${flavor} == 'se' &amp;&amp; !(${metrics.provider} == 'microprofile')">
+                                        <value key="groupId">io.helidon.reactive.metrics</value>
+                                        <value key="artifactId">helidon-reactive-metrics</value>
                                     </map>
                                 </list>
                                 <list key="Main-helidon-imports" if="!(${metrics.provider} == 'microprofile')">
-                                    <value>io.helidon.metrics.MetricsSupport</value>
+                                    <value>io.helidon.reactive.metrics.MetricsSupport</value>
                                 </list>
                                 <list key="Main-routingBuilder" if="!(${metrics.provider} == 'microprofile')">
                                     <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]></value>

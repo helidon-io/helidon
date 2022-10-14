@@ -56,6 +56,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
+@Disabled
 class MainTest {
 
     private static String appJarPathSE = System.getProperty("app.jar.path.se", "please-set-app.jar.path.se");

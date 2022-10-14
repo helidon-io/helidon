@@ -17,6 +17,7 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,8 +30,9 @@ import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -44,7 +46,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 @ApplicationScoped
 public class CoordinatorClusterDeploymentService {
-
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Logger LOGGER = Logger.getLogger(CoordinatorClusterDeploymentService.class.getName());
 
     static final String LOAD_BALANCER_NAME = "coordinator-loadbalancer";
@@ -108,26 +110,30 @@ public class CoordinatorClusterDeploymentService {
     @ApplicationScoped
     @RoutingName(value = LOAD_BALANCER_NAME, required = true)
     @RoutingPath("/lra-coordinator")
-    public Service coordinatorLoadBalancerService() {
+    public HttpService coordinatorLoadBalancerService() {
         return rules ->
-                rules.post("/start", (req, res) -> WebClient.builder()
-                                .baseUri(coordinators[roundRobinIndex.getAndUpdate(o -> o > 0 ? o - 1 : coordinators.length - 1)])
-                                .build()
-                                .method(req.method())
-                                .headers(req.headers())
-                                .queryParams(req.queryParams())
-                                .submit(req.content())
-                                .forSingle(wr -> {
-                                    wr.headers().forEach(res.headers()::add);
-                                    res.status(wr.status())
-                                            .send(wr.content());
-                                }))
+                rules.post("/start", (req, res) -> {
+                            WebClientResponse response = WebClient.builder()
+                                    .baseUri(coordinators[roundRobinIndex.getAndUpdate(o -> o > 0 ? o - 1 :
+                                            coordinators.length - 1)])
+                                    .build()
+                                    .method(req.prologue().method())
+                                    .headers(req.headers())
+                                    .queryParams(req.query())
+                                    //.submit(req.content().as(String.class))
+                                    .request()
+                                    .await(TIMEOUT);
+                            response.headers().forEach(res.headers()::set);
+                            res.status(response.status())
+                                    .send(response.content().as(String.class).await(TIMEOUT));
+                        })
                         .any((req, res) -> {
-                            if (!req.absoluteUri().toASCIIString().contains("/start")) {
-                                LOGGER.severe("Loadbalancer should be called only for starting LRA. " + req.absoluteUri());
-                                forbiddenLoadBalancerCall.set(req.method().name() + " " + req.absoluteUri());
+                            String path = req.path().absolute().path();
+                            if (!path.contains("/start")) {
+                                LOGGER.severe("Loadbalancer should be called only for starting LRA. " + path);
+                                forbiddenLoadBalancerCall.set(req.prologue().method().name() + " " + path);
                             }
-                            req.next();
+                            res.next();
                         });
     }
 
@@ -135,7 +141,7 @@ public class CoordinatorClusterDeploymentService {
     @ApplicationScoped
     @RoutingName(value = COORDINATOR_A_NAME, required = true)
     @RoutingPath("/lra-coordinator")
-    public Service coordinatorServiceA() {
+    public HttpService coordinatorServiceA() {
         return CoordinatorService.builder()
                 .url(() -> URI.create("http://localhost:" + getCoordinatorAPort().await() + "/lra-coordinator"))
                 .config(configForCoordinator(COORDINATOR_A_NAME))
@@ -146,7 +152,7 @@ public class CoordinatorClusterDeploymentService {
     @ApplicationScoped
     @RoutingName(value = COORDINATOR_B_NAME, required = true)
     @RoutingPath("/lra-coordinator")
-    public Service coordinatorServiceB() {
+    public HttpService coordinatorServiceB() {
         return CoordinatorService.builder()
                 .url(() -> URI.create("http://localhost:" + getCoordinatorBPort().await() + "/lra-coordinator"))
                 .config(configForCoordinator(COORDINATOR_B_NAME))

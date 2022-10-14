@@ -19,9 +19,9 @@ package io.helidon.nima.websocket.webserver;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Route;
-import io.helidon.nima.webserver.http.PathMatcher;
-import io.helidon.nima.webserver.http.PathMatchers;
 import io.helidon.nima.websocket.WsListener;
 
 class WebSocket implements Route {

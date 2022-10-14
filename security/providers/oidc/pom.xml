@@ -71,6 +71,18 @@
             <artifactId>helidon-reactive-webserver-cors</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-nima</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver-cors</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>

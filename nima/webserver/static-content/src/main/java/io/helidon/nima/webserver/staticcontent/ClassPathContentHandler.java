@@ -122,7 +122,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             URL welcomeUrl = classLoader.getResource(welcomeFileResource);
             if (null != welcomeUrl) {
                 // there is a welcome file under requested resource, ergo requested resource was a directory
-                String rawFullPath = request.path().rawPath();
+                String rawFullPath = request.prologue().uriPath().rawPath();
                 if (rawFullPath.endsWith("/")) {
                     // this is OK, as the path ends with a forward slash
                     url = welcomeUrl;

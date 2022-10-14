@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver.http;
 
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RoutedPath;
 
 /**
  * Routing request.

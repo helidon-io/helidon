@@ -21,18 +21,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Implementation of {@link ConcurrentGauge}.
  */
 final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge {
-
-    private static final String PROMETHEUS_TYPE = "gauge";
-
     private final ConcurrentGauge delegate;
 
     private HelidonConcurrentGauge(String registryType, Metadata metadata, ConcurrentGauge delegate) {
@@ -75,54 +70,6 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     @Override
     public long getMin() {
         return delegate.getMin();
-    }
-
-    @Override
-    public String prometheusNameWithUnits(MetricID metricID) {
-        return prometheusName(metricID.getName());
-    }
-
-    @Override
-    public String prometheusValue() {
-        return Long.toString(getCount());
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        final JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("current", metricID), getCount())
-                .add(jsonFullKey("max", metricID), getMax())
-                .add(jsonFullKey("min", metricID), getMin());
-        builder.add(metricID.getName(), myBuilder);
-    }
-
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        String name = prometheusNameWithUnits(metricID);
-        final String nameCurrent = name + "_current";
-        if (withHelpType) {
-            prometheusType(sb, nameCurrent, metadata().getType());
-            prometheusHelp(sb, nameCurrent);
-        }
-        sb.append(nameCurrent).append(prometheusTags(metricID.getTags()))
-                .append(" ").append(prometheusValue()).append('\n');
-        final String nameMin = name + "_min";
-        if (withHelpType) {
-            prometheusType(sb, nameMin, metadata().getType());
-        }
-        sb.append(nameMin).append(prometheusTags(metricID.getTags()))
-                .append(" ").append(getMin()).append('\n');
-        final String nameMax = name + "_max";
-        if (withHelpType) {
-            prometheusType(sb, nameMax, metadata().getType());
-        }
-        sb.append(nameMax).append(prometheusTags(metricID.getTags()))
-                .append(" ").append(getMax()).append('\n');
-    }
-
-    @Override
-    void prometheusType(StringBuilder sb, String nameWithUnits, String type) {
-        super.prometheusType(sb, nameWithUnits, PROMETHEUS_TYPE);
     }
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {

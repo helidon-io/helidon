@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ class MainTest {
     @Inject
     MainTest(ServerCdiExtension server) {
         this.server = server;
-        client = ClientBuilder.newClient();
+        this.client = ClientBuilder.newClient();
     }
 
     @BeforeAll

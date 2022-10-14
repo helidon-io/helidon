@@ -23,8 +23,8 @@ import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
-import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 
