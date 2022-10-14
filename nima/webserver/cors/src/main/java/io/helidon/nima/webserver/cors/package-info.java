@@ -75,7 +75,7 @@
  * <h3>The Níma CORS API</h3>
  * You can define your application's CORS behavior programmatically -- together with configuration if you want -- by:
  * <ul>
- *     <li>creating a {@link io.helidon.nima.webserver.cors.CrossOriginConfig.Builder} instance,</li>
+ *     <li>creating a {@link io.helidon.cors.CrossOriginConfig.Builder} instance,</li>
  *     <li>operating on the builder to prepare the CORS set-up you want,</li>
  *     <li>using the builder's {@code build()} method to create the {@code CrossOriginConfig} instance, and</li>
  * </ul>

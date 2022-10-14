@@ -93,7 +93,7 @@ public class GreetResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getMessage(@PathParam("name") String name) {
-         return createResponse(name);
+        return createResponse(name);
     }
 
     /**

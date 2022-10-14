@@ -260,7 +260,7 @@ public class Aggregator {
      * @param path the unnormalized request path to check
      * @param method HTTP method
      * @param secondaryLookup Supplier for CrossOrigin used if none found in config
-     * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
+     * @return Optional&lt;CrossOriginConfig> for the matching config, or an empty Optional if none matched
      */
     public Optional<CrossOriginConfig> lookupCrossOrigin(String path, String method,
             Supplier<Optional<CrossOriginConfig>> secondaryLookup) {

@@ -20,7 +20,7 @@
  * Example of integration (expects an instance of {@link io.helidon.security.Security}):
  * <pre>
  * // Web server routing builder - this is our integration point
- * {@link io.helidon.reactive.webserver.Routing} routing = Routing.builder()
+ * {@link io.helidon.nima.webserver.http.HttpRouting} routing = HttpRouting.builder()
  * // register the WebSecurity to create context (shared by all routes)
  * .register({@link io.helidon.security.integration.nima.WebSecurity}.{@link
  * io.helidon.security.integration.nima.WebSecurity#create(io.helidon.security.Security) from(security)})
@@ -31,7 +31,7 @@
  * .get("/admin", WebSecurity.rolesAllowed("admin")
  * .authenticate()
  * )
- * // build a routing instance to start {@link io.helidon.reactive.webserver.WebServer} with.
+ * // build a routing instance to start {@link io.helidon.nima.webserver.WebServer} with.
  * .build();
  * </pre>
  *
