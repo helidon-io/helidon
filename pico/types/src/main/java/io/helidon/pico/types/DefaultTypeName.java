@@ -282,8 +282,9 @@ public class DefaultTypeName implements TypeName {
     }
 
     /**
-     * Creates a builder initialized with the value passed.
+     * Creates a builder initialized with a value passed.
      *
+     * @param val the value
      * @return a fluent builder
      */
     public static Builder toBuilder(TypeName val) {
