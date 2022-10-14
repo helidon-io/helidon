@@ -54,6 +54,7 @@ public class ServiceDescriptor {
 
     private final String name;
     private final String fullName;
+    private final String protoPackage;
     private final Map<String, MethodDescriptor> methods;
     private final PriorityBag<ServerInterceptor> interceptors;
     private final Map<Context.Key<?>, Object> context;
@@ -61,19 +62,28 @@ public class ServiceDescriptor {
     private final Descriptors.FileDescriptor proto;
 
     private ServiceDescriptor(String name,
-                              String fullName,
                               Map<String, MethodDescriptor> methods,
                               PriorityBag<ServerInterceptor> interceptors,
                               Map<Context.Key<?>, Object> context,
                               HealthCheck healthCheck,
                               Descriptors.FileDescriptor proto) {
-        this.name = Objects.requireNonNull(name);
-        this.fullName = fullName;
+        String assignedName = Objects.requireNonNull(name);
         this.methods = methods;
         this.context = Collections.unmodifiableMap(context);
         this.healthCheck = healthCheck;
         this.interceptors = interceptors.copyMe();
         this.proto = proto;
+
+        protoPackage = proto == null ? "" : proto.getPackage();
+        String servicePrefix = protoPackage + (!protoPackage.isEmpty() ? "." : "");
+        if (!servicePrefix.isEmpty() && assignedName.startsWith(servicePrefix)) {
+            // If assignedName is already prefixed with package name, remove the package name part
+            this.name = assignedName.replace(servicePrefix, "");
+            this.fullName = this.name;
+        } else {
+            this.name = assignedName;
+            this.fullName = servicePrefix + assignedName;
+        }
     }
 
     /**
@@ -82,6 +92,22 @@ public class ServiceDescriptor {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * Returns the service name prefixed with package directive if one exists.
+     * @return service name prefixed with package directive if one exists.
+     */
+    public String getFullName() {
+        return fullName;
+    }
+
+    /**
+     * Returns package name from proto file.
+     * @return package name from proto file
+     */
+    public String getPackage() {
+        return protoPackage;
     }
 
     /**
@@ -134,20 +160,13 @@ public class ServiceDescriptor {
         return proto;
     }
 
-    /**
-     * Returns the service name prefixed with package directive if one exists.
-     */
-    String getFullName() {
-        return fullName;
-    }
-
     BindableService bindableService(PriorityBag<ServerInterceptor> interceptors) {
         return BindableServiceImpl.create(this, interceptors);
     }
 
     @Override
     public String toString() {
-        return "ServiceDescriptor(name='" + name + '\'' + ')';
+        return "ServiceDescriptor(name='" + fullName + '\'' + ')';
     }
 
     @Override
@@ -159,12 +178,12 @@ public class ServiceDescriptor {
             return false;
         }
         ServiceDescriptor that = (ServiceDescriptor) o;
-        return name.equals(that.name);
+        return fullName.equals(that.fullName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(fullName);
     }
 
     /**
@@ -657,7 +676,7 @@ public class ServiceDescriptor {
                 methods.put(methodName, entry.getValue().fullname(fullMethodName).build());
             }
 
-            return new ServiceDescriptor(name, fullName, methods, interceptors, context, healthCheck, proto);
+            return new ServiceDescriptor(name, methods, interceptors, context, healthCheck, proto);
         }
 
         @Override

@@ -28,8 +28,8 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.StreamObserver;
 import io.grpc.util.MutableHandlerRegistry;
 import io.helidon.grpc.core.PriorityBag;
-import io.helidon.grpc.server.test.Echopackage;
-import io.helidon.grpc.server.test.EchoPackageServiceGrpc;
+import helidon.test.Echopackagenojavapackage;
+import helidon.test.EchoPackageNoJavaPackageServiceGrpc;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
@@ -44,12 +44,12 @@ import static org.mockito.Mockito.when;
  * Tests for gRPC server support for package directive in proto file
  */
 @SuppressWarnings("unchecked")
-public class GrpcProtoPackageTest {
+public class GrpcProtoPackageNoJavaPackageTest {
     final static String PACKAGE_NAME = "helidon.test";
 
     @Test
     public void shouldContainPackage() {
-        Descriptors.FileDescriptor protoDescriptor = Echopackage.getDescriptor();
+        Descriptors.FileDescriptor protoDescriptor = Echopackagenojavapackage.getDescriptor();
         String packageName = protoDescriptor.getPackage();
         assertThat(packageName.isBlank(), is(false));
         assertThat(protoDescriptor.getPackage(), is(PACKAGE_NAME));
@@ -62,18 +62,18 @@ public class GrpcProtoPackageTest {
     }
 
     @Test
-    public void shouldHaveJavaPackage() {
-        Descriptors.FileDescriptor protoDescriptor = Echopackage.getDescriptor();
+    public void shouldHaveNoJavaPackage() {
+        Descriptors.FileDescriptor protoDescriptor = Echopackagenojavapackage.getDescriptor();
         String javaPackageName = protoDescriptor.getOptions().getJavaPackage();
-        assertThat(javaPackageName.isBlank(), is(false));
+        assertThat(javaPackageName.isBlank(), is(true));
     }
 
     @Test
     public void shouldCreateMethodDescriptor() {
         ServerCallHandler handler = mock(ServerCallHandler.class);
-        String fullServiceName = getServiceFullName(PACKAGE_NAME, "EchoPackageService");
+        String fullServiceName = getServiceFullName(PACKAGE_NAME, "EchoPackageNoJavaPackageService");
         String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(fullServiceName, "Echo");
-        io.grpc.MethodDescriptor grpcDescriptor = EchoPackageServiceGrpc.getServiceDescriptor()
+        io.grpc.MethodDescriptor grpcDescriptor = EchoPackageNoJavaPackageServiceGrpc.getServiceDescriptor()
                 .getMethods()
                 .stream()
                 .filter(md -> md.getFullMethodName().equals(fullMethodName))
@@ -97,7 +97,7 @@ public class GrpcProtoPackageTest {
     public void shouldOverrideServiceName() {
         BindableService service = new EchoPackageStub();
 
-        Descriptors.FileDescriptor protoDescriptor = Echopackage.getDescriptor();
+        Descriptors.FileDescriptor protoDescriptor = Echopackagenojavapackage.getDescriptor();
         ServiceDescriptor descriptor = ServiceDescriptor.builder(service)
                 .name("Foo")
                 .proto(protoDescriptor)
@@ -144,7 +144,7 @@ public class GrpcProtoPackageTest {
     public void shouldBuildFromProtoFile() {
         ServiceDescriptor descriptor = createServiceDescriptor();
 
-        assertThat(descriptor.name(), is("EchoPackageService"));
+        assertThat(descriptor.name(), is("EchoPackageNoJavaPackageService"));
 
         BindableService bindableService = descriptor.bindableService(PriorityBag.create());
         assertThat(bindableService, is(notNullValue()));
@@ -154,7 +154,7 @@ public class GrpcProtoPackageTest {
 
         io.grpc.ServiceDescriptor serviceDescriptor = ssd.getServiceDescriptor();
         assertThat(serviceDescriptor, is(notNullValue()));
-        String fullServiceName = getServiceFullName(PACKAGE_NAME, "EchoPackageService");
+        String fullServiceName = getServiceFullName(PACKAGE_NAME, "EchoPackageNoJavaPackageService");
         assertThat(serviceDescriptor.getName(), is(fullServiceName));
     }
 
@@ -182,7 +182,7 @@ public class GrpcProtoPackageTest {
         MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         handlerRegistry.addService(ssd);
         String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(
-                getServiceFullName(PACKAGE_NAME, "EchoPackageService"), "Echo");
+                getServiceFullName(PACKAGE_NAME, "EchoPackageNoJavaPackageService"), "Echo");
         System.out.println("Full Method Name=" + fullMethodName);
         assertThat(handlerRegistry.lookupMethod(fullMethodName).getMethodDescriptor().getFullMethodName(), is(fullMethodName));
     }
@@ -208,8 +208,8 @@ public class GrpcProtoPackageTest {
                 .usePlaintext()
                 .build();
 
-        Echopackage.EchoPackageResponse response = EchoPackageServiceGrpc.newBlockingStub(channel)
-                .echo(Echopackage.EchoPackageRequest.newBuilder().setMessage("foo").build());
+        Echopackagenojavapackage.EchoPackageNoJavaPackageResponse response = EchoPackageNoJavaPackageServiceGrpc.newBlockingStub(channel)
+                .echo(Echopackagenojavapackage.EchoPackageNoJavaPackageRequest.newBuilder().setMessage("foo").build());
 
         assertThat(response.getMessage(), is("foo"));
         grpcServer.shutdown();
@@ -222,9 +222,9 @@ public class GrpcProtoPackageTest {
     private ServiceDescriptor createServiceDescriptor() {
         GrpcService service = mock(GrpcService.class);
 
-        when(service.name()).thenReturn("EchoPackageService");
+        when(service.name()).thenReturn("EchoPackageNoJavaPackageService");
 
-        Descriptors.FileDescriptor protoDescriptor = Echopackage.getDescriptor();
+        Descriptors.FileDescriptor protoDescriptor = Echopackagenojavapackage.getDescriptor();
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(service)
                 .proto(protoDescriptor)
@@ -237,7 +237,7 @@ public class GrpcProtoPackageTest {
     }
 
     private class EchoPackageStub
-            extends EchoPackageServiceGrpc.EchoPackageServiceImplBase {
+            extends EchoPackageNoJavaPackageServiceGrpc.EchoPackageNoJavaPackageServiceImplBase {
     }
 
     public static class EchoPackageService
@@ -245,14 +245,14 @@ public class GrpcProtoPackageTest {
 
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.proto(Echopackage.getDescriptor())
-                 .name("EchoPackageService")
+            rules.proto(Echopackagenojavapackage.getDescriptor())
+                 .name("EchoPackageNoJavaPackageService")
                  .unary("Echo", this::echo);
         }
 
-        public void echo(Echopackage.EchoPackageRequest request, StreamObserver<Echopackage.EchoPackageResponse> observer)  {
+        public void echo(Echopackagenojavapackage.EchoPackageNoJavaPackageRequest request, StreamObserver<Echopackagenojavapackage.EchoPackageNoJavaPackageResponse> observer)  {
             String message = request.getMessage();
-            Echopackage.EchoPackageResponse response = Echopackage.EchoPackageResponse.newBuilder().setMessage(message).build();
+            Echopackagenojavapackage.EchoPackageNoJavaPackageResponse response = Echopackagenojavapackage.EchoPackageNoJavaPackageResponse.newBuilder().setMessage(message).build();
             complete(observer, response);
         }
     }
