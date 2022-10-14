@@ -49,6 +49,16 @@ The following providers are no longer evolved:
 |<<JWT Provider,JWT Provider>> |Authentication |✅ |JWT tokens passed from frontend
 |===
 
+**Note**: If the example code uses clear-text passwords in configuration, ensure that you add the following to the code snippet:
+
+[source,]
+----
+security:
+  config.require-encryption: false
+----
+If set to `true`, an exception is thrown. However, in a production environment, you would set this value to `true` so that any attempt to pass a clear-text password throws an exception.
+
+
 === OIDC Provider [[OIDC-Provider]]
 Open ID Connect security provider.
 
