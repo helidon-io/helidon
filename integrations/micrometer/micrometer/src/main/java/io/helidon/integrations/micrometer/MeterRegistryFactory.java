@@ -232,8 +232,7 @@ public final class MeterRegistryFactory {
     Handler matchingHandler(ServerRequest serverRequest, ServerResponse serverResponse) {
         return registryEnrollments.stream()
                 .map(e -> e.handlerFn().apply(serverRequest))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst()
                 .orElse((req, res) -> res
                         .status(Http.Status.NOT_ACCEPTABLE_406)
@@ -244,8 +243,7 @@ public final class MeterRegistryFactory {
                                                            io.helidon.nima.webserver.http.ServerResponse serverResponse) {
         return nimaRegistryEnrollments.stream()
                 .map(e -> e.handlerFn().apply(serverRequest))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst()
                 .orElse((req, res) -> res
                         .status(Http.Status.NOT_ACCEPTABLE_406)
