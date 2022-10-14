@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled
 class AdminTest {
     private static Server server;
     private static Client client;
@@ -94,12 +93,14 @@ class AdminTest {
     }
 
     @Test
+    @Disabled
     void testAdminResource5() {
         Response response = target.apply("/admin/;").request().get();
         assertThat(response.getStatus(), is(Http.Status.UNAUTHORIZED_401.code()));
     }
 
     @Test
+    @Disabled
     void testAdminResource6() {
         Response response = target.apply("/admin/;/").request().get();
         assertThat(response.getStatus(), is(Http.Status.UNAUTHORIZED_401.code()));

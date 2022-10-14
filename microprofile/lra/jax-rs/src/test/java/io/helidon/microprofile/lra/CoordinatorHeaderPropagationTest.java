@@ -16,6 +16,7 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -329,6 +330,8 @@ class CoordinatorHeaderPropagationTest {
         assertThat(closeHeadersCoordinator, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(closeHeadersCoordinator, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
 
+        // TODO this is a bad fix for an intermittent failure, requires better fix
+        Thread.sleep(Duration.ofMillis(100));
         // test after
         assertThat(afterHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(afterHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));

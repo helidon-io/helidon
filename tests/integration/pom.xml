@@ -17,7 +17,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -47,7 +47,11 @@
         <module>webclient</module>
         <module>webserver</module>
         <module>security</module>
+        <!--
+        This test was testing that we use custom executors for Jersey and Jersey async
+        with a switch to virtual threads, we only use virtual threads, and these executors are not configured
         <module>mp-gh-1538</module>
+        -->
         <module>mp-gh-2421</module>
         <module>mp-gh-2461</module>
         <module>mp-gh-3246</module>

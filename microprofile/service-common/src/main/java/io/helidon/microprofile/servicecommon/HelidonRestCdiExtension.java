@@ -246,7 +246,7 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
         RoutingBuilders routingBuilders = RoutingBuilders.create(config);
 
         if (serviceSupport.enabled()) {
-            serviceSupport.setup(routingBuilders.defaultRoutingBuilder());
+            serviceSupport.setup(routingBuilders.defaultRoutingBuilder(), routingBuilders.routingBuilder());
         }
 
         return routingBuilders.defaultRoutingBuilder();

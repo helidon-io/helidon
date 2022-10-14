@@ -59,6 +59,7 @@ public class DirectClient implements Http1Client {
                 .baseUri(URI.create("unit://helidon-unit:65000"))
                 .build();
         this.router = Router.builder().addRouting(routing).build();
+        this.router.beforeStart();
     }
 
     @Override
@@ -190,5 +191,12 @@ public class DirectClient implements Http1Client {
     public DirectClient serverTlsCertificates(Certificate[] serverTlsCertificates) {
         this.serverTlsCertificates = serverTlsCertificates;
         return this;
+    }
+
+    /**
+     * Call this method once testing is done, to carry out after stop operations on routers.
+     */
+    public void close() {
+        this.router.afterStop();
     }
 }

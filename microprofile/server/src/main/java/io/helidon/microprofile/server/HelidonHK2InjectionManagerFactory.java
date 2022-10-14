@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
 import jakarta.inject.Singleton;
@@ -207,9 +206,9 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
                                                                        + forApplication + " "
                                                                        + sh.getContractTypes().iterator().next()));
             }
-
-            return forApplicationList.size() == 0 ? sharedList
-                    : Stream.concat(sharedList.stream(), forApplicationList.stream()).toList();
+            List<ServiceHolder<T>> result = new ArrayList<>(sharedList);
+            result.addAll(forApplicationList);
+            return result;
         }
 
         @Override

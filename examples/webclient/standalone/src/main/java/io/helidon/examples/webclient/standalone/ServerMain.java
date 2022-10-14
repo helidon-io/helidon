@@ -17,8 +17,8 @@ package io.helidon.examples.webclient.standalone;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 

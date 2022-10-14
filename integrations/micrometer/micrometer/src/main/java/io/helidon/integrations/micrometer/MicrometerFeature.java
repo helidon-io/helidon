@@ -22,7 +22,6 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 

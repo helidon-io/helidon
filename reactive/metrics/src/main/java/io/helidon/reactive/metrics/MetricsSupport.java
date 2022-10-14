@@ -247,7 +247,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
     }
 
     private void configureVendorMetrics(Routing.Rules rules) {
-        String metricPrefix = "";
+        String metricPrefix = "requests.";
 
         KeyPerformanceIndicatorSupport.Metrics kpiMetrics =
                 KeyPerformanceIndicatorMetricsImpls.get(metricPrefix,
