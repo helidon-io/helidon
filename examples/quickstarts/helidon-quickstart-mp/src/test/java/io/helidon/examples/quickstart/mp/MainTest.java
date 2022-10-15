@@ -24,8 +24,10 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 class MainTest {
@@ -42,37 +44,37 @@ class MainTest {
         JsonObject jsonObject = target.path("/greet")
                 .request()
                 .get(JsonObject.class);
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                "default message");
+        assertThat("default message", jsonObject.getString("message"),
+                is("Hello World!"));
 
         jsonObject = target.path("/greet/Joe")
                 .request()
                 .get(JsonObject.class);
-        Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
-                "hello Joe message");
+        assertThat("hello Joe message", jsonObject.getString("message"),
+                is("Hello Joe!"));
 
         try (Response r = target.path("/greet/greeting")
                 .request()
                 .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
-            Assertions.assertEquals(204, r.getStatus(), "PUT status code");
+            assertThat("PUT status code", r.getStatus(), is(204));
         }
 
         jsonObject = target.path("/greet/Jose")
                 .request()
                 .get(JsonObject.class);
-        Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
-                "hola Jose message");
+        assertThat("hola Jose message", jsonObject.getString("message"),
+                is("Hola Jose!"));
 
         try (Response r = target.path("/metrics")
                 .request()
                 .get()) {
-            Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+            assertThat("GET metrics status code", r.getStatus(), is(200));
         }
 
         try (Response r = target.path("/health")
                 .request()
                 .get()) {
-            Assertions.assertEquals(200, r.getStatus(), "GET health status code");
+            assertThat("GET health status code", r.getStatus(), is(200));
         }
     }
 }
