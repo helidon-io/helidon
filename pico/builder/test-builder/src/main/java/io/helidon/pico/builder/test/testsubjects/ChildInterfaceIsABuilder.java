@@ -19,14 +19,34 @@ package io.helidon.pico.builder.test.testsubjects;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Demonstrates builder usages when the parent in a plain old interface (and not a target of the builder annotation), while this
+ * child interface is a target for the builder. The net result is that the builder generated will handle both the parent and the
+ * child merged as one.
+ */
 @Builder(implPrefix = "", implSuffix = "Impl")
 public interface ChildInterfaceIsABuilder extends ParentInterfaceNotABuilder {
 
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
     long childLevel();
 
+    /**
+     * Used for testing {@link io.helidon.config.metadata.ConfiguredOption} default values.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption("true")
     boolean isChildLevel();
 
+    /**
+     * Used for testing {@link io.helidon.config.metadata.ConfiguredOption} default values.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Override
     @ConfiguredOption("override")
     char[] overrideMe();

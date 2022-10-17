@@ -54,8 +54,8 @@ import io.helidon.pico.types.TypedElementName;
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
 public class DefaultBuilderCreator implements BuilderCreator {
     private static final boolean DEFAULT_HAS_META_ATTRIBUTES = Builder.DEFAULT_INCLUDE_META_ATTRIBUTES;
-    private static final String DEFUALT_PREFIX = Builder.DEFAULT_PREFIX;
-    private static final String DEFUALT_SUFFIX = Builder.DEFAULT_SUFFIX;
+    private static final String DEFAULT_PREFIX = Builder.DEFAULT_PREFIX;
+    private static final String DEFAULT_SUFFIX = Builder.DEFAULT_SUFFIX;
     private static final String DEFAULT_LIST_TYPE = Builder.DEFAULT_LIST_TYPE.getName();
     private static final String DEFAULT_MAP_TYPE = Builder.DEFAULT_MAP_TYPE.getName();
     private static final String DEFAULT_SET_TYPE = Builder.DEFAULT_SET_TYPE.getName();
@@ -107,11 +107,11 @@ public class DefaultBuilderCreator implements BuilderCreator {
     }
 
     protected String toImplTypePrefix(AnnotationAndValue builderAnnotation) {
-        return builderAnnotation.value("implPrefix").orElse(DEFUALT_PREFIX);
+        return builderAnnotation.value("implPrefix").orElse(DEFAULT_PREFIX);
     }
 
     protected String toImplTypeSuffix(AnnotationAndValue builderAnnotation) {
-        return builderAnnotation.value("implSuffix").orElse(DEFUALT_SUFFIX);
+        return builderAnnotation.value("implSuffix").orElse(DEFAULT_SUFFIX);
     }
 
     protected static boolean hasStreamSupport(AnnotationAndValue ignoreBuilderAnnotation) {
@@ -252,7 +252,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
     }
 
     protected void appendFooter(StringBuilder builder,
-                                BodyContext ctx) {
+                                BodyContext ignoredCtx) {
         builder.append("}\n");
     }
 
@@ -1216,10 +1216,11 @@ public class DefaultBuilderCreator implements BuilderCreator {
     }
 
     protected static <T> String toString(Collection<T> coll,
-                                         Function<T, String> fnc, String separator) {
+                                         Function<T, String> fnc,
+                                         String separator) {
         Function<T, String> fn = Objects.isNull(fnc) ? String::valueOf : fnc;
         separator = Objects.isNull(separator) ? ", " : separator;
-        return coll.stream().map(val -> fn.apply(val)).collect(Collectors.joining(separator));
+        return coll.stream().map(fn::apply).collect(Collectors.joining(separator));
     }
 
     protected static String toConfiguredOptionValue(TypedElementName method,

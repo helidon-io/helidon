@@ -16,13 +16,14 @@
 
 package io.helidon.pico.builder.api.test;
 
-import io.helidon.pico.builder.test.testsubjects.DependsOnAllBuilders;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DependsOnAllBuilderTest {
 
+    @Test
     void testIt() {
         assertThat(DependsOnAllBuilders.createCustomNamed(), notNullValue());
         assertThat(DependsOnAllBuilders.createLevel2(), notNullValue());

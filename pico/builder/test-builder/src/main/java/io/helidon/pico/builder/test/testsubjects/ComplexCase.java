@@ -23,25 +23,59 @@ import java.util.Set;
 import io.helidon.pico.builder.api.Builder;
 import io.helidon.pico.builder.api.Singular;
 
+/**
+ * Used for demonstrating and testing the Pico Builder.
+ * In this case we are enforcing bean style is used, and overriding the generated class to have a suffix of Impl on the class name.
+ */
 @Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
 public interface ComplexCase extends MyConfigBean {
 
+    /**
+     * Used for testing, and demonstrating the {@link io.helidon.pico.builder.api.Singular} annotation.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Singular("keyToConfigBean")
     Map<String, List<? extends MyConfigBean>> getMapOfKeyToConfigBeans();
 
+    /**
+     * Used for testing, and demonstrating the {@link io.helidon.pico.builder.api.Singular} annotation.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Singular("configBean")
     List<? extends MyConfigBean> getListOfConfigBeans();
 
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
     Set<List<Object>> getSetOfLists();
 
+    /**
+     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     *
+     * @return ignored, here for testing purposes only
+     */
     default String getCompositeName() {
         return getName() + ":" + getPort() + ":" + isEnabled();
     }
 
+    /**
+     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     *
+     * @return ignored, here for testing purposes only
+     */
     default boolean hasBeenEnabled() {
         return isEnabled();
     }
 
+    /**
+     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     *
+     * @return ignored, here for testing purposes only
+     */
     static boolean hasBeenEnabledStatic() {
         return false;
     }

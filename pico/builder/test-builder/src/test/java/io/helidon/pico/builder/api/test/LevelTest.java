@@ -21,13 +21,13 @@ import java.util.function.Supplier;
 
 import io.helidon.pico.builder.test.testsubjects.Level0;
 import io.helidon.pico.builder.test.testsubjects.Level0Impl;
-import io.helidon.pico.builder.test.testsubjects.Level0ManualImpl;
+import io.helidon.pico.builder.api.test.testsubjects.Level0ManualImpl;
 import io.helidon.pico.builder.test.testsubjects.Level1;
 import io.helidon.pico.builder.test.testsubjects.Level1Impl;
-import io.helidon.pico.builder.test.testsubjects.Level1ManualImpl;
+import io.helidon.pico.builder.api.test.testsubjects.Level1ManualImpl;
 import io.helidon.pico.builder.test.testsubjects.Level2;
 import io.helidon.pico.builder.test.testsubjects.Level2Impl;
-import io.helidon.pico.builder.test.testsubjects.Level2ManualImpl;
+import io.helidon.pico.builder.api.test.testsubjects.Level2ManualImpl;
 
 import org.junit.jupiter.api.Test;
 

@@ -18,9 +18,19 @@ package io.helidon.pico.builder.test.testsubjects;
 
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Used for demonstrating and testing the Pico Builder.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.MyConfigBean
+ */
 @Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
 public interface MyDerivedConfigBean extends MyConfigBean {
 
+    /**
+     * Used for testing and demonstrating usage.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Override
     int getPort();
 
