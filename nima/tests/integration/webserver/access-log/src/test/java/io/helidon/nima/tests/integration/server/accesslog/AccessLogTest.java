@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 
 @ServerTest
 class AccessLogTest {
@@ -73,7 +74,7 @@ class AccessLogTest {
     // no need for try with resources when we get as an actual type
     @SuppressWarnings("resource")
     @Test
-    void testRequestsAndValidateAccessLog() {
+    void testRequestsAndValidateAccessLog() throws InterruptedException {
         Http1ClientResponse response = client.get("/access").request();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity().as(String.class), is("Hello World!"));
@@ -86,22 +87,13 @@ class AccessLogTest {
                 .request();
         assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
 
-        try {
-            // Use retry since no happens-before relationship between log entry and assertion
-            assertThatWithRetry("Check log entry for /access exist",
-                    () -> LOG_HANDLER.get().contains(
-                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200"),
-                    is(true));
-            assertThatWithRetry("Check entry for /wrong exists",
-                    () -> LOG_HANDLER.get().contains(
-                    "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
-                    is(true));
-        } catch (InterruptedException | AssertionError e) {
-            throw new AssertionError(
-                    "Assertion failed with log:\n-----\n"
-                            + LOG_HANDLER.get().logAsString()
-                            + "-----\n", e);
-        }
+        // Use retry since no happens-before relationship between log entry and assertion
+        assertThatWithRetry("Check log entry for /access exist",
+                () -> LOG_HANDLER.get().logAsString(),
+                containsString("127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200"));
+        assertThatWithRetry("Check entry for /wrong exists",
+                () -> LOG_HANDLER.get().logAsString(),
+                containsString("127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"));
     }
 
     public static class MemoryLogHandler extends StreamHandler {
@@ -118,10 +110,6 @@ class AccessLogTest {
         public synchronized void publish(LogRecord record) {
             super.publish(record);
             flush();        // forces flush on writer
-        }
-
-        public boolean contains(String s) {
-            return logAsString().contains(s);
         }
 
         public String logAsString() {
