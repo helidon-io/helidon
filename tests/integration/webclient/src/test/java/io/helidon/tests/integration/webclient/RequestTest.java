@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import io.helidon.webclient.WebClientException;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -60,7 +59,7 @@ public class RequestTest extends TestParent {
     public void testHelloWorld() throws ExecutionException, InterruptedException {
         webClient.get()
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hello World!")))
                 .toCompletableFuture()
                 .get();
     }
@@ -85,7 +84,7 @@ public class RequestTest extends TestParent {
         webClient.get()
                 .path("/redirect")
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hello World!")))
                 .toCompletableFuture()
                 .get();
 
@@ -104,7 +103,7 @@ public class RequestTest extends TestParent {
                 .path("/redirectPath")
                 .request(JsonObject.class)
                 .await();
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
     }
 
     @Test
@@ -133,10 +132,10 @@ public class RequestTest extends TestParent {
         webClient.put()
                 .path("/greeting")
                 .submit(JSON_NEW_GREETING)
-                .thenAccept(response -> Assertions.assertEquals(204, response.status().code()))
+                .thenAccept(response -> assertThat(response.status().code(), is(204)))
                 .thenCompose(nothing -> webClient.get()
                         .request(JsonObject.class))
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hola World!", jsonObject.getString("message")))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hola World!")))
                 .thenCompose(nothing -> webClient.put()
                         .path("/greeting")
                         .submit(JSON_OLD_GREETING))
