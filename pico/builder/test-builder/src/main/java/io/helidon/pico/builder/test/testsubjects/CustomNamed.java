@@ -27,6 +27,12 @@ import io.helidon.pico.builder.api.Annotated;
 import io.helidon.pico.builder.api.Builder;
 import io.helidon.pico.builder.api.Singular;
 
+/**
+ * Used for demonstrating and testing the Pico Builder.
+ * <p>
+ * In this case we are overriding the Map, Set, and List types, usages of annotations placed on the generated class, as well as
+ * changing the package name targeted for the generated class.
+ */
 @Builder(packageName = ".impl",
          implPrefix = "Default",
          implSuffix = "",
@@ -34,16 +40,32 @@ import io.helidon.pico.builder.api.Singular;
          mapImplType = TreeMap.class,
          setImplType = TreeSet.class,
          requireBeanStyle = true)
-@Annotated("com.fasterxml.jackson.annotation.JsonAutoDetect(fieldVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY)")
+@Annotated("com.fasterxml.jackson.annotation.JsonAutoDetect(fieldVisibility = "
+        + "com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY)")
 public interface CustomNamed {
 
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Singular
     Set<String> getStringSet();
 
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Singular
     @Annotated("com.fasterxml.jackson.annotation.JsonIgnore")
     List<String> getStringList();
 
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Singular
     @Annotated("com.fasterxml.jackson.annotation.JsonIgnore")
     Map<String, Integer> getStringToIntegerMap();

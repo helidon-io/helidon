@@ -15,6 +15,6 @@
  */
 
 /**
- * The Pico Builder tools package. These are generally only needed by other Helidon modules like the Builder annotation processor, etc.
+ * Test subjects for the Pico Builder.
  */
-package io.helidon.pico.builder.tools;
+package io.helidon.pico.builder.test.testsubjects;

@@ -16,10 +16,27 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+/**
+ * Demonstrates how an annotation can be extended, and then used as the basis for a builder.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.AnnotationCaseExt
+ */
 public @interface AnnotationCase {
 
+    /**
+     * Also demonstrates how default values are handled on the generated builder.
+     *
+     * @return "hello"
+     * @see io.helidon.pico.builder.test.testsubjects.DefaultAnnotationCaseExt (generated code)
+     */
     String value() default "hello";
 
+    /**
+     * Demonstrates how string array defaults work on the generated builder.
+     *
+     * @return "a", "b", "c"
+     * @see io.helidon.pico.builder.test.testsubjects.DefaultAnnotationCaseExt (generated code)
+     */
     String[] strArr() default {"a", "b", "c"};
 
 }

@@ -18,7 +18,7 @@ package io.helidon.pico.builder.api.test;
 
 import io.helidon.pico.builder.test.testsubjects.MyConfigBean;
 import io.helidon.pico.builder.test.testsubjects.MyConfigBeanImpl;
-import io.helidon.pico.builder.test.testsubjects.MyConfigBeanManualImpl;
+import io.helidon.pico.builder.api.test.testsubjects.MyConfigBeanManualImpl;
 
 import org.junit.jupiter.api.Test;
 

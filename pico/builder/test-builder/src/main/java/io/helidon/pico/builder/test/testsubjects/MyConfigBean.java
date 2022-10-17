@@ -20,14 +20,36 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.metadata.ConfiguredValue;
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Used for demonstrating and testing the Pico Builder.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.MyDerivedConfigBean
+ */
 @Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
 public interface MyConfigBean {
 
+    /**
+     * Used for demonstrating and testing the Pico Builder. Here we can see that a {@code required=true} is placed on the configured
+     * option.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption(required = true)
     String getName();
 
+    /**
+     * Used for testing and demonstrating usage.
+     *
+     * @return ignored, here for testing purposes only
+     */
     boolean isEnabled();
 
+    /**
+     * Used for testing and demonstrating usage of {@link io.helidon.config.metadata.ConfiguredOption}
+     * and {@link io.helidon.config.metadata.ConfiguredValue}.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption(key = "port", value = "8080", allowedValues = {
             @ConfiguredValue(value = "8080", description = "t1"),
             @ConfiguredValue(value = "false", description = "t2")})

@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.test.testsubjects;
+package io.helidon.pico.builder.api.test;
 
+import io.helidon.pico.builder.test.testsubjects.CustomNamed;
+import io.helidon.pico.builder.test.testsubjects.Level2;
+import io.helidon.pico.builder.test.testsubjects.Level2Impl;
+import io.helidon.pico.builder.test.testsubjects.MyConfigBean;
+import io.helidon.pico.builder.test.testsubjects.MyConfigBeanImpl;
 import io.helidon.pico.builder.test.testsubjects.impl.DefaultCustomNamed;
 
-public class DependsOnAllBuilders {
+class DependsOnAllBuilders {
 
-    public static CustomNamed createCustomNamed() {
+    static CustomNamed createCustomNamed() {
         return DefaultCustomNamed.builder().build();
     }
 
-    public static Level2 createLevel2() {
+    static Level2 createLevel2() {
         return Level2Impl.builder().build();
     }
 
-    public static MyConfigBean createMyConfigBean() {
+    static MyConfigBean createMyConfigBean() {
         return MyConfigBeanImpl.builder().build();
     }
+
 }

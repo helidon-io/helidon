@@ -18,6 +18,9 @@ package io.helidon.pico.builder.test.testsubjects;
 
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Extends the annotation so that a builder can be built for it.
+ */
 @Builder
 public interface AnnotationCaseExt extends AnnotationCase {
 

@@ -21,11 +21,26 @@ import java.util.Optional;
 
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Used for demonstrating (and testing) multi-inheritance of interfaces and the builders that are produced.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.ParentInterfaceNotABuilder
+ */
 @Builder(implPrefix = "", implSuffix = "Impl")
 public interface ParentOfParentInterfaceIsABuilder {
 
+    /**
+     * for testing purposes only.
+     *
+     * @return ignored, here for testing purposes only
+     */
     Optional<URI> uri();
 
+    /**
+     * for testing purposes only.
+     *
+     * @return ignored, here for testing purposes only
+     */
     Optional<String> empty();
 
 }

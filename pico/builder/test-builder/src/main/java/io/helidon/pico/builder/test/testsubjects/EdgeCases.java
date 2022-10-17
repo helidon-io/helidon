@@ -21,12 +21,25 @@ import java.util.Optional;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Used for demonstrating and testing the Pico Builder.
+ */
 @Builder
 public interface EdgeCases {
 
+    /**
+     * Demonstrates usage on an Optional return value that also has default values assigned.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption("test")
     Optional<String> optionalStringWithDefault();
 
+    /**
+     * Demonstrates usage on an Optional return value that also has default values assigned.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption("-1")
     Optional<Integer> optionalIntegerWithDefault();
 

@@ -19,22 +19,52 @@ package io.helidon.pico.builder.test.testsubjects;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.api.Builder;
 
+/**
+ * Demonstrates multi-level inheritance for the generated builder.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.Level2
+ */
 @Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
 public interface Level1 extends Level0 {
 
+    /**
+     * Used for testing and demonstrating default values on the generated builder.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @Override
     @ConfiguredOption("1")
     String getLevel0StringAttribute();
 
+    /**
+     * Used for testing and demonstrating default values on the generated builder.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption("1")
     int getLevel1intAttribute();
 
+    /**
+     * Used for testing and demonstrating default values on the generated builder.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption("1")
     Integer getLevel1IntegerAttribute();
 
+    /**
+     * Used for testing and demonstrating default values on the generated builder.
+     *
+     * @return ignored, here for testing purposes only
+     */
     @ConfiguredOption("true")
     boolean getLevel1booleanAttribute();
 
+    /**
+     * Used for testing and demonstrating usage.
+     *
+     * @return ignored, here for testing purposes only
+     */
     Boolean getLevel1BooleanAttribute();
 
 }

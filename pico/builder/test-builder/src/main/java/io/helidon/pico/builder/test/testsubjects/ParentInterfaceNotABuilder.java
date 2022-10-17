@@ -16,15 +16,33 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+/**
+ * Used for demonstrating (and testing) multi-inheritance of interfaces and the builders that are produced.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.ChildInterfaceIsABuilder
+ */
 public interface ParentInterfaceNotABuilder extends ParentOfParentInterfaceIsABuilder {
 
+    /**
+     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     */
     default void ignoreMe() {
     }
 
+    /**
+     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     *
+     * @return ignored, here for testing purposes only
+     */
     default char[] overrideMe() {
         return new char[] {};
     }
 
+    /**
+     * Used for testing purposes.
+     *
+     * @return ignored, here for testing purposes only
+     */
     long parentLevel();
 
 }
