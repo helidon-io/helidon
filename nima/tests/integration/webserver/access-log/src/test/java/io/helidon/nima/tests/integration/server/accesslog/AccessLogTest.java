@@ -40,6 +40,7 @@ import io.helidon.nima.webserver.accesslog.UserLogEntry;
 import io.helidon.nima.webserver.http.HttpRouting;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -86,13 +87,16 @@ class AccessLogTest {
         assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
 
         try {
-            assertThat(LOG_HANDLER.get().contains(
+            // Use retry since no happens-before relationship between log entry and assertion
+            assertThatWithRetry("Check log entry for /access exist",
+                    () -> LOG_HANDLER.get().contains(
                     "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /access HTTP/1.1\" 200"),
                     is(true));
-            assertThat(LOG_HANDLER.get().contains(
+            assertThatWithRetry("Check entry for /wrong exists",
+                    () -> LOG_HANDLER.get().contains(
                     "127.0.0.1 - [03/Dec/2007:10:15:30 +0000] \"GET /wrong HTTP/1.1\" 404"),
                     is(true));
-        } catch (AssertionError e) {
+        } catch (InterruptedException | AssertionError e) {
             throw new AssertionError(
                     "Assertion failed with log:\n-----\n"
                             + LOG_HANDLER.get().logAsString()
