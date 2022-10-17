@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import java.util.Collection;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 /**
  * Class BookGeneratorTest.
@@ -30,7 +31,7 @@ public class BookGeneratorTest {
     @Test
     public void testGenerator() {
         Collection<Book> bookStore = new BookGenerator().apply(10);
-        assertEquals(10, bookStore.size());
+        assertThat(bookStore, hasSize(10));
         bookStore.forEach(book -> System.out.println(book));
     }
 }
