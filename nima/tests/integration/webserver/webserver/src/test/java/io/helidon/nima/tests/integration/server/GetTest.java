@@ -19,6 +19,7 @@ package io.helidon.nima.tests.integration.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import java.util.Random;
 
 import io.helidon.common.http.Headers;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
+import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -68,11 +70,12 @@ class GetTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.GET, "/string", Routes::string)
-                .route(Http.Method.GET, "/bytes", Routes::bytes)
-                .route(Http.Method.GET, "/chunked", Routes::chunked)
-                .route(Http.Method.GET, "/headers", Routes::headers)
-                .route(Http.Method.GET, "/close", Routes::close);
+        router.route(GET, "/string", Routes::string)
+                .route(GET, "/bytes", Routes::bytes)
+                .route(GET, "/chunked", Routes::chunked)
+                .route(GET, "/headers", Routes::headers)
+                .route(GET, "/close", Routes::close)
+                .route(GET, "/optional", Routes::optional);
     }
 
     @Test
@@ -151,7 +154,39 @@ class GetTest {
         }
     }
 
+    @Test
+    void testOptionalResponseWithValue() {
+        try (Http1ClientResponse response = client.get("/optional")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            String entity = response.entity().as(String.class);
+            assertThat(entity, is("return value"));
+        }
+    }
+
+    @Test
+    void testOptionalResponseEmpty() {
+        try (Http1ClientResponse response = client.get("/optional")
+                .queryParam("empty", "true")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+        }
+    }
+
     private static class Routes {
+        public static void optional(ServerRequest req, ServerResponse res) {
+            String empty = req.query().first("empty").orElse("false");
+
+            if ("false".equals(empty)) {
+                res.send(Optional.of("return value"));
+            } else {
+                res.send(Optional.empty());
+            }
+        }
+
         private static void close(ServerRequest req, ServerResponse res) {
             res.header(HeaderValues.CONNECTION_CLOSE);
             res.send("Hello");
