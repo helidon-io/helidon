@@ -107,52 +107,8 @@ public class DefaultTypedElementName implements TypedElementName {
      * @return provides the {typeName}{space}{elementName}
      */
     public String toDeclaration() {
-//        if (Objects.nonNull(typeName()) && Objects.nonNull(elementName())) {
             return typeName() + " " + elementName();
-//        }
-//
-//        if (Objects.nonNull(elementName())) {
-//            return elementName();
-//        }
-//
-//        if (Objects.nonNull(typeName())) {
-//            return typeName().name();
-//        }
-//
-//        return "";
     }
-
-//    /**
-//     * Creates an instance of a {@link io.helidon.pico.types.TypedElementName given its type and element name parameters.
-//     *
-//     * @param typeName the type name
-//     * @param elementName the element name
-//     * @return the created instance
-//     */
-//    public static TypedElementName create(TypeName typeName, String elementName) {
-//        return create(typeName, null, elementName, Collections.emptyList());
-//    }
-
-//    /**
-//     * Creates an instance of a {@link TypedElementName} given its type and element name parameters.
-//     *
-//     * @param typeName the type name
-//     * @param componentTypeNames the component type names (i.e., generics on the type)
-//     * @param elementName the element name
-//     * @param annotations the list of annotations
-//     * @return the created instance
-//     */
-//    public static TypedElementName create(TypeName typeName,
-//                                          List<TypeName> componentTypeNames,
-//                                          String elementName,
-//                                          Collection<AnnotationAndValue> annotations) {
-//        return DefaultTypedElementName.builder()
-//                .typeName(typeName)
-//                .componentTypeNames(Objects.isNull(componentTypeNames) ? Collections.emptyList() : componentTypeNames)
-//                .elementName(elementName)
-//                .annotations(new LinkedList<>(annotations))
-//                .build();
-//    }
 
 
     /**
