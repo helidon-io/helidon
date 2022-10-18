@@ -33,6 +33,12 @@ public class DefaultTypedElementName implements TypedElementName {
     private final List<AnnotationAndValue> annotations;
     private final List<AnnotationAndValue> elementTypeAnnotations;
 
+    /**
+     * Ctor.
+     *
+     * @param b the builder
+     * @see #builder()
+     */
     protected DefaultTypedElementName(Builder b) {
         this.typeName = b.typeName;
         this.componentTypeNames = Objects.isNull(b.componentTypeNames)
@@ -132,6 +138,9 @@ public class DefaultTypedElementName implements TypedElementName {
         private List<AnnotationAndValue> annotations;
         private List<AnnotationAndValue> elementTypeAnnotations;
 
+        /**
+         * Default ctor.
+         */
         protected Builder() {
         }
 

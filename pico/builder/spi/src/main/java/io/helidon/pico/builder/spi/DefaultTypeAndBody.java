@@ -27,9 +27,15 @@ public class DefaultTypeAndBody implements TypeAndBody {
     private final TypeName typeName;
     private final String body;
 
-    protected DefaultTypeAndBody(Builder builder) {
-        this.typeName = builder.typeName;
-        this.body = builder.body;
+    /**
+     * Ctor.
+     *
+     * @param b the builder
+     * @see #builder()
+     */
+    protected DefaultTypeAndBody(Builder b) {
+        this.typeName = b.typeName;
+        this.body = b.body;
     }
 
     /**
@@ -56,6 +62,11 @@ public class DefaultTypeAndBody implements TypeAndBody {
         return getClass().getSimpleName() + "(" + toStringInner() + ")";
     }
 
+    /**
+     * Returns the inner portion of the {@link #toString()}.
+     *
+     * @return  the inner part of the toString() output
+     */
     protected String toStringInner() {
         return "typeName=" + typeName()
                 + ", body=" + body();
@@ -78,6 +89,14 @@ public class DefaultTypeAndBody implements TypeAndBody {
     public static class Builder {
         private TypeName typeName;
         private String body;
+
+        /**
+         * Ctor.
+         *
+         * @see #builder()
+         */
+        protected Builder() {
+        }
 
         /**
          * Sets the typeName to val.

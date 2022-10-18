@@ -39,14 +39,20 @@ public class DefaultTypeInfo implements TypeInfo {
     private final List<TypedElementName> elementInfo;
     private final TypeInfo superTypeInfo;
 
-    protected DefaultTypeInfo(Builder builder) {
-        this.typeName = builder.typeName;
-        this.typeKind = builder.typeKind;
-        this.annotations = Objects.isNull(builder.annotations)
-                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(builder.annotations));
-        this.elementInfo = Objects.isNull(builder.elementInfo)
-                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(builder.elementInfo));
-        this.superTypeInfo = builder.superTypeInfo;
+    /**
+     * Ctor.
+     *
+     * @param b the builder
+     * @see #builder()
+     */
+    protected DefaultTypeInfo(Builder b) {
+        this.typeName = b.typeName;
+        this.typeKind = b.typeKind;
+        this.annotations = Objects.isNull(b.annotations)
+                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(b.annotations));
+        this.elementInfo = Objects.isNull(b.elementInfo)
+                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(b.elementInfo));
+        this.superTypeInfo = b.superTypeInfo;
     }
 
     /**
@@ -94,6 +100,11 @@ public class DefaultTypeInfo implements TypeInfo {
         return getClass().getSimpleName() + "(" + toStringInner() + ")";
     }
 
+    /**
+     * Calculates the inner portion of the {@link #toString()} result.
+     *
+     * @return the inner portion of the toString result
+     */
     protected String toStringInner() {
         return "typeName=" + typeName()
                 + ", elementInfo=" + elementInfo()
@@ -121,6 +132,12 @@ public class DefaultTypeInfo implements TypeInfo {
         private List<TypedElementName> elementInfo;
         private Map<TypedElementName, String> defaultValueMap;
         private TypeInfo superTypeInfo;
+
+        /**
+         * Default ctor.
+         */
+        protected Builder() {
+        }
 
         /**
          * Sets the typeName to val.

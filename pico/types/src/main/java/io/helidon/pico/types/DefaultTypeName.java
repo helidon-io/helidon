@@ -40,6 +40,12 @@ public class DefaultTypeName implements TypeName {
     private final boolean generic;
     private final List<TypeName> typeArguments;
 
+    /**
+     * Ctor.
+     *
+     * @param b the builder
+     * @see #builder()
+     */
     protected DefaultTypeName(Builder b) {
         this.packageName = b.packageName;
         this.className = b.className;
@@ -229,10 +235,6 @@ public class DefaultTypeName implements TypeName {
         return (null == name) ? calcName() : name.get();
     }
 
-    public String getName() {
-        return name();
-    }
-
     @Override
     public String declaredName() {
         return array() ? (name() + "[]") : name();
@@ -243,11 +245,21 @@ public class DefaultTypeName implements TypeName {
         return (null == fqName) ? calcFQName() : fqName.get();
     }
 
+    /**
+     * Calculates the name - this is lazily deferred until referenced in {@link #name}.
+     *
+     * @return the name
+     */
     protected String calcName() {
         return (primitive || Objects.isNull(packageName()))
                 ? className() : packageName() + "." + className();
     }
 
+    /**
+     * Calculates the fully qualified name - this is lazily deferred until referenced in {@link #fqName()}.
+     *
+     * @return the fully qualified name
+     */
     protected String calcFQName() {
         String name = wildcard() ? "? extends " + name() : name();
 
@@ -313,9 +325,17 @@ public class DefaultTypeName implements TypeName {
         private boolean generic;
         private List<TypeName> typeArguments;
 
+        /**
+         * Default ctor.
+         */
         protected Builder() {
         }
 
+        /**
+         * Ctor taking the typeName for initialization.
+         *
+         * @param val   the typeName
+         */
         protected Builder(TypeName val) {
             this.packageName = val.packageName();
             this.className = val.className();

@@ -65,11 +65,23 @@ public class DefaultBuilderCreator implements BuilderCreator {
     // note: tlanger to review (toggle AVOID... to true)
     private static final boolean AVOID_GENERIC_BUILDER = false;
 
+    /**
+     * Default ctor.
+     */
+    public DefaultBuilderCreator() {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Set<Class<? extends Annotation>> getSupportedAnnotationTypes() {
         return Collections.singleton(Builder.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<TypeAndBody> create(TypeInfo typeInfo, AnnotationAndValue builderAnnotation) {
         try {
@@ -84,17 +96,24 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Validates the integrity of the provided arguments in the context of what is being code generated.
+     *
+     * @param implTypeName      the implementation type name
+     * @param typeInfo          the type info
+     * @param builderAnnotation the builder annotation triggering the code generation
+     */
     protected void preValidate(TypeName implTypeName,
                                TypeInfo typeInfo,
                                AnnotationAndValue builderAnnotation) {
         // NOP
     }
 
-    protected TypeAndBody postValidate(TypeAndBody build) {
+    private TypeAndBody postValidate(TypeAndBody build) {
         return build;
     }
 
-    protected String toPackageName(String packageName,
+    private String toPackageName(String packageName,
                                    AnnotationAndValue builderAnnotation) {
         String packageNameFromAnno = builderAnnotation.value("packageName").orElse(null);
         if (Objects.isNull(packageNameFromAnno) || packageNameFromAnno.isBlank()) {
@@ -106,48 +125,48 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-    protected String toImplTypePrefix(AnnotationAndValue builderAnnotation) {
+    private String toImplTypePrefix(AnnotationAndValue builderAnnotation) {
         return builderAnnotation.value("implPrefix").orElse(DEFAULT_PREFIX);
     }
 
-    protected String toImplTypeSuffix(AnnotationAndValue builderAnnotation) {
+    private String toImplTypeSuffix(AnnotationAndValue builderAnnotation) {
         return builderAnnotation.value("implSuffix").orElse(DEFAULT_SUFFIX);
     }
 
-    protected static boolean hasStreamSupport(AnnotationAndValue ignoreBuilderAnnotation) {
+    private static boolean hasStreamSupport(AnnotationAndValue ignoreBuilderAnnotation) {
         return SUPPORT_STREAMS;
     }
 
-    protected static boolean hasMetaAttributes(AnnotationAndValue builderAnnotation) {
+    private static boolean hasMetaAttributes(AnnotationAndValue builderAnnotation) {
         String hasMetaAttributes = builderAnnotation.value("includeMetaAttributes").orElse(null);
         return Objects.isNull(hasMetaAttributes) ? DEFAULT_HAS_META_ATTRIBUTES : Boolean.parseBoolean(hasMetaAttributes);
     }
 
-    protected static boolean toRequireBeanStyle(AnnotationAndValue builderAnnotation,
+    private static boolean toRequireBeanStyle(AnnotationAndValue builderAnnotation,
                                          TypeInfo typeInfo) {
         String val = searchForBuilderAnnotation("requireBeanStyle", builderAnnotation, typeInfo);
         return Boolean.parseBoolean(val);
     }
 
-    protected static String toListImplType(AnnotationAndValue builderAnnotation,
+    private static String toListImplType(AnnotationAndValue builderAnnotation,
                                     TypeInfo typeInfo) {
         String type = searchForBuilderAnnotation("listImplType", builderAnnotation, typeInfo);
         return (!AnnotationAndValue.hasNonBlankValue(type)) ? DEFAULT_LIST_TYPE : type;
     }
 
-    protected static String toMapImplType(AnnotationAndValue builderAnnotation,
+    private static String toMapImplType(AnnotationAndValue builderAnnotation,
                                    TypeInfo typeInfo) {
         String type = searchForBuilderAnnotation("mapImplType", builderAnnotation, typeInfo);
         return (!AnnotationAndValue.hasNonBlankValue(type)) ? DEFAULT_MAP_TYPE : type;
     }
 
-    protected static String toSetImplType(AnnotationAndValue builderAnnotation,
+    private static String toSetImplType(AnnotationAndValue builderAnnotation,
                                    TypeInfo typeInfo) {
         String type = searchForBuilderAnnotation("setImplType", builderAnnotation, typeInfo);
         return (!AnnotationAndValue.hasNonBlankValue(type)) ? DEFAULT_SET_TYPE : type;
     }
 
-    protected static String searchForBuilderAnnotation(String key,
+    private static String searchForBuilderAnnotation(String key,
                                                 AnnotationAndValue builderAnnotation,
                                                 TypeInfo typeInfo) {
         String val = builderAnnotation.value(key).orElse(null);
@@ -166,7 +185,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return val;
     }
 
-    protected TypeName toImplTypeName(TypeName typeName,
+    private TypeName toImplTypeName(TypeName typeName,
                                       AnnotationAndValue builderAnnotation) {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toImplTypePrefix(builderAnnotation);
@@ -196,6 +215,13 @@ public class DefaultBuilderCreator implements BuilderCreator {
         private final TypeName ctorBuilderAcceptTypeName;
         private final String genericBuilderClassDecl;
 
+        /**
+         * Ctor.
+         *
+         * @param implTypeName      the impl type name
+         * @param typeInfo          the type info
+         * @param builderAnnotation the builder annotation
+         */
         protected BodyContext(TypeName implTypeName,
                     TypeInfo typeInfo,
                     AnnotationAndValue builderAnnotation) {
@@ -223,13 +249,26 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-
+    /**
+     * Creates the context for the class being built.
+     *
+     * @param implTypeName      the implementation type name that will be generated
+     * @param typeInfo          the type info describing the target interface
+     * @param builderAnnotation the builder annotation that triggered the builder being created
+     * @return the context describing what is being built
+     */
     protected BodyContext createBodyContext(TypeName implTypeName,
                                             TypeInfo typeInfo,
                                             AnnotationAndValue builderAnnotation) {
         return new BodyContext(implTypeName, typeInfo, builderAnnotation);
     }
 
+    /**
+     * Generates the body of the generated builder class.
+     *
+     * @param ctx   the context for what is being built
+     * @return      the string representation of the class being built
+     */
     protected String toBody(BodyContext ctx) {
         StringBuilder builder = new StringBuilder();
         appendHeader(builder, ctx);
@@ -251,12 +290,18 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return builder.toString();
     }
 
+    /**
+     * Appends the footer of the generated class.
+     *
+     * @param builder       the builder
+     * @param ignoredCtx    the context
+     */
     protected void appendFooter(StringBuilder builder,
                                 BodyContext ignoredCtx) {
         builder.append("}\n");
     }
 
-    protected void appendBuilder(StringBuilder builder,
+    private void appendBuilder(StringBuilder builder,
                                  BodyContext ctx) {
         builder.append("\tpublic static class ").append(ctx.genericBuilderClassDecl);
         builder.append("<B extends ").append(ctx.genericBuilderClassDecl).append("<B, T>, T extends ");
@@ -389,7 +434,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-    protected void appendToBuilderMethods(StringBuilder builder,
+    private void appendToBuilderMethods(StringBuilder builder,
                                           BodyContext ctx) {
         builder.append("\t/**\n\t * @return A builder for {@link ");
         builder.append(ctx.typeInfo.typeName());
@@ -433,7 +478,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                      decl, ctx.typeInfo, ctx.parentTypeName.get(), ctx.allAttributeNames, ctx.allTypeInfos);
     }
 
-    protected void appendInterfaceBasedGetters(StringBuilder builder,
+    private void appendInterfaceBasedGetters(StringBuilder builder,
                                                BodyContext ctx) {
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames) {
@@ -448,7 +493,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-    protected void appendCtor(StringBuilder builder,
+    private void appendCtor(StringBuilder builder,
                               BodyContext ctx) {
         builder.append("\n\tprotected ").append(ctx.implTypeName.className());
         builder.append("(").append(ctx.genericBuilderClassDecl).append(" b) {\n");
@@ -457,7 +502,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append("\t}\n\n");
     }
 
-    protected void appendHashCodeAndEquals(StringBuilder builder,
+    private void appendHashCodeAndEquals(StringBuilder builder,
                                            BodyContext ctx) {
         builder.append("\t@Override\n");
         builder.append("\tpublic int hashCode() {\n");
@@ -493,7 +538,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append("\t}\n\n");
     }
 
-    protected void appendInnerToStringMethod(StringBuilder builder,
+    private void appendInnerToStringMethod(StringBuilder builder,
                                              BodyContext ctx) {
         if (ctx.hasParent) {
             builder.append("\t@Override\n");
@@ -536,6 +581,12 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append("\t}\n\n");
     }
 
+    /**
+     * Adds the basic getters to the generated builder output.
+     *
+     * @param builder   the builder
+     * @param ctx       the context
+     */
     protected void appendBasicGetters(StringBuilder builder,
                                       BodyContext ctx) {
         if (!ctx.hasParent && ctx.hasStreamSupport) {
@@ -553,7 +604,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-    protected void appendMetaAttributes(StringBuilder builder,
+    private void appendMetaAttributes(StringBuilder builder,
                                         BodyContext ctx) {
         if (ctx.hasMetaAttributes) {
             builder.append("\tpublic static Class<?> __getMetaConfigBeanType() {\n"
@@ -578,6 +629,12 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Adds the fields part of the generated builder.
+     *
+     * @param builder   the builder
+     * @param ctx       the context
+     */
     protected void appendFields(StringBuilder builder,
                                 BodyContext ctx) {
         for (int i = 0; i < ctx.allTypeInfos.size(); i++) {
@@ -591,6 +648,12 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Adds the header part of the generated builder.
+     *
+     * @param builder   the builder
+     * @param ctx       the context
+     */
     protected void appendHeader(StringBuilder builder,
                                 BodyContext ctx) {
         builder.append("package ").append(ctx.implTypeName.packageName()).append(";\n\n");
@@ -619,7 +682,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append(" {\n");
     }
 
-    protected void appendDefaultValueAssignment(StringBuilder builder, TypedElementName method, String defaultVal) {
+    private void appendDefaultValueAssignment(StringBuilder builder, TypedElementName method, String defaultVal) {
         TypeName type = method.typeName();
         boolean isOptional = type.name().equals(Optional.class.getName());
         if (isOptional) {
@@ -649,11 +712,24 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Adds extra imports to the generated builder.
+     *
+     * @param builder   the builder
+     * @param typeInfo  the context
+     */
     protected void appendExtraImports(StringBuilder builder,
                                       TypeInfo typeInfo) {
         // NOP
     }
 
+    /**
+     * Generated the toString method on the generated builder.
+     *
+     * @param builder   the builder
+     * @param hasParent true if the type has a parent
+     * @param typeInfo  the context
+     */
     protected void appendToStringMethod(StringBuilder builder,
                                         boolean hasParent,
                                         TypeInfo typeInfo) {
@@ -663,6 +739,16 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append("\t}\n\n");
     }
 
+    /**
+     * Adds extra methods to the generated builder.
+     *
+     * @param builder               the builder
+     * @param builderAnnotation     the builder annotation
+     * @param hasParent             true if there is a parent for the generated type
+     * @param typeInfo              the type info
+     * @param allAttributeNames     all the bean attribute names belonging to the builder
+     * @param allTypeInfos          all the methods belonging to the builder
+     */
     protected void appendExtraMethods(StringBuilder builder,
                                       AnnotationAndValue builderAnnotation,
                                       boolean hasParent,
@@ -672,17 +758,29 @@ public class DefaultBuilderCreator implements BuilderCreator {
         // NOP
     }
 
+    /**
+     * Adds extra inner classes to write on the builder.
+     *
+     * @param builder               the builder
+     * @param hasParent             true if there is a parent for the generated type
+     * @param typeInfo              the type info
+     */
     protected void appendExtraInnerClasses(StringBuilder builder,
                                            boolean hasParent,
                                            TypeInfo typeInfo) {
         // NOP
     }
 
+    /**
+     * Returns the "final" field modifier by default.
+     *
+     * @return the field modifier
+     */
     protected String getFieldModifier() {
         return "final ";
     }
 
-    protected void appendCtorCode(StringBuilder builder,
+    private void appendCtorCode(StringBuilder builder,
                                   String ignoredBuilderTag,
                                   BodyContext ctx) {
         if (ctx.hasParent) {
@@ -711,6 +809,14 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Adds extra default ctor code.
+     *
+     * @param builder               the builder
+     * @param hasParent             true if there is a parent for the generated type
+     * @param builderTag            the tag (variable name) used for the builder arg
+     * @param typeInfo              the type info
+     */
     protected void appendExtraCtorCode(StringBuilder builder,
                                      boolean hasParent,
                                      String builderTag,
@@ -718,11 +824,25 @@ public class DefaultBuilderCreator implements BuilderCreator {
         // NOP
     }
 
+    /**
+     * Adds extra code following the ctor decl.
+     *
+     * @param builder   the builder
+     * @param ctx       the context
+     */
     protected void appendExtraPostCtorCode(StringBuilder builder,
                                            BodyContext ctx) {
         // NOP
     }
 
+    /**
+     * Adds extra fields on the main generated class.
+     *
+     * @param builder               the builder
+     * @param hasParent             true if there is a parent for the generated type
+     * @param hasMetaAttributes     true if there are meta attributes present
+     * @param typeInfo              the type info
+     */
     protected void appendExtraFields(StringBuilder builder,
                                      boolean hasParent,
                                      boolean hasMetaAttributes,
@@ -734,6 +854,16 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Adds extra toBuilder() methods.
+     *
+     * @param builder               the builder
+     * @param decl                  the declaration template for the toBuilder method
+     * @param typeInfo              the type info
+     * @param parentTypeName        the parent type name
+     * @param allAttributeNames     all the bean attribute names belonging to the builder
+     * @param allTypeInfos          all the methods belonging to the builder
+     */
     protected void appendExtraToBuilderBuilderFunctions(StringBuilder builder,
                                                         String decl,
                                                         TypeInfo typeInfo,
@@ -743,6 +873,17 @@ public class DefaultBuilderCreator implements BuilderCreator {
         // NOP
     }
 
+    /**
+     * Adds extra builder methods.
+     *
+     * @param builder               the builder
+     * @param builderGeneratedClassName the builder class name (as written in source form)
+     * @param builderAnnotation     the builder annotation
+     * @param typeInfo              the type info
+     * @param parentTypeName        the parent type name
+     * @param allAttributeNames     all the bean attribute names belonging to the builder
+     * @param allTypeInfos          all the methods belonging to the builder
+     */
     protected void appendExtraBuilderFields(StringBuilder builder,
                                            String builderGeneratedClassName,
                                            AnnotationAndValue builderAnnotation,
@@ -753,7 +894,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         // NOP
     }
 
-    protected void appendOverridesOfDefaultValues(StringBuilder builder,
+    private void appendOverridesOfDefaultValues(StringBuilder builder,
                                                   boolean isBeanStyleRequired,
                                                   TypeInfo typeInfo,
                                                   List<String> allAttributeNames,
@@ -780,7 +921,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-    protected String getSuperValue(Optional<TypeInfo> optSuperTypeInfo,
+    private String getSuperValue(Optional<TypeInfo> optSuperTypeInfo,
                                    String elemName,
                                    boolean isBeanStyleRequired) {
         if (optSuperTypeInfo.isEmpty()) {
@@ -802,7 +943,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return null;
     }
 
-    protected void appendDefaultOverride(StringBuilder builder,
+    private void appendDefaultOverride(StringBuilder builder,
                                          String attrName,
                                          TypedElementName method,
                                          String override) {
@@ -811,10 +952,26 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append(");\n");
     }
 
+    /**
+     * Adds extra builder pre-steps.
+     *
+     * @param builder               the builder
+     */
     protected void appendBuilderBuildPreSteps(StringBuilder builder) {
         // NOP
     }
 
+    /**
+     * Adds extra builder methods.
+     *
+     * @param builder               the builder
+     * @param builderGeneratedClassName the builder class name (as written in source form)
+     * @param builderAnnotation     the builder annotation
+     * @param typeInfo              the type info
+     * @param parentTypeName        the parent type name
+     * @param allAttributeNames     all the bean attribute names belonging to the builder
+     * @param allTypeInfos          all the methods belonging to the builder
+     */
     protected void appendExtraBuilderMethods(StringBuilder builder,
                                              String builderGeneratedClassName,
                                              AnnotationAndValue builderAnnotation,
@@ -825,6 +982,17 @@ public class DefaultBuilderCreator implements BuilderCreator {
         // NOP
     }
 
+    /**
+     * Adds extra meta properties to the generated code.
+     *
+     * @param builder               the builder
+     * @param tag                   the tag used to represent the meta props variable on the generated code
+     * @param typeInfo              the type info
+     * @param map                   the map of all the methods
+     * @param allAttributeNames     all the bean attribute names belonging to the builder
+     * @param allTypeInfos          all the methods belonging to the builder
+     * @param needsCustomMapOf      will be set to true if a custom map.of() function needs to be generated (i.e., if over 9 tuples)
+     */
     protected void appendMetaProps(StringBuilder builder,
                                    String tag,
                                    TypeInfo typeInfo,
@@ -842,7 +1010,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                     .append(");\n"));
     }
 
-    protected void appendCustomMapOf(StringBuilder builder) {
+    private void appendCustomMapOf(StringBuilder builder) {
         builder.append("\tprivate static Map<String, Object> __mapOf(Object... args) {\n"
                                + "\t\tMap<String, Object> result = new java.util.LinkedHashMap<>(args.length / 2);\n"
                                + "\t\tint i = 0;\n"
@@ -854,7 +1022,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                + "\t}\n\n");
     }
 
-    protected String mapOf(String attrName,
+    private String mapOf(String attrName,
                            TypedElementName method,
                            AtomicBoolean needsCustomMapOf) {
         final Optional<? extends AnnotationAndValue> configuredOptions = DefaultAnnotationAndValue
@@ -901,13 +1069,21 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return result.toString();
     }
 
+    /**
+     * Normalize the configured option key.
+     *
+     * @param key           the key attribute
+     * @param attrName      the attribute name
+     * @param method        the method
+     * @return the key to write on the generated output.
+     */
     protected String normalizeConfiguredOptionKey(String key,
                                                   String attrName,
                                                   TypedElementName method) {
-        return (AnnotationAndValue.hasNonBlankValue(key)) ? key : "";
+        return AnnotationAndValue.hasNonBlankValue(key) ? key : "";
     }
 
-    protected String quotedTupleOf(String key,
+    private String quotedTupleOf(String key,
                                    String val) {
         assert (Objects.nonNull(key));
         assert (AnnotationAndValue.hasNonBlankValue(val)) : key;
@@ -919,7 +1095,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return quotedValueOf(key) + ", " + val;
     }
 
-    protected String quotedValueOf(String val) {
+    private String quotedValueOf(String val) {
         if (val.startsWith("\"") && val.endsWith("\"")) {
             return val;
         }
@@ -927,9 +1103,8 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return "\"" + val + "\"";
     }
 
-    protected static void gatherAllAttributeNames(BodyContext ctx,
-                                                  TypeInfo typeInfo) {
-
+    private static void gatherAllAttributeNames(BodyContext ctx,
+                                                TypeInfo typeInfo) {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (Objects.nonNull(superTypeInfo)) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
@@ -994,9 +1169,9 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
-    protected static void populateMap(Map<String, TypedElementName> map,
-                             TypeInfo typeInfo,
-                             boolean isBeanStyleRequired) {
+    private static void populateMap(Map<String, TypedElementName> map,
+                                    TypeInfo typeInfo,
+                                    boolean isBeanStyleRequired) {
         if (typeInfo.superTypeInfo().isPresent()) {
             populateMap(map, typeInfo.superTypeInfo().get(), isBeanStyleRequired);
         }
@@ -1018,6 +1193,17 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Appends the singular setter methods on the builder.
+     *
+     * @param builder               the builder
+     * @param method                the method
+     * @param beanAttributeName     the bean attribute name
+     * @param isList                true if the output involves List type
+     * @param isMap                 true if the output involves Map type
+     * @param isSet                 true if the output involves Set type
+     * @param ctx                   the context
+     */
     protected void maybeAppendSingularSetter(StringBuilder builder,
                                              TypedElementName method,
                                              String beanAttributeName,
@@ -1054,6 +1240,15 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Append the setters for the given bean attribute name.
+     *
+     * @param mainBuilder           the builder
+     * @param beanAttributeName     the bean attribute name
+     * @param methodName            the method name
+     * @param method                the method
+     * @param ctx                   the body context
+     */
     protected void appendSetter(StringBuilder mainBuilder,
                                 String beanAttributeName,
                                 String methodName,
@@ -1110,6 +1305,14 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Append the setters for the given bean attribute name.
+     *
+     * @param builder               the builder
+     * @param beanAttributeName     the bean attribute name
+     * @param ignoreMethod          the method
+     * @param genericType           the generic return type name of the method
+     */
     protected void appendDirectNonOptionalSetter(StringBuilder builder,
                                                  String beanAttributeName,
                                                  TypedElementName ignoreMethod,
@@ -1124,6 +1327,13 @@ public class DefaultBuilderCreator implements BuilderCreator {
         builder.append("\t\t}\n\n");
     }
 
+    /**
+     * Append {@link io.helidon.pico.builder.api.Annotated} annotations if any.
+     *
+     * @param builder       the builder
+     * @param annotations   the list of annotations
+     * @param prefix        the spacing prefix
+     */
     protected void appendAnnotations(StringBuilder builder,
                                      List<AnnotationAndValue> annotations,
                                      String prefix) {
@@ -1141,41 +1351,91 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
     }
 
+    /**
+     * Returns true if the provided method involved {@link java.util.List}.
+     *
+     * @param method    the method
+     * @return true if list is part of the type
+     */
     protected static boolean isList(TypedElementName method) {
         return isList(method.typeName());
     }
 
+    /**
+     * Returns true if the provided method involved {@link java.util.List}.
+     *
+     * @param typeName  the type name
+     * @return true if list is part of the type
+     */
     protected static boolean isList(TypeName typeName) {
         return (typeName.name().equals(List.class.getName()));
     }
 
+    /**
+     * Returns true if the provided method involved {@link java.util.Map}.
+     *
+     * @param method    the method
+     * @return true if map is part of the type
+     */
     protected static boolean isMap(TypedElementName method) {
         return isMap(method.typeName());
     }
 
+    /**
+     * Returns true if the provided method involved {@link java.util.Map}.
+     *
+     * @param typeName  the type name
+     * @return true if map is part of the type
+     */
     protected static boolean isMap(TypeName typeName) {
         return (typeName.name().equals(Map.class.getName()));
     }
 
+    /**
+     * Returns true if the provided method involved {@link java.util.Set}.
+     *
+     * @param method    the method
+     * @return true if set is part of the type
+     */
     protected static boolean isSet(TypedElementName method) {
         return isSet(method.typeName());
     }
 
+    /**
+     * Returns true if the provided method involved {@link java.util.Set}.
+     *
+     * @param typeName  the type name
+     * @return true if set is part of the type
+     */
     protected static boolean isSet(TypeName typeName) {
         return (typeName.name().equals(Set.class.getName()));
     }
 
+    /**
+     * Produces the generic descriptor decl for the method.
+     *
+     * @param method                the method
+     * @param upLevelToCollection   true if the generics should be "up leveled"
+     * @return the generic decl
+     */
     protected static String toGenerics(TypedElementName method,
                                 boolean upLevelToCollection) {
         return toGenerics(method.typeName(), upLevelToCollection);
     }
 
+    /**
+     * Produces the generic descriptor decl for the method.
+     *
+     * @param typeName              the type name
+     * @param upLevelToCollection   true if the generics should be "up leveled"
+     * @return the generic decl
+     */
     protected static String toGenerics(TypeName typeName,
                                 boolean upLevelToCollection) {
         return toGenerics(typeName, upLevelToCollection, 0);
     }
 
-    protected static String toGenerics(TypeName typeName,
+    private static String toGenerics(TypeName typeName,
                                 boolean upLevelToCollection,
                                 int depth) {
         if (typeName.typeArguments().isEmpty()) {
@@ -1197,7 +1457,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return typeName.fqName();
     }
 
-    protected static String toGenericsDecl(TypedElementName method) {
+    private static String toGenericsDecl(TypedElementName method) {
         List<TypeName> compTypeNames = method.typeName().typeArguments();
         if (1 == compTypeNames.size()) {
             return avoidWildcard(compTypeNames.get(0)) + " val";
@@ -1207,14 +1467,29 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return "Object val";
     }
 
-    protected static String avoidWildcard(TypeName typeName) {
+    private static String avoidWildcard(TypeName typeName) {
         return typeName.wildcard() ? typeName.name() : typeName.fqName();
     }
 
+    /**
+     * Walk the collection to build a separator-delimited string value.
+     *
+     * @param coll          the collection
+     * @return              the string representation
+     */
     protected static String toString(Collection<?> coll) {
         return toString(coll, null, null);
     }
 
+    /**
+     * Walk the collection to build a separator-delimited string value.
+     *
+     * @param coll          the collection
+     * @param fnc           the function to apply, defaulting to {@link String#valueOf(java.lang.Object)}
+     * @param separator     the separator, defaulting to ", "
+     * @return              the string representation
+     * @param <T>           the types held by the collection
+     */
     protected static <T> String toString(Collection<T> coll,
                                          Function<T, String> fnc,
                                          String separator) {
@@ -1223,6 +1498,14 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return coll.stream().map(fn::apply).collect(Collectors.joining(separator));
     }
 
+    /**
+     * Extracts the value from the method, ignoring {@link io.helidon.config.metadata.ConfiguredOption#UNCONFIGURED}.
+     *
+     * @param method                    the method
+     * @param wantTypeElementDefaults   flag indicating whether the method passed can be used to obtain the default values
+     * @param avoidBlanks               flag indicating whether blank values should be ignored
+     * @return the default value, or null if there is no default value applicable for the given arguments
+     */
     protected static String toConfiguredOptionValue(TypedElementName method,
                                              boolean wantTypeElementDefaults,
                                              boolean avoidBlanks) {
@@ -1230,6 +1513,15 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return ConfiguredOption.UNCONFIGURED.equals(val) ? null : val;
     }
 
+    /**
+     * Retrieves the default value of the method to a string value.
+     *
+     * @param annoType                  the annotation that is being applied, that might have the default value
+     * @param method                    the method
+     * @param wantTypeElementDefaults   flag indicating whether the method passed can be used to obtain the default values
+     * @param avoidBlanks               flag indicating whether blank values should be ignored
+     * @return the default value, or null if there is no default value applicable for the given arguments
+     */
     protected static String toValue(Class<? extends Annotation> annoType,
                              TypedElementName method,
                              boolean wantTypeElementDefaults,
@@ -1254,13 +1546,13 @@ public class DefaultBuilderCreator implements BuilderCreator {
         return null;
     }
 
-    protected static char[] reverseBeanName(String beanName) {
+    private static char[] reverseBeanName(String beanName) {
         char[] c = beanName.toCharArray();
         c[0] = Character.toUpperCase(c[0]);
         return c;
     }
 
-    protected static String toBeanAttributeName(TypedElementName method,
+    private static String toBeanAttributeName(TypedElementName method,
                                          boolean isBeanStyleRequired) {
         AtomicReference<List<String>> attrNames = new AtomicReference<>();
         BeanUtils.validateAndParseMethodName(method.elementName(), method.typeName().name(), isBeanStyleRequired, attrNames);

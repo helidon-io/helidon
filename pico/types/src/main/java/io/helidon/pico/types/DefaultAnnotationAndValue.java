@@ -32,6 +32,12 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
     private final String value;
     private final Map<String, String> values;
 
+    /**
+     * Ctor.
+     *
+     * @param b the builder
+     * @see #builder()
+     */
     protected DefaultAnnotationAndValue(Builder b) {
         this.typeName = b.typeName;
         this.value = b.value;
@@ -235,6 +241,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         private String value;
         private Map<String, String> values;
 
+        /**
+         * Default ctor.
+         */
         protected Builder() {
         }
 
