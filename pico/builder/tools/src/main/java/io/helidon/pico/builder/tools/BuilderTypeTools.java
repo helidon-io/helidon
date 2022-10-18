@@ -62,6 +62,12 @@ public class BuilderTypeTools implements TypeInfoCreator {
 
     private final System.Logger logger = System.getLogger(getClass().getName());
 
+    /**
+     * Ctor.
+     */
+    public BuilderTypeTools() {
+    }
+
     @Override
     public TypeInfo createTypeInfo(AnnotationAndValue annotation,
                                    TypeName typeName,
@@ -105,6 +111,13 @@ public class BuilderTypeTools implements TypeInfoCreator {
                 .build();
     }
 
+    /**
+     * Translation the arguments to a collection of {@link io.helidon.pico.types.TypedElementName}'s.
+     *
+     * @param element           the typed element (i.e., class)
+     * @param processingEnv     the processing env
+     * @return the collection of typed elements
+     */
     protected Collection<TypedElementName> toElementInfo(TypeElement element, ProcessingEnvironment processingEnv) {
         return element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
@@ -114,6 +127,12 @@ public class BuilderTypeTools implements TypeInfoCreator {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns true if the executable element passed is acceptable for processing (i.e., not a static and not a default method).
+     *
+     * @param ee    the executable element
+     * @return true if not default and not static
+     */
     protected boolean canAccept(ExecutableElement ee) {
         Set<Modifier> mods = ee.getModifiers();
         return !mods.contains(Modifier.DEFAULT) && !mods.contains(Modifier.STATIC);

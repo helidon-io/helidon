@@ -65,7 +65,13 @@ public class BuilderProcessor extends AbstractProcessor {
     private static final Set<Class<? extends Annotation>> ALL_ANNO_TYPES_HANDLED = new LinkedHashSet<>();
     private static final List<BuilderCreator> PRODUCERS = initialize();
 
-    protected static List<BuilderCreator> initialize() {
+    /**
+     * Ctor.
+     */
+    public BuilderProcessor() {
+    }
+
+    private static List<BuilderCreator> initialize() {
         try {
             // note: it is important to use this class' CL since maven will not give us the "right" one.
             List<BuilderCreator> producers = HelidonServiceLoader
@@ -92,6 +98,9 @@ public class BuilderProcessor extends AbstractProcessor {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
@@ -119,16 +128,25 @@ public class BuilderProcessor extends AbstractProcessor {
         return Objects.isNull(set) ? null : Collections.unmodifiableSet(set);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return ALL_ANNO_TYPES_HANDLED.stream().map(Class::getName).collect(Collectors.toSet());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver() || Objects.isNull(tools) || PRODUCERS.isEmpty()) {
@@ -160,6 +178,13 @@ public class BuilderProcessor extends AbstractProcessor {
         return false;
     }
 
+    /**
+     * Process the annotation for the given element.
+     *
+     * @param annoType  the annotation that triggered processing
+     * @param element   the element being processed
+     * @throws IOException if unable to write the generated class
+     */
     protected void process(Class<? extends Annotation> annoType, Element element) throws IOException {
         AnnotationMirror am = BuilderTypeTools.findAnnotationMirror(annoType.getName(),
                                                                     element.getAnnotationMirrors());
@@ -186,6 +211,12 @@ public class BuilderProcessor extends AbstractProcessor {
         }
     }
 
+    /**
+     * Performs the actual code generation of the given type and body model object.
+     *
+     * @param typeAndBody   the model object
+     * @throws IOException if unable to write the generated class
+     */
     protected void codegen(TypeAndBody typeAndBody) throws IOException {
         JavaFileObject javaSrc = processingEnv.getFiler().createSourceFile(typeAndBody.typeName().name());
         try (Writer os = javaSrc.openWriter()) {

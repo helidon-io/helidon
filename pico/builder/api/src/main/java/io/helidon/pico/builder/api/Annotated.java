@@ -30,7 +30,9 @@ import java.lang.annotation.Target;
 public @interface Annotated {
 
     /**
-     * @return The annotation to add the method and field names for the given getter name.
+     * The annotation(s) to add to the generated methods and field names on the generated class w/ builder.
+     *
+     * @return The annotation(s) to add the generated method and field names
      */
     String[] value();
 
