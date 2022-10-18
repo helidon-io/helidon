@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,11 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -44,7 +47,9 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private final ReadOnlyParameters headers;
+    private final ReadOnlyHeaders headers;
+    @Deprecated
+    private final LazyValue<ReadOnlyParameters> headersAsParameters;
     private final Optional<MediaType> contentType;
     private final MessageBodyOperators<MessageBodyReader<?>> readers;
     private final MessageBodyOperators<MessageBodyStreamReader<?>> sreaders;
@@ -52,21 +57,15 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     /**
      * Private to enforce the use of the static factory methods.
      */
-    private MessageBodyReaderContext(MessageBodyReaderContext parent, EventListener eventListener, ReadOnlyParameters headers,
+    private MessageBodyReaderContext(MessageBodyReaderContext parent, EventListener eventListener, ReadOnlyHeaders headers,
             Optional<MediaType> contentType) {
-
-        super(parent, eventListener);
-        Objects.requireNonNull(headers, "headers cannot be null!");
-        Objects.requireNonNull(contentType, "contentType cannot be null!");
-        this.headers = headers;
-        this.contentType = contentType;
-        if (parent != null) {
-            this.readers = new MessageBodyOperators<>(parent.readers);
-            this.sreaders = new MessageBodyOperators<>(parent.sreaders);
-        } else {
-            this.readers = new MessageBodyOperators<>();
-            this.sreaders = new MessageBodyOperators<>();
-        }
+        this(parent,
+            eventListener,
+            true,
+            headers,
+            contentType,
+            parent != null ? new MessageBodyOperators<>(parent.readers) : new MessageBodyOperators<>(),
+            parent != null ? new MessageBodyOperators<>(parent.sreaders) : new MessageBodyOperators<>());
     }
 
     /**
@@ -74,19 +73,41 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * headers.
      */
     private MessageBodyReaderContext() {
-        super(null, null);
-        this.headers = ReadOnlyParameters.empty();
-        this.contentType = Optional.empty();
-        this.readers = new MessageBodyOperators<>();
-        this.sreaders = new MessageBodyOperators<>();
+        this(null,
+             null,
+                true,
+             ReadOnlyHeaders.empty(),
+             Optional.empty(),
+             new MessageBodyOperators<>(),
+             new MessageBodyOperators<>());
     }
 
     private MessageBodyReaderContext(MessageBodyReaderContext parent) {
-        super(parent);
-        this.headers = parent.headers;
-        this.contentType = parent.contentType;
-        this.readers = new MessageBodyOperators<>(parent.readers);
-        this.sreaders = new MessageBodyOperators<>(parent.sreaders);
+        this(parent,
+             null,
+                false,
+             parent.headers,
+             parent.contentType,
+             new MessageBodyOperators<>(parent.readers),
+             new MessageBodyOperators<>(parent.sreaders));
+    }
+
+    private MessageBodyReaderContext(MessageBodyReaderContext parent,
+                                     EventListener eventListener,
+                                     boolean useExplicitEventListener,
+                                     ReadOnlyHeaders headers,
+                                     Optional<MediaType> contentType,
+                                     MessageBodyOperators<MessageBodyReader<?>> readers,
+                                     MessageBodyOperators<MessageBodyStreamReader<?>> sreaders) {
+        super(parent, eventListener, useExplicitEventListener);
+        Objects.requireNonNull(headers, "headers cannot be null!");
+        Objects.requireNonNull(contentType, "contentType cannot be null!");
+        this.headers = headers;
+        headersAsParameters = LazyValue.create(() -> new ReadOnlyParameters(headers.toMap()));
+
+        this.contentType = contentType;
+        this.readers = readers;
+        this.sreaders = sreaders;
     }
 
     /**
@@ -257,11 +278,23 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * Get the underlying headers.
      *
      * @return Parameters, never {@code null}
+     * @deprecated Return type will change to {@link ReadOnlyHeaders} in a future release.
      */
+    @Deprecated(since = "3.0.2", forRemoval = true)
     public ReadOnlyParameters headers() {
-        return headers;
+        return headersAsParameters.get();
     }
 
+    /**
+     * Get the underlying headers.
+     *
+     * @return Headers, never {@code null}
+     * @deprecated Method name will change to {@code headers}, returning {@link ReadOnlyHeaders}, in a future release.
+     */
+    @Deprecated(since = "3.0.2", forRemoval = true)
+    public ReadOnlyHeaders hdrs() {
+        return headers;
+    }
     /**
      * Get the {@code Content-Type} header.
      *
@@ -304,8 +337,31 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @return MessageBodyReaderContext
      */
     public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
-                                                  ReadOnlyParameters headers, Optional<MediaType> contentType) {
+                                                  ReadOnlyHeaders headers, Optional<MediaType> contentType) {
 
+        if (mediaContext == null) {
+            return new MessageBodyReaderContext(null, eventListener, headers, contentType);
+        }
+        return new MessageBodyReaderContext(mediaContext.readerContext(), eventListener, headers, contentType);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param mediaContext mediaSupport instance used to derived the parent
+     * context, may be {@code null}
+     * @param eventListener subscription event listener, may be {@code null}
+     * @param parameters backing headers, must not be {@code null}
+     * @param contentType content type, must not be {@code null}
+     * @return MessageBodyReaderContext
+     * @deprecated Use {@link #create(MediaContext, io.helidon.media.common.MessageBodyContext.EventListener,
+     * io.helidon.common.http.ReadOnlyHeaders, java.util.Optional)} instead (passing headers instead of parameters).
+     */
+    @Deprecated(since = "3.0.2", forRemoval = false)
+    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
+                                                  ReadOnlyParameters parameters, Optional<MediaType> contentType) {
+
+        ReadOnlyHeaders headers = new ReadOnlyHeaders(parameters.toMap());
         if (mediaContext == null) {
             return new MessageBodyReaderContext(null, eventListener, headers, contentType);
         }
@@ -322,9 +378,27 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @return MessageBodyReaderContext
      */
     public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
-            ReadOnlyParameters headers, Optional<MediaType> contentType) {
+            ReadOnlyHeaders headers, Optional<MediaType> contentType) {
 
         return new MessageBodyReaderContext(parent, eventListener, headers, contentType);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param parent parent context, must not be {@code null}
+     * @param eventListener subscription event listener, may be {@code null}
+     * @param parameters backing headers, must not be {@code null}
+     * @param contentType content type, must not be {@code null}
+     * @return MessageBodyReaderContext
+     * @deprecated Use {@link #create(MessageBodyReaderContext, io.helidon.media.common.MessageBodyContext.EventListener,
+     * io.helidon.common.http.ReadOnlyHeaders, java.util.Optional)} instead (passing headers instead of parameters).
+     */
+    @Deprecated(since = "3.0.2", forRemoval = true)
+    public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
+                                                  ReadOnlyParameters parameters, Optional<MediaType> contentType) {
+
+        return new MessageBodyReaderContext(parent, eventListener, new ReadOnlyHeaders(parameters.toMap()), contentType);
     }
 
     /**

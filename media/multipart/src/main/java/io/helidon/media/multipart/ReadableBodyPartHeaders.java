@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package io.helidon.media.multipart;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 
 /**
  * Readable body part headers.
  */
-public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements BodyPartHeaders {
+public final class ReadableBodyPartHeaders extends ReadOnlyHeaders implements BodyPartHeaders {
 
     private final Object internalLock = new Object();
     private ContentDisposition contentDisposition;
@@ -53,6 +54,26 @@ public final class ReadableBodyPartHeaders extends ReadOnlyParameters implements
             }
         }
         return contentDisposition;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        ReadableBodyPartHeaders that = (ReadableBodyPartHeaders) o;
+        return Objects.equals(contentDisposition, that.contentDisposition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), contentDisposition);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,14 @@ import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.http.Utils;
 
 /**
- * A {@link RequestHeaders} implementation on top of {@link ReadOnlyParameters}.
+ * A {@link RequestHeaders} implementation on top of {@link ReadOnlyHeaders}.
  */
-class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
+class HashRequestHeaders extends ReadOnlyHeaders implements RequestHeaders {
 
     /**
      * Header value of the non compliant {@code Accept} header sent by
@@ -195,6 +196,27 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
         return first(Http.Header.REFERER).map(URI::create);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        HashRequestHeaders that = (HashRequestHeaders) o;
+        return Objects.equals(cookies, that.cookies) && Objects.equals(acceptedtypesCache,
+                                                                       that.acceptedtypesCache);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), cookies, acceptedtypesCache);
+    }
+
     /**
      * Parse cookies based on RFC6265 but it can accepts also older formats including RFC2965 but skips parameters.
      */
@@ -219,11 +241,11 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
          */
         public static Parameters parse(String cookieHeaderValue) {
             if (cookieHeaderValue == null) {
-                return empty();
+                return ReadOnlyParameters.empty();
             }
             cookieHeaderValue = cookieHeaderValue.trim();
             if (cookieHeaderValue.isEmpty()) {
-                return empty();
+                return ReadOnlyParameters.empty();
             }
 
             // Beware RFC2965
@@ -232,7 +254,7 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
                 isRfc2965 = true;
                 int ind = cookieHeaderValue.indexOf(';');
                 if (ind < 0) {
-                    return empty();
+                    return ReadOnlyParameters.empty();
                 } else {
                     cookieHeaderValue = cookieHeaderValue.substring(ind + 1);
                 }

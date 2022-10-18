@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Function;
 
 /**
@@ -45,7 +44,7 @@ public class ReadOnlyParameters implements Parameters {
      * @param data multi-map data to copy.
      */
     public ReadOnlyParameters(Map<String, List<String>> data) {
-        this.data = copyMultimapAsImutable(data);
+        this.data = copyMultimapAsImmutable(data);
     }
 
     /**
@@ -71,13 +70,25 @@ public class ReadOnlyParameters implements Parameters {
      *
      * @param data data to copy, if {@code null} then returns empty map.
      * @return unmodifiable map, never {@code null}.
+     * @deprecated Use {@link #copyMultimapAsImmutable(java.util.Map)} instead
      */
+    @Deprecated(since = "3.0.2", forRemoval = true)
     static Map<String, List<String>> copyMultimapAsImutable(Map<String, List<String>> data) {
+        return copyMultimapAsImmutable(data);
+    }
+
+    /**
+     * Returns a deep copy of provided multi-map which is completely unmodifiable.
+     *
+     * @param data data to copy, if {@code null} then returns empty map.
+     * @return unmodifiable map, never {@code null}.
+     */
+    static Map<String, List<String>> copyMultimapAsImmutable(Map<String, List<String>> data) {
         if (data == null || data.isEmpty()) {
             return Collections.emptyMap();
         } else {
             // Deep copy
-            Map<String, List<String>> h = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            Map<String, List<String>> h = new HashMap<>();
             data.forEach((k, v) -> h.put(k, Collections.unmodifiableList(new ArrayList<>(v))));
             return Collections.unmodifiableMap(h);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.config.Config;
 import io.helidon.media.common.DefaultMediaSupport;
 import io.helidon.media.common.MessageBodyReader;
@@ -87,18 +87,12 @@ class HelidonStructures {
     }
 
     static boolean hasEntity(WebClientResponse webClientResponse) {
-        final ReadOnlyParameters headers = webClientResponse.content().readerContext().headers();
+        final ReadOnlyHeaders headers = webClientResponse.content().readerContext().hdrs();
         final Optional<String> contentLenth = headers.first(Http.Header.CONTENT_LENGTH);
         final Optional<String> encoding = headers.first(Http.Header.TRANSFER_ENCODING);
 
         return ((contentLenth.isPresent() && !contentLenth.get().equals("0"))
                 || (encoding.isPresent() && encoding.get().equals(HttpHeaderValues.CHUNKED.toString())));
-    }
-
-    private static class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
-        ReadOnlyHeaders(Map<String, List<String>> data) {
-            super(data);
-        }
     }
 
     private static class ProxyBuilder {

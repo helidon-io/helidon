@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.config.testing.OptionalMatcher;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.TracerBuilder;
@@ -64,23 +65,28 @@ class ZipkinTracerProviderTest {
                 ZipkinTracerProvider.X_B3_TRACE_ID, List.of(traceId)
         );
         Map<String, List<String>> outboundHeaders = new HashMap<>();
+        HeaderConsumer headerConsumer = HeaderConsumer.create(outboundHeaders);
         provider.updateOutboundHeaders(mt,
                                        span.context(),
                                        HeaderProvider.create(inboundHeaders),
-                                       HeaderConsumer.create(outboundHeaders));
+                                       headerConsumer);
 
         // all should be propagated, X_OT should be fixed
-        List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
-        assertThat(values, is(List.of("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
+        assertThat("Fixed-up X_OT header",
+                   headerConsumer.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT),
+                   OptionalMatcher.value(is("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
 
-        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID);
-        assertThat(values, is(List.of(parentSpanId)));
+        assertThat("Parent span ID header",
+                   headerConsumer.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID),
+                   OptionalMatcher.value(is(parentSpanId)));
 
-        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_SPAN_ID);
-        assertThat(values, is(List.of(spanId)));
+        assertThat("Span ID header",
+                   headerConsumer.get(ZipkinTracerProvider.X_B3_SPAN_ID),
+                   OptionalMatcher.value(is(spanId)));
 
-        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_TRACE_ID);
-        assertThat(values, is(List.of(traceId)));
+        assertThat("Trace ID header",
+                   headerConsumer.get(ZipkinTracerProvider.X_B3_TRACE_ID),
+        OptionalMatcher.value(is(traceId)));
     }
 
     @Test
@@ -110,22 +116,27 @@ class ZipkinTracerProviderTest {
                 ZipkinTracerProvider.X_B3_TRACE_ID, List.of("17")
         );
 
+        HeaderConsumer headerConsumer = HeaderConsumer.create(outboundHeaders);
         provider.updateOutboundHeaders(mt,
                                        span.context(),
                                        HeaderProvider.create(inboundHeaders),
-                                       HeaderConsumer.create(outboundHeaders));
+                                       headerConsumer);
 
         // all should be propagated, X_OT should be fixed
-        List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
-        assertThat(values, is(List.of("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
+        assertThat("Fixed-up X_OT header",
+                   headerConsumer.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT),
+                OptionalMatcher.value(is("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
 
-        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID);
-        assertThat(values, is(List.of(parentSpanId)));
+        assertThat("Parent span ID header",
+                   headerConsumer.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID),
+                   OptionalMatcher.value(is(parentSpanId)));
 
-        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_SPAN_ID);
-        assertThat(values, is(List.of(spanId)));
+        assertThat("Span ID header",
+                   headerConsumer.get(ZipkinTracerProvider.X_B3_SPAN_ID),
+                   OptionalMatcher.value(is(spanId)));
 
-        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_TRACE_ID);
-        assertThat(values, is(List.of(traceId)));
+        assertThat("Trace ID header",
+                   headerConsumer.get(ZipkinTracerProvider.X_B3_TRACE_ID),
+                   OptionalMatcher.value(is(traceId)));
     }
 }

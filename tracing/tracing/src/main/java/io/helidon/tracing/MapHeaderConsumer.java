@@ -18,13 +18,14 @@ package io.helidon.tracing;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 class MapHeaderConsumer implements HeaderConsumer {
-    private final Map<String, List<String>> headers;
+    private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     MapHeaderConsumer(Map<String, List<String>> headers) {
-        this.headers = headers;
+        this.headers.putAll(headers);
     }
 
     @Override

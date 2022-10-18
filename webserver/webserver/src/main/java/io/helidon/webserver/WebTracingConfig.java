@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -344,7 +345,8 @@ public abstract class WebTracingConfig {
             private final Map<String, List<String>> headers;
 
             TracingHeaderProvider(Map<String, List<String>> headers) {
-                this.headers = headers;
+                this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+                this.headers.putAll(headers);
             }
 
             @Override

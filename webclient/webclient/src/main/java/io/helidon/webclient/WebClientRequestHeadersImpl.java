@@ -27,11 +27,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -233,9 +235,16 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
         return Collections.unmodifiableList(associatedHeaders);
     }
 
+    @Deprecated(since = "3.0.2", forRemoval = true)
     @Override
     public WebClientRequestHeaders putAll(Parameters parameters) {
         headers.putAll(parameters.toMap());
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders putAll(Headers headers) {
+        this.headers.putAll(headers.toMap());
         return this;
     }
 
@@ -251,9 +260,16 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
         return this;
     }
 
+    @Deprecated(since = "3.0.2", forRemoval = true)
     @Override
     public WebClientRequestHeaders addAll(Parameters parameters) {
         parameters.toMap().forEach(this::add);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestHeaders addAll(Headers headers) {
+        headers.toMap().forEach(this::add);
         return this;
     }
 
@@ -265,7 +281,9 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     @Override
     public Map<String, List<String>> toMap() {
-        return Collections.unmodifiableMap(new HashMap<>(headers));
+        Map<String, List<String>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        result.putAll(headers);
+        return Collections.unmodifiableMap(result);
     }
 
     private List<String> iterableToList(Iterable<String> iterable) {

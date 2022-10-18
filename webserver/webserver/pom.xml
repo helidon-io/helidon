@@ -243,5 +243,9 @@
             <artifactId>reactive-streams-tck-flow</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-testing</artifactId>
+        </dependency>
     </dependencies>
 </project>

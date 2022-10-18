@@ -18,6 +18,7 @@ package io.helidon.webclient.tracing;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
@@ -109,7 +110,13 @@ public final class WebClientTracing implements WebClientService {
 
         private ClientHeaderConsumer(WebClientRequestHeaders headers) {
             this.headers = headers;
-            this.headerMap = LazyValue.create(headers::toMap);
+            this.headerMap = LazyValue.create(this::headerMap);
+        }
+
+        private Map<String, List<String>> headerMap() {
+            Map<String, List<String>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            result.putAll(headers.toMap());
+            return result;
         }
 
         @Override

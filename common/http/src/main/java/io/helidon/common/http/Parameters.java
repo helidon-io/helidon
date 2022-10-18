@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * Parameters represents {@code key : value} pairs where {@code key} is a {@code String} with potentially multiple values.
  * <p>
- * This structure represents query parameters, headers and path parameters in e.g. {@link HttpRequest}.
+ * This structure represents query parameters and path parameters in e.g. {@link HttpRequest}.
  * <p>
  * Interface focus on most convenient use cases in HTTP Request and Response processing, like
  * <pre>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,6 +204,20 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
      */
     protected MessageBodyContext(MessageBodyContext parent) {
         this(parent, parent.eventListener);
+    }
+
+    /**
+     * Create a new content support instance.
+     *
+     * (This is a convenience "super" constructor so the various  {@link MessageBodyReaderContext} ctors
+     * can delegate to a common ctor.)
+     *
+     * @param parent content filters parent
+     * @param eventListener the event lister
+     * @param useExplicitEventListener whether to use the explicit event listener or not
+     */
+    protected MessageBodyContext(MessageBodyContext parent, EventListener eventListener, boolean useExplicitEventListener) {
+        this(parent, useExplicitEventListener ? eventListener : parent == null ? null : parent.eventListener);
     }
 
     /**
