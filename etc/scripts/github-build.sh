@@ -27,6 +27,6 @@ error_trap_setup
 mvn ${MAVEN_ARGS} --version
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    install -e \
+    clean install -e \
     -Dmaven.test.failure.ignore=false \
     -Pjavadoc,sources,tests,pipeline
