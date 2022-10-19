@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,20 +25,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * A {@link ConcurrentSkipListMap} based {@link Parameters} implementation with
- * case-insensitive keys and immutable {@link List} of values that needs to be copied on each write.
+ * A {@link Map}-based {@link Parameters} implementation with keys and immutable {@link List} of values that needs to be copied
+ * on each write. By default, this implementation uses case-sensitive keys and a {@code ConcurrentSkipListMap} but
+ * a subclass can furnish its own map factory to control what specific type of map is used.
  */
 public class HashParameters implements Parameters {
 
     private static final List<String> EMPTY_STRING_LIST = Collections.emptyList();
 
-    private final ConcurrentMap<String, List<String>> content;
+    private final Map<String, List<String>> content;
+
+    private final Supplier<? extends Map<String, List<String>>> emptyMapFactory;
 
     /**
      * Creates a new instance.
@@ -48,16 +50,37 @@ public class HashParameters implements Parameters {
     }
 
     /**
-     * Creates a new instance from provided data.
+     * Creates a new instance using the provided factory to create the map for holding the data.
+     *
+     * @param emptyMapFactory supplier of a new map instance
+     */
+    protected HashParameters(Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
+        this((Parameters) null, emptyMapFactory);
+    }
+
+    /**
+     * Creates a new instance from provided data, using a map with case-sensitive keys.
      * Initial data are copied.
      *
      * @param initialContent initial content.
      */
     protected HashParameters(Map<String, List<String>> initialContent) {
+        this(initialContent, ConcurrentSkipListMap::new);
+    }
+
+    /**
+     * Creates a new instance from provided data and using the specified factory to instantiate a concurrent map to hold the data.
+     * Initial data are copied.
+     *
+     * @param initialContent initial content
+     * @param emptyMapFactory factory for an empty map to hold the data
+     */
+    protected HashParameters(Map<String, List<String>> initialContent, Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
+        this.emptyMapFactory = emptyMapFactory;
         if (initialContent == null) {
-            content = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
+            content = emptyMapFactory.get();
         } else {
-            content = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
+            content = emptyMapFactory.get();
             for (Map.Entry<String, List<String>> entry : initialContent.entrySet()) {
                 content.compute(
                         entry.getKey(),
@@ -82,7 +105,11 @@ public class HashParameters implements Parameters {
      * @param initialContent initial content.
      */
     protected HashParameters(Parameters initialContent) {
-        this(initialContent == null ? null : initialContent.toMap());
+        this(initialContent, ConcurrentSkipListMap::new);
+    }
+
+    protected HashParameters(Parameters initialContent, Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
+        this(initialContent == null ? null : initialContent.toMap(), emptyMapFactory);
     }
 
     /**
@@ -123,16 +150,7 @@ public class HashParameters implements Parameters {
      * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
      */
     public static HashParameters concat(Parameters... parameters) {
-        if (parameters == null || parameters.length == 0) {
-            return new HashParameters();
-        }
-        List<Map<String, List<String>>> prms = new ArrayList<>(parameters.length);
-        for (Parameters p : parameters) {
-            if (p != null) {
-                prms.add(p.toMap());
-            }
-        }
-        return concat(prms);
+        return concat(HashParameters::new, HashParameters::new, parameters);
     }
 
     /**
@@ -144,21 +162,46 @@ public class HashParameters implements Parameters {
      * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
      */
     public static HashParameters concat(Iterable<Parameters> parameters) {
+        return concat(parameters, HashParameters::new, HashParameters::new);
+    }
+
+    protected static <T extends HashParameters> T concat(Supplier<T> emptyFactory,
+                                                         Function<Map<String, List<String>>, T> singletonFactory,
+                                                         Parameters... parameters) {
+
+        if (parameters == null || parameters.length == 0) {
+            return emptyFactory.get();
+        }
+        List<Map<String, List<String>>> prms = new ArrayList<>(parameters.length);
+        for (Parameters p : parameters) {
+            if (p != null) {
+                prms.add(p.toMap());
+            }
+        }
+        return concat(prms, emptyFactory, singletonFactory);
+    }
+
+    protected static <T extends HashParameters> T concat(Iterable<Parameters> parameters,
+                                                         Supplier<T> emptyFactory,
+                                                         Function<Map<String, List<String>>, T> singletoneFactory) {
         ArrayList<Map<String, List<String>>> prms = new ArrayList<>();
         for (Parameters p : parameters) {
             if (p != null) {
                 prms.add(p.toMap());
             }
         }
-        return concat(prms);
+        return concat(prms, emptyFactory, singletoneFactory);
     }
 
-    private static HashParameters concat(List<Map<String, List<String>>> prms) {
+    protected static <T extends HashParameters> T concat(List<Map<String, List<String>>> prms,
+                                                         Supplier<T> emptyFactory,
+                                                         Function<Map<String, List<String>>, T> singletonFactory) {
+
         if (prms.isEmpty()) {
-            return new HashParameters();
+            return emptyFactory.get();
         }
         if (prms.size() == 1) {
-            return new HashParameters(prms.get(0));
+            return singletonFactory.apply(prms.get(0));
         }
 
         Map<String, List<String>> composer = new HashMap<>();
@@ -168,7 +211,7 @@ public class HashParameters implements Parameters {
                 strings.addAll(entry.getValue());
             }
         }
-        return new HashParameters(composer);
+        return singletonFactory.apply(composer);
     }
 
     private List<String> internalListCopy(String... values) {
@@ -358,7 +401,7 @@ public class HashParameters implements Parameters {
     @Override
     public Map<String, List<String>> toMap() {
         // deep copy
-        Map<String, List<String>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, List<String>> result = emptyMapFactory.get();
         for (Map.Entry<String, List<String>> entry : content.entrySet()) {
             result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
@@ -372,10 +415,14 @@ public class HashParameters implements Parameters {
 
     @Override
     public boolean equals(Object o) {
+        return equals(o, HashParameters.class);
+    }
+
+    protected <T extends HashParameters> boolean equals(Object o, Class<T> cl) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HashParameters)) {
+        if (!cl.isInstance(o)) {
             return false;
         }
         HashParameters that = (HashParameters) o;
@@ -384,6 +431,10 @@ public class HashParameters implements Parameters {
 
     @Override
     public int hashCode() {
-        return content.hashCode();
+        return hashCode(HashParameters.class.hashCode());
+    }
+
+    protected int hashCode(int extra) {
+        return extra + 37 * content.hashCode();
     }
 }

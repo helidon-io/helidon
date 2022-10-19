@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.AlreadyCompletedException;
-import io.helidon.common.http.HashParameters;
+import io.helidon.common.http.HashHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -47,9 +47,9 @@ import io.helidon.common.http.Utils;
 import io.helidon.common.reactive.Single;
 
 /**
- * A {@link ResponseHeaders} implementation on top of {@link HashParameters}.
+ * A {@link ResponseHeaders} implementation on top of {@link HashHeaders}.
  */
-class HashResponseHeaders extends HashParameters implements ResponseHeaders {
+class HashResponseHeaders extends HashHeaders implements ResponseHeaders {
 
     private static final String COMPLETED_EXCEPTION_MESSAGE = "Response headers are already completed (sent to the client)!";
 

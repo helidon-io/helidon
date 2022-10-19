@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.GrpcTracingContext;
@@ -251,7 +252,12 @@ public class GrpcTracing implements ServerInterceptor {
         private final Map<String, String> headers;
 
         MapHeaderProvider(Map<String, String> headers) {
-            this.headers = headers;
+            if (headers instanceof TreeMap && ((TreeMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER) {
+                this.headers = headers;
+            } else {
+                this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+                this.headers.putAll(headers);
+            }
         }
 
         @Override

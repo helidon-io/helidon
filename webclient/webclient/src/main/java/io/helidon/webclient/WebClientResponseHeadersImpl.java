@@ -22,29 +22,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.common.http.SetCookie;
 
 /**
  * Implementation of {@link WebClientResponseHeaders}.
  */
-class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClientResponseHeaders {
+class WebClientResponseHeadersImpl extends ReadOnlyHeaders implements WebClientResponseHeaders {
 
     private WebClientResponseHeadersImpl(Map<String, List<String>> headers) {
         super(headers);
     }
 
     /**
-     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Parameters} instance.
+     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Headers} instance.
      *
-     * @param parameters headers in parameters instance
+     * @param headers headers in parameters instance
      * @return response headers instance
      */
-    static WebClientResponseHeaders create(Parameters parameters) {
-        return create(parameters.toMap());
+    static WebClientResponseHeaders create(Headers headers) {
+        return create(headers.toMap());
     }
 
     /**
@@ -53,7 +53,7 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
      * @param headers response headers in map
      * @return response headers instance
      */
-    static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
+    public static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
         return new WebClientResponseHeadersImpl(headers);
     }
 

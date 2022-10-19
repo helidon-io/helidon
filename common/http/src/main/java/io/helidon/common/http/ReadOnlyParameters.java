@@ -22,8 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * An immutable implementation of {@link Parameters}.
@@ -45,7 +45,7 @@ public class ReadOnlyParameters implements Parameters {
      * @param data multi-map data to copy.
      */
     public ReadOnlyParameters(Map<String, List<String>> data) {
-        this.data = copyMultimapAsImutable(data);
+        this(data, HashMap::new);
     }
 
     /**
@@ -54,7 +54,17 @@ public class ReadOnlyParameters implements Parameters {
      * @param parameters parameters to copy.
      */
     public ReadOnlyParameters(Parameters parameters) {
-        this(parameters == null ? null : parameters.toMap());
+        this(parameters, HashMap::new);
+    }
+
+    protected ReadOnlyParameters(Map<String, List<String>> data,
+                                 Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
+        this.data = copyMultimapAsImmutable(data, emptyMapFactory);
+    }
+
+    protected ReadOnlyParameters(Parameters parameters,
+                                 Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
+        this(parameters == null ? null : parameters.toMap(), emptyMapFactory);
     }
 
     /**
@@ -72,12 +82,13 @@ public class ReadOnlyParameters implements Parameters {
      * @param data data to copy, if {@code null} then returns empty map.
      * @return unmodifiable map, never {@code null}.
      */
-    static Map<String, List<String>> copyMultimapAsImutable(Map<String, List<String>> data) {
+    static Map<String, List<String>> copyMultimapAsImmutable(Map<String, List<String>> data,
+                                                             Supplier<? extends Map<String, List<String>>> mapFactory) {
         if (data == null || data.isEmpty()) {
             return Collections.emptyMap();
         } else {
             // Deep copy
-            Map<String, List<String>> h = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            Map<String, List<String>> h = mapFactory.get();
             data.forEach((k, v) -> h.put(k, Collections.unmodifiableList(new ArrayList<>(v))));
             return Collections.unmodifiableMap(h);
         }
@@ -154,5 +165,9 @@ public class ReadOnlyParameters implements Parameters {
         Map<String, List<String>> h = new HashMap<>(data.size());
         data.forEach((k, v) -> h.put(k, new ArrayList<>(v)));
         return h;
+    }
+
+    protected Map<String, List<String>> data() {
+        return data;
     }
 }
