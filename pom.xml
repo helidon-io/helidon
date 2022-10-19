@@ -1423,11 +1423,6 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
         </profile>
         <profile>
             <id>toolchain</id>
-            <activation>
-                <file>
-                    <exists>${user.home}/.m2/toolchains.xml</exists>
-                </file>
-            </activation>
             <properties>
                 <jdkToolchainVersion>${java.vm.specification.version}</jdkToolchainVersion>
             </properties>
