@@ -30,8 +30,6 @@ readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
 die() { echo "${1}" ; exit 1 ;}
 
-which mvn
-
 mvn ${MAVEN_ARGS} \
         -f ${WS_DIR}/pom.xml \
         -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
