@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-/**
- * Pico minimal (spi) types module.
- */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+package io.helidon.pico.builder.test.testsubjects;
 
-    exports io.helidon.pico.types;
+import io.helidon.pico.builder.api.Builder;
+
+/**
+ * Extends the annotation so that a builder can be built for it.
+ */
+@Builder
+public interface AnnotationCaseExt extends AnnotationCase {
+
 }

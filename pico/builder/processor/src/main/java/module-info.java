@@ -15,10 +15,19 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder annotation processor module.
  */
-module io.helidon.pico.types {
+module io.helidon.pico.builder.processor {
+    requires java.compiler;
     requires io.helidon.common;
+    requires io.helidon.pico.builder.api;
+    requires io.helidon.pico.builder.tools;
+    requires io.helidon.pico.builder.spi;
+    requires io.helidon.pico.types;
 
-    exports io.helidon.pico.types;
+    uses io.helidon.pico.builder.spi.BuilderCreator;
+
+    exports io.helidon.pico.builder.processor;
+
+    provides javax.annotation.processing.Processor with io.helidon.pico.builder.processor.BuilderProcessor;
 }

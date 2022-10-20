@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Pico minimal (spi) types module.
- */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+package io.helidon.pico.builder.api.test;
 
-    exports io.helidon.pico.types;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class DependsOnAllBuilderTest {
+
+    @Test
+    void testIt() {
+        assertThat(DependsOnAllBuilders.createCustomNamed(), notNullValue());
+        assertThat(DependsOnAllBuilders.createLevel2(), notNullValue());
+        assertThat(DependsOnAllBuilders.createMyConfigBean(), notNullValue());
+    }
+
 }

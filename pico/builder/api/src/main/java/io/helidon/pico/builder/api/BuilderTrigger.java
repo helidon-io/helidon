@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-/**
- * Pico minimal (spi) types module.
- */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+package io.helidon.pico.builder.api;
 
-    exports io.helidon.pico.types;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * the meta-annotation will trigger the enclosing service type marked with this annotation to drive the
+ * builder-processor. In another words, this annotation is a means for discovery of other
+ * {@link io.helidon.pico.builder.api.Builder}-like annotations.
+ */
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface BuilderTrigger {
+
 }

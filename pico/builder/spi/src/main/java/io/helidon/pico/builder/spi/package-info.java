@@ -15,10 +15,10 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder SPI module provides two things:
+ *  <ol>
+ *      <li>{@link io.helidon.pico.builder.spi.BuilderCreator} - responsible for code generating the implementation w/ a fluent builder.</li>
+ *      <li>{@link io.helidon.pico.builder.spi.TypeAndBody} - the dom-like description of the target type of the builder.</li>
+ *  </ol>
  */
-module io.helidon.pico.types {
-    requires io.helidon.common;
-
-    exports io.helidon.pico.types;
-}
+package io.helidon.pico.builder.spi;

@@ -16,20 +16,20 @@
     limitations under the License.
 
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.helidon.pico</groupId>
-        <artifactId>helidon-pico-project</artifactId>
+        <groupId>io.helidon.pico.builder</groupId>
+        <artifactId>helidon-pico-builder-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-types</artifactId>
-    <name>Helidon Pico Types</name>
-    <description>Provides the runtime types (a subset of SPI) useful for Pico</description>
+    <artifactId>helidon-pico-builder-spi</artifactId>
+    <name>Helidon Pico Builder SPI</name>
 
     <dependencies>
         <dependency>
@@ -37,13 +37,21 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-types</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico.builder</groupId>
+            <artifactId>helidon-pico-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

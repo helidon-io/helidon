@@ -15,10 +15,10 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * Pico Builder test module.
  */
-module io.helidon.pico.types {
-    requires io.helidon.common;
-
-    exports io.helidon.pico.types;
+module io.helidon.pico.builder.test.builder {
+    requires static com.fasterxml.jackson.annotation;
+    requires static io.helidon.pico.builder.api;
+    requires io.helidon.config.metadata;
 }

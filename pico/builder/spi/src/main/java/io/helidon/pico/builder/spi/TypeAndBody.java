@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-/**
- * Pico minimal (spi) types module.
- */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+package io.helidon.pico.builder.spi;
 
-    exports io.helidon.pico.types;
+import io.helidon.pico.types.TypeName;
+
+/**
+ * Represents the generated source as a model object.
+ */
+public interface TypeAndBody {
+
+    /**
+     * The type name for the source to be generated.
+     *
+     * @return The type name for the source to be generated
+     */
+    TypeName typeName();
+
+    /**
+     * The body for the source to be generated.
+     *
+     * @return The body for the source to be generated
+     */
+    String body();
+
 }

@@ -15,10 +15,6 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder tools package. These are generally only needed by other Helidon modules like the Builder annotation processor, etc.
  */
-module io.helidon.pico.types {
-    requires io.helidon.common;
-
-    exports io.helidon.pico.types;
-}
+package io.helidon.pico.builder.tools;

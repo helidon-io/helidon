@@ -15,10 +15,11 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder API module. This module typically is only needed during compile-time processing, in conjunction with
+ * the Builder's annotation processing module.
  */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+module io.helidon.pico.builder.api {
+    requires static io.helidon.config.metadata;
 
-    exports io.helidon.pico.types;
+    exports io.helidon.pico.builder.api;
 }

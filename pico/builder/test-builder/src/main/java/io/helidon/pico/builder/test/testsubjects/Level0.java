@@ -14,11 +14,25 @@
  * limitations under the License.
  */
 
-/**
- * Pico minimal (spi) types module.
- */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+package io.helidon.pico.builder.test.testsubjects;
 
-    exports io.helidon.pico.types;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.builder.api.Builder;
+
+/**
+ * Demonstrates multi-level inheritance for the generated builder.
+ *
+ * @see io.helidon.pico.builder.test.testsubjects.Level1
+ */
+@Builder(requireBeanStyle = true, implPrefix = "", implSuffix = "Impl")
+public interface Level0 {
+
+    /**
+     * Used for testing and demonstrating default values on the generated builder.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    @ConfiguredOption("1")
+    String getLevel0StringAttribute();
+
 }

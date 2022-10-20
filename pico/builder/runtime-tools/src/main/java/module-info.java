@@ -15,10 +15,10 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * Pico Builder Runtime Tools module.
  */
-module io.helidon.pico.types {
-    requires io.helidon.common;
+module io.helidon.pico.builder.runtime.tools {
 
-    exports io.helidon.pico.types;
+    exports io.helidon.pico.builder.runtime.tools;
+
 }

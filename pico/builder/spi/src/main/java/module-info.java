@@ -15,10 +15,12 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder SPI module.
  */
-module io.helidon.pico.types {
+module io.helidon.pico.builder.spi {
+    requires io.helidon.pico.builder.api;
+    requires io.helidon.pico.types;
     requires io.helidon.common;
 
-    exports io.helidon.pico.types;
+    exports io.helidon.pico.builder.spi;
 }

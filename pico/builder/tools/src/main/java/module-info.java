@@ -15,10 +15,19 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder tools module.
  */
-module io.helidon.pico.types {
+module io.helidon.pico.builder.tools {
+    requires java.compiler;
+    requires io.helidon.pico.types;
+    requires io.helidon.pico.builder.api;
+    requires io.helidon.pico.builder.spi;
+    requires io.helidon.pico.builder.runtime.tools;
     requires io.helidon.common;
+    requires io.helidon.config.metadata;
 
-    exports io.helidon.pico.types;
+    exports io.helidon.pico.builder.tools;
+
+    provides io.helidon.pico.builder.spi.BuilderCreator with io.helidon.pico.builder.tools.DefaultBuilderCreator;
+    provides io.helidon.pico.builder.tools.TypeInfoCreator with io.helidon.pico.builder.tools.BuilderTypeTools;
 }

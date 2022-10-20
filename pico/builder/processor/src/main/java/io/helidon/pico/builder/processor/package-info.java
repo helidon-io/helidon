@@ -15,10 +15,6 @@
  */
 
 /**
- * Pico minimal (spi) types module.
+ * The Pico Builder annotation processing package.
  */
-module io.helidon.pico.types {
-    requires io.helidon.common;
-
-    exports io.helidon.pico.types;
-}
+package io.helidon.pico.builder.processor;

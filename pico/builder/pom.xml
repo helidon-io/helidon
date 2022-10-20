@@ -16,9 +16,10 @@
     limitations under the License.
 
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.pico</groupId>
         <artifactId>helidon-pico-project</artifactId>
@@ -27,25 +28,19 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-types</artifactId>
-    <name>Helidon Pico Types</name>
-    <description>Provides the runtime types (a subset of SPI) useful for Pico</description>
+    <groupId>io.helidon.pico.builder</groupId>
+    <artifactId>helidon-pico-builder-project</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <name>Helidon Pico Builder Project</name>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>api</module>
+        <module>spi</module>
+        <module>runtime-tools</module>
+        <module>tools</module>
+        <module>processor</module>
+        <module>test-builder</module>
+    </modules>
 
 </project>
