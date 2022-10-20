@@ -379,7 +379,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
                 .forEach(it -> targetConfigSources.add(new OrdinalSource(it)));
 
         ServiceLoader.load(ConfigSourceProvider.class)
-                .forEach(it ->{
+                .forEach(it -> {
                     configureProfileIfPresent(it);
                     it.getConfigSources(classLoader)
                         .forEach(source -> targetConfigSources.add(new OrdinalSource(source)));
@@ -391,7 +391,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
             Field profile = configSourceProvider.getClass()
                                 .getDeclaredField("profile");
             profile.setAccessible(true);
-            profile.set(configSourceProvider,this.profile);
+            profile.set(configSourceProvider, this.profile);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.finest(String.format("The ConfigSourceProvider %s doesn't use profiles", configSourceProvider.getClass()

@@ -17,6 +17,7 @@
 package io.helidon.config.yaml.mp;
 
 import java.util.Objects;
+
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
@@ -30,7 +31,7 @@ public class YamlConfigSourceProvider implements ConfigSourceProvider {
     private String profile;
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
-        return Objects.nonNull(profile) && !profile.isBlank() ?
-               YamlMpConfigSource.classPath(RESOURCE_NAME, profile) : YamlMpConfigSource.classPath(RESOURCE_NAME);
+        return Objects.nonNull(profile) && !profile.isBlank()
+               ? YamlMpConfigSource.classPath(RESOURCE_NAME, profile) : YamlMpConfigSource.classPath(RESOURCE_NAME);
     }
 }
