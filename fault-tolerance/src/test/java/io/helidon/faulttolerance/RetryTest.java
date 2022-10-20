@@ -376,6 +376,38 @@ class RetryTest {
         assertThat(count, is(4));
     }
 
+    @Test
+    void testExponentialRetrySequence(){
+        Retry.ExponentialRetryPolicy policy = Retry.ExponentialRetryPolicy.builder()
+                .calls(10)
+                .jitter(0)
+                .factor(2)
+                .build();
+
+        long[] result = new long[10];
+        for (int i = 0; i < 10; i++){
+            Optional<Long> nextDelay = policy.nextDelayMillis(0, 0, i);
+            result[i]=nextDelay.get();
+        }
+        assertThat(result, is(new long[]{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}));
+    }
+
+    @Test
+    void testFibonacciRetrySequence(){
+        Retry.FibonacciRetryPolicy policy = Retry.FibonacciRetryPolicy.builder()
+                .initialDelay(Duration.ofMillis(1))
+                .calls(10)
+                .jitter(0)
+                .build();
+
+        long[] result = new long[10];
+        for (int i = 0; i < 10; i++){
+            Optional<Long> nextDelay = policy.nextDelayMillis(0, 0, i);
+            result[i]=nextDelay.get();
+        }
+        assertThat(result, is(new long[]{1, 2, 3, 5, 8, 13, 21, 34, 55, 89}));
+    }
+
     private static class TestSubscriber implements Flow.Subscriber<Integer> {
         private final AtomicBoolean failed = new AtomicBoolean();
         private final AtomicReference<Throwable> throwable = new AtomicReference<>();

@@ -827,8 +827,8 @@ public interface Retry extends FtHandler {
     /**
      * A retry policy that increases the delay time following an exponential sequence.
      * Allowed elements that are also annotated with {@code @Retry}.
-     * Expected sequence: initial delay, 2 * initial delay + jitter, 4 * initial delay + jitter,
-     * 8 * initial delay + jitter, etc. {@code maxDelayInMillis} is used to prevent endless waiting.
+     * Expected sequence in case factor is 2: initial delay, 2 * initial delay + jitter, 4 * initial delay + jitter,
+     * 8 * initial delay + jitter, etc. {@code maxDelay} is used to prevent endless waiting.
      */
     class ExponentialRetryPolicy implements RetryPolicy {
 
@@ -866,7 +866,6 @@ public interface Retry extends FtHandler {
         public static Builder builder() {
             return new Builder();
         }
-
 
         @Override
         public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
