@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -108,7 +109,7 @@ public class HashHeaders extends HashParameters implements Headers {
     }
 
     @Override
-    protected Map<String, List<String>> emptyMapForUpdates() {
+    protected ConcurrentMap<String, List<String>> emptyMapForUpdates() {
         return new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 }

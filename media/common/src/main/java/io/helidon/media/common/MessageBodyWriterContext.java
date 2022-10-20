@@ -237,10 +237,15 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param parent parent writer context
      * @param headers headers
      * @return MessageBodyWriterContext
+     * @deprecated Use (@link {@link #create(MessageBodyWriterContext, io.helidon.common.http.Headers)} instead passing
+     * {@code Headers} instead of {@code Parameters}.
      */
-    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Headers headers) {
-        return new MessageBodyWriterContext(parent, headers);
+    @Deprecated(since = "3.0.3", forRemoval = true)
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Parameters headers) {
+        return create(parent, HashHeaders.create(headers));
     }
+
+
 
     /**
      * Create a new parented writer context backed by the specified headers.
@@ -248,11 +253,9 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param parent parent writer context
      * @param headers headers
      * @return MessageBodyWriterContext
-     * @deprecated Use (@link {@link #create(MessageBodyWriterContext, io.helidon.common.http.Headers)} instead passing
-     * {@code Headers} instead of {@code Parameters}.
      */
-    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Parameters headers) {
-        return create(parent, HashHeaders.create(headers));
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Headers headers) {
+        return new MessageBodyWriterContext(parent, headers);
     }
 
     /**

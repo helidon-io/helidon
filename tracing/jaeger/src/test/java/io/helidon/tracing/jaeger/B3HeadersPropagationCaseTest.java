@@ -89,11 +89,6 @@ class B3HeadersPropagationCaseTest {
             assertThat("Trace ID",
                        traceIdSeenByEndpoint,
                        endsWith(TRACE_ID)); // endsWith because of leading zeros
-            // The span ID seen by the service endpoint is the newly-created child span of the original span we seeded in the
-            // headers. The SpanContext does not expose its parent (primarily because underlying implementations such as OTel do
-            // not currently xpose the parent), so the endpoint cannot discover the parent span ID to send
-            // that back to the test for checking. But if the trace ID sent back matches, the oddly-cased trace ID header
-            // was correctly recognized as a B3 header.
         } finally {
             response.close();
         }

@@ -72,6 +72,17 @@ public class ReadOnlyParameters implements Parameters {
     }
 
     /**
+     * Returns a deep copy of provided multi-map which is completely unmodifiable.
+     *
+     * @param data data to copy, if {@code null} then returns empty map.
+     * @return unmodifiable map, never {@code null}.
+     */
+    static Map<String, List<String>> copyMultimapAsImutable(Map<String, List<String>> data) {
+        return copyMultimapAsImmutable(data == null ? null : data.entrySet(),
+                                       ReadOnlyParameters::createEmptyMap);
+    }
+
+    /**
      * Returns a deep copy of provided data which is completely unmodifiable.
      *
      * @param data data to copy, if {@code null} then returns empty map.
@@ -80,8 +91,11 @@ public class ReadOnlyParameters implements Parameters {
     static Map<String, List<String>> copyMultimapAsImmutable(Iterable<Map.Entry<String, List<String>>> data,
                                                              Supplier<? extends Map<String, List<String>>> mapFactory) {
 
-        Iterator<Map.Entry<String, List<String>>> entries =
-                data == null ? Collections.emptyIterator() : data.iterator();
+        if (data == null) {
+            return Collections.emptyMap();
+        }
+
+        Iterator<Map.Entry<String, List<String>>> entries = data.iterator();
 
         if (!entries.hasNext()) {
             return Collections.emptyMap();
@@ -181,7 +195,7 @@ public class ReadOnlyParameters implements Parameters {
      * @return empty {@code Map}
      */
     protected Map<String, List<String>> emptyMap() {
-        return new HashMap<>();
+        return createEmptyMap();
     }
 
     /**
@@ -191,5 +205,9 @@ public class ReadOnlyParameters implements Parameters {
      */
     protected Map<String, List<String>> emptyMapForCopy() {
         return new HashMap<>(data.size());
+    }
+
+    private static Map<String, List<String>> createEmptyMap() {
+        return new HashMap<>();
     }
 }

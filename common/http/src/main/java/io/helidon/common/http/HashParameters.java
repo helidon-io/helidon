@@ -27,8 +27,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,16 +36,15 @@ import java.util.function.Supplier;
  * A {@link Map}-based {@link Parameters} implementation with keys and immutable {@link List} of values that needs to be copied
  * on each write.
  * <p>
- *     By default, this implementation uses case-sensitive keys and a {@code ConcurrentSkipListMap} but
- *     a subclass can override the map factory methods {@link #emptyMapForReads()} and {@link #emptyMapForUpdates()} to
- *     control the specific type of map used.
+ * By default, this implementation uses case-sensitive keys but a subclass can override the map factory methods
+ * {@link #emptyMapForReads()} and {@link #emptyMapForUpdates()} to control the specific type of map used.
  * </p>
  */
 public class HashParameters implements Parameters {
 
     private static final List<String> EMPTY_STRING_LIST = Collections.emptyList();
 
-    private final Map<String, List<String>> content;
+    private final ConcurrentMap<String, List<String>> content;
 
     /**
      * Creates a new instance.
@@ -61,7 +60,7 @@ public class HashParameters implements Parameters {
      * @param initialContent initial content.
      */
     protected HashParameters(Map<String, List<String>> initialContent) {
-        this(initialContent.entrySet());
+        this(initialContent == null ? null : initialContent.entrySet());
     }
 
     /**
@@ -109,7 +108,7 @@ public class HashParameters implements Parameters {
     }
 
     /**
-     * Creates a new instance of {@link HashParameters} from a single provided Parameter or Map. Initial data is copied.
+     * Creates a new instance of {@link HashParameters} from a single provided Map. Initial data is copied.
      *
      * @param initialContent initial content.
      * @return a new instance of {@link HashParameters} initialized with the given content.
@@ -219,7 +218,7 @@ public class HashParameters implements Parameters {
      *
      * @return empty {@code Map} implementation with correct case-sensitivity behavior and suitable for read-write access
      */
-    protected Map<String, List<String>> emptyMapForUpdates() {
+    protected ConcurrentMap<String, List<String>> emptyMapForUpdates() {
         return new ConcurrentSkipListMap<>();
     }
 
@@ -442,8 +441,8 @@ public class HashParameters implements Parameters {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        HashParameters entries = (HashParameters) o;
-        return content.equals(entries.content);
+        HashParameters that = (HashParameters) o;
+        return content.equals(that.content);
     }
 
     @Override
@@ -452,7 +451,7 @@ public class HashParameters implements Parameters {
     }
 
     /**
-     * {@code Iterable} around an array (to avoid {@code Array.asList}).
+     * {@code Iterable} around an array (to avoid uses of {@code Array.asList}) to get an {@code Iterable}.
      *
      * @param <T> type of the array elements
      */
@@ -487,13 +486,6 @@ public class HashParameters implements Parameters {
                     return content[slot++];
                 }
             };
-        }
-
-        @Override
-        public void forEach(Consumer<? super T> action) {
-            for (T t : content) {
-                action.accept(t);
-            }
         }
     }
 }
