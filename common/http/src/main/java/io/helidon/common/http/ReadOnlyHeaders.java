@@ -57,9 +57,20 @@ public class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
      *
      * @param initialContent {@code Parameters} to be used as the initial content for the new instance
      * @return new instance with specified initial content
-     * @deprecated Use
+     * @deprecated Use {@link #create(Headers)} instead, passing {@code Headers} instead of {@code Parameters}.
      */
+    @Deprecated(since = "3.0.3", forRemoval = true)
     public static ReadOnlyHeaders create(Parameters initialContent) {
+        return new ReadOnlyHeaders(initialContent);
+    }
+
+    /**
+     * Creates a new instance populated with the specified {@code Headers} settings.
+     *
+     * @param initialContent {@code Headers} to be used as the initial content for the new instance
+     * @return new instance with specified initial content
+     */
+    public static ReadOnlyHeaders create(Headers initialContent) {
         return new ReadOnlyHeaders(initialContent);
     }
 
