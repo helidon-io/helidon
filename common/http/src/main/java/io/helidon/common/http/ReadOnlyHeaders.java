@@ -15,7 +15,6 @@
  */
 package io.helidon.common.http;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -49,7 +48,7 @@ public class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
      * @param initialContent multi-map contains name/values-list pairs for the initial content
      * @return new instance with the specified initial content
      */
-    public static ReadOnlyHeaders create(Map<String, List<String>> initialContent) {
+    protected static ReadOnlyHeaders create(Map<String, List<String>> initialContent) {
         return new ReadOnlyHeaders(initialContent);
     }
 
@@ -58,6 +57,7 @@ public class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
      *
      * @param initialContent {@code Parameters} to be used as the initial content for the new instance
      * @return new instance with specified initial content
+     * @deprecated Use
      */
     public static ReadOnlyHeaders create(Parameters initialContent) {
         return new ReadOnlyHeaders(initialContent);
@@ -69,7 +69,7 @@ public class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
      * @param data multi-map data to copy.
      */
     protected ReadOnlyHeaders(Map<String, List<String>> data) {
-        super(data, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+        super(data);
     }
 
     /**
@@ -78,19 +78,16 @@ public class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
      * @param parameters parameters to copy.
      */
     protected ReadOnlyHeaders(Parameters parameters) {
-        super(parameters, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+        super(parameters);
     }
 
-    /**
-     * Returns a multi-map, normalized to lower-case keys, which is itself case-insensitive.
-     *
-     * @return a case-insensitive multi-map containing lower-cased normalized keys
-     */
     @Override
-    public Map<String, List<String>> toMap() {
-        // Use a TreeMap to preserve case-insensitive behavior.
-        Map<String, List<String>> h = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        data().forEach((k, v) -> h.put(k, new ArrayList<>(v)));
-        return h;
+    protected Map<String, List<String>> emptyMap() {
+        return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+
+    @Override
+    protected Map<String, List<String>> emptyMapForCopy() {
+        return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 }

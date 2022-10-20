@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -266,6 +267,11 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
     @Override
     public Map<String, List<String>> toMap() {
         return Collections.unmodifiableMap(new HashMap<>(headers));
+    }
+
+    @Override
+    public Iterator<Map.Entry<String, List<String>>> iterator() {
+        return headers.entrySet().iterator();
     }
 
     private List<String> iterableToList(Iterable<String> iterable) {

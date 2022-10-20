@@ -53,7 +53,7 @@ class WebClientResponseHeadersImpl extends ReadOnlyHeaders implements WebClientR
      * @param headers response headers in map
      * @return response headers instance
      */
-    public static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
+    protected static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
         return new WebClientResponseHeadersImpl(headers);
     }
 

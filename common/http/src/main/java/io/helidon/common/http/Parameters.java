@@ -16,6 +16,7 @@
 
 package io.helidon.common.http;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +48,7 @@ import java.util.function.Function;
  * <p>
  * Various static factory methods can be used to create common implementations.
  */
-public interface Parameters {
+public interface Parameters extends Iterable<Map.Entry<String, List<String>>> {
 
     /**
      * Returns an unmodifiable view.
@@ -229,4 +230,17 @@ public interface Parameters {
      * @return the {@code Map}
      */
     Map<String, List<String>> toMap();
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementations should override this default with a more efficient implementation.
+     * </p>
+     *
+     * @return {@code Iterator} over the entries in the data
+     */
+    @Override
+    default Iterator<Map.Entry<String, List<String>>> iterator() {
+        return toMap().entrySet().iterator();
+    }
 }

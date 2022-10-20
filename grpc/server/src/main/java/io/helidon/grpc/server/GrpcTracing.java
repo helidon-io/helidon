@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.GrpcTracingContext;
@@ -189,6 +190,13 @@ public class GrpcTracing implements ServerInterceptor {
         return span;
     }
 
+    private static boolean isCaseInsensitive(Map<String, String> headers) {
+        return (headers instanceof TreeMap
+                        && ((TreeMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER)
+                || (headers instanceof ConcurrentSkipListMap<?, ?>
+                            && ((ConcurrentSkipListMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER);
+    }
+
     /**
      * A {@link  ServerCall.Listener} to apply details to a tracing {@link Span} at various points
      * in a call lifecycle.
@@ -252,9 +260,10 @@ public class GrpcTracing implements ServerInterceptor {
         private final Map<String, String> headers;
 
         MapHeaderProvider(Map<String, String> headers) {
-            if (headers instanceof TreeMap && ((TreeMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER) {
+            if (isCaseInsensitive(headers)) {
                 this.headers = headers;
             } else {
+                // headers is not updated, so TreeMap is OK--no need for concurrency.
                 this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 this.headers.putAll(headers);
             }

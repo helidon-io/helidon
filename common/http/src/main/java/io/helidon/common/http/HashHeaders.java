@@ -15,12 +15,11 @@
  */
 package io.helidon.common.http;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Supplier;
 
 /**
  * A {@link Map}-based {@link Headers} implementation with case-insensitive keys and immutable {@link List} of values that
@@ -28,14 +27,11 @@ import java.util.function.Supplier;
  */
 public class HashHeaders extends HashParameters implements Headers {
 
-    private static final Supplier<ConcurrentMap<String, List<String>>> CASE_SENSITIVE_MAP_FACTORY =
-            () -> new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
-
     /**
      * Creates a new empty instance.
      */
     protected HashHeaders() {
-        super(CASE_SENSITIVE_MAP_FACTORY);
+        super();
     }
 
     /**
@@ -44,15 +40,17 @@ public class HashHeaders extends HashParameters implements Headers {
      * @param initialContent multi-map containing the initial contents to populate the new instance
      */
     protected HashHeaders(Map<String, List<String>> initialContent) {
-        super(initialContent, CASE_SENSITIVE_MAP_FACTORY);
+        super(initialContent == null ? Collections.emptySet() : initialContent.entrySet());
     }
 
     /**
-     * Creates a new instance populated from the contents of the provided {@code Parameters}.
-     * @param initialContent {@code Parameters} containing the initial contents to populate the new instance
+     * Creates a new instance populated from the given contents, typically from another {@code HashHeaders} instance or
+     * a map's entry set.
+     *
+     * @param initialContent initial data
      */
-    protected HashHeaders(Parameters initialContent) {
-        super(initialContent, CASE_SENSITIVE_MAP_FACTORY);
+    protected HashHeaders(Iterable<Map.Entry<String, List<String>>> initialContent) {
+        super(initialContent);
     }
 
     /**
@@ -91,32 +89,26 @@ public class HashHeaders extends HashParameters implements Headers {
      * @return new {@code HashHeaders} containing the names and values from the specified initial parameters
      */
     public static HashHeaders concat(Parameters... parameters) {
-        return concat(HashHeaders::new, HashHeaders::new, parameters);
+        return concat(new ArrayIterable<>(parameters));
     }
 
     /**
      * Concatenates the specified contents into a new {@code HashHeaders} instance.
      *
-     * @param parameters zero or more {@code Parameters} instances
+     * @param initialContent zero or more {@code Parameters} instances
      * @return new {@code HashHeaders} containint the names and values from the specified initial content
      */
-    public static HashHeaders concat(Iterable<Parameters> parameters) {
-        List<Map<String, List<String>>> hdrs = new ArrayList<>();
-        for (Parameters p : parameters) {
-            if (p != null) {
-                hdrs.add(p.toMap());
-            }
-        }
-        return concat(hdrs, HashHeaders::new, HashHeaders::new);
+    public static HashHeaders concat(Iterable<Parameters> initialContent) {
+        return concat(initialContent, HashHeaders::new, HashHeaders::new);
     }
 
     @Override
-    public boolean equals(Object o) {
-        return equals(o, HashHeaders.class);
+    protected Map<String, List<String>> emptyMapForReads() {
+        return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
     @Override
-    public int hashCode() {
-        return hashCode(HashHeaders.class.hashCode());
+    protected Map<String, List<String>> emptyMapForUpdates() {
+        return new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 }

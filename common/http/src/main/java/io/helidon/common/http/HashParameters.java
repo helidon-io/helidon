@@ -21,18 +21,25 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * A {@link Map}-based {@link Parameters} implementation with keys and immutable {@link List} of values that needs to be copied
- * on each write. By default, this implementation uses case-sensitive keys and a {@code ConcurrentSkipListMap} but
- * a subclass can furnish its own map factory to control what specific type of map is used.
+ * on each write.
+ * <p>
+ *     By default, this implementation uses case-sensitive keys and a {@code ConcurrentSkipListMap} but
+ *     a subclass can override the map factory methods {@link #emptyMapForReads()} and {@link #emptyMapForUpdates()} to
+ *     control the specific type of map used.
+ * </p>
  */
 public class HashParameters implements Parameters {
 
@@ -40,48 +47,33 @@ public class HashParameters implements Parameters {
 
     private final Map<String, List<String>> content;
 
-    private final Supplier<? extends Map<String, List<String>>> emptyMapFactory;
-
     /**
      * Creates a new instance.
      */
     protected HashParameters() {
-        this((Parameters) null);
+        content = emptyMapForUpdates();
     }
 
     /**
-     * Creates a new instance using the provided factory to create the map for holding the data.
-     *
-     * @param emptyMapFactory supplier of a new map instance
-     */
-    protected HashParameters(Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
-        this((Parameters) null, emptyMapFactory);
-    }
-
-    /**
-     * Creates a new instance from provided data, using a map with case-sensitive keys.
+     * Creates a new instance from provided data.
      * Initial data are copied.
      *
      * @param initialContent initial content.
      */
     protected HashParameters(Map<String, List<String>> initialContent) {
-        this(initialContent, ConcurrentSkipListMap::new);
+        this(initialContent.entrySet());
     }
 
     /**
-     * Creates a new instance from provided data and using the specified factory to instantiate a concurrent map to hold the data.
+     * Creates a new instance from provided data, typically either another {@code Parameters} instance or a map's entry set.
      * Initial data are copied.
      *
      * @param initialContent initial content
-     * @param emptyMapFactory factory for an empty map to hold the data
      */
-    protected HashParameters(Map<String, List<String>> initialContent, Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
-        this.emptyMapFactory = emptyMapFactory;
-        if (initialContent == null) {
-            content = emptyMapFactory.get();
-        } else {
-            content = emptyMapFactory.get();
-            for (Map.Entry<String, List<String>> entry : initialContent.entrySet()) {
+    protected HashParameters(Iterable<Map.Entry<String, List<String>>> initialContent) {
+        this();
+        if (initialContent != null) {
+            initialContent.forEach(entry ->
                 content.compute(
                         entry.getKey(),
                         (key, values) -> {
@@ -93,8 +85,7 @@ public class HashParameters implements Parameters {
 
                             }
                         }
-                );
-            }
+                ));
         }
     }
 
@@ -105,11 +96,7 @@ public class HashParameters implements Parameters {
      * @param initialContent initial content.
      */
     protected HashParameters(Parameters initialContent) {
-        this(initialContent, ConcurrentSkipListMap::new);
-    }
-
-    protected HashParameters(Parameters initialContent, Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
-        this(initialContent == null ? null : initialContent.toMap(), emptyMapFactory);
+        this((Iterable<Map.Entry<String, List<String>>>) initialContent);
     }
 
     /**
@@ -122,13 +109,13 @@ public class HashParameters implements Parameters {
     }
 
     /**
-     * Creates a new instance {@link HashParameters} from provided data. Initial data is copied.
+     * Creates a new instance of {@link HashParameters} from a single provided Parameter or Map. Initial data is copied.
      *
      * @param initialContent initial content.
      * @return a new instance of {@link HashParameters} initialized with the given content.
      */
     public static HashParameters create(Map<String, List<String>> initialContent) {
-        return new HashParameters(initialContent);
+        return new HashParameters(initialContent == null ? Collections.emptySet() : initialContent.entrySet());
     }
 
     /**
@@ -142,6 +129,16 @@ public class HashParameters implements Parameters {
     }
 
     /**
+     * Creates a new instance of {@link HashParameters} from a single provided Parameter or Map. Initial data is copied.
+     *
+     * @param initialContent initial content.
+     * @return a new instance of {@link HashParameters} initialized with the given content.
+     */
+    public static HashParameters create(Iterable<Map.Entry<String, List<String>>> initialContent) {
+        return new HashParameters(initialContent);
+    }
+
+    /**
      * Creates new instance of {@link HashParameters} as a concatenation of provided parameters.
      * Values for keys found across the provided parameters are "concatenated" into a {@link List} entry for their respective key
      * in the created {@link HashParameters} instance.
@@ -150,7 +147,7 @@ public class HashParameters implements Parameters {
      * @return a new instance of {@link HashParameters} that represents the concatenation of the provided parameters.
      */
     public static HashParameters concat(Parameters... parameters) {
-        return concat(HashParameters::new, HashParameters::new, parameters);
+        return concat(new ArrayIterable<>(parameters));
     }
 
     /**
@@ -165,53 +162,77 @@ public class HashParameters implements Parameters {
         return concat(parameters, HashParameters::new, HashParameters::new);
     }
 
-    protected static <T extends HashParameters> T concat(Supplier<T> emptyFactory,
-                                                         Function<Map<String, List<String>>, T> singletonFactory,
-                                                         Parameters... parameters) {
-
-        if (parameters == null || parameters.length == 0) {
-            return emptyFactory.get();
-        }
-        List<Map<String, List<String>>> prms = new ArrayList<>(parameters.length);
-        for (Parameters p : parameters) {
-            if (p != null) {
-                prms.add(p.toMap());
-            }
-        }
-        return concat(prms, emptyFactory, singletonFactory);
+    @Override
+    public Iterator<Map.Entry<String, List<String>>> iterator() {
+        return content.entrySet().iterator();
     }
 
-    protected static <T extends HashParameters> T concat(Iterable<Parameters> parameters,
-                                                         Supplier<T> emptyFactory,
-                                                         Function<Map<String, List<String>>, T> singletoneFactory) {
-        ArrayList<Map<String, List<String>>> prms = new ArrayList<>();
-        for (Parameters p : parameters) {
-            if (p != null) {
-                prms.add(p.toMap());
-            }
-        }
-        return concat(prms, emptyFactory, singletoneFactory);
-    }
+    /**
+     * Creates a new instance of the correct {@link HashParameters} subclass as a concatenation of the provided sources.
+     * Values for keys found across the sources are "concatenated" into a {@link List} entry for their respective key
+     * in the created {@link HashParameters} (or subclass) instance.
+     *
+     * @param contentSources {@code Iterable} over the sources whose contents are to be combined
+     * @param emptyFactory factory for an empty named value lists implementation
+     * @param singletonFactory factory for a named value lists implementation preloaded with one source's data
+     * @return new named value lists implementation containing the combined data from the sources
+     * @param <T> type of the named value lists implementation to create
+     */
+    protected static <T extends HashParameters> T concat(
+            Iterable<? extends Iterable<Map.Entry<String, List<String>>>> contentSources,
+            Supplier<T> emptyFactory,
+            Function<Iterable<Map.Entry<String, List<String>>>, T> singletonFactory) {
 
-    protected static <T extends HashParameters> T concat(List<Map<String, List<String>>> prms,
-                                                         Supplier<T> emptyFactory,
-                                                         Function<Map<String, List<String>>, T> singletonFactory) {
-
-        if (prms.isEmpty()) {
+        Iterator<? extends Iterable<Map.Entry<String, List<String>>>> sources = contentSources.iterator();
+        if (!sources.hasNext()) {
             return emptyFactory.get();
         }
-        if (prms.size() == 1) {
-            return singletonFactory.apply(prms.get(0));
+        Iterable<Map.Entry<String, List<String>>> source = sources.next();
+        if (!sources.hasNext()) {
+            return singletonFactory.apply(source);
         }
 
-        Map<String, List<String>> composer = new HashMap<>();
-        for (Map<String, List<String>> prm : prms) {
-            for (Map.Entry<String, List<String>> entry : prm.entrySet()) {
-                List<String> strings = composer.computeIfAbsent(entry.getKey(), k -> new ArrayList<>(entry.getValue().size()));
-                strings.addAll(entry.getValue());
+        Map<String, List<String>> composer = new HashMap<>(); // source was initialized above
+        do {
+            if (source != null) {
+                source.forEach(entry -> {
+                    List<String> strings = composer.computeIfAbsent(entry.getKey(),
+                                                                    k -> new ArrayList<>(entry.getValue().size()));
+                    strings.addAll(entry.getValue());
+                });
             }
-        }
-        return singletonFactory.apply(composer);
+            if (!sources.hasNext()) {
+                break;
+            }
+            source = sources.next();
+        } while (true);
+
+        return singletonFactory.apply(composer.entrySet());
+    }
+
+    /**
+     * Returns an empty {@code Map} suitable for case-sensitivity or case-insensitivity and
+     * for read-write access.
+     * <p>
+     *     Typical implementations should return a concurrent implementation.
+     * </p>
+     *
+     * @return empty {@code Map} implementation with correct case-sensitivity behavior and suitable for read-write access
+     */
+    protected Map<String, List<String>> emptyMapForUpdates() {
+        return new ConcurrentSkipListMap<>();
+    }
+
+    /**
+     * Returns an empty {@code Map} suitable for case-sensitivity or case-insensitivity and optimized for read-only access.
+     * <p>
+     *     Typical implementations should not return a concurrent implementation.
+     * </p>
+     *
+     * @return empty {@code Map} implementation with correct case-sensitivity behavior and optimized for read-only access
+     */
+    protected Map<String, List<String>> emptyMapForReads() {
+        return new HashMap<>();
     }
 
     private List<String> internalListCopy(String... values) {
@@ -401,7 +422,7 @@ public class HashParameters implements Parameters {
     @Override
     public Map<String, List<String>> toMap() {
         // deep copy
-        Map<String, List<String>> result = emptyMapFactory.get();
+        Map<String, List<String>> result = emptyMapForReads();
         for (Map.Entry<String, List<String>> entry : content.entrySet()) {
             result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
@@ -415,26 +436,64 @@ public class HashParameters implements Parameters {
 
     @Override
     public boolean equals(Object o) {
-        return equals(o, HashParameters.class);
-    }
-
-    protected <T extends HashParameters> boolean equals(Object o, Class<T> cl) {
         if (this == o) {
             return true;
         }
-        if (!cl.isInstance(o)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        HashParameters that = (HashParameters) o;
-        return content.equals(that.content);
+        HashParameters entries = (HashParameters) o;
+        return content.equals(entries.content);
     }
 
     @Override
     public int hashCode() {
-        return hashCode(HashParameters.class.hashCode());
+        return 37 * getClass().hashCode() + content.hashCode();
     }
 
-    protected int hashCode(int extra) {
-        return extra + 37 * content.hashCode();
+    /**
+     * {@code Iterable} around an array (to avoid {@code Array.asList}).
+     *
+     * @param <T> type of the array elements
+     */
+    protected static class ArrayIterable<T> implements Iterable<T> {
+
+        private final T[] content;
+
+        /**
+         * Creates a new instance using the specified content.
+         *
+         * @param content the array over which the {@code Iterable} traverses
+         */
+        protected ArrayIterable(T[] content) {
+            this.content = content;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return content == null ? Collections.emptyIterator() : new Iterator<T>() {
+
+                private int slot = 0;
+                @Override
+                public boolean hasNext() {
+                    return slot < content.length;
+                }
+
+                @Override
+                public T next() {
+                    if (slot >= content.length) {
+                        throw new NoSuchElementException();
+                    }
+                    return content[slot++];
+                }
+            };
+        }
+
+        @Override
+        public void forEach(Consumer<? super T> action) {
+            for (T t : content) {
+                action.accept(t);
+            }
+        }
     }
 }

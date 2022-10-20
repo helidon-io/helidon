@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.common.http;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +46,7 @@ public class ReadOnlyParameters implements Parameters {
      * @param data multi-map data to copy.
      */
     public ReadOnlyParameters(Map<String, List<String>> data) {
-        this(data, HashMap::new);
+        this(data == null ? Collections.emptySet() : data.entrySet());
     }
 
     /**
@@ -54,17 +55,11 @@ public class ReadOnlyParameters implements Parameters {
      * @param parameters parameters to copy.
      */
     public ReadOnlyParameters(Parameters parameters) {
-        this(parameters, HashMap::new);
+        this((Iterable<Map.Entry<String, List<String>>>) parameters);
     }
 
-    protected ReadOnlyParameters(Map<String, List<String>> data,
-                                 Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
-        this.data = copyMultimapAsImmutable(data, emptyMapFactory);
-    }
-
-    protected ReadOnlyParameters(Parameters parameters,
-                                 Supplier<? extends Map<String, List<String>>> emptyMapFactory) {
-        this(parameters == null ? null : parameters.toMap(), emptyMapFactory);
+    protected ReadOnlyParameters(Iterable<Map.Entry<String, List<String>>> data) {
+        this.data = copyMultimapAsImmutable(data, this::emptyMap);
     }
 
     /**
@@ -77,21 +72,29 @@ public class ReadOnlyParameters implements Parameters {
     }
 
     /**
-     * Returns a deep copy of provided multi-map which is completely unmodifiable.
+     * Returns a deep copy of provided data which is completely unmodifiable.
      *
      * @param data data to copy, if {@code null} then returns empty map.
      * @return unmodifiable map, never {@code null}.
      */
-    static Map<String, List<String>> copyMultimapAsImmutable(Map<String, List<String>> data,
+    static Map<String, List<String>> copyMultimapAsImmutable(Iterable<Map.Entry<String, List<String>>> data,
                                                              Supplier<? extends Map<String, List<String>>> mapFactory) {
-        if (data == null || data.isEmpty()) {
+
+        Iterator<Map.Entry<String, List<String>>> entries =
+                data == null ? Collections.emptyIterator() : data.iterator();
+
+        if (!entries.hasNext()) {
             return Collections.emptyMap();
-        } else {
-            // Deep copy
-            Map<String, List<String>> h = mapFactory.get();
-            data.forEach((k, v) -> h.put(k, Collections.unmodifiableList(new ArrayList<>(v))));
-            return Collections.unmodifiableMap(h);
         }
+        Map<String, List<String>> h = mapFactory.get();
+        while (entries.hasNext()) {
+            Map.Entry<String, List<String>> entry = entries.next();
+            if (entry != null) {
+                h.put(entry.getKey(), Collections.unmodifiableList(new ArrayList<>(entry.getValue())));
+            }
+        }
+
+        return Collections.unmodifiableMap(h);
     }
 
     @Override
@@ -162,12 +165,31 @@ public class ReadOnlyParameters implements Parameters {
 
     @Override
     public Map<String, List<String>> toMap() {
-        Map<String, List<String>> h = new HashMap<>(data.size());
+        Map<String, List<String>> h = emptyMapForCopy();
         data.forEach((k, v) -> h.put(k, new ArrayList<>(v)));
         return h;
     }
 
-    protected Map<String, List<String>> data() {
-        return data;
+    @Override
+    public Iterator<Map.Entry<String, List<String>>> iterator() {
+        return data.entrySet().iterator();
+    }
+
+    /**
+     * Creates an empty {@code Map} suitable (once populated) for read-only access.
+     *
+     * @return empty {@code Map}
+     */
+    protected Map<String, List<String>> emptyMap() {
+        return new HashMap<>();
+    }
+
+    /**
+     * Creates an empty {@code Map} suitable (once populated) for read-only access, pre-sized as specified.
+     *
+     * @return empty {@code Map}, possibly pre-sized as indicated
+     */
+    protected Map<String, List<String>> emptyMapForCopy() {
+        return new HashMap<>(data.size());
     }
 }
