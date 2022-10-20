@@ -28,4 +28,16 @@
         <Bug pattern="PREDICTABLE_RANDOM"/>
     </Match>
 
+    <Match>
+        <!-- Random is used for retry Exponential, not cryptology -->
+        <Class name="io.helidon.faulttolerance.Retry$ExponentialRetryPolicy"/>
+        <Bug pattern="PREDICTABLE_RANDOM"/>
+    </Match>
+
+    <Match>
+        <!-- Random is used for retry Fibonacci, not cryptology -->
+        <Class name="io.helidon.faulttolerance.Retry$FibonacciRetryPolicy"/>
+        <Bug pattern="PREDICTABLE_RANDOM"/>
+    </Match>
+
 </FindBugsFilter>

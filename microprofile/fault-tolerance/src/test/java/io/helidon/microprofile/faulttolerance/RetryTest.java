@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Test cases for @Retry.
@@ -103,5 +102,42 @@ public class RetryTest extends FaultToleranceTest {
         bean.reset();
         assertCompleteOk(bean.retryWithUltimateSuccess(), "Success");
         assertThat(bean.getInvocations(), is(3));
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("createBeans")
+    public void testRetryExponentialBackoff(RetryBean bean, String unused) {
+        bean.reset();
+        assertThat(bean.getInvocations(), is(0));
+        bean.retryExponentialBackoff();
+        assertThat(bean.getInvocations(), is(4));
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("createBeans")
+    public void testRetryExponentialBackoffTimeOut(RetryBean bean, String unused) throws Exception {
+        bean.reset();
+        long millis = System.currentTimeMillis();
+        bean.retryExponentialBackoffTimeOut();
+        assertThat(System.currentTimeMillis() - millis, lessThan(200L));
+    }
+
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("createBeans")
+    public void testRetryFibonacciBackoff(RetryBean bean, String unused) {
+        bean.reset();
+        assertThat(bean.getInvocations(), is(0));
+        bean.retryFibonacciBackoff();
+        assertThat(bean.getInvocations(), is(4));
+    }
+
+    @ParameterizedTest(name = "{1}")
+    @MethodSource("createBeans")
+    public void testRetryFibonacciBackoffTimeOut(RetryBean bean, String unused) throws Exception {
+        bean.reset();
+        long millis = System.currentTimeMillis();
+        bean.retryRetryFibonacciBackoffTimeOut();
+        assertThat(System.currentTimeMillis() - millis, lessThan(200L));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -434,6 +434,279 @@ public interface Retry extends FtHandler {
              * @return updated builder instance
              */
             public Builder jitter(Duration jitter) {
+                this.jitter = jitter;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * A retry policy that increases the delay time following the Fibonacci sequence.
+     * Allowed elements that are also annotated with {@code @Retry}.
+     * Expected sequence: initial delay, 2 * initial delay + jitter, 3 * initial delay + jitter,
+     * 5 * initial delay + jitter, etc. {@code maxDelayInMillis} is used to prevent endless waiting.
+     */
+    class FibonacciRetryPolicy implements RetryPolicy {
+
+        private final int calls;
+        private final Duration initialDelay;
+        private final Duration maxDelay;
+        private final Supplier<Long> randomJitter;
+
+        private long delayA;
+        private long delayB;
+
+        private FibonacciRetryPolicy(Builder builder) {
+            calls = builder.calls;
+            initialDelay = builder.initialDelay;
+            maxDelay = builder.maxDelay;
+            long jitter = builder.randomJitter;
+            int jitterMillis = (int) Math.min(jitter, Integer.MAX_VALUE);
+            if (jitterMillis == 0L) {
+                randomJitter = () -> 0L;
+            } else {
+                Random random = new Random();
+                // need a number [-jitterMillis,+jitterMillis]
+                randomJitter = () -> Long.valueOf(random.nextInt(jitterMillis * 2) - jitterMillis);
+            }
+        }
+
+        /**
+         * A new fluent API builder to configure instances of {@link io.helidon.faulttolerance.Retry}.
+         *
+         * @return a new builder
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+
+        @Override
+        public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
+
+            if (call >= calls) {
+                return Optional.empty();
+            }
+
+            if (delayA == 0) {
+                delayA = initialDelay.toMillis();
+                return Optional.of(delayA + randomJitter.get());
+            }
+
+            if (delayB == 0) {
+                delayB = initialDelay.toMillis() << 1;
+                return Optional.of(delayB + randomJitter.get());
+            }
+
+            long delay = delayA + delayB;
+            delayA = delayB;
+            delayB = delay;
+
+            if (delay >= maxDelay.toMillis()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(delay + randomJitter.get());
+        }
+
+        /**
+         * Fluent API builder for {@link io.helidon.faulttolerance.Retry.FibonacciRetryPolicy}.
+         */
+        public static class Builder implements io.helidon.common.Builder<FibonacciRetryPolicy> {
+
+            private int calls = 10;
+            private Duration initialDelay = Duration.ofMillis(2);
+            private Duration maxDelay = Duration.ofMillis(180_000);
+            private long randomJitter = 50;
+
+            @Override
+            public FibonacciRetryPolicy build() {
+                return new FibonacciRetryPolicy(this);
+            }
+
+            /**
+             * Total number of calls (first + retries).
+             *
+             * @param calls how many times to call the method
+             * @return updated builder instance
+             */
+            public Builder calls(int calls) {
+                this.calls = calls;
+                return this;
+            }
+
+            /**
+             * Initial Delay in Milliseconds.
+             *
+             * @param initialDelay Duration
+             * @return updated builder instance
+             */
+            public Builder initialDelay(Duration initialDelay) {
+                this.initialDelay = initialDelay;
+                return this;
+            }
+
+            /**
+             * Max Delay in Milliseconds.
+             *
+             * @param maxDelay Duration
+             * @return updated builder instance
+             */
+            public Builder maxDelay(Duration maxDelay) {
+                this.maxDelay = maxDelay;
+                return this;
+            }
+
+
+            /**
+             * Random part of the delay.
+             * A number between {@code [-jitter,+jitter]} is applied to delay each time
+             * delay is calculated.
+             *
+             * @param jitter jitter duration
+             * @return updated builder instance
+             */
+            public Builder jitter(long jitter) {
+                this.randomJitter = jitter;
+                return this;
+            }
+        }
+    }
+
+
+    /**
+     * A retry policy that increases the delay time following an exponential sequence.
+     * Allowed elements that are also annotated with {@code @Retry}.
+     * Expected sequence in case factor is 2: initial delay, 2 * initial delay + jitter, 4 * initial delay + jitter,
+     * 8 * initial delay + jitter, etc. {@code maxDelay} is used to prevent endless waiting.
+     */
+    class ExponentialRetryPolicy implements RetryPolicy {
+
+        private final int calls;
+        private final Duration initialDelay;
+        private final Duration maxDelay;
+        private final int factor;
+        private final Supplier<Long> jitter;
+
+        private long accumulateDelay;
+
+
+        private ExponentialRetryPolicy(Builder builder) {
+            calls = builder.calls;
+            initialDelay = builder.initialDelay;
+            maxDelay = builder.maxDelay;
+            factor = builder.factor;
+
+            long jitter = builder.jitter;
+            int jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
+            if (jitterMillis == 0L) {
+                this.jitter = () -> 0L;
+            } else {
+                Random random = new Random();
+                // need a number [-jitterMillis,+jitterMillis]
+                this.jitter = () -> Long.valueOf(random.nextInt((jitterMillis * 2) - jitterMillis));
+            }
+        }
+
+        /**
+         * A new fluent API builder to configure instances of {@link io.helidon.faulttolerance.Retry}.
+         *
+         * @return a new builder
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        @Override
+        public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
+
+            if (call >= calls) {
+                return Optional.empty();
+            }
+
+            if (accumulateDelay == 0) {
+                accumulateDelay = initialDelay.toMillis();
+                return Optional.of(accumulateDelay + jitter.get());
+            }
+
+            accumulateDelay = accumulateDelay * factor;
+
+            if (accumulateDelay >= maxDelay.toMillis()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(accumulateDelay + jitter.get());
+        }
+
+        /**
+         * Fluent API builder for {@link io.helidon.faulttolerance.Retry.ExponentialRetryPolicy}.
+         */
+        public static class Builder implements io.helidon.common.Builder<ExponentialRetryPolicy> {
+
+            private int calls = 10;
+            private Duration initialDelay = Duration.ofMillis(2);
+            private Duration maxDelay = Duration.ofMillis(180_000);
+            private int factor = 2;
+            private long jitter = 50;
+
+            @Override
+            public ExponentialRetryPolicy build() {
+                return new ExponentialRetryPolicy(this);
+            }
+
+            /**
+             * Total number of calls (first + retries).
+             *
+             * @param calls how many times to call the method
+             * @return updated builder instance
+             */
+            public Builder calls(int calls) {
+                this.calls = calls;
+                return this;
+            }
+
+            /**
+             * Initial Delay.
+             *
+             * @param initialDelay Duration
+             * @return updated builder instance
+             */
+            public Builder initialDelay(Duration initialDelay) {
+                this.initialDelay = initialDelay;
+                return this;
+            }
+
+            /**
+             * Max Delay in Milliseconds.
+             *
+             * @param maxDelay long
+             * @return updated builder instance
+             */
+            public Builder maxDelay(Duration maxDelay) {
+                this.maxDelay = maxDelay;
+                return this;
+            }
+
+            /**
+             * Multiplication factor.
+             *
+             * @param factor multiplication factor
+             * @return updated builder instance
+             */
+            public Builder factor(int factor) {
+                this.factor = factor;
+                return this;
+            }
+
+            /**
+             * Random part of the delay.
+             * A number between {@code [-jitter,+jitter]} is applied to delay each time
+             * delay is calculated.
+             *
+             * @param jitter jitter duration
+             * @return updated builder instance
+             */
+            public Builder jitter(long jitter) {
                 this.jitter = jitter;
                 return this;
             }
