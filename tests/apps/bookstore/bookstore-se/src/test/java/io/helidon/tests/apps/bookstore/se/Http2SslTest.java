@@ -35,7 +35,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -73,15 +74,15 @@ public class Http2SslTest {
         Request postBook = builder.post(
                 RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
         try (Response postBookRes = client.newCall(postBook).execute()) {
-            assertEquals(postBookRes.code(), 200);
-            assertEquals(postBookRes.protocol(), Protocol.HTTP_2);
+            assertThat(postBookRes.code(), is(200));
+            assertThat(postBookRes.protocol(), is(Protocol.HTTP_2));
         }
 
         builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
         Request deleteBook = builder.delete().build();
         try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            assertEquals(deleteBookRes.code(), 200);
-            assertEquals(deleteBookRes.protocol(), Protocol.HTTP_2);
+            assertThat(deleteBookRes.code(), is(200));
+            assertThat(deleteBookRes.protocol(), is(Protocol.HTTP_2));
         }
     }
 
@@ -95,8 +96,8 @@ public class Http2SslTest {
         executor.invokeAll(tasks).forEach(f -> {
             try {
                 Response r = f.get(1, TimeUnit.SECONDS);
-                assertEquals(r.code(), 200);
-                assertEquals(r.protocol(), Protocol.HTTP_2);
+                assertThat(r.code(), is(200));
+                assertThat(r.protocol(), is(Protocol.HTTP_2));
             } catch (Exception e) {
                 fail(e);
             }
@@ -108,35 +109,35 @@ public class Http2SslTest {
 
         Request getBooks = builder.build();
         try (Response getBooksRes = client.newCall(getBooks).execute()) {
-            assertEquals(getBooksRes.code(), 200);
-            assertEquals(getBooksRes.protocol(), Protocol.HTTP_2);
+            assertThat(getBooksRes.code(), is(200));
+            assertThat(getBooksRes.protocol(), is(Protocol.HTTP_2));
         }
 
         Request postBook = builder.post(
                 RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
         try (Response postBookRes = client.newCall(postBook).execute()) {
-            assertEquals(postBookRes.code(), 200);
-            assertEquals(postBookRes.protocol(), Protocol.HTTP_2);
+            assertThat(postBookRes.code(), is(200));
+            assertThat(postBookRes.protocol(), is(Protocol.HTTP_2));
         }
 
         builder = TestServer.newRequestBuilder(webServer, "/books/123456", true, compression);
         Request getBook = builder.build();
         try (Response getBookRes = client.newCall(getBook).execute()) {
-            assertEquals(getBookRes.code(), 200);
-            assertEquals(getBookRes.protocol(), Protocol.HTTP_2);
+            assertThat(getBookRes.code(), is(200));
+            assertThat(getBookRes.protocol(), is(Protocol.HTTP_2));
         }
 
         Request deleteBook = builder.delete().build();
         try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            assertEquals(deleteBookRes.code(), 200);
-            assertEquals(deleteBookRes.protocol(), Protocol.HTTP_2);
+            assertThat(deleteBookRes.code(), is(200));
+            assertThat(deleteBookRes.protocol(), is(Protocol.HTTP_2));
 
         }
 
         Request getNoBook = builder.build();
         try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
-            assertEquals(getNoBookRes.code(), 404);
-            assertEquals(getNoBookRes.protocol(), Protocol.HTTP_2);
+            assertThat(getNoBookRes.code(), is(404));
+            assertThat(getNoBookRes.protocol(), is(Protocol.HTTP_2));
         }
     }
 }
