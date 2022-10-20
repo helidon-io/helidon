@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.ReadOnlyHeaders;
@@ -35,16 +34,6 @@ class WebClientResponseHeadersImpl extends ReadOnlyHeaders implements WebClientR
 
     private WebClientResponseHeadersImpl(Map<String, List<String>> headers) {
         super(headers);
-    }
-
-    /**
-     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Headers} instance.
-     *
-     * @param headers headers in parameters instance
-     * @return response headers instance
-     */
-    static WebClientResponseHeaders create(Headers headers) {
-        return create(headers.toMap());
     }
 
     /**
