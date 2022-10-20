@@ -28,7 +28,5 @@
  *     <li>The target type that is annotated with the builder annotation should have all getter-like methods.</li>
  *     <li>Any static or default method will be ignored.</li>
  * </ul>
- *
- * @see io.helidon.config.metadata.ConfiguredOption
  */
 package io.helidon.pico.builder.api;

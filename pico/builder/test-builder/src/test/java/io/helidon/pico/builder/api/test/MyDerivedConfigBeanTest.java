@@ -42,9 +42,9 @@ class MyDerivedConfigBeanTest {
                         + ".ConfiguredOption, value=io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED}, port={key=, "
                         + "type=int}}"));
 
-        MyDerivedConfigBean cfg = MyDerivedConfigBeanImpl.builder().build();
+        MyDerivedConfigBean cfg = MyDerivedConfigBeanImpl.builder().name("test").build();
         assertThat(cfg.toString(),
-                   equalTo("MyDerivedConfigBeanImpl(name=null, enabled=false, port=8080)"));
+                   equalTo("MyDerivedConfigBeanImpl(name=test, enabled=false, port=8080)"));
     }
 
     static Map<String, ?> sort(Map<String, ?> inMap) {

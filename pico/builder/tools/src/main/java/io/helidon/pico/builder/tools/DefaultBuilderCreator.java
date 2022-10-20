@@ -310,7 +310,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
             builder.append("extends ").append(toImplTypeName(ctx.parentTypeName.get(), ctx.builderAnnotation))
                     .append(".").append(ctx.genericBuilderClassDecl).append("<B, T>");
         } else if (ctx.hasStreamSupport) {
-            builder.append("implements java.util.function.Supplier<T>, java.util.function.Consumer<T> ");
+            builder.append("implements Supplier<T>, java.util.function.Consumer<T> ");
         }
         builder.append(" {\n");
 
@@ -416,11 +416,23 @@ public class DefaultBuilderCreator implements BuilderCreator {
             i++;
         }
 
+        if (ctx.hasParent) {
+            builder.append("\t\t@Override\n");
+        } else {
+            builder.append("\t\t/**\n"
+                                   + "\t\t * Builds the instance.\n"
+                                   + "\t\t * \n"
+                                   + "\t\t * @return the built instance\n"
+                                   + "\t\t * @throws java.lang.AssertionError if any required attributes are missing\n"
+                                   + "\t\t */\n");
+        }
         builder.append("\t\tpublic ").append(ctx.implTypeName).append(" build() {\n");
+        appendRequiredValidator(builder);
         appendBuilderBuildPreSteps(builder);
         builder.append("\t\t\treturn new ").append(ctx.implTypeName.className()).append("(this);\n");
         builder.append("\t\t}\n");
 
+        // end of the generated builder inner class here
         builder.append("\t}\n");
 
         if (AVOID_GENERIC_BUILDER) {
@@ -432,6 +444,17 @@ public class DefaultBuilderCreator implements BuilderCreator {
             builder.append("\t\t}\n");
             builder.append("\t}\n\n");
         }
+    }
+
+    /**
+     * Appends the simple {@link io.helidon.config.metadata.ConfiguredOption#required()} validation inside the build() method.
+     *
+     * @param builder the builder
+     */
+    protected void appendRequiredValidator(StringBuilder builder) {
+        builder.append("\t\t\tRequiredAttributeVisitor visitor = new RequiredAttributeVisitor();\n"
+                               + "\t\t\tvisitAttributes(visitor, null);\n"
+                               + "\t\t\tvisitor.validate();\n");
     }
 
     private void appendToBuilderMethods(StringBuilder builder,
@@ -658,8 +681,10 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                 BodyContext ctx) {
         builder.append("package ").append(ctx.implTypeName.packageName()).append(";\n\n");
         builder.append("import java.util.Collections;\n");
+        builder.append("import java.util.List;\n");
         builder.append("import java.util.Map;\n");
-        builder.append("import java.util.Objects;\n");
+        builder.append("import java.util.Objects;\n\n");
+        builder.append("import java.util.function.Supplier;\n");
         appendExtraImports(builder, ctx.typeInfo);
         builder.append("\n");
         builder.append("/**\n");
@@ -677,7 +702,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         }
         builder.append(" implements ").append(ctx.typeInfo.typeName());
         if (!ctx.hasParent && ctx.hasStreamSupport) {
-            builder.append(", java.util.function.Supplier<T>");
+            builder.append(", Supplier<T>");
         }
         builder.append(" {\n");
     }
@@ -740,7 +765,8 @@ public class DefaultBuilderCreator implements BuilderCreator {
     }
 
     /**
-     * Adds extra methods to the generated builder.
+     * Adds extra methods to the generated builder. This base implementation will generate the visitAttributes() for the main
+     * generated class.
      *
      * @param builder               the builder
      * @param builderAnnotation     the builder annotation
@@ -755,11 +781,12 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                       TypeInfo typeInfo,
                                       List<String> allAttributeNames,
                                       List<TypedElementName> allTypeInfos) {
-        // NOP
+        appendVisitAttributes(builder, "", false, hasParent, typeInfo, allAttributeNames, allTypeInfos);
     }
 
     /**
-     * Adds extra inner classes to write on the builder.
+     * Adds extra inner classes to write on the builder. This default implementation will write the AttributeVisitor inner class
+     * if this is the root interface (i.e., hasParent is false), as well as the RequiredAttributeVisitor.
      *
      * @param builder               the builder
      * @param hasParent             true if there is a parent for the generated type
@@ -768,7 +795,51 @@ public class DefaultBuilderCreator implements BuilderCreator {
     protected void appendExtraInnerClasses(StringBuilder builder,
                                            boolean hasParent,
                                            TypeInfo typeInfo) {
-        // NOP
+        if (!hasParent) {
+            builder.append("\n\t/**\n"
+                                   + "\t * A functional interface that can be used to visit all attributes of this type.\n"
+                                   + "\t */\n");
+            builder.append("\t@FunctionalInterface\n"
+                                   + "\tpublic static interface AttributeVisitor {\n"
+                                   + "\t\tvoid visit(String attrName, Supplier<Object> valueSupplier, "
+                                   + "Map<String, Object> meta, Object userDefinedCtx, Class<?> "
+                                   + "type, Class<?>... typeArgument);\n"
+                                   + "\t}\n\n");
+
+            builder.append("\tstatic class RequiredAttributeVisitor implements AttributeVisitor {\n"
+                                   + "\t\tList<String> errors;\n"
+                                   + "\n"
+                                   + "\t\t@Override\n"
+                                   + "\t\tpublic void visit(String attrName,\n"
+                                   + "\t\t\t\t\t\t  Supplier<Object> valueSupplier,\n"
+                                   + "\t\t\t\t\t\t  Map<String, Object> meta,\n"
+                                   + "\t\t\t\t\t\t  Object userDefinedCtx,\n"
+                                   + "\t\t\t\t\t\t  Class<?> type,\n"
+                                   + "\t\t\t\t\t\t  Class<?>... typeArgument) {\n"
+                                   + "\t\t\tboolean required = Boolean.valueOf((String) meta.get(\"required\"));\n"
+                                   + "\t\t\tif (!required) {\n"
+                                   + "\t\t\t\treturn;\n"
+                                   + "\t\t\t}\n"
+                                   + "\t\t\t\n"
+                                   + "\t\t\tObject val = valueSupplier.get();\n"
+                                   + "\t\t\tif (Objects.nonNull(val)) {\n"
+                                   + "\t\t\t\treturn;\n"
+                                   + "\t\t\t}\n"
+                                   + "\t\t\t\n"
+                                   + "\t\t\tif (Objects.isNull(errors)) {\n"
+                                   + "\t\t\t\t errors = new java.util.LinkedList<>();\n"
+                                   + "\t\t\t}\n"
+                                   + "\t\t\terrors.add(\"'\" + attrName + \"' is a required attribute and should not be null\")"
+                                   + ";\n"
+                                   + "\t\t}\n"
+                                   + "\n"
+                                   + "\t\tvoid validate() {\n"
+                                   + "\t\t\tif (Objects.nonNull(errors) && !errors.isEmpty()) {\n"
+                                   + "\t\t\t\tthrow new AssertionError(String.join(\", \", errors));\n"
+                                   + "\t\t\t}\n"
+                                   + "\t\t}\n"
+                                   + "\t}\n");
+        }
     }
 
     /**
@@ -778,6 +849,69 @@ public class DefaultBuilderCreator implements BuilderCreator {
      */
     protected String getFieldModifier() {
         return "final ";
+    }
+
+    /**
+     * Appends the visitAttributes() method on the generated class.
+     *
+     * @param builder               the builder
+     * @param extraTabs             spacing
+     * @param beanNameRef           refer to bean name? otherwise refer to the element name
+     * @param hasParent             true if there is a parent for the generated type
+     * @param typeInfo              type info
+     * @param allAttributeNames     all the bean attribute names belonging to the builder
+     * @param allTypeInfos          all the methods belonging to the builder
+     */
+    protected void appendVisitAttributes(StringBuilder builder,
+                                         String extraTabs,
+                                         boolean beanNameRef,
+                                         boolean hasParent,
+                                         TypeInfo typeInfo,
+                                         List<String> allAttributeNames,
+                                         List<TypedElementName> allTypeInfos) {
+        if (hasParent) {
+            builder.append(extraTabs).append("\t@Override\n");
+        } else {
+            builder.append(extraTabs).append("\t/**\n");
+            builder.append(extraTabs).append("\t * Visits all attributes of " + typeInfo.typeName() + ", calling the {@link "
+                                                     + "AttributeVisitor} for each.\n");
+            builder.append(extraTabs).append("\t * \n");
+            builder.append(extraTabs).append("\t * @param visitor\t\t\tthe visitor called for each attribute\n");
+            builder.append(extraTabs).append("\t * @param userDefinedCtx\tany object you wish to pass to each visit call\n");
+            builder.append(extraTabs).append("\t */\n");
+        }
+        builder.append(extraTabs).append("\tpublic void visitAttributes(AttributeVisitor visitor, Object userDefinedCtx) {\n");
+        if (hasParent) {
+            builder.append(extraTabs).append("\t\tsuper.visitAttributes(visitor, userDefinedCtx);\n");
+        }
+
+        // void visit(String key, Object value, Object userDefinedCtx, Class<?> type, Class<?>... typeArgument);
+        int i = 0;
+        for (String attrName : allAttributeNames) {
+            TypedElementName method = allTypeInfos.get(i);
+            String typeName = method.typeName().declaredName();
+            List<String> typeArgs = method.typeName().typeArguments().stream()
+                    .map(it -> it.declaredName() + ".class")
+                    .collect(Collectors.toList());
+            String typeArgsStr = String.join(", ", typeArgs);
+
+            builder.append(extraTabs).append("\t\tvisitor.visit(\"").append(attrName).append("\", () -> ");
+            if (beanNameRef) {
+                builder.append(attrName).append(", ");
+            } else {
+                builder.append(method.elementName()).append("(), ");
+            }
+            builder.append("__metaProps.get(\"").append(attrName).append("\"), userDefinedCtx, ");
+            builder.append(typeName).append(".class");
+            if (!typeArgsStr.isBlank()) {
+                builder.append(", ").append(typeArgsStr);
+            }
+            builder.append(");\n");
+
+            i++;
+        }
+
+        builder.append(extraTabs).append("\t}\n\n");
     }
 
     private void appendCtorCode(StringBuilder builder,
@@ -962,7 +1096,8 @@ public class DefaultBuilderCreator implements BuilderCreator {
     }
 
     /**
-     * Adds extra builder methods.
+     * Adds extra builder methods. This base implementation will write the visitAttributes() method on the
+     * generated builder class.
      *
      * @param builder               the builder
      * @param builderGeneratedClassName the builder class name (as written in source form)
@@ -979,7 +1114,8 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                              TypeName parentTypeName,
                                              List<String> allAttributeNames,
                                              List<TypedElementName> allTypeInfos) {
-        // NOP
+        boolean hasParent = Objects.nonNull(parentTypeName);
+        appendVisitAttributes(builder, "\t", true, hasParent, typeInfo, allAttributeNames, allTypeInfos);
     }
 
     /**
@@ -1211,7 +1347,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
                                              BodyContext ctx) {
         String singularVal = toValue(Singular.class, method, false, false);
         if (Objects.nonNull(singularVal) && (isList || isMap || isSet)) {
-            char[] methodName = reverseBeanName(singularVal.isBlank() ? beanAttributeName : singularVal);
+            char[] methodName = reverseBeanName(singularVal.isBlank() ? maybeSingularFormOf(beanAttributeName) : singularVal);
             builder.append("\t\t/**\n");
             builder.append("\t\t * Singular setter for ").append(beanAttributeName).append(".\n");
             builder.append("\t\t */\n");
@@ -1238,6 +1374,20 @@ public class DefaultBuilderCreator implements BuilderCreator {
             builder.append("\t\t\treturn identity();\n");
             builder.append("\t\t}\n\n");
         }
+    }
+
+    /**
+     * If the provided name ends in an "s" then this will return the base name with the s stripped off.
+     *
+     * @param beanAttributeName the name
+     * @return the name stripped with any "s" suffix
+     */
+    protected static String maybeSingularFormOf(String beanAttributeName) {
+        if (beanAttributeName.endsWith("s") && beanAttributeName.length() > 1) {
+            beanAttributeName = beanAttributeName.substring(0, beanAttributeName.length() - 1);
+        }
+
+        return beanAttributeName;
     }
 
     /**

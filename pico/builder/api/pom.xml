@@ -31,11 +31,4 @@
     <artifactId>helidon-pico-builder-api</artifactId>
     <name>Helidon Pico Builder API</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-        </dependency>
-    </dependencies>
-
 </project>

@@ -35,47 +35,47 @@ class MyConfigBeanTest {
                    equalTo("MyConfigBeanManualImpl(name=null, enabled=false, port=0)"));
 
         val = MyConfigBeanManualImpl.toBuilder(val)
-                .name("jeff")
+                .name("test")
                 .enabled(true)
                 .port(80)
                 .build();
-        assertThat(val.toString(), equalTo("MyConfigBeanManualImpl(name=jeff, enabled=true, port=80)"));
+        assertThat(val.toString(), equalTo("MyConfigBeanManualImpl(name=test, enabled=true, port=80)"));
     }
 
     @Test
     void codeGen() {
-        MyConfigBean val = MyConfigBeanImpl.builder().build();
+        MyConfigBean val = MyConfigBeanImpl.builder().name("test").build();
         assertThat(val.toString(),
-                   equalTo("MyConfigBeanImpl(name=null, enabled=false, port=8080)"));
+                   equalTo("MyConfigBeanImpl(name=test, enabled=false, port=8080)"));
 
         val = MyConfigBeanImpl.toBuilder(val)
-                .name("jeff")
+                .name("test")
                 .enabled(true)
                 .port(80)
                 .build();
         assertThat(val.toString(),
-                   equalTo("MyConfigBeanImpl(name=jeff, enabled=true, port=80)"));
+                   equalTo("MyConfigBeanImpl(name=test, enabled=true, port=80)"));
     }
 
     @Test
     void mixed() {
         MyConfigBean val1 = MyConfigBeanManualImpl.builder().build();
         val1              = MyConfigBeanImpl.toBuilder(val1)
-                .name("jeff")
+                .name("test")
                 .enabled(true)
                 .port(80)
                 .build();
         assertThat(val1.toString(),
-                   equalTo("MyConfigBeanImpl(name=jeff, enabled=true, port=80)"));
+                   equalTo("MyConfigBeanImpl(name=test, enabled=true, port=80)"));
 
-        MyConfigBean val2 = MyConfigBeanImpl.builder().build();
+        MyConfigBean val2 = MyConfigBeanImpl.builder().name("test").build();
         val2              = MyConfigBeanManualImpl.toBuilder(val2)
-                .name("jeff")
+                .name("test")
                 .enabled(true)
                 .port(80)
                 .build();
         assertThat(val2.toString(),
-                   equalTo("MyConfigBeanManualImpl(name=jeff, enabled=true, port=80)"));
+                   equalTo("MyConfigBeanManualImpl(name=test, enabled=true, port=80)"));
 
         assertThat(val1.hashCode(), is(val2.hashCode()));
         assertThat(val1, equalTo(val2));

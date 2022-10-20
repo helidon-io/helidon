@@ -1,6 +1,6 @@
 # pico-builder
 
-The <b>Pico Builder</b> provides compile-time code generation for fluent builders. It was inspired by [Lombok]([https://projectlombok.org/), but the implementation here in Helidon is different in a few ways:
+The <b>Helidon Pico Builder</b> provides compile-time code generation for fluent builders. It was inspired by [Lombok]([https://projectlombok.org/), but the implementation here in Helidon is different in a few ways:
 <ol>
     <li>Pico Builders target interface or annotation types only.</li>
     <li>Generated classes implement the target interface (or annotation) and provide a fluent builder that will always have an implementation of <i>toString(), hashCode(), and equals().</i></li>
@@ -39,6 +39,8 @@ The result of this will create (under ./target/generated-sources):
 * Support for toString(), hashCode(), and equals() are always included.
 * Support for toBuilder().
 * Support for streams (see javadoc for [Builder](./api/src/main/java/io/helidon/pico/builder/Builder.java)).
+* Support for attribute visitors (see [test-builder](./test-builder/src/main/java/io/helidon/pico/builder/test/testsubjects/package-info.java)).
+* Support for attribute validation (see ConfiguredOption#required() and [test-builder](./test-builder/src/main/java/io/helidon/pico/builder/test/testsubjects/package-info.java)).
 
 The implementation of the processor also allows for a provider-based extensibility mechanism.
 
@@ -50,9 +52,9 @@ The implementation of the processor also allows for a provider-based extensibili
 * [processor](./processor) - the annotation processor which delegates to the tools module for processing. Only needed at compile time.
 * [test-builder](./test-builder) - internal tests that can also serve as examples for usage.
 
-## provider
-To implement your own provider:
-* Write an implementation for <i>BuilderCreator</i> having a higher-than-default <i>Weighted</i> value as compared to <i>DefaultBuilderCreator</i>.
+## Customizations
+To implement your own custom <i>Builder</i>:
+* Write an implementation of <i>BuilderCreator</i> having a higher-than-default <i>Weighted</i> value as compared to <i>DefaultBuilderCreator</i>.
 * Include your module with this creator in your annotation processing path.
 
 See [test-builder](./test-builder) for usage examples.

@@ -35,7 +35,7 @@ import java.util.Set;
  * <ul>
  *     <li>{@link io.helidon.pico.builder.api.Annotated} - in order to add custom annotations on the implementation.</li>
  *     <li>{@link io.helidon.pico.builder.api.Singular} - when using lists, maps, and sets on getter methods.</li>
- *     <li>{@link io.helidon.config.metadata.ConfiguredOption} - for handling default values, policy constraints, etc.</li>
+ *     <li>io.helidon.config.metadata.ConfiguredOption - for handling default values, policy constraints, etc.</li>
  * </ul>
  *
  * @see io.helidon.pico.builder.api.Annotated

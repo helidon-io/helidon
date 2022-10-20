@@ -21,9 +21,7 @@ import io.helidon.pico.types.TypeName;
 /**
  * The default implementation of {@link io.helidon.pico.builder.spi.TypeAndBody}.
  */
-@SuppressWarnings("unchecked")
 public class DefaultTypeAndBody implements TypeAndBody {
-
     private final TypeName typeName;
     private final String body;
 

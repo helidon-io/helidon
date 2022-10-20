@@ -19,7 +19,5 @@
  * the Builder's annotation processing module.
  */
 module io.helidon.pico.builder.api {
-    requires static io.helidon.config.metadata;
-
     exports io.helidon.pico.builder.api;
 }

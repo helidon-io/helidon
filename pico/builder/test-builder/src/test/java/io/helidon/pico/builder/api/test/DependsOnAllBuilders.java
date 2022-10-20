@@ -34,7 +34,7 @@ class DependsOnAllBuilders {
     }
 
     static MyConfigBean createMyConfigBean() {
-        return MyConfigBeanImpl.builder().build();
+        return MyConfigBeanImpl.builder().name("test").build();
     }
 
 }

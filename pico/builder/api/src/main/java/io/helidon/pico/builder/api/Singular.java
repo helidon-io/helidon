@@ -38,7 +38,9 @@ public @interface Singular {
      * List<Pickle> getPickles();
      * }</pre>
      * an additional generated method named {@code addPickle(Pickle val)} will be placed on the builder of the generated class.
-     * <p>This annotation only applies to getter methods that return a Map, List, or Set.
+     * <p>This annotation only applies to getter methods that return a Map, List, or Set. If left undefined then the add method
+     * will used the default method name, dropping any "s" that might be present at the end of the method name (e.g., pickles ->
+     * pickle).
      *
      * @return The singular name to add.
      */
