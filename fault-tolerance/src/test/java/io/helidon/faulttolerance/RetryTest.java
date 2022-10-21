@@ -31,14 +31,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.config.spi.ConfigSource;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-
 import org.junit.jupiter.api.Test;
-import org.hamcrest.Matchers;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -301,7 +296,7 @@ class RetryTest {
         AtomicBoolean cancelCalled = new AtomicBoolean();
         Retry retry = Retry.builder().build();
         Single<Void> single = retry.invoke(() ->
-                new CompletableFuture<>() {
+                new CompletableFuture<Void>() {
                     @Override
                     public boolean cancel(boolean b) {
                         cancelCalled.set(true);
@@ -313,30 +308,21 @@ class RetryTest {
     }
 
     @Test
-    void testRetryConfig() {
-        ConfigSource configSource = ConfigSources.classpath("application.yaml").build();
-        Config config = Config.create(() -> configSource);
+    void testFibonacciRetryPolicy() {
+        Retry retry = Retry.builder()
+                .retryPolicy(Retry.FibonacciRetryPolicy.builder()
+                        .calls(10)
+                        .maxDelay(Duration.ofMillis(100))
+                        .jitter(0)
+                        .build())
+                .overallTimeout(Duration.ofMillis(500))
+                .build();
 
-        Retry.Builder retry1 = Retry.builder()
-                .config(config.get("retry1"));
-        assertThat(retry1.name(), is("MyRetry1"));
-        assertThat(retry1.cancelSource(), is(false));
-        assertThat(retry1.overallTimeout(), is(Duration.ofSeconds(2)));
-        assertThat(retry1.retryPolicy(), instanceOf(Retry.DelayingRetryPolicy.class));
-        Retry.DelayingRetryPolicy policy1 = (Retry.DelayingRetryPolicy) retry1.retryPolicy();
-        assertThat(policy1.calls(), is(6));
-        assertThat(policy1.delay(), is(Duration.ofMillis(400)));
-        assertThat(policy1.delayFactor(), is(4.0));
 
-        Retry.Builder retry2 = Retry.builder()
-                .config(config.get("retry2"));
-        assertThat(retry2.name(), Matchers.is("MyRetry2"));
-        assertThat(retry2.cancelSource(), Matchers.is(false));
-        assertThat(retry2.overallTimeout(), is(Duration.ofSeconds(2)));
-        assertThat(retry2.retryPolicy(), instanceOf(Retry.JitterRetryPolicy.class));
-        Retry.JitterRetryPolicy policy2 = (Retry.JitterRetryPolicy) retry2.retryPolicy();
-        assertThat(policy2.calls(), is(6));
-        assertThat(policy2.delay(), is(Duration.ofMillis(400)));
+        Request req = new Request(8, new TerminalException(), new RetryException());
+        Single<Integer> result = retry.invoke(req::invoke);
+        int count = result.await(1, TimeUnit.SECONDS);
+        assertThat(count, is(9));
     }
 
     @Test
@@ -375,7 +361,7 @@ class RetryTest {
     }
 
     @Test
-    void testFibonacciRetrySequence() {
+    void testFibonacciRetrySequence(){
         Retry.FibonacciRetryPolicy policy = Retry.FibonacciRetryPolicy.builder()
                 .initialDelay(Duration.ofMillis(1))
                 .calls(10)
@@ -383,9 +369,9 @@ class RetryTest {
                 .build();
 
         long[] result = new long[10];
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++){
             Optional<Long> nextDelay = policy.nextDelayMillis(0, 0, i);
-            result[i] = nextDelay.get();
+            result[i]=nextDelay.get();
         }
         assertThat(result, is(new long[]{1, 2, 3, 5, 8, 13, 21, 34, 55, 89}));
     }
