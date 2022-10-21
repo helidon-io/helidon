@@ -706,6 +706,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.FibonacciRetryPolicy}.
          */
+        @Configured(provides = RetryPolicy.class)
         public static class Builder implements io.helidon.common.Builder<FibonacciRetryPolicy> {
 
             private int calls = 10;
@@ -724,6 +725,7 @@ public interface Retry extends FtHandler {
              * @param calls how many times to call the method
              * @return updated builder instance
              */
+            @ConfiguredOption("10")
             public Builder calls(int calls) {
                 this.calls = calls;
                 return this;
@@ -735,6 +737,7 @@ public interface Retry extends FtHandler {
              * @param initialDelay Duration
              * @return updated builder instance
              */
+            @ConfiguredOption("0")
             public Builder initialDelay(Duration initialDelay) {
                 this.initialDelay = initialDelay;
                 return this;
@@ -746,6 +749,7 @@ public interface Retry extends FtHandler {
              * @param maxDelay Duration
              * @return updated builder instance
              */
+            @ConfiguredOption("180000")
             public Builder maxDelay(Duration maxDelay) {
                 this.maxDelay = maxDelay;
                 return this;
@@ -760,13 +764,57 @@ public interface Retry extends FtHandler {
              * @param jitter jitter duration
              * @return updated builder instance
              */
+            @ConfiguredOption("50")
             public Builder jitter(long jitter) {
                 this.randomJitter = jitter;
                 return this;
             }
+
+            /**
+             * <p>
+             * Load all properties for this Retry Policy from configuration.
+             * </p>
+             * <table class="config">
+             * <caption>Configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>default value</th>
+             *     <th>description</th>
+             * </tr>
+             * <tr>
+             *     <td>calls</td>
+             *     <td>10</td>
+             *     <td>Number of calls</td>
+             * </tr>
+             * <tr>
+             *     <td>initial-delay</td>
+             *     <td>2</td>
+             *     <td>Initial delay</td>
+             * </tr>
+             * <tr>
+             *     <td>max-delay</td>
+             *     <td>3 minutes</td>
+             *     <td>Maximum delay</td>
+             * </tr>
+             * <tr>
+             *     <td>jitter</td>
+             *     <td>50 milliseconds</td>
+             *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
+             * </tr>
+             * </table>
+             *
+             * @param config the config node to use
+             * @return updated builder instance
+             */
+            public Builder config(Config config) {
+                config.get("calls").asInt().ifPresent(this::calls);
+                config.get("initial-delay").as(Duration.class).ifPresent(this::initialDelay);
+                config.get("max-delay").as(Duration.class).ifPresent(this::maxDelay);
+                config.get("jitter").asLong().ifPresent(this::jitter);
+                return this;
+            }
         }
     }
-
 
     /**
      * A retry policy that increases the delay time following an exponential sequence.
@@ -835,6 +883,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.ExponentialRetryPolicy}.
          */
+        @Configured(provides = RetryPolicy.class)
         public static class Builder implements io.helidon.common.Builder<ExponentialRetryPolicy> {
 
             private int calls = 10;
@@ -854,6 +903,7 @@ public interface Retry extends FtHandler {
              * @param calls how many times to call the method
              * @return updated builder instance
              */
+            @ConfiguredOption("10")
             public Builder calls(int calls) {
                 this.calls = calls;
                 return this;
@@ -865,6 +915,7 @@ public interface Retry extends FtHandler {
              * @param initialDelay Duration
              * @return updated builder instance
              */
+            @ConfiguredOption("2")
             public Builder initialDelay(Duration initialDelay) {
                 this.initialDelay = initialDelay;
                 return this;
@@ -876,6 +927,7 @@ public interface Retry extends FtHandler {
              * @param maxDelay long
              * @return updated builder instance
              */
+            @ConfiguredOption("180000")
             public Builder maxDelay(Duration maxDelay) {
                 this.maxDelay = maxDelay;
                 return this;
@@ -887,6 +939,7 @@ public interface Retry extends FtHandler {
              * @param factor multiplication factor
              * @return updated builder instance
              */
+            @ConfiguredOption("2")
             public Builder factor(int factor) {
                 this.factor = factor;
                 return this;
@@ -900,12 +953,65 @@ public interface Retry extends FtHandler {
              * @param jitter jitter duration
              * @return updated builder instance
              */
+            @ConfiguredOption("50")
             public Builder jitter(long jitter) {
                 this.jitter = jitter;
                 return this;
             }
+
+
+            /**
+             * <p>
+             * Load all properties for this Retry Policy from configuration.
+             * </p>
+             * <table class="config">
+             * <caption>Configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>default value</th>
+             *     <th>description</th>
+             * </tr>
+             * <tr>
+             *     <td>calls</td>
+             *     <td>10</td>
+             *     <td>Number of calls</td>
+             * </tr>
+             * <tr>
+             *     <td>initial-delay</td>
+             *     <td>2</td>
+             *     <td>Initial delay</td>
+             * </tr>
+             * <tr>
+             *     <td>max-delay</td>
+             *     <td>3 minutes</td>
+             *     <td>Maximum delay</td>
+             * </tr>
+             * <tr>
+             *     <td>factor</td>
+             *     <td>2</td>
+             *     <td>Multiplication factor</td>
+             * </tr>
+             * <tr>
+             *     <td>jitter</td>
+             *     <td>50 milliseconds</td>
+             *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
+             * </tr>
+             * </table>
+             *
+             * @param config the config node to use
+             * @return updated builder instance
+             */
+            public Builder config(Config config) {
+                config.get("calls").asInt().ifPresent(this::calls);
+                config.get("initial-delay").as(Duration.class).ifPresent(this::initialDelay);
+                config.get("max-delay").as(Duration.class).ifPresent(this::maxDelay);
+                config.get("factor").asInt().ifPresent(this::factor);
+                config.get("jitter").asLong().ifPresent(this::jitter);
+                return this;
+            }
         }
     }
+
 
     /**
      * Number of times a method called has been retried. This is a monotonically
