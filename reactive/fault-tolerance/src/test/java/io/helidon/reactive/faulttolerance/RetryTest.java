@@ -339,6 +339,75 @@ class RetryTest {
         assertThat(policy2.delay(), is(Duration.ofMillis(400)));
     }
 
+    @Test
+    void testFibonacciRetryPolicy() {
+        Retry retry = Retry.builder()
+                .retryPolicy(Retry.FibonacciRetryPolicy.builder()
+                        .calls(10)
+                        .maxDelay(Duration.ofMillis(100))
+                        .jitter(0)
+                        .build())
+                .overallTimeout(Duration.ofMillis(500))
+                .build();
+
+
+        Request req = new Request(8, new TerminalException(), new RetryException());
+        Single<Integer> result = retry.invoke(req::invoke);
+        int count = result.await(1, TimeUnit.SECONDS);
+        assertThat(count, is(9));
+    }
+
+    @Test
+    void testExponentialRetryPolicy() {
+        Retry retry = Retry.builder()
+                .retryPolicy(Retry.ExponentialRetryPolicy.builder()
+                        .calls(5)
+                        .maxDelay(Duration.ofMillis(50))
+                        .jitter(0)
+                        .factor(3)
+                        .build())
+                .overallTimeout(Duration.ofMillis(500))
+                .build();
+
+
+        Request req = new Request(3, new TerminalException(), new RetryException());
+        Single<Integer> result = retry.invoke(req::invoke);
+        int count = result.await(1, TimeUnit.SECONDS);
+        assertThat(count, is(4));
+    }
+
+    @Test
+    void testExponentialRetrySequence(){
+        Retry.ExponentialRetryPolicy policy = Retry.ExponentialRetryPolicy.builder()
+                .calls(10)
+                .jitter(0)
+                .factor(2)
+                .build();
+
+        long[] result = new long[10];
+        for (int i = 0; i < 10; i++){
+            Optional<Long> nextDelay = policy.nextDelayMillis(0, 0, i);
+            result[i]=nextDelay.get();
+        }
+        assertThat(result, is(new long[]{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}));
+    }
+
+    @Test
+    void testFibonacciRetrySequence(){
+        Retry.FibonacciRetryPolicy policy = Retry.FibonacciRetryPolicy.builder()
+                .initialDelay(Duration.ofMillis(1))
+                .calls(10)
+                .jitter(0)
+                .build();
+
+        long[] result = new long[10];
+        for (int i = 0; i < 10; i++){
+            Optional<Long> nextDelay = policy.nextDelayMillis(0, 0, i);
+            result[i]=nextDelay.get();
+        }
+        assertThat(result, is(new long[]{1, 2, 3, 5, 8, 13, 21, 34, 55, 89}));
+    }
+
     private static class TestSubscriber implements Flow.Subscriber<Integer> {
         private final AtomicBoolean failed = new AtomicBoolean();
         private final AtomicReference<Throwable> throwable = new AtomicReference<>();

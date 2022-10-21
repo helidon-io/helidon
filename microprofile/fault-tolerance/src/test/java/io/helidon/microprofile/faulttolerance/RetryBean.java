@@ -122,4 +122,42 @@ class RetryBean {
         }
         return future;
     }
+
+    @Retry(maxDuration = 200, maxRetries = 5, jitter = 0)
+    @RetryExponentialBackoff
+    void retryExponentialBackoff() {
+        if (invocations.incrementAndGet() <= 3) {
+            printStatus("RetryBean::retryExponentialBackoff()",
+                    "failure " + System.currentTimeMillis());
+            throw new RuntimeException("Oops");
+        }
+        printStatus("RetryBean::retryExponentialBackoff()",
+                "success " + System.currentTimeMillis());
+    }
+
+    @Retry(maxDuration = 200,maxRetries = 10)
+    @RetryExponentialBackoff
+    void retryExponentialBackoffTimeOut() {
+        //just keep incrementing
+        invocations.incrementAndGet();
+    }
+
+    @Retry(maxDuration = 200, maxRetries = 4, jitter = 0)
+    @RetryFibonacciBackoff
+    void retryFibonacciBackoff() {
+        if (invocations.incrementAndGet() <= 3) {
+            printStatus("RetryBean::retryFibonacciBackoff()",
+                    "failure " + System.currentTimeMillis());
+            throw new RuntimeException("Oops");
+        }
+        printStatus("RetryBean::retryFibonacciBackoff()",
+                "success " + System.currentTimeMillis());
+    }
+
+    @Retry(maxDuration = 200, maxRetries = 10)
+    @RetryFibonacciBackoff
+    void retryRetryFibonacciBackoffTimeOut() {
+        //just keep incrementing
+        invocations.incrementAndGet();
+    }
 }
