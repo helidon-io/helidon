@@ -194,11 +194,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                               clientRequest.configuration(),
                                                                               Http.Method.GET);
         builder.headers(clientRequest.headers());
-        builder.queryParams(clientRequest.queryParams());
-        builder.uri = clientRequest.uri();
         builder.httpVersion = clientRequest.version();
         builder.proxy = clientRequest.proxy();
-        builder.fragment = clientRequest.fragment();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;
         int maxRedirects = builder.configuration.maxRedirects();
         if (builder.redirectionCount > maxRedirects) {

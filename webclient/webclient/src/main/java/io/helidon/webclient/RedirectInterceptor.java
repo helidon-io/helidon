@@ -44,8 +44,11 @@ class RedirectInterceptor implements HttpInterceptor {
                     .create(clientRequest);
             if (URI.create(newUri).getHost() == null) {
                 URI uri = clientRequest.uri();
-                requestBuilder.uri(uri.getScheme() + "://" + uri.getAuthority());
-                requestBuilder.path(newUri);
+                String path = newUri;
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                requestBuilder.uri(uri.getScheme() + "://" + uri.getAuthority() + path);
             } else {
                 requestBuilder.uri(newUri);
             }

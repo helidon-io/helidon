@@ -578,7 +578,7 @@ class WebClientConfiguration {
             return me;
         }
 
-        private B enableAutomaticCookieStore(Boolean enableAutomaticCookieStore) {
+        public B enableAutomaticCookieStore(Boolean enableAutomaticCookieStore) {
             this.enableAutomaticCookieStore = enableAutomaticCookieStore;
             return me;
         }
