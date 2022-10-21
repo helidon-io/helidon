@@ -46,6 +46,8 @@ include::{rootdir}/config/io_helidon_security_providers_httpauth_HttpDigestAuthP
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
   - http-digest-auth:
       realm: "helidon"
