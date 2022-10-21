@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -74,11 +74,12 @@ sharing of the `/metrics` endpoint to `\http://foo.com`.
 ----
 private static Routing createRouting(Config config) {
 
-        CrossOriginConfig metricsCrossOriginConfig = CrossOriginConfig.builder() // <1>
-                .allowOrigins("http://foo.com")
-                .build();
+        CrossOriginConfig.Builder metricsCrossOriginConfigBuilder = CrossOriginConfig.builder() // <1>
+                .allowOrigins("http://foo.com");
+        RestServiceSettings.Builder restServiceSettingsBuilder = RestServiceSettings.builder()
+                 .crossOriginConfig(metricsCrossOriginConfigBuilder); // <2>
         MetricsSupport metrics = MetricsSupport.builder()
-                .crossOriginConfig(metricsCrossOriginConfig) // <2>
+                .restServiceSettings(restServiceSettingsBuilder) // <3>
                 .build();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
@@ -87,14 +88,16 @@ private static Routing createRouting(Config config) {
 
         return Routing.builder()
                 .register(health)                   // Health at "/health"
-                .register(metrics)                  // Metrics at "/metrics" // <3>
+                .register(metrics)                  // Metrics at "/metrics" // <4>
                 .register("/greet", greetService)
                 .build();
     }
 ----
-<1> Create the `CrossOriginConfig` for metrics, limiting sharing to `\http://foo.com`.
-<2> Use the `CrossOriginConfig` instance in constructing the `MetricsSupport` service.
-<3> Use the `MetricsSupport` object in creating the routing rules.
+<1> Create the `CrossOriginConfig.Builder` for metrics, limiting sharing to `\http://foo.com`.
+<2> Use the `CrossOriginConfig.Builder` instance in constructing
+the `RestServiceSetting.Builder` (which assigns common settings such as the CORS configuration and the web context for the service endpoint).
+<3> Use the `RestServiceSetting.Builder` in preparing the `MetricsSupport` service.
+<4> Use the `MetricsSupport` object in creating the routing rules.
 
 include::{common-page-prefix-inc}[tag=configuring-cors-for-builtin-services]
 

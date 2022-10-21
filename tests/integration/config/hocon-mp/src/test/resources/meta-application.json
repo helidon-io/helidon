@@ -1,0 +1,12 @@
+{
+  "json": {
+    "string": "Meta String",
+    "number": 20,
+    "array": [
+      "Meta Array 1",
+      "Meta Array 2",
+      "Meta Array 3"
+    ],
+    "boolean": true
+  }
+}

@@ -35,14 +35,18 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -100,6 +104,27 @@ class HealthServerTest {
         checkResponse(webClient::head, "health/ready", false);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = { "", "/live", "/ready"})
+    void testCacheSuppression(String pathSuffix) {
+        WebClientResponse response = null;
+        String requestPath = "/health" + pathSuffix;
+
+        try {
+            response = webClient.get()
+                    .path(requestPath)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .request()
+                    .await();
+            assertThat("Header cache settings " + response.headers().toMap(),
+                       response.headers().values(Http.Header.CACHE_CONTROL),
+                       containsInAnyOrder("no-cache", "no-store", "must-revalidate", "no-transform"));
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+    }
 
     private static void checkResponse(Supplier<WebClientRequestBuilder> requestFactory,
                                       String requestPath,

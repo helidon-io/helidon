@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration</artifactId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>2.5.5-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.tests.integration.jep290</groupId>
     <artifactId>helidon-tests-integration-jep290-project</artifactId>
@@ -77,5 +77,6 @@
         <module>set_c_f_c</module>
         <module>set_f</module>
         <module>set_o</module>
+        <module>server_and_custom</module>
     </modules>
 </project>

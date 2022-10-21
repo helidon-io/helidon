@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ class TestHttpParseFineTuning {
 
     @Test
     void testDefaults() {
-        // default is 8Kb for headers
+        // default is 16Kb for headers
         // and 4096 for initial line
         WebServer ws = WebServer.builder()
                 .host("localhost")
@@ -52,11 +52,11 @@ class TestHttpParseFineTuning {
                 .validateHeaders(false)
                 .build();
 
-        testHeader(client, 8000, true);
+        testHeader(client, 16000, true);
         testInitialLine(client, 10, true);
 
-        testHeader(client, 8900, false);
-        testHeader(client, 8900, false);
+        testHeader(client, 17000, false);
+        testHeader(client, 17000, false);
 
         // now test with big initial line
         testInitialLine(client, 5000, false);
@@ -76,7 +76,7 @@ class TestHttpParseFineTuning {
                                  .any((req, res) -> res.send("any"))
                                  .build())
                 .config(config)
-                .maxHeaderSize(9100)
+                .maxHeaderSize(17100)
                 .maxInitialLineLength(5100)
                 .build()
                 .start()
@@ -87,11 +87,11 @@ class TestHttpParseFineTuning {
                 .validateHeaders(false)
                 .build();
 
-        testHeader(client, 8000, true);
+        testHeader(client, 16000, true);
         testInitialLine(client, 10, true);
 
-        testHeader(client, 8900, true);
-        testHeader(client, 8900, true);
+        testHeader(client, 16900, true);
+        testHeader(client, 16900, true);
 
         // now test with big initial line
         testInitialLine(client, 5000, true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigSource;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -72,6 +75,19 @@ class TimeoutTest {
     @Test
     void testTimeoutCancelCurrentThread() {
         timeoutCancel(true);
+    }
+
+    @Test
+    void testTimeoutConfig() {
+        ConfigSource configSource = ConfigSources.classpath("application.yaml").build();
+        Config config = Config.create(() -> configSource);
+
+        Timeout.Builder timeout = Timeout.builder()
+                .config(config.get("timeout"));
+        assertThat(timeout.timeout(), Matchers.is(Duration.ofSeconds(20)));
+        assertThat(timeout.name(), Matchers.is("MyTimeout"));
+        assertThat(timeout.currentThread(), Matchers.is(true));
+        assertThat(timeout.cancelSource(), Matchers.is(false));
     }
 
     void timeoutCancel(boolean currentThread) {

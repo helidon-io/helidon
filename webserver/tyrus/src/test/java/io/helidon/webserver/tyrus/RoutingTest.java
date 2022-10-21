@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class RoutingTest extends TyrusSupportBaseTest {
     @Test
     public void testEcho() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo?user=Helidon");
             new EchoClient(uri).echo("One");
         } catch (Exception e) {
             fail("Unexpected exception " + e);
@@ -46,7 +46,7 @@ public class RoutingTest extends TyrusSupportBaseTest {
     @Test
     public void testDoubleEcho() {
         try {
-            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/doubleEcho");
+            URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/doubleEcho?user=Helidon");
             new EchoClient(uri, (s1, s2) -> s2.equals(s1 + s1)).echo("One");
         } catch (Exception e) {
             fail("Unexpected exception " + e);

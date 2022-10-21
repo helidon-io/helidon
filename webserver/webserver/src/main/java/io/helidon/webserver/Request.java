@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
+import io.helidon.common.http.UriComponent;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;

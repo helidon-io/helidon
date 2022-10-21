@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package io.helidon.metrics;
 
 import javax.json.JsonObject;
-import javax.json.JsonValue;
 
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -38,23 +41,45 @@ import io.helidon.webserver.WebServer;
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 public class TestServer {
 
     private static final Logger LOGGER = Logger.getLogger(TestServer.class.getName());
+
+    private static final String[] EXPECTED_NO_CACHE_HEADER_SETTINGS = {"no-cache", "no-store", "must-revalidate", "no-transform"};
 
     private static WebServer webServer;
 
     private static final MetricsSupport.Builder NORMAL_BUILDER = MetricsSupport.builder();
 
     private static MetricsSupport metricsSupport;
+
+    private static final MediaType EXPECTED_OPENMETRICS_CONTENT_TYPE = MediaType.builder()
+            .type(MediaType.APPLICATION_OPENMETRICS.type())
+            .subtype(MediaType.APPLICATION_OPENMETRICS.subtype())
+            .addParameter("version", "1.0.0")
+            .charset("UTF-8")
+            .build();
+
+    private static final MediaType EXPECTED_PROMETHEUS_CONTENT_TYPE = MediaType.builder()
+            .type(MediaType.TEXT_PLAIN.type())
+            .subtype(MediaType.TEXT_PLAIN.subtype())
+            .addParameter("version", "0.0.4")
+            .charset("UTF-8")
+            .build();
 
     private WebClient.Builder webClientBuilder;
 
@@ -161,6 +186,9 @@ public class TestServer {
     @Test
     void checkMetricsForExecutorService() {
 
+        // Because ThreadPoolExecutor methods are documented as reporting approximations of task counts, etc., we should
+        // not depend on the values changing in a reasonable time period...or at all. So this test simply makes sure that
+        // an expected metric is present.
         String jsonKeyForCompleteTaskCountInThreadPool =
                 "executor-service.completed-task-count;poolIndex=0;supplierCategory=helidon-thread-pool-1;supplierIndex=0";
 
@@ -181,27 +209,75 @@ public class TestServer {
         int completedTaskCount =
                 metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
         assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
+    }
 
-        WebClientResponse slowGreetResponse = webClientBuilder
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/base", "/vendor", "/application"})
+    void testCacheSuppression(String pathSuffix) {
+        String requestPath = "/metrics" + pathSuffix;
+
+        WebClientResponse response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path(requestPath)
+                .submit()
+                .await();
+
+        assertThat("Headers suppressing caching",
+                   response.headers().values(Http.Header.CACHE_CONTROL),
+                   containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS));
+
+        response = webClientBuilder
+                .build()
+                .options()
+                .accept(MediaType.APPLICATION_JSON)
+                .path(requestPath)
+                .submit()
+                .await();
+
+        assertThat ("Headers suppressing caching in OPTIONS request",
+                    response.headers().values(Http.Header.CACHE_CONTROL),
+                    not(containsInAnyOrder(EXPECTED_NO_CACHE_HEADER_SETTINGS)));
+    }
+    @Test
+    void testOpenMetricsFormatting() throws IOException {
+        WebClientResponse response = webClientBuilder
+                .build()
+                .get()
+                .accept(MediaType.APPLICATION_OPENMETRICS)
+                .path("/metrics")
+                .submit()
+                .await();
+
+        assertThat("Content-Type",
+                   response.headers().values(Http.Header.CONTENT_TYPE),
+                   containsInAnyOrder(EXPECTED_OPENMETRICS_CONTENT_TYPE.toString()));
+
+        String content = response.content().as(String.class).await(10, TimeUnit.SECONDS);
+        assertThat("Terminated content", content, endsWith("EOF\n"));
+
+        LineNumberReader reader = new LineNumberReader(new StringReader(content));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.isBlank()) {
+                Assertions.fail("Found blank line where none is allowed in response: \n" + content);
+            }
+        }
+    }
+
+    @Test
+    void testPrometheusFormatting() {
+        WebClientResponse response = webClientBuilder
                 .build()
                 .get()
                 .accept(MediaType.TEXT_PLAIN)
-                .path("greet/slow")
+                .path("/metrics")
                 .submit()
                 .await();
 
-        assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
-
-        WebClientResponse secondMetricsResponse = metricsRequestBuilder
-                .submit()
-                .await();
-
-        assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
-
-        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await();
-
-        int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
-
-        assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
+        assertThat("Content-Type",
+                   response.headers().values(Http.Header.CONTENT_TYPE),
+                   containsInAnyOrder(EXPECTED_PROMETHEUS_CONTENT_TYPE.toString()));
     }
 }

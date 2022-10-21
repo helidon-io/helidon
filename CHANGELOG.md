@@ -7,11 +7,172 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.5.1-SNAPSHOT]
+## [2.5.5]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
 
 ### CHANGES
+
+## [2.5.4]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- CORS: Fix CORS annotation handling error in certain cases [5102](https://github.com/helidon-io/helidon/pull/5102)
+- DBClient: Helidon DBClient does not trigger an Exception when no sane DB connection can be obtained [4772](https://github.com/helidon-io/helidon/pull/4772)
+- Examples: Remove module-info files from examples [4893](https://github.com/helidon-io/helidon/pull/4893)
+- JAX-RS: Register a low-priority exception mapper to log internal errors [5059](https://github.com/helidon-io/helidon/pull/5059)
+- Metrics: OpenMetrics formatting issue; add tests [4901](https://github.com/helidon-io/helidon/pull/4901)
+- MicroProfile: Fix identification of parallel startup of CDI [4994](https://github.com/helidon-io/helidon/pull/4994)
+- WebClient: WebClient uses DataPropagationProvider to module-info [4916](https://github.com/helidon-io/helidon/pull/4916)
+- WebServer: Default header size increased to 16K Helidon Server and docs [5018](https://github.com/helidon-io/helidon/pull/5018)
+- WebServer: Watermarked response backpressure [5062](https://github.com/helidon-io/helidon/pull/5062)
+- Dependencies: Update graphql-java to 17.4 [4992](https://github.com/helidon-io/helidon/pull/4992)
+- Dependencies: Upgrade build-tools to 2.3.6 [5099](https://github.com/helidon-io/helidon/pull/5099)
+- Dependencies: Upgrade eclipselink to 2.7.11 [4974](https://github.com/helidon-io/helidon/pull/4974)
+- Dependencies: Upgrade hibernate to 5.6.11.Final [4965](https://github.com/helidon-io/helidon/pull/4965)
+- Dependencies: Upgrade reactive-sreams to 1.0.4 [5044](https://github.com/helidon-io/helidon/pull/5044)
+- Dependencies: Upgrade snakeyaml to 1.32 [4921](https://github.com/helidon-io/helidon/pull/4921)
+- Dependencies: upgrade hibernate validator to 6.2.5 [5037](https://github.com/helidon-io/helidon/pull/5037)
+- Docs: Fix invalid example in se/config/advanced-configuration.adoc (#4775) [4943](https://github.com/helidon-io/helidon/pull/4943)
+- Docs: Sec provider 4810 [5034](https://github.com/helidon-io/helidon/pull/5034)
+- Test: EchoServiceTest timeout [5006](https://github.com/helidon-io/helidon/pull/5006)
+- Test: Fixed race condition in the OCI Metrics integration test between retrieval of metrics from registry and asserting that from expected results [4897](https://github.com/helidon-io/helidon/pull/4897)
+- Test: MultiFromBlockingInputStream RC fix [5061](https://github.com/helidon-io/helidon/pull/5061)
+- Test: Rest Client timeout test exclusion [5077](https://github.com/helidon-io/helidon/pull/5077)
+- Test: ThreadPoolTest [4988](https://github.com/helidon-io/helidon/pull/4988)
+- Test: Use Hamcrest assertions instead of JUnit (#1749) [5087](https://github.com/helidon-io/helidon/pull/5087) and others
+
+## [2.5.3]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.5.3 is API compatible with 2.4.0.
+
+### CHANGES
+
+- Config: Injection of Map from configuration now honors prefix (backport) [4659](https://github.com/oracle/helidon/pull/4659)
+- Config: Obtaining parent dir for watcher service fixed [4666](https://github.com/oracle/helidon/pull/4666)
+- Config: Unescape the keys when config is returned as a map [4678](https://github.com/oracle/helidon/pull/4678)
+- Dependencies: Upgrade snakeyaml to 1.31 [4849](https://github.com/oracle/helidon/pull/4849)
+- Dependencies: Upgrades OCI to 2.41.0 [4812](https://github.com/oracle/helidon/pull/4812)
+- Docs: Fix K8s deployment yaml [4761](https://github.com/oracle/helidon/pull/4761)
+- Grpc: Upgrade protobuf to support osx-aarch_64 architecture [4630](https://github.com/oracle/helidon/pull/4630)
+- JAX-RS: Make Application subclasses available via our context during Feature executions [4745](https://github.com/oracle/helidon/pull/4745)
+- LRA: 4749 LRA fixes backport [4824](https://github.com/oracle/helidon/pull/4824)
+- MicroProfile: MP path based static content should use index.html [4735](https://github.com/oracle/helidon/pull/4735)
+- Native image: Issue #4741 - Upgrade Postgre driver to 42.4.1 [4780](https://github.com/oracle/helidon/pull/4780)
+- Security: Access token refresh [4758](https://github.com/oracle/helidon/pull/4758)
+- Security: Configuration parameter 'cookie-encryption-password' takes only a single character rather than a string (#4512) [4657](https://github.com/oracle/helidon/pull/4657)
+- Tests: Intermittent test fix, using random port for tests [4801](https://github.com/oracle/helidon/pull/4801)
+- WebClient: DNS resolver should not be possible to set per request [4815](https://github.com/oracle/helidon/pull/4815)
+- WebClient: Dns resolver type method on webclient builder [4839](https://github.com/oracle/helidon/pull/4839)
+- WebClient: Round Robin added as DNS resolver option [4806](https://github.com/oracle/helidon/pull/4806)
+- WebServer: WebServerTls parts should not be initialized when disabled [4651](https://github.com/oracle/helidon/pull/4651)
+
+## [2.5.2]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.5.2 is API compatible with 2.4.0.
+
+### CHANGES
+
+- CORS: Correct return of path from MP CORS request adapter; add test (2.x) [4434](https://github.com/oracle/helidon/pull/4434)
+- CORS: Preserve order of mapped cross-origin config path entries from config; add test (2.x) [4432](https://github.com/oracle/helidon/pull/4432)
+- Common: Completed @Deprecated annotation and fixed Javadoc [4389](https://github.com/oracle/helidon/pull/4389)
+- Common: Completed @Deprecated annotations in common configurable [4395](https://github.com/oracle/helidon/pull/4395)
+- Common: Update `@Deprecated` anno in 2.x `service-common/rest` [4392](https://github.com/oracle/helidon/pull/4392)
+- Config: Add helidon-config-yaml-mp as a dependency in helidon-microprofile-config. (#4379) [4394](https://github.com/oracle/helidon/pull/4394)
+- Docs: Add documentation for hocon/json support and meta-config extensibility on MP [4391](https://github.com/oracle/helidon/pull/4391)
+- Docs: Fix MP references in SE metrics guide [4648](https://github.com/oracle/helidon/pull/4648)
+- Examples: Add examples for SE and MP to update counters of HTTP response status ranges (1xx, 2xx, etc.) for 2.x [4616](https://github.com/oracle/helidon/pull/4616)
+- Examples: Fix gRPC examples that are failing. (#4585) [4635](https://github.com/oracle/helidon/pull/4635)
+- Examples: OCI Integration Examples Update 2.x [4502](https://github.com/oracle/helidon/pull/4502)
+- Examples: Uses lowercase for database column names in se … [4274](https://github.com/oracle/helidon/pull/4274)
+- FT: Added config support for bulkheads, breakers, timeouts and retries [4337](https://github.com/oracle/helidon/pull/4337)
+- FT: Changes to FT implementation to support interception of proxy methods [4641](https://github.com/oracle/helidon/pull/4641)
+- JAX-RS: Change log level to fine for exception caught while intercepting [4632](https://github.com/oracle/helidon/pull/4632)
+- LRA: Coordinator test fix #4544 backport [4611](https://github.com/oracle/helidon/pull/4611)
+- LRA: Deprecations cleanup 2.x [4450](https://github.com/oracle/helidon/pull/4450)
+- Metrics: Fix deprecation annotations in metrics; update doc; revise examples (2.x) [4396](https://github.com/oracle/helidon/pull/4396)
+- Metrics: Remove unneeded dependency [4378](https://github.com/oracle/helidon/pull/4378)
+- Native Image: Add module info to native image extensions. [4588](https://github.com/oracle/helidon/pull/4588)
+- Native Image: Removed final from proxied types [4586](https://github.com/oracle/helidon/pull/4586)
+- Security: Added X509 certificate context key when client certificate is present and pem trust store configuration [4226](https://github.com/oracle/helidon/pull/4226)
+- Security: JEP-290 2.x [4587](https://github.com/oracle/helidon/pull/4587)
+- Test: Removed usage of deprecated method. [4401](https://github.com/oracle/helidon/pull/4401)
+- Tracing: Cleanup of E2E test for tracing. [4589](https://github.com/oracle/helidon/pull/4589)
+- Tracing: Update for Jaeger tracing. [4631](https://github.com/oracle/helidon/pull/4631)
+- WebClient: Context propagation across HTTP. [4612](https://github.com/oracle/helidon/pull/4612)
+- WebClient: Set executor of CompletableFuture for response with no content. (#4540) [4596](https://github.com/oracle/helidon/pull/4596)
+- WebServer: Updated TyrusSupport to correctly propagate query params from webserver [4624](https://github.com/oracle/helidon/pull/4624)
+- WebServer: Wrong Http/2 version 2x [4629](https://github.com/oracle/helidon/pull/4629)
+
+## [2.5.1]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### Compatibility
+
+2.5.1 is API compatible with 2.4.0.
+
+In this release we are no longer managing the version of Mockito for Helidon applications. If you
+were depending on that you will need to manage the version yourself.
+
+### CHANGES
+
+- CDI: Abstract decorator class now gets correct proxy name in Weld [4135](https://github.com/oracle/helidon/pull/4135)
+- Common: Enable thread pool growth at threshold instead of above it [4245](https://github.com/oracle/helidon/pull/4245)
+- Common: Improve threadNamePrefix defaulting to be more informative [4165](https://github.com/oracle/helidon/pull/4165)
+- Common: Properly count completed and failed thread pool tasks [4244](https://github.com/oracle/helidon/pull/4244)
+- Config: Fix retention of @Configured [4113](https://github.com/oracle/helidon/pull/4113)
+- Config: Remove dependency on helidon-common-reactive from config [4225](https://github.com/oracle/helidon/pull/4225)
+- Config: Support Hocon/Json Configuration Source for MP [4218](https://github.com/oracle/helidon/pull/4218)
+- Config: Support for Hocon inclusion of files without an extension [4162](https://github.com/oracle/helidon/pull/4162)
+- Config: Turn off reference substitution in Hocon parser level for lazy resolution of references [4167](https://github.com/oracle/helidon/pull/4167)
+- FaultTolerance: Fix some test regressions and some code simplifications [4239](https://github.com/oracle/helidon/pull/4239)
+- FaultTolerance: Fixed a few problems with Fallback and Multi's in SE [4157](https://github.com/oracle/helidon/pull/4157)
+- FaultTolerance: Make require transitive for helidon common reactive module [4233](https://github.com/oracle/helidon/pull/4233)
+- FaultTolerance: New AnnotationFinder to handle transitive annotations in FT  [4216](https://github.com/oracle/helidon/pull/4216)
+- JPA: Adds XA support to Helidon's UCP integration [4292](https://github.com/oracle/helidon/pull/4292)
+- Metrics: Add cache control to metrics and health endpoints [4257](https://github.com/oracle/helidon/pull/4257)
+- Metrics: Correct Prometheus output for timer and JSON output for SimpleTimer [4242](https://github.com/oracle/helidon/pull/4242)
+- MicroProfile: Support of Bean Validation in Helidon MP #721 [3885](https://github.com/oracle/helidon/pull/3885)
+- Native-image: Native image configuration reflection update for Jaeger [4118](https://github.com/oracle/helidon/pull/4118)
+- Security: Do not fail when expected audience is null [4174](https://github.com/oracle/helidon/pull/4174)
+- Security: Fix JwtProvider wrong error message [4137](https://github.com/oracle/helidon/pull/4137)
+- Security: Injection of empty SecurityContext [4173](https://github.com/oracle/helidon/pull/4173)
+- Security: OIDC update to support HTTPS identity provider [4270](https://github.com/oracle/helidon/pull/4270)
+- Security: RoleContainer support added [4275](https://github.com/oracle/helidon/pull/4275)
+- WebClient: Case insensitive client request headers fix [4111](https://github.com/oracle/helidon/pull/4111)
+- WebClient: MDC propagation [4112](https://github.com/oracle/helidon/pull/4112)
+- gRPC: Fixing io.grpc module-info and MP gRPC client and server module-info files [4189](https://github.com/oracle/helidon/pull/4189)
+- Build: Add test-nightly.sh [4277](https://github.com/oracle/helidon/pull/4277)
+- Dependencies: Move mockito dependency management to root pom  [4283](https://github.com/oracle/helidon/pull/4283)
+- Dependencies: Upgrade Netty to 4.1.77.Final [4250](https://github.com/oracle/helidon/pull/4250)
+- Dependencies: Upgrade google-api-client [4324](https://github.com/oracle/helidon/pull/4324)
+- Dependencies: Upgrade jackson to 2.13.2.2 [4179](https://github.com/oracle/helidon/pull/4179)
+- Dependencies: Upgrades Eclipselink to 2.7.10 [4131](https://github.com/oracle/helidon/pull/4131)
+- Dependencies: Uppgrade grpc-java to 1.45.1 [4146](https://github.com/oracle/helidon/pull/4146)
+- Dependencies: Yasson version updated [4261](https://github.com/oracle/helidon/pull/4261)
+- Docs: Add IDCS related info to MP Security example  [4328](https://github.com/oracle/helidon/pull/4328)
+- Docs: Fix guide broken links and typos 4119 for [4134](https://github.com/oracle/helidon/pull/4134)
+- Docs: Fix guide. Change JPA Scope. [4169](https://github.com/oracle/helidon/pull/4169)
+- Docs: Update OCI integration documentation to reflect use of new OCI SDK extension [4329](https://github.com/oracle/helidon/pull/4329)
+- Examples: Gradle: Add helidon test dependency. Add task dependency for jandex [4230](https://github.com/oracle/helidon/pull/4230)
+- Examples: Fix deps in jpa examples plus some cleanup [4130](https://github.com/oracle/helidon/pull/4130)
+- Examples: Use OBJECT schema type with requiredProperties in Quickstart MP [4149](https://github.com/oracle/helidon/pull/4149)
+- Examples: remove buffered multipart example [4104](https://github.com/oracle/helidon/pull/4104)
+- Tests: Fixed problem in DelayRetryPolicyTest that would cause all delays to be zero [4217](https://github.com/oracle/helidon/pull/4217)
+- Tests: Fixed dbclient integration tests build issue. [4099](https://github.com/oracle/helidon/pull/4099)
+- Tests: Use 127.0.0.1 for client connections in test (instead of 0.0.0.0) [4280](https://github.com/oracle/helidon/pull/4280)
+- Tests: possible fix for HttpPipelineTest hang [4139](https://github.com/oracle/helidon/pull/4139)
 
 ## [2.5.0]
 
@@ -1841,7 +2002,11 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.5.1-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.5.0...helidon-2.x
+[2.5.5]: https://github.com/oracle/helidon/compare/2.5.4...2.5.5
+[2.5.4]: https://github.com/oracle/helidon/compare/2.5.3...2.5.4
+[2.5.3]: https://github.com/oracle/helidon/compare/2.5.2...2.5.3
+[2.5.2]: https://github.com/oracle/helidon/compare/2.5.1...2.5.2
+[2.5.1]: https://github.com/oracle/helidon/compare/2.5.0...2.5.1
 [2.5.0]: https://github.com/oracle/helidon/compare/2.4.2...2.5.0
 [2.4.2]: https://github.com/oracle/helidon/compare/2.4.1...2.4.2
 [2.4.1]: https://github.com/oracle/helidon/compare/2.4.0...2.4.1

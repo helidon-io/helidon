@@ -43,7 +43,7 @@ class HttpClientTest extends TyrusSupportBaseTest {
 
     @Test
     void testJdkClient() throws ExecutionException, InterruptedException, TimeoutException {
-        URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo");
+        URI uri = URI.create("ws://localhost:" + webServer().port() + "/tyrus/echo?user=Helidon");
         ClientListener listener = new ClientListener();
 
         WebSocket webSocket = HttpClient.newHttpClient()

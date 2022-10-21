@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>2.5.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-yaml-mp</artifactId>
     <name>Helidon Config YAML MP</name>
@@ -38,6 +38,10 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-mp</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>

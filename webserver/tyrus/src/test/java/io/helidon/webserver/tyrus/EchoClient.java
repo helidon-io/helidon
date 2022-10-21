@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ import javax.websocket.Session;
 
 import org.glassfish.tyrus.client.ClientManager;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -43,7 +44,7 @@ public class EchoClient {
     private static final Logger LOGGER = Logger.getLogger(EchoClient.class.getName());
 
     private static final ClientManager client = ClientManager.createClient();
-    private static final long TIMEOUT_SECONDS = 10;
+    private static final long TIMEOUT_SECONDS = 40;
 
     private final URI uri;
     private final BiFunction<String, String, Boolean> equals;
@@ -82,7 +83,7 @@ public class EchoClient {
                             LOGGER.info("Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(equals.apply(messages[index], message));
+                            assertThat(equals.apply(messages[index], message), is(true));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.http.HttpRequest;
-
 import org.glassfish.jersey.CommonProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -40,10 +39,10 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.webserver.jersey.JerseySupport.IGNORE_EXCEPTION_RESPONSE;
 import static io.helidon.webserver.jersey.JerseySupport.basePath;
 import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * The JerseySupportTest.
@@ -223,7 +222,7 @@ public class JerseySupportTest {
             // in this case the test is a no-op.
             return;
         }
-        assertNotNull(response);
+        assertThat(response, notNullValue());
         doAssert(response, null, Response.Status.NOT_FOUND);
     }
 
@@ -308,8 +307,9 @@ public class JerseySupportTest {
         Response response = webTarget.path("jersey/first/streamingOutput")
                 .request()
                 .get();
-        assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
-                "Unexpected error: " + response.getStatus());
+
+        assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
+
         try (InputStream is = response.readEntity(InputStream.class)) {
             byte[] buffer = new byte[32];
             int n = is.read(buffer);        // should read only first chunk
@@ -338,6 +338,14 @@ public class JerseySupportTest {
     public void testJerseyProperties() {
         assertThat(System.getProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER), is("true"));
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("true"));
+    }
+
+    @Test
+    public void testInternalErrorMapper() {
+        JerseySupport.Builder builder = JerseySupport.builder();
+        JerseySupport jerseySupport = builder.build();
+        assertThat(jerseySupport, is(notNullValue()));
+        assertThat(builder.resourceConfig().getClasses(), contains(JerseySupport.InternalErrorMapper.class));
     }
 
     static class PathMockup implements HttpRequest.Path {
@@ -398,12 +406,9 @@ public class JerseySupportTest {
     }
 
     private void doAssert(Response response, String expected) {
-        try {
-            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
-                    "Unexpected error: " + response.getStatus());
-            assertEquals(expected, response.readEntity(String.class));
-        } finally {
-            response.close();
+        try (response) {
+            assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
+            assertThat(response.readEntity(String.class), is(expected));
         }
     }
 
@@ -412,14 +417,11 @@ public class JerseySupportTest {
     }
 
     private void doAssert(Response response, String expectedContent, int expectedStatusCode) {
-        try {
-            assertEquals(expectedStatusCode, response.getStatus(),
-                    "Unexpected error: " + response.getStatus());
+        try (response) {
+            assertThat(response.getStatus(), is(expectedStatusCode));
             if (expectedContent != null) {
-                assertEquals(expectedContent, response.readEntity(String.class));
+                assertThat(response.readEntity(String.class), is(expectedContent));
             }
-        } finally {
-            response.close();
         }
     }
 }

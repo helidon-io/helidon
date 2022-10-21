@@ -26,6 +26,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Retry supports retry policies to be applied on an execution of asynchronous tasks.
@@ -48,6 +51,7 @@ public interface Retry extends FtHandler {
     /**
      * Fluent API builder for {@link io.helidon.faulttolerance.Retry}.
      */
+    @Configured
     class Builder implements io.helidon.common.Builder<Retry> {
         private final Set<Class<? extends Throwable>> applyOn = new HashSet<>();
         private final Set<Class<? extends Throwable>> skipOn = new HashSet<>();
@@ -61,6 +65,7 @@ public interface Retry extends FtHandler {
         private Duration overallTimeout = Duration.ofSeconds(1);
         private LazyValue<? extends ScheduledExecutorService> scheduledExecutor = FaultTolerance.scheduledExecutor();
         private String name = "Retry-" + System.identityHashCode(this);
+        private boolean cancelSource = true;
 
         private Builder() {
         }
@@ -78,6 +83,7 @@ public interface Retry extends FtHandler {
          * @param policy retry policy
          * @return updated builder instance
          */
+        @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
         public Builder retryPolicy(RetryPolicy policy) {
             this.retryPolicy = policy;
             return this;
@@ -162,6 +168,7 @@ public interface Retry extends FtHandler {
          * @param overallTimeout an overall timeout
          * @return updated builder instance
          */
+        @ConfiguredOption("PT1S")
         public Builder overallTimeout(Duration overallTimeout) {
             this.overallTimeout = overallTimeout;
             return this;
@@ -173,8 +180,85 @@ public interface Retry extends FtHandler {
          * @param name the name
          * @return updated builder instance
          */
+        @ConfiguredOption("Retry-")
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Policy to cancel any source stage if the value return by {@link Retry#invoke}
+         * is cancelled. Default is {@code true}; mostly used by FT MP to change default.
+         *
+         * @param cancelSource cancel source policy
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public Builder cancelSource(boolean cancelSource) {
+            this.cancelSource = cancelSource;
+            return this;
+        }
+
+        /**
+         * <p>
+         * Load all properties for this circuit breaker from configuration.
+         * </p>
+         * <table class="config">
+         * <caption>Configuration</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>overall-timeout</td>
+         *     <td>1 second</td>
+         *     <td>Timeout for overall execution</td>
+         * </tr>
+         * <tr>
+         *     <td>name</td>
+         *     <td>Retry-N</td>
+         *     <td>Name used for debugging</td>
+         * </tr>
+         * <tr>
+         *     <td>cancel-source</td>
+         *     <td>true</td>
+         *     <td>Cancel task source if task is cancelled</td>
+         * </tr>
+         * <tr>
+         *     <td>delaying-retry-policy</td>
+         *     <td>N/A</td>
+         *     <td>A delaying retry policy</td>
+         * </tr>
+         * <tr>
+         *     <td>jitter-retry-policy</td>
+         *     <td>Policy of 4 calls, delay 200 millis and jitter of 50 millis</td>
+         *     <td>A jitter retry policy</td>
+         * </tr>
+         * </table>
+         *
+         * @param config the config node to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("overall-timeout").as(Duration.class).ifPresent(this::overallTimeout);
+            config.get("name").asString().ifPresent(this::name);
+            config.get("cancel-source").asBoolean().ifPresent(this::cancelSource);
+            boolean hasRetryPolicy = false;
+            if (config.get("delaying-retry-policy").exists()) {
+                hasRetryPolicy = true;
+                retryPolicy(DelayingRetryPolicy.builder()
+                        .config(config.get("delaying-retry-policy"))
+                        .build());
+            }
+            if (config.get("jitter-retry-policy").exists()) {
+                if (hasRetryPolicy) {
+                    throw new IllegalArgumentException("Retry must not define multiple retry policies");
+                }
+                retryPolicy(JitterRetryPolicy.builder()
+                        .config(config.get("jitter-retry-policy"))
+                        .build());
+            }
             return this;
         }
 
@@ -200,6 +284,10 @@ public interface Retry extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean cancelSource() {
+            return cancelSource;
         }
     }
 
@@ -272,6 +360,18 @@ public interface Retry extends FtHandler {
                     .build();
         }
 
+        int calls() {
+            return calls;
+        }
+
+        Duration delay() {
+            return Duration.ofMillis(delayMillis);
+        }
+
+        double delayFactor() {
+            return delayFactor;
+        }
+
         @Override
         public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
             if (call >= calls) {
@@ -279,6 +379,8 @@ public interface Retry extends FtHandler {
             }
 
             if (call == 0) {
+                return Optional.of(0L);
+            } else if (call == 1) {
                 return Optional.of(delayMillis);
             }
 
@@ -288,6 +390,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.DelayingRetryPolicy}.
          */
+        @Configured
         public static class Builder implements io.helidon.common.Builder<DelayingRetryPolicy> {
             private int calls = 3;
             private double delayFactor = 2;
@@ -304,6 +407,7 @@ public interface Retry extends FtHandler {
              * @param calls how many times to call the method
              * @return updated builder instance
              */
+            @ConfiguredOption("3")
             public Builder calls(int calls) {
                 this.calls = calls;
                 return this;
@@ -315,6 +419,7 @@ public interface Retry extends FtHandler {
              * @param delay delay between the invocations
              * @return updated builder instance
              */
+            @ConfiguredOption("PT0.2S")
             public Builder delay(Duration delay) {
                 this.delay = delay;
                 return this;
@@ -326,8 +431,47 @@ public interface Retry extends FtHandler {
              * @param delayFactor a delay multiplication factor
              * @return updated builder instance
              */
+            @ConfiguredOption("2")
             public Builder delayFactor(double delayFactor) {
                 this.delayFactor = delayFactor;
+                return this;
+            }
+
+            /**
+             * <p>
+             * Load all properties for this circuit breaker from configuration.
+             * </p>
+             * <table class="config">
+             * <caption>Configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>default value</th>
+             *     <th>description</th>
+             * </tr>
+             * <tr>
+             *     <td>calls</td>
+             *     <td>3</td>
+             *     <td>Number of calls</td>
+             * </tr>
+             * <tr>
+             *     <td>delay</td>
+             *     <td>200 millis</td>
+             *     <td>Delay to wait between retries</td>
+             * </tr>
+             * <tr>
+             *     <td>delay-factor</td>
+             *     <td>2</td>
+             *     <td>A delay multiplication factor</td>
+             * </tr>
+             * </table>
+             *
+             * @param config the config node to use
+             * @return updated builder instance
+             */
+            public Builder config(Config config) {
+                config.get("calls").asInt().ifPresent(this::calls);
+                config.get("delay").as(Duration.class).ifPresent(this::delay);
+                config.get("delay-factor").asDouble().ifPresent(this::delayFactor);
                 return this;
             }
         }
@@ -374,6 +518,14 @@ public interface Retry extends FtHandler {
             return new Builder();
         }
 
+        int calls() {
+            return calls;
+        }
+
+        Duration delay() {
+            return Duration.ofMillis(delayMillis);
+        }
+
         @Override
         public Optional<Long> nextDelayMillis(long firstCallNanos, long lastDelay, int call) {
             if (call >= calls) {
@@ -391,6 +543,7 @@ public interface Retry extends FtHandler {
         /**
          * Fluent API builder for {@link io.helidon.faulttolerance.Retry.JitterRetryPolicy}.
          */
+        @Configured
         public static class Builder implements io.helidon.common.Builder<JitterRetryPolicy> {
             private int calls = 3;
             private Duration delay = Duration.ofMillis(200);
@@ -409,6 +562,7 @@ public interface Retry extends FtHandler {
              * @param calls how many times to call the method
              * @return updated builder instance
              */
+            @ConfiguredOption("3")
             public Builder calls(int calls) {
                 this.calls = calls;
                 return this;
@@ -420,6 +574,7 @@ public interface Retry extends FtHandler {
              * @param delay delay between the invocations
              * @return updated builder instance
              */
+            @ConfiguredOption("PT0.2S")
             public Builder delay(Duration delay) {
                 this.delay = delay;
                 return this;
@@ -433,8 +588,47 @@ public interface Retry extends FtHandler {
              * @param jitter jitter duration
              * @return updated builder instance
              */
+            @ConfiguredOption("PT0.05S")
             public Builder jitter(Duration jitter) {
                 this.jitter = jitter;
+                return this;
+            }
+
+            /**
+             * <p>
+             * Load all properties for this circuit breaker from configuration.
+             * </p>
+             * <table class="config">
+             * <caption>Configuration</caption>
+             * <tr>
+             *     <th>key</th>
+             *     <th>default value</th>
+             *     <th>description</th>
+             * </tr>
+             * <tr>
+             *     <td>calls</td>
+             *     <td>3</td>
+             *     <td>Number of calls</td>
+             * </tr>
+             * <tr>
+             *     <td>delay</td>
+             *     <td>200 millis</td>
+             *     <td>Delay to wait between retries</td>
+             * </tr>
+             * <tr>
+             *     <td>jitter</td>
+             *     <td>50 millis</td>
+             *     <td>A number between {@code [-jitter,+jitter]} applied to delay</td>
+             * </tr>
+             * </table>
+             *
+             * @param config the config node to use
+             * @return updated builder instance
+             */
+            public Builder config(Config config) {
+                config.get("calls").asInt().ifPresent(this::calls);
+                config.get("delay").as(Duration.class).ifPresent(this::delay);
+                config.get("delay-factor").as(Duration.class).ifPresent(this::jitter);
                 return this;
             }
         }

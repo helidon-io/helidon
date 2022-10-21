@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -127,11 +126,11 @@ class CircuitBreakerTest extends FaultToleranceTest {
     void testWithBulkhead() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         bean.withBulkhead(started);             // enters bulkhead
-        assertTrue(started.await(1000, TimeUnit.MILLISECONDS));
+        assertThat(started.await(1000, TimeUnit.MILLISECONDS), is(true));
 
         started = new CountDownLatch(1);
         bean.withBulkhead(started);             // gets queued
-        assertFalse(started.await(1000, TimeUnit.MILLISECONDS));
+        assertThat(started.await(1000, TimeUnit.MILLISECONDS), is(false));
 
         assertThrows(ExecutionException.class, () -> {
             CompletableFuture<?> future = bean.withBulkhead(new CountDownLatch(1));
@@ -143,11 +142,11 @@ class CircuitBreakerTest extends FaultToleranceTest {
     void testWithBulkheadStage() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         bean.withBulkheadStage(started);             // enters bulkhead
-        assertTrue(started.await(1000, TimeUnit.MILLISECONDS));
+        assertThat(started.await(1000, TimeUnit.MILLISECONDS), is(true));
 
         started = new CountDownLatch(1);
         bean.withBulkheadStage(started);             // gets queued
-        assertFalse(started.await(1000, TimeUnit.MILLISECONDS));
+        assertThat(started.await(1000, TimeUnit.MILLISECONDS), is(false));
 
         CompletionStage<?> stage = bean.withBulkheadStage(new CountDownLatch(1));
         final CountDownLatch called = new CountDownLatch(1);
@@ -155,7 +154,7 @@ class CircuitBreakerTest extends FaultToleranceTest {
             called.countDown();
             assertThat(throwable, instanceOf(BulkheadException.class));
         });
-        assertTrue(called.await(1000, TimeUnit.MILLISECONDS));
+        assertThat(called.await(1000, TimeUnit.MILLISECONDS), is(true));
     }
 
     // -- Private methods -----------------------------------------------------

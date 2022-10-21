@@ -37,6 +37,7 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
+import io.helidon.security.integration.jersey.SecurityDisabledFeature;
 import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.abac.AbacProvider;
@@ -122,6 +123,9 @@ public class SecurityCdiExtension implements Extension {
 
             jaxrs.applicationsToRun()
                     .forEach(app -> app.resourceConfig().register(feature));
+        } else {
+            SecurityDisabledFeature feature = new SecurityDisabledFeature(security);
+            jaxrs.applicationsToRun().forEach(app -> app.resourceConfig().register(feature));
         }
 
         Config webServerConfig = config.get("security.web-server");

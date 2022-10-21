@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,8 @@ import io.helidon.webserver.ServerResponse;
 
 import io.opentracing.SpanContext;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The JerseyExampleResource.
@@ -150,7 +151,7 @@ public class JerseyExampleResource {
         String content = new String(inputStream.readAllBytes());
 
         try {
-            assertEquals(JerseySupportTest.longData(length).toString(), content);
+            assertThat(content, is(JerseySupportTest.longData(length).toString()));
         } catch (Throwable e) {
             streamException = e;
             throw new IllegalStateException("NOT EQUALS");

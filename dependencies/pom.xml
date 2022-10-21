@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>2.5.5-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -42,36 +42,36 @@
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
-        <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
+        <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <!-- commons-codec is for dependency convergence only -->
         <version.lib.commons-codec>1.15</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>2.7.9</version.lib.eclipselink>
+        <version.lib.eclipselink>2.7.11</version.lib.eclipselink>
         <version.lib.el-api>3.0.3</version.lib.el-api>
         <version.lib.el-impl>3.0.4</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.google-api-client>1.32.2</version.lib.google-api-client>
-        <version.lib.google-oauth-client>1.32.1</version.lib.google-oauth-client>
+        <version.lib.google-api-client>1.34.1</version.lib.google-api-client>
+        <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>3.19.2</version.lib.google-protobuf>
+        <version.lib.google-protobuf>3.21.7</version.lib.google-protobuf>
         <version.lib.graalvm>21.3.0</version.lib.graalvm>
-        <version.lib.graphql-java>15.0</version.lib.graphql-java>
-        <version.lib.graphql-java.extended.scalars>15.0.0</version.lib.graphql-java.extended.scalars>
+        <version.lib.graphql-java>17.4</version.lib.graphql-java>
+        <version.lib.graphql-java.extended.scalars>17.1</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.8.9</version.lib.gson>
-        <version.lib.grpc>1.44.0</version.lib.grpc>
+        <version.lib.grpc>1.45.1</version.lib.grpc>
         <version.lib.guava>30.0-jre</version.lib.guava>
         <version.lib.h2>1.4.200</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>5.5.7.Final</version.lib.hibernate>
+        <version.lib.hibernate>5.6.11.Final</version.lib.hibernate>
         <version.lib.hikaricp>5.0.0</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
-        <!-- This is the BOM version for Jackson Databind 2.13.2.1 -->
-        <version.lib.jackson>2.13.2.20220324</version.lib.jackson>
+        <!-- This is the BOM version for Jackson Databind 2.13.2.2 -->
+        <version.lib.jackson>2.13.2.20220328</version.lib.jackson>
         <version.lib.jaegertracing>1.6.0</version.lib.jaegertracing>
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
@@ -115,15 +115,15 @@
         <version.lib.microprofile-tracing>1.3.3</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>1.0</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
-        <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.neo4j>4.4.3</version.lib.neo4j>
+        <version.lib.hibernate-validator>6.2.5.Final</version.lib.hibernate-validator>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
-        <version.lib.netty>4.1.73.Final</version.lib.netty>
+        <version.lib.netty>4.1.77.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
-        <version.lib.oci>2.19.0</version.lib.oci>
+        <version.lib.oci>2.41.0</version.lib.oci>
         <version.lib.oci-java-sdk-objectstorage>${version.lib.oci}</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -132,12 +132,13 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
+        <version.lib.perfmark-api>0.23.0</version.lib.perfmark-api>
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
-        <version.lib.postgresql>42.3.3</version.lib.postgresql>
+        <version.lib.postgresql>42.4.1</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>1.7.32</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.0.26</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.30</version.lib.snakeyaml>
+        <version.lib.snakeyaml>1.32</version.lib.snakeyaml>
         <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>1.17</version.lib.tyrus>
@@ -145,7 +146,7 @@
         <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
         <version.lib.weld-api>3.1.SP2</version.lib.weld-api>
         <version.lib.weld>3.1.6.Final</version.lib.weld>
-        <version.lib.yasson>1.0.8</version.lib.yasson>
+        <version.lib.yasson>1.0.11</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
@@ -456,15 +457,15 @@
 
             <!-- Dependency convergence. Should align with version used by io.grpc -->
             <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${version.lib.google-protobuf}</version>
-            </dependency>
-            <!-- Dependency convergence. Should align with version used by io.grpc -->
-            <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${version.lib.gson}</version>
+            </dependency>
+            <!-- Dependency convergence. Should align with version used by io.grpc -->
+            <dependency>
+              <groupId>io.perfmark</groupId>
+              <artifactId>perfmark-api</artifactId>
+              <version>${version.lib.perfmark-api}</version>
             </dependency>
 
             <dependency>
@@ -569,15 +570,20 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- For dependency converge only -->
+            <!-- For dependency converge and force uppgrade of oauth-client -->
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client</artifactId>
                 <version>${version.lib.google-oauth-client}</version>
+                <!-- Defer to versions from google-api-client -->
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.http-client</groupId>
                         <artifactId>google-http-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.http-client</groupId>
+                        <artifactId>google-http-client-gson</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -835,17 +841,6 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${version.lib.postgresql}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-objectstorage</artifactId>
-                <version>${version.lib.oci-java-sdk-objectstorage}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>jakarta.inject</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.zaxxer</groupId>
@@ -1132,6 +1127,17 @@
                 <artifactId>neo4j-java-driver</artifactId>
                 <version>${version.lib.neo4j}</version>
             </dependency>
+            <!-- Bean Validation -->
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${version.lib.hibernate-validator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator-cdi</artifactId>
+                <version>${version.lib.hibernate-validator}</version>
+            </dependency>
             <!-- Cron utils -->
             <dependency>
                 <groupId>com.cronutils</groupId>
@@ -1258,6 +1264,12 @@
             <!-- END OF Section 2: third party dependencies used by examples -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
+            <!-- Upgrades version pulled in by hibernate -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${version.lib.jaxb-runtime}</version>
+            </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-dns</artifactId>
@@ -1396,11 +1408,6 @@
 
             <!-- Section 4: Testing -->
             <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${version.lib.mockito}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${version.lib.junit}</version>
@@ -1491,6 +1498,14 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
+            <!-- Force upgrade. Used by grpc -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-bom</artifactId>
+                <version>${version.lib.google-protobuf}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc-bom</artifactId>
@@ -1512,12 +1527,749 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- OCI BOM omitted due to https://github.com/oracle/oci-java-sdk/issues/432 -->
+            <!--
             <dependency>
                 <groupId>com.oracle.oci.sdk</groupId>
                 <artifactId>oci-java-sdk-bom</artifactId>
                 <version>${version.lib.oci}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            -->
+
+            <!-- OCI BOM contents inlined below to work around https://github.com/oracle/oci-java-sdk/issues/432 -->
+
+            <!-- Common packages -->
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-circuitbreaker</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-common</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <!-- Service modules, alpha sorted -->
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-audit</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-containerengine</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-core</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-database</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-dns</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-email</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-filestorage</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-identity</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-loadbalancer</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-objectstorage</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-addons-resteasy-client-configurator</artifactId>
+              <version>${version.lib.oci}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-addons-sasl</artifactId>
+              <version>${version.lib.oci}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-addons-graalvm</artifactId>
+              <version>${version.lib.oci}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-resourcesearch</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-addons-apache</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-keymanagement</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-announcementsservice</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-healthchecks</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-waas</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-streaming</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-resourcemanager</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-monitoring</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-ons</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-autoscaling</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-budget</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-workrequests</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-limits</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-functions</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-events</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-dts</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-oce</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-oda</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-analytics</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-integration</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-osmanagement</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-marketplace</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-apigateway</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-applicationmigration</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-datacatalog</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-dataflow</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-datascience</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-nosql</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-secrets</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-vault</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-bds</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-encryption</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-cims</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-datasafe</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-mysql</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-dataintegration</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-ocvp</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-usageapi</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-blockchain</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-loggingingestion</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-logging</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-loganalytics</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-managementdashboard</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-sch</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-loggingsearch</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-managementagent</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-cloudguard</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-opsi</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-computeinstanceagent</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-optimizer</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-tenantmanagercontrolplane</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-rover</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-databasemanagement</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-artifacts</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-apmsynthetics</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-goldengate</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-apmcontrolplane</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-apmtraces</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-networkloadbalancer</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-vulnerabilityscanning</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-databasemigration</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-servicecatalog</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-ailanguage</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-operatoraccesscontrol</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-bastion</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-genericartifactscontent</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-jms</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-devops</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-aianomalydetection</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-datalabelingservice</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-datalabelingservicedataplane</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-apmconfig</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-waf</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-certificates</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-certificatesmanagement</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-usage</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-databasetools</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-servicemanagerproxy</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-appmgmtcontrol</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-ospgateway</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-identitydataplane</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-visualbuilder</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-osubusage</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-osubsubscription</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-osuborganizationsubscription</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-osubbillingschedule</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-dashboardservice</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-threatintelligence</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-aivision</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-aispeech</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-dataconnectivity</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-stackmonitoring</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-servicemesh</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-adm</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-licensemanager</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-onesubscription</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-governancerulescontrolplane</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-waa</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-networkfirewall</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-vnmonitoring</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-emwarehouse</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-lockbox</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-fusionapps</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-mediaservices</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-opa</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-opensearch</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
             </dependency>
 
         </dependencies>

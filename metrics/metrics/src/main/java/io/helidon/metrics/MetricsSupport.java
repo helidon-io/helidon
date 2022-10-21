@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,13 +173,18 @@ public final class MetricsSupport extends HelidonRestServiceSupport
      * Create a new builder to construct an instance.
      *
      * @return A new builder instance
+     * @deprecated Use {@link io.helidon.metrics.serviceapi.MetricsSupport#builder()} instead.
      */
+    @Deprecated(since = "2.5.2", forRemoval = false)
     public static Builder builder() {
         return new Builder();
     }
 
     private static MediaType findBestAccepted(RequestHeaders headers) {
-        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
+        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN,
+                                                             MediaType.APPLICATION_JSON,
+                                                             MediaType.APPLICATION_OPENMETRICS);
+
         return mediaType.orElse(null);
     }
 
@@ -194,6 +199,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
@@ -201,10 +207,10 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         }
 
         MediaType mediaType = findBestAccepted(req.headers());
-        if (mediaType == MediaType.APPLICATION_JSON) {
+        if (matches(mediaType, MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonData(registry));
-        } else if (mediaType == MediaType.TEXT_PLAIN) {
-            res.send(toPrometheusData(registry));
+        } else if (matches(mediaType, MediaType.TEXT_PLAIN, MediaType.APPLICATION_OPENMETRICS)) {
+            sendPrometheus(res, toPrometheusData(registry), mediaType);
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -218,6 +224,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
             return;
         }
 
+        // Options returns only the metadata, so it's OK to allow caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registry));
         } else {
@@ -488,13 +495,14 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
-                    if (mediaType == MediaType.APPLICATION_JSON) {
+                    if (matches(mediaType, MediaType.APPLICATION_JSON)) {
                         sendJson(res, jsonDataByName(registry, metricName));
-                    } else if (mediaType == MediaType.TEXT_PLAIN) {
-                        res.send(prometheusDataByName(registry, metricName));
+                    } else if (matches(mediaType, MediaType.TEXT_PLAIN, MediaType.APPLICATION_OPENMETRICS)) {
+                        sendPrometheus(res, prometheusDataByName(registry, metricName), mediaType);
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
                         res.send();
@@ -535,10 +543,11 @@ public final class MetricsSupport extends HelidonRestServiceSupport
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
-        if (mediaType == MediaType.APPLICATION_JSON) {
+        res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING);
+        if (matches(mediaType, MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonData(registries));
-        } else if (mediaType == MediaType.TEXT_PLAIN) {
-            res.send(toPrometheusData(registries));
+        } else if (matches(mediaType, MediaType.TEXT_PLAIN, MediaType.APPLICATION_OPENMETRICS)) {
+            sendPrometheus(res, toPrometheusData(registries), mediaType);
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -546,6 +555,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
+        // Options returns metadata only, so do not discourage caching.
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             sendJson(res, toJsonMeta(registries));
         } else {
@@ -554,11 +564,21 @@ public final class MetricsSupport extends HelidonRestServiceSupport
         }
     }
 
+    private static boolean matches(MediaType candidateMediaType, MediaType... standardTypes) {
+        for (MediaType mt : standardTypes) {
+            if (mt.test(candidateMediaType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
         registry.getOptionalMetricWithIDsEntry(metricName)
                 .ifPresentOrElse(entry -> {
+                    // Options returns only metadata, so do not discourage caching.
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
@@ -571,6 +591,21 @@ public final class MetricsSupport extends HelidonRestServiceSupport
                     res.status(Http.Status.NO_CONTENT_204);
                     res.send();
                 });
+    }
+
+    private static void sendPrometheus(ServerResponse res, String formattedOutput, MediaType requestedMediaType) {
+        MediaType.Builder responseMediaTypeBuilder = MediaType.builder()
+                .type(requestedMediaType.type())
+                .subtype(requestedMediaType.subtype())
+                .charset("UTF-8");
+
+        if (matches(requestedMediaType, MediaType.APPLICATION_OPENMETRICS)) {
+            responseMediaTypeBuilder.addParameter("version", "1.0.0");
+        } else if (matches(requestedMediaType, MediaType.TEXT_PLAIN)) {
+            responseMediaTypeBuilder.addParameter("version", "0.0.4");
+        }
+        res.addHeader("Content-Type", responseMediaTypeBuilder.build().toString());
+        res.send(formattedOutput + "# EOF\n");
     }
 
     /**
@@ -618,7 +653,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * performance metrics configuration
          * @deprecated Use {@link #metricsSettings(MetricsSettings.Builder)} instead
          */
-        @Deprecated
+        @Deprecated(since = "2.4.0", forRemoval = true)
         public Builder config(Config config) {
             super.config(config);
             metricsSettingsBuilder.config(config);
@@ -661,7 +696,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * {@link MetricsSettings.Builder#keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder)}
          * instead.
          */
-        @Deprecated
+        @Deprecated(since = "2.4.0", forRemoval = true)
         public Builder keyPerformanceIndicatorsMetricsSettings(KeyPerformanceIndicatorMetricsSettings.Builder builder) {
             this.metricsSettingsBuilder.keyPerformanceIndicatorSettings(builder);
             return this;
@@ -676,7 +711,7 @@ public final class MetricsSupport extends HelidonRestServiceSupport
          * {@link MetricsSettings.Builder#keyPerformanceIndicatorSettings(KeyPerformanceIndicatorMetricsSettings.Builder)}
          * instead.
          */
-        @Deprecated
+        @Deprecated(since = "2.4.0", forRemoval = true)
         public Builder keyPerformanceIndicatorsMetricsConfig(Config kpiConfig) {
             return keyPerformanceIndicatorsMetricsSettings(
                     KeyPerformanceIndicatorMetricsSettings.builder().config(kpiConfig));

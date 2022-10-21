@@ -165,11 +165,18 @@ public class HoconConfigParser implements ConfigParser {
             } else if (value instanceof ConfigObject) {
                 builder.addObject(key, fromConfig((ConfigObject) value));
             } else {
-                Object unwrapped = value.unwrapped();
-                if (unwrapped == null) {
-                    builder.addValue(key, "");
-                } else {
-                    builder.addValue(key, String.valueOf(unwrapped));
+                try {
+                    Object unwrapped = value.unwrapped();
+                    if (unwrapped == null) {
+                        builder.addValue(key, "");
+                    } else {
+                        builder.addValue(key, String.valueOf(unwrapped));
+                    }
+                } catch (com.typesafe.config.ConfigException.NotResolved e) {
+                    // An unresolved ConfigReference resolved later in config module since
+                    // Helidon and Hocon use the same reference syntax and resolving here
+                    // would be too early for resolution across sources
+                    builder.addValue(key, value.render());
                 }
             }
         });
@@ -184,11 +191,18 @@ public class HoconConfigParser implements ConfigParser {
             } else if (value instanceof ConfigObject) {
                 builder.addObject(fromConfig((ConfigObject) value));
             } else {
-                Object unwrapped = value.unwrapped();
-                if (unwrapped == null) {
-                    builder.addValue("");
-                } else {
-                    builder.addValue(String.valueOf(unwrapped));
+                try {
+                    Object unwrapped = value.unwrapped();
+                    if (unwrapped == null) {
+                        builder.addValue("");
+                    } else {
+                        builder.addValue(String.valueOf(unwrapped));
+                    }
+                } catch (com.typesafe.config.ConfigException.NotResolved e) {
+                    // An unresolved ConfigReference resolved later in config module since
+                    // Helidon and Hocon use the same reference syntax and resolving here
+                    // would be too early for resolution across sources
+                    builder.addValue(value.render());
                 }
             }
         });

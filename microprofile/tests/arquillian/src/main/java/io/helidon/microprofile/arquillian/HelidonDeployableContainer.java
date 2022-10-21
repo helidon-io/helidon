@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DefinitionException;
+import javax.enterprise.util.AnnotationLiteral;
 
 import io.helidon.config.mp.MpConfigSources;
 
@@ -56,6 +57,8 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
@@ -109,6 +112,17 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      * Run contexts - kept for each deployment.
      */
     private final Map<String, RunContext> contexts = new HashMap<>();
+
+    /**
+     * Annotation literal to inject base registry.
+     */
+    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
+
+        @Override
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.BASE;
+        }
+    }
 
     @Override
     public Class<HelidonContainerConfiguration> getConfigurationClass() {
@@ -183,8 +197,18 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             LOGGER.log(Level.INFO, "Failed to start container", e);
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
         } catch (InvocationTargetException e) {
+
+            try {
+                context.runnerClass
+                        .getDeclaredMethod("abortedCleanup")
+                        .invoke(context.runner);
+            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ex) {
+                ex.printStackTrace();
+            }
+
             throw lookForSupressedDeploymentException(e.getTargetException())
-                    .map(d -> new org.jboss.arquillian.container.spi.client.container.DeploymentException("Oj!", d))
+                    .map(d ->
+                            new org.jboss.arquillian.container.spi.client.container.DeploymentException("Deployment failure!", d))
                     .orElseThrow(() -> new DefinitionException(e));
         } catch (ReflectiveOperationException e) {
             LOGGER.log(Level.INFO, "Failed to start container", e);
@@ -215,10 +239,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 deploymentException = candicate;
             }
         }
-        if (deploymentException.isPresent()) {
-            return deploymentException;
-        }
-        return Optional.empty();
+        return deploymentException;
     }
 
     void startServer(RunContext context, Path[] classPath)
@@ -244,9 +265,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
 
         context.classLoader = new HelidonContainerClassloader(parent,
-                                                              urlClassloader,
-                                                              excludedLibrariesPattern,
-                                                              containerConfig.getUserParentClassloader());
+                urlClassloader,
+                excludedLibrariesPattern,
+                containerConfig.getUserParentClassloader());
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
@@ -266,16 +287,22 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             }
         });
 
-        // Configuration needs to be explicit, as some TCK libraries contain an unfortunate
-        //    META-INF/microprofile-config.properties (such as JWT-Auth)
         ConfigBuilder builder = ConfigProviderResolver.instance()
                 .getBuilder();
-        Config config =
-                containerConfig.useBuilder(builder.withSources(findMpConfigSources(classPath)))
-                .addDiscoveredConverters()
-                // will read application.yaml
-                .addDiscoveredSources()
-                .build();
+
+        Config config;
+
+        if (containerConfig.hasCustomConfig()) {
+            config = containerConfig.useBuilder(builder).build();
+        } else {
+            // Configuration needs to be explicit, as some TCK libraries contain an unfortunate
+            //    META-INF/microprofile-config.properties (such as JWT-Auth)
+            config = containerConfig.useBuilder(builder.withSources(findMpConfigSources(classPath)))
+                    .addDiscoveredConverters()
+                    // will read application.yaml
+                    .addDiscoveredSources()
+                    .build();
+        }
 
         context.runnerClass
                 .getDeclaredMethod("start", Config.class, Integer.TYPE)
@@ -364,11 +391,17 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public void undeploy(Archive<?> archive) {
+        // Clean up all the base metrics for next test
+        cleanupBaseMetrics();
+
+        // Clean up contexts
         RunContext context = contexts.remove(archive.getId());
         if (null == context) {
             LOGGER.severe("Undeploying an archive that was not deployed. ID: " + archive.getId());
             return;
         }
+
+        // Stop the server
         try {
             context.runnerClass.getDeclaredMethod("stop")
                     .invoke(context.runner);
@@ -383,8 +416,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             Thread.currentThread().setContextClassLoader(context.oldClassLoader);
         }
 
+        // Try to clean up the deploy directory
         if (containerConfig.getDeleteTmp()) {
-            // Try to clean up the deploy directory
             if (context.deployDir != null) {
                 try {
                     Files.walk(context.deployDir)
@@ -420,6 +453,22 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public void undeploy(Descriptor descriptor) {
         // No-Op
+    }
+
+    /**
+     * Injects the base metric registry and cleans up all metrics in preparation to run another
+     * Arquillian test in the same VM. Without this cleanup, metrics added by a previous test
+     * would be available and may cause failures.
+     */
+    private void cleanupBaseMetrics() {
+        try {
+            MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class,
+                    new BaseRegistryTypeLiteral()).get();
+            Objects.requireNonNull(metricRegistry);
+            metricRegistry.removeMatching((m, v) -> true);
+        } catch (IllegalStateException e) {
+            LOGGER.log(Level.WARNING, "Unable to cleanup base metrics", e);
+        }
     }
 
     /**

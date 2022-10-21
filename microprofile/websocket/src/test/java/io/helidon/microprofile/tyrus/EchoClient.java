@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,8 @@ import java.util.logging.Logger;
 
 import org.glassfish.tyrus.client.ClientManager;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -90,7 +91,7 @@ class EchoClient {
                             LOGGER.info("Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(equals.apply(messages[index], message));
+                            assertThat(messages[index] +":"+message, equals.apply(messages[index], message), is(true));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {

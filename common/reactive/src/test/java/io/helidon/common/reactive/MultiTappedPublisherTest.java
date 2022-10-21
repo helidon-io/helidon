@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,15 @@
 package io.helidon.common.reactive;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MultiTappedPublisherTest {
 
@@ -162,7 +161,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -183,7 +182,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -207,7 +206,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -234,7 +233,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -327,7 +326,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -346,7 +345,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -365,7 +364,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -384,7 +383,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -448,7 +447,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 
@@ -474,7 +473,7 @@ public class MultiTappedPublisherTest {
 
         ts.requestMax();
 
-        assertEquals(ts.getItems(), Collections.singletonList(1));
+        assertThat(ts.getItems(), contains(1));
         assertThat(ts.getLastError(), is(nullValue()));
         assertThat(ts.isComplete(), is(true));
 

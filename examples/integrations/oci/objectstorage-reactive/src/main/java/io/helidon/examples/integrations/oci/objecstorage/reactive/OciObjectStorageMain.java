@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,15 @@ package io.helidon.examples.integrations.oci.objecstorage.reactive;
 
 import io.helidon.common.LogConfig;
 import io.helidon.config.Config;
-import io.helidon.health.HealthSupport;
-import io.helidon.integrations.oci.objectstorage.OciObjectStorageRx;
-import io.helidon.integrations.oci.objectstorage.health.OciObjectStorageHealthCheck;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
+
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.model.BmcException;
+import com.oracle.bmc.objectstorage.ObjectStorageAsync;
+import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -40,7 +44,7 @@ public final class OciObjectStorageMain {
      *
      * @param args ignored
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         LogConfig.configureRuntime();
         // as I cannot share my configuration of OCI, let's combine the configuration
         // from my home directory with the one compiled into the jar
@@ -52,26 +56,19 @@ public final class OciObjectStorageMain {
 
         // this requires OCI configuration in the usual place
         // ~/.oci/config
-        OciObjectStorageRx ociObjectStorage = OciObjectStorageRx.create(ociConfig);
+        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
+        ObjectStorageAsync objectStorageAsyncClient = new ObjectStorageAsyncClient(authProvider);
 
         // the following parameters are required
-        String bucketName = ociConfig.get("objectstorage").get("bucket").asString().get();
-        String namespace = ociConfig.get("objectstorage").get("namespace").asString().get();
-
-        // setup ObjectStorage health check
-        HealthSupport health = HealthSupport.builder()
-                .addLiveness(OciObjectStorageHealthCheck.builder()
-                        .ociObjectStorage(ociObjectStorage)
-                        .addBucket(bucketName)
-                        .namespace(namespace)
-                        .build())
-                .build();
+        String bucketName = ociConfig.get("objectstorage").get("bucketName").asString().get();
 
         WebServer.builder()
                 .config(config.get("server"))
                 .routing(Routing.builder()
-                                 .register(health)
-                                 .register("/files", new ObjectStorageService(ociObjectStorage, bucketName)))
+                                 .register("/files", new ObjectStorageService(objectStorageAsyncClient, bucketName))
+                                 // OCI SDK error handling
+                                 .error(BmcException.class, (req, res, ex) -> res.status(ex.getStatusCode())
+                                         .send(ex.getMessage())))
                 .build()
                 .start()
                 .await();

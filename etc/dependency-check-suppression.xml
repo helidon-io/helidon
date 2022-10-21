@@ -159,6 +159,20 @@
    <cve>CVE-2021-34371</cve>
 </suppress>
 
+<!-- Neo4j driver bundles some netty components. This CVE "only impacts applications
+     running on Java version 6". We require Java 11 or newer.
+     Helidon's Netty version has already been upgraded to 4.1.77.Final (or newer) which does
+     not contain this CVE.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-java-driver-4.4.3.jar (shaded: io.netty:netty-transport:4.1.73.Final)
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@4.1.73.Final$</packageUrl>
+   <cve>CVE-2022-24823</cve>
+</suppress>
+
+
 <!-- This CVE was fixed in the EL implementations com.sun.el:el-ri:3.0.4 and org.glassfish:jakarta.el:3.0.4
      which we have upgraded to. But the scan triggers a false positive on the API: jakarta.el:jakarta.el-api:3.0.3
 -->
@@ -180,6 +194,115 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
    <cpe>cpe:/a:netty:netty</cpe>
+</suppress>
+
+<!-- This package was being detected as an old version of com.google.code.gson:gson. The version 
+     of com.google.cod.gson:gson that is brought in transitively is 2.8.9 which does not 
+     contain this CVE.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: google-http-client-gson-1.41.8.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
+   <cve>CVE-2022-25647</cve>
+</suppress>
+
+<!-- This CVE is against micronaut's Content Type header parsing. We never use micronaut classes
+     to parse the Content Type header. So this is N/A in our use of micronaut (for micronaut data).
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: micronaut-core-3.5.13.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.micronaut/micronaut\-core@.*$</packageUrl>
+   <vulnerabilityName>CVE-2022-21700</vulnerabilityName>
+</suppress>
+
+<!-- okhttp is a transitive fourth party dependency of Jaeger client. This CVE is considered
+     by the okhttp team as not exploitable unless the class in question is used
+     directly by an application (highly unlikely). See https://github.com/square/okhttp/issues/6724
+     They have only fixed this in 4.9.3 and newer. We can't force upgrade due to a tangle of
+     dependencies, compatibility, and issues with dependency convergence.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: okhttp-3.14.9.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
+   <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
+</suppress>
+
+<!-- False Positive. Matching "pki" in "zipkin" to "pki-core" project.
+     See  https://github.com/jeremylong/DependencyCheck/issues/4692
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: zipkin-2.12.5.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.zipkin\.zipkin2/zipkin@.*$</packageUrl>
+   <cve>CVE-2022-2393</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: zipkin-reporter-2.12.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.zipkin\.reporter2/zipkin\-reporter@.*$</packageUrl>
+   <cve>CVE-2022-2393</cve>
+</suppress>
+
+<!-- False Positive. This CVE is fixed in snakeyaml-1.32 which we use, but CVE has not been updated.
+     See https://github.com/jeremylong/DependencyCheck/issues/4839
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: snakeyaml-1.32.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+   <vulnerabilityName>CVE-2022-38752</vulnerabilityName>
+</suppress>
+
+<!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-graphql-api-1.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.graphql/microprofile\-graphql\-api@.*$</packageUrl>
+   <cve>CVE-2022-37734</cve>
+</suppress>
+
+<!-- False Positive. This CVE is against graphql-java, not graphql-java-extended-scalars
+     See https://github.com/jeremylong/DependencyCheck/issues/4851
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: graphql-java-extended-scalars-17.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/graphql\-java\-extended\-scalars@.*$</packageUrl>
+   <cve>CVE-2022-37734</cve>
+</suppress>
+
+
+<!-- False Positive. This CVE is against graphql-java, not java-dataloader
+     See https://github.com/jeremylong/DependencyCheck/issues/4851
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: java-dataloader-3.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
+   <cve>CVE-2022-37734</cve>
+</suppress>
+
+<!-- False Postive. This CVE is against the kafka server. This is the kafka client
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: kafka-clients-2.8.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
+   <cve>CVE-2022-34917</cve>
 </suppress>
 
 </suppressions>

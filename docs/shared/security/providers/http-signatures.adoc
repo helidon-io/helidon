@@ -52,6 +52,8 @@ https://github.com/oracle/helidon/tree/master/examples/security/webserver-signat
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
     - http-signatures:
         inbound:

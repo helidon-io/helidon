@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -289,7 +289,8 @@ public class IdcsMtRoleMapperRxProvider extends IdcsRoleMapperRxProviderBase {
     protected Single<Optional<String>> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
         return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppTokenRx(oidcConfig().appWebClient(),
-                                                                              multitenantEndpoints.tokenEndpoint(idcsTenantId)))
+                                                                              multitenantEndpoints.tokenEndpoint(idcsTenantId),
+                                                                              oidcConfig().tokenRefreshSkew()))
                 .getToken(tracing);
     }
 

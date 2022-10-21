@@ -29,11 +29,8 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
-import javax.enterprise.inject.spi.WithAnnotations;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 
@@ -63,27 +60,20 @@ public class CorsCdiExtension implements Extension {
 
     private CorsSupportMp corsSupportMp;
 
-    private final Set<AnnotatedType<?>> annotatedTypes = new HashSet<>();
     private final Set<Method> methodsWithCrossOriginIncorrectlyUsed = new HashSet<>();
     private final Map<Method, CrossOriginConfig> corsConfigs = new HashMap<>();
 
-    void recordCrossOrigin(@Observes @WithAnnotations(CrossOrigin.class) ProcessAnnotatedType<?> pat) {
-        annotatedTypes.add(pat.getAnnotatedType());
-    }
-
     void processManagedBean(@Observes ProcessManagedBean<?> pmb) {
-        if (annotatedTypes.contains(pmb.getAnnotatedBeanClass())) {
-            pmb.getAnnotatedBeanClass().getMethods().forEach(am -> {
-                Method method = am.getJavaMember();
-                if (am.isAnnotationPresent(CrossOrigin.class) && !am.isAnnotationPresent(OPTIONS.class)) {
-                    methodsWithCrossOriginIncorrectlyUsed.add(method);
-                } else {
-                    crossOriginConfigFromAnnotationOnAssociatedMethod(method)
-                            .ifPresent(crossOriginConfig -> corsConfigs.put(method,
-                                                                            crossOriginConfig));
-                }
-            });
-        }
+        pmb.getAnnotatedBeanClass().getMethods().forEach(am -> {
+            Method method = am.getJavaMember();
+            if (am.isAnnotationPresent(CrossOrigin.class) && !am.isAnnotationPresent(OPTIONS.class)) {
+                methodsWithCrossOriginIncorrectlyUsed.add(method);
+            } else {
+                crossOriginConfigFromAnnotationOnAssociatedMethod(method)
+                        .ifPresent(crossOriginConfig -> corsConfigs.put(method,
+                                                                        crossOriginConfig));
+            }
+        });
     }
 
     void recordSupplierOfCrossOriginConfigFromAnnotation(Supplier<Optional<CrossOriginConfig>> supplier) {

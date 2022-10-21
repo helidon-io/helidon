@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.dbclient.jdbc.JdbcStatement.Parser;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 /**
  * Unit test for {@link JdbcStatement.Parser}.
@@ -43,8 +44,8 @@ public class JdbcStatementParserTest {
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
-        assertEquals(stmtIn, stmtOut);
-        assertTrue(names.isEmpty());
+        assertThat(stmtOut, is(stmtIn));
+        assertThat(names, empty());
     }
     
     /**
@@ -61,14 +62,11 @@ public class JdbcStatementParserTest {
                 "SELECT t.*, 'first' FROM table t\r\n" +
                 "  WHERE name = ?\n" +
                 "   AND age > ?";
-        List<String> namesExp = new ArrayList<>(2);
-        namesExp.add("my_n4m3");
-        namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
-        assertEquals(stmtExp, stmtOut);
-        assertEquals(namesExp, names);
+        assertThat(stmtOut, is(stmtExp));
+        assertThat(names, contains("my_n4m3", "ag3"));
     }
 
     /**
@@ -89,14 +87,11 @@ public class JdbcStatementParserTest {
                 "  WHERE address IS NULL\r\n" +
                 " AND name = ?\n" +
                 "   AND age > ?";
-        List<String> namesExp = new ArrayList<>(2);
-        namesExp.add("n4m3");
-        namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
-        assertEquals(stmtExp, stmtOut);
-        assertEquals(namesExp, names);
+        assertThat(stmtOut, is(stmtExp));
+        assertThat(names, contains("n4m3", "ag3"));
     }
 
     /**
@@ -115,14 +110,11 @@ public class JdbcStatementParserTest {
                 "  WHERE address IS NULL\r\n" +
                 " AND name = ?\n" +
                 "   AND age > ?";
-        List<String> namesExp = new ArrayList<>(2);
-        namesExp.add("myN4m3");
-        namesExp.add("ag3");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
-        assertEquals(stmtExp, stmtOut);
-        assertEquals(namesExp, names);
+        assertThat(stmtOut, is(stmtExp));
+        assertThat(names, contains("myN4m3", "ag3"));
     }
 
     /**
@@ -143,13 +135,11 @@ public class JdbcStatementParserTest {
                 " INNER JOIN address a ON a.id = p.aid" +
                 " WHERE p.age > :12age" +
                 "   AND a.zip = ?";
-        List<String> namesExp = new ArrayList<>(2);
-        namesExp.add("zip");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
-        assertEquals(stmtExp, stmtOut);
-        assertEquals(namesExp, names);
+        assertThat(stmtOut, is(stmtExp));
+        assertThat(names, contains("zip"));
     }
 
     @Test
@@ -160,13 +150,11 @@ public class JdbcStatementParserTest {
         String stmtExp = "INSERT INTO example (created_at)\n" +
                 "      VALUES (?)\n" +
                 "      RETURNING example_id, created_at;";
-        List<String> namesExp = new ArrayList<>(1);
-        namesExp.add("created_at");
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
-        assertEquals(stmtExp, stmtOut);
-        assertEquals(namesExp, names);
+        assertThat(stmtOut, is(stmtExp));
+        assertThat(names, contains("created_at"));
     }
 
 }

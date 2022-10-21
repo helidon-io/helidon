@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,5 +43,5 @@ module io.helidon.webserver.jersey {
     provides InjectionManagerFactory with io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory;
 
     // reflection access from jersey injection
-    opens io.helidon.webserver.jersey to hk2.locator,hk2.utils;
+    opens io.helidon.webserver.jersey to hk2.locator,hk2.utils,weld.core.impl;
 }

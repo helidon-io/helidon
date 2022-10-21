@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webclient</groupId>
         <artifactId>helidon-webclient-project</artifactId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>2.5.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webclient</artifactId>
@@ -46,6 +46,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-key-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -70,6 +74,10 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns</artifactId>
         </dependency>
 
         <dependency>

@@ -18,24 +18,22 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 
+import javax.enterprise.inject.spi.AnnotatedMethod;
+
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-/**
- * Class FallbackAntn.
- */
 class FallbackAntn extends MethodAntn implements Fallback {
 
     /**
      * Constructor.
      *
-     * @param beanClass Bean class.
-     * @param method The method.
+     * @param annotatedMethod The annotated method.
      */
-    FallbackAntn(Class<?> beanClass, Method method) {
-        super(beanClass, method);
+    FallbackAntn(AnnotatedMethod<?> annotatedMethod) {
+        super(annotatedMethod);
     }
 
     @Override

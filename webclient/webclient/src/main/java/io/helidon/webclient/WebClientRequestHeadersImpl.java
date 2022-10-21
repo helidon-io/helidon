@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -45,13 +46,13 @@ class WebClientRequestHeadersImpl implements WebClientRequestHeaders {
 
     private static final DateTimeFormatter FORMATTER = Http.DateTime.RFC_1123_DATE_TIME.withZone(ZoneId.of("GMT"));
 
-    private final Map<String, List<String>> headers = new HashMap<>();
+    private final Map<String, List<String>> headers = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
 
     WebClientRequestHeadersImpl() {
     }
 
     WebClientRequestHeadersImpl(WebClientRequestHeaders headers) {
-        this.headers.putAll(headers.toMap());
+        headers.toMap().forEach((key, values) -> this.headers.computeIfAbsent(key, k -> new ArrayList<>()).addAll(values));
     }
 
     @Override

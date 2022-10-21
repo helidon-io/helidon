@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,12 +369,12 @@ class ThreadPoolTest {
         assertThat(pool.getPoolSize(), is(coreSize));
         assertThat(pool.getQueueSize(), is(0));
 
-        // Add growthThreshold + 1 tasks to fill the queue to just above the threshold
+        // Add growthThreshold tasks to fill the queue to just the threshold
         // and make sure the pool has not grown
 
-        addTasks(growthThreshold + 1);
+        addTasks(growthThreshold);
         assertThat(pool.getPoolSize(), is(coreSize));
-        assertThat(pool.getQueueSize(), is(growthThreshold + 1));
+        assertThat(pool.getQueueSize(), is(growthThreshold));
 
         // Add 1 task at a time and the pool should grow by one thread each time since
         // we have a 100% rate. Repeat to grow to max size.
@@ -388,7 +388,7 @@ class ThreadPoolTest {
         // Ensure that pool size is at max and that the queue is still just above the threshold
 
         assertThat(pool.getPoolSize(), is(maxSize));
-        assertThat(pool.getQueueSize(), is(growthThreshold + 1));
+        assertThat(pool.getQueueSize(), is(growthThreshold));
 
         // Let tasks run until we empty the queue
 
@@ -408,14 +408,46 @@ class ThreadPoolTest {
 
         // Fill the queue again
 
-        addTasks(growthThreshold + 1);
+        addTasks(growthThreshold);
         assertThat(pool.getPoolSize(), is(coreSize));
-        assertThat(pool.getQueueSize(), is(growthThreshold + 1));
+        assertThat(pool.getQueueSize(), is(growthThreshold));
 
         // Add 1 task and ensure that we grow by 1 thread
 
         addTasks(1);
         waitUntilActiveThreadsIs(coreSize + 1);
+    }
+
+    @Test
+    void testSimpleGrowth() throws InterruptedException {
+        int coreSize = 1;
+        int maxSize = 2;
+        int growthThreshold = 0;
+        int growthRate = 100;
+
+        pool = newPool(coreSize, maxSize, growthThreshold, growthRate);
+
+        // Create single thread to fill coreSize
+        CountDownLatch running1 = new CountDownLatch(1);
+        Task task1 = new Task(running1);
+        pool.submit(task1);
+        running1.await();
+        assertThat(pool.getPoolSize(), is(coreSize));
+        assertThat(pool.getQueueSize(), is(0));
+
+        // New thread should cause immediate growth to maxSize, no queueing
+        CountDownLatch running2 = new CountDownLatch(1);
+        Task task2 = new Task(running2);
+        pool.submit(task2);
+        boolean success = running2.await(1, SECONDS);
+        assertThat(success, is(true));
+        assertThat(pool.getPoolSize(), is(maxSize));
+        assertThat(pool.getQueueSize(), is(0));
+
+        // Clean up
+        task1.finish();
+        task2.finish();
+        pool.shutdown();
     }
 
     @Test
@@ -498,6 +530,41 @@ class ThreadPoolTest {
         } catch (IllegalStateException e) {
             assertThat(customPolicy.getRejectionCount(), is(1));
         }
+    }
+
+    @Test
+    void testFailedAndCompletedCounters() throws InterruptedException {
+        pool = newPool( 4, 4, 10, 20);
+
+        CountDownLatch running1 = new CountDownLatch(1);
+        CountDownLatch running2 = new CountDownLatch(1);
+        Task task1 = new Task(running1);
+        Task task2 = new Task(running2);
+        pool.submit(task1);
+        pool.submit(task2);
+        running1.await();
+        running2.await();
+        task1.finish();
+        task2.finish();
+        Task task3 = new Task() {
+            @Override
+            public void run() {
+                throw new RuntimeException("Oops");
+            }
+        };
+        pool.submit(task3);
+        Task task4 = new Task() {
+            @Override
+            public void run() {
+                throw new RuntimeException("Oops");
+            }
+        };
+        pool.submit(task4);
+        pool.shutdown();
+        assertThat(pool.awaitTermination(20, SECONDS), is(true));
+        assertThat(pool.getCompletedTasks(), is(2));
+        assertThat(pool.getFailedTasks(), is(2));
+        assertThat(pool.getTotalTasks(), is(pool.getCompletedTasks() + pool.getFailedTasks()));
     }
 
     private CountDownLatch addTasks(int count) {

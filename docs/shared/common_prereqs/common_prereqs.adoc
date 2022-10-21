@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 
 // tag::common-prereqs-table-contents[]
 
-|A Helidon MP Application | You can use your own application or use the https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart] to create a sample application.
+|A Helidon {upper-case-flavor} Application | You can use your own application or use the https://helidon.io/docs/v2/#/{lower-case-flavor}/guides/02_quickstart[Helidon {upper-case-flavor} Quickstart] to create a sample application.
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) |Helidon requires Java 11+.
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
 |https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,12 @@ public final class WebServerTls {
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
+
+    /**
+     * This constant is a context classifier for the x509 client certificate if it is present. Callers may use this
+     * constant to lookup the client certificate associated with the current request context.
+     */
+    public static final String CLIENT_X509_CERTIFICATE = WebServerTls.class.getName() + ".client-x509-certificate";
 
     private final Set<String> enabledTlsProtocols;
     private final Set<String> cipherSuite;
@@ -168,6 +174,12 @@ public final class WebServerTls {
          * @return this builder
          */
         public Builder config(Config config) {
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
+            if (explicitEnabled != null && !explicitEnabled) {
+                return this;
+            }
+
             config.get("client-auth").asString().ifPresent(this::clientAuth);
             config.get("private-key")
                     .ifExists(it -> privateKey(KeyConfig.create(it)));
@@ -181,8 +193,6 @@ public final class WebServerTls {
             DeprecatedConfig.get(config, "session-timeout-seconds", "session-timeout")
                     .asLong()
                     .ifPresent(this::sessionTimeoutSeconds);
-
-            config.get("enabled").asBoolean().ifPresent(this::enabled);
 
             return this;
         }

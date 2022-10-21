@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,6 +208,8 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int initialBufferSize;
         private final boolean enableCompression;
         private final long maxPayloadSize;
+        private final long backpressureBufferSize;
+        private final BackpressureStrategy backpressureStrategy;
 
         /**
          * Creates new instance.
@@ -227,6 +229,8 @@ class ServerBasicConfig implements ServerConfiguration {
             this.initialBufferSize = builder.initialBufferSize();
             this.enableCompression = builder.enableCompression();
             this.maxPayloadSize = builder.maxPayloadSize();
+            this.backpressureBufferSize = builder.backpressureBufferSize();
+            this.backpressureStrategy = builder.backpressureStrategy();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
         }
@@ -324,6 +328,16 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public long maxPayloadSize() {
             return maxPayloadSize;
+        }
+
+        @Override
+        public long backpressureBufferSize() {
+            return backpressureBufferSize;
+        }
+
+        @Override
+        public BackpressureStrategy backpressureStrategy() {
+            return backpressureStrategy;
         }
     }
 }

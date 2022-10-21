@@ -23,7 +23,7 @@
     <parent>
         <artifactId>helidon-examples-project</artifactId>
         <groupId>io.helidon.examples</groupId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>2.5.5-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
@@ -35,6 +35,7 @@
         <module>exemplar</module>
         <module>kpi</module>
         <module>filtering</module>
+        <module>http-status-count-se</module>
     </modules>
 
 </project>

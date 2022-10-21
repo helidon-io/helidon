@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -386,7 +386,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
             if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
                 String firstHost = entry.getValue().get(0);
-                return oidcConfig.redirectUriWithHost(env.transport() + "://" + firstHost);
+                return oidcConfig.redirectUriWithHost(oidcConfig.forceHttpsRedirects() ? "https" : env.transport()
+                        + "://" + firstHost);
             }
         }
 

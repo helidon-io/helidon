@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import javax.ws.rs.core.Response;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test that the resource class {@link VetoedResource} is not part
@@ -37,6 +38,6 @@ class VetoedResourceTest {
     @Test
     void testVetoed() {
         Response res = webTarget.path("/vetoed").request().get();
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
+        assertThat(res.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
     }
 }

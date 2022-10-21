@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>2.5.1-SNAPSHOT</version>
+        <version>2.5.5-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>
@@ -52,6 +52,14 @@
         <dependency>
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
 
         <!-- Runtime-scoped dependencies. -->
@@ -107,17 +115,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Provided-scoped dependencies. -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.transaction</groupId>
-            <artifactId>jakarta.transaction-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- Test-scoped dependencies. -->
         <dependency>

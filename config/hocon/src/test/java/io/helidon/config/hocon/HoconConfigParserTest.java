@@ -38,9 +38,6 @@ import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
-import io.helidon.config.spi.ConfigParserException;
-
-import com.typesafe.config.ConfigResolveOptions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigValues.simpleValue;
@@ -50,11 +47,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.stringContainsInOrder;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link HoconConfigParser}.
@@ -63,7 +57,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabled() {
-        ConfigParser parser = HoconConfigParser.create();
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> ""
                                                + "aaa = 1 \n"
                                                + "bbb = ${aaa} \n"
@@ -78,28 +72,8 @@ public class HoconConfigParserTest {
     }
 
     @Test
-    public void testResolveDisabled() {
-        ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParser.builder().disableResolving().build();
-            parser.parse((StringContent) () -> ""
-                                 + "aaa = 1 \n"
-                                 + "bbb = ${aaa} \n"
-                                 + "ccc = \"${aaa}\" \n"
-                                 + "ddd = ${?zzz}",
-                         it -> Optional.empty());
-        });
-
-        assertThat(cpe.getMessage(),
-                   stringContainsInOrder(List.of(
-                           "Cannot read from source",
-                           "substitution not resolved",
-                           "${aaa}")));
-        assertThat(cpe.getCause(), instanceOf(com.typesafe.config.ConfigException.NotResolved.class));
-    }
-
-    @Test
     public void testResolveEnabledEnvVar() {
-        ConfigParser parser = HoconConfigParser.create();
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
@@ -107,25 +81,8 @@ public class HoconConfigParserTest {
     }
 
     @Test
-    public void testResolveEnabledEnvVarDisabled() {
-        ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
-            ConfigParser parser = HoconConfigParser.builder()
-                    .resolveOptions(ConfigResolveOptions.noSystem())
-                    .build();
-            parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}", it -> Optional.empty());
-        });
-
-        assertThat(cpe.getMessage(),
-                   stringContainsInOrder(List.of(
-                           "Cannot read from source",
-                           "not resolve substitution ",
-                           "${HOCON_TEST_PROPERTY}")));
-        assertThat(cpe.getCause(), instanceOf(com.typesafe.config.ConfigException.UnresolvedSubstitution.class));
-    }
-
-    @Test
     public void testEmpty() {
-        HoconConfigParser parser = HoconConfigParser.create();
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(0));
@@ -133,7 +90,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testSingleValue() {
-        HoconConfigParser parser = HoconConfigParser.create();
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = bbb", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
@@ -142,7 +99,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testStringListValue() {
-        HoconConfigParser parser = HoconConfigParser.create();
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> "aaa = [ bbb, ccc, ddd ]", it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(1));
@@ -156,7 +113,7 @@ public class HoconConfigParserTest {
 
     @Test
     public void testComplexValue() {
-        HoconConfigParser parser = HoconConfigParser.create();
+        ConfigParser parser = createResolvingParser();
         ObjectNode node = parser.parse((StringContent) () -> ""
                                                + "aaa =  \"bbb\"\n"
                                                + "arr = [ bbb, 13, true, 3.14159 ] \n"
@@ -245,11 +202,11 @@ public class HoconConfigParserTest {
         assertThat(keys, containsInAnyOrder("oracle~1com", "oracle~1com.prop1", "oracle~1com.prop2",
                                             "oracle", "oracle.com", "oracle.cz"));
 
-        //map
+        //map, expect keys to be unescaped
         Map<String, String> map = config.asMap().get();
         assertThat(map.keySet(), hasSize(4));
-        assertThat(map.get("oracle~1com.prop1"), is("val1"));
-        assertThat(map.get("oracle~1com.prop2"), is("val2"));
+        assertThat(map.get("oracle.com.prop1"), is("val1"));
+        assertThat(map.get("oracle.com.prop2"), is("val2"));
         assertThat(map.get("oracle.com"), is("1"));
         assertThat(map.get("oracle.cz"), is("2"));
     }
@@ -398,5 +355,9 @@ public class HoconConfigParserTest {
                     config.get("storagePassphrase").asString().get()
             );
         }
+    }
+
+    private static ConfigParser createResolvingParser() {
+        return HoconConfigParser.builder().resolvingEnabled(true).build();
     }
 }

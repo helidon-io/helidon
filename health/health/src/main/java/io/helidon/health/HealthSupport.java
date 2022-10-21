@@ -39,6 +39,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -85,8 +86,8 @@ public final class HealthSupport implements Service {
     private final boolean backwardCompatible;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final MessageBodyWriter<JsonStructure> jsonpWriter = JsonpSupport.writer();
-    private final Timeout timeout;
-    private final Async async;
+    private final LazyValue<? extends Timeout> timeout;
+    private final LazyValue<? extends Async> async;
 
     private HealthSupport(Builder builder) {
         this.enabled = builder.enabled;
@@ -120,9 +121,9 @@ public final class HealthSupport implements Service {
             this.excludedHealthChecks = Collections.emptySet();
         }
 
-
-        this.timeout = Timeout.create(Duration.ofMillis(builder.timeoutMillis));
-        this.async = Async.create();
+        // Lazy values to prevent early init of maybe-not-yet-configured FT thread pools
+        this.timeout = LazyValue.create(() -> Timeout.create(Duration.ofMillis(builder.timeoutMillis)));
+        this.async = LazyValue.create(Async::create);
     }
 
     @Override
@@ -174,7 +175,8 @@ public final class HealthSupport implements Service {
 
     void invoke(ServerResponse res, List<HealthCheck> healthChecks, boolean sendDetails) {
         // timeout on the asynchronous execution
-        Single<HealthResponse> result = timeout.invoke(() -> async.invoke(() -> callHealthChecks(healthChecks)));
+        Single<HealthResponse> result = timeout.get().invoke(
+                () -> async.get().invoke(() -> callHealthChecks(healthChecks)));
 
         // handle timeouts and failures in execution
         result = result.onErrorResume(throwable -> {
@@ -188,7 +190,9 @@ public final class HealthSupport implements Service {
             if (status == Http.Status.OK_200.code() && !sendDetails) {
                 status = Http.Status.NO_CONTENT_204.code();
             }
-            res.status(status);
+            res.cachingStrategy(ServerResponse.CachingStrategy.NO_CACHING)
+                    .status(status);
+
             if (sendDetails) {
                 res.send(jsonpWriter.marshall(hres.json));
             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,6 +174,7 @@ abstract class Response implements ServerResponse {
     @Override
     public <T> Single<ServerResponse> send(T content) {
         try {
+            bareResponse.backpressureStrategy(BackpressureStrategy.UNBOUNDED);
             sendLockSupport.execute(() -> {
                 Publisher<DataChunk> sendPublisher = writerContext.marshall(
                         Single.just(content), GenericType.create(content));
