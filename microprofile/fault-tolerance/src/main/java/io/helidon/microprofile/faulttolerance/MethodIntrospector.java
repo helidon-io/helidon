@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ class MethodIntrospector {
 
     private final RetryFibonacciBackoff retryFibonacciBackoff;
 
+
     /**
      * Constructor.
      *
@@ -73,28 +74,14 @@ class MethodIntrospector {
 
         this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(annotatedMethod) : null;
         this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class)
-                ? new CircuitBreakerAntn(beanClass, method) : null;
-        this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(beanClass, method) : null;
-        this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(beanClass, method) : null;
-        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(beanClass, method) : null;
+                ? new CircuitBreakerAntn(annotatedMethod) : null;
+        this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(annotatedMethod) : null;
+        this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(annotatedMethod) : null;
+        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(annotatedMethod) : null;
 
         // Check for retry strategies
         this.retryFibonacciBackoff = method.getAnnotation(RetryFibonacciBackoff.class);
         this.retryExponentialBackoff = method.getAnnotation(RetryExponentialBackoff.class);
-    }
-
-    Method method() {
-        return method;
-    }
-
-    /**
-     * Checks if {@code clazz} is assignable from the method's return type.
-     *
-     * @param clazz The class.
-     * @return Outcome of test.
-     */
-    boolean isReturnType(Class<?> clazz) {
-        return clazz.isAssignableFrom(method.getReturnType());
     }
 
     /**
