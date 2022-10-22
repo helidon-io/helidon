@@ -73,6 +73,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.Timeo
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutTimedOut;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
+
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
  * of this class is created for each method invocation. Some state is shared across
@@ -218,7 +219,7 @@ class MethodInvoker implements FtSupplier<Object> {
          * without further processing. See Section 5.2.1 of spec.
          *
          * @return value from this future
-         * @throws ExecutionException if this future completed exceptionally
+         * @throws ExecutionException   if this future completed exceptionally
          * @throws InterruptedException if the current thread was interrupted
          */
         @Override
@@ -235,11 +236,11 @@ class MethodInvoker implements FtSupplier<Object> {
          * without further processing. See Section 5.2.1 of spec.
          *
          * @param timeout the timeout
-         * @param unit the timeout unit
+         * @param unit    the timeout unit
          * @return value from this future
          * @throws CancellationException if this future was cancelled
-         * @throws ExecutionException if this future completed exceptionally
-         * @throws InterruptedException if the current thread was interrupted
+         * @throws ExecutionException    if this future completed exceptionally
+         * @throws InterruptedException  if the current thread was interrupted
          */
         @Override
         public T get(long timeout, TimeUnit unit) throws InterruptedException,
@@ -268,7 +269,7 @@ class MethodInvoker implements FtSupplier<Object> {
     /**
      * Constructor.
      *
-     * @param context The invocation context.
+     * @param context      The invocation context.
      * @param introspector The method introspector.
      */
     MethodInvoker(InvocationContext context, MethodIntrospector introspector) {
@@ -488,9 +489,9 @@ class MethodInvoker implements FtSupplier<Object> {
 
     /**
      * Creates a FT handler for this invocation. Handlers are composed as follows:
-     *
-     *  fallback(retry(circuitbreaker(timeout(bulkhead(method)))))
-     *
+     * <p>
+     * fallback(retry(circuitbreaker(timeout(bulkhead(method)))))
+     * <p>
      * Uses the cached handlers defined in the method state for this invocation's
      * method, except for fallback.
      *
@@ -519,20 +520,50 @@ class MethodInvoker implements FtSupplier<Object> {
             } else {
                 maxRetries++;       // add 1 for initial call
             }
-            methodState.retry = Retry.builder()
-                    .retryPolicy(Retry.JitterRetryPolicy.builder()
-                            .calls(maxRetries)
-                            .delay(Duration.of(introspector.getRetry().delay(),
-                                    introspector.getRetry().delayUnit()))
-                            .jitter(Duration.of(introspector.getRetry().jitter(),
-                                    introspector.getRetry().jitterDelayUnit()))
-                            .build())
-                    .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
-                            introspector.getRetry().durationUnit()))
-                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
-                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
-                    .build();
-            builder.addRetry(methodState.retry);
+
+            if (introspector.hasRetryExponentialBackoff()) {
+                methodState.retry = Retry.builder()
+                        .retryPolicy(Retry.ExponentialRetryPolicy.builder()
+                                .calls(introspector.getRetry().maxRetries())
+                                .initialDelay(Duration.ofMillis(introspector.getRetryExponentialBackoff().initialDelay()))
+                                .maxDelay(Duration.ofMillis(introspector.getRetry().maxDuration()))
+                                .factor(introspector.getRetryExponentialBackoff().factor())
+                                .jitter(introspector.getRetry().jitter())
+                                .build())
+                        .overallTimeout(Duration.ofMillis(introspector.getRetry().maxDuration()))
+                        .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                        .skipOn(mapTypes(introspector.getRetry().abortOn()))
+                        .build();
+                builder.addRetry(methodState.retry);
+            } else if (introspector.hasRetryFibonacciBackoff()) {
+                methodState.retry = Retry.builder()
+                        .retryPolicy(Retry.FibonacciRetryPolicy.builder()
+                                .calls(introspector.getRetry().maxRetries())
+                                .initialDelay(Duration.ofMillis(introspector.getRetryFibonacciBackoff().initialDelay()))
+                                .maxDelay(Duration.ofMillis(introspector.getRetry().maxDuration()))
+                                .jitter(introspector.getRetry().jitter())
+                                .build())
+                        .overallTimeout(Duration.ofMillis(introspector.getRetry().maxDuration()))
+                        .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                        .skipOn(mapTypes(introspector.getRetry().abortOn()))
+                        .build();
+                builder.addRetry(methodState.retry);
+            } else {
+                methodState.retry = Retry.builder()
+                        .retryPolicy(Retry.JitterRetryPolicy.builder()
+                                .calls(maxRetries)
+                                .delay(Duration.of(introspector.getRetry().delay(),
+                                        introspector.getRetry().delayUnit()))
+                                .jitter(Duration.of(introspector.getRetry().jitter(),
+                                        introspector.getRetry().jitterDelayUnit()))
+                                .build())
+                        .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
+                                introspector.getRetry().durationUnit()))
+                        .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                        .skipOn(mapTypes(introspector.getRetry().abortOn()))
+                        .build();
+                builder.addRetry(methodState.retry);
+            }
         }
 
         // Create and add fallback handler for this invocation
