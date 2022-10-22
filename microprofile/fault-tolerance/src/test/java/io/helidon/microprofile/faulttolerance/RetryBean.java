@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,4 +122,43 @@ class RetryBean {
         }
         return future;
     }
+
+    @Retry(maxDuration = 200, maxRetries = 5, jitter = 0)
+    @RetryExponentialBackoff
+    void retryExponentialBackoff() {
+        if (invocations.incrementAndGet() <= 3) {
+            printStatus("RetryBean::retryExponentialBackoff()",
+                    "failure " + System.currentTimeMillis());
+            throw new RuntimeException("Oops");
+        }
+        printStatus("RetryBean::retryExponentialBackoff()",
+                "success " + System.currentTimeMillis());
+    }
+
+    @Retry(maxDuration = 200,maxRetries = 10)
+    @RetryExponentialBackoff
+    void retryExponentialBackoffTimeOut() {
+        //just keep incrementing
+        invocations.incrementAndGet();
+    }
+
+    @Retry(maxDuration = 200, maxRetries = 4, jitter = 0)
+    @RetryFibonacciBackoff
+    void retryFibonacciBackoff() {
+        if (invocations.incrementAndGet() <= 3) {
+            printStatus("RetryBean::retryFibonacciBackoff()",
+                    "failure " + System.currentTimeMillis());
+            throw new RuntimeException("Oops");
+        }
+        printStatus("RetryBean::retryFibonacciBackoff()",
+                "success " + System.currentTimeMillis());
+    }
+
+    @Retry(maxDuration = 200, maxRetries = 10)
+    @RetryFibonacciBackoff
+    void retryRetryFibonacciBackoffTimeOut() {
+        //just keep incrementing
+        invocations.incrementAndGet();
+    }
+
 }
