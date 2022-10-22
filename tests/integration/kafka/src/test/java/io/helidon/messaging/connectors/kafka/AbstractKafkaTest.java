@@ -43,8 +43,9 @@ import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class AbstractKafkaTest {
@@ -98,13 +99,13 @@ public abstract class AbstractKafkaTest {
         if (requested > 0) {
             // Wait till records are delivered
             boolean done = kafkaConsumingBean.await();
-            assertTrue(done, String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
-                    expected.toString(), kafkaConsumingBean.consumed().toString()));
+            assertThat(String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
+                    expected.toString(), kafkaConsumingBean.consumed().toString()), done, is(true));
         }
         Collections.sort(kafkaConsumingBean.consumed());
         Collections.sort(expected);
         if (!expected.isEmpty()) {
-            assertEquals(expected, kafkaConsumingBean.consumed());
+            assertThat(kafkaConsumingBean.consumed(), contains(expected.toArray()));
         }
     }
 
