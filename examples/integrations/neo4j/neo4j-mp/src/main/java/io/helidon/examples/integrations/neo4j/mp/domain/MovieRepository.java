@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Value;
 /**
  * The Movies repository.
+ *
+ * @author Michael Simons
+ * @author Dmitry Aleksandov
  */
 @ApplicationScoped
 public class MovieRepository {
