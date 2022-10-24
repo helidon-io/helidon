@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,8 @@ public class ServiceDescriptor {
             Context.key("Helidon.ServiceDescriptor");
 
     private final String name;
+    private final String fullName;
+    private final String packageName;
     private final Map<String, MethodDescriptor> methods;
     private final PriorityBag<ServerInterceptor> interceptors;
     private final Map<Context.Key<?>, Object> context;
@@ -65,12 +67,25 @@ public class ServiceDescriptor {
                               Map<Context.Key<?>, Object> context,
                               HealthCheck healthCheck,
                               Descriptors.FileDescriptor proto) {
-        this.name = Objects.requireNonNull(name);
+        String assignedName = Objects.requireNonNull(name);
         this.methods = methods;
         this.context = Collections.unmodifiableMap(context);
         this.healthCheck = healthCheck;
         this.interceptors = interceptors.copyMe();
         this.proto = proto;
+
+        this.packageName = proto == null ? "" : proto.getPackage();
+        String servicePrefix = packageName + (!packageName.isEmpty() ? "." : "");
+        if (!servicePrefix.isEmpty() && assignedName.startsWith(servicePrefix)) {
+            // If assignedName is already prefixed with package name, strip the package name part
+            // so name is in simple format
+            this.name = assignedName.replace(servicePrefix, "");
+            // Use the assigned name as the fullName since it is already prefixed with the package name
+            this.fullName = assignedName;
+        } else {
+            this.name = assignedName;
+            this.fullName = servicePrefix + assignedName;
+        }
     }
 
     /**
@@ -79,6 +94,22 @@ public class ServiceDescriptor {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * Returns the service name prefixed with package directive if one exists.
+     * @return service name prefixed with package directive if one exists.
+     */
+    public String fullName() {
+        return fullName;
+    }
+
+    /**
+     * Returns package name from proto file.
+     * @return package name from proto file
+     */
+    public String packageName() {
+        return packageName;
     }
 
     /**
@@ -137,7 +168,7 @@ public class ServiceDescriptor {
 
     @Override
     public String toString() {
-        return "ServiceDescriptor(name='" + name + '\'' + ')';
+        return "ServiceDescriptor(name='" + fullName + '\'' + ')';
     }
 
     @Override
@@ -149,12 +180,12 @@ public class ServiceDescriptor {
             return false;
         }
         ServiceDescriptor that = (ServiceDescriptor) o;
-        return name.equals(that.name);
+        return fullName.equals(that.fullName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(fullName);
     }
 
     /**
@@ -640,8 +671,11 @@ public class ServiceDescriptor {
         public ServiceDescriptor build() {
             Map<String, MethodDescriptor> methods = new LinkedHashMap<>();
 
+            String fullName = getFullName();
             for (Map.Entry<String, MethodDescriptor.Builder> entry : methodBuilders.entrySet()) {
-                methods.put(entry.getKey(), entry.getValue().build());
+                String methodName = entry.getKey();
+                String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(fullName, methodName);
+                methods.put(methodName, entry.getValue().fullname(fullMethodName).build());
             }
 
             return new ServiceDescriptor(name, methods, interceptors, context, healthCheck, proto);
@@ -661,7 +695,7 @@ public class ServiceDescriptor {
                 MethodDescriptor.Configurer<ReqT, ResT> configurer) {
 
             io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
-                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(this.name, methodName))
+                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(getFullName(), methodName))
                     .setType(methodType)
                     .setSampledToLocalTracing(true);
 
@@ -671,7 +705,8 @@ public class ServiceDescriptor {
             MethodDescriptor.Builder<ReqT, ResT> builder = MethodDescriptor.builder(this.name, methodName, grpcDesc, callHandler)
                     .defaultMarshallerSupplier(marshallerSupplier)
                     .requestType(requestType)
-                    .responseType(responseType);
+                    .responseType(responseType)
+                    .fullname(getFullName());
 
             if (configurer != null) {
                 configurer.configure(builder);
@@ -702,7 +737,7 @@ public class ServiceDescriptor {
 
             // make sure that any nested protobuf class names are converted
             // into a proper Java binary class name
-            String className = pkg + "." + outerClass + type.getFullName().replace('.', '$');
+            String className = pkg + "." + outerClass + type.getName();
 
             // the assumption here is that the protobuf generated classes can always
             // be loaded by the same class loader that loaded the service class,
@@ -717,6 +752,18 @@ public class ServiceDescriptor {
         private String getPackageName() {
             String pkg = proto.getOptions().getJavaPackage();
             return "".equals(pkg) ? proto.getPackage() : pkg;
+        }
+
+        /**
+         * Returns the service name prefixed with package directive if one exists.
+         */
+        private String getFullName() {
+            String pkg = proto == null ? "" : proto.getPackage();
+            String serviceName = name;
+            if (!pkg.isEmpty() && !serviceName.startsWith(pkg + ".")) {
+                serviceName = pkg + "." + serviceName;
+            }
+            return serviceName;
         }
 
         private String getOuterClassName() {

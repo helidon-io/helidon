@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,22 @@ public class ServiceDescriptorTest {
                 .build();
 
         assertThat(descriptor.name(), is(service.name()));
+        // Name and FullName should be the same as there is no proto package directive
+        assertThat(descriptor.name(), is(descriptor.fullName()));
+    }
+
+    @Test
+    public void shouldBeTheSameObjects() {
+        GrpcService service = createMockService();
+        ServiceDescriptor descriptor1 = ServiceDescriptor.builder(service)
+                .build();
+        ServiceDescriptor descriptor2 = ServiceDescriptor.builder(service)
+                .build();
+
+        assertThat(descriptor1.equals(descriptor2), is(true));
+        assertThat(descriptor1.hashCode(), is(descriptor2.hashCode()));
+        assertThat(descriptor1.toString().contains(descriptor2.fullName()), is(true));
+        assertThat(descriptor1.toString(), is(descriptor2.toString()));
     }
 
     @Test
