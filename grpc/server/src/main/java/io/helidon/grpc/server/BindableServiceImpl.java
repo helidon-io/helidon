@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,8 @@ class BindableServiceImpl implements BindableService {
     @SuppressWarnings("unchecked")
     @Override
     public ServerServiceDefinition bindService() {
-        io.grpc.ServiceDescriptor.Builder serviceDescriptorBuilder = io.grpc.ServiceDescriptor.newBuilder(descriptor.name());
+        io.grpc.ServiceDescriptor.Builder serviceDescriptorBuilder =
+                io.grpc.ServiceDescriptor.newBuilder(descriptor.fullName());
         if (descriptor.proto() != null) {
             serviceDescriptorBuilder.setSchemaDescriptor((ProtoFileDescriptorSupplier) descriptor::proto);
         }
