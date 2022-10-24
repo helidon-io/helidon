@@ -114,13 +114,9 @@ public class DefaultTypeName implements TypeName {
      * @return the TypeName for the provided type name
      */
     public static DefaultTypeName createFromGenericDeclaration(String genericAliasTypeName) {
-        if (!AnnotationAndValue.hasNonBlankValue(genericAliasTypeName)) {
-            return null;
-        }
-
         return builder()
                 .generic(true)
-                .className(genericAliasTypeName)
+                .className(Objects.requireNonNull(genericAliasTypeName))
                 .build();
     }
 
@@ -171,10 +167,7 @@ public class DefaultTypeName implements TypeName {
      * @param name the type name to check
      */
     public static void ensureIsFQN(TypeName name) {
-        if (null == name
-                || !AnnotationAndValue.hasNonBlankValue(name.packageName())
-                || !AnnotationAndValue.hasNonBlankValue(name.className())
-                || !AnnotationAndValue.hasNonBlankValue(name.name())) {
+        if (!isFQN(name)) {
             throw new AssertionError("needs to be a fully qualified name: " + name);
         }
     }
@@ -186,13 +179,9 @@ public class DefaultTypeName implements TypeName {
      * @return true if the provided name is fully qualified
      */
     public static boolean isFQN(TypeName name) {
-        if (null == name
-                || !AnnotationAndValue.hasNonBlankValue(name.packageName())
-                || !AnnotationAndValue.hasNonBlankValue(name.className())
-                || !AnnotationAndValue.hasNonBlankValue(name.name())) {
-            return false;
-        }
-        return true;
+        return !Objects.requireNonNull(name.packageName()).isBlank()
+                && !Objects.requireNonNull(name.className()).isBlank()
+                && !Objects.requireNonNull(name.name()).isBlank();
     }
 
     @Override
@@ -343,7 +332,8 @@ public class DefaultTypeName implements TypeName {
             this.array = val.array();
             this.wildcard = val.wildcard();
             this.generic = val.generic();
-            this.typeArguments = new ArrayList<>(val.typeArguments());
+            Collection<TypeName> args = val.typeArguments();
+            this.typeArguments = (Objects.isNull(args) || args.isEmpty()) ? Collections.emptyList() : new ArrayList<>(args);
         }
 
         /**
@@ -436,8 +426,8 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder typeArguments(Collection<TypeName> val) {
-            this.typeArguments = new ArrayList<>(val);
-            return this;
+            this.typeArguments = Objects.isNull(val) ? null : new ArrayList<>(val);
+            return (Objects.nonNull(val) && !val.isEmpty()) ? generic(true) : this;
         }
 
         /**

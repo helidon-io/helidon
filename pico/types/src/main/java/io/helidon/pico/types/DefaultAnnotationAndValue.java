@@ -168,7 +168,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
     public static AnnotationAndValue getFirst(String annoTypeName,
                                                Collection<? extends AnnotationAndValue> coll,
                                                boolean mustHaveValue) {
-        assert (AnnotationAndValue.hasNonBlankValue(annoTypeName));
+        assert (!annoTypeName.isBlank());
         Objects.requireNonNull(coll, "collection is required");
         Optional<? extends AnnotationAndValue> result =  coll.stream()
                 .filter(it -> it.typeName().name().equals(annoTypeName))
@@ -188,7 +188,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      */
     public static Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
                                                          Collection<? extends AnnotationAndValue> coll) {
-        assert (AnnotationAndValue.hasNonBlankValue(annoTypeName));
+        assert (!annoTypeName.isBlank());
         Objects.requireNonNull(coll, "collection is required");
         return coll.stream()
                 .filter(it -> it.typeName().name().equals(annoTypeName))
