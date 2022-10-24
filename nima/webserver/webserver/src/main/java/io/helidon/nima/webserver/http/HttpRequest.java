@@ -85,4 +85,14 @@ public interface HttpRequest {
      * @param header header to set
      */
     void header(Http.HeaderValue header);
+
+    /**
+     * Request ID on this connection.
+     * In HTTP/1, this is a number between 0 and {@link Integer#MAX_VALUE}. When the number of requests reaches maximum, it
+     * starts again from 0.
+     * In HTTP/2, this is the stream id.
+     *
+     * @return id of this request on a connection
+     */
+    int id();
 }

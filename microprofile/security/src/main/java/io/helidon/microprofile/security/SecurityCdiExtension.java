@@ -58,6 +58,12 @@ public class SecurityCdiExtension implements Extension {
     private Security.Builder securityBuilder = Security.builder();
     private Config config;
 
+    /**
+     * Public constructor required by service loader.
+     */
+    public SecurityCdiExtension() {
+    }
+
     private void registerBean(@Observes BeforeBeanDiscovery abd) {
         abd.addAnnotatedType(SecurityProducer.class, "helidon-security-producer")
                 .add(ApplicationScoped.Literal.INSTANCE);

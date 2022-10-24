@@ -24,9 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.config.DeprecatedConfig;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigException;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -152,7 +151,7 @@ public interface Resource {
      * @param resourceConfig    configuration current node must be the node containing the location of the resource, by
      *                          convention in helidon, this should be on key named {@code resource}
      * @return a resource ready to load from one of the locations
-     * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
+     * @throws io.helidon.common.config.ConfigException in case this config does not define a resource configuration
      */
     @ConfiguredOption(key = "resource-path", description = "Classpath location of the resource.")
     @ConfiguredOption(key = "path", description = "File system path to the resource.")
@@ -167,7 +166,7 @@ public interface Resource {
     static Resource create(Config resourceConfig) {
         return ResourceUtil.fromConfigPath(resourceConfig.get("path"))
                 .or(() -> ResourceUtil.fromConfigResourcePath(resourceConfig.get("resource-path")))
-                .or(() -> ResourceUtil.fromConfigUrl(DeprecatedConfig.get(resourceConfig, "uri", "url")))
+                .or(() -> ResourceUtil.fromConfigUrl(resourceConfig.get("uri")))
                 .or(() -> ResourceUtil.fromConfigContent(resourceConfig.get("content-plain")))
                 .or(() -> ResourceUtil.fromConfigB64Content(resourceConfig.get("content")))
                 .orElseThrow(() -> new ConfigException("Config is not a resource configuration on key: " + resourceConfig.key()

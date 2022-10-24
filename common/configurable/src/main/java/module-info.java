@@ -21,8 +21,8 @@
  */
 module io.helidon.common.configurable {
     requires java.management;
-    requires transitive io.helidon.config;
-    requires io.helidon.common;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common;
     requires io.helidon.common.context;
     requires static io.helidon.config.metadata;
 

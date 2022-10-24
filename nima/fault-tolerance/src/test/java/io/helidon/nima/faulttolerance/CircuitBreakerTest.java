@@ -17,6 +17,10 @@
 package io.helidon.nima.faulttolerance;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,8 +29,11 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CircuitBreakerTest {
+
+    private static final long WAIT_TIMEOUT_MILLIS = 2000;
+
     @Test
-    void testCircuitBreaker() throws InterruptedException {
+    void testCircuitBreaker() throws InterruptedException, ExecutionException, TimeoutException {
         CircuitBreaker breaker = CircuitBreaker.builder()
                 .volume(10)
                 .errorRatio(20)
@@ -50,13 +57,8 @@ class CircuitBreakerTest {
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
 
         // need to wait until half open
-        int count = 0;
-        while (count++ < 10) {
-            Thread.sleep(50);
-            if (breaker.state() == CircuitBreaker.State.HALF_OPEN) {
-                break;
-            }
-        }
+        ScheduledFuture<Boolean> schedule = ((CircuitBreakerImpl) breaker).schedule();
+        schedule.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.HALF_OPEN));
 

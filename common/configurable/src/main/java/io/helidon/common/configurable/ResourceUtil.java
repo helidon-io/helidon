@@ -25,12 +25,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Utilities to move private static methods from interface,
@@ -38,8 +36,6 @@ import io.helidon.config.Config;
  */
 final class ResourceUtil {
     private static final int DEFAULT_PROXY_PORT = 80;
-    private static final Set<String> LOGGED_RESOURCES = new HashSet<>();
-    private static final System.Logger LOGGER = System.getLogger(ResourceUtil.class.getName());
 
     private ResourceUtil() {
     }

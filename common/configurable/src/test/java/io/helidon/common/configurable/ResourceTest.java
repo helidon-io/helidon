@@ -108,12 +108,6 @@ class ResourceTest {
     }
 
     @Test
-    void testConfigUrl() {
-        Resource resource = config.get("test-3.resource").as(Resource::create).get();
-        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
-    }
-
-    @Test
     void testConfigPlainContent() {
         Resource resource = config.get("test-4.resource").as(Resource::create).get();
         assertThat(resource.string(), is("content"));

@@ -31,7 +31,7 @@ module io.helidon.graphql.server {
 
     requires transitive io.helidon.reactive.webserver.cors;
     requires transitive io.helidon.config;
-    requires transitive graphql.java;
+    requires transitive com.graphqljava;
 
     exports io.helidon.graphql.server;
 }

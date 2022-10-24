@@ -16,8 +16,12 @@
 
 package io.helidon.nima.faulttolerance;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
+
+import io.helidon.common.LazyValue;
 
 /**
  * Runs synchronous suppliers asynchronously using virtual threads. Includes
@@ -54,5 +58,54 @@ public interface Async {
      */
     static <T> CompletableFuture<T> invokeStatic(Supplier<T> supplier) {
         return create().invoke(supplier);
+    }
+
+    /**
+     * A new builder to build a customized {@link Async} instance.
+     * @return a new builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Fluent API Builder for {@link Async}.
+     */
+    class Builder implements io.helidon.common.Builder<Builder, Async> {
+        private LazyValue<? extends ExecutorService> executor;
+
+        private Builder() {
+        }
+
+        @Override
+        public Async build() {
+            return new AsyncImpl(this);
+        }
+
+        /**
+         * Configure executor service to use for executing tasks asynchronously.
+         *
+         * @param executor executor service supplier
+         * @return updated builder instance
+         */
+        public Builder executor(Supplier<? extends ExecutorService> executor) {
+            this.executor = LazyValue.create(Objects.requireNonNull(executor));
+            return this;
+        }
+
+        /**
+         * Configure executor service to use for executing tasks asynchronously.
+         *
+         * @param executor executor service
+         * @return updated builder instance
+         */
+        public Builder executor(ExecutorService executor) {
+            this.executor = LazyValue.create(Objects.requireNonNull(executor));
+            return this;
+        }
+
+        LazyValue<? extends ExecutorService> executor() {
+            return executor;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 
 /**
@@ -112,6 +113,18 @@ public class MpConfigTest {
     void testIntArray() {
         Integer[] values = config.getValue("mp-list", Integer[].class);
         assertThat(values, arrayContaining(1, 2, 3));
+    }
+
+    @Test
+    void testStringList() {
+        List<String> values = config.getValues("mp-array", String.class);
+        assertThat(values, contains("a", "b", "c"));
+    }
+
+    @Test
+    void testIntList() {
+        List<Integer> values = config.getValues("mp-list", Integer.class);
+        assertThat(values, contains(1, 2, 3));
     }
 
     @Test
@@ -322,4 +335,3 @@ public class MpConfigTest {
         }
     }
 }
-

@@ -41,7 +41,6 @@
             <includes>
                 <include>.helidon.mustache</include>
                 <include>README.md.mustache</include>
-                <include>app.yaml.mustache</include>
             </includes>
         </templates>
         <model>

@@ -96,11 +96,13 @@ public final class HttpRouting implements Routing {
 
     @Override
     public void beforeStart() {
+        filters.beforeStart();
         rootRoute.beforeStart();
     }
 
     @Override
     public void afterStop() {
+        filters.afterStop();
         rootRoute.afterStop();
     }
 

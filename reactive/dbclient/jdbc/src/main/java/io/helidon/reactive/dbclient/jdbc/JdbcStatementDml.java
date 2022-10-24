@@ -54,7 +54,13 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> imple
                                    CompletableFuture<Long> queryFuture) {
 
         executorService().submit(() -> {
-            connection().thenAccept(conn -> callStatement(dbContext, conn, statementFuture, queryFuture));
+            connection()
+                    .thenAccept(conn -> callStatement(dbContext, conn, statementFuture, queryFuture))
+                    .exceptionally(t -> {
+                        statementFuture.completeExceptionally(t);
+                        queryFuture.completeExceptionally(t);
+                        return null;
+                    });
         });
 
         // the query future is reused, as it completes with the number of updated records

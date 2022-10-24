@@ -144,6 +144,11 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
+    public int id() {
+        return requestId;
+    }
+
+    @Override
     public Http2ServerRequest path(RoutedPath routedPath) {
         this.path = routedPath;
         return this;
