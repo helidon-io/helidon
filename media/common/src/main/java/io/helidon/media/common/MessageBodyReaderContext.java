@@ -257,22 +257,9 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     /**
      * Get the underlying headers.
      *
-     * @return Parameters, never {@code null}
-     * @deprecated The return type will change to {@code ReadOnlyHeaders} in a future release.
+     * @return headers, never {@code null}
      */
-    @Deprecated(since = "3.0.3", forRemoval = true)
-    public ReadOnlyParameters headers() {
-        return headers;
-    }
-
-    /**
-     * Get the underlying headers.
-     *
-     * @return Headers, never {@code null}
-     * @deprecated The method name will change to {@code headers} in a future release.
-     */
-    @Deprecated(since = "3.0.3", forRemoval = true)
-    public ReadOnlyHeaders hdrs() {
+    public ReadOnlyHeaders headers() {
         return headers;
     }
 

@@ -456,22 +456,9 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     /**
      * Get the underlying headers.
      *
-     * @return Parameters, never {@code null}
-     * @deprecated The return type will change to {@code Headers} in a future release.
+     * @return headers, never {@code null}
      */
-    @Deprecated(since = "3.0.3", forRemoval = true)
-    public Parameters headers() {
-        return headers;
-    }
-
-    /**
-     * Get the underlying headers.
-     *
-     * @return {@code Headers}, never {@code null}
-     * @deprecated The method name will change to {@code headers} in a future release.
-     */
-    @Deprecated(since = "3.0.3", forRemoval = true)
-    public Headers hdrs() {
+    public Headers headers() {
         return headers;
     }
 
