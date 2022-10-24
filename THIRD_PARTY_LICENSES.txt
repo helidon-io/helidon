@@ -7157,13 +7157,16 @@ jersey-mp-rest-client: Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-jersey-client, helidon-jersey-connector, helidon-microprofile-rest-client]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-The documentation team must include the following in the documentation accompanying the Oracle product that includes the EPL code:
-1.  The follow files are available in source code form under the Eclipse Public License at:  {INSERT WEBSITE WHERE SOURCE CODE IS AVAILABLE}.  (The EPL license is reproduced below).
-2.  All past Contributors to the {INSERT THE NAME OF THE EPL CODE} disclaim all warranties and conditions, express and implied, including warranties or conditions of title and non-infringement, and implied warranties or conditions of merchantability and fitness for a particular purpose.  In addition, such Contributors are not liable for any damages, including direct, indirect, special, incidental and consequential damages, such as lost profits.  
-
-3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public License are offered by Oracle alone and not by any other party.
-4.  { IF THERE ARE MODIFICATIONS OR ADDITIONS, INSERT THE FOLLOWING} Oracle has modified the following files {LIST FILES}
-5.  { IF EXECUTABLES ARE UNDER ORACLE AGREEMENT AS OPPOSED TO THE EPL, INSERT THE FOLLOWING} These files are licensed in executable form under your Oracle license agreement.  Oracle is solely responsible for any representations and warranties contained therein. 
+1.  The follow files are available in source code form under the Eclipse Public License at:
+    https://github.com/eclipse-ee4j/jersey (The EPL license is reproduced below).
+2.  All past Contributors to the Jersey disclaim all warranties and
+    conditions, express and implied, including warranties or conditions of title and
+    non-infringement, and implied warranties or conditions of merchantability and
+    fitness for a particular purpose.  In addition, such Contributors are not liable
+    for any damages, including direct, indirect, special, incidental and consequential
+    damages, such as lost profits.
+3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
+    License are offered by Oracle alone and not by any other party.
 ______________________________________________________
 
 jersey-mp-rest-client (org.glassfish.jersey.ext.microprofile:jersey-mp-rest-client)
@@ -7746,13 +7749,16 @@ jersey-server: Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
 Used by: [helidon-jersey-server]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-The documentation team must include the following in the documentation accompanying the Oracle product that includes the EPL code:
-1.  The follow files are available in source code form under the Eclipse Public License at:  {INSERT WEBSITE WHERE SOURCE CODE IS AVAILABLE}.  (The EPL license is reproduced below).
-2.  All past Contributors to the {INSERT THE NAME OF THE EPL CODE} disclaim all warranties and conditions, express and implied, including warranties or conditions of title and non-infringement, and implied warranties or conditions of merchantability and fitness for a particular purpose.  In addition, such Contributors are not liable for any damages, including direct, indirect, special, incidental and consequential damages, such as lost profits.  
-
-3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public License are offered by Oracle alone and not by any other party.
-4.  { IF THERE ARE MODIFICATIONS OR ADDITIONS, INSERT THE FOLLOWING} Oracle has modified the following files {LIST FILES}
-5.  { IF EXECUTABLES ARE UNDER ORACLE AGREEMENT AS OPPOSED TO THE EPL, INSERT THE FOLLOWING} These files are licensed in executable form under your Oracle license agreement.  Oracle is solely responsible for any representations and warranties contained therein. 
+1.  The follow files are available in source code form under the Eclipse Public License at:
+    https://github.com/eclipse-ee4j/jersey (The EPL license is reproduced below).
+2.  All past Contributors to the Jersey disclaim all warranties and
+    conditions, express and implied, including warranties or conditions of title and
+    non-infringement, and implied warranties or conditions of merchantability and
+    fitness for a particular purpose.  In addition, such Contributors are not liable
+    for any damages, including direct, indirect, special, incidental and consequential
+    damages, such as lost profits.
+3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
+    License are offered by Oracle alone and not by any other party.
 _______________________________________
 
 jersey-core-server (org.glassfish.jersey.core:jersey-server)
