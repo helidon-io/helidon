@@ -1,0 +1,205 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= OpenAPI Generator
+:toc:
+:toc-placement: preamble
+:description: Helidon MP OpenAPI Generator
+:keywords: helidon, mp, microprofile, openapi, generator
+:feature-name: MicroProfile OpenAPI Generator
+:rootdir: {docdir}/..
+:generator-version: 6.2.1
+:generator-site-version: v{generator-version}
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+- <<Reference, Reference>>
+
+== Overview
+
+The link:https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md[OpenAPI specification] provides a standard way to express RESTful APIs.
+Helidon MP users can use OpenAPI documents to generate API clients or server stubs.
+Specifically, Helidon MP users can use the Helidon OpenAPI client generator to create Microprofile REST client which interact with any server described by an OpenAPI document.
+With the OpenAPI server generator for Helidon MP, you can generate server stubs and then write the code to implement the business logic for each endpoint.
+
+You can use the generator in three ways:
+
+* Maven plug-in
++
+By invoking the generator's Maven plug-in from your project's `pom.xml`, your build generates or regenerates several of the files that depend on the OpenAPI document. This approach keeps the generated files up to date as the OpenAPI document evolves.
+* CLI
++
+You can run the generator's CLI to create a new project, including a generated `pom.xml` file as well as the files that depend on the OpenAPI document. You can rerun the CLI as your OpenAPI document changes to update key generated files.
+* Online generator
++
+The OpenAPI tools website hosts an online generator you can run to generate a project.
+
+== Maven Coordinates [[Maven-Coordinates]]
+
+Maven plugin:
+
+[source,xml,subs="+attributes"]
+----
+<properties>
+    <openapi-generator-version>{generator-version}</openapi-generator-version>
+</properties>
+
+<build>
+    <plugin-management>
+        <plugin>
+             <groupId>org.openapitools</groupId>
+             <artifactId>openapi-generator-maven-plugin</artifactId>
+             <version>${openapi-generator-version}</version>
+        </plugin>
+    </plugin-management>
+</build>
+----
+
+== Configuration
+
+To customize a generated project, there are several options that can be used.
+Note that the options for OpenAPI generator are the same whether you're using the Maven/Gradle plugins, CLI, or online generation.
+
+General Configuration parameters
+
+To generate a new Helidon MP project, the following configuration parameters must be provided:
+
+.Required Generator Options
+[cols="1,1,1"]
+|===
+|Option | Short Option | Description
+
+|`--inputSpec`
+|`-i`
+|OpenAPI spec file path
+|`--generatorName`
+|`-g`
+| generator name (`java-helidon-server` or `java-helidon-client`)
+|`--library`
+|
+|library (`mp` or `se`)
+|===
+
+For a complete list of OpenAPI Generator configuration parameters, see the link:https://github.com/OpenAPITools/openapi-generator/tree/{generator-site-version}/modules/openapi-generator-maven-plugin[openapi-generator-maven-plugin] page.
+
+OpenAPI Generators for Helidon MP support such specific options :
+
+[cols="1,1,1,1,1"]
+|===
+|Option |Description |Values |Default |Notes
+
+|helidonVersion
+|Version of Helidon
+|
+|2.5.2
+|
+
+|fullProject
+|Generate API files only
+|true/false
+|false
+| API files : API Interfaces or abstract classes, models (files we do not expect the end user to modify)
+
+|serializationLibrary
+|Library to use for serializing JSON
+|jsonb, jackson
+|jackson
+|
+|===
+
+== Usage
+
+To generate a new project:
+
+* Run the CLI. (Follow these link:https://github.com/OpenAPITools/openapi-generator#13---download-jar[download instructions].)
+* Run the online generator (described link:https://github.com/OpenAPITools/openapi-generator#33---online-openapi-generator[here]).
+
+To update an existing project:
+
+* Run the CLI.
+* Invoke the Maven or Gradle plug-ins from your project's `pom.xml` file (described above).
+
+To generate Helidon MP server stubs for the OpenAPI document `petstore.yaml`, navigate to the `openapi-generator-cli.jar` and run the following:
+
+[source,bash]
+----
+java -jar path-to-generator/openapi-generator-cli.jar \
+  generate \
+  -i petstore.yaml \
+  -g java-helidon-server \
+  --library mp \
+  -p groupId=test.mp.helidon \
+  -p artifactId=test-helidon-mp-server \
+  -p artifactVersion=1.0.0-SNAPSHOT \
+  -p serializationLibrary=jsonb
+----
+
+This command will generate a Maven project for a Helidon MP server with `groupId`, `artifactId` and `version` as described above. JSON-B will then be used to convert the Java objects to/from JSON.
+
+To generate a MicroProfile REST client for `petstore.yaml` using the `openapi-generator-cli.jar`, run the following where `path-to-generator` is the directory where you downloaded the generator CLI JAR file:
+
+[source,bash]
+----
+java -jar path-to-generator/openapi-generator-cli.jar \
+  generate \
+  -i petstore.yaml \
+  -g java-helidon-client \
+  --library mp
+----
+
+This command will generate a Maven project for a MicroProfile Rest client that can interact with the server that exposes the API as described in the OpenAPI document `petstore.yaml`.
+
+Maven plugin `openapi-generator-maven-plugin` can be used to generate files according to an OpenAPI document.
+Default phase is `generate-sources` phase.
+
+For example, this Maven plugin can be used to generate/regenerate files, such as API interfaces or abstract classes, that represent REST endpoints, models and other files that the end user does not modify.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.openapitools</groupId>
+    <artifactId>openapi-generator-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <inputSpec>${project.basedir}/src/main/resources/petstore.yaml</inputSpec>
+                <generatorName>java-helidon-server</generatorName>
+                <library>mp</library>
+                <configOptions>
+                   <fullProject>false</fullProject>
+                </configOptions>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Reference
+
+* link:https://openapi-generator.tech[OpenAPI Generator Official Website]
+* link:https://github.com/OpenAPITools/openapi-generator[OpenAPI Generator GitHub Repository]
+* link:https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md[OpenAPI specification]
