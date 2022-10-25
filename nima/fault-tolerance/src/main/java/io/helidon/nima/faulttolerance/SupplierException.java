@@ -22,6 +22,11 @@ package io.helidon.nima.faulttolerance;
  */
 public class SupplierException extends RuntimeException {
 
+    /**
+     * Create an instance using a {@code Throwable}.
+     *
+     * @param cause the cause
+     */
     public SupplierException(Throwable cause) {
         super(cause);
     }

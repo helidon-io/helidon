@@ -39,6 +39,7 @@ import io.helidon.nima.faulttolerance.FtHandlerTyped;
 import io.helidon.nima.faulttolerance.Retry;
 import io.helidon.nima.faulttolerance.RetryTimeoutException;
 import io.helidon.nima.faulttolerance.Timeout;
+
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -640,10 +641,17 @@ class MethodInvoker implements FtSupplier<Object> {
 
                 // Update times for gauges
                 switch (methodState.lastBreakerState) {
-                    case OPEN -> methodState.breakerTimerOpen += System.nanoTime() - methodState.startNanos;
-                    case CLOSED -> methodState.breakerTimerClosed += System.nanoTime() - methodState.startNanos;
-                    case HALF_OPEN -> methodState.breakerTimerHalfOpen += System.nanoTime() - methodState.startNanos;
-                    default -> throw new IllegalStateException("Unknown breaker state " + methodState.lastBreakerState);
+                    case OPEN:
+                        methodState.breakerTimerOpen += System.nanoTime() - methodState.startNanos;
+                        break;
+                    case CLOSED:
+                        methodState.breakerTimerClosed += System.nanoTime() - methodState.startNanos;
+                        break;
+                    case HALF_OPEN:
+                        methodState.breakerTimerHalfOpen += System.nanoTime() - methodState.startNanos;
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown breaker state " + methodState.lastBreakerState);
                 }
 
                 // Update internal state

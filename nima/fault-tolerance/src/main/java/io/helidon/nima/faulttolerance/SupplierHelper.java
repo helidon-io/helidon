@@ -26,6 +26,9 @@ import java.util.function.Supplier;
  */
 public class SupplierHelper {
 
+    private SupplierHelper() {
+    }
+
     /**
      * Maps a supplier returning a {@code CompletionStage<T>} to a supplier returning {@code T}
      * by waiting on the stage to produce a value.
