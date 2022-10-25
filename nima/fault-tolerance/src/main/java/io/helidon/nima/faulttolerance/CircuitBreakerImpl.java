@@ -26,6 +26,9 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options
@@ -110,8 +113,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
             U result = supplier.get();
             results.update(ResultWindow.Result.SUCCESS);
             return result;
-        } catch (Throwable e) {
-            if (errorChecker.shouldSkip(e)) {
+        } catch (Throwable t) {
+            Throwable throwable = unwrapThrowable(t);
+            if (errorChecker.shouldSkip(throwable)) {
                 results.update(ResultWindow.Result.SUCCESS);
             } else {
                 results.update(ResultWindow.Result.FAILURE);
@@ -121,7 +125,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 // if we successfully switch to open, we need to schedule switch to half-open
                 scheduleHalf();
             }
-            throw e;
+            throw toRuntimeException(throwable);
         }
     }
 
@@ -138,23 +142,24 @@ class CircuitBreakerImpl implements CircuitBreaker {
                     state.compareAndSet(State.HALF_OPEN, State.CLOSED);
                 }
                 return result;
-            } catch (Throwable e) {
-                if (errorChecker.shouldSkip(e)) {
+            } catch (Throwable t) {
+                Throwable throwable = unwrapThrowable(t);
+                if (errorChecker.shouldSkip(throwable)) {
                     // success
                     int successes = successCounter.incrementAndGet();
                     if (successes >= successThreshold) {
                         // transition to closed
                         successCounter.set(0);
                         state.compareAndSet(State.HALF_OPEN, State.CLOSED);
-                    } else {
-                        // failure
-                        successCounter.set(0);
-                        state.set(State.OPEN);
-                        // if we successfully switch to open, we need to schedule switch to half-open
-                        scheduleHalf();
                     }
+                } else {
+                    // failure
+                    successCounter.set(0);
+                    state.set(State.OPEN);
+                    // if we successfully switch to open, we need to schedule switch to half-open
+                    scheduleHalf();
                 }
-                throw e;
+                throw toRuntimeException(throwable);
             } finally {
                 halfOpenInProgress.set(false);
             }

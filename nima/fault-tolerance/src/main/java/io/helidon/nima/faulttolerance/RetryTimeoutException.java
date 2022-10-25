@@ -22,6 +22,8 @@ package io.helidon.nima.faulttolerance;
 public class RetryTimeoutException extends TimeoutException {
     private static final long serialVersionUID = 1900926677490550714L;
 
+    private final Throwable lastRetryException;
+
     /**
      * Constructs a {@code RetryTimeoutException} with the specified detail
      * message.
@@ -31,6 +33,16 @@ public class RetryTimeoutException extends TimeoutException {
      */
     public RetryTimeoutException(String message, Throwable throwable) {
         super(message, throwable);
+        lastRetryException = throwable;
+    }
+
+    /**
+     * Last exception thrown in {@code Retry} before the overall timeout reached.
+     *
+     * @return last exception thrown
+     */
+    public Throwable lastRetryException() {
+        return lastRetryException;
     }
 }
 

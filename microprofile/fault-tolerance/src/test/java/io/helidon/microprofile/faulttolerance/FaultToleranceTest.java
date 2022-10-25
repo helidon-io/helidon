@@ -77,7 +77,7 @@ abstract class FaultToleranceTest {
 
     static void printStatus(String message, String status) {
         System.out.println(message + " -> " + status + " [Thread: "
-                                   + Thread.currentThread().getName() + "]");
+                                   + Thread.currentThread().threadId() + "]");
     }
 
     @SuppressWarnings("unchecked")

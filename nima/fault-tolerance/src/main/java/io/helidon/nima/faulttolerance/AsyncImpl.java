@@ -23,6 +23,8 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 /**
  * Implementation of {@code Async}. If no executor specified in builder, then it will
  * use {@link Executors#newVirtualThreadPerTaskExecutor}. Note that this default executor
@@ -47,8 +49,9 @@ class AsyncImpl implements Async {
             try {
                 T t = supplier.get();
                 result.complete(t);
-            } catch (Exception e) {
-                result.completeExceptionally(e);
+            } catch (Throwable t) {
+                Throwable throwable = unwrapThrowable(t);
+                result.completeExceptionally(throwable);
             }
         });
         return result;

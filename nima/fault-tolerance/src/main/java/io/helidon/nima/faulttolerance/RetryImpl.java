@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 class RetryImpl implements Retry {
     private final ErrorChecker errorChecker;
     private final long maxTimeNanos;
@@ -50,9 +52,10 @@ class RetryImpl implements Retry {
         while (true) {
             try {
                 return supplier.get();
-            } catch (Throwable e) {
-                context.thrown.add(e);
-                if (errorChecker.shouldSkip(e)) {
+            } catch (Throwable t) {
+                Throwable throwable = unwrapThrowable(t);
+                context.thrown.add(throwable);
+                if (errorChecker.shouldSkip(throwable)) {
                     return context.throwIt();
                 }
             }
@@ -126,8 +129,7 @@ class RetryImpl implements Retry {
             if (t instanceof Error e) {
                 throw e;
             }
-            // this is a case that should not happen, as the supplier cannot throw a checked exception
-            throw new RuntimeException("Retries completed with exception", t);
+            throw new SupplierException(t);
         }
 
         boolean hasThrowable() {

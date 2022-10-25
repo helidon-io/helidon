@@ -23,6 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 
@@ -118,9 +121,10 @@ class BulkheadImpl implements Bulkhead {
             }
             return result;
         } catch (Throwable t) {
+            Throwable throwable = unwrapThrowable(t);
             LOGGER.log(Level.DEBUG, name + " finished execution: " + task
-                    + " (failure)", t);
-            throw t;
+                    + " (failure)", throwable);
+            throw toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
             inProgress.release();

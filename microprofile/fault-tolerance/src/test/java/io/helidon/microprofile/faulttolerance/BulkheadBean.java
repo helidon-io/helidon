@@ -102,7 +102,7 @@ class BulkheadBean {
     CompletableFuture<String> execute(long sleepMillis) {
         try {
             counter.increment();
-            FaultToleranceTest.printStatus("BulkheadBean::execute", "success");
+            FaultToleranceTest.printStatus("BulkheadBean::execute", "incremented");
             try {
                 Thread.sleep(sleepMillis);
             } catch (InterruptedException e) {
@@ -111,6 +111,7 @@ class BulkheadBean {
             return CompletableFuture.completedFuture(Thread.currentThread().getName());
         } finally {
             counter.decrement();
+            FaultToleranceTest.printStatus("BulkheadBean::execute", "decremented");
         }
     }
 
