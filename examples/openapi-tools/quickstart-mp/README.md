@@ -102,7 +102,7 @@ public class MessageService {
 
     @Inject
     @RestClient
-    MessageApi messageApi;
+    private MessageApi messageApi;
 
 
     @GET

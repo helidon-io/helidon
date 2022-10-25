@@ -19,8 +19,8 @@ package org.openapitools.server.api;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
@@ -28,7 +28,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
-
 import org.openapitools.server.model.Message;
 
 /**
@@ -36,8 +35,8 @@ import org.openapitools.server.model.Message;
  */
 @ApplicationScoped
 @Path("/greet")
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonServerCodegen", date = "2022-10-25T09:58" +
-        ":58.439110277+02:00[Europe/Prague]")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonServerCodegen", date = "2022-10-25T09:58"
+        + ":58.439110277+02:00[Europe/Prague]")
 public class MessageServiceImpl implements MessageService {
 
     private final AtomicReference<Message> defaultMessage = new AtomicReference<>();

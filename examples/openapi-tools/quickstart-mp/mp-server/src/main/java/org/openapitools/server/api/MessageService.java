@@ -16,9 +16,8 @@
 
 package org.openapitools.server.api;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
-
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
@@ -28,8 +27,8 @@ import jakarta.ws.rs.Produces;
 import org.openapitools.server.model.Message;
 
 @Path("/greet")
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonServerCodegen", date = "2022-10-25T09:58" +
-        ":58.439110277+02:00[Europe/Prague]")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonServerCodegen", date = "2022-10-25T09:58"
+        + ":58.439110277+02:00[Europe/Prague]")
 public interface MessageService {
 
     @GET

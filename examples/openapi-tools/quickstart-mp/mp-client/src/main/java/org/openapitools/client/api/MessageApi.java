@@ -25,7 +25,6 @@ import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-
 import org.openapitools.client.model.Message;
 
 /**

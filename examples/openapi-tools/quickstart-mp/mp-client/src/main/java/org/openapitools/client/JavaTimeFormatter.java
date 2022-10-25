@@ -24,13 +24,15 @@ import java.time.format.DateTimeParseException;
  * Class that add parsing/formatting support for Java 8+ {@code OffsetDateTime} class.
  * It's generated for java clients when {@code AbstractJavaCodegen#dateLibrary} specified as {@code java8}.
  */
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonClientCodegen", date = "2022-10-25T13:34:54.065731594+02:00[Europe/Prague]")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonClientCodegen", date = "2022-10-25T13:34"
+        + ":54.065731594+02:00[Europe/Prague]")
 public class JavaTimeFormatter {
 
     private DateTimeFormatter offsetDateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     /**
      * Get the date format used to parse/format {@code OffsetDateTime} parameters.
+     *
      * @return DateTimeFormatter
      */
     public DateTimeFormatter getOffsetDateTimeFormatter() {
@@ -39,6 +41,7 @@ public class JavaTimeFormatter {
 
     /**
      * Set the date format used to parse/format {@code OffsetDateTime} parameters.
+     *
      * @param offsetDateTimeFormatter {@code DateTimeFormatter}
      */
     public void setOffsetDateTimeFormatter(DateTimeFormatter offsetDateTimeFormatter) {
@@ -47,6 +50,7 @@ public class JavaTimeFormatter {
 
     /**
      * Parse the given string into {@code OffsetDateTime} object.
+     *
      * @param str String
      * @return {@code OffsetDateTime}
      */
@@ -57,8 +61,10 @@ public class JavaTimeFormatter {
             throw new RuntimeException(e);
         }
     }
+
     /**
      * Format the given {@code OffsetDateTime} object into string.
+     *
      * @param offsetDateTime {@code OffsetDateTime}
      * @return {@code OffsetDateTime} in string format
      */

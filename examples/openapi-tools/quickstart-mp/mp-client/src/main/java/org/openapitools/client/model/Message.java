@@ -17,78 +17,79 @@
 package org.openapitools.client.model;
 
 /**
-  * An message for the user
+ * An message for the user
  **/
-public class Message  {
-  
-  private String message;
+public class Message {
 
-  private String greeting;
+    private String message;
 
- /**
-   * Get message
-   * @return message
-  **/
-  public String getMessage() {
-    return message;
-  }
+    private String greeting;
 
-  /**
-    * Set message
-  **/
-  public void setMessage(String message) {
-    this.message = message;
-  }
-
-  public Message message(String message) {
-    this.message = message;
-    return this;
-  }
-
- /**
-   * Get greeting
-   * @return greeting
-  **/
-  public String getGreeting() {
-    return greeting;
-  }
-
-  /**
-    * Set greeting
-  **/
-  public void setGreeting(String greeting) {
-    this.greeting = greeting;
-  }
-
-  public Message greeting(String greeting) {
-    this.greeting = greeting;
-    return this;
-  }
-
-
-  /**
-    * Create a string representation of this pojo.
-  **/
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class Message {\n");
-    
-    sb.append("    message: ").append(toIndentedString(message)).append("\n");
-    sb.append("    greeting: ").append(toIndentedString(greeting)).append("\n");
-    sb.append("}");
-    return sb.toString();
-  }
-
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private static String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
+    /**
+     * Get message
+     *
+     * @return message
+     **/
+    public String getMessage() {
+        return message;
     }
-    return o.toString().replace("\n", "\n    ");
-  }
-}
 
+    /**
+     * Set message
+     **/
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public Message message(String message) {
+        this.message = message;
+        return this;
+    }
+
+    /**
+     * Get greeting
+     *
+     * @return greeting
+     **/
+    public String getGreeting() {
+        return greeting;
+    }
+
+    /**
+     * Set greeting
+     **/
+    public void setGreeting(String greeting) {
+        this.greeting = greeting;
+    }
+
+    public Message greeting(String greeting) {
+        this.greeting = greeting;
+        return this;
+    }
+
+
+    /**
+     * Create a string representation of this pojo.
+     **/
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("class Message {\n");
+
+        sb.append("    message: ").append(toIndentedString(message)).append("\n");
+        sb.append("    greeting: ").append(toIndentedString(greeting)).append("\n");
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private static String toIndentedString(Object o) {
+        if (o == null) {
+            return "null";
+        }
+        return o.toString().replace("\n", "\n    ");
+    }
+}

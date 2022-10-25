@@ -27,21 +27,37 @@ import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.openapitools.client.model.Message;
 
+/**
+ * MessageService.
+ */
 @Path("/greet")
 @ApplicationScoped
 public class MessageService {
 
     @Inject
     @RestClient
-    MessageApi messageApi;
+    private MessageApi messageApi;
 
 
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return a worldly greeting message.
+     * @throws ApiException
+     */
     @GET
     @Produces({"application/json"})
     public Message getDefaultMessage() throws ApiException {
         return messageApi.getDefaultMessage();
     }
 
+    /**
+     * Return a greeting message using the name that was provided.
+     *
+     * @param name name for message.
+     * @return a greeting message.
+     * @throws ApiException
+     */
     @GET
     @Path("/{name}")
     @Produces({"application/json"})
@@ -49,6 +65,12 @@ public class MessageService {
         return messageApi.getMessage(name);
     }
 
+    /**
+     * Set the greeting to use in future messages.
+     *
+     * @param message message to set.
+     * @throws ApiException
+     */
     @PUT
     @Path("/greeting")
     @Consumes({"application/json"})
