@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.pico.spi;
+
+import io.helidon.pico.api.Contract;
+
+/**
+ * Activators are responsible for lifecycle creation and lazy activation of service providers. They are responsible for taking the
+ * {@link ServiceProvider}'s manage service instance from {@link ActivationPhase#PENDING}
+ * through {@link ActivationPhase#POST_CONSTRUCTING} (i.e., including any
+ * {@link PostConstructMethod} invocations, etc.), and finally into
+ * {@link ActivationPhase#ACTIVE} status. In Helidon's Pico reference implementation that additionally means this occurs avoiding
+ * the use of reflection at runtime.
+ * <p>
+ * Assumption:
+ * <ol>
+ *  <li>Each {@link ServiceProvider} managing its backing service will have an activator strategy conforming to the DI
+ *  specification.</li>
+ *  <li>Each services activation is expected to be non-blocking, but may in fact require deferred blocking activities to become
+ *  fully ready for runtime operation.</li>
+ * </ol>
+ * Activation includes:
+ * <ol>
+ *  <li>Management of the service's {@link ActivationPhase}.</li>
+ *  <li>Control over creation (i.e., invoke the ctor non-reflectively).</li>
+ *  <li>Control over gathering the service requisite dependencies (ctor, field, setters) and optional activation of those.</li>
+ *  <li>Invocation of any {@link PostConstructMethod}.</li>
+ *  <li>Responsible to logging to the {@link ActivationLog} - see {@link PicoServices#activationLog()}.</li>
+ * </ol>
+ *
+ * @param <T> the managed service type being activated
+ * @see DeActivator
+ */
+@Contract
+public interface Activator<T> {
+
+    /**
+     * Activate a managed service/provider.
+     *
+     * @param targetServiceProvider the target service provider
+     * @param ipInfoCtx             the optional injection point context
+     * @param ultimateTargetPhase   the desired target phase for activation
+     * @param throwOnFailure        should the provider throw if an error is observed, alternatively will return a result with an
+     *                              error inside
+     * @return the result of the activation
+     */
+    ActivationResult<T> activate(ServiceProvider<T> targetServiceProvider,
+                                 InjectionPointInfo ipInfoCtx,
+                                 ActivationPhase ultimateTargetPhase,
+                                 boolean throwOnFailure);
+
+    /**
+     * Activate a managed service/provider.
+     *
+     * @param targetServiceProvider the target service provider
+     * @param ipInfoCtx             the optional injection point context
+     * @param ultimateTargetPhase   the desired target phase for activation
+     * @return the result of the activation
+     */
+    default ActivationResult<T> activate(ServiceProvider<T> targetServiceProvider,
+                                         InjectionPointInfo ipInfoCtx,
+                                         ActivationPhase ultimateTargetPhase) {
+        return activate(targetServiceProvider, ipInfoCtx, ultimateTargetPhase, true);
+    }
+
+}

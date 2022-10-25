@@ -46,7 +46,7 @@
     <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
         <module>api</module>
-<!--        <module>spi</module>-->
+        <module>spi</module>
         <module>types</module>
         <module>builder</module>
 <!--        <module>config</module>-->

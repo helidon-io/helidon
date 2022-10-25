@@ -1402,6 +1402,11 @@
                 <artifactId>helidon-pico-types</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Pico Builder -->
             <dependency>
