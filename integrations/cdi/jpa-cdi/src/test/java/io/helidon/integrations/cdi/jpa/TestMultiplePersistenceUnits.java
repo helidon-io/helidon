@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ApplicationScoped
 @DataSourceDefinition(
@@ -70,7 +71,7 @@ class TestMultiplePersistenceUnits {
     void startCdiContainer() {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
 
@@ -109,15 +110,15 @@ class TestMultiplePersistenceUnits {
     @Test
     void testMultiplePersistenceUnits() {
         TestMultiplePersistenceUnits self = this.cdiContainer.select(TestMultiplePersistenceUnits.class).get();
-        assertNotNull(self);
+        assertThat(self, notNullValue());
 
         EntityManager testEm = self.getTestEntityManager();
-        assertNotNull(testEm);
-        assertTrue(testEm.isOpen());
+        assertThat(testEm, notNullValue());
+        assertThat(testEm.isOpen(), is(true));
 
         EntityManager test2Em = self.getTest2EntityManager();
-        assertNotNull(test2Em);
-        assertTrue(test2Em.isOpen());
+        assertThat(test2Em, notNullValue());
+        assertThat(test2Em.isOpen(), is(true));
     }
 
 }
