@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 
 package io.helidon.messaging.connectors.kafka;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
@@ -101,13 +102,13 @@ public abstract class AbstractKafkaTest {
         if (requested > 0) {
             // Wait till records are delivered
             boolean done = kafkaConsumingBean.await();
-            assertTrue(done, String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
-                    expected.toString(), kafkaConsumingBean.consumed().toString()));
+            assertThat(String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
+                    expected.toString(), kafkaConsumingBean.consumed().toString()), done, is(true));
         }
         Collections.sort(kafkaConsumingBean.consumed());
         Collections.sort(expected);
         if (!expected.isEmpty()) {
-            assertEquals(expected, kafkaConsumingBean.consumed());
+            assertThat(kafkaConsumingBean.consumed(), contains(expected.toArray()));
         }
     }
 
