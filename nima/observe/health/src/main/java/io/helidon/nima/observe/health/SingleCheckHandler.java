@@ -19,6 +19,7 @@ package io.helidon.nima.observe.health;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.http.HtmlEncoder;
@@ -39,13 +40,19 @@ class SingleCheckHandler implements Handler {
 
     private final EntityWriter<JsonObject> entityWriter;
     private final boolean details;
+    private final List<HealthCheck> allChecks;
     private final Map<String, HealthCheck> checks;
 
-    SingleCheckHandler(EntityWriter<JsonObject> entityWriter, boolean details, Map<String, HealthCheck> checks) {
+    SingleCheckHandler(EntityWriter<JsonObject> entityWriter, boolean details, List<HealthCheck> checks) {
         this.entityWriter = entityWriter;
         this.details = details;
+        this.allChecks = checks;
         this.checks = new HashMap<>();
-        checks.values().forEach(it -> this.checks.putIfAbsent(it.path(), it));
+    }
+
+    @Override
+    public void beforeStart() {
+        allChecks.forEach(it -> this.checks.putIfAbsent(it.path(), it));
     }
 
     @Override

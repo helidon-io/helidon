@@ -52,7 +52,7 @@ public class ServerImpl implements Server {
             try {
                 listenHost = InetAddress.getByName(builder.host());
             } catch (UnknownHostException e) {
-                throw new MpException("Failed to create address for host: " + builder.host(), e);
+                throw new IllegalArgumentException("Failed to create address for host: " + builder.host(), e);
             }
         }
         this.host = listenHost.getHostName();
@@ -61,12 +61,15 @@ public class ServerImpl implements Server {
 
         this.serverExtension = beanManager.getExtension(ServerCdiExtension.class);
 
+        serverExtension.context(helidonContainer.context());
+
         serverExtension.serverBuilder()
-                .context(helidonContainer.context())
-                .port(builder.port())
-                .bindAddress(listenHost);
+                        .port(builder.port())
+                        .defaultSocket(it -> it.bindAddress(listenHost));
 
         serverExtension.listenHost(this.host);
+
+
     }
 
     @Override

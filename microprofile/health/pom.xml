@@ -41,20 +41,24 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.health</groupId>
-            <artifactId>helidon-reactive-health</artifactId>
+            <groupId>org.eclipse.microprofile.health</groupId>
+            <artifactId>microprofile-health-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.health</groupId>
-            <artifactId>microprofile-health-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service-common</groupId>
-            <artifactId>helidon-service-common-rest-cdi</artifactId>
+            <groupId>io.helidon.microprofile.service-common</groupId>
+            <artifactId>helidon-microprofile-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

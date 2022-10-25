@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Headers;
 import io.helidon.config.Config;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webclient.WebClientRequestHeaders;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;

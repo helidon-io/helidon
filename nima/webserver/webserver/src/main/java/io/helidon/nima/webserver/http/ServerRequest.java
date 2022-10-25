@@ -16,6 +16,8 @@
 
 package io.helidon.nima.webserver.http;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.http.RoutedPath;
 import io.helidon.nima.http.media.ReadableEntity;
 
 /**
@@ -58,4 +60,13 @@ public interface ServerRequest extends HttpRequest {
      * @return server socket id
      */
     String serverSocketId();
+
+    /**
+     * Context of this web server request, to set and get information.
+     * The context is not registered as the current context! You can use a dedicated module ({@code helidon-nima-webserver-context})
+     * to add a filter that would execute all requests within a context.
+     *
+     * @return request context
+     */
+    Context context();
 }

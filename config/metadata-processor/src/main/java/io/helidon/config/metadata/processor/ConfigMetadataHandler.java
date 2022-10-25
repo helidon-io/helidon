@@ -88,6 +88,7 @@ class ConfigMetadataHandler {
      */
     private TypeMirror builderType;
     private TypeMirror configType;
+    private TypeMirror commonConfigType;
     private TypeMirror erasedListType;
     private TypeMirror erasedIterableType;
     private TypeMirror erasedSetType;
@@ -109,7 +110,15 @@ class ConfigMetadataHandler {
         // get the types
         configuredElement = elementUtils.getTypeElement(CONFIGURED_CLASS);
         builderType = elementUtils.getTypeElement("io.helidon.common.Builder").asType();
-        configType = elementUtils.getTypeElement("io.helidon.config.Config").asType();
+        TypeElement configTypeElement = elementUtils.getTypeElement("io.helidon.config.Config");
+        if (configTypeElement != null) {
+            configType = configTypeElement.asType();
+        }
+        TypeElement commonConfigTypeElement = elementUtils.getTypeElement("io.helidon.common.config.Config");
+        if (commonConfigTypeElement != null) {
+            commonConfigType = commonConfigTypeElement.asType();
+        }
+
         erasedListType = typeUtils.erasure(elementUtils.getTypeElement(List.class.getName()).asType());
         erasedSetType = typeUtils.erasure(elementUtils.getTypeElement(Set.class.getName()).asType());
         erasedIterableType = typeUtils.erasure(elementUtils.getTypeElement(Iterable.class.getName()).asType());
@@ -392,8 +401,10 @@ class ConfigMetadataHandler {
                 if (typeUtils.isSameType(typeElement.asType(), method.getReturnType())) {
                     validMethods.add(method);
                     List<? extends VariableElement> parameters = method.getParameters();
-                    if (parameters.size() == 1 && typeUtils.isSameType(parameters.get(0).asType(), configType)) {
-                        configCreator = method;
+                    if (parameters.size() == 1) {
+                        if (isConfigType(parameters.get(0).asType())) {
+                            configCreator = method;
+                        }
                     }
                     isTargetType = true;
                 }
@@ -485,6 +496,15 @@ class ConfigMetadataHandler {
         }
     }
 
+    private boolean isConfigType(TypeMirror typeMirror) {
+        if (configType != null && typeUtils.isSameType(typeMirror, configType)) {
+            return true;
+        } else if (commonConfigType != null && typeUtils.isSameType(typeMirror, commonConfigType)) {
+            return true;
+        }
+        return false;
+    }
+
     private String findBuildMethodTarget(TypeElement typeElement) {
         return elementUtils.getAllMembers(typeElement)
                 .stream()
@@ -521,7 +541,7 @@ class ConfigMetadataHandler {
                     if (parameters.size() == 1) {
                         VariableElement parameter = parameters.iterator().next();
                         // public static Me create(...)
-                        return typeUtils.isSameType(configType, parameter.asType());
+                        return isConfigType(parameter.asType());
                     }
                     return false;
                 });

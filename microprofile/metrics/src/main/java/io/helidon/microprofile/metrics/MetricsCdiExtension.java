@@ -46,14 +46,14 @@ import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.servicecommon.restcdi.HelidonRestCdiExtension;
+import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+import io.helidon.nima.observe.metrics.MetricsFeature;
+import io.helidon.nima.webserver.http.HttpRules;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -122,7 +122,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *     producers to avoid the ambiguity using qualifiers.
  * </p>
  */
-public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport> {
+public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature> {
 
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
@@ -210,7 +210,15 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
      * Creates a new extension instance.
      */
     public MetricsCdiExtension() {
-        super(LOGGER, MetricsSupport::create, "metrics");
+        super(LOGGER, MetricsCdiExtension::createMetricsService, "metrics");
+    }
+
+    private static MetricsFeature createMetricsService(Config helidonConfig) {
+        MetricsFeature.Builder builder = MetricsFeature.builder()
+                .webContext("/metrics")
+                .config(helidonConfig);
+
+        return builder.build();
     }
 
     /**
@@ -722,19 +730,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
     // register metrics with server after security and when
     // application scope is initialized
     @Override
-    public Routing.Builder registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
-                Object adv,
-                BeanManager bm,
-                ServerCdiExtension server) {
-
+    public HttpRules registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                                               Object adv,
+                                               BeanManager bm,
+                                               ServerCdiExtension server) {
         Errors problems = errors.collect();
         errors = null;
         if (problems.hasFatal()) {
             throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
         }
 
-        Routing.Builder defaultRouting = super.registerService(adv, bm, server);
-        MetricsSupport metricsSupport = serviceSupport();
+        HttpRules defaultRouting = super.registerService(adv, bm, server);
+        MetricsFeature metricsSupport = serviceSupport();
 
         // Initialize our implementation
         RegistryProducer.clearApplicationRegistry();
@@ -754,7 +761,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsSupport>
                 .orElseGet(List::of)
                 .forEach(routeName -> {
                     if (!vendorMetricsAdded.contains(routeName)) {
-                        metricsSupport.configureVendorMetrics(routeName, server.serverNamedRoutingBuilder(routeName));
+                        metricsSupport.configureVendorMetrics(server.serverNamedRoutingBuilder(routeName));
                         vendorMetricsAdded.add(routeName);
                     }
                 });

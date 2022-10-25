@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.reactive.webserver.cors.CrossOriginConfig
-:keywords: helidon, config, io.helidon.reactive.webserver.cors.CrossOriginConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.reactive.webserver.cors.CrossOriginConfig
+:description: Configuration of io.helidon.cors.CrossOriginConfig
+:keywords: helidon, config, io.helidon.cors.CrossOriginConfig
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.cors.CrossOriginConfig
 include::{rootdir}/includes/attributes.adoc[]
 
 = CrossOriginConfig (webserver.cors) Configuration
@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.reactive.webserver.cors/io/helidon/reactive/webserver/cors/CrossOriginConfig.html[io.helidon.reactive.webserver.cors.CrossOriginConfig]
+Type: link:{javadoc-base-url}/io.helidon.reactive.webserver.cors/io/helidon/reactive/webserver/cors/CrossOriginConfig.html[io.helidon.cors.CrossOriginConfig]
 
 
 

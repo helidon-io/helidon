@@ -15,10 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,52 +55,47 @@ import org.eclipse.microprofile.metrics.Tag;
  *     holding all this information. That, plus the type generality, makes for quite the class here.
  * </p>
  */
-class MetricStore<M extends HelidonMetric> {
+class MetricStore {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock(true);
 
-    private final Map<MetricID, M> allMetrics = new ConcurrentHashMap<>();
+    private final Map<MetricID, HelidonMetric> allMetrics = new ConcurrentHashMap<>();
     private final Map<String, List<MetricID>> allMetricIDsByName = new ConcurrentHashMap<>();
     private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
 
     private volatile RegistrySettings registrySettings;
-    private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories;
+    private final Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories;
     private final AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory;
     private final AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory;
     private final MetricRegistry.Type registryType;
-    private final Class<M> metricClass;
-    private final BiFunction<Metadata, Metric, M> toImpl;
+    private final BiFunction<Metadata, Metric, HelidonMetric> toImpl;
 
-    static <M extends HelidonMetric> MetricStore<M> create(RegistrySettings registrySettings,
-                                                           Map<MetricType, BiFunction<String, Metadata, M>> metricFactories,
-                                                           AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory,
-                                                           AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory,
-                                                           MetricRegistry.Type registryType,
-                                                           Class<M> metricClass,
-                                                           BiFunction<Metadata, Metric, M> toImpl) {
-        return new MetricStore<>(registrySettings,
+    static MetricStore create(RegistrySettings registrySettings,
+                               Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories,
+                               AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory,
+                               AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory,
+                               MetricRegistry.Type registryType,
+                               BiFunction<Metadata, Metric, HelidonMetric> toImpl) {
+        return new MetricStore(registrySettings,
                                  metricFactories,
                                  supplierBasedGaugeFactory,
                                  functionBasedGaugeFactory,
                                  registryType,
-                                 metricClass,
                                  toImpl);
 
     }
 
     private MetricStore(RegistrySettings registrySettings,
-                        Map<MetricType, BiFunction<String, Metadata, M>> metricFactories,
+                        Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories,
                         AbstractRegistry.GaugeFactory.SupplierBased supplierBasedGaugeFactory,
                         AbstractRegistry.GaugeFactory.FunctionBased functionBasedGaugeFactory,
                         MetricRegistry.Type registryType,
-                        Class<M> metricClass,
-                        BiFunction<Metadata, Metric, M> toImpl) {
+                        BiFunction<Metadata, Metric, HelidonMetric> toImpl) {
         this.registrySettings = registrySettings;
         this.metricFactories = metricFactories;
         this.supplierBasedGaugeFactory = supplierBasedGaugeFactory;
         this.functionBasedGaugeFactory = functionBasedGaugeFactory;
         this.registryType = registryType;
-        this.metricClass = metricClass;
         this.toImpl = toImpl;
     }
 
@@ -130,7 +121,7 @@ class MetricStore<M extends HelidonMetric> {
 
     <U extends Metric> U getOrRegisterMetric(Metadata newMetadata, Class<U> clazz, Tag... tags) {
         return writeAccess(() -> {
-            M metric = getMetricLocked(newMetadata.getName(), tags);
+            HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
                 Metadata metadataToUse = newMetadata.getTypeRaw().equals(MetricType.INVALID)
                         ? Metadata.builder(newMetadata).withType(MetricType.from(clazz)).build()
@@ -202,12 +193,12 @@ class MetricStore<M extends HelidonMetric> {
                                                                                                valueSupplier));
     }
 
-    private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<M> metricFinder,
+    private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<HelidonMetric> metricFinder,
                                                            Supplier<Metadata> metadataFinder,
                                                            Supplier<MetricID> metricIDSupplier,
                                                            Function<Metadata, Gauge<R>> gaugeFactory) {
         return writeAccess(() -> {
-            M metric = metricFinder.get();
+            HelidonMetric metric = metricFinder.get();
             if (metric == null) {
                 Metadata metadata = metadataFinder.get();
                 metric = registerMetricLocked(metricIDSupplier.get(),
@@ -245,7 +236,7 @@ class MetricStore<M extends HelidonMetric> {
                     allMetricIDsByName.remove(metricID.getName());
                     allMetadata.remove(metricID.getName());
                 }
-                M doomedMetric = allMetrics.remove(metricID);
+                HelidonMetric doomedMetric = allMetrics.remove(metricID);
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                 }
@@ -262,7 +253,7 @@ class MetricStore<M extends HelidonMetric> {
             }
             boolean result = false;
             for (MetricID metricID : doomedMetricsIDs) {
-                M metric = allMetrics.get(metricID);
+                HelidonMetric metric = allMetrics.get(metricID);
                 if (metric != null) {
                     metric.markAsDeleted();
                     result |= allMetrics.remove(metricID) != null;
@@ -308,18 +299,18 @@ class MetricStore<M extends HelidonMetric> {
         return new TreeMap<>(collected);
     }
 
-    Map.Entry<Metadata, List<MetricID>> metadataWithIDs(String metricName) {
+    MetricsForMetadata metadataWithIDs(String metricName) {
         return readAccess(() -> {
                               Metadata metadata = allMetadata.get(metricName);
                               List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
                               return (metadata == null || metricIDs == null || metricIDs.isEmpty())
                                       ? null
-                                      : new AbstractMap.SimpleEntry<>(metadata, metricIDs);
+                                      : new MetricsForMetadata(metadata, metricIDs);
                           }
         );
     }
 
-    M metric(MetricID metricID) {
+    HelidonMetric metric(MetricID metricID) {
         return allMetrics.get(metricID);
     }
 
@@ -331,7 +322,7 @@ class MetricStore<M extends HelidonMetric> {
         return allMetadata.get(metricName);
     }
 
-    Map<MetricID, M> metrics() {
+    Map<MetricID, HelidonMetric> metrics() {
         return allMetrics;
     }
 
@@ -342,7 +333,7 @@ class MetricStore<M extends HelidonMetric> {
      * @param metricName metric name to find
      * @return matching metric; null if no metric is registered with the specified name
      */
-    Map.Entry<MetricID, M> untaggedOrFirstMetricWithID(String metricName) {
+    MetricInstance untaggedOrFirstMetricInstance(String metricName) {
         return readAccess(() -> {
             List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
             if (metricIDs == null || metricIDs.isEmpty()) {
@@ -354,19 +345,19 @@ class MetricStore<M extends HelidonMetric> {
                     metricID = candidate;
                 }
             }
-            return new AbstractMap.SimpleImmutableEntry<>(metricID, allMetrics.get(metricID));
+            return new MetricInstance(metricID, allMetrics.get(metricID));
         });
     }
 
-    List<Map.Entry<MetricID, M>> metricsWithIDs(String metricName) {
+    List<MetricInstance> metricsWithIDs(String metricName) {
         return readAccess(() -> {
             List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
             if (metricIDs == null) {
                 return Collections.emptyList();
             }
-            List<Map.Entry<MetricID, M>> result = new ArrayList<>();
+            List<MetricInstance> result = new ArrayList<>();
             for (MetricID metricID : metricIDs) {
-                result.add(new AbstractMap.SimpleImmutableEntry<>(metricID, allMetrics.get(metricID)));
+                result.add(new MetricInstance(metricID, allMetrics.get(metricID)));
             }
             return result;
         });
@@ -376,21 +367,24 @@ class MetricStore<M extends HelidonMetric> {
         return new ArrayList<>(allMetricIDsByName.get(metricName));
     }
 
-    Stream<Map.Entry<MetricID, M>> stream() {
-        return allMetrics.entrySet().stream().filter(entry -> registrySettings.isMetricEnabled(entry.getKey().getName()));
+    Stream<MetricInstance> stream() {
+        return allMetrics.entrySet()
+                .stream()
+                .filter(entry -> registrySettings.isMetricEnabled(entry.getKey().getName()))
+                .map(it -> new MetricInstance(it.getKey(), it.getValue()));
     }
 
-    private void removeLocked(Map.Entry<MetricID, M> entry) {
+    private void removeLocked(Map.Entry<MetricID, HelidonMetric> entry) {
         remove(entry.getKey());
     }
 
     private <U extends Metric> U getOrRegisterMetric(String metricName,
                                                      Class<U> clazz,
-                                                     Supplier<M> metricFactory,
+                                                     Supplier<HelidonMetric> metricFactory,
                                                      Supplier<MetricID> metricIDFactory,
                                                      Supplier<Metadata> metadataFactory) {
         return writeAccess(() -> {
-            M metric = metricFactory.get();
+            HelidonMetric metric = metricFactory.get();
             if (metric == null) {
                 try {
                     MetricType metricType = MetricType.from(clazz);
@@ -408,7 +402,7 @@ class MetricStore<M extends HelidonMetric> {
         });
     }
 
-    private M getMetricLocked(String metricName, Tag... tags) {
+    private HelidonMetric getMetricLocked(String metricName, Tag... tags) {
         List<MetricID> metricIDsForName = allMetricIDsByName.get(metricName);
         if (metricIDsForName == null) {
             return null;
@@ -421,7 +415,7 @@ class MetricStore<M extends HelidonMetric> {
         return null;
     }
 
-    private <T extends M> T registerMetricLocked(MetricID metricID, T metric) {
+    private HelidonMetric registerMetricLocked(MetricID metricID, HelidonMetric metric) {
         allMetrics.put(metricID, metric);
         allMetricIDsByName
                 .computeIfAbsent(metricID.getName(), k -> new ArrayList<>())
@@ -468,42 +462,23 @@ class MetricStore<M extends HelidonMetric> {
         return metadata;
     }
 
-    private <U extends Metric> M createEnabledAwareMetric(Class<U> clazz, Metadata metadata) {
+    private <U extends Metric> HelidonMetric createEnabledAwareMetric(Class<U> clazz, Metadata metadata) {
         String metricName = metadata.getName();
         MetricType metricType = MetricType.from(clazz);
         return registrySettings.isMetricEnabled(metricName)
                 ? metricFactories.get(MetricType.from(clazz)).apply(registryType.getName(), metadata)
-                : metricClass.cast(Proxy.newProxyInstance(
-                        metricClass.getClassLoader(),
-                        new Class<?>[] {clazz, metricClass},
-                        new DisabledMetricInvocationHandler(metricType, metricName, metadata)));
+                : NoOpMetricRegistry.noOpMetricFactories().get(metricType).apply(metricName, metadata);
     }
 
-    private <R extends Number> M createEnabledAwareGauge(Metadata metadata, Function<Metadata, Gauge<R>> gaugeFactory) {
+    private <R extends Number> HelidonMetric createEnabledAwareGauge(Metadata metadata,
+                                                                     Function<Metadata, Gauge<R>> gaugeFactory) {
         String metricName = metadata.getName();
-        return metricClass.cast(registrySettings.isMetricEnabled(metricName)
-                                        ? gaugeFactory.apply(metadata)
-                                        : Proxy.newProxyInstance(
-                                                metricClass.getClassLoader(),
-                                                new Class<?>[] {Gauge.class, metricClass},
-                                                new DisabledMetricInvocationHandler(MetricType.GAUGE, metricName, metadata)));
+        return registrySettings.isMetricEnabled(metricName)
+                ? (HelidonMetric) gaugeFactory.apply(metadata)
+                : NoOpMetricRegistry.noOpMetricFactories().get(MetricType.GAUGE).apply(metricName, metadata);
     }
 
-    private static class DisabledMetricInvocationHandler implements InvocationHandler {
-
-        private final NoOpMetric delegate;
-
-        DisabledMetricInvocationHandler(MetricType metricType, String metricName, Metadata metadata) {
-            delegate = NoOpMetricRegistry.noOpMetricFactories().get(metricType).apply(metricName, metadata);
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            return method.invoke(delegate, args);
-        }
-    }
-
-    private <T extends M, U extends Metric> U toType(T m1, Class<U> clazz) {
+    private <T extends HelidonMetric, U extends Metric> U toType(T m1, Class<U> clazz) {
         MetricType type1 = toType(m1);
         MetricType type2 = MetricType.from(clazz);
         if (type1 == type2) {

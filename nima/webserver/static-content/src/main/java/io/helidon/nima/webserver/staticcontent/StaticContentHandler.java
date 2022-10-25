@@ -30,12 +30,11 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.NotFoundException;
-import io.helidon.common.http.RequestException;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.PathMatchers;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -156,10 +155,10 @@ abstract class StaticContentHandler implements StaticContentSupport {
     static void redirect(ServerRequest request, ServerResponse response, String location) {
         UriQuery query = request.query();
         String locationWithQuery;
-        if (query == null) {
+        if (query.isEmpty()) {
             locationWithQuery = location;
         } else {
-            locationWithQuery = location + "?" + query;
+            locationWithQuery = location + "?" + query.rawValue();
         }
 
         response.status(Http.Status.MOVED_PERMANENTLY_301);
@@ -215,7 +214,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
             if (!doHandle(method, requestPath, request, response)) {
                 response.next();
             }
-        } catch (RequestException httpException) {
+        } catch (HttpException httpException) {
             if (httpException.status().code() == Http.Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND
                 response.next();

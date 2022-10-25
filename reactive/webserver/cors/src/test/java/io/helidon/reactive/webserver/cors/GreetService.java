@@ -23,7 +23,7 @@ import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
 
-public class GreetService implements Service {
+class GreetService implements Service {
 
     private String greeting;
 

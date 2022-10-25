@@ -32,12 +32,12 @@ module io.helidon.microprofile.graphql.server {
     requires org.jboss.jandex;
 
     requires io.helidon.config;
-    requires io.helidon.reactive.webserver;
+    requires io.helidon.nima.graphql.server;
     requires io.helidon.graphql.server;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
 
-    requires graphql.java;
+    requires com.graphqljava;
     requires graphql.java.extended.scalars;
     requires microprofile.graphql.api;
     requires microprofile.config.api;

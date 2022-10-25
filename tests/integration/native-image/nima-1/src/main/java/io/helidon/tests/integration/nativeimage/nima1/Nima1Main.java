@@ -24,7 +24,7 @@ import io.helidon.health.HealthCheckResponse;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveSupport;
 import io.helidon.nima.observe.health.HealthObserveProvider;
-import io.helidon.nima.observe.health.HealthService;
+import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
@@ -100,7 +100,7 @@ public final class Nima1Main {
         GreetService greetService = new GreetService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-reactive-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
-        HealthService health = HealthService.builder()
+        HealthFeature health = HealthFeature.builder()
                 .addCheck(() -> HealthCheckResponse.builder()
                         .detail("timestamp",
                                 System.currentTimeMillis())

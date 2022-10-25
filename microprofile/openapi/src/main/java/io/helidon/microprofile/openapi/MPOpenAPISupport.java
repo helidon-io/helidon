@@ -15,12 +15,12 @@
  */
 package io.helidon.microprofile.openapi;
 
-import io.helidon.openapi.OpenAPISupport;
+import io.helidon.nima.openapi.OpenApiService;
 
 /**
  * MP variant of OpenAPISupport.
  */
-class MPOpenAPISupport extends OpenAPISupport {
+class MPOpenAPISupport extends OpenApiService {
 
     protected MPOpenAPISupport(MPOpenAPIBuilder builder) {
         super(builder);

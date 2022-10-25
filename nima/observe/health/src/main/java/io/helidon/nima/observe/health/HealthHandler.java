@@ -16,9 +16,9 @@
 
 package io.helidon.nima.observe.health;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
 import io.helidon.common.http.HtmlEncoder;
 import io.helidon.common.http.Http;
@@ -43,15 +43,15 @@ class HealthHandler implements Handler {
 
     HealthHandler(EntityWriter<JsonObject> entityWriter,
                   boolean details,
-                  Map<String, HealthCheck> checksByPath) {
+                  List<HealthCheck> checks) {
         this.entityWriter = entityWriter;
         this.details = details;
-        this.checks = checksByPath.values();
+        this.checks = checks;
     }
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        Map<String, HealthCheckResponse> responses = new LinkedHashMap<>();
+        List<NamedResponse> responses = new ArrayList<>();
         HealthCheckResponse.Status status = HealthCheckResponse.Status.UP;
 
         for (HealthCheck check : checks) {
@@ -67,7 +67,8 @@ class HealthHandler implements Handler {
                         .build();
                 LOGGER.log(System.Logger.Level.ERROR, "Unexpected failure of health check", e);
             }
-            responses.put(check.name(), response);
+            // we may have more checks with the same name (such as in MP Health)
+            responses.add(new NamedResponse(check.name(), response));
 
             if (response.status() == HealthCheckResponse.Status.ERROR) {
                 status = HealthCheckResponse.Status.ERROR;
@@ -96,12 +97,12 @@ class HealthHandler implements Handler {
         }
     }
 
-    private static JsonObject toJson(HealthCheckResponse.Status status, Map<String, HealthCheckResponse> responses) {
+    private static JsonObject toJson(HealthCheckResponse.Status status, List<NamedResponse> responses) {
         JsonObjectBuilder response = HealthHelper.JSON.createObjectBuilder();
         response.add("status", status.toString());
 
         JsonArrayBuilder checks = HealthHelper.JSON.createArrayBuilder();
-        responses.forEach((name, result) -> checks.add(HealthHelper.toJson(name, result)));
+        responses.forEach(result -> checks.add(HealthHelper.toJson(result.name(), result.response())));
 
         response.add("checks", checks);
         return response.build();

@@ -29,9 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.jersey.common.InvokedResource;
-import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -116,21 +116,29 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return appClassCacheEntry(appClass).subResourceMethodSecurity;
     }
 
-    @Context
-    private ServerConfig serverConfig;
+    private final ServerConfig serverConfig;
 
-    @Context
-    private SecurityContext securityContext;
-
-    @Context
-    private ServerRequest serverRequest;
+    private final SecurityContext securityContext;
 
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
 
     /**
-     * Default constructor to be used by Jersey when creating an instance of this class.
+     * Constructor to be used by Jersey when creating an instance, injects all parameters.
+     *
+     * @param security security instance
+     * @param featureConfig feature config
+     * @param serverConfig server config
+     * @param securityContext security context
      */
-    public SecurityFilter() {
+    public SecurityFilter(@Context Security security,
+                          @Context FeatureConfig featureConfig,
+                          @Context ServerConfig serverConfig,
+                          @Context SecurityContext securityContext) {
+        super(security, featureConfig);
+
+        this.serverConfig = serverConfig;
+        this.securityContext = securityContext;
+
         loadAnalyzers();
     }
 
@@ -389,7 +397,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         Class<?> definitionClass = getRealClass(obtainedClass);
 
         // Get the application for this request in case there's more than one
-        Application appInstance = serverRequest.context().get(Application.class).get();
+        Application appInstance = Contexts.context().flatMap(it -> it.get(Application.class)).get();
 
         // Create and cache security definition for application
         Class<?> appRealClass = getRealClass(appInstance.getClass());

@@ -166,6 +166,25 @@ public interface SocketConfiguration {
     }
 
     /**
+     * Maximum length of the response data sending buffer can keep without flushing.
+     * Depends on `backpressure-policy` what happens if max buffer size is reached.
+     *
+     * @return maximum non-flushed data Netty can buffer until backpressure is applied
+     */
+    default long backpressureBufferSize() {
+        return 5 * 1024 * 1024;
+    }
+
+    /**
+     * Strategy for applying backpressure to the reactive stream of response data.
+     *
+     * @return strategy identifier for applying backpressure
+     */
+    default BackpressureStrategy backpressureStrategy() {
+        return BackpressureStrategy.LINEAR;
+    }
+
+    /**
      * Initial size of the buffer used to parse HTTP line and headers.
      *
      * @return initial size of the buffer
@@ -325,12 +344,12 @@ public interface SocketConfiguration {
          * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
          * is returned.
          * <p>
-         * Default is {@code 8192}
+         * Default is {@code 16384}
          *
          * @param size maximal number of bytes of combined header values
          * @return this builder
          */
-        @ConfiguredOption("8192")
+        @ConfiguredOption("16384")
         B maxHeaderSize(int size);
 
         /**
@@ -365,6 +384,31 @@ public interface SocketConfiguration {
          */
         @ConfiguredOption
         B maxPayloadSize(long size);
+
+        /**
+         * Maximum length of the response data sending buffer can keep without flushing.
+         * Depends on `backpressure-policy` what happens if max buffer size is reached.
+         *
+         * @param size maximum non-flushed data Netty can buffer until backpressure is applied
+         * @return this builder
+         */
+        @ConfiguredOption
+        B backpressureBufferSize(long size);
+
+        /**
+         * Sets a backpressure strategy for the server to apply against user provided response upstream.
+         *
+         * <ul>
+         * <li>LINEAR - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.</li>
+         * <li>AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.</li>
+         * <li>PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.</li>
+         * <li>NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.</li>
+         * </ul>
+         * @param backpressureStrategy One of NONE, PREFETCH or LINEAR, default is LINEAR
+         * @return this builder
+         */
+        @ConfiguredOption("LINEAR")
+        B backpressureStrategy(BackpressureStrategy backpressureStrategy);
 
         /**
          * Set a maximum length of the content of an upgrade request.
@@ -419,6 +463,8 @@ public interface SocketConfiguration {
 
             // compression
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
+            config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
+            config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
             return (B) this;
         }
     }
@@ -445,15 +491,18 @@ public interface SocketConfiguration {
         // methods with `name` are removed from server builder (for adding sockets)
         private String name = UNCONFIGURED_NAME;
         private boolean enabled = true;
+        //Header size increased to 16K
+        private int maxHeaderSize = 16384;
         // these values are as defined in Netty implementation
-        private int maxHeaderSize = 8192;
         private int maxInitialLineLength = 4096;
         private int maxChunkSize = 8192;
         private boolean validateHeaders = true;
         private int initialBufferSize = 128;
         private boolean enableCompression = false;
         private long maxPayloadSize = -1;
+        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.LINEAR;
         private int maxUpgradeContentLength = 64 * 1024;
+        private long maxBufferSize = 5 * 1024 * 1024;
 
         private Builder() {
         }
@@ -628,6 +677,18 @@ public interface SocketConfiguration {
         }
 
         @Override
+        public Builder backpressureBufferSize(long size) {
+            this.maxBufferSize = size;
+            return this;
+        }
+
+        @Override
+        public Builder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            this.backpressureStrategy = backpressureStrategy;
+            return this;
+        }
+
+        @Override
         public Builder maxUpgradeContentLength(int size) {
             this.maxUpgradeContentLength = size;
             return this;
@@ -713,6 +774,8 @@ public interface SocketConfiguration {
             config.get("validate-headers").asBoolean().ifPresent(this::validateHeaders);
             config.get("initial-buffer-size").asInt().ifPresent(this::initialBufferSize);
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
+            config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
+            config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
 
             return this;
         }
@@ -775,6 +838,14 @@ public interface SocketConfiguration {
 
         long maxPayloadSize() {
             return maxPayloadSize;
+        }
+
+        long backpressureBufferSize() {
+            return maxBufferSize;
+        }
+
+        BackpressureStrategy backpressureStrategy() {
+            return backpressureStrategy;
         }
 
         int maxUpgradeContentLength() {

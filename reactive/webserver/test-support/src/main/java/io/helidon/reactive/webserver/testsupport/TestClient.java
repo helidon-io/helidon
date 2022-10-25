@@ -38,6 +38,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.media.common.MediaContext;
 import io.helidon.reactive.media.common.MediaSupport;
+import io.helidon.reactive.webserver.BackpressureStrategy;
 import io.helidon.reactive.webserver.BareRequest;
 import io.helidon.reactive.webserver.BareResponse;
 import io.helidon.reactive.webserver.RequestHeaders;
@@ -292,6 +293,11 @@ public class TestClient {
         @Override
         public Single<BareResponse> whenCompleted() {
             return Single.create(completionStage);
+        }
+
+        @Override
+        public void backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            //noop
         }
 
         @Override

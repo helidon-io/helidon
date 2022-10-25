@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.common.SecurityTracing;
 
@@ -47,11 +48,18 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
 
     private static final AtomicInteger CONTEXT_COUNTER = new AtomicInteger();
 
-    @Context
-    private InjectionManager injectionManager;
+    private final InjectionManager injectionManager;
+    private final UriInfo uriInfo;
 
-    @Context
-    private UriInfo uriInfo;
+    SecurityPreMatchingFilter(@Context Security security,
+                              @Context FeatureConfig featureConfig,
+                              @Context InjectionManager injectionManager,
+                              @Context UriInfo uriInfo) {
+        super(security, featureConfig);
+
+        this.injectionManager = injectionManager;
+        this.uriInfo = uriInfo;
+    }
 
     @Override
     public void filter(ContainerRequestContext request) {

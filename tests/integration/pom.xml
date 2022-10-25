@@ -17,7 +17,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -32,6 +32,10 @@
 
     <name>Helidon Integration Tests</name>
 
+    <properties>
+        <version.lib.testcontainers>1.17.4</version.lib.testcontainers>
+    </properties>
+
     <modules>
         <module>tools</module>
         <module>zipkin-mp-2.2</module>
@@ -43,7 +47,11 @@
         <module>webclient</module>
         <module>webserver</module>
         <module>security</module>
+        <!--
+        This test was testing that we use custom executors for Jersey and Jersey async
+        with a switch to virtual threads, we only use virtual threads, and these executors are not configured
         <module>mp-gh-1538</module>
+        -->
         <module>mp-gh-2421</module>
         <module>mp-gh-2461</module>
         <module>mp-gh-3246</module>
@@ -51,34 +59,34 @@
         <module>mp-gh-4123</module>
         <module>mp-gh-4654</module>
         <module>kafka</module>
+        <module>jpa</module>
         <module>jms</module>
         <module>config</module>
         <module>jep290</module>
         <module>mp-bean-validation</module>
         <module>restclient</module>
         <module>native-image</module>
+        <module>vault</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <!-- testcontainers should only be used in integration tests -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${version.lib.testcontainers}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <profiles>
-        <profile>
-            <id>native-image</id>
-            <properties>
-                <native-image>true</native-image>
-            </properties>
-            <modules>
-                <module>jpa</module>
-            </modules>
-        </profile>
         <profile>
             <id>dbclient-it</id>
             <modules>
                 <module>dbclient</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>vault-it</id>
-            <modules>
-                <module>vault</module>
             </modules>
         </profile>
     </profiles>

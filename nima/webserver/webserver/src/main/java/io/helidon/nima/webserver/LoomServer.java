@@ -32,6 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import io.helidon.common.Version;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -181,7 +182,8 @@ class LoomServer implements WebServer {
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-        LOGGER.log(System.Logger.Level.INFO, "Níma server started all channels in "
+        LOGGER.log(System.Logger.Level.INFO, "Helidon Níma " + Version.VERSION);
+        LOGGER.log(System.Logger.Level.INFO, "Started all channels in "
                 + now + " milliseconds. "
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());

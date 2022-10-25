@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ package io.helidon.metrics;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -31,27 +28,18 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.metrics.HelidonMetricsMatcher.withinTolerance;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for {@link HelidonMeter}.
  */
 class HelidonMeterTest {
-    private static final String EXPECTED_PROMETHEUS_START = "# TYPE application_requests_total counter\n"
-            + "# HELP application_requests_total Tracks the number of requests to the server\n"
-            + "application_requests_total 1000\n"
-            + "# TYPE application_requests_rate_per_second gauge\n"
-            + "application_requests_rate_per_second ";
     private static HelidonMeter meter;
     private static MetricID meterID;
 
     @BeforeAll
-    static void initClass() throws InterruptedException {
+    static void initClass() {
         Metadata meta = Metadata.builder()
 				.withName("requests")
 				.withDisplayName("Requests")
@@ -112,40 +100,5 @@ class HelidonMeterTest {
     @Test
     void testFifteenMinuteRate() {
         assertThat("fifteen minute rate", meter.getFifteenMinuteRate(),  is(withinTolerance(100)));
-    }
-
-    @Test
-    void testJson() {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        meter.jsonData(builder, new MetricID("requests"));
-
-        JsonObject result = builder.build();
-
-        JsonObject metricData = result.getJsonObject("requests");
-        assertThat(metricData, notNullValue());
-        assertThat(metricData.getInt("count"), is(1000));
-        assertThat(metricData.getJsonNumber("meanRate").doubleValue(), closeTo(100, 0.1));
-        assertThat(metricData.getJsonNumber("oneMinRate").doubleValue(), closeTo(100, 0.1));
-        assertThat(metricData.getJsonNumber("fiveMinRate").doubleValue(), closeTo(100, 0.1));
-        assertThat(metricData.getJsonNumber("fifteenMinRate").doubleValue(), closeTo(100, 0.1));
-
-    }
-
-    @Test
-    void testPrometheus() {
-        final StringBuilder sb = new StringBuilder();
-        meter.prometheusData(sb, meterID, true);
-        String data = sb.toString();
-
-        assertThat(data, startsWith(EXPECTED_PROMETHEUS_START));
-        assertThat(data, containsString("# TYPE application_requests_one_min_rate_per_second gauge\n"
-                                                + "application_requests_one_min_rate_per_second "));
-
-        assertThat(data, containsString("# TYPE application_requests_five_min_rate_per_second gauge\n"
-                                                + "application_requests_five_min_rate_per_second "));
-
-        assertThat(data, containsString("# TYPE application_requests_fifteen_min_rate_per_second gauge\n"
-                                                + "application_requests_fifteen_min_rate_per_second "));
-
     }
 }

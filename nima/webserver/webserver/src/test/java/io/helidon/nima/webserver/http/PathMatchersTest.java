@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.common.uri.UriPath;
 
 import org.hamcrest.Description;

@@ -21,8 +21,8 @@ import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.serviceapi.MetricsSupport;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.reactive.metrics.MetricsSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 

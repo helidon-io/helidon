@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
-import io.helidon.metrics.Sample.Derived;
-import io.helidon.metrics.Sample.Labeled;
+import io.helidon.metrics.api.LabeledSample;
+import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.Sample;
+import io.helidon.metrics.api.Sample.Derived;
 
 import org.eclipse.microprofile.metrics.Snapshot;
 
-import static io.helidon.metrics.Sample.derived;
+import static io.helidon.metrics.api.Sample.derived;
 
 /*
  * This class is heavily inspired by:
@@ -43,7 +45,7 @@ import static io.helidon.metrics.Sample.derived;
 /**
  * A statistical snapshot of a {@link WeightedSnapshot}.
  */
-class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
+class WeightedSnapshot extends Snapshot implements LabeledSnapshot {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private final WeightedSample[] copy;
@@ -325,7 +327,7 @@ class WeightedSnapshot extends Snapshot implements DisplayableLabeledSnapshot {
      * If the label is empty, then this sample will never be an exemplar so we do not need to default the timestamp to the
      * current time.
      */
-    static class WeightedSample extends Labeled.Impl {
+    static class WeightedSample extends LabeledSample {
 
         static final WeightedSample ZERO = new WeightedSample(0, 1.0, "");
 

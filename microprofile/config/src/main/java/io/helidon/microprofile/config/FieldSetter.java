@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.config;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -35,18 +36,19 @@ class FieldSetter {
     private final Class<?> fieldType;
     private final String defaultValue;
     private final boolean isOptional;
+    private final boolean isList;
 
     FieldSetter(Field field, String configKey, String defaultValue) {
         this.field = field;
         this.configKey = configKey;
         this.defaultValue = defaultValue;
         FieldTypes fieldTypes = FieldTypes.create(field.getGenericType());
-        if (fieldTypes.field0().rawType().equals(Optional.class)) {
+        this.isOptional = fieldTypes.field0().rawType().equals(Optional.class);
+        this.isList = fieldTypes.field0().rawType().equals(List.class);
+        if (isOptional || isList) {
             fieldType = fieldTypes.field1().rawType();
-            isOptional = true;
         } else {
             fieldType = field.getType();
-            isOptional = false;
         }
         field.setAccessible(true);
     }
@@ -58,18 +60,37 @@ class FieldSetter {
                 setValue(prefixedKey, field, instance, valueWithDefault(config, prefixedKey));
             } else {
                 Object currentValue = field.get(instance);
-                Optional<?> value = config.getOptionalValue(prefixedKey, fieldType);
-                if (currentValue == null) {
-                    // no current value, need configuration
-                    if (value.isPresent()) {
-                        setValue(prefixedKey, field, instance, value.get());
+
+                if (isList) {
+                    Optional<? extends List<?>> value = config.getOptionalValues(prefixedKey, fieldType);
+                    if (currentValue == null) {
+                        // no current value, need configuration
+                        if (value.isPresent()) {
+                            setValue(prefixedKey, field, instance, value.get());
+                        } else {
+                            setValue(prefixedKey, field, instance, null);
+                        }
                     } else {
-                        setValue(prefixedKey, field, instance, null);
+                        // there is existing value, only override if value in config
+                        if (value.isPresent()) {
+                            setValue(prefixedKey, field, instance, value.get());
+                        }
                     }
+
                 } else {
-                    // there is existing value, only override if value in config
-                    if (value.isPresent()) {
-                        setValue(prefixedKey, field, instance, value.get());
+                    Optional<?> value = config.getOptionalValue(prefixedKey, fieldType);
+                    if (currentValue == null) {
+                        // no current value, need configuration
+                        if (value.isPresent()) {
+                            setValue(prefixedKey, field, instance, value.get());
+                        } else {
+                            setValue(prefixedKey, field, instance, null);
+                        }
+                    } else {
+                        // there is existing value, only override if value in config
+                        if (value.isPresent()) {
+                            setValue(prefixedKey, field, instance, value.get());
+                        }
                     }
                 }
             }

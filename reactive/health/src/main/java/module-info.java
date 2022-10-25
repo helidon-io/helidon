@@ -24,7 +24,7 @@ module io.helidon.reactive.health {
     requires io.helidon.health;
     requires transitive microprofile.health.api;
     requires io.helidon.reactive.webserver;
-    requires io.helidon.servicecommon.rest;
+    requires io.helidon.reactive.servicecommon;
     requires static io.helidon.config.metadata;
     requires io.helidon.reactive.webserver.cors;
     requires io.helidon.reactive.media.jsonp;

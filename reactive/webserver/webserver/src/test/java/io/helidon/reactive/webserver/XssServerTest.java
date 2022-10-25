@@ -22,6 +22,7 @@ import java.util.List;
 import io.helidon.common.http.HtmlEncoder;
 import io.helidon.common.http.Http;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -42,34 +43,42 @@ class XssServerTest extends BaseServerTest {
 
     @Test
     void testScriptInjection() throws Exception {
-        String s = socketClient().sendAndReceive("/bar%3cscript%3eevil%3c%2fscript%3e",
-                                                   Http.Method.GET, null);
-        assertThat(s, not(containsString("<script>")));
-        assertThat(s, not(containsString("</script>")));
+        try (SocketHttpClient client = socketClient()) {
+            String s = client.sendAndReceive("/bar%3cscript%3eevil%3c%2fscript%3e",
+                    Http.Method.GET, null);
+            assertThat(s, not(containsString("<script>")));
+            assertThat(s, not(containsString("</script>")));
+        }
     }
 
     @Test
     void testScriptInjectionIllegalUrlChar() throws Exception {
-        String s = socketClient().sendAndReceive("/bar<script/>evil</script>",
-                Http.Method.GET, null);
-        assertThat(s, not(containsString("<script>")));
-        assertThat(s, not(containsString("</script>")));
+        try (SocketHttpClient client = socketClient()) {
+            String s = client.sendAndReceive("/bar<script/>evil</script>",
+                    Http.Method.GET, null);
+            assertThat(s, not(containsString("<script>")));
+            assertThat(s, not(containsString("</script>")));
+        }
     }
 
     @Test
     void testScriptInjectionContentType() throws Exception {
-        List<String> requestHeaders = Arrays.asList("Content-Type: <script>evil</script>");
-        String s = socketClient().sendAndReceive("/foo",
-                Http.Method.GET, null, requestHeaders);
-        assertThat(s, not(containsString("<script>")));
-        assertThat(s, not(containsString("</script>")));
+        try (SocketHttpClient client = socketClient()) {
+            List<String> requestHeaders = Arrays.asList("Content-Type: <script>evil</script>");
+            String s = client.sendAndReceive("/foo",
+                    Http.Method.GET, null, requestHeaders);
+            assertThat(s, not(containsString("<script>")));
+            assertThat(s, not(containsString("</script>")));
+        }
     }
 
     @Test
     void testResponseEncoding() throws Exception {
-        String s = socketClient().sendAndReceive("/foo",
-                Http.Method.GET, null);
-        assertThat(s, not(containsString("<script>")));
-        assertThat(s, not(containsString("</script>")));
+        try (SocketHttpClient client = socketClient()) {
+            String s = client.sendAndReceive("/foo",
+                    Http.Method.GET, null);
+            assertThat(s, not(containsString("<script>")));
+            assertThat(s, not(containsString("</script>")));
+        }
     }
 }

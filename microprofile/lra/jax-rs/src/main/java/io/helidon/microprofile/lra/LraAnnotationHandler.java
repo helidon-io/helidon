@@ -48,7 +48,7 @@ class LraAnnotationHandler implements AnnotationHandler {
     private final InspectionService.Lra annotation;
     private final CoordinatorClient coordinatorClient;
     private final ParticipantService participantService;
-    private Duration coordinatorTimeout;
+    private final Duration coordinatorTimeout;
 
     LraAnnotationHandler(AnnotationInstance annotation,
                          CoordinatorClient coordinatorClient,

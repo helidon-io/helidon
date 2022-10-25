@@ -199,6 +199,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.graphql</groupId>
+                <artifactId>helidon-nima-graphql-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.reactive.graphql</groupId>
+                <artifactId>helidon-reactive-graphql-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.graphql</groupId>
                 <artifactId>helidon-microprofile-graphql-server</artifactId>
                 <version>${helidon.version}</version>
@@ -243,6 +253,11 @@
             <dependency>
                 <groupId>io.helidon.reactive.media</groupId>
                 <artifactId>helidon-reactive-media-multipart</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.reactive.metrics</groupId>
+                <artifactId>helidon-reactive-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- config -->
@@ -393,6 +408,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.security.integration</groupId>
+                <artifactId>helidon-security-integration-nima</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-annotations</artifactId>
                 <version>${helidon.version}</version>
@@ -529,6 +549,11 @@
                 <artifactId>helidon-microprofile-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.service-common</groupId>
+                <artifactId>helidon-microprofile-service-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- metrics -->
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
@@ -622,16 +647,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.service-common</groupId>
-                <artifactId>helidon-service-common-rest</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.service-common</groupId>
-                <artifactId>helidon-service-common-rest-cdi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-crypto</artifactId>
                 <version>${helidon.version}</version>
@@ -664,6 +679,11 @@
             <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-http-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.reactive.service-common</groupId>
+                <artifactId>helidon-reactive-service-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -1071,11 +1091,21 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.reactive.openapi</groupId>
+                <artifactId>helidon-reactive-openapi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.openapi</groupId>
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- CORS support -->
+            <dependency>
+                <groupId>io.helidon.cors</groupId>
+                <artifactId>helidon-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.reactive.webserver.cors</groupId>
                 <artifactId>helidon-cors</artifactId>
@@ -1267,6 +1297,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.nima.webserver</groupId>
+                <artifactId>helidon-nima-webserver-context</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webserver</groupId>
                 <artifactId>helidon-nima-webserver-static-content</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1327,6 +1362,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.nima.observe</groupId>
+                <artifactId>helidon-nima-observe-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.observe</groupId>
                 <artifactId>helidon-nima-observe-info</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1345,6 +1385,51 @@
                 <artifactId>helidon-nima-fault-tolerance</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.openapi</groupId>
+                <artifactId>helidon-nima-openapi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Pico -->
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-types</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Pico Builder -->
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-runtime-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder</groupId>
+                <artifactId>helidon-pico-builder-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 </project>

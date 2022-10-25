@@ -56,6 +56,8 @@ public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerific
                 requestContext,
                 CompletableFuture.completedFuture(null),
                 CompletableFuture.completedFuture(null),
+                100 * 1024,
+                BackpressureStrategy.LINEAR,
                 0L) {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {

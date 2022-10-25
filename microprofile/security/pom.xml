@@ -57,7 +57,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-webserver</artifactId>
+            <artifactId>helidon-security-integration-nima</artifactId>
         </dependency>
         <!--
             The following dependency simplifies developers' poms so they can add

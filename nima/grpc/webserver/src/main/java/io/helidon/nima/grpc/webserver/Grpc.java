@@ -17,8 +17,8 @@
 package io.helidon.nima.grpc.webserver;
 
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.nima.webserver.http.PathMatcher;
-import io.helidon.nima.webserver.http.PathMatchers;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;

@@ -20,6 +20,7 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,12 +30,13 @@ import static org.hamcrest.Matchers.not;
 @HelidonTest
 @AddConfig(key = "metrics.enabled", value = "false")
 @AddBean(GaugedBean.class)
+@Disabled
 class TestDisabledMetrics {
 
     @Test
     void ensureRegistryFactoryIsMinimal() {
         // Invoking instance() should retrieve the factory previously initialized as disabled.
         RegistryFactory rf = RegistryFactory.getInstance();
-        assertThat("RegistryFactory type", rf, not(instanceOf(io.helidon.metrics.RegistryFactory.class)));
+        assertThat("RegistryFactory type", rf, not(instanceOf(io.helidon.metrics.api.RegistryFactory.class)));
     }
 }

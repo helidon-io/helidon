@@ -57,7 +57,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Alpha10</version.lib.arquillian>
-        <version.lib.asm>6.0</version.lib.asm>
+        <version.lib.asm>9.4</version.lib.asm>
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
@@ -93,7 +93,7 @@
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.build-helper>1.12</version.plugin.build-helper>
         <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
-        <version.plugin.compiler>3.8.1</version.plugin.compiler>
+        <version.plugin.compiler>3.10.1</version.plugin.compiler>
         <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
@@ -118,7 +118,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>7.1.1</version.plugin.dependency-check>
+        <version.plugin.dependency-check>7.2.1</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -196,9 +196,10 @@
         <module>graphql</module>
         <module>logging</module>
         <module>scheduling</module>
-        <module>service-common</module>
         <module>nima</module>
         <module>reactive</module>
+        <module>cors</module>
+        <module>pico</module>
     </modules>
 
 
@@ -231,6 +232,13 @@
                             <arg>-Xpkginfo:always</arg>
                         </compilerArgs>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${version.lib.asm}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -394,10 +402,15 @@
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>
                         </sourceFileExcludes>
-                        <dependencySourceExcludes>
-
-                        </dependencySourceExcludes>
+                        <dependencySourceExcludes></dependencySourceExcludes>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${version.lib.asm}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -430,6 +443,13 @@
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${version.lib.asm}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -618,14 +638,6 @@
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate-enhance}</version>
-                    <dependencies>
-                        <dependency>
-                            <!-- used by hibernate plugin - requires update for Java 17 -->
-                            <groupId>net.bytebuddy</groupId>
-                            <artifactId>byte-buddy</artifactId>
-                            <version>${version.lib.byte-buddy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -679,12 +691,12 @@
                         <dependency>
                             <groupId>org.ow2.asm</groupId>
                             <artifactId>asm</artifactId>
-                            <version>${version.lib.asm}</version>
+                            <version>6.0</version>
                         </dependency>
                         <dependency>
                             <groupId>org.ow2.asm</groupId>
                             <artifactId>asm-commons</artifactId>
-                            <version>${version.lib.asm}</version>
+                            <version>6.0</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -1411,11 +1423,6 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
         </profile>
         <profile>
             <id>toolchain</id>
-            <activation>
-                <file>
-                    <exists>${user.home}/.m2/toolchains.xml</exists>
-                </file>
-            </activation>
             <properties>
                 <jdkToolchainVersion>${java.vm.specification.version}</jdkToolchainVersion>
             </properties>

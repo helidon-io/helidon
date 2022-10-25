@@ -47,8 +47,13 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.reactive.metrics</groupId>
+            <artifactId>helidon-reactive-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.reactive.health</groupId>
@@ -86,15 +91,6 @@
                 <executions>
                     <execution>
                         <id>copy-libs</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>third-party-license-report</id>
                     </execution>
                 </executions>
             </plugin>

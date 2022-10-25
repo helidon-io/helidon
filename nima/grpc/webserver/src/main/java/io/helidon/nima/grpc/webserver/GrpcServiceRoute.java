@@ -20,7 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.nima.webserver.http.PathMatchers;
+import io.helidon.common.http.PathMatchers;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.ServerCalls;

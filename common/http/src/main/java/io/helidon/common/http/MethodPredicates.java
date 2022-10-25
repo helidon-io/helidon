@@ -38,6 +38,11 @@ class MethodPredicates {
         public Set<Method> acceptedMethods() {
             return Set.of();
         }
+
+        @Override
+        public String toString() {
+            return "(any method)";
+        }
     }
 
     static class SingleMethodEnumPredicate implements MethodPredicate {

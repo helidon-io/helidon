@@ -20,10 +20,10 @@ import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpRoute;
-import io.helidon.nima.webserver.http.PathMatcher;
-import io.helidon.nima.webserver.http.PathMatchers;
 
 /**
  * A route for HTTP/2 only.

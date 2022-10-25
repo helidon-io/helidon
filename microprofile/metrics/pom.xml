@@ -50,8 +50,8 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service-common</groupId>
-            <artifactId>helidon-service-common-rest-cdi</artifactId>
+            <groupId>io.helidon.microprofile.service-common</groupId>
+            <artifactId>helidon-microprofile-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
@@ -62,17 +62,12 @@
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-service-api</artifactId>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -91,6 +86,11 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

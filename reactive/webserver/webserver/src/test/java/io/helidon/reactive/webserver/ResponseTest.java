@@ -290,6 +290,11 @@ public class ResponseTest {
         }
 
         @Override
+        public void backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            //noop
+        }
+
+        @Override
         public void onSubscribe(Flow.Subscription subscription) {
             subscription.request(Long.MAX_VALUE);
         }

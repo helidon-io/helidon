@@ -16,14 +16,13 @@
 
 package io.helidon.lra.coordinator;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.metrics.MetricsSupport;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.metrics.MetricsFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * In memory Lra coordinator.
@@ -45,7 +44,8 @@ public class Main {
 
         CoordinatorService coordinatorService = CoordinatorService.builder().build();
 
-        WebServer server = WebServer.builder(createRouting(config, coordinatorService))
+        WebServer server = WebServer.builder()
+                .routing(it -> updateRouting(it, config, coordinatorService))
                 .config(config.get("helidon.lra.coordinator.server"))
                 .build();
 
@@ -53,30 +53,17 @@ public class Main {
                 .asString()
                 .orElse("/lra-coordinator");
 
-        Single<WebServer> webserver = server.start();
-
-        webserver.thenAccept(ws -> {
-            System.out.println("Helidon LRA Coordinator is up! http://localhost:" + ws.port() + context);
-            ws.whenShutdown()
-                    .thenRun(() -> {
-                        System.out.println("Helidon LRA Coordinator is DOWN. Good bye!");
-                    });
-        }).exceptionallyAccept(t -> {
-            System.err.println("Startup failed: " + t.getMessage());
-            t.printStackTrace(System.err);
-        });
+        WebServer webserver = server.start();
+        System.out.println("Helidon LRA Coordinator is up! http://localhost:" + webserver.port() + context);
     }
 
-    private static Routing createRouting(Config config, CoordinatorService coordinatorService) {
+    private static void updateRouting(HttpRouting.Builder routing, Config config, CoordinatorService coordinatorService) {
 
-        MetricsSupport metrics = MetricsSupport.create();
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .build();
+        MetricsFeature metrics = MetricsFeature.create();
+        HealthFeature health = HealthFeature.create(HealthChecks.healthChecks());
 
-        return Routing.builder()
-                .register(metrics)
-                .register(health)
+        routing.addFeature(metrics)
+                .addFeature(health)
                 .register(config.get("mp.lra.coordinator.context.path")
                         .asString()
                         .orElse("/lra-coordinator"), coordinatorService)

@@ -48,38 +48,32 @@ import org.eclipse.microprofile.metrics.Timer;
  *     This class provides the bookkeeping for tracking the metrics which are created and registered along with their
  *     IDs and metadata. Concrete subclasses create new instances of the various types of metrics (counter, timer, etc.).
  * </p>
- *
- * @param <M> general type of metric implementation supported by an implementation of this class (e.g., {@code
- * HelidonMetric}
  */
-public abstract class AbstractRegistry<M extends HelidonMetric> implements MetricRegistry {
+public abstract class AbstractRegistry implements Registry {
 
     private static final Tag[] NO_TAGS = new Tag[0];
 
     private final MetricRegistry.Type type;
 
-    private final Map<MetricType, BiFunction<String, Metadata, M>> metricFactories = prepareMetricFactories();
+    private final Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories = prepareMetricFactories();
 
-    private final MetricStore<M> metricStore;
+    private final MetricStore metricStore;
 
     /**
      * Create a registry of a certain type.
      *
      * @param type Registry type.
-     * @param metricClass class of the specific metric type this registry manages
      * @param registrySettings registry settings which influence this registry
      */
     protected AbstractRegistry(Type type,
-                               Class<M> metricClass,
                                RegistrySettings registrySettings) {
         this.type = type;
-        metricStore = MetricStore.create(registrySettings,
-                                         prepareMetricFactories(),
-                                         this::createGauge,
-                                         this::createGauge,
-                                         type,
-                                         metricClass,
-                                         this::toImpl);
+        this.metricStore = MetricStore.create(registrySettings,
+                                              prepareMetricFactories(),
+                                              this::createGauge,
+                                              this::createGauge,
+                                              type,
+                                              this::toImpl);
     }
 
     /**
@@ -92,18 +86,6 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
         return (metric instanceof HelidonMetric)
                 && ((HelidonMetric) metric).isDeleted();
     }
-
-    /**
-     * Indicates whether the specified metric name is enabled or not.
-     * <p>
-     *     Concrete implementations of this method should account for registry settings that might have disabled the specified
-     *     metric or the registry as a whole. They do not need to check whether metrics in its entirety is enabled.
-     * </p>
-     *
-     * @param metricName name of the metric to check
-     * @return true if the metric is enabled; false otherwise
-     */
-    protected abstract boolean isMetricEnabled(String metricName);
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
@@ -118,6 +100,26 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
         return metricStore.register(metadata, metric, tags);
+    }
+
+    @Override
+    public Optional<MetricInstance> find(String name) {
+        return Optional.ofNullable(metricStore.untaggedOrFirstMetricInstance(name));
+    }
+
+    @Override
+    public List<MetricInstance> list(String metricName) {
+        return metricStore.metricsWithIDs(metricName);
+    }
+
+    @Override
+    public List<MetricID> metricIdsByName(String name) {
+        return metricStore.metricIDs(name);
+    }
+
+    @Override
+    public Optional<MetricsForMetadata> metricsByName(String name) {
+        return Optional.ofNullable(metricStore.metadataWithIDs(name));
     }
 
     @Override
@@ -468,7 +470,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     }
 
     @Override
-    public Metric getMetric(MetricID metricID) {
+    public HelidonMetric getMetric(MetricID metricID) {
         return metricStore.metric(metricID);
     }
 
@@ -516,21 +518,11 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
     }
 
     /**
-     * Returns a map entry, its key the metadata and its value all metric IDs matching the provided metric name.
-     *
-     * @param metricName name to search for
-     * @return the metadata and metric IDs known for the specified metric name; null if the name is not registered
-     */
-    public Map.Entry<Metadata, List<MetricID>> metadataWithIDs(String metricName) {
-        return metricStore.metadataWithIDs(metricName);
-    }
-
-    /**
      * Returns a stream of {@link Map.Entry} for this registry for enabled metrics.
      *
      * @return Stream of {@link Map.Entry}
      */
-    protected Stream<Map.Entry<MetricID, M>> stream() {
+    public Stream<MetricInstance> stream() {
         return metricStore.stream();
     }
 
@@ -539,10 +531,9 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      *
      * @param metadata {@code Metadata} for the metric
      * @param metric the existing metric to be wrapped by the impl
-     * @param <T> specific type of {@code Metric} provided and wrapped
      * @return new wrapper implementation around the specified metric instance
      */
-    protected abstract <T extends Metric> M toImpl(Metadata metadata, T metric);
+    protected abstract HelidonMetric toImpl(Metadata metadata, Metric metric);
 
     /**
      * Provides a map from MicroProfile metric type to a factory which creates a concrete metric instance of the MP metric type
@@ -550,36 +541,9 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      *
      * @return map from each MicroProfile metric type to the correspondingfactory method
      */
-    protected abstract Map<MetricType, BiFunction<String, Metadata, M>> prepareMetricFactories();
+    protected abstract Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> prepareMetricFactories();
 
     // -- Package private -----------------------------------------------------
-
-    /**
-     * Returns an {@code Optional} for an entry containing a metric ID and the corresponding metric matching the specified
-     * metric name.
-     * <p>
-     *     If multiple metrics match the name (because of tags), the returned metric is, preferentially, the one (if any) with
-     *     no tags. If all metrics registered under the specified name have tags, then the method returns the metric which was
-     *     registered earliest
-     * </p>
-     *
-     * @param metricName name of the metric of interest
-     * @return {@code Optional} of a map entry containing the metric ID and the metric selected
-     */
-    protected Optional<Map.Entry<MetricID, M>> getOptionalMetricEntry(String metricName) {
-        return Optional.ofNullable(metricStore.untaggedOrFirstMetricWithID(metricName));
-    }
-
-    /**
-     * Returns a list of metric ID/metric pairs which match the provided metric name.
-     *
-     * @param metricName name of the metric of interest
-     * @return List of entries indicating metrics with the specified name; empty of no matches
-     */
-    protected List<Map.Entry<MetricID, M>> getMetricsByName(String metricName) {
-        return metricStore.metricsWithIDs(metricName);
-    }
-
     /**
      * Returns a list of metric IDs given a metric name.
      *
@@ -664,7 +628,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      *
      * @return map from MicroProfile metric type to factory functions.
      */
-    protected Map<MetricType, BiFunction<String, Metadata, M>> metricFactories() {
+    protected Map<MetricType, BiFunction<String, Metadata, HelidonMetric>> metricFactories() {
         return metricFactories;
     }
 
@@ -673,7 +637,7 @@ public abstract class AbstractRegistry<M extends HelidonMetric> implements Metri
      *
      * @return prepared map for a given metrics implementation
      */
-    protected abstract Map<Class<? extends M>, MetricType> prepareMetricToTypeMap();
+    protected abstract Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap();
 
     /**
      * Gauge factories based on either functions or suppliers.

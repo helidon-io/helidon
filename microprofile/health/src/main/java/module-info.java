@@ -24,8 +24,10 @@ module io.helidon.microprofile.health {
     requires java.management;
 
     requires io.helidon.common;
-    requires io.helidon.reactive.health;
-    requires io.helidon.servicecommon.restcdi;
+
+    requires io.helidon.health;
+    requires io.helidon.nima.observe.health;
+    requires io.helidon.microprofile.servicecommon;
     requires io.helidon.microprofile.server;
 
     requires jakarta.cdi;
@@ -36,7 +38,6 @@ module io.helidon.microprofile.health {
     requires microprofile.config.api;
     requires transitive microprofile.health.api;
     requires io.helidon.config.mp;
-    requires io.helidon.health;
 
     exports io.helidon.microprofile.health;
 
@@ -46,5 +47,7 @@ module io.helidon.microprofile.health {
     uses io.helidon.microprofile.health.HealthCheckProvider;
     uses io.helidon.health.spi.HealthCheckProvider;
 
+    provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider
+            with io.helidon.microprofile.health.HealthCheckResponseProviderImpl;
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.health.HealthCdiExtension;
 }

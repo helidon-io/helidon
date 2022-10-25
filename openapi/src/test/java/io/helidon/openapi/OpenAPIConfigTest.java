@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 
-/**
- *
- */
-public class OpenAPIConfigTest {
+class OpenAPIConfigTest {
 
     private final static String TEST_CONFIG_DIR = "src/test/resources";
 
@@ -57,8 +53,7 @@ public class OpenAPIConfigTest {
     private static final String SCHEMA_OVERRIDE_CONFIG_FQCN = "java.util.Date";
 
     private static final Map<String, String> SCHEMA_OVERRIDE_CONFIG = Map.of(
-            OpenAPISupport.Builder.CONFIG_KEY
-                    + "."
+                 "openapi."
                     + OpenAPIConfigImpl.Builder.SCHEMA
                     + "."
                     + SCHEMA_OVERRIDE_CONFIG_FQCN,
@@ -70,18 +65,15 @@ public class OpenAPIConfigTest {
         return sj.toString();
     }
 
-    public OpenAPIConfigTest() {
-    }
-
     @Test
-    public void simpleConfigTest() {
+    void simpleConfigTest() {
         Config config = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .sources(ConfigSources.file(Paths.get(TEST_CONFIG_DIR, "simple.properties").toString()))
                 .build();
         OpenApiConfig openAPIConfig = OpenAPIConfigImpl.builder()
-                .config(config.get(OpenAPISupport.Builder.CONFIG_KEY))
+                .config(config.get("openapi"))
                 .build();
 
         assertThat("reader mismatch", openAPIConfig.modelReader(), is("io.helidon.openapi.test.MyModelReader"));
@@ -92,14 +84,14 @@ public class OpenAPIConfigTest {
     }
 
     @Test
-    public void checkUnconfiguredValues() {
+    void checkUnconfiguredValues() {
         Config config = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .sources(ConfigSources.file(Paths.get(TEST_CONFIG_DIR, "simple.properties").toString()))
                 .build();
         OpenApiConfig openAPIConfig = OpenAPIConfigImpl.builder()
-                .config(config.get(OpenAPISupport.Builder.CONFIG_KEY))
+                .config(config.get("openapi"))
                 .build();
 
         assertThat("scan disable mismatch", openAPIConfig.scanDisable(), is(true));
@@ -110,7 +102,7 @@ public class OpenAPIConfigTest {
         Config config = Config.just(ConfigSources.file(Paths.get(TEST_CONFIG_DIR, "simple.properties").toString()),
                                     ConfigSources.create(SCHEMA_OVERRIDE_CONFIG));
         OpenApiConfig openAPIConfig = OpenAPIConfigImpl.builder()
-                .config(config.get(OpenAPISupport.Builder.CONFIG_KEY))
+                .config(config.get("openapi"))
                 .build();
 
         assertThat("Schema override", openAPIConfig.getSchemas(), hasKey(SCHEMA_OVERRIDE_CONFIG_FQCN));

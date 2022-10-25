@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import org.yaml.snakeyaml.representer.Representer;
  * while suppressing tags that would indicate the SmallRye classes -- we don't want to
  * suggest that the output can only be read into the SmallRye implementation.
  */
-class Serializer {
+public class Serializer {
 
     private static final DumperOptions YAML_DUMPER_OPTIONS = new DumperOptions();
     private static final DumperOptions JSON_DUMPER_OPTIONS = new DumperOptions();
@@ -70,9 +70,20 @@ class Serializer {
         JSON_DUMPER_OPTIONS.setSplitLines(false);
     }
 
-    static void serialize(Map<Class<?>, ExpandedTypeDescription> types, Map<Class<?>, ExpandedTypeDescription> implsToTypes,
-            OpenAPI openAPI, Format fmt,
-            Writer writer) {
+    /**
+     * Serialize using the selected format.
+     *
+     * @param types types
+     * @param implsToTypes implementations to types
+     * @param openAPI Open API document to serialize
+     * @param fmt format to use
+     * @param writer writer to serialize to
+     */
+    public static void serialize(Map<Class<?>, ExpandedTypeDescription> types,
+                                 Map<Class<?>, ExpandedTypeDescription> implsToTypes,
+                                 OpenAPI openAPI,
+                                 Format fmt,
+                                 Writer writer) {
         if (fmt == Format.JSON) {
             serialize(types, implsToTypes, openAPI, writer, JSON_DUMPER_OPTIONS, DumperOptions.ScalarStyle.DOUBLE_QUOTED);
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,19 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
-import jakarta.json.JsonObjectBuilder;
+import io.helidon.metrics.api.Sample;
+import io.helidon.metrics.api.SampledMetric;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Implementation of {@link Counter}.
  */
-final class HelidonCounter extends MetricImpl implements Counter {
+final class HelidonCounter extends MetricImpl implements Counter, SampledMetric {
     private final Counter delegate;
 
     private HelidonCounter(String registryType, Metadata metadata, Counter delegate) {
@@ -60,42 +62,33 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public String prometheusNameWithUnits(MetricID metricID) {
-        String metricName = prometheusName(metricID.getName());
-        return metricName.endsWith("total") ? metricName : metricName + "_total";
-    }
-
-    @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType) {
-        prometheusData(sb, metricID, withHelpType, prometheusNameWithUnits(metricID));
-    }
-
-    void prometheusData(StringBuilder sb, MetricID metricID, boolean withHelpType, String prometheusName) {
-        if (withHelpType) {
-            prometheusType(sb, prometheusName, metadata().getType());
-            prometheusHelp(sb, prometheusName);
+    public Optional<Sample.Labeled> sample() {
+        if (delegate instanceof CounterImpl ci) {
+            return Optional.ofNullable(ci.sample);
         }
-        sb.append(prometheusName)
-                .append(prometheusTags(metricID.getTags()))
-                .append(" ")
-                .append(prometheusValue());
-        if (delegate instanceof CounterImpl) {
-            Sample.Labeled sample = ((CounterImpl) delegate).sample;
-            if (sample != null) {
-                sb.append(prometheusExemplar(sample));
-            }
+        return Optional.empty();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delegate);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        sb.append('\n');
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonCounter that = (HelidonCounter) o;
+        return Objects.equals(delegate, that.delegate);
     }
 
     @Override
-    public String prometheusValue() {
-        return Long.toString(getCount());
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        builder.add(jsonFullKey(metricID), getCount());
+    protected String toStringDetails() {
+        return ", counter='" + getCount() + '\'';
     }
 
     private static class CounterImpl implements Counter {
@@ -135,27 +128,5 @@ final class HelidonCounter extends MetricImpl implements Counter {
             CounterImpl that = (CounterImpl) o;
             return getCount() == that.getCount();
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
-            return false;
-        }
-        HelidonCounter that = (HelidonCounter) o;
-        return Objects.equals(delegate, that.delegate);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), delegate);
-    }
-
-    @Override
-    protected String toStringDetails() {
-        return ", counter='" + getCount() + '\'';
     }
 }

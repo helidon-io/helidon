@@ -43,7 +43,7 @@ This example requires a database.
 Instructions for H2 can be found here: https://www.h2database.com/html/cheatSheet.html
 ]]></value>
                                     </list>
-                                    <list key="config-entries">
+                                    <list key="application-yaml-entries">
                                         <value file="files/application.h2.yaml"/>
                                     </list>
                                     <list key="config-test">
@@ -171,7 +171,7 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_D
 ```
 ]]></value>
                                     </list>
-                                    <list key="config-entries">
+                                    <list key="application-yaml-entries">
                                         <value file="files/application.mysql.yaml"/>
                                     </list>
                                     <list key="config-test">
@@ -214,7 +214,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
 ```
 ]]></value>
                                     </list>
-                                    <list key="config-entries">
+                                    <list key="application-yaml-entries">
                                         <value file="files/application.oracledb.yaml"/>
                                     </list>
                                     <list key="config-test">
@@ -255,7 +255,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
 ```
 ]]></value>
                                     </list>
-                                    <list key="config-entries">
+                                    <list key="application-yaml-entries">
                                         <value file="files/application.mongo.yaml"/>
                                     </list>
                                     <list key="config-test">
@@ -289,6 +289,9 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <include>src/*/java/**/*.java.mustache</include>
                             <include>src/*/resources/**/*</include>
                         </includes>
+                        <excludes>
+                            <exclude if="${server} != 'oracledb'">src/*/resources/**/serial-config.properties</exclude>
+                        </excludes>
                     </templates>
                     <model>
                         <list key="native-sections" if="${docker}">

@@ -19,12 +19,13 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Http;
+import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.reactive.webserver.ServerRequest;
 
 /**
- * Helidon SE implementation of {@link CorsSupportBase.RequestAdapter}.
+ * Helidon SE implementation of {@link io.helidon.cors.CorsRequestAdapter}.
  */
-class RequestAdapterSe implements CorsSupportBase.RequestAdapter<ServerRequest> {
+class RequestAdapterSe implements CorsRequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
 
@@ -65,6 +66,11 @@ class RequestAdapterSe implements CorsSupportBase.RequestAdapter<ServerRequest> 
     @Override
     public ServerRequest request() {
         return request;
+    }
+
+    @Override
+    public String authority() {
+        return firstHeader(Http.Header.HOST).orElse("localhost");
     }
 
     @Override

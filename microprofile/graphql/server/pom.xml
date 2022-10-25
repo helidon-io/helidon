@@ -43,6 +43,10 @@
             <artifactId>helidon-graphql-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.graphql</groupId>
+            <artifactId>helidon-nima-graphql-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java-extended-scalars</artifactId>
         </dependency>

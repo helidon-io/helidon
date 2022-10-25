@@ -24,6 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
@@ -104,7 +105,8 @@ public class TestUtil {
                         (req, resp) -> resp.status(Http.Status.OK_200).send());
     }
 
-    static Config minimalConfig(Supplier<? extends ConfigSource> configSource) {        Config.Builder configBuilder = Config.builder()
+    static Config minimalConfig(Supplier<? extends ConfigSource> configSource) {
+        Config.Builder configBuilder = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource();
         configBuilder.sources(configSource);

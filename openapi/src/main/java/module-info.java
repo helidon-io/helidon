@@ -22,10 +22,6 @@ module io.helidon.openapi {
 
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.reactive.media.common;
-    requires io.helidon.reactive.media.jsonp;
-    requires io.helidon.reactive.webserver;
-    requires io.helidon.reactive.webserver.cors;
 
     requires org.jboss.jandex;
 
@@ -39,5 +35,5 @@ module io.helidon.openapi {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.openapi;
-    exports io.helidon.openapi.internal to io.helidon.microprofile.openapi;
+    exports io.helidon.openapi.internal to io.helidon.microprofile.openapi, io.helidon.reactive.openapi, io.helidon.nima.openapi;
 }

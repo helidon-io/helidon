@@ -20,6 +20,8 @@ import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 
 class HttpRouteImpl extends HttpRouteBase implements HttpRoute {
     private final Handler handler;

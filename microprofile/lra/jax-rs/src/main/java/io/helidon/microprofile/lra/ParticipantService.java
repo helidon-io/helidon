@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.reactive.Single;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
@@ -90,11 +89,11 @@ class ParticipantService {
     /**
      * Participant ID is expected to be classFqdn#methodName.
      */
-    Single<Optional<?>> invoke(String classFqdn,
-                               String methodName,
-                               URI lraId,
-                               Object secondParam,
-                               PropagatedHeaders propagatedHeaders) {
+    Optional<?> invoke(String classFqdn,
+                       String methodName,
+                       URI lraId,
+                       Object secondParam,
+                       PropagatedHeaders propagatedHeaders) {
         Class<?> clazz;
         try {
             clazz = Class.forName(classFqdn);
@@ -118,22 +117,25 @@ class ParticipantService {
             Object result = method.invoke(LraCdiExtension.lookup(bean, beanManager),
                     Stream.of(lraId, secondParam).limit(paramCount).toArray());
 
-            return resultToSingle(result);
+            return fixResult(result);
 
         } catch (IllegalAccessException e) {
-            return Single.error(new RuntimeException("Cant invoke participant method " + methodName
-                    + " with participant method: " + classFqdn + "#" + methodName, e));
+            throw new RuntimeException("Cant invoke participant method " + methodName
+                    + " with participant method: " + classFqdn + "#" + methodName, e);
         } catch (InvocationTargetException e) {
-            if (e.getTargetException() instanceof WebApplicationException) {
-                return Single.just(Optional.ofNullable(((WebApplicationException) e.getTargetException()).getResponse()));
+            if (e.getTargetException() instanceof WebApplicationException wae) {
+                return Optional.ofNullable(wae.getResponse());
+            } else if (e.getTargetException() instanceof RuntimeException re){
+                throw re;
             } else {
-                return Single.error(e.getTargetException());
+                throw new RuntimeException(e.getTargetException());
             }
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, t, () -> "Un-caught exception in non-jax-rs LRA method "
+            LOGGER.log(Level.SEVERE, "Un-caught exception in non-jax-rs LRA method "
                     + classFqdn + "#" + methodName
-                    + " LRA id: " + lraId);
-            return Single.error(t);
+                    + " LRA id: " + lraId,
+                       t);
+            throw t;
         }
     }
 
@@ -143,29 +145,20 @@ class ParticipantService {
                 .ifPresent(context -> context.register(key, propagatedHeaders));
     }
 
-    private Single<Optional<?>> resultToSingle(Object result) {
+    private Optional<?> fixResult(Object result) {
         if (result == null) {
-            return Single.just(Optional.empty());
-        } else if (result instanceof Response) {
-            return Single.just((Response) result)
-                    .map(this::optionalMapper);
-        } else if (result instanceof Single) {
-            return ((Single<?>) result)
-                    .map(this::optionalMapper);
-        } else if (result instanceof CompletionStage) {
-            return Single.create(((CompletionStage<?>) result).thenApply(this::optionalMapper));
-        } else {
-            return Single.just(optionalMapper(result));
-        }
-    }
-
-    private Optional<?> optionalMapper(Object item) {
-        if (item == null) {
             return Optional.empty();
-        } else if (item instanceof Optional) {
-            return (Optional<?>) item;
-        } else {
-            return Optional.of(item);
+        } else if (result instanceof Optional<?> opt) {
+            return opt;
+        } else if (result instanceof Response resp) {
+            return Optional.of(resp);
+        } else if (result instanceof CompletionStage<?> cs) {
+            try {
+                return Optional.ofNullable(cs.toCompletableFuture().get());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to get result from future", e);
+            }
         }
+        return Optional.of(result);
     }
 }

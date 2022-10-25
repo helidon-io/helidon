@@ -21,6 +21,7 @@ import java.util.List;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
+import io.helidon.common.http.RoutedPath;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
 import io.helidon.nima.webserver.ConnectionContext;

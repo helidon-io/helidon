@@ -38,6 +38,10 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.cors</groupId>
+            <artifactId>helidon-cors</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
             <scope>test</scope>

@@ -20,8 +20,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webserver.cors.CorsSupportBase;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
+import io.helidon.cors.CorsRequestAdapter;
+import io.helidon.cors.CorsResponseAdapter;
+import io.helidon.cors.CorsSupportBase;
+import io.helidon.cors.CrossOriginConfig;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -55,8 +57,8 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
      * continue
      */
     @Override
-    protected Optional<Response> processRequest(RequestAdapter<ContainerRequestContext> requestAdapter,
-            ResponseAdapter<Response> responseAdapter) {
+    protected Optional<Response> processRequest(CorsRequestAdapter<ContainerRequestContext> requestAdapter,
+                                                CorsResponseAdapter<Response> responseAdapter) {
         return super.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -67,8 +69,8 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
      * @param responseAdapter wrapper around the response
      */
     @Override
-    protected void prepareResponse(RequestAdapter<ContainerRequestContext> requestAdapter,
-            ResponseAdapter<Response> responseAdapter) {
+    protected void prepareResponse(CorsRequestAdapter<ContainerRequestContext> requestAdapter,
+                                   CorsResponseAdapter<Response> responseAdapter) {
         super.prepareResponse(requestAdapter, responseAdapter);
     }
 
@@ -90,11 +92,6 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
-        protected Builder me() {
-            return this;
-        }
-
-        @Override
         protected Builder secondaryLookupSupplier(
                 Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
             super.secondaryLookupSupplier(secondaryLookupSupplier);
@@ -102,12 +99,18 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
     }
 
-    static class RequestAdapterMp implements RequestAdapter<ContainerRequestContext> {
+    static class RequestAdapterMp implements CorsRequestAdapter<ContainerRequestContext> {
 
         private final ContainerRequestContext requestContext;
 
         RequestAdapterMp(ContainerRequestContext requestContext) {
             this.requestContext = requestContext;
+        }
+
+        @Override
+        public String authority() {
+            // TODO Níma we want authority - we should set it in integration with Nima as request property
+            return firstHeader(Http.Header.HOST).orElse("localhost");
         }
 
         @Override
@@ -152,7 +155,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
     }
 
-    static class ResponseAdapterMp implements ResponseAdapter<Response> {
+    static class ResponseAdapterMp implements CorsResponseAdapter<Response> {
 
         private final int status;
         private final MultivaluedMap<String, Object> headers;
@@ -168,13 +171,13 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         }
 
         @Override
-        public ResponseAdapter<Response> header(Http.HeaderName key, String value) {
+        public CorsResponseAdapter<Response> header(Http.HeaderName key, String value) {
             headers.add(key.defaultCase(), value);
             return this;
         }
 
         @Override
-        public ResponseAdapter<Response> header(Http.HeaderName key, Object value) {
+        public CorsResponseAdapter<Response> header(Http.HeaderName key, Object value) {
             headers.add(key.defaultCase(), value);
             return this;
         }

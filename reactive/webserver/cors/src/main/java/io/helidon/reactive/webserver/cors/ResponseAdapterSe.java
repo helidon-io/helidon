@@ -16,12 +16,13 @@
 package io.helidon.reactive.webserver.cors;
 
 import io.helidon.common.http.Http;
+import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.reactive.webserver.ServerResponse;
 
 /**
- * SE implementation of {@link CorsSupportBase.ResponseAdapter}.
+ * SE implementation of {@link io.helidon.cors.CorsResponseAdapter}.
  */
-class ResponseAdapterSe implements CorsSupportBase.ResponseAdapter<ServerResponse> {
+class ResponseAdapterSe implements CorsResponseAdapter<ServerResponse> {
 
     private final ServerResponse serverResponse;
 
@@ -30,13 +31,13 @@ class ResponseAdapterSe implements CorsSupportBase.ResponseAdapter<ServerRespons
     }
 
     @Override
-    public CorsSupportBase.ResponseAdapter<ServerResponse> header(Http.HeaderName key, String value) {
+    public CorsResponseAdapter<ServerResponse> header(Http.HeaderName key, String value) {
         serverResponse.headers().add(key, value);
         return this;
     }
 
     @Override
-    public CorsSupportBase.ResponseAdapter<ServerResponse> header(Http.HeaderName key, Object value) {
+    public CorsResponseAdapter<ServerResponse> header(Http.HeaderName key, Object value) {
         serverResponse.headers().add(key, value.toString());
         return this;
     }

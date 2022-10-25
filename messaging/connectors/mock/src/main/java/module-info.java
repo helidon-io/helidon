@@ -19,12 +19,16 @@
  */
 module helidon.messaging.mock {
     requires java.logging;
-    requires io.helidon.common.reactive;
-    requires microprofile.reactive.messaging.api;
-    requires microprofile.reactive.streams.operators.api;
+
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
     requires org.reactivestreams;
+    requires io.helidon.common.reactive;
+    requires transitive microprofile.reactive.messaging.api;
+    requires transitive microprofile.reactive.streams.operators.api;
     requires hamcrest.all;
     requires microprofile.config.api;
-    requires jakarta.cdi;
-    requires jakarta.inject;
+
+
+    exports io.helidon.messaging.connectors.mock;
 }

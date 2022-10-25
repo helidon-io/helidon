@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,12 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.stream.IntStream;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -75,21 +73,6 @@ public class HelidonConcurrentGaugeTest {
                 .build();
         System.out.println("Minimum required seconds within minute is " + MIN_REQUIRED_SECONDS
                 + ", so SECONDS_THRESHOLD is " + SECONDS_THRESHOLD);
-    }
-
-    @Test
-    void testInitialState() {
-        HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
-        assertThat(gauge.getCount(), is(0L));
-        assertThat(gauge.getMax(), is(0L));
-        assertThat(gauge.getMin(), is(0L));
-
-        // Make sure the concurrent gauge formatting conforms to Prometheus rules.
-        StringBuilder sb = new StringBuilder();
-        MetricID metricID = new MetricID(meta.getName());
-        gauge.prometheusData(sb, metricID, true);
-        assertThat("Prometheus format for ConcurrentGauge", sb.toString(), containsString(
-                "# TYPE base_" + metricID.getName() + "_current gauge"));
     }
 
     @Test

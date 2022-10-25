@@ -26,8 +26,9 @@ module io.helidon.tracing.jersey {
     requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;
-    requires io.helidon.reactive.webserver;
     requires transitive io.helidon.tracing.jersey.client;
+    requires io.helidon.tracing;
+    requires io.helidon.tracing.config;
 
     exports io.helidon.tracing.jersey;
 }

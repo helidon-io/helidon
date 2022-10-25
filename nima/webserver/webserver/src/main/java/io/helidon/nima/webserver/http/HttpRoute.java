@@ -21,6 +21,8 @@ import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Route;
 
 /**
@@ -41,7 +43,7 @@ public interface HttpRoute extends Route {
      *
      * @param prologue prologue of the request
      * @return result of the validation
-     * @see PathMatchers.MatchResult#notAccepted()
+     * @see io.helidon.common.http.PathMatchers.MatchResult#notAccepted()
      */
     PathMatchers.MatchResult accepts(HttpPrologue prologue);
 

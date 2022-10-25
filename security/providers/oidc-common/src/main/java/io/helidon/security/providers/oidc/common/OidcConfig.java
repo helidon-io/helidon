@@ -34,10 +34,10 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.reactive.webclient.security.WebClientSecurity;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -204,7 +204,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>oidc-metadata.resource</td>
  *     <td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
+ *     about the identity server. See {@link Resource#create(io.helidon.common.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>token-endpoint-uri</td>
@@ -227,7 +227,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
  *              when jwt validation is done by us</td>
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
- *     See {@link Resource#create(io.helidon.config.Config)}</td>
+ *     See {@link Resource#create(io.helidon.common.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
@@ -306,7 +306,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * <tr>
  *     <td>{@code cors}</td>
  *     <td>&nbsp;</td>
- *     <td>Cross-origin resource sharing settings. See {@link io.helidon.reactive.webserver.cors.CrossOriginConfig}.</td>
+ *     <td>Cross-origin resource sharing settings. See {@link io.helidon.cors.CrossOriginConfig}.</td>
  * </tr>
  * <tr>
  *     <td>{@code force-https-redirects}</td>

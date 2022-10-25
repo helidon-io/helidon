@@ -17,9 +17,11 @@
 package io.helidon.nima.webserver.http;
 
 import java.io.OutputStream;
+import java.util.Optional;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.uri.UriQuery;
 
@@ -96,6 +98,15 @@ public interface ServerResponse {
      * @param entity entity object
      */
     void send(Object entity);
+
+    /**
+     * Send an entity if present, throw {@link io.helidon.common.http.NotFoundException} if empty.
+     *
+     * @param entity entity as an optional
+     */
+    default void send(Optional<?> entity) {
+        send(entity.orElseThrow(() -> new NotFoundException("")));
+    }
 
     /**
      * Whether this response has been sent.

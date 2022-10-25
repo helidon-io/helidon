@@ -23,12 +23,13 @@
 
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
-    <source src="/common/observability.xml"/>
     <exec src="/common/security.xml"/>
     <source src="/common/extra.xml"/>
     <exec src="/common/packaging.xml"/>
+    <source src="/common/observability.xml"/>
     <exec src="/mp/custom/database.xml"/>
     <exec src="/mp/common/common-mp.xml"/>
+    <source src="/mp/custom/observability.xml"/>
     <output>
         <files if="${security}">
             <directory>files</directory>
@@ -47,7 +48,7 @@
                        if="${docker.native-image} &amp;&amp; !(${db})"
                        template="mustache"/>
             </list>
-            <list key="config-entries">
+            <list key="microprofile-config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
             <list key="MainTest-java-imports" if="${media.json-lib} == 'jsonp'">

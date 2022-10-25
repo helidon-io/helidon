@@ -31,12 +31,12 @@ import static org.hamcrest.Matchers.empty;
  */
 class TestOpenAPIMediaTypesDescribedCorrectly {
 
-    private static final Set<String> FILE_TYPES_DEFINED_BY_ENUM = Arrays.stream(OpenAPISupport.OpenAPIMediaType.values())
+    private static final Set<String> FILE_TYPES_DEFINED_BY_ENUM = Arrays.stream(OpenAPIMediaType.values())
             .flatMap(mediaType -> mediaType.matchingTypes().stream())
             .collect(Collectors.toSet());
 
     private static final Set<String> FILE_TYPES_DESCRIBED = Arrays.stream(
-                    OpenAPISupport.OpenAPIMediaType.TYPE_LIST.split("\\|"))
+                    OpenAPIMediaType.TYPE_LIST.split("\\|"))
             .collect(Collectors.toSet());
 
     @Test

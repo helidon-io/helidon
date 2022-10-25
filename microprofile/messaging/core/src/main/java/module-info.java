@@ -34,8 +34,12 @@ module io.helidon.microprofile.messaging {
     requires transitive org.reactivestreams;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
+    requires io.helidon.common.reactive;
 
     exports io.helidon.microprofile.messaging;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.messaging to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.messaging.MessagingCdiExtension;
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,25 +17,22 @@ server:
   port: 7001
   host: "localhost"
   sockets:
-    health:
+    - name: "health"
       port: 8001
-      bind-address: "localhost"
-    metrics:
+    - name: "metrics"
       port: 8002
-      bind-address: "localhost"
-    nothing:
+    - name: "nothing"
       port: 8003
-      bind-address: "localhost"
 
 health:
   # endpoint will be exposed on this named route
   routing: "health"
-  web-context: "myhealth"
+  web-context: "/myhealth"
 
 metrics:
   # endpoint will be exposed on this named route
   routing: "metrics"
-  web-context: "mymetrics"
+  web-context: "/mymetrics"
   # if we want to add vendor metrics to additional named routes
   # default is added automatically
   vendor-metrics-routings: ["metrics", "health"]

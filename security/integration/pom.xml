@@ -38,5 +38,6 @@
         <module>grpc</module>
         <module>common</module>
         <module>jersey-client</module>
+        <module>nima</module>
     </modules>
 </project>

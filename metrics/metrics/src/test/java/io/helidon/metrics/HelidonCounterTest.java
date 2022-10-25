@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.io.StringReader;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -98,43 +93,6 @@ class HelidonCounterTest {
         counter.inc(49);
         wrappingCounter.inc();
         testValues(49);
-    }
-
-    @Test
-    void testPrometheusData() {
-        StringBuilder sb = new StringBuilder();
-        counter.inc(17);
-        wrappingCounter.inc(17);
-
-        String expected = "# TYPE base_theName_total counter\n"
-                + "# HELP base_theName_total theDescription\n"
-                + "base_theName_total{a=\"b\",c=\"d\"} 17\n";
-
-        counter.prometheusData(sb, counterID, true);
-        assertThat(sb.toString(), is(expected));
-
-        expected = "# TYPE base_theName_total counter\n"
-                + "# HELP base_theName_total theDescription\n"
-                + "base_theName_total 49\n";
-        sb = new StringBuilder();
-        wrappingCounter.prometheusData(sb, wrappingCounterID, true);
-        assertThat(sb.toString(), is(expected));
-    }
-
-    @Test
-    void testJsonData() {
-        counter.inc(47);
-        wrappingCounter.inc(47);
-
-        JsonObject expected = Json.createReader(new StringReader("{\"theName;a=b;c=d\": 47}")).readObject();
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        counter.jsonData(builder, counterID);
-        assertThat(builder.build(), is(expected));
-
-        expected = Json.createReader(new StringReader("{\"theName\": 49}")).readObject();
-        builder = Json.createObjectBuilder();
-        wrappingCounter.jsonData(builder, wrappingCounterID);
-        assertThat(builder.build(), is(expected));
     }
 
     private void testValues(long counterValue) {

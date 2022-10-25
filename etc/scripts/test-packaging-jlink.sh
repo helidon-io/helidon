@@ -24,15 +24,6 @@
 # Setup error handling using default settings (defined in includes/error_handlers.sh)
 error_trap_setup
 
-mvn ${MAVEN_ARGS} --version
-
-# Temporary workaround until job stages will share maven repository
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    install -e \
-    -Dmaven.test.skip=true \
-    -DskipTests \
-    -Ppipeline
-
 # Run native image tests
 cd ${WS_DIR}/tests/integration/native-image
 
@@ -54,17 +45,18 @@ cd ${WS_DIR}/tests/integration/native-image/se-1
 jri_dir=${WS_DIR}/tests/integration/native-image/se-1/target/helidon-tests-native-image-se-1-jri
 
 # Classpath
-${jri_dir}/bin/start --test
+${jri_dir}/bin/start --test --jvm --enable-preview
 
 # Run MP-1
 cd ${WS_DIR}/tests/integration/native-image/mp-1
 jri_dir=${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1-jri
 
 # Classpath
-${jri_dir}/bin/start
+${jri_dir}/bin/start --jvm --enable-preview
 
 # Module Path
 ${jri_dir}/bin/java \
+  --enable-preview \
   --module-path ${jri_dir}/app/helidon-tests-native-image-mp-1.jar:${jri_dir}/app/libs \
   --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
 
@@ -73,10 +65,11 @@ cd ${WS_DIR}/tests/integration/native-image/mp-3
 jri_dir=${WS_DIR}/tests/integration/native-image/mp-3/target/helidon-tests-native-image-mp-3-jri
 
 # Classpath
-${jri_dir}/bin/start --test
+${jri_dir}/bin/start --test --jvm --enable-preview
 
 # Module Path
 ${jri_dir}/bin/java -Dexit.on.started=! \
+   --enable-preview \
    --module-path ${jri_dir}/app/helidon-tests-native-image-mp-3.jar:${jri_dir}/app/libs \
    --add-modules helidon.tests.nimage.quickstartmp \
    --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main

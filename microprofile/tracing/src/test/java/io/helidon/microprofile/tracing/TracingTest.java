@@ -44,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test that tracing is correctly handled.
  */
-public class TracingTest {
+class TracingTest {
     private static Server server;
     private static WebTarget target;
     private static WebTarget hellWorldTarget;

@@ -28,13 +28,13 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webserver.http.RoutedPath;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -150,6 +150,7 @@ class StaticContentHandlerTest {
         ServerResponse res = mock(ServerResponse.class);
         ServerRequest req = mock(ServerRequest.class);
         when(res.headers()).thenReturn(resh);
+        when(req.query()).thenReturn(UriQuery.empty());
         StaticContentHandler.redirect(req, res, "/foo/");
         verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
         verify(res).header(LOCATION, "/foo/");

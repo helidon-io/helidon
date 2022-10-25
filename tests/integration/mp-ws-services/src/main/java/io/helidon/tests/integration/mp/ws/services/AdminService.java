@@ -17,8 +17,8 @@ package io.helidon.tests.integration.mp.ws.services;
 
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,9 +32,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 @RoutingPath("/wrong")
 // see application.yaml for override
 @RoutingName(value = "wrong", required = true)
-public class AdminService implements Service {
+public class AdminService implements HttpService {
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/admin", (req, res) -> res.send("admin"))
                 .get("/", (req, res) -> res.send("admin"));
     }

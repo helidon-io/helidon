@@ -22,7 +22,7 @@
 
     <step name="Media Support" optional="true">
         <variables>
-            <text path="media.default-json-lib" if="${flavor} != 'se'">jackson</text>
+            <text path="media.default-json-lib" if="${flavor} != 'se'">jsonb</text>
             <text path="media.default-json-lib" if="${flavor} == 'se'">jsonp</text>
         </variables>
         <inputs>

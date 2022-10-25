@@ -18,9 +18,9 @@ package io.helidon.microprofile.cors;
 
 import java.util.Optional;
 
+import io.helidon.cors.CrossOriginConfig;
 import io.helidon.microprofile.cors.CorsSupportMp.RequestAdapterMp;
 import io.helidon.microprofile.cors.CorsSupportMp.ResponseAdapterMp;
-import io.helidon.reactive.webserver.cors.CrossOriginConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.inject.spi.CDI;

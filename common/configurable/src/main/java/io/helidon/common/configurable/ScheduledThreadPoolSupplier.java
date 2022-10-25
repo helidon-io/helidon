@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 

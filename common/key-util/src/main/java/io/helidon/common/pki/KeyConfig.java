@@ -31,9 +31,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
-import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -593,7 +593,7 @@ public final class KeyConfig {
             Config keystoreConfig = config.get("keystore");
 
             // the actual resource (file, classpath) with the bytes of the keystore
-            keystoreConfig.get("resource").as(Resource::create).ifPresent(this::keystore);
+            keystoreConfig.get("resource").map(Resource::create).ifPresent(this::keystore);
 
             // type of keystore
             keystoreConfig.get("type")
@@ -779,10 +779,10 @@ public final class KeyConfig {
          */
         public PemBuilder config(Config config) {
             Config pemConfig = config.get("pem");
-            pemConfig.get("key.resource").as(Resource::create).ifPresent(this::key);
+            pemConfig.get("key.resource").map(Resource::create).ifPresent(this::key);
             pemConfig.get("key.passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
-            pemConfig.get("cert-chain.resource").as(Resource::create).ifPresent(this::certChain);
-            pemConfig.get("certificates.resource").as(Resource::create).ifPresent(this::certificates);
+            pemConfig.get("cert-chain.resource").map(Resource::create).ifPresent(this::certChain);
+            pemConfig.get("certificates.resource").map(Resource::create).ifPresent(this::certificates);
             return this;
         }
     }

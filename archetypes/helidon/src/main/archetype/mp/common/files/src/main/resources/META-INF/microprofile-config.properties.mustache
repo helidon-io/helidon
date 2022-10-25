@@ -5,9 +5,9 @@ server.host=0.0.0.0
 # Change the following to true to enable the optional MicroProfile Metrics REST.request metrics
 metrics.rest-request.enabled=false
 
-{{#config-entries}}
+{{#microprofile-config-entries}}
 {{.}}
-{{/config-entries}}
+{{/microprofile-config-entries}}
 
 {{#database-hikari}}
 # Datasource properties

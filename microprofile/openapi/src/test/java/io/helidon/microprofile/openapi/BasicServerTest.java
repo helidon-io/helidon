@@ -20,7 +20,7 @@ import java.util.Map;
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.openapi.OpenAPISupport;
+import io.helidon.nima.openapi.OpenApiService;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -48,8 +48,8 @@ public class BasicServerTest {
 
     private static Map<String, Object> retrieveYaml(WebTarget webTarget) {
         try (Response response = webTarget
-                .path(OpenAPISupport.DEFAULT_WEB_CONTEXT)
-                .request(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE.text())
+                .path(OpenApiService.DEFAULT_WEB_CONTEXT)
+                .request(OpenApiService.DEFAULT_RESPONSE_MEDIA_TYPE.text())
                 .get()) {
             assertThat("Fetch of OpenAPI document from server status", response.getStatus(),
                     is(equalTo(Http.Status.OK_200.code())));

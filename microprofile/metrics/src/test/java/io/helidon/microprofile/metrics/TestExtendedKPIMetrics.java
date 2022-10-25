@@ -28,6 +28,7 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
@@ -46,6 +47,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddConfig(key = "server.executor-service.core-pool-size", value = "1")
 @AddConfig(key = "server.executor-service.max-pool-size", value = "1")
 @AddBean(HelloWorldApp.class)
+@Disabled
 public class TestExtendedKPIMetrics {
 
     @Inject

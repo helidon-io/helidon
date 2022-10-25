@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.tests.integration.jpa.simple.test;
 
 import java.util.List;
 
+import io.helidon.tests.integration.jpa.simple.DbUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
@@ -67,12 +68,13 @@ public class DeleteIT {
     @BeforeAll
     public static void setup() {
         pu = PU.getInstance();
+        pu.tx(pu -> DbUtils.dbInit(pu));
         dbInsertMisty();
     }
 
     @AfterAll
     public static void destroy() {
-        dbDeleteMisty();
+        pu.tx(pu -> DbUtils.dbCleanup(pu));
         pu = null;
     }
 

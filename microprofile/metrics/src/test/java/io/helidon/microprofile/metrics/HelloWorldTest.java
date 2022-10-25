@@ -41,6 +41,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static io.helidon.microprofile.metrics.HelloWorldResource.MESSAGE_SIMPLE_TIMER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -51,7 +52,7 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
-public class HelloWorldTest {
+class HelloWorldTest {
 
     @Inject
     WebTarget webTarget;
@@ -88,6 +89,8 @@ public class HelloWorldTest {
             throw new RuntimeException(e);
         }
     }
+
+
 
     @BeforeEach
     public void registerCounter() {
@@ -151,7 +154,9 @@ public class HelloWorldTest {
         );
 
         assertThat("Response code from mapped exception endpoint", response.getStatus(), is(500));
-        assertThat("Change in successful count", simpleTimer.getCount() - successfulBeforeRequest, is(1L));
+        assertThatWithRetry("Change in successful count",
+                            () -> simpleTimer.getCount() - successfulBeforeRequest,
+                            is(1L));
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(0L));
     }
 
@@ -172,7 +177,9 @@ public class HelloWorldTest {
         );
 
         assertThat("Response code from unmapped exception endpoint", response.getStatus(), is(500));
-        assertThat("Change in successful count", simpleTimer.getCount() - successfulBeforeRequest, is(0L));
+        assertThatWithRetry("Change in successful count",
+                            () -> simpleTimer.getCount() - successfulBeforeRequest,
+                            is(0L));
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(1L));
     }
 

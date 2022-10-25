@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.metrics.api.spi.ExemplarService;
+
 /**
  * Provides exemplar support in metrics using tracing identifiers.
  */
@@ -23,5 +25,5 @@ module io.helidon.metrics.traceexemplar {
     requires io.helidon.common.context;
     requires io.helidon.tracing;
 
-    provides io.helidon.metrics.ExemplarService with io.helidon.metrics.exemplartrace.TraceExemplarService;
+    provides ExemplarService with io.helidon.metrics.exemplartrace.TraceExemplarService;
 }

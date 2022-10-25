@@ -475,7 +475,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             Objects.requireNonNull(metricRegistry);
             metricRegistry.removeMatching((m, v) -> true);
         } catch (IllegalStateException e) {
-            LOGGER.log(Level.WARNING, "Unable to cleanup base metrics", e);
+            // this may be a negative CDI test (e.g. when CDI is intended not to start)
+            // in such cases, CDI will not be available
+            LOGGER.log(Level.FINE, "Unable to cleanup base metrics", e);
         }
     }
 

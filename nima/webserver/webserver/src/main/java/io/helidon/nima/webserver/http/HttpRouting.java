@@ -16,7 +16,7 @@
 
 package io.helidon.nima.webserver.http;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -27,8 +27,10 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.NotFoundException;
+import io.helidon.common.http.PathMatcher;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Routing;
+import io.helidon.nima.webserver.ServerLifecycle;
 
 /**
  * HTTP routing.
@@ -42,10 +44,12 @@ public final class HttpRouting implements Routing {
     private final ServiceRoute rootRoute;
     // todo configure on HTTP routing
     private final ErrorHandlers errorHandlers = new ErrorHandlers();
+    private final List<HttpFeature> features;
 
     private HttpRouting(Builder builder) {
         this.filters = Filters.create(errorHandlers, List.copyOf(builder.filters));
         this.rootRoute = builder.rootRules.build();
+        this.features = List.copyOf(builder.features);
     }
 
     /**
@@ -98,12 +102,14 @@ public final class HttpRouting implements Routing {
     public void beforeStart() {
         filters.beforeStart();
         rootRoute.beforeStart();
+        features.forEach(ServerLifecycle::beforeStart);
     }
 
     @Override
     public void afterStop() {
         filters.afterStop();
         rootRoute.afterStop();
+        features.forEach(ServerLifecycle::afterStop);
     }
 
     private enum RoutingResult {
@@ -116,8 +122,9 @@ public final class HttpRouting implements Routing {
      * Fluent API builder for {@link io.helidon.nima.webserver.http.HttpRouting}.
      */
     public static class Builder implements HttpRules, io.helidon.common.Builder<Builder, HttpRouting> {
-        private final List<Filter> filters = new LinkedList<>();
+        private final List<Filter> filters = new ArrayList<>();
         private final ServiceRules rootRules = new ServiceRules();
+        private final List<HttpFeature> features = new ArrayList<>();
 
         private Builder() {
         }
@@ -135,6 +142,19 @@ public final class HttpRouting implements Routing {
          */
         public Builder addFilter(Filter filter) {
             filters.add(filter);
+            return this;
+        }
+
+        /**
+         * Add a new feature.
+         *
+         * @param feature feature to add
+         * @return updated builder
+         */
+        public Builder addFeature(Supplier<? extends HttpFeature> feature) {
+            HttpFeature httpFeature = feature.get();
+            features.add(httpFeature);
+            httpFeature.setup(this);
             return this;
         }
 
