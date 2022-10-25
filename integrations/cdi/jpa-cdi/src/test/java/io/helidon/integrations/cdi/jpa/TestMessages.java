@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@ package io.helidon.integrations.cdi.jpa;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 final class TestMessages {
 
     @Test
     final void testMessages() {
         final String message = Messages.format("resourceLocalPersistenceUnitWarning");
-        assertNotNull(message);
-        assertTrue(message.startsWith("The persistence unit "));
+        assertThat(message, notNullValue());
+        assertThat(message, startsWith("The persistence unit "));
     }
 
 }
