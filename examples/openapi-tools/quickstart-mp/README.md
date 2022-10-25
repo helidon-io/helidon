@@ -1,6 +1,6 @@
 # Helidon OpenAPI Generator example for Helidon MP server and client
 
-The goal of this example is to show how a user can easily create Helidon MP server or client from OpenAPI document using OpenAPI Generator.  
+The goal of this example is to show how a user can easily create a Helidon MP server or client from an OpenAPI document using OpenAPI Generator.  
 
 Here we will show the steps that a user has to do to create Helidon MP server and client using OpenAPI Generator and what has to be done to make the generated server and client fully functional.
 
@@ -8,13 +8,13 @@ For generation of our projects we will use `openapi-generator-cli.jar` that can 
 
 ## Build, prepare and run the Helidon MP server
 
-To generate Helidon MP server at first we create `mp-server` folder and then inside it we run the following command :
+To generate Helidon MP server at first we create `mp-server` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
 ```bash
-java -jar openapi-generator-cli.jar \
+java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-server \  
           --library mp \
-          -i quickstart.yaml
+          -i path-to-openapi-doc/quickstart.yaml
 ```
 
 When this command finishes its work in the folder `mp-server` we will find the generated project where the most interesting parts are located inside `api` and `model` packages.
@@ -37,19 +37,19 @@ Let's change a little class `MessageServiceImpl` for our example :
         defaultMessage.set(message);
     }
 ```
-4) Replace implementation of the method `public Response getDefaultMessage()` by this:
+4) Replace implementation of the method `public Message getDefaultMessage()` by this:
 ```java
-        return Response.ok().entity(defaultMessage.get()).build();
+        return defaultMessage.get();
 ```
-5) Replace implementation of the method `public Response getMessage(@PathParam("name") String name)` by this:
+5) Replace implementation of the method `public Message getMessage(@PathParam("name") String name)` by this:
 ```java
         defaultMessage.get().setMessage(name);
-        return Response.ok().entity(defaultMessage.get()).build();
+        return defaultMessage.get();
 ```
 6) Replace implementation of the method `public Response updateGreeting(@Valid @NotNull Message message)` by this:
 ```java
         defaultMessage.set(message);
-        return Response.status(Response.Status.NO_CONTENT).build();
+        Response.status(Response.Status.NO_CONTENT).build();
 ```
 
 To run the application : 
@@ -57,7 +57,7 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-java-server.jar
+java -jar target/openapi-mp-server.jar
 ```
 
 To check that server works as expected run the following `curl` commands :
@@ -79,13 +79,13 @@ curl -X GET http://localhost:8080/greet
 
 The second part of this example is generating MicroProfile Rest Client that will communicate with the server that we have just created.
 
-To generate Helidon MP client at first we create `mp-client` folder and then inside it we run the following command :
+To generate Helidon MP client at first we create `mp-client` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
 ```bash
-java -jar openapi-generator-cli.jar \
+java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-client \  
           --library mp \
-          -i quickstart.yaml
+          -i path-to-openapi-doc/quickstart.yaml
 ```
 
 When this command finishes its work in the folder `mp-client` we will find the generated project. 
@@ -127,16 +127,8 @@ public class MessageService {
 }
 ```
 
-2) Add class `RestApplication` that extends `Application` :
-```java
-@ApplicationScoped
-@ApplicationPath("")
-public class RestApplication extends Application {
-
-}
-```
-3) Create `META-INF` folder inside resource directory.
-4) Add `beans.xml` inside `META-INF` folder :
+2) Create `META-INF` folder inside the directory `resource`.
+3) Add file `beans.xml` inside the folder `META-INF` :
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -148,18 +140,26 @@ public class RestApplication extends Application {
        bean-discovery-mode="annotated">
 </beans>
 ```
-5) Add `microprofile-config.properties` inside `META-INF` folder :
+4) Add file `microprofile-config.properties` inside the folder `META-INF` :
 ```properties
 # Microprofile server properties
 server.port=8081
 server.host=0.0.0.0
 ```
-6) Add dependency in `pom.xml` :
+5) Add dependency in `pom.xml` :
 ```xml
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
+```
+6) In the file `MessageApi` replace the line:
+```java
+@RegisterRestClient
+```
+to
+```java
+@RegisterRestClient(baseUri="http://localhost:8080")
 ```
 
 To run the application :
@@ -167,17 +167,19 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-java-client.jar
+java -jar target/openapi-mp-client.jar
 ```
 
-To check that client works as expected and process all the request using our server run the following `curl` commands :
+To check that the client works as expected and process all the requests using our server run the following `curl` commands :
 
 ```
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hi", "message":"Mike"}' http://localhost:8081/greet/greeting
+
 curl -X GET http://localhost:8081/greet
+{"message":"Mike","greeting":"Hi"}
 
 curl -X GET http://localhost:8081/greet/Joe
-
-curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola", "message":"Lisa"}' http://localhost:8081/greet/greeting
+{"message":"Joe","greeting":"Hi"}
 ```
 
 ## Update applications
@@ -219,7 +221,7 @@ Add these lines to the `pom.xml` of our server :
 ```
 
 For the client application :
-1) Copy OpenApi document `openapi.yaml` to the `META-INF` folder.
+1) Copy OpenApi document `path-to-openapi-doc/quickstart.yaml` to the folder `META-INF` and rename it to `openapi.yaml`.
 2) Add these lines to the `pom.xml` of our client :
 ```xml
     <profiles>

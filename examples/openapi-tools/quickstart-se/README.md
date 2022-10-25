@@ -1,6 +1,6 @@
 # Helidon OpenAPI Generator example for Helidon SE server and client
 
-The goal of this example is to show how a user can easily create Helidon SE server or client from OpenAPI document using OpenAPI Generator.  
+The goal of this example is to show how a user can easily create a Helidon SE server or client from an OpenAPI document using OpenAPI Generator.  
 
 Here we will show the steps that a user has to do to create Helidon SE server and client using OpenAPI Generator and what has to be done to make the generated server and client fully functional.
 
@@ -8,13 +8,13 @@ For generation of our projects we will use `openapi-generator-cli.jar` that can 
 
 ## Build, prepare and run the Helidon SE server
 
-To generate Helidon SE server at first we create `se-server` folder and then inside it we run the following command :
+To generate Helidon SE server at first we create `se-server` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
 ```bash
-java -jar openapi-generator-cli.jar \
+java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-server \  
           --library se \
-          -i quickstart.yaml
+          -i path-to-openapi-doc/quickstart.yaml
 ```
 
 When this command finishes its work in the folder `se-server` we will find the generated project where the most interesting parts are located inside `api` and `model` packages.
@@ -64,7 +64,7 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-java-server.jar
+java -jar target/openapi-se-server.jar
 ```
 
 To check that server works as expected run the following `curl` commands :
@@ -86,23 +86,39 @@ curl -X GET http://localhost:8080/greet
 
 The second part of this example is generating Rest Client that will communicate with the server that we have just created.
 
-To generate Helidon SE client at first we create `se-client` folder and then inside it we run the following command :
+To generate Helidon SE client at first we create `se-client` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
 ```bash
-java -jar openapi-generator-cli.jar \
+java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
           -g java-helidon-client \  
           --library se \
-          -i quickstart.yaml
+          -i path-to-openapi-doc/quickstart.yaml
 ```
 
 When this command finishes its work in the folder `se-client` we will find the generated project. 
-As with server project there is the most interesting part are located inside `api` and `model` packages and `ApiClient` class.
+As with the server project the most interesting parts are located inside `api` and `model` packages and `ApiClient` class.
 The package `api` contains interfaces that represent endpoints to our server and implementations for them.
 The package `model` contains classes that represent transport objects that will be used to communicate with the server.
 `ApiClient` class represents configuration and utility class for `WebClient` that is used to connect to our server.
 To make our client application fully functional let's add some classes, dependencies and files to the project.
 
-1) Let's add a class `MessageService` that will use `MessageApi` and `ApiClient` to interact with the server :
+1) Add  to the `pom.xml` :
+```xml
+    <properties>
+        <mainClass>org.openapitools.client.Main</mainClass>
+    </properties>
+
+    <dependency>
+        <groupId>io.helidon.webserver</groupId>
+        <artifactId>helidon-webserver</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config-yaml</artifactId>
+    </dependency>
+```
+
+2) Let's add a class `MessageService` that will use `MessageApi` and `ApiClient` to interact with the server :
 ```java
 public class MessageService implements Service {
 
@@ -167,7 +183,7 @@ public class MessageService implements Service {
 }
 ```
 
-2) Add class `Main` that main class for our client :
+3) Add class `Main` that will be the main class for our client :
 ```java
 public final class Main {
 
@@ -232,26 +248,12 @@ public final class Main {
     }
 }
 ```
-3) Create `resource` folder and put `application.yaml` inside.
+
+4) Create `resource` folder and put a `application.yaml` file inside.
 ```yaml
 server:
   port: 8081
   host: localhost
-```
-4) Add  to the `pom.xml` :
-```xml
-    <properties>
-        <mainClass>org.openapitools.client.Main</mainClass>
-    </properties>
-
-    <dependency>
-        <groupId>io.helidon.webserver</groupId>
-        <artifactId>helidon-webserver</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config-yaml</artifactId>
-    </dependency>
 ```
 
 To run the application :
@@ -259,17 +261,19 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-java-client.jar
+java -jar target/openapi-se-client.jar
 ```
 
 To check that client works as expected and process all the request using our server run the following `curl` commands :
 
 ```
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola", "message":"Lisa"}' http://localhost:8081/greet/greeting
+
 curl -X GET http://localhost:8081/greet
+{"message":"Lisa","greeting":"Hola"}
 
 curl -X GET http://localhost:8081/greet/Joe
-
-curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola", "message":"Lisa"}' http://localhost:8081/greet/greeting
+{"message":"Joe","greeting":"Hola"}
 ```
 
 ## Update applications
@@ -311,7 +315,7 @@ Add these lines to the `pom.xml` of our server :
 ```
 
 For the client application :
-1) Copy OpenApi document `openapi.yaml` to the `resource` folder.
+1) Copy the OpenApi document `path-to-openapi-doc/quickstart.yaml` to the folder `resources` and rename it to `openapi.yaml`.
 2) Add these lines to the `pom.xml` of our client :
 ```xml
     <profiles>
