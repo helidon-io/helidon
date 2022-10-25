@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Models.
+ */
 package org.openapitools.client.model;

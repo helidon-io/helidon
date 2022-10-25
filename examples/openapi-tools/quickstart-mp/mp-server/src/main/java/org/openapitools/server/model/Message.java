@@ -19,7 +19,6 @@ package org.openapitools.server.model;
 /**
  * An message for the user
  **/
-
 public class Message {
 
     private String message;

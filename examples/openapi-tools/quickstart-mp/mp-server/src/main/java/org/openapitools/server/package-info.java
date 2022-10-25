@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Helidon MP server.
+ */
 package org.openapitools.server;

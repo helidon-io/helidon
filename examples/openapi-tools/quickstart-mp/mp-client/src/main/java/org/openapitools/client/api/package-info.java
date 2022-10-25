@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * API package.
+ */
 package org.openapitools.client.api;

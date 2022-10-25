@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.openapitools.server;
 
 import org.openapitools.server.api.MessageServiceImpl;
@@ -16,28 +32,30 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 /**
-* The application main class.
-*/
+ * The application main class.
+ */
 public final class Main {
 
     /**
-    * Cannot be instantiated.
-    */
+     * Cannot be instantiated.
+     */
     private Main() {
     }
 
     /**
-    * Application main entry point.
-    * @param args command line arguments.
-    */
+     * Application main entry point.
+     *
+     * @param args command line arguments.
+     */
     public static void main(final String[] args) {
         startServer();
     }
 
     /**
-    * Start the server.
-    * @return the created {@link WebServer} instance
-    */
+     * Start the server.
+     *
+     * @return the created {@link WebServer} instance
+     */
     static Single<WebServer> startServer() {
 
         // load logging configuration
@@ -69,11 +87,11 @@ public final class Main {
     }
 
     /**
-    * Creates new {@link Routing}.
-    *
-    * @return routing configured with JSON support, a health check, and a service
-    * @param config configuration of this server
-    */
+     * Creates new {@link Routing}.
+     *
+     * @param config configuration of this server
+     * @return routing configured with JSON support, a health check, and a service
+     */
     private static Routing createRouting(Config config) {
 
         MetricsSupport metrics = MetricsSupport.create();

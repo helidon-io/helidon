@@ -26,24 +26,27 @@ import org.openapitools.client.model.Message;
  */
 public interface MessageApi {
 
- /**
-  * Return a worldly greeting message.
-  * @return {@code ApiResponse<Message>}
-  */
-  ApiResponse<Message> getDefaultMessage();
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return {@code ApiResponse<Message>}
+     */
+    ApiResponse<Message> getDefaultMessage();
 
- /**
-  * Return a greeting message using the name that was provided.
-  * @param name the name to greet (required)
-  * @return {@code ApiResponse<Message>}
-  */
-  ApiResponse<Message> getMessage(String name);
+    /**
+     * Return a greeting message using the name that was provided.
+     *
+     * @param name the name to greet (required)
+     * @return {@code ApiResponse<Message>}
+     */
+    ApiResponse<Message> getMessage(String name);
 
- /**
-  * Set the greeting to use in future messages.
-  * @param message Message for the user (required)
-  * @return {@code ApiResponse<Void>}
-  */
-  ApiResponse<Void> updateGreeting(Message message);
+    /**
+     * Set the greeting to use in future messages.
+     *
+     * @param message Message for the user (required)
+     * @return {@code ApiResponse<Void>}
+     */
+    ApiResponse<Void> updateGreeting(Message message);
 
 }

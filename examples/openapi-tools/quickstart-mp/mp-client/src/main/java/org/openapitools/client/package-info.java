@@ -15,6 +15,6 @@
  */
 
 /**
- * Model package.
+ * Helidon MP client.
  */
-package org.openapitools.client.model;
+package org.openapitools.client;

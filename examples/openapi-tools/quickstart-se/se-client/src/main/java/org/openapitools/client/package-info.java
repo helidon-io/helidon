@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Helidon SE client.
+ */
 package org.openapitools.client;

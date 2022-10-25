@@ -16,7 +16,11 @@
 
 package org.openapitools.server.api;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
@@ -24,13 +28,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
+
 import org.openapitools.server.model.Message;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
-
+/**
+ * MessageService implementation.
+ */
 @ApplicationScoped
 @Path("/greet")
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaHelidonServerCodegen", date = "2022-10-25T09:58" +

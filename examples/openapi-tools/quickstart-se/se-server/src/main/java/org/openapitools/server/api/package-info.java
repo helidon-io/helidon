@@ -15,6 +15,6 @@
  */
 
 /**
- * Model package.
+ * APIs.
  */
-package org.openapitools.client.model;
+package org.openapitools.server.api;
