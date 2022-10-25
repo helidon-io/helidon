@@ -47,7 +47,7 @@ public class TestJBatchEndpoint {
         assertNotNull(responseJobId, "Response Job Id");
 
         //Wait a bit for it to complete
-        Thread.sleep(1000);
+        Thread.sleep(3000);
 
         //Examine the results
         jsonObject = webTarget
