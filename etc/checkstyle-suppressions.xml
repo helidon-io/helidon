@@ -120,7 +120,9 @@
               files="examples/openapi-tools/quickstart-se/se-server/src/main/java/org/openapitools/server/api/MessageServiceImpl.java"/>
 
     <suppress checks="MissingJavadocType"
-              files="examples/openapi-tools/quickstart-mp/mp-server/src/main/java/org/openapitools/server/RFC3339DateFormat.java"/>
+              files="examples/openapi-tools/"/>
+<!--    <suppress checks="MissingJavadocType"-->
+<!--              files="examples/openapi-tools/quickstart-mp/mp-server/src/main/java/org/openapitools/server/RFC3339DateFormat.java"/>-->
     <suppress checks="MissingJavadocType"
               files="examples/openapi-tools/quickstart-mp/mp-client/src/main/java/org/openapitools/client/api/ApiExceptionMapper.java"/>
     <suppress checks="MissingJavadocType"
