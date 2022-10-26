@@ -140,7 +140,7 @@ For the Maven plug-in, use elements within the `<configuration>` section of the 
 [source,xml]
 ----
 <configuration>
-    <inputSpec>petstore.yaml</output>
+    <inputSpec>petstore.yaml</inputSpec>
 </configuration>
 ----
 * _additional properties_
