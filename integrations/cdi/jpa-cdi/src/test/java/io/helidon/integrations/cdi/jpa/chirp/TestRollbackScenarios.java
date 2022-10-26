@@ -38,10 +38,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ApplicationScoped
@@ -88,7 +87,7 @@ class TestRollbackScenarios {
     void startCdiContainer() {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
 
@@ -160,30 +159,30 @@ class TestRollbackScenarios {
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
         final TestRollbackScenarios self = self();
-        assertNotNull(self);
+        assertThat(self, notNullValue());
 
         // Get the EntityManager that is synchronized with and scoped
         // to a JTA transaction.
         final EntityManager em = self.getJpaTransactionScopedSynchronizedEntityManager();
-        assertNotNull(em);
-        assertTrue(em.isOpen());
+        assertThat(em, notNullValue());
+        assertThat(em.isOpen(), is(true));
 
         // We haven't started any kind of transaction yet and we
         // aren't testing anything using
         // the @jakarta.transaction.Transactional annotation so there is
         // no transaction in effect so the EntityManager cannot be
         // joined to one.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
         final TransactionManager tm = self.getTransactionManager();
-        assertNotNull(tm);
+        assertThat(tm, notNullValue());
         tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
 
         // Now magically our EntityManager should be joined to it.
-        assertTrue(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(true));
 
         // Create a JPA entity and insert it.
         Author author = new Author("Abraham Lincoln");
@@ -194,43 +193,43 @@ class TestRollbackScenarios {
         // database, which, in turn, will result in author identifier
         // generation.
         tm.commit();
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
-        assertEquals(Integer.valueOf(1), author.getId());
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+        assertThat(author.getId(), is(1));
 
         // We're no longer in a transaction.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // The persistence context should be cleared.
-        assertFalse(em.contains(author));
+        assertThat(em.contains(author), is(false));
 
         // Ensure transaction statuses are what we think they are.
         tm.begin();
         tm.setRollbackOnly();
         try {
-          assertEquals(Status.STATUS_MARKED_ROLLBACK, tm.getStatus());
+          assertThat(tm.getStatus(), is(Status.STATUS_MARKED_ROLLBACK));
         } finally {
           tm.rollback();
         }
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
 
         // We can do non-transactional things.
-        assertTrue(em.isOpen());
+        assertThat(em.isOpen(), is(true));
         author = em.find(Author.class, Integer.valueOf(1));
-        assertNotNull(author);
+        assertThat(author, notNullValue());
 
         // Note that because we've invoked this somehow outside of a
         // transaction everything it touches is detached, per section
         // 7.6.2 of the JPA 2.2 specification.
-        assertFalse(em.contains(author));
+        assertThat(em.contains(author), is(false));
 
         // Remove everything.
         tm.begin();
         author = em.merge(author);
-        assertNotNull(author);
-        assertTrue(em.contains(author));
+        assertThat(author, notNullValue());
+        assertThat(em.contains(author), is(true));
         em.remove(author);
         tm.commit();
-        assertFalse(em.contains(author));
+        assertThat(em.contains(author), is(false));
 
         // Perform a rollback "in the middle" of a sequence of
         // operations and observe that the EntityManager is in the
@@ -238,10 +237,10 @@ class TestRollbackScenarios {
         author = new Author("John Kennedy");
         tm.begin();
         em.persist(author);
-        assertTrue(em.contains(author));
+        assertThat(em.contains(author), is(true));
         tm.rollback();
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
-        assertFalse(em.contains(author));
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+        assertThat(em.contains(author), is(false));
         try {
           em.remove(author);
           fail("remove() was allowed to complete without a transaction");
@@ -257,11 +256,11 @@ class TestRollbackScenarios {
 
         // author is detached; prove it.
         tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
-        assertTrue(em.isJoinedToTransaction());
-        assertFalse(em.contains(author));
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
+        assertThat(em.isJoinedToTransaction(), is(true));
+        assertThat(em.contains(author), is(false));
         em.detach(author); // redundant; just making a point
-        assertFalse(em.contains(author));
+        assertThat(em.contains(author), is(false));
         try {
           em.remove(author);
           // We shouldn't get here because author is detached but with
@@ -274,21 +273,21 @@ class TestRollbackScenarios {
 
         // Remove the author properly.
         tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
-        assertTrue(em.isJoinedToTransaction());
-        assertFalse(em.contains(author));
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
+        assertThat(em.isJoinedToTransaction(), is(true));
+        assertThat(em.contains(author), is(false));
         author = em.merge(author);
         em.remove(author);
         tm.commit();
-        assertFalse(em.contains(author));
+        assertThat(em.contains(author), is(false));
 
         // Cause a timeout-tripped rollback.
         tm.setTransactionTimeout(1); // 1 second
         author = new Author("Woodrow Wilson");
         tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
         Thread.sleep(1500L); // 1.5 seconds (arbitrarily greater than 1 second)
-        assertEquals(Status.STATUS_ROLLEDBACK, tm.getStatus());
+        assertThat(tm.getStatus(), is(Status.STATUS_ROLLEDBACK));
         try {
           em.persist(author);
           fail("Transaction rolled back but persist still happened");
@@ -296,7 +295,7 @@ class TestRollbackScenarios {
 
         }
         tm.rollback();
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
 
         tm.setTransactionTimeout(60); // 60 seconds; the usual default
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ApplicationScoped
@@ -78,7 +79,7 @@ class TestAnnotationRewriting {
         System.setProperty("jpaAnnotationRewritingEnabled", "true");
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
   
@@ -109,24 +110,24 @@ class TestAnnotationRewriting {
     @PersistenceContext(unitName = "test")
     private void observerMethod(@Observes final TestIsRunning event,
                                 final EntityManager emParameter) {
-        assertNotNull(event);
+        assertThat(event, notNullValue());
 
-        assertNotNull(emParameter);
-        assertTrue(emParameter.isOpen());
-        assertFalse(emParameter.isJoinedToTransaction());
+        assertThat(emParameter, notNullValue());
+        assertThat(emParameter.isOpen(), is(true));
+        assertThat(emParameter.isJoinedToTransaction(), is(false));
 
-        assertNotNull(this.em);
-        assertTrue(this.em.isOpen());
-        assertFalse(this.em.isJoinedToTransaction());
+        assertThat(this.em, notNullValue());
+        assertThat(this.em.isOpen(), is(true));
+        assertThat(this.em.isJoinedToTransaction(), is(false));
 
-        assertNotNull(this.emf);
-        assertTrue(this.emf.isOpen());
+        assertThat(this.emf, notNullValue());
+        assertThat(this.emf.isOpen(), is(true));
         EntityManager em = null;
         try {
           em = this.emf.createEntityManager();
-          assertNotNull(em);
-          assertTrue(em.isOpen());
-          assertFalse(em.isJoinedToTransaction());
+          assertThat(em, notNullValue());
+          assertThat(em.isOpen(), is(true));
+          assertThat(em.isJoinedToTransaction(), is(false));
         } finally {
           if (em != null && !em.isOpen()) {
             em.close();
@@ -162,9 +163,9 @@ class TestAnnotationRewriting {
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
         qualifiers.add(JpaTransactionScoped.Literal.INSTANCE);
         final EntityManager entityManager = this.cdiContainer.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()])).get();
-        assertTrue(entityManager instanceof DelegatingEntityManager);
-        assertTrue(entityManager.isOpen());
-        assertFalse(entityManager.isJoinedToTransaction());
+        assertThat(entityManager, instanceOf(DelegatingEntityManager.class));
+        assertThat(entityManager.isOpen(), is(true));
+        assertThat(entityManager.isJoinedToTransaction(), is(false));
         try {
             entityManager.persist(new Object());
             fail("A TransactionRequiredException should have been thrown");
@@ -187,14 +188,14 @@ class TestAnnotationRewriting {
             .fire(new TestIsRunning("testTransactionalEntityManager"));
         final Instance<TestAnnotationRewriting> instance = this.cdiContainer.select(TestAnnotationRewriting.class);
         final TestAnnotationRewriting test = instance.get();
-        assertNotNull(test);
+        assertThat(test, notNullValue());
         test.testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod();
     }
     
     @Transactional
     void testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod() {
-        assertNotNull(this.em);
-        assertTrue(this.em.isJoinedToTransaction());
+        assertThat(this.em, notNullValue());
+        assertThat(this.em.isJoinedToTransaction(), is(true));
         try {
             this.em.close();
             fail("Closed EntityManager; should not have been able to");

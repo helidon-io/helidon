@@ -44,12 +44,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ApplicationScoped
@@ -96,13 +95,13 @@ class TestCascadePersist {
     void startCdiContainerAndRunDDL() throws SQLException {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
         final DataSource ds = this.cdiContainer.select(DataSource.class).get();
-        assertNotNull(ds);
+        assertThat(ds, notNullValue());
         try (final Connection connection = ds.getConnection();
              final Statement statement = connection.createStatement()) {
-            assertNotNull(statement);
+            assertThat(statement, notNullValue());
             statement.executeUpdate("RUNSCRIPT FROM 'classpath:chirp.ddl'");
         }
     }
@@ -169,83 +168,83 @@ class TestCascadePersist {
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
         final TestCascadePersist self = self();
-        assertNotNull(self);
+        assertThat(self, notNullValue());
 
         // Get the EntityManager that is synchronized with and scoped
         // to a JTA transaction.
         final EntityManager em = self.getEntityManager();
-        assertNotNull(em);
-        assertTrue(em.isOpen());
+        assertThat(em, notNullValue());
+        assertThat(em.isOpen(), is(true));
 
         // We haven't started any kind of transaction yet and we
         // aren't testing anything using
         // the @jakarta.transaction.Transactional annotation so there is
         // no transaction in effect so the EntityManager cannot be
         // joined to one.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.  This simulates
         // entering a method annotated
         // with @Transactional(TxType.REQUIRES_NEW) or similar.
         final TransactionManager tm = self.getTransactionManager();
-        assertNotNull(tm);
+        assertThat(tm, notNullValue());
         tm.begin();
-        assertEquals(Status.STATUS_ACTIVE, tm.getStatus());
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
 
         // Now magically our EntityManager should be joined to it.
-        assertTrue(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(true));
 
         // Create an author but don't persist him explicitly.
         Author author = new Author("Abraham Lincoln");
 
         // No trip to the database has happened yet, so the author's
         // identifier isn't set yet.
-        assertNull(author.getId());
+        assertThat(author.getId(), nullValue());
 
         // Set up a blog for that Author.
         Microblog blog = new Microblog(author, "Gettysburg Address Draft 1");
 
         // Persist the blog.  The Author should be persisted too.
         em.persist(blog);
-        assertTrue(em.contains(blog));
-        assertTrue(em.contains(author));
+        assertThat(em.contains(blog), is(true));
+        assertThat(em.contains(author), is(true));
 
         // Commit the transaction.  Because we're relying on the
         // default flush mode, this will cause a flush to the
         // database, which, in turn, will result in identifier
         // generation.
         tm.commit();
-        assertEquals(Status.STATUS_NO_TRANSACTION, tm.getStatus());
-        assertEquals(Integer.valueOf(1), author.getId());
-        assertEquals(Integer.valueOf(1), blog.getId());
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+        assertThat(author.getId(), is(1));
+        assertThat(blog.getId(), is(1));
 
         // We're no longer in a transaction.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // The persistence context should be cleared.
-        assertFalse(em.contains(blog));
-        assertFalse(em.contains(author));
+        assertThat(em.contains(blog), is(false));
+        assertThat(em.contains(author), is(false));
 
         // Let's check the database directly.
         final DataSource ds = this.cdiContainer.select(DataSource.class).get();
-        assertNotNull(ds);
+        assertThat(ds, notNullValue());
         try (final Connection connection = ds.getConnection();
              final Statement statement = connection.createStatement()) {
-            assertNotNull(statement);
+            assertThat(statement, notNullValue());
             ResultSet rs = statement.executeQuery("SELECT COUNT(1) FROM MICROBLOG");
-            assertNotNull(rs);
+            assertThat(rs, notNullValue());
             try {
-                assertTrue(rs.next());
-                assertEquals(1, rs.getInt(1));
+                assertThat(rs.next(), is(true));
+                assertThat(rs.getInt(1), is(1));
             } finally {
                 rs.close();
             }
             rs = statement.executeQuery("SELECT COUNT(1) FROM AUTHOR");
-            assertNotNull(rs);
+            assertThat(rs, notNullValue());
             try {
-                assertTrue(rs.next());
-                assertEquals(1, rs.getInt(1));
+                assertThat(rs.next(), is(true));
+                assertThat(rs.getInt(1), is(1));
             } finally {
                 rs.close();
             }
@@ -254,12 +253,12 @@ class TestCascadePersist {
         // Start a new transaction.
         tm.begin();
 
-        assertFalse(em.contains(blog));
+        assertThat(em.contains(blog), is(false));
         final Microblog newBlog = em.find(Microblog.class, Integer.valueOf(1));
-        assertNotNull(newBlog);
-        assertTrue(em.contains(newBlog));
+        assertThat(newBlog, notNullValue());
+        assertThat(em.contains(newBlog), is(true));
 
-        assertEquals(blog.getId(), newBlog.getId());
+        assertThat(newBlog.getId(), is(blog.getId()));
         blog = newBlog;
 
         // Now let's have our author write some stuff.
@@ -271,11 +270,11 @@ class TestCascadePersist {
                                        + "whether that nation, or any nation so conceived and so "
                                        + "dedicated, can long endure.");
         blog.addChirp(chirp1);
-        assertSame(blog, chirp1.getMicroblog());
+        assertThat(chirp1.getMicroblog(), sameInstance(blog));
         blog.addChirp(chirp2);
-        assertSame(blog, chirp2.getMicroblog());
+        assertThat(chirp2.getMicroblog(), sameInstance(blog));
         blog.addChirp(chirp3);
-        assertSame(blog, chirp3.getMicroblog());
+        assertThat(chirp3.getMicroblog(), sameInstance(blog));
 
         // Commit the transaction.  The changes should be propagated.
         // However, this will fail, because the third chirp above is
@@ -292,12 +291,12 @@ class TestCascadePersist {
         // functioned properly.  Let's make sure.
         try (final Connection connection = ds.getConnection();
              final Statement statement = connection.createStatement()) {
-            assertNotNull(statement);
+            assertThat(statement, notNullValue());
             ResultSet rs = statement.executeQuery("SELECT COUNT(1) FROM CHIRP");
-            assertNotNull(rs);
+            assertThat(rs, notNullValue());
             try {
-                assertTrue(rs.next());
-                assertEquals(0, rs.getInt(1));
+                assertThat(rs.next(), is(true));
+                assertThat(rs.getInt(1), is(0));
             } finally {
                 rs.close();
             }
