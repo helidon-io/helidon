@@ -23,6 +23,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -529,11 +530,14 @@ class MethodInvoker implements FtSupplier<Object> {
 
                         // Fallback executed in another thread
                         if (introspector.isAsynchronous()) {
-                            // In a reactive env, we shouldn't block on a Future<?>, so the FT spec
-                            // states not to fall back in this case -- even though we can with VTs
-                            if (method.getReturnType().equals(Future.class)) {
+                            // In a reactive env, we shouldn't block on a Future, so the FT spec
+                            // states not to fallback in this case -- even though we can with VTs
+                            // Note if method throws exception directly, fallback is required.
+                            if (method.getReturnType().equals(Future.class)
+                                    && throwable instanceof ExecutionException) {       // exception from Future
                                 throw toRuntimeException(throwable);
                             }
+
                             CompletableFuture<?> f = callSupplierNewThread(asyncToSyncFtSupplier(cfb::execute));
                             try {
                                 return f.get();

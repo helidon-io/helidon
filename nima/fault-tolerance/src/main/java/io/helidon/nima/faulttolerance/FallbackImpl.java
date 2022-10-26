@@ -44,7 +44,9 @@ class FallbackImpl<T> implements Fallback<T> {
                 return fallback.apply(throwable);
             } catch (Throwable t2) {
                 Throwable throwable2 = unwrapThrowable(t2);
-                throwable2.addSuppressed(throwable);
+                if (throwable2 != throwable) {      // cannot self suppress
+                    throwable2.addSuppressed(throwable);
+                }
                 throw toRuntimeException(throwable2);
             }
         }
