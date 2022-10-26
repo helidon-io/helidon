@@ -67,9 +67,8 @@ class ServerListener {
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
 
-    // todo now only from service loader, should be explicitly configurable (both)
-    private final MediaContext mediaContext = MediaContext.create();
-    private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+    private final MediaContext mediaContext;
+    private final ContentEncodingContext contentEncodingContext;
     private final LoomServer server;
 
     private volatile boolean running;
@@ -81,7 +80,9 @@ class ServerListener {
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
-                   DirectHandlers simpleHandlers) {
+                   DirectHandlers simpleHandlers,
+                   MediaContext mediaContext,
+                   ContentEncodingContext contentEncodingContext) {
         this.server = loomServer;
         this.connectionProviders = ConnectionProviders.create(connectionProviders);
         this.socketName = socketName;
@@ -113,6 +114,8 @@ class ServerListener {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
+        this.mediaContext = mediaContext;
+        this.contentEncodingContext = contentEncodingContext;
     }
 
     int port() {
