@@ -55,7 +55,8 @@ class RetryImpl implements Retry {
             } catch (Throwable t) {
                 Throwable throwable = unwrapThrowable(t);
                 context.thrown.add(throwable);
-                if (errorChecker.shouldSkip(throwable)) {
+                if (errorChecker.shouldSkip(throwable)
+                        || throwable instanceof InterruptedException) {     // no retry on interrupt
                     return context.throwIt();
                 }
             }

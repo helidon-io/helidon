@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +40,6 @@ import io.helidon.nima.faulttolerance.FtHandlerTyped;
 import io.helidon.nima.faulttolerance.Retry;
 import io.helidon.nima.faulttolerance.RetryTimeoutException;
 import io.helidon.nima.faulttolerance.Timeout;
-
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -147,6 +147,12 @@ class MethodInvoker implements FtSupplier<Object> {
      * FT handler for this invoker.
      */
     private final FtHandlerTyped<Object> handler;
+
+    /**
+     * Wraps method invocation in a supplier that can be cancelled. This is required
+     * when a task is cancelled without its thread being interrupted.
+     */
+    private CancellableFtSupplier cancellableSupplier;
 
     /**
      * A key used to lookup {@code MethodState} instances, which include FT handlers.
@@ -343,10 +349,10 @@ class MethodInvoker implements FtSupplier<Object> {
     }
 
     private CompletableFuture<Object> callSupplierNewThread(FtSupplier<Object> supplier) {
-        CompletableFuture<Object> resultFuture = new CompletableFuture<>();
-        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         FtSupplier<Object> wrappedSupplier = requestScopeHelper.wrapInScope(supplier);
 
+        // Call supplier in new thread
+        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         CompletableFuture<Object> asyncFuture = Async.create().invoke(() -> {
             Thread.currentThread().setContextClassLoader(ccl);
             try {
@@ -355,6 +361,16 @@ class MethodInvoker implements FtSupplier<Object> {
                 throw toRuntimeException(t);
             }
         });
+
+        // Set resultFuture based on supplier's outcome
+        AtomicBoolean mayInterrupt = new AtomicBoolean(false);
+        CompletableFuture<Object> resultFuture = new CompletableFuture<>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                mayInterrupt.set(mayInterruptIfRunning);
+                return super.cancel(mayInterruptIfRunning);
+            }
+        };
         asyncFuture.whenComplete((result, throwable) -> {
             requestScopeHelper.clearScope();
 
@@ -364,6 +380,17 @@ class MethodInvoker implements FtSupplier<Object> {
                 resultFuture.complete(result);
             }
         });
+
+        // If resultFuture is cancelled, then cancel supplier call
+        resultFuture.exceptionally(t -> {
+            if (t instanceof CancellationException) {
+                Objects.requireNonNull(cancellableSupplier);
+                cancellableSupplier.cancel();
+                asyncFuture.cancel(mayInterrupt.get());
+            }
+            return null;
+        });
+
         return resultFuture;
     }
 
@@ -387,16 +414,18 @@ class MethodInvoker implements FtSupplier<Object> {
     /**
      * Converts an async supplier into a sync one by waiting on the async supplier
      * to produce an actual result. Will block thread indefinitely until such value
-     * becomes available.
+     * becomes available. Wraps supplier with cancellable supplier for async
+     * cancellations.
      *
      * @param supplier async supplier
      * @return value produced by supplier
      * @param <T> type of value produced
      */
     @SuppressWarnings("unchecked")
-    public static <T> FtSupplier<T> asyncToSyncFtSupplier(FtSupplier<Object> supplier) {
+    public <T> FtSupplier<T> asyncToSyncFtSupplier(FtSupplier<Object> supplier) {
+        cancellableSupplier = CancellableFtSupplier.create(supplier);
         return () -> {
-            Object result = supplier.get();
+            Object result = cancellableSupplier.get();
             if (result instanceof CompletionStage<?> cs) {
                 return (T) cs.toCompletableFuture().get();
             } else if (result instanceof Future<?> f) {

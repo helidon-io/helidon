@@ -16,9 +16,12 @@
 
 package io.helidon.nima.faulttolerance;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -44,8 +47,15 @@ class AsyncImpl implements Async {
 
     @Override
     public <T> CompletableFuture<T> invoke(Supplier<T> supplier) {
-        CompletableFuture<T> result = new CompletableFuture<>();
-        executor.get().submit(() -> {
+        AtomicBoolean mayInterrupt = new AtomicBoolean(false);
+        CompletableFuture<T> result = new CompletableFuture<>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                mayInterrupt.set(mayInterruptIfRunning);
+                return super.cancel(mayInterruptIfRunning);
+            }
+        };
+        Future<?> future = executor.get().submit(() -> {
             try {
                 T t = supplier.get();
                 result.complete(t);
@@ -53,6 +63,12 @@ class AsyncImpl implements Async {
                 Throwable throwable = unwrapThrowable(t);
                 result.completeExceptionally(throwable);
             }
+        });
+        result.exceptionally(t -> {
+            if (t instanceof CancellationException) {
+                future.cancel(mayInterrupt.get());
+            }
+            return null;
         });
         return result;
     }
