@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,12 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests SSL/TLS with HTTP 1.1.
@@ -54,29 +55,29 @@ public class SslTest {
 
         Request getBooks = builder.build();
         try (Response getBooksRes = client.newCall(getBooks).execute()) {
-            Assertions.assertEquals(getBooksRes.code(), 200);
+            assertThat(getBooksRes.code(), is(200));
         }
 
         Request postBook = builder.post(
                 RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
         try (Response postBookRes = client.newCall(postBook).execute()) {
-            Assertions.assertEquals(postBookRes.code(), 200);
+            assertThat(postBookRes.code(), is(200));
         }
 
         builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
         Request getBook = builder.build();
         try (Response getBookRes = client.newCall(getBook).execute()) {
-            Assertions.assertEquals(getBookRes.code(), 200);
+            assertThat(getBookRes.code(), is(200));
         }
 
         Request deleteBook = builder.delete().build();
         try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            Assertions.assertEquals(deleteBookRes.code(), 200);
+            assertThat(deleteBookRes.code(), is(200));
         }
 
         Request getNoBook = builder.build();
         try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
-            Assertions.assertEquals(getNoBookRes.code(), 404);
+            assertThat(getNoBookRes.code(), is(404));
         }
     }
 }

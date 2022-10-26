@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@
 package io.helidon.messaging.connectors.kafka;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -450,7 +451,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         List<String> events = readTopic(TOPIC, uncommit.size(), GROUP);
         Collections.sort(events);
         Collections.sort(uncommit);
-        assertEquals(uncommit, events);
+        assertThat(events, contains(uncommit.toArray()));
     }
 
     @Test
@@ -493,9 +494,9 @@ public class KafkaSeTest extends AbstractKafkaTest {
         }
         int uncommited = kafkaConsumingBean.uncommitted();
         // At least one message was not committed
-        assertTrue(uncommited > 0);
+        assertThat(uncommited, greaterThan(0));
         LOGGER.fine(() -> "Uncommitted messages : " + uncommited);
         List<String> messages = readTopic(TOPIC, uncommited, GROUP);
-        assertEquals(uncommited, messages.size(), "Received messages are " + messages);
+        assertThat("Received messages are " + messages, messages, hasSize(uncommited));
     }
 }
