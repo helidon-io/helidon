@@ -383,9 +383,6 @@
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
-                            <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki
-                            </additionalJOption>
-                            <!--<additionalJOption>- -frames</additionalJOption>-->
                         </additionalJOptions>
                         <additionalOptions>
                             <!--<additionalOption> - -add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>-->
