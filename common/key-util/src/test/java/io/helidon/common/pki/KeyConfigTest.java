@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.pki;
 
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -27,10 +28,13 @@ import io.helidon.config.Config;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -53,6 +57,15 @@ class KeyConfigTest {
         assertThat(publicKey.privateKey().isPresent(), is(false));
         assertThat(publicKey.publicCert().isPresent(), is(true));
         assertThat(publicKey.publicKey().isPresent(), is(true));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"512", "1024","2048"})
+    void testPkcs1(String length) {
+        PrivateKey privateKey = PemReader.readPrivateKey(KeyConfigTest.class.getResourceAsStream("/keystore/pkcs1-" + length +
+                                                                                                         ".pem"), null);
+        assertThat(privateKey, notNullValue());
+        assertThat(privateKey.getAlgorithm(), is("RSA"));
     }
 
     @Test
