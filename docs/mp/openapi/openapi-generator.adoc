@@ -61,7 +61,7 @@ public class ExampleResource {
 }
 ----
 <1> Uses a bean-defining annotation so CDI can inject into this class.
-<2> Requests that CDI inject the following
+<2> Requests that CDI inject the following field.
 <3> Identifies to Helidon MP that the following field is a REST client.
 <4> Declares the field using the generated `PetApi` type.
 <5> Invokes the remote service using the injected field and the parameter from the incoming request.

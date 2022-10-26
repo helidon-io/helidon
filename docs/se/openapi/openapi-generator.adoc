@@ -29,63 +29,171 @@ include::{gen-inc}[tag=preamble]
 include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server;using-generated-code-client-intro]
 
 The generated Helidon SE client includes the class `ApiClient`. This class corresponds to
-the Helidon link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.html[`WebClient`], representing the connection to the remote server. The generator also creates one or more `Api` interfaces and corresponding implementation classes. The brief examples below use the `PetApi` interface and the `PetApiImpl` class.
+the Helidon link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.html[`WebClient`] and represents the connection between your client and the remote server. The generator also creates one or more `Api` interfaces and corresponding implementation classes. The examples below use the `PetApi` interface and the `PetApiImpl` class.
 
-Your code must:
+To invoke the remote service your code must:
 
 . Create an instance of `ApiClient`.
-. Use that `ApiClient` instance to instantiate a `PetApi`.
-. Invoke the methods on the `PetApi` instance to access the remote services.
+. Use that `ApiClient` instance to instantiate a `PetApi` object.
+. Invoke the methods on the `PetApi` object to access the remote services.
 . Use the returned results.
 
+The following sections explain these steps.
+
 ==== Creating an `ApiClient` Instance
-In the simplest case, your code can invoke `ApiClient.builder().build()` to get the instance it needs.
-Or, if needed, it can use the builder to fine-tune the settings for the `ApiClient` before building it.
-This fine-tuning can include setting an object mapper for Jackson processing or the  `JsonbConfig` for JSON-B, depending on which serialization library you chose when you ran the generator.
+The Helidon SE client generator gives you as much flexibility as you need in connecting to the remote service.
 
-If necessary, your code has full access to the Helidon
-link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.Builder.html[`WebClient.Builder`] that the `ApiClient.Builder` uses internally, via the `ApiClient.Builder.webClientBuilder()` method.
+Internally, the `ApiClient` uses a Helidon `WebClient` object to contact the remote system.
+The `ApiClient.Builder` automatically prepares a Helidon
+link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.Builder.html[`WebClient.Builder`] object using settings from the OpenAPI document.
 
-Once your code has prepared the `ApiClient.Builder` as it needs, it invokes `build()` to initialize the `ApiClient`.
+The next sections describe, from simplest to most complicated, the ways your code can create an `ApiClient` instance, each involving increased involvement with the `WebClient.Builder` object.
+
+===== Accepting the Automatic `WebClient.Builder`
+In the simplest case, your code can get an `ApiClient` instance almost directly.
+
+[source,java]
+.Creating an `ApiClient` instance - simple case
+----
+ApiClient apiClient = ApiClient.builder().build();
+----
+
+Your code relies fully on the automatic `WebClient.Builder`.
+In many cases, this approach works very well.
+
+===== Influencing the Automatic `WebClient.Builder`
+Your code can use the `ApiClient.Builder` to fine-tune the settings for the internal `WebClient.Builder`.
+For instance, your code can set an object mapper to be used for Jackson processing or the `JsonbConfig` object to be used for JSON-B processing, depending on which serialization library you chose when you ran the generator.
+
+Your code does not need to know how the object mapper setting is conveyed to the internal `WebClient.Builder`. The `ApiClient.Builder` knows how to do that.
+
+[source,java]
+.Creating an `ApiClient` instance - influencing the `ApiClient.Builder`
+----
+ApiClient apiClient = apiClient.builder()
+                            .objectMapper(yourCustomMapper)
+                            .build();
+----
+
+===== Adjusting the Automatic `WebClient.Builder`
+In more complicated situations, your code can work with the `WebClient.Builder` the `ApiClient.Builder` creates.
+
+[source,java]
+.Creating an `ApiClient` instance - adjusting the `WebClient.Builder`
+----
+ApiClient.Builder apiClientBuilder = ApiClient.builder();
+
+apiClientBuilder.webClientBuilder()
+                .connectTimeout(4, TimeUnit.SECONDS);
+
+ApiClient apiClient = apiClientBuilder.build();
+----
+
+===== Providing a Custom `WebClient.Builder`
+Lastly, you can construct the `WebClient.Builder` entirely yourself and have the `ApiClient.Builder` use it instead of its own internal builder.
+
+[source,java]
+.Creating an `ApiClient` instance - using a custom `WebClient.Builder`
+----
+WebClient.Builder customWebClientBuilder = WebClient.builder()
+                .connectTimeout(3, TimeUnit.SECONDS)
+                .baseUri("https://myservice.mycompany.com");
+
+ApiClient apiClient = ApiClient.builder()
+                        .webClientBuilder(customWebClientBuilder)
+                        .build();
+----
+Note that this approach entirely replaces the internal, automatically-prepared `WebClient.Builder` with yours; it _does not_ merge the new builder with the internal one. In particular, any information from the OpenAPI document used to prepare the internal  `WebClient.Builder` is lost.
+
 
 ==== Creating a `PetApi` Instance
-The `ApiClient` represents the connection to the remote server but not the individual RESTful operations. Rather, the `PetApi` interface declares a method for each operation pertaining to pets declared in the OpenAPI document.
+The `ApiClient` represents the connection to the remote server but not the individual RESTful operations. Rather, the `PetApi` interface exposes a method for each operation in the OpenAPI document that pertains to pets.
 
-To invoke an operation defined on the `PetApi` interface, your code instantiates a `PetApi` using the `ApiClient` it just prepared, often as simply as:
+To invoke an operation defined on the `PetApi` interface, your code instantiates a `PetApi` using an `ApiClient` object:
 
-.Preparing  PetStore Client API
 [source,java]
+.Preparing the PetStore Client API
 ----
 ApiClient apiClient = ApiClient.builder().build();
 PetApi petApi = PetApiImpl.create(apiClient);
 ----
 
 ==== Invoking Remote Endpoints
-Once your code has the `petApi` object, it can invoke any of the methods on `PetApi` to contact the remote service.
+With the `petApi` object, your code can invoke any of the methods on the `PetApi` interface to contact the remote service.
 
-The Helidon WebClient support uses a reactive programming model, and the Helidon SE client generator creates an `ApiResponse` interface which follows this model.
-In fact, each generated `PetApi` method returns an `ApiResponse<returnType>` where the `returnType` is the return type declared in the OpenAPI document for the corresponding operation.
+The Helidon WebClient follows a reactive programming model, and the Helidon SE client generator creates an `ApiResponse` interface which follows the same approach.
+Each generated `PetApi` method returns an `ApiResponse<returnType>` where the `returnType` is the return type declared in the OpenAPI document for the corresponding operation.
 
 The `ApiResponse` interface exposes two methods your code can use to work with the response from the remote service invocation:
 
+* `Single<T> result()`
++
+Provides reactive access to the value returned by the remote service in the response.
+This method lets your code fetch the return value directly.
 * `Single<WebClientResponse> webClientResponse()`
 +
 Provides reactive access to the Helidon `WebClientResponse` object.
 Your code can find out the HTTP return status, read headers in the response, and process the content (if any) in the response.
-* `Single<T> result()`
-+
-Provides reactive access to the value returned by the remote service in the response.
-This method lets your code fetch the return value without you having to process the `WebClientResponse` content yourself.
 
-In the reactive Helidon WebClient model, the response can begin to arrive (the status and headers become available) before the entity in the body of the response is readable. So there are two reactive events associated with an incoming HTTP response:
+In the reactive Helidon WebClient model, the response can begin to arrive (the status and headers are available) before the entity in the body of the response is readable.
+So there are two reactive events associated with an incoming HTTP response:
 
 . when the response _excluding_ the entity content has arrived, and
 . when your code can begin consuming the entity content.
 
-===== Using the Fully-reactive Programming Model
+You can adopt different styles of retrieving the results, depending on the specific needs of the code you are writing.
+
+===== Synchronous access to the result
+This example shows the simplest way to invoke the remote service and work with the result.
+
+[source,java]
+.Synchronous access to the return value
+----
+// Assumes the petApi field is initialized as above.
+List<Pet> availablePets = petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())) // <1>
+                .result()
+                .await(4, TimeUnit.SECONDS); // <2>
+----
+<1> Start the remote service invocation.
+<2> Wait for the result to arrive.
+
+This code blocks the current thread, waiting up to four seconds for the response to arrive.
+This approach might work for a CLI client where the thread has no other meaningful work to do until it has the result.
+This is _not_ an appropriate style for server code that uses the generated client to invoke another service.
+
+Note that this approach offers no access to the HTTP status for the response or any headers that might have been returned.
+
+===== Synchronous access with status checking
+The Helidon WebClient programming model includes a `WebClientResponse` interface which exposes all aspects of the HTTP response returned from the remote service.
+
+The next example shows how your code can use the `WebClientResponse`.
+
+[source,java]
+.Synchronous access with status checking
+----
+ApiResponse<List<Pet>> apiResponse = petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); // <1>
+
+WebClientResponse webClientResponse = apiResponse.webClientResponse()
+            .await(4, TimeUnit.SECONDS); // <2>
+
+if (webClientResponse.status().code() != 200) { // <3>
+    // Handle a non-successful status.
+}
+
+List<Pet>> availablePets = apiResponse.result()
+            .await(4, TimeUnit.SECONDS); // <4>
+----
+<1> Start the remote service invocation.
+<2> Wait for the HTTP response status and headers to arrive.
+<3> Check the status in the HTTP response.
+<4> Wait for the content to arrive.
+
+This code also blocks the current thread, first to wait for the initial response and then to wait for the content.
+
+===== Fully-reactive access
 The following example shows how your code might invoke the remote service and process the response using the reactive programming model.
 
-.Invoking a Remote Service and Processing the Result (fully reactive)
+.Fully-reactive access with status checking
 [source,java]
 ----
 // Assumes the petApi field is initialized as above.
@@ -124,40 +232,11 @@ availablePetsResponse.webClientResponse()
 <6> Handle a non-200 response status.
 <7> Reactively handles any errors in receiving the HTTP response.
 
-The fully-reactive approach lets you avoid blocking the thread which initiates the outbound remote service access.
+The fully-reactive approach brings with it some complexity, but it lets your code avoid blocking the thread that initiates the outbound remote service access.
 Avoiding blocking is especially important if the code which uses the generated client runs in a server.
 
-The code is complicated because receiving the beginning of the response and receiving the entity content of the response both occur asynchronously. There are several ways this processing can fail, and your code should handle each of them in whatever ways make sense for your application.
-
-===== Using a Blocking Programming Model
-In other situations, you might be willing to block the thread until the response arrives and the entity data becomes available.
-This might be the case in a command-line client that cannot continue doing work until it can process the response and the entity contents returned from the remote service.
-The following example illustrates the blocking approach.
-
-.Invoking a Remote Service and Processing the Result (blocking)
-[source,java]
-----
-ApiResponse<List<Pet>> availablePetsResponse =
-    petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE)); // <1>
-
-WebClientResponse resp = availablePetsResponse.webClientResponse().await(); // <2>
-if (resp.status().code() == 200) {
-    try {
-        List<Pet> availablePets = availablePetsResponse.result().await(); // <3>
-    } catch (ExecutionException | InterruptedException e) {
-        // Handle errors while waiting for the response content to arrive. // <4>
-    }
-} else {
-    // Handle non-200 response status. // <5>
-}
-----
-<1> Start the remote service call.
-<2> Wait for the response preamble (status, headers) to arrive.
-<3> Wait for the entity to arrive and convert it to the result type.
-<4> Handle problems that occurred while waiting for the response content to arrive.
-<5> Handle a non-200 response status.
-
-The blocking style is easier to program but you should still address the various error conditions in whatever way makes sense for your application.
+Some of the complexity enters because there are several ways this processing can fail.
+Your code should handle each of them in whatever ways make sense for your application, and that might mean dealing with each different error scenario in a different way.
 
 include::{gen-inc}[tag=common-references]
 * xref:{helidon-client-xref}[Helidon WebClient documentation]

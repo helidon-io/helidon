@@ -170,9 +170,9 @@ backend:
                 glyph:
                   type: "icon"
                   value: "donut_large"
-                  sources:
-                    - "openapi.adoc"
-                    - "openapi-generator.adoc"
+                sources:
+                  - "openapi.adoc"
+                  - "openapi-generator.adoc"
               - type: "MENU"
                 title: "Integrations"
                 dir: "integrations"
@@ -381,9 +381,9 @@ backend:
                 glyph:
                   type: "icon"
                   value: "donut_large"
-                  sources:
-                    - "openapi.adoc"
-                    - "openapi-generator.adoc"
+                sources:
+                  - "openapi.adoc"
+                  - "openapi-generator.adoc"
               - type: "MENU"
                 title: "Integrations"
                 dir: "integrations"

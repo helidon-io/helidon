@@ -27,3 +27,4 @@ ifdef::mp-flavor[]
 endif::[]
 :webclient-page: {rootdir}/se/webclient.adoc
 :restclient-page: {rootdir}/mp/restclient.adoc
+:cli-page: {rootdir}/about/cli.adoc
