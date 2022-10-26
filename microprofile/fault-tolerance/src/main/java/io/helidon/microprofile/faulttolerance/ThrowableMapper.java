@@ -79,7 +79,7 @@ class ThrowableMapper {
             } else if (t == CircuitBreakerOpenException.class) {
                 result[i] = io.helidon.nima.faulttolerance.CircuitBreakerOpenException.class;
             } else if (t == TimeoutException.class) {
-                result[i] = java.util.concurrent.TimeoutException.class;
+                result[i] = io.helidon.nima.faulttolerance.TimeoutException.class;
             } else {
                 result[i] = t;
             }

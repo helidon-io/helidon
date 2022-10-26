@@ -120,12 +120,13 @@ class CircuitBreakerImpl implements CircuitBreaker {
             } else {
                 results.update(ResultWindow.Result.FAILURE);
             }
+            throw toRuntimeException(throwable);
+        } finally {
             if (results.shouldOpen() && state.compareAndSet(State.CLOSED, State.OPEN)) {
                 results.reset();
                 // if we successfully switch to open, we need to schedule switch to half-open
                 scheduleHalf();
             }
-            throw toRuntimeException(throwable);
         }
     }
 

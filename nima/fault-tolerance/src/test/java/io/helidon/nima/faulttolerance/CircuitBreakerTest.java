@@ -83,6 +83,21 @@ class CircuitBreakerTest {
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
     }
 
+    @Test
+    void testOpenOnLastSuccess() {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(4)
+                .errorRatio(75)
+                .build();
+
+        bad(breaker);
+        bad(breaker);
+        bad(breaker);
+        good(breaker);
+
+        assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
+    }
+
     private void breakerOpen(CircuitBreaker breaker) {
         Request good = new Request();
         assertThrows(CircuitBreakerOpenException.class, () -> breaker.invoke(good::invoke));
