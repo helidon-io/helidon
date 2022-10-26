@@ -18,11 +18,30 @@ package io.helidon.common.pki;
 
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.HexFormat;
 
 final class Pkcs1Util {
-    // this is a constant for RSA (and we only support RSA)
-    private static final byte[] RSA_ALG = HexFormat.of().parseHex("020100300D06092A864886F70D0101010500");
+    // this is a constant for RSA (and we only support RSA) - HexFormat.of().parseHex("020100300D06092A864886F70D0101010500")
+    // as HexFormat is only available since Java 17, we have to use explicit bytes here
+    private static final byte[] RSA_ALG = new byte[] {
+            0x02,
+            0x01,
+            0x00,
+            0x30,
+            0x0D,
+            0x06,
+            0x09,
+            0x2A,
+            (byte) 0x86,
+            0x48,
+            (byte) 0x86,
+            (byte) 0xF7,
+            0x0D,
+            0x01,
+            0x01,
+            0x01,
+            0x05,
+            0x00
+    };
 
     private Pkcs1Util() {
     }
