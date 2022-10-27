@@ -15,11 +15,11 @@
  */
 package io.helidon.examples.istio;
 
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 /**
  * Provider for greeting message.
@@ -28,8 +28,13 @@ import javax.ws.rs.Path;
 @RegisterRestClient(configKey = "GreetingProvider")
 public interface GreetingProvider {
 
+    /**
+     * Get message.
+     *
+     * @return message
+     */
     @GET
     @Path("/first")
-    public String getMessage();
+    String getMessage();
 
 }

@@ -15,7 +15,11 @@
  */
 package io.helidon.examples.istio;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.NamedStoredProcedureQueries;
+import javax.persistence.NamedStoredProcedureQuery;
 
 /**
  * Person JPA entity.
@@ -37,30 +41,61 @@ public class Person {
     @Column
     private String name;
 
+    /**
+     * Default contructor.
+     */
     public Person() {
     }
 
+    /**
+     * Construct a person given a nickname and a name.
+     *
+     * @param nick Nickname
+     * @param name Name
+     */
     public Person(String nick, String name) {
         this.nick = nick;
         this.name = name;
     }
 
+    /**
+     * Get nickname.
+     * @return nickname
+     */
     public String getNick() {
         return nick;
     }
 
+    /**
+     * Set nickname.
+     * @param nick nickname
+     */
     public void setNick(String nick) {
         this.nick = nick;
     }
 
+
+    /**
+     * Get name.
+     * @return name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Set name.
+     * @param name Name
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Convert to string.
+     *
+     * @return string representation
+     */
     @Override
     public String toString() {
         return "Person [nick=" + nick + ", name=" + name + "]";
