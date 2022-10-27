@@ -61,6 +61,7 @@
         <module>logging</module>
         <module>metrics</module>
         <module>jbatch</module>
+        <module>istio</module>
     </modules>
 
     <build>
