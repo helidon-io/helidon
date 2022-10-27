@@ -57,7 +57,7 @@ class TimeoutImpl implements Timeout {
                         .orTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                         .get();
             } catch (Throwable t) {
-                throw mapThrowable(t);
+                throw mapThrowable(t, null);
             }
         } else {
             Thread thisThread = Thread.currentThread();
@@ -85,7 +85,7 @@ class TimeoutImpl implements Timeout {
                 }
                 return result;
             } catch (Throwable t) {
-                throw mapThrowable(t);
+                throw mapThrowable(t, interrupted);
             } finally {
                 interruptLock.lock();
                 try {
@@ -103,13 +103,15 @@ class TimeoutImpl implements Timeout {
         }
     }
 
-    private static RuntimeException mapThrowable(Throwable t) {
+    private static RuntimeException mapThrowable(Throwable t, AtomicBoolean interrupted) {
         Throwable throwable = unwrapThrowable(t);
         if (throwable instanceof InterruptedException) {
             return new TimeoutException("Call interrupted", throwable);
 
         } else if (throwable instanceof java.util.concurrent.TimeoutException) {
             return new TimeoutException("Timeout reached", throwable.getCause());
+        } else if (interrupted != null && interrupted.get()) {
+            return new TimeoutException("Supplier execution interrupted", t);
         }
         return toRuntimeException(throwable);
     }

@@ -30,4 +30,14 @@ public class SupplierException extends RuntimeException {
     public SupplierException(Throwable cause) {
         super(cause);
     }
+
+    /**
+     * Create an instance using a {@code Throwable}.
+     *
+     * @param message the message
+     * @param cause the cause
+     */
+    public SupplierException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
