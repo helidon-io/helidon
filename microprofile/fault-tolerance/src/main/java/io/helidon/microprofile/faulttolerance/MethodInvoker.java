@@ -323,6 +323,9 @@ class MethodInvoker implements FtSupplier<Object> {
             }
             updateMetricsAfter(throwable);
             if (throwable != null) {
+                if (throwable instanceof RetryTimeoutException rte) {
+                    throw rte.lastRetryException();
+                }
                 throw throwable;
             }
             return result;
@@ -337,9 +340,6 @@ class MethodInvoker implements FtSupplier<Object> {
             result = supplier.get();
         } catch (Throwable t) {
             cause = map(unwrapThrowable(t));
-        }
-        if (cause instanceof RetryTimeoutException) {
-            cause = ((RetryTimeoutException) cause).lastRetryException();
         }
         if (cause != null) {
             throw cause;
