@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.common.Errors;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.webclient.Proxy;
@@ -69,12 +72,14 @@ final class OidcUtil {
 
     static WebClient.Builder webClientBaseBuilder(String proxyHost,
                                                   int proxyPort,
+                                                  boolean relativeUris,
                                                   Duration clientTimeout) {
         WebClient.Builder webClientBuilder = WebClient.builder()
                 .addService(WebClientTracing.create())
                 .addMediaSupport(JsonpSupport.create())
                 .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                .config(Config.create(ConfigSources.create(Map.of("relative-uris", String.valueOf(relativeUris)))));
 
         if (proxyHost != null) {
             webClientBuilder.proxy(Proxy.builder()
