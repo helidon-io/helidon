@@ -312,9 +312,7 @@ class MethodInvoker implements FtSupplier<Object> {
         updateMetricsBefore();
 
         if (introspector.isAsynchronous()) {
-            CompletableFuture<Object> future = callSupplierNewThread(contextSupplier);
-            future.whenComplete((result, throwable) -> updateMetricsAfter(throwable));
-            return future;
+            return callSupplierNewThread(contextSupplier);
         } else {
             Object result = null;
             Throwable throwable = null;
@@ -374,9 +372,10 @@ class MethodInvoker implements FtSupplier<Object> {
         };
         asyncFuture.whenComplete((result, throwable) -> {
             requestScopeHelper.clearScope();
-
+            Throwable cause = unwrapThrowable(throwable);
+            updateMetricsAfter(cause);
             if (throwable != null) {
-                resultFuture.completeExceptionally(unwrapThrowable(throwable));
+                resultFuture.completeExceptionally(cause);
             } else {
                 resultFuture.complete(result);
             }
@@ -525,7 +524,6 @@ class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
-                        fallbackCalled.set(true);
                         FallbackHelper cfb = new FallbackHelper(context, introspector, throwable);
 
                         // Fallback executed in another thread
@@ -540,12 +538,14 @@ class MethodInvoker implements FtSupplier<Object> {
 
                             CompletableFuture<?> f = callSupplierNewThread(asyncToSyncFtSupplier(cfb::execute));
                             try {
+                                fallbackCalled.set(true);
                                 return f.get();
                             } catch (Throwable t) {
                                 throw toRuntimeException(t);
                             }
                         } else {
                             try {
+                                fallbackCalled.set(true);
                                 return callSupplier(cfb::execute);
                             } catch (Throwable t) {
                                 throw toRuntimeException(t);
