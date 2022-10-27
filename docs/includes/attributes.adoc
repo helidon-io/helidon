@@ -265,6 +265,13 @@ endif::[]
 // OpenAPI generator
 :openapi-generator-version: 6.2.1
 :openapi-generator-tool-base-url: https://github.com/OpenAPITools/openapi-generator
+:openapi-generator-site-version: v{openapi-generator-version}
+
+:openapi-generator-tool-docs-url: {openapi-generator-tool-base-url}/blob/{openapi-generator-site-version}/docs
+:openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
 :openapi-generator-tool-site-url: https://openapi-generator.tech
+
+// Maven plug-ins
+:maven-build-helper-plugin-url: https://www.mojohaus.org/build-helper-maven-plugin/usage.html
 
 endif::attributes-included[]

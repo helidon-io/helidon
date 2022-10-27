@@ -45,7 +45,7 @@ In the following example, `ExampleResource` (itself running in a server) invokes
 [source,java]
 .Using the generated `PetApi` from a separate service
 ----
-@Path("/example") // <1>
+@Path("/exampleServiceCallingService") // <1>
 public class ExampleResource {
 
     @Inject // <2>
