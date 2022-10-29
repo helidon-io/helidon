@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Makes sure that the app-supplied model reader participates in constructing
@@ -73,8 +74,8 @@ public class ServerModelReaderTest {
                 TestUtil.escapeForJsonPointer(MyModelReader.MODEL_READER_PATH)));
         if (v.getValueType().equals(JsonValue.ValueType.STRING)) {
             JsonString s = (JsonString) v;
-            assertEquals(MyModelReader.SUMMARY, s.getString(),
-                    "Unexpected summary value as added by model reader");
+            assertThat("Unexpected summary value as added by model reader",
+                    s.getString(), is(MyModelReader.SUMMARY));
         }
     }
 
@@ -97,7 +98,7 @@ public class ServerModelReaderTest {
                         JsonValue v = json.getValue(String.format("/paths/%s/get/summary",
                             TestUtil.escapeForJsonPointer(MyModelReader.DOOMED_PATH)));
                 });
-        assertTrue(ex.getMessage().contains(
+        assertThat(ex.getMessage(), containsString(
                 String.format("contains no mapping for the name '%s'", MyModelReader.DOOMED_PATH)));
     }
 }
