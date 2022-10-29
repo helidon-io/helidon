@@ -145,8 +145,8 @@ class OpentraceableClientE2ETest {
                     if (IS_LOGGABLE) {
                         LOGGER.log(LEVEL, String.format(
                                            """
-                                           Service %10s recorded span %14s/%s, parent %s, trace %s; 
-                                           map size: %d; remaining latch count: %d
+                                           Service %10s recorded span %14s/%s, parent %s, trace %s; \
+                                           map size: %d; remaining latch count: %d \
                                            """,
                                    serviceName,
                                    span.name(),
