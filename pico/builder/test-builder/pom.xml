@@ -43,6 +43,11 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico.builder</groupId>
+            <artifactId>helidon-pico-builder-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor to build processor 1st -->
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico.builder</groupId>
             <artifactId>helidon-pico-builder-api</artifactId>
             <scope>provided</scope>
         </dependency>
