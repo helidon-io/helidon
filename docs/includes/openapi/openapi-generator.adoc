@@ -505,11 +505,13 @@ The Helidon generators go a long way in helping you write your client or server.
 // end::using-generated-code-intro[]
 
 // tag::using-generated-code-server[]
+// tag::using-generated-code-server-intro[]
 
 === Completing the Server
-Recall earlier how the OpenAPI generator gathers operations into one or more "APIs" and generates either a class or an interface--your choice--for each API.
+Recall from earlier how the OpenAPI generator gathers operations into one or more "APIs" and generates either a class or an interface--your choice--for each API.
 You need to extend each generated API class or implement each generated API interface by writing your own classes.
 Any input parameters to the endpoints are expressed as POJO model objects or Java types, as declared in the OpenAPI document. Your server code uses each of the input parameters to accomplish whatever business purpose that endpoint is responsible for, possibly returning a result as a POJO or Java type as indicated for that operation in the OpenAPI document.
+// end::using-generated-code-server-intro[]
 
 In some cases, you might need more control over the response sent to the client. In that case, specify the additional property `returnResponse=true` when you run the Helidon server generator. The return type for the generated methods is
 ifdef::mp-flavor[]

@@ -26,7 +26,60 @@ include::{rootdir}/includes/pages.adoc[]
 :helidon-client-xref: {webclient-page}
 include::{gen-inc}[tag=preamble]
 
-include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server;using-generated-code-client-intro]
+include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server-intro]
+
+
+The Helidon SE server generator also creates, for each API, a separate class containing handler methods for each endpoint.
+Along with the `PetService` interface or abstract class which has methods such as `addPet` and `getPetById`, the tool generates `PetServiceImpl` with methods such as `handleAddPet` and `handleGetPetById`.
+
+[source,java]
+.Generated `PetService` abstract class
+----
+public abstract class PetService implements Service {
+    void addPet(ServerRequest request, ServerResponse response, Pet pet) {
+        // ...
+    }
+    abstract void handleAddPet(ServerRequest request, ServerResponse response, Pet pet);
+
+    void getPetById(ServerRequest request, ServerResponse response) {
+        // ...
+    }
+    abstract void handleGetPetById(ServerRequest request, ServerResponse response, Long petId);
+}
+----
+
+[source,java]
+.Generated skeleton `PetServiceImpl` class (which you extend)
+----
+public class PetServiceImpl extends PetService {
+    public void handleAddPet(ServerRequest request, ServerResponse response, Pet pet) {
+        response.status(HTTP_CODE_NOT_IMPLEMENTED.send());
+    }
+
+    public void handleGetPetById(ServerRequest request, ServerResponse response, Long petId) {
+        response.status(HTTP_CODE_NOT_IMPLEMENTED).send();
+    }
+}
+----
+You write your own classes which extend `PetServiceImpl` and the other generated `xxxImpl` classes, overriding the `handle...` methods.
+
+You have control over--and therefore responsibility for--preparing the response to be sent to the client, including the status, any response headers, and any returned entity.
+Your overriding implementation of `handleGetPetById` might look like the following example.
+
+[source,java]
+.Example override of `handleGetPetById`
+----
+public void handleGetPetById(ServerRequest request, ServerResponse response, Long petId) {
+    Pet pet = locatePetInDatabase(petId);
+    if (pet == null) {
+        response.status(404).send();
+    }
+    response.send(pet); // Respnose status is 200 by default.
+    }
+}
+----
+
+include::{gen-inc}[tag=using-generated-code-client-intro]
 
 The generated Helidon SE client includes the class `ApiClient`. This class corresponds to
 the Helidon link:{webclient-javadoc-base-url}/io/helidon/webclient/WebClient.html[`WebClient`] and represents the connection between your code and the remote server. The generator also creates one or more `Api` interfaces and corresponding implementation classes. The examples below use the `PetApi` interface and the `PetApiImpl` class.
