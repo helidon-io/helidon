@@ -41,6 +41,7 @@ import io.helidon.nima.faulttolerance.FtHandlerTyped;
 import io.helidon.nima.faulttolerance.Retry;
 import io.helidon.nima.faulttolerance.RetryTimeoutException;
 import io.helidon.nima.faulttolerance.Timeout;
+
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -387,7 +388,8 @@ class MethodInvoker implements FtSupplier<Object> {
 
         // If resultFuture is cancelled, then cancel supplier call
         resultFuture.exceptionally(t -> {
-            if (t instanceof CancellationException || t instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
+            if (t instanceof CancellationException
+                    || t instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
                 Objects.requireNonNull(cancellableSupplier);
                 cancellableSupplier.cancel();
                 // Cancel supplier in bulkhead in case it is queued
