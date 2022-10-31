@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -154,6 +155,11 @@ class WebClientQueryParams implements Parameters {
     @Override
     public Map<String, List<String>> toMap() {
         return rawParams.toMap();
+    }
+
+    @Override
+    public Iterator<Map.Entry<String, List<String>>> iterator() {
+        return rawParams.iterator();
     }
 
     void skipEncoding() {

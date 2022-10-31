@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ class HelidonStructures {
                 || (encoding.isPresent() && encoding.get().equals(HttpHeaderValues.CHUNKED.toString())));
     }
 
-    private static class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
+    private static class ReadOnlyHeaders extends io.helidon.common.http.ReadOnlyHeaders {
         ReadOnlyHeaders(Map<String, List<String>> data) {
             super(data);
         }

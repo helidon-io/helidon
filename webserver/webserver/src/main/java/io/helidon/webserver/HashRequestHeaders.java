@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.common.http.Utils;
 
 /**
- * A {@link RequestHeaders} implementation on top of {@link ReadOnlyParameters}.
+ * A {@link RequestHeaders} implementation on top of {@link ReadOnlyHeaders}.
  */
-class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
+class HashRequestHeaders extends ReadOnlyHeaders implements RequestHeaders {
 
     /**
      * Header value of the non compliant {@code Accept} header sent by
