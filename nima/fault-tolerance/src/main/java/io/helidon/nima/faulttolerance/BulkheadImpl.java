@@ -27,7 +27,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -40,24 +39,18 @@ class BulkheadImpl implements Bulkhead {
 
     private final Semaphore inProgress;
     private final String name;
-    private final int maxQueue;
+    private final BarrierQueue queue;
     private final AtomicLong concurrentExecutions = new AtomicLong(0L);
     private final AtomicLong callsAccepted = new AtomicLong(0L);
     private final AtomicLong callsRejected = new AtomicLong(0L);
-    private final AtomicInteger enqueued = new AtomicInteger();
     private final List<QueueListener> listeners;
-
-    private BarrierQueue barrierQueue = null;
     private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
 
     BulkheadImpl(Builder builder) {
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
-        this.maxQueue = builder.queueLength();
         this.listeners = builder.queueListeners();
-        if (this.maxQueue > 0) {
-            barrierQueue = new BarrierQueue(this.maxQueue);
-        }
+        this.queue = new BarrierQueue(builder.queueLength());
     }
 
     @Override
@@ -75,22 +68,17 @@ class BulkheadImpl implements Bulkhead {
             return execute(supplier);
         }
 
-        int queueLength = enqueued.incrementAndGet();
-        if (queueLength > maxQueue) {
-            enqueued.decrementAndGet();
+        if (queue.size() == queue.capacity()) {
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
         try {
-            assert barrierQueue != null;
-
             // block current thread until barrier is retracted
             listeners.forEach(l -> l.enqueueing(supplier));
-            barrierQueue.enqueueAndWaitOn(supplier);
+            queue.enqueueAndWaitOn(supplier);
 
             // unblocked so we can proceed with execution
             listeners.forEach(l -> l.dequeued(supplier));
-            enqueued.decrementAndGet();
 
             // do not run if cancelled while queued
             if (cancelledSuppliers.remove(supplier)) {
@@ -130,7 +118,7 @@ class BulkheadImpl implements Bulkhead {
 
             @Override
             public long waitingQueueSize() {
-                return enqueued.get();
+                return queue.size();
             }
         };
     }
@@ -153,37 +141,61 @@ class BulkheadImpl implements Bulkhead {
             throw toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
-            if (barrierQueue != null) {
-                barrierQueue.dequeueAndRetract();
+            if (queue.size() > 0) {
+                queue.dequeueAndRetract();
+            } else {
+                inProgress.release();
             }
-            inProgress.release();
         }
     }
 
     @Override
     public boolean cancelSupplier(Supplier<?> supplier) {
-        boolean cancelled = barrierQueue.remove(supplier);
+        boolean cancelled = queue.remove(supplier);
         if (cancelled) {
-            enqueued.decrementAndGet();
             cancelledSuppliers.add(supplier);
         }
         return cancelled;
     }
 
+    /**
+     * A queue that holds all those suppliers that don't have permits to execute at a
+     * certain time. The thread running the supplier will be forced to wait on a barrier
+     * until a new permit becomes available. The capacity of this queue can be 0, in
+     * which case nothing can be queued or dequeued.
+     */
     private static class BarrierQueue {
 
-        private final ReentrantLock lock = new ReentrantLock();
-        private final Queue<Supplier<?>> queue;
-        private final Map<Supplier<?>, Barrier> map = new ConcurrentHashMap<>();
+        private final int capacity;
+        private ReentrantLock lock = null;
+        private Queue<Supplier<?>> queue = null;
+        private Map<Supplier<?>, Barrier> map = null;
 
-        BarrierQueue(int size) {
-            if (size <= 0) {
-                throw new IllegalStateException("BarrierQueue size must be greater that 0");
+        BarrierQueue(int capacity) {
+            this.capacity = Math.max(capacity, 0);
+            if (this.capacity > 0) {
+                this.queue = new LinkedBlockingQueue<>(capacity);
+                this.map = new ConcurrentHashMap<>();
+                this.lock = new ReentrantLock();
             }
-            this.queue = new LinkedBlockingQueue<>(size);
+        }
+
+        int size() {
+            return capacity > 0 ? queue.size() : 0;
+        }
+
+        int capacity() {
+            return capacity;
+        }
+
+        private void ensureQueue() {
+            if (this.queue == null) {
+                throw new IllegalStateException("Queue capacity is 0");
+            }
         }
 
         Barrier enqueue(Supplier<?> supplier) {
+            ensureQueue();
             lock.lock();
             try {
                 boolean added = queue.offer(supplier);
@@ -201,6 +213,7 @@ class BulkheadImpl implements Bulkhead {
         }
 
         Barrier dequeue() {
+            ensureQueue();
             lock.lock();
             try {
                 Supplier<?> supplier = queue.poll();
@@ -218,10 +231,14 @@ class BulkheadImpl implements Bulkhead {
         }
 
         boolean remove(Supplier<?> supplier) {
+            ensureQueue();
             return queue.remove(supplier);
         }
     }
 
+    /**
+     * A barrier is used to force a thread to wait (block) until it is retracted.
+     */
     private static class Barrier {
         private final CompletableFuture<Void> future = new CompletableFuture<>();
 
