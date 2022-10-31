@@ -18,9 +18,18 @@ package io.helidon.nima.faulttolerance;
 
 import java.lang.System.Logger.Level;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
@@ -38,11 +47,17 @@ class BulkheadImpl implements Bulkhead {
     private final AtomicInteger enqueued = new AtomicInteger();
     private final List<QueueListener> listeners;
 
+    private BarrierQueue barrierQueue = null;
+    private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
+
     BulkheadImpl(Builder builder) {
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
         this.maxQueue = builder.queueLength();
         this.listeners = builder.queueListeners();
+        if (this.maxQueue > 0) {
+            barrierQueue = new BarrierQueue(this.maxQueue);
+        }
     }
 
     @Override
@@ -67,13 +82,22 @@ class BulkheadImpl implements Bulkhead {
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
         try {
-            // block current thread until permit available
+            assert barrierQueue != null;
+
+            // block current thread until barrier is retracted
             listeners.forEach(l -> l.enqueueing(supplier));
-            inProgress.acquire();
+            barrierQueue.enqueueAndWaitOn(supplier);
 
             // unblocked so we can proceed with execution
             listeners.forEach(l -> l.dequeued(supplier));
             enqueued.decrementAndGet();
+
+            // do not run if cancelled while queued
+            if (cancelledSuppliers.remove(supplier)) {
+                return null;
+            }
+
+            // invoke supplier now
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, name + " invoking " + supplier);
             }
@@ -81,6 +105,8 @@ class BulkheadImpl implements Bulkhead {
         } catch (InterruptedException e) {
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead \"" + name + "\" interrupted while acquiring");
+        } catch (ExecutionException e) {
+            throw new BulkheadException(e.getMessage());
         }
     }
 
@@ -110,24 +136,101 @@ class BulkheadImpl implements Bulkhead {
     }
 
     // this method must be called while holding a permit
-    private <T> T execute(Supplier<? extends T> task) {
+    private <T> T execute(Supplier<? extends T> supplier) {
         callsAccepted.incrementAndGet();
         concurrentExecutions.incrementAndGet();
         try {
-            T result = task.get();
+            T result = supplier.get();
             if (LOGGER.isLoggable(Level.DEBUG)) {
-                LOGGER.log(Level.DEBUG, name + " finished execution: " + task
+                LOGGER.log(Level.DEBUG, name + " finished execution: " + supplier
                         + " (success)");
             }
             return result;
         } catch (Throwable t) {
             Throwable throwable = unwrapThrowable(t);
-            LOGGER.log(Level.DEBUG, name + " finished execution: " + task
+            LOGGER.log(Level.DEBUG, name + " finished execution: " + supplier
                     + " (failure)", throwable);
             throw toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
+            if (barrierQueue != null) {
+                barrierQueue.dequeueAndRetract();
+            }
             inProgress.release();
+        }
+    }
+
+    @Override
+    public boolean cancelSupplier(Supplier<?> supplier) {
+        boolean cancelled = barrierQueue.remove(supplier);
+        if (cancelled) {
+            enqueued.decrementAndGet();
+            cancelledSuppliers.add(supplier);
+        }
+        return cancelled;
+    }
+
+    private static class BarrierQueue {
+
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Queue<Supplier<?>> queue;
+        private final Map<Supplier<?>, Barrier> map = new ConcurrentHashMap<>();
+
+        BarrierQueue(int size) {
+            if (size <= 0) {
+                throw new IllegalStateException("BarrierQueue size must be greater that 0");
+            }
+            this.queue = new LinkedBlockingQueue<>(size);
+        }
+
+        Barrier enqueue(Supplier<?> supplier) {
+            lock.lock();
+            try {
+                boolean added = queue.offer(supplier);
+                return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
+            Barrier barrier = enqueue(supplier);
+            if (barrier != null) {
+                barrier.waitOn();
+            }
+        }
+
+        Barrier dequeue() {
+            lock.lock();
+            try {
+                Supplier<?> supplier = queue.poll();
+                return supplier == null ? null : map.remove(supplier);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        void dequeueAndRetract() {
+            Barrier barrier = dequeue();
+            if (barrier != null) {
+                barrier.retract();
+            }
+        }
+
+        boolean remove(Supplier<?> supplier) {
+            return queue.remove(supplier);
+        }
+    }
+
+    private static class Barrier {
+        private final CompletableFuture<Void> future = new CompletableFuture<>();
+
+        void waitOn() throws ExecutionException, InterruptedException {
+            future.get();
+        }
+
+        void retract() {
+            future.complete(null);
         }
     }
 }

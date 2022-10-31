@@ -153,7 +153,12 @@ class MethodInvoker implements FtSupplier<Object> {
      * Wraps method invocation in a supplier that can be cancelled. This is required
      * when a task is cancelled without its thread being interrupted.
      */
-    private CancellableFtSupplier cancellableSupplier;
+    private CancellableFtSupplier<Object> cancellableSupplier;
+
+    /**
+     * The {@code Supplier} passed to the FT handlers for execution.
+     */
+    private Supplier<?> handlerSupplier;
 
     /**
      * A key used to lookup {@code MethodState} instances, which include FT handlers.
@@ -299,15 +304,14 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     @Override
     public Object get() throws Throwable {
-        // Create supplier for this call using FT handler
-        FtSupplier<Object> supplier = () ->
-                handler.invoke(
-                        ftSupplierToSupplier(introspector.isAsynchronous()
-                                ? asyncToSyncFtSupplier(context::proceed) : context::proceed));
+        // Supplier that shall be passed to FT handlers
+        handlerSupplier = ftSupplierToSupplier(introspector.isAsynchronous()
+                ? asyncToSyncFtSupplier(context::proceed) : context::proceed);
 
         // Wrap supplier with Helidon context info
         FtSupplier<Object> contextSupplier = () ->
-                Contexts.runInContextWithThrow(helidonContext, () -> ftSupplierToSupplier(supplier).get());
+                Contexts.runInContextWithThrow(helidonContext,
+                        () -> ftSupplierToSupplier(() -> handler.invoke(handlerSupplier)).get());
 
         updateMetricsBefore();
 
@@ -383,10 +387,14 @@ class MethodInvoker implements FtSupplier<Object> {
 
         // If resultFuture is cancelled, then cancel supplier call
         resultFuture.exceptionally(t -> {
-            if (t instanceof CancellationException) {
+            if (t instanceof CancellationException || t instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
                 Objects.requireNonNull(cancellableSupplier);
                 cancellableSupplier.cancel();
-                asyncFuture.cancel(mayInterrupt.get());
+                // Cancel supplier in bulkhead in case it is queued
+                if (introspector.hasBulkhead()) {
+                    methodState.bulkhead.cancelSupplier(handlerSupplier);
+                }
+                 asyncFuture.cancel(mayInterrupt.get());
             }
             return null;
         });

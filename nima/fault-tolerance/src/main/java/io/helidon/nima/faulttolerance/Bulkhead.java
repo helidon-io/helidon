@@ -47,6 +47,14 @@ public interface Bulkhead extends FtHandler {
     Stats stats();
 
     /**
+     * Can be used to cancel a supplier while queued.
+     *
+     * @param supplier the supplier
+     * @return outcome of cancellation
+     */
+    boolean cancelSupplier(Supplier<?> supplier);
+
+    /**
      * Provides statistics during the lifetime of a bulkhead, such as
      * concurrent executions, accepted/rejected calls and queue size.
      */

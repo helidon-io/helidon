@@ -21,32 +21,38 @@ import java.util.concurrent.CancellationException;
 /**
  * A {@code FtSupplier} that can be cancelled.
  */
-public class CancellableFtSupplier<T> implements FtSupplier<T> {
+class CancellableFtSupplier<T> implements FtSupplier<T> {
 
     private boolean cancelled = false;
+    private boolean getCalled = false;
     private final FtSupplier<T> supplier;
 
     private CancellableFtSupplier(FtSupplier<T> supplier) {
         this.supplier = supplier;
     }
 
-    public void cancel() {
+    void cancel() {
         this.cancelled = true;
     }
 
-    public boolean isCancelled() {
+    boolean isCancelled() {
         return cancelled;
+    }
+
+    boolean getCalled() {
+        return getCalled;
     }
 
     @Override
     public T get() throws Throwable {
+        getCalled = true;
         if (cancelled) {
             throw new CancellationException("Supplier has been cancelled");
         }
         return supplier.get();
     }
 
-    public static <T> CancellableFtSupplier<T> create(FtSupplier<T> supplier) {
+    static <T> CancellableFtSupplier<T> create(FtSupplier<T> supplier) {
         return new CancellableFtSupplier<>(supplier);
     }
 }
