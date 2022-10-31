@@ -61,6 +61,22 @@ public class ServiceDescriptorTest {
                 .build();
 
         assertThat(descriptor.name(), is(service.name()));
+        // Name and FullName should be the same as there is no proto package directive
+        assertThat(descriptor.name(), is(descriptor.fullName()));
+    }
+
+    @Test
+    public void shouldBeTheSameObjects() {
+        GrpcService service = createMockService();
+        ServiceDescriptor descriptor1 = ServiceDescriptor.builder(service)
+                .build();
+        ServiceDescriptor descriptor2 = ServiceDescriptor.builder(service)
+                .build();
+
+        assertThat(descriptor1.equals(descriptor2), is(true));
+        assertThat(descriptor1.hashCode(), is(descriptor2.hashCode()));
+        assertThat(descriptor1.toString().contains(descriptor2.fullName()), is(true));
+        assertThat(descriptor1.toString(), is(descriptor2.toString()));
     }
 
     @Test
