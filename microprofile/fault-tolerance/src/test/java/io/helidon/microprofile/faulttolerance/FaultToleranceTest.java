@@ -25,6 +25,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -45,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @HelidonTest
 abstract class FaultToleranceTest {
+    private static final Logger LOGGER = Logger.getLogger(FaultToleranceTest.class.getName());
 
     private static final long TIMEOUT = 5000;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MILLISECONDS;
@@ -76,8 +79,10 @@ abstract class FaultToleranceTest {
     }
 
     static void printStatus(String message, String status) {
-        System.out.println(message + " -> " + status + " [Thread: "
-                                   + Thread.currentThread().threadId() + "]");
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, message + " -> " + status
+                    + " [Thread: " + Thread.currentThread().threadId() + "]");
+        }
     }
 
     @SuppressWarnings("unchecked")
