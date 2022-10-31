@@ -27,12 +27,5 @@
         <packages>
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
-        <!-- classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest">
-                <methods>
-                    <include name="testTimeoutAsyncBulkhead"/>
-                </methods>
-            </class>
-        </classes -->
     </test>
 </suite>
