@@ -17,12 +17,12 @@
 package io.helidon.nima.faulttolerance;
 
 import java.lang.System.Logger.Level;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -50,7 +50,9 @@ class BulkheadImpl implements Bulkhead {
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
         this.listeners = builder.queueListeners();
-        this.queue = new BarrierQueue(builder.queueLength());
+        this.queue = builder.queueLength() > 0
+                ? new BlockingQueue(builder.queueLength())
+                : new ZeroCapacityQueue();
     }
 
     @Override
@@ -159,61 +161,136 @@ class BulkheadImpl implements Bulkhead {
     }
 
     /**
+     * A queue for suppliers that block on barriers.
+     */
+    private interface BarrierQueue {
+
+        /**
+         * Number of suppliers in queue.
+         *
+         * @return current number of suppliers
+         */
+        int size();
+
+        /**
+         * Maximum number of suppliers in queue.
+         *
+         * @return max number of suppliers
+         */
+        int capacity();
+
+        /**
+         * Enqueue supplier and block thread on barrier.
+         *
+         * @param supplier the supplier
+         * @throws ExecutionException if exception encountered while blocked
+         * @throws InterruptedException if blocking is interrupted
+         */
+        void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException;
+
+        /**
+         * Dequeue supplier and retract its barrier.
+         */
+        void dequeueAndRetract();
+
+        /**
+         * Remove supplier from queue, if present.
+         *
+         * @param supplier the supplier
+         * @return {@code true} if supplier was removed or {@code false} otherwise
+         */
+        boolean remove(Supplier<?> supplier);
+    }
+
+    /**
+     * A queue with capacity 0.
+     */
+    private static class ZeroCapacityQueue implements BarrierQueue {
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public int capacity() {
+            return 0;
+        }
+
+        @Override
+        public void enqueueAndWaitOn(Supplier<?> supplier) throws InterruptedException {
+            throw new IllegalStateException("Queue capacity is 0");
+        }
+
+        @Override
+        public void dequeueAndRetract() {
+            throw new IllegalStateException("Queue capacity is 0");
+        }
+
+        @Override
+        public boolean remove(Supplier<?> supplier) {
+            throw new IllegalStateException("Queue capacity is 0");
+        }
+    }
+
+    /**
      * A queue that holds all those suppliers that don't have permits to execute at a
      * certain time. The thread running the supplier will be forced to wait on a barrier
-     * until a new permit becomes available. The capacity of this queue can be 0, in
-     * which case nothing can be queued or dequeued.
+     * until a new permit becomes available.
      */
-    private static class BarrierQueue {
+    private static class BlockingQueue implements BarrierQueue {
 
         private final int capacity;
-        private ReentrantLock lock = null;
-        private Queue<Supplier<?>> queue = null;
-        private Map<Supplier<?>, Barrier> map = null;
+        private final ReentrantLock lock;
+        private final Queue<Supplier<?>> queue;
+        private final Map<Supplier<?>, Barrier> map;
 
-        BarrierQueue(int capacity) {
-            this.capacity = Math.max(capacity, 0);
-            if (this.capacity > 0) {
-                this.queue = new LinkedBlockingQueue<>(capacity);
-                this.map = new ConcurrentHashMap<>();
-                this.lock = new ReentrantLock();
+        BlockingQueue(int capacity) {
+            if (capacity <= 0) {
+                throw new IllegalArgumentException("Queue capacity must be greater than 0");
             }
+            this.capacity = capacity;
+            this.queue = new LinkedBlockingQueue<>(capacity);
+            this.map = new IdentityHashMap<>();     // just use references
+            this.lock = new ReentrantLock();
         }
 
-        int size() {
-            return capacity > 0 ? queue.size() : 0;
+        @Override
+        public int size() {
+            return queue.size();
         }
 
-        int capacity() {
+        @Override
+        public int capacity() {
             return capacity;
         }
 
-        private void ensureQueue() {
-            if (this.queue == null) {
-                throw new IllegalStateException("Queue capacity is 0");
-            }
-        }
-
-        Barrier enqueue(Supplier<?> supplier) {
-            ensureQueue();
-            lock.lock();
-            try {
-                boolean added = queue.offer(supplier);
-                return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
+        @Override
+        public void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
             Barrier barrier = enqueue(supplier);
             if (barrier != null) {
                 barrier.waitOn();
+            } else {
+                throw new IllegalStateException("Queue is full");
             }
         }
 
-        Barrier dequeue() {
-            ensureQueue();
+        @Override
+        public void dequeueAndRetract() {
+            Barrier barrier = dequeue();
+            if (barrier != null) {
+                barrier.retract();
+            } else {
+                throw new IllegalStateException("Queue is empty");
+            }
+        }
+
+        @Override
+        public boolean remove(Supplier<?> supplier) {
+            return queue.remove(supplier);
+        }
+
+        private Barrier dequeue() {
             lock.lock();
             try {
                 Supplier<?> supplier = queue.poll();
@@ -223,16 +300,14 @@ class BulkheadImpl implements Bulkhead {
             }
         }
 
-        void dequeueAndRetract() {
-            Barrier barrier = dequeue();
-            if (barrier != null) {
-                barrier.retract();
+        private Barrier enqueue(Supplier<?> supplier) {
+            lock.lock();
+            try {
+                boolean added = queue.offer(supplier);
+                return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
+            } finally {
+                lock.unlock();
             }
-        }
-
-        boolean remove(Supplier<?> supplier) {
-            ensureQueue();
-            return queue.remove(supplier);
         }
     }
 
