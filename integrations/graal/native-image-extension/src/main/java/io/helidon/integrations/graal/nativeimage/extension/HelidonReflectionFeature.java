@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.Reflected;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.config.mp.MpConfigProviderResolver;

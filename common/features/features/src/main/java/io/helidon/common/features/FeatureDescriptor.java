@@ -29,23 +29,32 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
     private final HelidonFlavor[] flavors;
     private final HelidonFlavor[] notFlavors;
     private final String name;
+    private final String since;
     private final String[] path;
     private final String description;
     private final boolean nativeSupported;
     private final String nativeDescription;
     private final boolean incubating;
+    private final boolean experimental;
     private final String module;
+    private final boolean deprecated;
+    private final String deprecatedSince;
+
 
     private FeatureDescriptor(Builder builder) {
         this.flavors = builder.flavors;
         this.notFlavors = builder.notFlavors;
         this.name = builder.name;
+        this.since = builder.since;
+        this.module = builder.module;
         this.path = builder.path;
         this.description = builder.description;
         this.nativeSupported = builder.nativeSupported;
         this.nativeDescription = builder.nativeDescription;
-        this.incubating = builder.experimental;
-        this.module = builder.module;
+        this.incubating = builder.incubating;
+        this.experimental = builder.experimental;
+        this.deprecated = builder.deprecated;
+        this.deprecatedSince = builder.deprecatedSince;
     }
 
     static Builder builder() {
@@ -91,7 +100,7 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         return path.length - o.path.length;
     }
 
-    public String module() {
+    String module() {
         return module;
     }
 
@@ -140,6 +149,22 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         return incubating;
     }
 
+    String since() {
+        return since;
+    }
+
+    boolean experimental() {
+        return experimental;
+    }
+
+    boolean deprecated() {
+        return deprecated;
+    }
+
+    String deprecatedSince() {
+        return deprecatedSince;
+    }
+
     boolean hasFlavor(HelidonFlavor expected) {
         for (HelidonFlavor flavor : flavors) {
             if (flavor == expected) {
@@ -154,11 +179,16 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         private HelidonFlavor[] flavors;
         private HelidonFlavor[] notFlavors;
         private String name;
+        private String since;
         private String[] path;
         private String description = null;
         private boolean nativeSupported = true;
         private String nativeDescription = null;
         private boolean experimental;
+        private boolean incubating;
+        private boolean deprecated;
+        private String deprecatedSince;
+
 
         private Builder() {
         }
@@ -168,8 +198,28 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
             return new FeatureDescriptor(this);
         }
 
-        public Builder module(String module) {
+        Builder module(String module) {
             this.module = module;
+            return this;
+        }
+
+        Builder since(String version) {
+            this.since = version;
+            return this;
+        }
+
+        Builder incubating(boolean incubating) {
+            this.incubating = incubating;
+            return this;
+        }
+
+        Builder deprecated(boolean deprecated) {
+            this.deprecated = deprecated;
+            return this;
+        }
+
+        Builder deprecatedSince(String version) {
+            this.deprecatedSince = version;
             return this;
         }
 

@@ -23,7 +23,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 /**
  * Loom based WebServer.
  */
-@Feature(value = "WebServer", description = "Níma Web Server", invalidIn = HelidonFlavor.SE)
+@Feature(value = "WebServer", description = "Nima Web Server", invalidIn = HelidonFlavor.SE)
 module io.helidon.nima.webserver {
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.socket;

@@ -17,10 +17,10 @@
 package io.helidon.common.features;
 
 import java.lang.System.Logger.Level;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +61,9 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 public final class HelidonFeatures {
     private static final System.Logger LOGGER = System.getLogger(HelidonFeatures.class.getName());
+    private static final System.Logger EXPERIMENTAL = System.getLogger(HelidonFeatures.class.getName() + ".experimental");
     private static final System.Logger INCUBATING = System.getLogger(HelidonFeatures.class.getName() + ".incubating");
+    private static final System.Logger DEPRECATED = System.getLogger(HelidonFeatures.class.getName() + ".deprecated");
     private static final System.Logger INVALID = System.getLogger(HelidonFeatures.class.getName() + ".invalid");
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
@@ -118,7 +120,7 @@ public final class HelidonFeatures {
     /**
      * Set the current Helidon flavor. Features will only be printed for the
      * flavor configured.
-     *
+     * <p>
      * The first flavor configured wins.
      *
      * @param flavor current flavor
@@ -146,11 +148,6 @@ public final class HelidonFeatures {
 
     static Node ensureNode(String name, Node parent) {
         return parent.children.computeIfAbsent(name, it -> new Node(name));
-    }
-
-    // testing only
-    static Map<String, Node> rootFeatureNodes(HelidonFlavor flavor) {
-        return ROOT_FEATURE_NODES.computeIfAbsent(flavor, it -> new HashMap<>());
     }
 
     private static void register(FeatureDescriptor featureDescriptor) {
@@ -211,23 +208,58 @@ public final class HelidonFeatures {
                                                      ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
                                                      0));
         } else {
-            List<FeatureDescriptor> allExperimental = new LinkedList<>();
+            List<FeatureDescriptor> allExperimental = new ArrayList<>();
+            List<FeatureDescriptor> allDeprecated = new ArrayList<>();
+            List<FeatureDescriptor> allIncubating = new ArrayList<>();
+
             if (ROOT_FEATURE_NODES.containsKey(currentFlavor)) {
                 FEATURES.get(currentFlavor)
-                        .forEach(feature -> gatherExperimental(allExperimental,
-                                                               ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0])));
+                        .forEach(feature -> {
+                            gatherExperimental(allExperimental,
+                                               ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                            gatherDeprecated(allDeprecated,
+                                             ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                            gatherIncubating(allIncubating,
+                                             ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                        });
             }
 
             if (!allExperimental.isEmpty()) {
-                INCUBATING.log(Level.INFO,
-                               "You are using Incubating features. These APIs may change, please follow changelog!");
+                EXPERIMENTAL.log(Level.WARNING,
+                               "You are using experimental features. These APIs are not production ready!");
                 allExperimental
-                        .forEach(it -> INCUBATING.log(Level.INFO,
-                                                      "\tIncubating feature: "
+                        .forEach(it -> EXPERIMENTAL.log(Level.INFO,
+                                                      "\tExperimental feature: "
                                                                 + it.name()
+                                                                + " since " + it.since()
                                                                 + " ("
                                                                 + it.stringPath()
                                                                 + ")"));
+            }
+            if (!allDeprecated.isEmpty()) {
+                DEPRECATED.log(Level.WARNING,
+                                 "You are using deprecated features. These APIs will be removed from Helidon!");
+                allDeprecated
+                        .forEach(it -> DEPRECATED.log(Level.INFO,
+                                                      "\tDeprecated feature: "
+                                                              + it.name()
+                                                              + " since " + it.deprecatedSince()
+                                                              + " ("
+                                                              + it.stringPath()
+                                                              + ")"));
+            }
+            if (!allDeprecated.isEmpty()) {
+                INCUBATING.log(Level.INFO,
+                               "You are using incubating features. These APIs are production ready, yet may change more "
+                                       + "frequently. Please follow Helidon release changelog!");
+                allIncubating
+                        .forEach(it -> INCUBATING.log(Level.INFO,
+                                                      "\tIncubating feature: "
+                                                              + it.name()
+                                                              + " since " + it.since()
+                                                              + " ("
+                                                              + it.stringPath()
+                                                              + ")"));
             }
         }
     }
@@ -241,10 +273,24 @@ public final class HelidonFeatures {
     }
 
     private static void gatherExperimental(List<FeatureDescriptor> allExperimental, Node node) {
-        if (node.descriptor != null && node.descriptor.incubating()) {
+        if (node.descriptor != null && node.descriptor.experimental()) {
             allExperimental.add(node.descriptor);
         }
         node.children().values().forEach(it -> gatherExperimental(allExperimental, it));
+    }
+
+    private static void gatherIncubating(List<FeatureDescriptor> allIncubating, Node node) {
+        if (node.descriptor != null && node.descriptor.incubating()) {
+            allIncubating.add(node.descriptor);
+        }
+        node.children().values().forEach(it -> gatherIncubating(allIncubating, it));
+    }
+
+    private static void gatherDeprecated(List<FeatureDescriptor> allDeprecated, Node node) {
+        if (node.descriptor != null && node.descriptor.deprecated()) {
+            allDeprecated.add(node.descriptor);
+        }
+        node.children().values().forEach(it -> gatherDeprecated(allDeprecated, it));
     }
 
     private static void scan(ClassLoader classLoader) {
@@ -303,7 +349,9 @@ public final class HelidonFeatures {
             } else {
                 suffix = "\t";
             }
-            String experimental = feat.incubating() ? "Incubating - " : "";
+            String incubating = feat.incubating() ? "Incubating - " : "";
+            String experimental = feat.experimental() ? "Experimental - " : "";
+            String deprecated = feat.deprecated() ? "Deprecated since " + feat.deprecatedSince() + " - " : "";
             String nativeDesc = "";
             if (!feat.nativeSupported()) {
                 nativeDesc = " (NOT SUPPORTED in native image)";
@@ -312,7 +360,7 @@ public final class HelidonFeatures {
                     nativeDesc = " (Native image: " + feat.nativeDescription() + ")";
                 }
             }
-            System.out.println(prefix + name + suffix + experimental + feat.description() + nativeDesc);
+            System.out.println(prefix + name + suffix + deprecated + experimental + incubating + feat.description() + nativeDesc);
         }
 
         node.children.forEach((childName, childNode) -> {
