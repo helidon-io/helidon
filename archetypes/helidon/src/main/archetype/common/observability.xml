@@ -381,6 +381,20 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                         </output>
                     </boolean>
                 </inputs>
+                <output if="${db} &amp;&amp; ${flavor} == 'se'">
+                    <model>
+                        <list key="dependencies">
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
+                            </map>
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-metrics</value>
+                            </map>
+                        </list>
+                    </model>
+                </output>
             </boolean>
             <boolean id="health"
                      name="Health Checks"
@@ -462,6 +476,22 @@ curl -s -X GET http://localhost:8080/health
                         </output>
                     </boolean>
                 </inputs>
+                <output if="${db} &amp;&amp; ${flavor} == 'se'">
+                    <model>
+                        <list key="dependencies">
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-health</value>
+                            </map>
+                        </list>
+                        <list key="Main-helidon-imports">
+                            <value>io.helidon.dbclient.health.DbClientHealthCheck</value>
+                        </list>
+                        <list key="Main-healthBuilder">
+                            <value><![CDATA[                .addLiveness(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))]]></value>
+                        </list>
+                    </model>
+                </output>
             </boolean>
             <boolean id="tracing"
                      name="Tracing"
@@ -509,6 +539,16 @@ curl -s -X GET http://localhost:8080/health
                         </option>
                     </enum>
                 </inputs>
+                <output if="${db} &amp;&amp; ${flavor} == 'se'">
+                    <model>
+                        <list key="dependencies">
+                            <map>
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-tracing</value>
+                            </map>
+                        </list>
+                    </model>
+                </output>
             </boolean>
         </inputs>
         <output>
