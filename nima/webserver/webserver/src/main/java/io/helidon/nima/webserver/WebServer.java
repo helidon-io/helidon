@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -29,6 +30,8 @@ import io.helidon.common.http.DirectHandler;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -131,6 +134,9 @@ public interface WebServer {
 
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
                 HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
+
+        private MediaContext mediaContext = MediaContext.create();
+        private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         Builder(Config rootConfig) {
             config(rootConfig.get("server"));
@@ -348,6 +354,38 @@ public interface WebServer {
          */
         public boolean hasSocket(String socketName) {
             return DEFAULT_SOCKET_NAME.equals(socketName) || socketBuilder.containsKey(socketName);
+        }
+
+        /**
+         * Configure the default {@link MediaContext}.
+         * This method discards all previously registered MediaContext.
+         * @param mediaContext media context
+         * @return updated instance of the builder
+         */
+        public Builder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.mediaContext = mediaContext;
+            return this;
+        }
+
+        /**
+         * Configure the default {@link ContentEncodingContext}.
+         * This method discards all previously registered ContentEncodingContext.
+         * @param contentEncodingContext content encoding context
+         * @return updated instance of the builder
+         */
+        public Builder contentEncodingContext(ContentEncodingContext contentEncodingContext) {
+            Objects.requireNonNull(contentEncodingContext);
+            this.contentEncodingContext = contentEncodingContext;
+            return this;
+        }
+
+        MediaContext mediaContext() {
+            return this.mediaContext;
+        }
+
+        ContentEncodingContext contentEncodingContext() {
+            return this.contentEncodingContext;
         }
 
         Map<String, ListenerConfiguration.Builder> socketBuilders() {

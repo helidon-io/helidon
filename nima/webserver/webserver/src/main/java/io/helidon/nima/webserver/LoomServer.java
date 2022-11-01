@@ -33,6 +33,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.common.Version;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -65,6 +67,9 @@ class LoomServer implements WebServer {
             defaultRouter = Router.empty();
         }
 
+        MediaContext mediaContext = builder.mediaContext();
+        ContentEncodingContext contentEncodingContext = builder.contentEncodingContext();
+
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
             if (router == null) {
@@ -84,7 +89,9 @@ class LoomServer implements WebServer {
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers));
+                                             simpleHandlers,
+                                             mediaContext,
+                                             contentEncodingContext));
         }
 
         this.listeners = Map.copyOf(listeners);
