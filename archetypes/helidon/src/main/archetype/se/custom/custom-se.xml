@@ -23,10 +23,10 @@
     <source src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
-    <source src="/common/extra.xml"/>
-    <exec src="/common/packaging.xml"/>
-    <exec src="/common/observability.xml"/>
     <exec src="/se/custom/database.xml"/>
+    <source src="/common/extra.xml"/>
+    <exec src="/common/observability.xml"/>
+    <exec src="/common/packaging.xml"/>
     <exec src="/se/custom/custom-tests.xml"/>
     <source src="/se/custom/observability.xml"/>
     <exec src="/se/common/common-se.xml"/>
