@@ -119,7 +119,9 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * <tr>
  *     <td>relative-uris</td>
  *     <td>false</td>
- *     <td>Flag to force the use of relative URIs in all requests</td>
+ *     <td>Flag to force the use of relative URIs in all requests. By default,
+ *          requests that use the Proxy will have absolute URIs. Set this flag to
+ *          true if the host is unable to accept absolute URIs.</td>
  * </tr>
  * <tr>
  *     <td>redirect-uri</td>
@@ -998,7 +1000,7 @@ public final class OidcConfig {
      * Determines whether to force the use of relative URIs in all requests,
      * regardless of the presence or absence of proxies or no-proxy lists.
      *
-     * @return if we should use relative URIs
+     * @return {@code true} if we should use relative URIs
      */
     public boolean relativeUris() {
         return relativeUris;
@@ -1974,8 +1976,10 @@ public final class OidcConfig {
 
         /**
          * Can be set to {@code true} to force the use of relative URIs in all requests,
-         * regardless of the presence or absence of proxies or no-proxy lists.
-         * Defaults to {@value #DEFAULT_RELATIVE_URIS}
+         * regardless of the presence or absence of proxies or no-proxy lists. By default,
+         * requests that use the Proxy will have absolute URIs. Set this flag to {@code true}
+         * if the host is unable to accept absolute URIs.
+         * Defaults to {@value #DEFAULT_RELATIVE_URIS}.
          *
          * @param  relativeUris relative URIs flag
          * @return updated builder instance
