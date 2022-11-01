@@ -46,7 +46,6 @@ import org.neo4j.driver.Value;
  * The Movie repository.
  *
  * @author Michael Simons
- * @author Dmitry Aleksandrov
  */
 public final class MovieRepository {
 
