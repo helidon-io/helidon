@@ -23,6 +23,13 @@ import java.lang.annotation.Target;
 
 /**
  * A Helidon feature annotation to be placed on module in module-info.java.
+ * <p>
+ * This feature descriptor can be augmented with additioonal annotations:
+ * <ul>
+ *     <li>{@link io.helidon.common.features.api.Incubating}</li>
+ *     <li>{@link io.helidon.common.features.api.Experimental}</li>
+ *     <li>{@link java.lang.Deprecated}</li>
+ * </ul>
  */
 @Target(ElementType.MODULE)
 @Retention(RetentionPolicy.SOURCE)
@@ -33,6 +40,13 @@ public @interface Feature {
      * @return name
      */
     String value();
+
+    /**
+     * What is the first version that has seen this feature.
+     *
+     * @return version of Helidon this feature was introduced in
+     */
+    String since() default "1.0.0";
 
     /**
      * Path of this feature (a feature path). If this is a top level feature, it can be omitted and

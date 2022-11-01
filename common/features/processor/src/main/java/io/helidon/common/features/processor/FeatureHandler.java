@@ -102,6 +102,23 @@ class FeatureHandler {
             case FeatureProcessor.EXPERIMENTAL_CLASS:
                 descriptor.experimental(true);
                 break;
+            case FeatureProcessor.INCUBATING_CLASS:
+                descriptor.incubating(true);
+                break;
+            case FeatureProcessor.DEPRECATED_CLASS:
+                descriptor.deprecated(true);
+                annotation.getElementValues()
+                        .forEach((method, value) -> {
+                            if (method.getSimpleName().contentEquals("since")) {
+                                descriptor.since((String) value.getValue());
+                            }
+                        });
+                if (descriptor.noDeprecatedSince()) {
+                    messager.printMessage(Diagnostic.Kind.ERROR, "Failed to process feature metadata annotation processor. "
+                            + " Module " + moduleName + " has @Deprecated without since. Since must be defined");
+                    throw new IllegalStateException("Deprecated without since in module " + moduleName);
+                }
+                break;
             case FeatureProcessor.FEATURE_CLASS:
                 annotation.getElementValues()
                         .forEach((method, value) -> {
@@ -120,8 +137,10 @@ class FeatureHandler {
 
                             } else if (method.getSimpleName().contentEquals("in")) {
                                 descriptor.in(enumList(value.getValue()));
-                            } else if (method.getSimpleName().contentEquals("notIn")) {
-                                descriptor.notIn(enumList(value.getValue()));
+                            } else if (method.getSimpleName().contentEquals("invalidIn")) {
+                                descriptor.invalidIn(enumList(value.getValue()));
+                            } else if (method.getSimpleName().contentEquals("since")) {
+                                descriptor.since((String) value.getValue());
                             }
                         });
                 break;

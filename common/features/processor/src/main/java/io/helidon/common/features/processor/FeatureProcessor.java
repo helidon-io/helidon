@@ -30,8 +30,10 @@ import javax.lang.model.element.TypeElement;
 public class FeatureProcessor extends AbstractProcessor {
     static final String ANNOTATIONS_PACKAGE = "io.helidon.common.features.api.";
     static final String AOT_CLASS = ANNOTATIONS_PACKAGE + "Aot";
+    static final String INCUBATING_CLASS = ANNOTATIONS_PACKAGE + "Incubating";
     static final String EXPERIMENTAL_CLASS = ANNOTATIONS_PACKAGE + "Experimental";
     static final String FEATURE_CLASS = ANNOTATIONS_PACKAGE + "Feature";
+    static final String DEPRECATED_CLASS = "java.lang.Deprecated";
 
     private FeatureHandler handler;
 
@@ -45,7 +47,9 @@ public class FeatureProcessor extends AbstractProcessor {
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(AOT_CLASS,
                       EXPERIMENTAL_CLASS,
-                      FEATURE_CLASS);
+                      FEATURE_CLASS,
+                      INCUBATING_CLASS,
+                      DEPRECATED_CLASS);
     }
 
     @Override
