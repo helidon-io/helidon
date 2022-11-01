@@ -582,7 +582,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         ctx.writeAndFlush(response)
                 .addListener(future -> ctx.close());
 
-        failPublisher(new Error("400: Bad request"));
+        Error error = new Error("400: Bad request");
+        LOGGER.log(Level.WARNING, error, error::getMessage);
+        failPublisher(error);
     }
 
     /**
@@ -604,7 +606,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         ctx.writeAndFlush(response)
                 .addListener(future -> ctx.close());
 
-        failPublisher(new Error("413: Payload is too large"));
+        Error error = new Error("413: Payload is too large");
+        LOGGER.log(Level.WARNING, error, error::getMessage);
+        failPublisher(error);
     }
 
     private FullHttpResponse toNettyResponse(TransportResponse handlerResponse) {
