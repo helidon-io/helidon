@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.helidon.microprofile.example.lra;
@@ -44,6 +43,15 @@ public class LRAExampleResource {
 
     private static final Logger LOGGER = Logger.getLogger(LRAExampleResource.class.getName());
 
+    /**
+     * Starts a new long-running action.
+     *
+     * @param lraId id of this action
+     * @param data entity
+     * @return empty response
+     *
+     * @throws InterruptedException this method is sleeping on thread, so it can throw interrupted exception
+     */
     @PUT
     @LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 500, timeUnit = ChronoUnit.MILLIS)
     @Path("start-example")
@@ -61,6 +69,12 @@ public class LRAExampleResource {
         return Response.ok().build();
     }
 
+    /**
+     * Completes the long-running action.
+     *
+     * @param lraId id of this action
+     * @return completed response
+     */
     @PUT
     @Complete
     @Path("complete-example")
@@ -69,6 +83,12 @@ public class LRAExampleResource {
         return LRAResponse.completed();
     }
 
+    /**
+     * Compensation for long-running action.
+     *
+     * @param lraId id of action to compensate
+     * @return compensated response
+     */
     @PUT
     @Compensate
     @Path("compensate-example")
