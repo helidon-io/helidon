@@ -89,7 +89,7 @@ class LoomServer implements WebServer {
 
         this.listeners = Map.copyOf(listeners);
         this.executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                          .allowSetThreadLocals(false)
+                                                                          .allowSetThreadLocals(true)
                                                                           .inheritInheritableThreadLocals(false)
                                                                           .factory());
     }
