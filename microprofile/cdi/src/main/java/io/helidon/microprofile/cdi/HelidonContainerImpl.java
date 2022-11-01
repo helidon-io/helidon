@@ -31,7 +31,6 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.common.LogConfig;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;

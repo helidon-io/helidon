@@ -22,15 +22,30 @@ class ModuleDescriptor {
     private boolean aotSupported = true;
     private String aotDescription;
 
+    private boolean incubating = false;
     private boolean experimental = false;
+    private boolean deprecated = false;
+    private String deprecatedSince;
 
     private String[] in;
-    private String[] notIn;
+    private String[] invalidIn;
 
     private String name;
+    private String since;
     private String description;
     private String[] path;
     private String moduleName;
+
+
+    ModuleDescriptor deprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+        return this;
+    }
+
+    ModuleDescriptor deprecatedSince(String deprecatedSince) {
+        this.deprecatedSince = deprecatedSince;
+        return this;
+    }
 
     ModuleDescriptor moduleName(String moduleName) {
         this.moduleName = moduleName;
@@ -47,18 +62,28 @@ class ModuleDescriptor {
         return this;
     }
 
+    ModuleDescriptor incubating(boolean incubating) {
+        this.incubating = incubating;
+        return this;
+    }
+
     ModuleDescriptor experimental(boolean experimental) {
         this.experimental = experimental;
         return this;
     }
 
-    ModuleDescriptor notIn(String[] notIn) {
-        this.notIn = notIn;
+    ModuleDescriptor invalidIn(String[] invalidIn) {
+        this.invalidIn = invalidIn;
         return this;
     }
 
     ModuleDescriptor in(String[] in) {
         this.in = in;
+        return this;
+    }
+
+    ModuleDescriptor since(String since) {
+        this.since = since;
         return this;
     }
 
@@ -81,13 +106,18 @@ class ModuleDescriptor {
         return this;
     }
 
+    boolean noDeprecatedSince() {
+        return deprecatedSince == null;
+    }
+
     void write(PrintWriter metaWriter) {
         write(metaWriter, "m", moduleName);
         write(metaWriter, "n", name);
         write(metaWriter, "d", description);
+        write(metaWriter, "s", since);
         write(metaWriter, "aotd", aotDescription);
         write(metaWriter, "in", in);
-        write(metaWriter, "not", notIn);
+        write(metaWriter, "not", invalidIn);
 
         if (path != null && path.length != 0) {
             if (path.length != 1 || !name.equals(path[0])) {
@@ -101,6 +131,13 @@ class ModuleDescriptor {
 
         if (experimental) {
             write(metaWriter, "e", true);
+        }
+        if (incubating) {
+            write(metaWriter, "i", true);
+        }
+        if (deprecated) {
+            write(metaWriter, "dep", true);
+            write(metaWriter, "deps", deprecatedSince);
         }
     }
 

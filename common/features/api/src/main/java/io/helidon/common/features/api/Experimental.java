@@ -22,13 +22,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for incubating modules.
- * Incubating module may be changed including backward incompatible changes in between major versions of Helidon.
- * Incubating features are considered production ready features.
+ * Annotation for experimental modules.
+ * Experimental module may be changed including backward incompatible changes in between major versions of Helidon.
+ * Experimental features are NOT production ready features, and may be removed at discretion of Helidon team.
  *
- * @see io.helidon.common.features.api.Experimental - mutualy exclusive with Experimental
+ * @see io.helidon.common.features.api.Incubating - mutualy exclusive with Incubating
  */
 @Target(ElementType.MODULE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Incubating {
+public @interface Experimental {
 }
