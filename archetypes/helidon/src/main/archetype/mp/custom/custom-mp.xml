@@ -24,10 +24,10 @@
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
-    <source src="/common/extra.xml"/>
-    <exec src="/common/packaging.xml"/>
-    <source src="/common/observability.xml"/>
     <exec src="/mp/custom/database.xml"/>
+    <source src="/common/extra.xml"/>
+    <source src="/common/observability.xml"/>
+    <exec src="/common/packaging.xml"/>
     <exec src="/mp/common/common-mp.xml"/>
     <source src="/mp/custom/observability.xml"/>
     <output>

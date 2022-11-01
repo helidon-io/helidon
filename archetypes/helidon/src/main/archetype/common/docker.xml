@@ -53,6 +53,12 @@
                     </includes>
                 </templates>
                 <model>
+                    <list key="native-sections" if="${db} &amp;&amp; ${flavor} == 'mp'">
+                        <value file="/se/database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
+                    </list>
+                    <list key="native-sections" if="${db} &amp;&amp; ${flavor} == 'se'">
+                        <value file="/se/database/files/README.native.md" if="${docker.native-image} &amp;&amp; ${db.server} != 'mongodb'" template="mustache"/>
+                    </list>
                     <list key="readme-sections">
                         <value order="50" template="mustache">
                             <![CDATA[
