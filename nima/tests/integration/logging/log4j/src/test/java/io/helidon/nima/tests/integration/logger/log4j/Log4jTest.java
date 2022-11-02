@@ -30,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class Log4jTest {
 
-    System.Logger logger = getLogger(Log4jTest.class.getName());
+    private static final System.Logger LOGGER = getLogger(Log4jTest.class.getName());
     private final Http1Client client;
 
     Log4jTest(Http1Client client) {
@@ -48,7 +48,7 @@ class Log4jTest {
         String response = client.method(Http.Method.GET)
                 .request(String.class);
 
-        logger.log(System.Logger.Level.DEBUG,"Message");
+        LOGGER.log(System.Logger.Level.DEBUG, "Message");
 
         assertThat(response, is("Hi"));
     }
