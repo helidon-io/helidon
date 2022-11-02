@@ -33,6 +33,8 @@ import static javax.transaction.xa.XAResource.TMRESUME;
 import static javax.transaction.xa.XAResource.TMSTARTRSCAN;
 import static javax.transaction.xa.XAResource.TMSUCCESS;
 import static javax.transaction.xa.XAResource.TMSUSPEND;
+import static javax.transaction.xa.XAResource.XA_OK;
+import static javax.transaction.xa.XAResource.XA_RDONLY;
 
 final class NoOpXAResource implements Synchronization, XAResource {
 
