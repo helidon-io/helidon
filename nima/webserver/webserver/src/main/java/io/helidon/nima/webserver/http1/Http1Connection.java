@@ -62,7 +62,7 @@ public class Http1Connection implements ServerConnection {
     private final Http1Headers http1headers;
     private final Http1Prologue http1prologue;
     // todo pass from server config
-    private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+    private final ContentEncodingContext contentEncodingContext;
     private final Http1ConnectionListener sendListener;
     private final HttpRouting routing;
     private final long maxPayloadSize;
@@ -83,6 +83,7 @@ public class Http1Connection implements ServerConnection {
      * @param validateHeaders    whether to validate request headers
      * @param validatePath       whether to validate path
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
+     * @param contentEncodingContext content encoding context
      */
     public Http1Connection(ConnectionContext ctx,
                            Http1ConnectionListener recvListener,
@@ -91,7 +92,8 @@ public class Http1Connection implements ServerConnection {
                            int maxHeadersSize,
                            boolean validateHeaders,
                            boolean validatePath,
-                           Map<String, Http1UpgradeProvider> upgradeProviderMap) {
+                           Map<String, Http1UpgradeProvider> upgradeProviderMap,
+                           ContentEncodingContext contentEncodingContext) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
@@ -104,6 +106,7 @@ public class Http1Connection implements ServerConnection {
         this.http1prologue = new Http1Prologue(reader, maxPrologueLength, validatePath);
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.maxPayloadSize();
+        this.contentEncodingContext = contentEncodingContext;
     }
 
     @Override

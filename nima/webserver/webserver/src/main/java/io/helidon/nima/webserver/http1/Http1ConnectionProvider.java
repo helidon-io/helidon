@@ -27,6 +27,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.config.Config;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
@@ -50,6 +51,8 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
     private final Http1ConnectionListener sendListener;
     private final Http1ConnectionListener recvListener;
 
+    private final ContentEncodingContext contentEncodingContext;
+
     /**
      * Create a new instance with default configuration.
      *
@@ -68,6 +71,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
         this.upgradeProviderMap = builder.upgradeProviders();
         this.sendListener = builder.sendListener();
         this.recvListener = builder.recvListener();
+        this.contentEncodingContext = builder.contentEncodingContext;
     }
 
     /**
@@ -121,7 +125,8 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
                                    maxHeadersSize,
                                    validateHeaders,
                                    validatePath,
-                                   upgradeProviderMap);
+                                   upgradeProviderMap,
+                                   contentEncodingContext);
     }
 
     /**
@@ -138,6 +143,8 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
         private int maxHeaderSize = DEFAULT_MAX_HEADERS_SIZE;
         private boolean validateHeaders = DEFAULT_VALIDATE_HEADERS;
         private boolean validatePath = DEFAULT_VALIDATE_PATH;
+
+        private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private Builder() {
             Config config = Config.create()
@@ -238,6 +245,19 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
             recvListeners.add(listener);
             return this;
         }
+
+        /**
+         * Configure the default {@link ContentEncodingContext}.
+         * This method discards all previously registered ContentEncodingContext.
+         *
+         * @param contentEncodingContext content encoding context
+         * @return updated instance of the builder
+         */
+        public Builder contentEncodingContext(ContentEncodingContext contentEncodingContext) {
+            this.contentEncodingContext = contentEncodingContext;
+            return this;
+        }
+
 
         Http1ConnectionListener sendListener() {
             return Http1ConnectionListener.create(sendListeners);
