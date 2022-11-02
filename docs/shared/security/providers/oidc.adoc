@@ -82,6 +82,7 @@ an important distinction when more than one provider is used
 |`proxy-protocol` |`http` |Proxy protocol to use when proxy is used
 |`proxy-host` |`null` |Proxy host to use. When defined, triggers usage of proxy for HTTP requests
 |`proxy-port` |`80` |Port of the proxy server to use
+|`relative-uris`|`false`|Can be set to `true` to force the use of relative URIs in all requests, regardless of the presence or absence of proxies or no-proxy lists. By default, requests that use the Proxy will have absolute URIs. Set this flag to `true` if the receiving host is unable to accept absolute URIs.
 |`redirect-uri` |`/oidc/redirect` |URI to register web server component on, used by the OIDC server to redirect authorization requests to after a user logs in or approves scopes. Note that usually the redirect URI configured here must be the same one as configured on OIDC server.
 |`scope-audience` |empty string |Audience of the scope required by this application. This is prefixed to the scope name when requesting scopes from the identity server.
 |`cookie-use` |`true` |Whether to use cookie to store JWT. If used, redirects happen only in case the user is not authenticated or has insufficient scopes

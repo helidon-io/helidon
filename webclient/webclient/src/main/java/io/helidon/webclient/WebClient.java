@@ -204,6 +204,18 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Can be set to {@code true} to force the use of relative URIs in all requests,
+         * regardless of the presence or absence of proxies or no-proxy lists.
+         *
+         * @param relativeUris relative URIs flag
+         * @return updated builder instance
+         */
+        public Builder relativeUris(boolean relativeUris) {
+            this.configuration.relativeUris(relativeUris);
+            return this;
+        }
+
         @Override
         public Builder mediaContext(MediaContext mediaContext) {
             configuration.mediaContext(mediaContext);
