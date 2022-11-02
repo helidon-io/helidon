@@ -21,16 +21,11 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http1.Http1Route;
 import org.junit.jupiter.api.Test;
-
-import java.util.logging.Logger;
 
 import static java.lang.System.getLogger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.notNullValue;
 
 @ServerTest
 class Log4jTest {
@@ -44,17 +39,14 @@ class Log4jTest {
 
     @SetUpRoute
     static void routing(HttpRules builder) {
-        builder.route(Http1Route.route(Http.Method.GET,
-                "/",
-                (req, res) -> res.send("Hi")));
+        builder.get("/", (req, res) -> res.send("Hi"));
     }
 
     //The server should just work
     @Test
     void testOk() {
         String response = client.method(Http.Method.GET)
-                .request()
-                .as(String.class);
+                .request(String.class);
 
         logger.log(System.Logger.Level.DEBUG,"Message");
 
