@@ -31,7 +31,6 @@
     </Appenders>
 
     <Loggers>
-        <!-- avoid duplicated logs with additivity=false -->
         <Logger name="io.helidon.nima" level="debug" additivity="false">
             <AppenderRef ref="LogToRollingFile"/>
         </Logger>
