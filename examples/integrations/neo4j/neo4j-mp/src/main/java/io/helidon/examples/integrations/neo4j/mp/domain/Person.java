@@ -34,7 +34,6 @@ package io.helidon.examples.integrations.neo4j.mp.domain;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Author: Dmitry Aleksandrov, Oracle
  */
 
 /**
