@@ -28,9 +28,10 @@
     <name>Helidon Níma Tests Integration Logging Log4j</name>
 
     <dependencies>
+
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-webserver</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
 
         <!-- Test Log4j dependencies -->
