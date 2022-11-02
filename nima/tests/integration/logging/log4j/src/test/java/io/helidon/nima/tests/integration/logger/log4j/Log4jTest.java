@@ -33,7 +33,7 @@ class Log4jTest {
     System.Logger logger = getLogger(Log4jTest.class.getName());
     private final Http1Client client;
 
-    public Log4jTest(Http1Client client) {
+    Log4jTest(Http1Client client) {
         this.client = client;
     }
 
