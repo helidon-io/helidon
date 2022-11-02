@@ -84,6 +84,7 @@ import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
+import org.yaml.snakeyaml.introspector.Property;
 
 import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
@@ -273,8 +274,9 @@ public abstract class OpenAPISupport implements Service {
             if (Extensible.class.isAssignableFrom(td.getType())) {
                 td.addExtensions();
             }
-            if (td.hasDefaultProperty()) {
-                td.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
+            Property defaultProperty = td.defaultProperty();
+            if (defaultProperty != null) {
+                td.substituteProperty("default", defaultProperty.getType(), "getDefaultValue", "setDefaultValue");
                 td.addExcludes("defaultValue");
             }
             if (isRef(td)) {
