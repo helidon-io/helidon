@@ -107,7 +107,7 @@ class BulkheadTest extends FaultToleranceTest {
                 10);
 
         // Check that only one thread entered the bulkhead
-        int sum = Arrays.asList(calls).stream().map(c -> {
+        int sum = Arrays.stream(calls).map(c -> {
             try {
                 return c.get();
             } catch (Exception e) {
