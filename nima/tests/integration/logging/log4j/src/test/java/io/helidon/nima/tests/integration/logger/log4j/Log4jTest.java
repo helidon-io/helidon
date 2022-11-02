@@ -24,6 +24,9 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http1.Http1Route;
 import org.junit.jupiter.api.Test;
 
+import java.util.logging.Logger;
+
+import static java.lang.System.getLogger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -32,6 +35,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @ServerTest
 class Log4jTest {
 
+    System.Logger logger = getLogger(Log4jTest.class.getName());
     private final Http1Client client;
 
     public Log4jTest(Http1Client client) {
@@ -51,6 +55,8 @@ class Log4jTest {
         String response = client.method(Http.Method.GET)
                 .request()
                 .as(String.class);
+
+        logger.log(System.Logger.Level.DEBUG,"Message");
 
         assertThat(response, is("Hi"));
     }

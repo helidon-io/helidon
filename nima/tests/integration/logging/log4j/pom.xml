@@ -39,6 +39,12 @@
             <artifactId>helidon-logging-log4j</artifactId>
         </dependency>
 
+        <!-- Test Log4j dependencies -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+
 
         <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
