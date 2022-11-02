@@ -1985,7 +1985,7 @@ public final class OidcConfig {
          * @return updated builder instance
          */
         @ConfiguredOption("false")
-        public Builder relativeUris(Boolean relativeUris) {
+        public Builder relativeUris(boolean relativeUris) {
             this.relativeUris = relativeUris;
             return this;
         }

@@ -17,15 +17,12 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.common.Errors;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.webclient.Proxy;
@@ -79,7 +76,7 @@ final class OidcUtil {
                 .addMediaSupport(JsonpSupport.create())
                 .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                .config(Config.create(ConfigSources.create(Map.of("relative-uris", String.valueOf(relativeUris)))));
+                .relativeUris(relativeUris);
 
         if (proxyHost != null) {
             webClientBuilder.proxy(Proxy.builder()
