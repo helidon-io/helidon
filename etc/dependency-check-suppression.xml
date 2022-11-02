@@ -18,119 +18,119 @@
 -->
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21248</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21271</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21277</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21282</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21283</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21291</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21293</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21294</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21296</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21299</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21305</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21340</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21341</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21349</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21360</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21365</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-22.2.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21366</cve>
