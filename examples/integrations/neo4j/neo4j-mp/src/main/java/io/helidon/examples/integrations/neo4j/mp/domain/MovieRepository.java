@@ -41,7 +41,6 @@ import org.neo4j.driver.Value;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Author: Dmitry Aleksandrov, Oracle
  */
 
 /**
