@@ -23,6 +23,7 @@
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
+include::{rootdir}/includes/pages.adoc[]
 
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
 reactive streams, asynchronous and functional programming, and fluent-style
@@ -97,7 +98,7 @@ Instrumentation to expose metrics of your applications.
 //Openapi
 [CARD]
 .OpenAPI
-[icon=donut_large,link=openapi.adoc]
+[icon=donut_large,link={openapi-page}]
 --
 Support OpenAPI from your application.
 --
@@ -160,22 +161,22 @@ Enables Java applications to participate in WebSocket interactions as both serve
 
 == Migration
 
-In case you need to upgrade the version of Helidon, follow the `migration guides`.
+In case you need to upgrade the version of Helidon, follow the `upgrade guides`.
 
 [PILLARS]
 ====
 [CARD]
-.Helidon SE 2.x Migration Guide
+.Helidon SE 2x Migration Guide
 [icon=upgrade,link=guides/migration.adoc]
 --
-Follow this guide to migrate your application from Helidon 1.x to 2.x.
+Follow this guide to migrate your application from Helidon 1x to 2x.
 --
 
 [CARD]
-.Helidon SE 3.x Migration Guide
+.Helidon SE 3x Migration Guide
 [icon=upgrade,link=guides/migration_3x.adoc]
 --
-Follow this guide to migrate your application from Helidon 2.x to 3.x.
+Follow this guide to migrate your application from Helidon 2x to 3x.
 --
 
 ====
@@ -199,7 +200,7 @@ Follow step-by-step guides to build your applications using Helidon SE.
 [CARD]
 .Javadocs
 // suppress inspection "AsciiDocLinkResolve"
-[icon=link,link={javadoc-base-url}/index.html?overview-summary.html,link-type=url]
+[icon=library_books,link={javadoc-base-url}/index.html?overview-summary.html,link-type=url]
 --
 Browse the Helidon Javadocs.
 --

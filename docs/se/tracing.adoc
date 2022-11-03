@@ -85,11 +85,11 @@ Helidon provides such an implementation for:
 [source,java]
 .Configuring OpenTracing `Tracer`
 ----
-WebServer.builder()
-         .tracer(TracerBuilder.create("my-application")                    // <1>
-                       .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
-                       .build())
-         .build()
+ServerConfiguration.builder()
+                   .tracer(TracerBuilder.create("my-application")                    // <1>
+                                 .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
+                                 .build())
+                   .build()
 ----
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
@@ -286,12 +286,12 @@ Tracing propagation is automatic as long as the current span context is availabl
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-tracing</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient-tracing</artifactId>
 </dependency>
 
 ----

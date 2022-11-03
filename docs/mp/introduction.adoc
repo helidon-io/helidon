@@ -22,11 +22,11 @@
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/mp.adoc[]
+include::{rootdir}/includes/pages.adoc[]
 
 == Introduction
 
-
-Helidon MP includes a compatible implementation of Eclipse MicroProfile {version-lib-microprofile-api} . MicroProfile is a set of specifications created by the Eclipse Foundation, MicroProfile Community that support application portability between different compatible implementation providers. Additionally, MicroProfile requires compatible implementations of certain component specifications from the Eclipse Jakarta EE community as well.
+Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It designed for ease of use and provides Spring Boot like development experience with heavily usage of dependency injection and annotations. 
 
 == Supported Jakarta EE Specifications
 
@@ -101,7 +101,7 @@ Helidon MP includes a compatible implementation of Eclipse MicroProfile {version
 | link:{microprofile-metrics-spec-url}[{version-lib-microprofile-metrics-api}]
 | Defining and exposing telemetry data in Prometheus and JSON formats
 
-| xref:{rootdir}/mp/openapi.adoc[MicroProfile Open API]
+| xref:{openapi-page}[MicroProfile Open API]
 | link:{microprofile-open-api-spec-url}[{version-lib-microprofile-openapi-api}]
 | Annotations for documenting your application endpoints
 
@@ -147,13 +147,13 @@ Helidon MP includes a compatible implementation of Eclipse MicroProfile {version
 
 == Migration
 
-Use the following migration guides to upgrade your current Helidon version.
+In case you need to upgrade the version of Helidon, follow the `Migration Guides`.
 
-To migrate from Helidon 1.x to 2.x:
+For migration from Helidon 1.x to 2.x:
 
 * xref:{rootdir}/mp/guides/migration.adoc[Helidon MP 2x Migration Guide]
 
-To migrate from Helidon 2.x to 3.x:
+For migration from Helidon 2.x to 3.x:
 
 * xref:{rootdir}/mp/guides/migration_3x.adoc[Helidon MP 3x Migration Guide]
 
