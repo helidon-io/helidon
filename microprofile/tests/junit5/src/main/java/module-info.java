@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ module io.helidon.microprofile.tests.junit5 {
     requires org.junit.jupiter.api;
     requires transitive jakarta.enterprise.cdi.api;
     requires transitive java.ws.rs;
+    requires jakarta.inject.api;
 
     exports io.helidon.microprofile.tests.junit5;
 }

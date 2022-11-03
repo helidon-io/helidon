@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.InjectionPoint;
+import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -448,34 +450,62 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private static class AddBeansExtension implements Extension {
         private final Class<?> testClass;
         private final List<AddBean> addBeans;
+        private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
+
 
         private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
         }
 
-        @SuppressWarnings("unchecked")
+        void processSocketInjectionPoints(@Observes ProcessInjectionPoint<?, WebTarget> event) throws Exception{
+            InjectionPoint injectionPoint = event.getInjectionPoint();
+            Set<Annotation> qualifiers = injectionPoint.getQualifiers();
+            for (Annotation qualifier : qualifiers) {
+                if (qualifier.annotationType().equals(Socket.class)) {
+                    String value = ((Socket) qualifier).value();
+                    socketAnnotations.put(value, qualifier);
+                    break;
+                }
+            }
+
+        }
+
         void registerOtherBeans(@Observes AfterBeanDiscovery event) {
+
             Client client = ClientBuilder.newClient();
+
+            //register for all named Ports
+            socketAnnotations.forEach((namedPort, qualifier) -> {
+
+                event.addBean()
+                        .addType(WebTarget.class)
+                        .scope(ApplicationScoped.class)
+                        .qualifiers(qualifier)
+                        .createWith(context -> getWebTarget(client, namedPort));
+            });
 
             event.addBean()
                     .addType(javax.ws.rs.client.WebTarget.class)
                     .scope(ApplicationScoped.class)
-                    .createWith(context -> {
-                        try {
-                            Class<? extends Extension> extClass = (Class<? extends Extension>) Class
-                                    .forName("io.helidon.microprofile.server.ServerCdiExtension");
-                            Extension extension = CDI.current().getBeanManager().getExtension(extClass);
-                            Method m = extension.getClass().getMethod("port");
-                            int port = (int) m.invoke(extension);
-                            String uri = "http://localhost:" + port;
-                            return client.target(uri);
-                        } catch (ReflectiveOperationException e) {
-                            return client.target("http://localhost:7001");
-                        }
-                    });
+                    .createWith(context -> getWebTarget(client, "@default"));
+
         }
 
+        @SuppressWarnings("unchecked")
+        private static WebTarget getWebTarget(Client client, String namedPort) {
+            try {
+                Class<? extends Extension> extClass = (Class<? extends Extension>) Class
+                        .forName("io.helidon.microprofile.server.ServerCdiExtension");
+                Extension extension = CDI.current().getBeanManager().getExtension(extClass);
+                Method m = extension.getClass().getMethod("port", String.class);
+                int port = (int) m.invoke(extension, new Object[]{namedPort});
+                String uri = "http://localhost:" + port;
+                return client.target(uri);
+            } catch (ReflectiveOperationException e) {
+                return client.target("http://localhost:7001");
+            }
+        }
         void registerAddedBeans(@Observes BeforeBeanDiscovery event) {
             event.addAnnotatedType(testClass, "junit-" + testClass.getName())
                     .add(ApplicationScoped.Literal.INSTANCE);
