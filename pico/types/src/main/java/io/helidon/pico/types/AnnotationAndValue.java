@@ -17,7 +17,6 @@
 package io.helidon.pico.types;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -61,26 +60,6 @@ public interface AnnotationAndValue {
      */
     default boolean hasNonBlankValue() {
         Optional<String> val = value();
-        return val.isPresent() && hasNonBlankValue(val.get());
-    }
-
-    /**
-     * Helper method to determine if the value is present (i.e., non-null and non-blank).
-     *
-     * @param val the value to check
-     * @return true if the value provided is non-null and non-blank.
-     */
-    static boolean hasNonBlankValue(String val) {
-        return Objects.nonNull(val) && !val.isBlank();
-    }
-
-    /**
-     * Helper method to determine if the value is present and non-blank.
-     *
-     * @param val the optional string value to check
-     * @return true if the value provided is present and non-blank.
-     */
-    static boolean hasNonBlankValue(Optional<String> val) {
         return val.isPresent() && !val.get().isBlank();
     }
 

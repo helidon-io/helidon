@@ -20,12 +20,10 @@
 module io.helidon.pico.builder.processor {
     requires java.compiler;
     requires io.helidon.common;
-    requires io.helidon.pico.builder.api;
-    requires io.helidon.pico.builder.tools;
-    requires io.helidon.pico.builder.spi;
+    requires io.helidon.pico.builder;
+    requires io.helidon.pico.builder.processor.spi;
+    requires io.helidon.pico.builder.processor.tools;
     requires io.helidon.pico.types;
-
-    uses io.helidon.pico.builder.spi.BuilderCreator;
 
     exports io.helidon.pico.builder.processor;
 

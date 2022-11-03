@@ -1406,22 +1406,17 @@
             <!-- Pico Builder -->
             <dependency>
                 <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-api</artifactId>
+                <artifactId>helidon-pico-builder</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-spi</artifactId>
+                <artifactId>helidon-pico-builder-processor-spi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-tools</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-runtime-tools</artifactId>
+                <artifactId>helidon-pico-builder-processor-tools</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

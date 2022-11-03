@@ -42,17 +42,17 @@ import javax.tools.JavaFileObject;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
-import io.helidon.pico.builder.spi.BuilderCreator;
-import io.helidon.pico.builder.spi.TypeAndBody;
-import io.helidon.pico.builder.spi.TypeInfo;
-import io.helidon.pico.builder.tools.BuilderTypeTools;
-import io.helidon.pico.builder.tools.TypeInfoCreator;
+import io.helidon.pico.builder.processor.spi.BuilderCreator;
+import io.helidon.pico.builder.processor.spi.TypeAndBody;
+import io.helidon.pico.builder.processor.spi.TypeInfo;
+import io.helidon.pico.builder.processor.spi.TypeInfoCreator;
+import io.helidon.pico.builder.processor.tools.BuilderTypeTools;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
 /**
- * The processor for handling any annotation having a {@link io.helidon.pico.builder.api.BuilderTrigger}.
+ * The processor for handling any annotation having a {@link io.helidon.pico.builder.BuilderTrigger}.
  */
 public class BuilderProcessor extends AbstractProcessor {
 
@@ -66,8 +66,9 @@ public class BuilderProcessor extends AbstractProcessor {
     private static final List<BuilderCreator> PRODUCERS = initialize();
 
     /**
-     * Ctor.
+     * Default constructor.
      */
+    // note: this needs to remain public since it will be resolved via service loader ...
     public BuilderProcessor() {
     }
 
@@ -78,7 +79,7 @@ public class BuilderProcessor extends AbstractProcessor {
                     .create(ServiceLoader.load(BuilderCreator.class, BuilderCreator.class.getClassLoader()))
                     .asList();
             producers.forEach(producer -> {
-                producer.getSupportedAnnotationTypes().forEach(annoType -> {
+                producer.supportedAnnotationTypes().forEach(annoType -> {
                     PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.create(annoType), (k, v) -> {
                         if (Objects.isNull(v)) {
                             v = new LinkedHashSet<>();
@@ -89,7 +90,7 @@ public class BuilderProcessor extends AbstractProcessor {
                 });
             });
             producers.sort(Weights.weightComparator());
-            producers.forEach(p -> ALL_ANNO_TYPES_HANDLED.addAll(p.getSupportedAnnotationTypes()));
+            producers.forEach(p -> ALL_ANNO_TYPES_HANDLED.addAll(p.supportedAnnotationTypes()));
             return producers;
         } catch (Throwable t) {
             RuntimeException e = new RuntimeException("Failed to initialize", t);
@@ -98,9 +99,6 @@ public class BuilderProcessor extends AbstractProcessor {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
@@ -111,14 +109,14 @@ public class BuilderProcessor extends AbstractProcessor {
         if (Objects.isNull(tools)) {
             String msg = "no available " + TypeInfoCreator.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
-            LOGGER.log(System.Logger.Level.ERROR, msg);
+            throw new IllegalStateException(msg);
         }
         LOGGER.log(System.Logger.Level.DEBUG, TypeInfoCreator.class.getSimpleName() + ": " + tools);
 
         if (PRODUCERS.isEmpty()) {
             String msg = "no available " + BuilderCreator.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
-            LOGGER.log(System.Logger.Level.ERROR, msg);
+            throw new IllegalStateException(msg);
         }
         LOGGER.log(System.Logger.Level.DEBUG, BuilderCreator.class.getSimpleName() + "s: " + PRODUCERS);
     }
@@ -128,25 +126,16 @@ public class BuilderProcessor extends AbstractProcessor {
         return Objects.isNull(set) ? null : Collections.unmodifiableSet(set);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return ALL_ANNO_TYPES_HANDLED.stream().map(Class::getName).collect(Collectors.toSet());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver() || Objects.isNull(tools) || PRODUCERS.isEmpty()) {
@@ -165,17 +154,17 @@ public class BuilderProcessor extends AbstractProcessor {
                     try {
                         process(annoType, element);
                     } catch (Throwable e) {
-                        throw new RuntimeException("Failed while processing " + element + " with " + annoType, e);
+                        throw new IllegalStateException("Failed while processing " + element + " with " + annoType, e);
                     }
                 }
             }
+
+            return false;
         } catch (Throwable e) {
             LOGGER.log(System.Logger.Level.ERROR, e.getMessage(), e);
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
-            throw new RuntimeException(e.getMessage(), e);
+            throw new IllegalStateException(e.getMessage(), e);
         }
-
-        return false;
     }
 
     /**
@@ -187,22 +176,24 @@ public class BuilderProcessor extends AbstractProcessor {
      */
     protected void process(Class<? extends Annotation> annoType, Element element) throws IOException {
         AnnotationMirror am = BuilderTypeTools.findAnnotationMirror(annoType.getName(),
-                                                                    element.getAnnotationMirrors());
+                                                                    element.getAnnotationMirrors()).orElse(null);
         AnnotationAndValue builderAnnotation = BuilderTypeTools
-                .createAnnotationAndValueFromMirror(am, processingEnv.getElementUtils());
-        TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element);
-        TypeInfo typeInfo = tools.createTypeInfo(builderAnnotation, typeName, (TypeElement) element, processingEnv);
+                .createAnnotationAndValueFromMirror(am, processingEnv.getElementUtils()).get();
+        TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element).orElse(null);
+        TypeInfo typeInfo = tools.createTypeInfo(builderAnnotation, typeName, (TypeElement) element, processingEnv).orElse(null);
         if (Objects.isNull(typeInfo)) {
-            LOGGER.log(System.Logger.Level.WARNING, "Nothing to process, skipping: " + element);
+            String msg = "Nothing to process, skipping: " + element;
+            LOGGER.log(System.Logger.Level.WARNING, msg);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg);
             return;
         }
 
         Set<BuilderCreator> creators = getProducersForType(DefaultTypeName.create(annoType));
-        Optional<TypeAndBody> result = creators.stream()
-                .map(it -> it.create(typeInfo, builderAnnotation).orElse(null)).findFirst();
-        if (result.isEmpty()
-                || Objects.isNull(result.get().typeName())
-                || Objects.isNull(result.get().body())) {
+        Optional<List<TypeAndBody>> result = creators.stream()
+                .map(it -> it.create(typeInfo, builderAnnotation))
+                .filter(it -> !it.isEmpty())
+                .findFirst();
+        if (result.isEmpty()) {
             String msg = "Unable to process " + typeName;
             LOGGER.log(System.Logger.Level.WARNING, msg);
             processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg);
@@ -214,13 +205,15 @@ public class BuilderProcessor extends AbstractProcessor {
     /**
      * Performs the actual code generation of the given type and body model object.
      *
-     * @param typeAndBody   the model object
+     * @param codegens  the model objects to be code generated
      * @throws IOException if unable to write the generated class
      */
-    protected void codegen(TypeAndBody typeAndBody) throws IOException {
-        JavaFileObject javaSrc = processingEnv.getFiler().createSourceFile(typeAndBody.typeName().name());
-        try (Writer os = javaSrc.openWriter()) {
-            os.write(typeAndBody.body());
+    protected void codegen(List<TypeAndBody> codegens) throws IOException {
+        for (TypeAndBody typeAndBody : codegens) {
+            JavaFileObject javaSrc = processingEnv.getFiler().createSourceFile(typeAndBody.typeName().name());
+            try (Writer os = javaSrc.openWriter()) {
+                os.write(typeAndBody.body());
+            }
         }
     }
 

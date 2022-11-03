@@ -81,7 +81,7 @@ public class DefaultTypedElementName implements TypedElementName {
      *
      * @return the component type names of the element
      */
-    public List<TypeName> getComponentTypeNames() {
+    public List<TypeName> componentTypeNames() {
         return componentTypeNames;
     }
 
@@ -113,7 +113,7 @@ public class DefaultTypedElementName implements TypedElementName {
      * @return provides the {typeName}{space}{elementName}
      */
     public String toDeclaration() {
-            return typeName() + " " + elementName();
+        return typeName() + " " + elementName();
     }
 
 
