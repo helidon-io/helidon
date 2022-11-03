@@ -31,7 +31,5 @@
 
     <modules>
         <module>jmh</module>
-        <module>h2</module>
-        <module>techempower</module>
     </modules>
 </project>
