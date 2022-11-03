@@ -39,14 +39,15 @@ class MyConfigBeanTest {
                 .enabled(true)
                 .port(80)
                 .build();
-        assertThat(val.toString(), equalTo("MyConfigBeanManualImpl(name=test, enabled=true, port=80)"));
+        assertThat(val.toString(),
+                   equalTo("MyConfigBeanManualImpl(name=test, enabled=true, port=80)"));
     }
 
     @Test
     void codeGen() {
         MyConfigBean val = MyConfigBeanImpl.builder().name("test").build();
         assertThat(val.toString(),
-                   equalTo("MyConfigBeanImpl(name=test, enabled=false, port=8080)"));
+                   equalTo("MyConfigBean(name=test, enabled=false, port=8080)"));
 
         val = MyConfigBeanImpl.toBuilder(val)
                 .name("test")
@@ -54,22 +55,22 @@ class MyConfigBeanTest {
                 .port(80)
                 .build();
         assertThat(val.toString(),
-                   equalTo("MyConfigBeanImpl(name=test, enabled=true, port=80)"));
+                   equalTo("MyConfigBean(name=test, enabled=true, port=80)"));
     }
 
     @Test
     void mixed() {
         MyConfigBean val1 = MyConfigBeanManualImpl.builder().build();
-        val1              = MyConfigBeanImpl.toBuilder(val1)
+        val1 = MyConfigBeanImpl.toBuilder(val1)
                 .name("test")
                 .enabled(true)
                 .port(80)
                 .build();
         assertThat(val1.toString(),
-                   equalTo("MyConfigBeanImpl(name=test, enabled=true, port=80)"));
+                   equalTo("MyConfigBean(name=test, enabled=true, port=80)"));
 
         MyConfigBean val2 = MyConfigBeanImpl.builder().name("test").build();
-        val2              = MyConfigBeanManualImpl.toBuilder(val2)
+        val2 = MyConfigBeanManualImpl.toBuilder(val2)
                 .name("test")
                 .enabled(true)
                 .port(80)

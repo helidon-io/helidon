@@ -54,12 +54,12 @@ class ParentParentChildTest {
                 .overrideMe("password")
                 .build();
         assertThat(val.toString(),
-                equalTo("ChildInterfaceIsABuilderImpl(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
+                equalTo("ChildInterfaceIsABuilder(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
                         + "overrideMe=not-null)"));
 
         val = ChildInterfaceIsABuilderImpl.toBuilder(val).overrideMe((char[]) null).build();
         assertThat(val.toString(),
-                equalTo("ChildInterfaceIsABuilderImpl(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
+                equalTo("ChildInterfaceIsABuilder(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
                         + "overrideMe=null)"));
     }
 

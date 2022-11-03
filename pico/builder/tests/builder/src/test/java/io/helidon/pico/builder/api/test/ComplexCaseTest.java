@@ -36,7 +36,7 @@ class ComplexCaseTest {
                 .setOfLists(Collections.singleton(Collections.singletonList(null)))
                 .build();
         assertThat(val.toString(),
-                   equalTo("ComplexCaseImpl(name=name, enabled=false, port=8080, mapOfKeyToConfigBeans={key=null}, "
+                   equalTo("ComplexCase(name=name, enabled=false, port=8080, mapOfKeyToConfigBeans={key=null}, "
                                    + "listOfConfigBeans=[null], setOfLists=[[null]])"));
     }
 

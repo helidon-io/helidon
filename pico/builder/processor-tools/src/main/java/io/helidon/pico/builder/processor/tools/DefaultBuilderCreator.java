@@ -1016,7 +1016,8 @@ public class DefaultBuilderCreator implements BuilderCreator {
 
         builder.append("\t@Override\n");
         builder.append("\tpublic String toString() {\n");
-        builder.append("\t\treturn getClass().getSimpleName() + \"(\" + toStringInner() + \")\";\n");
+        builder.append("\t\treturn ").append(ctx.typeInfo.typeName());
+        builder.append(".class.getSimpleName() + \"(\" + toStringInner() + \")\";\n");
         builder.append("\t}\n\n");
     }
 

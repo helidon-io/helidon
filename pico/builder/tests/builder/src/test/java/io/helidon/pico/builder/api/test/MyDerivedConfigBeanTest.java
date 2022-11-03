@@ -41,7 +41,7 @@ class MyDerivedConfigBeanTest {
 
         MyDerivedConfigBean cfg = MyDerivedConfigBeanImpl.builder().name("test").build();
         assertThat(cfg.toString(),
-                   equalTo("MyDerivedConfigBeanImpl(name=test, enabled=false, port=8080)"));
+                   equalTo("MyDerivedConfigBean(name=test, enabled=false, port=8080)"));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

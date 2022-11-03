@@ -39,7 +39,7 @@ class CustomNamedTest {
         CustomNamed customNamed = customNamedBuilder.build();
         assertThat("should be ordered since we are using tree and ordered/linked",
                    customNamed.toString(),
-                   equalTo("DefaultCustomNamed(stringSet=[a, b, y], stringList=[b, a, b, y], stringToIntegerMap={a=3, b=1, "
+                   equalTo("CustomNamed(stringSet=[a, b, y], stringList=[b, a, b, y], stringToIntegerMap={a=3, b=1, "
                                    + "e=2})"));
 
         ObjectMapper mapper = new ObjectMapper()

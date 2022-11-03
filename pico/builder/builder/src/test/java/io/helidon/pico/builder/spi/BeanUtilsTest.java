@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static io.helidon.pico.builder.spi.BeanUtils.isBooleanType;
 import static io.helidon.pico.builder.spi.BeanUtils.isValidMethodType;
 import static io.helidon.pico.builder.spi.BeanUtils.validateAndParseMethodName;
@@ -68,34 +69,34 @@ class BeanUtilsTest {
         assertThat(attrName.get(), optionalEmpty());
 
         assertThat(validateAndParseMethodName("isAlpha", Boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alpha", "isAlpha"));
+        assertThat(attrName.get(), optionalValue(contains("alpha", "isAlpha")));
 
         assertThat(validateAndParseMethodName("isAlpha", boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alpha", "isAlpha"));
+        assertThat(attrName.get(), optionalValue(contains("alpha", "isAlpha")));
 
         assertThat(validateAndParseMethodName("getAlpha", boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alpha"));
+        assertThat(attrName.get(), optionalValue(contains("alpha")));
 
         assertThat(validateAndParseMethodName("getAlpha", Boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alpha"));
+        assertThat(attrName.get(), optionalValue(contains("alpha")));
 
         assertThat(validateAndParseMethodName("getAlpha", String.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alpha"));
+        assertThat(attrName.get(), optionalValue(contains("alpha")));
 
         assertThat(validateAndParseMethodName("getAlpha", Object.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alpha"));
+        assertThat(attrName.get(), optionalValue(contains("alpha")));
 
         assertThat(validateAndParseMethodName("isAlphaNumeric", boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alphaNumeric", "isAlphaNumeric"));
+        assertThat(attrName.get(), optionalValue(contains("alphaNumeric", "isAlphaNumeric")));
 
         assertThat(validateAndParseMethodName("getAlphaNumeric", boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("alphaNumeric"));
+        assertThat(attrName.get(), optionalValue(contains("alphaNumeric")));
 
         assertThat(validateAndParseMethodName("isX", boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("x", "isX"));
+        assertThat(attrName.get(), optionalValue(contains("x", "isX")));
 
         assertThat(validateAndParseMethodName("getX", boolean.class.getName(), false, attrName), is(true));
-        assertThat(attrName.get().get(), contains("x"));
+        assertThat(attrName.get(), optionalValue(contains("x")));
 
         // negative cases ...
         assertThat(validateAndParseMethodName("isX", String.class.getName(), false, attrName), is(false));
