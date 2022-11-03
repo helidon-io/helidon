@@ -16,9 +16,7 @@
 
 package io.helidon.integrations.microstream.cache;
 
-import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -65,9 +63,7 @@ class ConfigurationTest {
                   () -> assertThat("getCacheLoaderFactory", cacheConfig.getCacheLoaderFactory(), nullValue()),
                   () -> assertThat("getCacheWriterFactory", cacheConfig.getCacheWriterFactory(), nullValue()),
                   () -> assertThat("getCacheEntryListenerConfigurations",
-                                   cacheConfig.getCacheEntryListenerConfigurations(), emptyIterable()),
-                  () -> assertThat("getSerializerFieldPredicate", cacheConfig.getSerializerFieldPredicate(),
-                                   is(CacheConfiguration.DefaultSerializerFieldPredicate())));
+                                   cacheConfig.getCacheEntryListenerConfigurations(), emptyIterable()));
     }
 
     /**
@@ -152,16 +148,5 @@ class ConfigurationTest {
                 .builder(Integer.class, String.class).evictionManagerFactory(evictionManagerFactory).build();
 
         assertThat(cacheConfig.getEvictionManagerFactory(), sameInstance(evictionManagerFactory));
-    }
-
-    @Test
-    void serializerFieldPredicate() {
-        @SuppressWarnings("unchecked")
-        Predicate<? super Field> serializerFieldPredicate = Mockito.mock(Predicate.class);
-
-        CacheConfiguration<Integer, String> cacheConfig = MicrostreamCacheConfigurationBuilder
-                .builder(Integer.class, String.class).serializerFieldPredicate(serializerFieldPredicate).build();
-
-        assertThat(cacheConfig.getSerializerFieldPredicate(), sameInstance(serializerFieldPredicate));
     }
 }

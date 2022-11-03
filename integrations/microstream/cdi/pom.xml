@@ -27,10 +27,10 @@
     </parent>
 
     <artifactId>helidon-integrations-microstream-cdi</artifactId>
-    <name>Helidon Integrations Microstream CDI</name>
+    <name>Helidon Integrations MicroStream CDI</name>
     <packaging>jar</packaging>
 
-    <description>Microstream JCache implementation</description>
+    <description>MicroStream CDI integration into Helidon</description>
 
     <dependencies>
         <dependency>

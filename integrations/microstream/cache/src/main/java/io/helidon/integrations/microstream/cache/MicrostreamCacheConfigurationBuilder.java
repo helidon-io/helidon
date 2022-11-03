@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package io.helidon.integrations.microstream.cache;
 
-import java.lang.reflect.Field;
-import java.util.function.Predicate;
-
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -33,6 +30,7 @@ import one.microstream.cache.types.CacheConfigurationBuilderConfigurationBased;
 import one.microstream.cache.types.CacheConfigurationPropertyNames;
 import one.microstream.cache.types.EvictionManager;
 import one.microstream.configuration.types.Configuration;
+import one.microstream.persistence.binary.util.SerializerFoundation;
 
 /**
  * Builder for Microstream-CacheConfigurations.
@@ -113,6 +111,12 @@ public class MicrostreamCacheConfigurationBuilder<K, V> implements CacheConfigur
     }
 
     @Override
+    public MicrostreamCacheConfigurationBuilder<K, V> serializerFoundation(SerializerFoundation<?> serializerFoundation) {
+        cacheConfigBuilder.serializerFoundation(serializerFoundation);
+        return this;
+    }
+
+    @Override
     public MicrostreamCacheConfigurationBuilder<K, V> readThrough(boolean readTrough) {
         cacheConfigBuilder.readThrough(readTrough);
         return this;
@@ -166,13 +170,6 @@ public class MicrostreamCacheConfigurationBuilder<K, V> implements CacheConfigur
     public MicrostreamCacheConfigurationBuilder<K, V> cacheWriterFactory(
             Factory<CacheWriter<? super K, ? super V>> cacheWriterFactory) {
         cacheConfigBuilder.cacheWriterFactory(cacheWriterFactory);
-        return this;
-    }
-
-    @Override
-    public MicrostreamCacheConfigurationBuilder<K, V> serializerFieldPredicate(
-            Predicate<? super Field> serializerFieldPredicate) {
-        cacheConfigBuilder.serializerFieldPredicate(serializerFieldPredicate);
         return this;
     }
 
