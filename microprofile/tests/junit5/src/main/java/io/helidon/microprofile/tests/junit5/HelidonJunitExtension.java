@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.tests.junit5;
 
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -44,6 +45,8 @@ import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -66,6 +69,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+
 
 /**
  * Junit5 extension to support Helidon CDI container in tests.
@@ -99,6 +103,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private ConfigProviderResolver configProviderResolver;
     private Config config;
     private SeContainer container;
+
 
     @SuppressWarnings("unchecked")
     @Override
@@ -448,31 +453,61 @@ class HelidonJunitExtension implements BeforeAllCallback,
         private final Class<?> testClass;
         private final List<AddBean> addBeans;
 
+        private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
+
         private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
         }
 
-        @SuppressWarnings("unchecked")
+
+        void processSocketInjectionPoints(@Observes ProcessInjectionPoint<?, WebTarget> event) throws Exception{
+             InjectionPoint injectionPoint = event.getInjectionPoint();
+             Set<Annotation> qualifiers = injectionPoint.getQualifiers();
+                for (Annotation qualifier : qualifiers) {
+                    if (qualifier.annotationType().equals(Socket.class)) {
+                        String value = ((Socket) qualifier).value();
+                        socketAnnotations.put(value, qualifier);
+                        break;
+                    }
+                }
+
+        }
+
         void registerOtherBeans(@Observes AfterBeanDiscovery event) {
+
             Client client = ClientBuilder.newClient();
+
+            //register for all named Ports
+            socketAnnotations.forEach((namedPort, qualifier) -> {
+
+                event.addBean()
+                        .addType(WebTarget.class)
+                        .scope(ApplicationScoped.class)
+                        .qualifiers(qualifier)
+                        .createWith(context -> getWebTarget(client, namedPort));
+            });
 
             event.addBean()
                     .addType(jakarta.ws.rs.client.WebTarget.class)
                     .scope(ApplicationScoped.class)
-                    .createWith(context -> {
-                        try {
-                            Class<? extends Extension> extClass = (Class<? extends Extension>) Class
-                                    .forName("io.helidon.microprofile.server.ServerCdiExtension");
-                            Extension extension = CDI.current().getBeanManager().getExtension(extClass);
-                            Method m = extension.getClass().getMethod("port");
-                            int port = (int) m.invoke(extension);
-                            String uri = "http://localhost:" + port;
-                            return client.target(uri);
-                        } catch (ReflectiveOperationException e) {
-                            return client.target("http://localhost:7001");
-                        }
-                    });
+                    .createWith(context -> getWebTarget(client, "@default"));
+
+        }
+
+        @SuppressWarnings("unchecked")
+        private static WebTarget getWebTarget(Client client, String namedPort) {
+            try {
+                Class<? extends Extension> extClass = (Class<? extends Extension>) Class
+                        .forName("io.helidon.microprofile.server.ServerCdiExtension");
+                Extension extension = CDI.current().getBeanManager().getExtension(extClass);
+                Method m = extension.getClass().getMethod("port", String.class);
+                int port = (int) m.invoke(extension, new Object[]{namedPort});
+                String uri = "http://localhost:" + port;
+                return client.target(uri);
+            } catch (ReflectiveOperationException e) {
+                return client.target("http://localhost:7001");
+            }
         }
 
         void registerAddedBeans(@Observes BeforeBeanDiscovery event) {
@@ -509,6 +544,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
             return false;
         }
+
     }
 
     private static final class ConfigMeta {
