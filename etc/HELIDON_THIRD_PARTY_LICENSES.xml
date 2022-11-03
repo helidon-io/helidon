@@ -5322,9 +5322,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </attribution>
         </dependency>
         <dependency>
-            <id>91744</id>
+            <id>132432</id>
             <name>jackson-databind</name>
-            <version>2.12.1</version>
+            <version>2.13.4.2</version>
             <licensor>FasterXML, LLC</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
