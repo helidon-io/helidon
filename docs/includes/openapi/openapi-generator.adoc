@@ -40,14 +40,13 @@ The link:{openapi-spec-url}[OpenAPI specification] provides a standard way to ex
 
 Separately, the link:{openapi-generator-tool-site-url}[OpenAPI generator] project has created a powerful code generator tool which accepts an OpenAPI document and generates client and server code for many languages and frameworks. The Helidon team contributes to this tool to ensure that it provides strong support for Helidon {flavor-uc} clients and servers.
 As a result, you can use the generator to create code that fits smoothly into your Helidon applications.
-The OpenAPI generator gained particularly strong support for Helidon in release
-{first-version-with-strong-helidon-support}.
+The OpenAPI generator release {first-version-with-strong-helidon-support} gained particularly strong support for Helidon.
 This document applies to that release and later ones.
 
 In the vocabulary of the tool, there are two _generators_ for Helidon:
 
-* `java-helidon-client` (which this document refers to as the Helidon client generator)
-* `java-helidon-server` (Helidon server generator).
+* `java-helidon-client` (hereafter the Helidon client generator)
+* `java-helidon-server` (hereafter the Helidon server generator).
 
 Each of these generators supports two _libraries_:
 
@@ -65,13 +64,13 @@ The resulting client library works with any server that implements the API decla
 The client library provides an abstraction similar to remote procedure calls (RPC).
 To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
 
-Use the tool's Helidon _server_ generator and its `{flavor-lc}` library to create server endpoint stubs for a Helidon {flavor-uc} service. You build on these stubs by extending a generated class or implementing a generated interface, adding your specific business logic to finish the implementation of the endpoints. The combination of the generated server code plus Helidon {flavor-uc} underneath it allows you to focus on the business details instead of the networking.
+Use the tool's Helidon _server_ generator and its `{flavor-lc}` library to create server endpoint stubs for a Helidon {flavor-uc} service. You build on these stubs by extending a generated class or implementing a generated interface, adding your specific business logic to finish the implementation of the endpoints. The combination of the generated server code plus Helidon {flavor-uc} underneath it allows you to focus on the business details instead of resource boilerplate.
 
 You can run the OpenAPI generators in three ways:
 
 // tag::three-ways-to-run[]
 * using the OpenAPI generator CLI
-* using the OpenAPI generator Maven or Gradle plug-in
+* using the OpenAPI generator Maven plug-in
 * using the online OpenAPI generator website
 // end::three-ways-to-run[]
 
@@ -522,7 +521,7 @@ the Helidon SE `ServerResponse`
 endif::se-flavor[]
 and your code has complete control--and therefore responsibility--over setting the status, writing the response entity (if any), and assigning any returned headers.
 
-Your code plus the server code from the Helidon generator--all running on Helidon {flavor-uc}--combine to implement fully the server API declared in the original OpenAPI document. Build your project to get a tailored Helidon {flavor-uc} server `.jar` file or Docker image and your server is ready to run.
+Your code plus the server code from the Helidon generator--all running on Helidon {flavor-uc}--combine to fully implement the server API declared in the original OpenAPI document. Build your project to get a tailored Helidon {flavor-uc} server `.jar` file or Docker image and your server is ready to run.
 
 // end::using-generated-code-server[]
 
