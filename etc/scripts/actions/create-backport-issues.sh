@@ -70,7 +70,7 @@ readonly ISSUE=$(curl -s -X GET \
   "$GET_ISSUE_URL")
 
 # Get issue information
-ISSUE_TITLE=$(echo "$ISSUE" | jq -r ".title")
+issue_title=$(echo "$ISSUE" | jq -r ".title")
 readonly ISSUE_ASSIGNEE=$(echo "$ISSUE" | jq -r ".assignee.login")
 readonly ISSUE_LABELS=$(echo "$ISSUE" | jq -r ".labels") # JSON Array
 
@@ -109,7 +109,7 @@ if [ ${#version_labels[@]} -eq 0 ]; then
 fi
 
 # Replace all instances of " with ' in the Issue Title to avoid JSON parsing issue
-ISSUE_TITLE=$(sed "s/\"/'/g" <<< "$ISSUE_TITLE")
+issue_title=$(sed "s/\"/'/g" <<< "$issue_title")
 
 ############################################################
 # For each version that is not the issue's version, add backport
@@ -117,7 +117,7 @@ ISSUE_TITLE=$(sed "s/\"/'/g" <<< "$ISSUE_TITLE")
 for version in ${VERSIONS[@]}; do
   if [ "$version" != "$HELIDON_VERSION" ]; then
     # Create issue for all other versions and add the same labels and assignee
-    new_issue_title="[$version] ${ISSUE_TITLE}"
+    new_issue_title="[$version] ${issue_title}"
     new_issue_text="Backport of #${ISSUE_NUMBER} for Helidon ${version}"
 
     # by default, add label for the version we are backporting into, and for backport itself
