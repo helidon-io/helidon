@@ -130,6 +130,7 @@
                                 <argument>${project.build.outputDirectory}</argument>
                                 <argument>${project.build.outputDirectory}</argument>
                             </arguments>
+                            <skip>${eclipselink.weave.skip}</skip>
                         </configuration>
                     </execution>
                 </executions>
