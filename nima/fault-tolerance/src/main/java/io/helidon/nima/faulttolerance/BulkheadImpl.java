@@ -267,7 +267,13 @@ class BulkheadImpl implements Bulkhead {
 
         @Override
         public void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
-            Barrier barrier = enqueue(supplier);
+            Barrier barrier;
+            lock.lock();
+            try {
+                barrier = enqueue(supplier);
+            } finally {
+                lock.unlock();
+            }
             if (barrier != null) {
                 barrier.waitOn();
             } else {
@@ -277,37 +283,37 @@ class BulkheadImpl implements Bulkhead {
 
         @Override
         public void dequeueAndRetract() {
-            Barrier barrier = dequeue();
-            if (barrier != null) {
-                barrier.retract();
-            } else {
-                throw new IllegalStateException("Queue is empty");
+            lock.lock();
+            try {
+                Barrier barrier = dequeue();
+                if (barrier != null) {
+                    barrier.retract();
+                } else {
+                    throw new IllegalStateException("Queue is empty");
+                }
+            } finally {
+                lock.unlock();
             }
         }
 
         @Override
         public boolean remove(Supplier<?> supplier) {
-            return queue.remove(supplier);
+            lock.lock();
+            try {
+                return queue.remove(supplier);
+            } finally {
+                lock.unlock();
+            }
         }
 
         private Barrier dequeue() {
-            lock.lock();
-            try {
-                Supplier<?> supplier = queue.poll();
-                return supplier == null ? null : map.remove(supplier);
-            } finally {
-                lock.unlock();
-            }
+            Supplier<?> supplier = queue.poll();
+            return supplier == null ? null : map.remove(supplier);
         }
 
         private Barrier enqueue(Supplier<?> supplier) {
-            lock.lock();
-            try {
-                boolean added = queue.offer(supplier);
-                return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
-            } finally {
-                lock.unlock();
-            }
+            boolean added = queue.offer(supplier);
+            return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
         }
     }
 
