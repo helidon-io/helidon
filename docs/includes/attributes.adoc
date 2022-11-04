@@ -276,7 +276,4 @@ endif::[]
 // OpenAPI U/I
 :smallrye-openapi-ui-base-url: https://github.com/smallrye/smallrye-open-api/tree/{version-lib-smallrye-open-api}/ui/open-api-ui
 
-// Maven plug-ins
-:maven-build-helper-plugin-url: https://www.mojohaus.org/build-helper-maven-plugin/usage.html
-
 endif::attributes-included[]
