@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -228,6 +229,14 @@ public interface SocketConfiguration {
      * @return initial size of the buffer
      */
     int initialBufferSize();
+
+    /**
+     * Discovery types to identify requested URI.
+     *
+     * @return list with supported types, will always contain at least
+     * {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType#HOST}.
+     */
+    List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes();
 
     /**
      * Maximum length of the content of an upgrade request.
@@ -460,6 +469,28 @@ public interface SocketConfiguration {
         B maxUpgradeContentLength(int size);
 
         /**
+         * Add a type of frontend uri discovery to be used. If discovery is disabled, ti will be enabled by this method.
+         *
+         * @param type type to add
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "requested-uri-discovery-types", kind = ConfiguredOption.Kind.LIST)
+        B addRequestedUriDiscoveryType(RequestedUriDiscoveryType type);
+
+        /**
+         * When set to {@code true}, {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType#FORWARDED} will be
+         * used to discover client requested uri, available through {@link ServerRequest#requestedUri()}.
+         * Discovery types can be configured explicitly.
+         * This method does not modify requested uri discovery types if already customized by
+         * {@link #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)}.
+         *
+         * @param enabled whether to enable discovery
+         * @return updated builder
+         */
+        @ConfiguredOption
+        B requestedUriDiscoveryEnabled(boolean enabled);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -503,10 +534,40 @@ public interface SocketConfiguration {
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
+
+            config.get("requested-uri-discovery-enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
+            config.get("requested-uri-discovery-types").asList(RequestedUriDiscoveryType.class)
+                    .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
+
             return (B) this;
         }
     }
 
+    /**
+     * Types of discovery of frontend uri. Defaults to {@link #HOST} when frontend uri discovery is disabled (uses only Host
+     * header and information about current request to determine scheme, host, port, and path).
+     * Defaults to {@link #FORWARDED} when discovery is enabled. Can be explicitly configured on socket configuration builder.
+     */
+    enum RequestedUriDiscoveryType {
+        /**
+         * The {@link io.helidon.common.http.Http.Header#FORWARDED} header is used to discover the original requested URI.
+         */
+        FORWARDED,
+        /**
+         * The
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PROTO},
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_HOST},
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PORT},
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PREFIX}
+         * headers are used to discover the original requested URI.
+         */
+        X_FORWARDED,
+        /**
+         * This is the default, only the {@link io.helidon.common.http.Http.Header#HOST} header is used to discover
+         * requested URI.
+         */
+        HOST
+    }
     /**
      * The {@link io.helidon.webserver.SocketConfiguration} builder class.
      */
@@ -541,6 +602,8 @@ public interface SocketConfiguration {
         private BackpressureStrategy backpressureStrategy = BackpressureStrategy.LINEAR;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
+        private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
+        private boolean requestedUriDiscoveryEnabled;
 
         private Builder() {
         }
@@ -818,6 +881,24 @@ public interface SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
+            this.requestedUriDiscoveryTypes.add(type);
+            this.requestedUriDiscoveryEnabled = true;
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryEnabled(boolean enabled) {
+            this.requestedUriDiscoveryEnabled = enabled;
+            if (enabled) {
+                if (this.requestedUriDiscoveryTypes.isEmpty()) {
+                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
+                }
+            }
+            return this;
+        }
+
         int port() {
             return port;
         }
@@ -888,6 +969,13 @@ public interface SocketConfiguration {
 
         int maxUpgradeContentLength() {
             return maxUpgradeContentLength;
+        }
+
+        List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes() {
+            if (requestedUriDiscoveryEnabled && !requestedUriDiscoveryTypes.isEmpty()) {
+                return requestedUriDiscoveryTypes;
+            }
+            return List.of(RequestedUriDiscoveryType.HOST);
         }
     }
 }

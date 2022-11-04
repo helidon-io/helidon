@@ -25,6 +25,7 @@ import java.util.Optional;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
+import io.helidon.common.http.UriInfo;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.tracing.SpanContext;
@@ -149,6 +150,16 @@ public interface ServerRequest extends HttpRequest {
      * @return Single completed when connection is closed.
      */
     Single<Void> closeConnection();
+
+    /**
+     * URI as it was requested by the user (to the best of our knowledge).
+     * By default, the information is taken from {@link Http.Header#HOST} header and current request.
+     * If enabled by configuration, additional headers may be used to determine the user invoked URI (such as
+     * {@link Http.Header#FORWARDED}).
+     *
+     * @return uri info that can be used for redirects
+     */
+    UriInfo requestedUri();
 
     /**
      * Absolute URI of the incoming request, including query parameters and fragment.

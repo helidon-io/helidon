@@ -607,6 +607,18 @@ public interface WebServer {
             return this;
         }
 
+        @Override
+        public Builder addRequestedUriDiscoveryType(SocketConfiguration.RequestedUriDiscoveryType type) {
+            defaultSocket(it -> it.addRequestedUriDiscoveryType(type));
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryEnabled(boolean enabled) {
+            defaultSocket(it -> it.requestedUriDiscoveryEnabled(enabled));
+            return this;
+        }
+
         /**
          * A helper method to support fluentAPI when invoking another method.
          * <p>

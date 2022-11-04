@@ -28,12 +28,15 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Forwarded;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.UriComponent;
+import io.helidon.common.http.UriInfo;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;
@@ -64,6 +67,7 @@ abstract class Request implements ServerRequest {
     private final HashRequestHeaders headers;
     private final MessageBodyReadableContent content;
     private final MessageBodyEventListener eventListener;
+    private final LazyValue<UriInfo> requestedUri;
 
     /**
      * Creates new instance.
@@ -81,6 +85,7 @@ abstract class Request implements ServerRequest {
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
                 .create(webServer.readerContext(), eventListener, headers, headers.contentType());
         this.content = MessageBodyReadableContent.create(req.bodyPublisher(), readerContext);
+        this.requestedUri = LazyValue.create(this::createRequestedUri);
     }
 
     /**
@@ -96,6 +101,7 @@ abstract class Request implements ServerRequest {
         this.headers = request.headers;
         this.content = request.content;
         this.eventListener = request.eventListener;
+        this.requestedUri = request.requestedUri;
     }
 
     /**
@@ -195,6 +201,114 @@ abstract class Request implements ServerRequest {
     @Override
     public Single<Void> closeConnection() {
         return this.bareRequest.closeConnection();
+    }
+
+    @Override
+    public UriInfo requestedUri() {
+        return requestedUri.get();
+    }
+
+    // this method is called max once per request
+    private UriInfo createRequestedUri() {
+        RequestHeaders headers = headers();
+        String scheme = null;
+        String authority = null;
+        String host = null;
+        int port = -1;
+        String path = null;
+        String query = query();
+
+        for (var type : bareRequest.socketConfiguration().requestedUriDiscoveryTypes()) {
+            switch (type) {
+            case FORWARDED -> {
+                List<Forwarded> forwardedList = Forwarded.create(headers);
+                if (!forwardedList.isEmpty()) {
+                    Forwarded f = forwardedList.get(0);
+                    if (scheme == null) {
+                        scheme = f.proto().orElse(null);
+                    }
+                    if (host == null && authority == null) {
+                        authority = f.host().orElse(null);
+                    }
+                }
+            }
+            case X_FORWARDED -> {
+                if (scheme == null) {
+                    scheme = headers.first(Http.Header.X_FORWARDED_PROTO).orElse(null);
+                }
+                if (host == null && authority == null) {
+                    host = headers.first(Http.Header.X_FORWARDED_HOST).orElse(null);
+                }
+                if (port == -1 && authority == null) {
+                    port = headers.first(Http.Header.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
+                }
+
+                path = headers.first(Http.Header.X_FORWARDED_PREFIX)
+                        .map(prefix -> {
+                            String absolute = path().absolute().toString();
+                            return prefix + (absolute.startsWith("/") ? "" : "/") + absolute;
+                        })
+                        .orElse(null);
+            }
+            default -> {
+                if (host == null && authority == null) {
+                    authority = headers.first(Http.Header.HOST).orElse(null);
+                }
+            }
+            }
+        }
+        if (host == null && authority == null) {
+            authority = headers.first(Http.Header.HOST).orElse(null);
+        }
+
+        if (path == null) {
+            path = path().absolute().toString();
+        }
+        if (host == null && authority != null) {
+            Authority a = Authority.create(scheme, authority);
+            if (a.host() != null) {
+                host = a.host();
+            }
+            if (port == -1) {
+                port = a.port();
+            }
+        }
+
+        if (scheme == null) {
+            if (port == 80) {
+                scheme = "http";
+            } else if (port == 443) {
+                scheme = "https";
+            } else {
+                scheme = isSecure() ? "https" : "http";
+            }
+        }
+
+        if (port == -1) {
+            if ("https".equals(scheme)) {
+                port = 443;
+            } else {
+                port = 80;
+            }
+        }
+        if (query == null || query.isEmpty()) {
+            query = null;
+        }
+        return new UriInfo(scheme, host, port, path, Optional.ofNullable(query));
+    }
+
+    private record Authority(String host, int port) {
+        private static final Authority NULL_AUTHORITY = new Authority(null, -1);
+        static Authority create(String scheme, String hostHeader) {
+            int colon = hostHeader.indexOf(':');
+            if (colon == -1) {
+                // define port by protocol
+                return new Authority(hostHeader, "https".equals(scheme) ? 443 : 80);
+            }
+            String hostString = hostHeader.substring(0, colon);
+            String portString = hostHeader.substring(colon + 1);
+            return new Authority(hostString, Integer.parseInt(portString));
+        }
     }
 
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {

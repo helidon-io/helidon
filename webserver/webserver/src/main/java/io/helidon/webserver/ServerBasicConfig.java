@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -183,7 +184,10 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfig.enableCompression();
     }
 
-
+    @Override
+    public List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes() {
+        return socketConfig.requestedUriDiscoveryTypes();
+    }
 
     static class SocketConfig implements SocketConfiguration {
 
@@ -205,6 +209,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final long backpressureBufferSize;
         private final BackpressureStrategy backpressureStrategy;
         private final int maxUpgradeContentLength;
+        private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
 
         /**
          * Creates new instance.
@@ -229,6 +234,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxUpgradeContentLength = builder.maxUpgradeContentLength();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
+            this.requestedUriDiscoveryTypes = builder.requestedUriDiscoveryTypes();
         }
 
         @Override
@@ -339,6 +345,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public BackpressureStrategy backpressureStrategy() {
             return backpressureStrategy;
+        }
+
+        @Override
+        public List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes() {
+            return requestedUriDiscoveryTypes;
         }
     }
 }

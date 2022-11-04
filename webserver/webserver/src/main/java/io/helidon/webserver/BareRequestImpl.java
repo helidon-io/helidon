@@ -30,6 +30,7 @@ import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -41,6 +42,7 @@ import io.netty.handler.codec.http.HttpVersion;
  */
 class BareRequestImpl implements BareRequest {
 
+    private final SocketConfiguration soConfig;
     private final HttpRequest nettyRequest;
     private final Flow.Publisher<DataChunk> publisher;
     private final WebServer webServer;
@@ -49,17 +51,19 @@ class BareRequestImpl implements BareRequest {
     private final long requestId;
     private final URI uri;
 
-    BareRequestImpl(HttpRequest request,
-                    Flow.Publisher<DataChunk> publisher,
-                    WebServer webServer,
-                    ChannelHandlerContext ctx,
+    BareRequestImpl(NettyWebServer webServer,
+                    SocketConfiguration soConfig,
                     SSLEngine sslEngine,
+                    ChannelHandlerContext ctx,
+                    HttpRequest request,
+                    Multi<DataChunk> publisher,
                     long requestId) {
+        this.webServer = webServer;
+        this.soConfig = soConfig;
+        this.sslEngine = sslEngine;
+        this.ctx = ctx;
         this.nettyRequest = request;
         this.publisher = publisher;
-        this.webServer = webServer;
-        this.ctx = ctx;
-        this.sslEngine = sslEngine;
         this.requestId = requestId;
         this.uri = URI.create(nettyRequest.uri());
     }
@@ -105,6 +109,11 @@ class BareRequestImpl implements BareRequest {
     @Override
     public int remotePort() {
         return port(ctx.channel().remoteAddress());
+    }
+
+    @Override
+    public SocketConfiguration socketConfiguration() {
+        return soConfig;
     }
 
     private String hostString(SocketAddress address) {

@@ -566,6 +566,18 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
+            defaultSocketBuilder().addRequestedUriDiscoveryType(type);
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryEnabled(boolean enabled) {
+            defaultSocketBuilder().requestedUriDiscoveryEnabled(enabled);
+            return this;
+        }
+
         /**
          * Configure the maximum amount of time that the server will wait to shut
          * down regardless of the value of any additionally requested
