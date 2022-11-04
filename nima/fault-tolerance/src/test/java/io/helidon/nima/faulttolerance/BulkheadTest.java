@@ -97,6 +97,14 @@ class BulkheadTest {
         assertThat(rejected.isStarted(), is(false));
         assertThat(rejected.isBlocked(), is(true));
 
+        // Verify rejected task was indeed rejected
+        ExecutionException executionException = assertThrows(ExecutionException.class,
+                () -> rejectedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
+        Throwable cause = executionException.getCause();
+        assertThat(cause, notNullValue());
+        assertThat(cause, instanceOf(BulkheadException.class));
+        assertThat(cause.getMessage(), is("Bulkhead queue \"" + name + "\" is full"));
+
         // Unblock inProgress task and get result to free bulkhead
         inProgress.unblock();
         inProgressResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
@@ -113,14 +121,6 @@ class BulkheadTest {
         // Unblock enqueued task and get result
         enqueued.unblock();
         enqueuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-
-        // Verify rejected task was indeed rejected
-        ExecutionException executionException = assertThrows(ExecutionException.class,
-                () -> rejectedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
-        Throwable cause = executionException.getCause();
-        assertThat(cause, notNullValue());
-        assertThat(cause, instanceOf(BulkheadException.class));
-        assertThat(cause.getMessage(), is("Bulkhead queue \"" + name + "\" is full"));
     }
 
     @Test
