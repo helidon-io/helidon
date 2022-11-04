@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class AckTest {
         }).when(mockedMessage).acknowledge();
 
         AqConnectorImpl aqConnector = new AqConnectorImpl(Map.of(), null, null);
-        JmsMessage<?> jmsMessage = aqConnector.createMessage(mockedMessage, null, sessionMetadata);
+        JmsMessage<?> jmsMessage = aqConnector.createMessage(null, mockedMessage, null, sessionMetadata);
         AqMessage<String> aqMessage = new AqMessageImpl<>(jmsMessage, sessionMetadata);
         aqMessage.ack();
         assertThat("Ack not propagated to JmsMessage",

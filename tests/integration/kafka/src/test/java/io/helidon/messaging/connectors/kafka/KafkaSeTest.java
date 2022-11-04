@@ -85,7 +85,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
     private static final String TEST_SE_TOPIC_9 = "special-se-topic-9";
     private static final String TEST_SE_TOPIC_PATTERN_34 = "special-se-topic-[3-4]";
 
-    static Logger nackHandlerLogLogger = Logger.getLogger(NackHandler.Log.class.getName());
+    static Logger nackHandlerLogLogger = Logger.getLogger(KafkaNackHandler.Log.class.getName());
 
     private static final List<String> logNackHandlerWarnings = new ArrayList<>(1);
 
