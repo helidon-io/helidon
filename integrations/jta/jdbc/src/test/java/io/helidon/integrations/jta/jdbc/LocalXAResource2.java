@@ -21,25 +21,20 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.sql.DataSource;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import static javax.transaction.xa.XAException.XAER_DUPID;
+import static javax.transaction.xa.XAException.XAER_INVAL;
+import static javax.transaction.xa.XAException.XAER_NOTA;
 import static javax.transaction.xa.XAException.XAER_PROTO;
 import static javax.transaction.xa.XAException.XAER_RMERR;
-import static javax.transaction.xa.XAException.XA_HEURCOM;
-import static javax.transaction.xa.XAException.XA_HEURHAZ;
-import static javax.transaction.xa.XAException.XA_HEURMIX;
-import static javax.transaction.xa.XAException.XA_HEURRB;
-import static javax.transaction.xa.XAException.XA_RBBASE;
-import static javax.transaction.xa.XAException.XA_RBEND;
-import static javax.transaction.xa.XAException.XA_RETRY;
 import static javax.transaction.xa.XAResource.TMENDRSCAN;
 import static javax.transaction.xa.XAResource.TMFAIL;
 import static javax.transaction.xa.XAResource.TMJOIN;
@@ -70,9 +65,8 @@ public final class LocalXAResource2 implements XAResource {
      */
 
 
-    private final Supplier<? extends Connection> connectionSupplier;
+    private final Function<? super Xid, ? extends Connection> connectionFunction;
 
-    // Interesting; this could be static.
     private final Map<Xid, Association> associations;
 
 
@@ -81,10 +75,9 @@ public final class LocalXAResource2 implements XAResource {
      */
 
 
-    // Interesting; this could be a singleton.
-    public LocalXAResource2(Supplier<? extends Connection> connectionSupplier) {
+    public LocalXAResource2(Function<? super Xid, ? extends Connection> connectionFunction) {
         super();
-        this.connectionSupplier = Objects.requireNonNull(connectionSupplier, "connectionSupplier");
+        this.connectionFunction = Objects.requireNonNull(connectionFunction, "connectionFunction");
         this.associations = new ConcurrentHashMap<>();
     }
 
@@ -101,105 +94,62 @@ public final class LocalXAResource2 implements XAResource {
         }
 
         if (xid == null) {
-            throw (XAException) new XAException(XAException.XAER_INVAL).initCause(new NullPointerException("xid"));
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
+        }
+
+        BiFunction<Xid, Association, Association> remappingFunction;
+        switch (flags) {
+        case TMJOIN:
+            remappingFunction = LocalXAResource2::join;
+            break;
+        case TMNOFLAGS:
+            remappingFunction = this::start;
+            break;
+        case TMRESUME:
+            remappingFunction = LocalXAResource2::resume;
+            break;
+        default:
+            throw (XAException) new XAException(XAER_INVAL).initCause(new IllegalArgumentException("xid: " + xid
+                                                                                                   + "; flags: "
+                                                                                                   + flagsToString(flags)));
         }
 
         try {
-            this.associations.compute(xid, (x, a) -> {
-                    switch (flags) {
-                    case TMJOIN:
-                        assert a.xid().equals(x);
-                        if (a.suspended()) {
-                            throw new IllegalArgumentException(new XAException(XAException.XAER_PROTO)
-                                                               .initCause(new IllegalStateException("xid: " + x
-                                                                                                    + "; flags: "
-                                                                                                    + flagsToString(flags)
-                                                                                                    + "; association: " + a)));
-                        }
-                        switch (a.branchState()) {
-                        case ACTIVE:
-                            return a;
-                        case IDLE:
-                            try {
-                                return new Association(Association.BranchState.ACTIVE,
-                                                       x,
-                                                       false,
-                                                       a.connection(),
-                                                       a.priorAutoCommit());
-                            } catch (IllegalStateException e) {
-                                // (Thrown when
-                                // a.connection().getAutoCommit()
-                                // throws a SQLException.)
-                                throw new IllegalArgumentException(new XAException(XAException.XAER_RMERR).initCause(e));
-                            }
-                        default:
-                            throw new IllegalArgumentException(new XAException(XAException.XAER_PROTO)
-                                                               .initCause(new IllegalStateException("xid: " + x
-                                                                                                    + "; flags: "
-                                                                                                    + flagsToString(flags)
-                                                                                                    + "; association: " + a)));
-                        }
-
-                    case TMNOFLAGS:
-                        if (a == null) {
-                            try {
-                                return new Association(Association.BranchState.ACTIVE,
-                                                       x,
-                                                       false,
-                                                       this.connectionSupplier.get(),
-                                                       true);
-                            } catch (IllegalStateException e) {
-                                // (Thrown when
-                                // this.connectionSupplier.get()
-                                // throws an IllegalStateException or
-                                // new
-                                // Association(...).connection().getAutoCommit()
-                                // throws a SQLException.)
-                                throw new IllegalArgumentException(new XAException(XAException.XAER_RMERR).initCause(e));
-                            }
-                        }
-                        throw new IllegalArgumentException(new XAException(XAException.XAER_DUPID));
-
-                    case TMRESUME:
-                        assert a.xid().equals(x);
-                        if (!a.suspended()) {
-                            throw new IllegalArgumentException(new XAException(XAException.XAER_PROTO)
-                                                               .initCause(new IllegalStateException("xid: " + x
-                                                                                                    + "; flags: "
-                                                                                                    + flagsToString(flags)
-                                                                                                    + "; association: " + a)));
-                        }
-                        // TODO: actual resumption logic on a, then:
-                        try {
-                            a = a.resume();
-                            assert a.xid().equals(x);
-                            return a;
-                        } catch (IllegalStateException e) {
-                            // (Thrown when
-                            // a.connection().getAutoCommit() throws a
-                            // SQLException.)
-                            throw new IllegalArgumentException(new XAException(XAException.XAER_RMERR).initCause(e));
-                        }
-
-                    default:
-                        throw new IllegalArgumentException(new XAException(XAException.XAER_INVAL)
-                                                           .initCause(new IllegalArgumentException("xid: " + x
-                                                                                                   + "; flags: "
-                                                                                                   + flagsToString(flags)
-                                                                                                   + "; association: " + a)));
-                    }
-                });
+            this.associations.compute(xid, remappingFunction);
         } catch (IllegalArgumentException illegalArgumentException) {
-            // From ConcurrentMap#compute(Object, BiFunction):
-            // "IllegalArgumentException - if some property of the
-            // specified key or value prevents it from being
-            // stored in this map"
+            // By the contract of ConcurrentMap::compute, the
+            // remapping function must throw IllegalArgumentException
+            // and no other kind of error in the normal course of
+            // events.  From ConcurrentMap#compute(Object,
+            // BiFunction): "IllegalArgumentException - if some
+            // property of the specified key or value prevents it from
+            // being stored in this map". We harvest the cause, which
+            // will always be an XAException, and throw that.
             throw (XAException) illegalArgumentException.getCause();
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(this.getClass().getName(), "start");
         }
+    }
+
+    private Association start(Xid x, Association a) {
+        if (a == null) {
+            Connection c;
+            try {
+                c = this.connectionFunction.apply(x);
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e));
+            }
+            try {
+                return new Association(Association.BranchState.ACTIVE, x, c);
+            } catch (UncheckedSQLException e) {
+                throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e.getCause()));
+            }
+        }
+        throw new IllegalArgumentException(new XAException(XAER_DUPID)
+                                           .initCause(new IllegalArgumentException("xid: " + x
+                                                                                   + "; association: " + a)));
     }
 
     @Override // XAResource
@@ -209,34 +159,34 @@ public final class LocalXAResource2 implements XAResource {
         }
 
         if (xid == null) {
-            throw (XAException) new XAException(XAException.XAER_INVAL).initCause(new NullPointerException("xid"));
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
+        }
+
+        BiFunction<Xid, Association, Association> remappingFunction;
+        switch (flags) {
+        case TMFAIL:
+        case TMSUCCESS:
+            remappingFunction = LocalXAResource2::activeToIdle;
+            break;
+        case TMSUSPEND:
+            remappingFunction = LocalXAResource2::suspend;
+            break;
+        default:
+            throw (XAException) new XAException(XAER_INVAL).initCause(new IllegalArgumentException("xid: " + xid
+                                                                                                   + "; flags: "
+                                                                                                   + flagsToString(flags)));
         }
 
         try {
-            this.associations.compute(xid, (x, a) -> compute(x, a, EnumSet.of(Association.BranchState.ACTIVE), a2 -> {
-                        switch (flags) {
-                        case TMFAIL:
-                        case TMSUCCESS:
-                            a2 = a2.end(); // S1 -> S2; go to IDLE
-                            break;
-                        case TMSUSPEND:
-                            a2 = a2.suspend();
-                            break;
-                        default:
-                            throw new IllegalArgumentException((XAException) new XAException(XAException.XAER_INVAL)
-                                                               .initCause(new IllegalArgumentException("xid: " + x
-                                                                                                       + "; flags: "
-                                                                                                       + flagsToString(flags)
-                                                                                                       + "; association: " + a)));
-                        }
-                        assert a2.branchState() == Association.BranchState.IDLE;
-                        return a2;
-                    }));
+            this.associations.compute(xid, remappingFunction);
         } catch (IllegalArgumentException illegalArgumentException) {
+            // The remapping function must throw
+            // IllegalArgumentException and no other kind of error.
             // From ConcurrentMap#compute(Object, BiFunction):
             // "IllegalArgumentException - if some property of the
-            // specified key or value prevents it from being
-            // stored in this map"
+            // specified key or value prevents it from being stored in
+            // this map". We harvest the cause, which will always be
+            // an XAException, and throw that.
             throw (XAException) illegalArgumentException.getCause();
         }
 
@@ -252,31 +202,25 @@ public final class LocalXAResource2 implements XAResource {
         }
 
         if (xid == null) {
-            throw (XAException) new XAException(XAException.XAER_INVAL).initCause(new NullPointerException("xid"));
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
         }
 
         Object association;
         try {
             association =
-                this.associations.compute(xid, (x, a) -> compute(x, a, EnumSet.of(Association.BranchState.IDLE), a2 -> {
-                            assert !a2.suspended(); // can't be in T2
-                            try {
-                                if (a2.connection().isReadOnly()) {
-                                    a2 = a2.reset();
-                                    assert a2.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
-                                    a2 = null;
-                                }
-                            } catch (SQLException sqlException) {
-                                throw new IllegalArgumentException((XAException) new XAException(XAException.XAER_RMERR)
-                                                                   .initCause(sqlException));
-                            }
-                            return a2;
-                        }));
+                this.associations.compute(xid,
+                                          (x, a) -> compute(x,
+                                                            a,
+                                                            Association.BranchState.IDLE,
+                                                            LocalXAResource2::prepare));
         } catch (IllegalArgumentException illegalArgumentException) {
+            // The remapping function must throw
+            // IllegalArgumentException and no other kind of error.
             // From ConcurrentMap#compute(Object, BiFunction):
             // "IllegalArgumentException - if some property of the
-            // specified key or value prevents it from being
-            // stored in this map"
+            // specified key or value prevents it from being stored in
+            // this map". We harvest the cause, which will always be
+            // an XAException, and throw that.
             //
             // (Don't remove XID here.)
             throw (XAException) illegalArgumentException.getCause();
@@ -297,29 +241,24 @@ public final class LocalXAResource2 implements XAResource {
         }
 
         if (xid == null) {
-            throw (XAException) new XAException(XAException.XAER_INVAL).initCause(new NullPointerException("xid"));
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
         }
 
         try {
-            this.associations.compute(xid, (x, a) -> compute(x,
-                                                             a,
-                                                             EnumSet.of(Association.BranchState.IDLE,
-                                                                        Association.BranchState.PREPARED),
-                                                             a2 -> {
-                                                                 try {
-                                                                     a2 = a2.commitAndReset();
-                                                                 } catch (SQLException sqlException) {
-                                                                     throw new IllegalArgumentException(sqlException);
-                                                                 }
-                                                                 assert a2.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
-                                                                 // Remove the association.
-                                                                 return null;
-                                                             }));
+            this.associations.compute(xid,
+                                      (x, a) -> compute(x,
+                                                        a,
+                                                        EnumSet.of(Association.BranchState.IDLE,
+                                                                   Association.BranchState.PREPARED),
+                                                        LocalXAResource2::commitAndReset));
         } catch (IllegalArgumentException illegalArgumentException) {
+            // The remapping function must throw
+            // IllegalArgumentException and no other kind of error.
             // From ConcurrentMap#compute(Object, BiFunction):
             // "IllegalArgumentException - if some property of the
-            // specified key or value prevents it from being
-            // stored in this map"
+            // specified key or value prevents it from being stored in
+            // this map". We harvest the cause, which will always be
+            // an XAException, and throw that.
             //
             // (Remove XID because even errors cause us to transist
             // back to T0.)
@@ -346,25 +285,17 @@ public final class LocalXAResource2 implements XAResource {
         }
 
         if (xid == null) {
-            throw (XAException) new XAException(XAException.XAER_INVAL).initCause(new NullPointerException("xid"));
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
         }
 
         try {
-            this.associations.compute(xid, (x, a) -> compute(x,
-                                                             a,
-                                                             EnumSet.of(Association.BranchState.IDLE,
-                                                                        Association.BranchState.PREPARED,
-                                                                        Association.BranchState.ROLLBACK_ONLY),
-                                                             a2 -> {
-                                                                 try {
-                                                                     a2 = a2.rollbackAndReset();
-                                                                 } catch (SQLException sqlException) {
-                                                                     throw new IllegalArgumentException(sqlException);
-                                                                 }
-                                                                 assert a2.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
-                                                                 // Remove the association.
-                                                                 return null;
-                                                             }));
+            this.associations.compute(xid,
+                                      (x, a) -> compute(x,
+                                                        a,
+                                                        EnumSet.of(Association.BranchState.IDLE,
+                                                                   Association.BranchState.PREPARED,
+                                                                   Association.BranchState.ROLLBACK_ONLY),
+                                                        LocalXAResource2::rollbackAndReset));
         } catch (IllegalArgumentException illegalArgumentException) {
             // From ConcurrentMap#compute(Object, BiFunction):
             // "IllegalArgumentException - if some property of the
@@ -396,22 +327,14 @@ public final class LocalXAResource2 implements XAResource {
         }
 
         if (xid == null) {
-            throw (XAException) new XAException(XAException.XAER_INVAL).initCause(new NullPointerException("xid"));
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
         }
 
         try {
             this.associations.compute(xid, (x, a) -> compute(x,
                                                              a,
-                                                             EnumSet.of(Association.BranchState.HEURISTICALLY_COMPLETED),
-                                                             a2 -> {
-                                                                 try {
-                                                                     a2 = a2.reset();
-                                                                 } catch (SQLException sqlException) {
-                                                                     throw new IllegalArgumentException(sqlException);
-                                                                 }
-                                                                 assert a2.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
-                                                                 return null;
-                                                             }));
+                                                             Association.BranchState.HEURISTICALLY_COMPLETED,
+                                                             LocalXAResource2::forget));
         } catch (IllegalArgumentException illegalArgumentException) {
             // From ConcurrentMap#compute(Object, BiFunction):
             // "IllegalArgumentException - if some property of the
@@ -446,7 +369,7 @@ public final class LocalXAResource2 implements XAResource {
         case TMNOFLAGS:
             break;
         default:
-            throw (XAException) new XAException(XAException.XAER_INVAL)
+            throw (XAException) new XAException(XAER_INVAL)
                 .initCause(new IllegalArgumentException("flags: " + flagsToString(flags)));
         }
 
@@ -483,19 +406,139 @@ public final class LocalXAResource2 implements XAResource {
 
     private static Association compute(Xid x,
                                        Association a,
+                                       Association.BranchState legalBranchState0,
+                                       UnaryOperator<Association> f) {
+        return compute(x, a, EnumSet.of(legalBranchState0), f);
+    }
+
+    private static Association compute(Xid x,
+                                       Association a,
+                                       Association.BranchState legalBranchState0,
+                                       Association.BranchState legalBranchState1,
+                                       UnaryOperator<Association> f) {
+        return compute(x, a, EnumSet.of(legalBranchState0, legalBranchState1), f);
+    }
+
+    private static Association compute(Xid x,
+                                       Association a,
+                                       Association.BranchState legalBranchState0,
+                                       Association.BranchState legalBranchState1,
+                                       Association.BranchState legalBranchState2,
+                                       UnaryOperator<Association> f) {
+        return compute(x, a, EnumSet.of(legalBranchState0, legalBranchState1, legalBranchState2), f);
+    }
+
+    private static Association compute(Xid x,
+                                       Association a,
                                        EnumSet<Association.BranchState> legalBranchStates,
                                        UnaryOperator<Association> f) {
         if (a == null) {
-            throw new IllegalArgumentException((XAException) new XAException(XAException.XAER_NOTA)
+            throw new IllegalArgumentException(new XAException(XAER_NOTA)
                                                .initCause(new IllegalStateException("xid: " + x
                                                                                     + "; association: " + a)));
         }
         if (legalBranchStates.contains(a.branchState())) {
             return f.apply(a);
         }
-        throw new IllegalArgumentException((XAException) new XAException(XAException.XAER_PROTO)
+        throw new IllegalArgumentException(new XAException(XAER_PROTO)
                                            .initCause(new IllegalStateException("xid: " + x
                                                                                 + "; association: " + a)));
+    }
+
+    // (Remapping BiFunction.)
+    private static Association activeToIdle(Xid x, Association a) {
+        return a.activeToIdle();
+    }
+
+    // (Remapping BiFunction.)
+    private static Association suspend(Xid x, Association a) {
+        return a.suspend();
+    }
+
+    // (Remapping BiFunction.)
+    private static Association join(Xid x, Association a) {
+        if (a != null && !a.suspended()) {
+            switch (a.branchState()) {
+            case ACTIVE:
+                return a;
+            case IDLE:
+                try {
+                    return a.idleToActive();
+                } catch (UncheckedSQLException e) {
+                    throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e.getCause()));
+                }
+            }
+        }
+        throw new IllegalArgumentException(new XAException(XAER_PROTO)
+                                           .initCause(new IllegalStateException("xid: " + x
+                                                                                + "; association: " + a)));
+    }
+
+    // (Remapping BiFunction.)
+    private static Association resume(Xid x, Association a) {
+        if (a != null) {
+            // TODO: actual resumption logic on a, then:
+            try {
+                return a.resume();
+            } catch (UncheckedSQLException e) {
+                throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e.getCause()));
+            } catch (IllegalTransitionException e) {
+                throw new IllegalArgumentException(new XAException(XAER_PROTO).initCause(e));
+            }
+        }
+        throw new IllegalArgumentException(new XAException(XAER_NOTA)
+                                           .initCause(new IllegalArgumentException("xid: " + x
+                                                                                   + "; association: " + a)));
+    }
+
+    // (UnaryOperator for supplying to compute() above.)
+    private static Association commitAndReset(Association a) {
+        try {
+            a = a.commitAndReset();
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(e);
+        }
+        assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
+        // Remove the association.
+        return null;
+    }
+
+    // (UnaryOperator for supplying to compute() above.)
+    private static Association rollbackAndReset(Association a) {
+        try {
+            a = a.rollbackAndReset();
+        } catch (SQLException sqlException) {
+            throw new IllegalArgumentException(sqlException);
+        }
+        assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
+        // Remove the association.
+        return null;
+    }
+
+    // (UnaryOperator for supplying to compute() above.)
+    private static Association prepare(Association a) {
+        assert !a.suspended(); // can't be in T2
+        try {
+            if (a.connection().isReadOnly()) {
+                a = a.reset();
+                assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
+                a = null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e));
+        }
+        return a;
+    }
+
+    // (UnaryOperator for supplying to compute() above.)
+    private static Association forget(Association a) {
+        try {
+            a = a.reset();
+        } catch (SQLException sqlException) {
+            throw new IllegalArgumentException(sqlException);
+        }
+        assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
+        return null;
     }
 
     private static String flagsToString(int flags) {
@@ -531,6 +574,31 @@ public final class LocalXAResource2 implements XAResource {
      */
 
 
+    private static final class UncheckedSQLException extends RuntimeException {
+
+        private static final long serialVersionUID = 1L;
+
+        private UncheckedSQLException(SQLException cause) {
+            super(cause);
+        }
+
+        @Override // RuntimeException
+        public SQLException getCause() {
+            return (SQLException) super.getCause();
+        }
+
+    }
+
+    private static final class IllegalTransitionException extends IllegalStateException {
+
+        private static final long serialVersionUID = 1L;
+
+        private IllegalTransitionException(String message) {
+            super(message);
+        }
+
+    }
+
     private static record Association(BranchState branchState,
                                       Xid xid,
                                       boolean suspended,
@@ -549,6 +617,14 @@ public final class LocalXAResource2 implements XAResource {
         // S3: Prepared
         // S4: Rollback Only
         // S5: Heuristically Completed
+
+        private Association(BranchState branchState, Xid xid, Connection connection) {
+            this(branchState, xid, false, connection);
+        }
+
+        private Association(BranchState branchState, Xid xid, boolean suspended, Connection connection) {
+            this(branchState, xid, suspended, connection, true /* JDBC default; will be set from connection anyway */);
+        }
 
         private Association {
             Objects.requireNonNull(xid, "xid");
@@ -569,124 +645,159 @@ public final class LocalXAResource2 implements XAResource {
             }
             try {
                 priorAutoCommit = connection.getAutoCommit();
-            } catch (SQLException sqlException) {
-                throw new IllegalStateException(sqlException.getMessage(), sqlException);
-            }
-            if (priorAutoCommit) {
-                try {
+                if (priorAutoCommit) {
                     connection.setAutoCommit(false);
-                } catch (SQLException sqlException) {
-                    throw new IllegalStateException(sqlException.getMessage(), sqlException);
                 }
+            } catch (SQLException sqlException) {
+                throw new UncheckedSQLException(sqlException);
             }
             // T0, T1 or T2; S0 or S2
         }
 
         public boolean suspended() {
             assert this.suspended ? this.branchState() == BranchState.IDLE : true;
-            return this.suspended();
+            return this.suspended;
         }
 
-        private Association end() {
-            return this.endWith(BranchState.IDLE);
-        }
-
-        private Association endWith(BranchState idleOrRollbackOnly) {
-            if (this.xid() == null || this.suspended()) {
-                // T0? T2? Bad state.
-                throw new IllegalStateException();
+        private Association activeToIdle() {
+            if (!this.suspended()) {
+                switch (this.branchState()) {
+                case ACTIVE:
+                    // OK; end(*) was called and didn't fail with an
+                    // XAER_RB* code and we are not suspended
+                    //
+                    // Associated -> Associated (T1 -> T1; unchanged)
+                    // Active     -> Idle       (S1 -> S2)
+                    return new Association(BranchState.IDLE,
+                                           this.xid(),
+                                           false,
+                                           this.connection(),
+                                           this.priorAutoCommit());
+                }
             }
-            switch (this.branchState()) {
-            case ACTIVE:
-                switch (idleOrRollbackOnly) {
+            throw new IllegalTransitionException(this.toString());
+        }
+
+        private Association activeToRollbackOnly() {
+            if (!this.suspended()) {
+                switch (this.branchState()) {
+                case ACTIVE:
+                    // OK; end(*) was called and failed with an
+                    // XAER_RB* code and we are not suspended
+                    //
+                    // Associated -> Associated    (T1 -> T1; unchanged)
+                    // Active     -> Rollback Only (S1 -> S4)
+                    return new Association(BranchState.ROLLBACK_ONLY,
+                                           this.xid(),
+                                           false,
+                                           this.connection(),
+                                           this.priorAutoCommit());
+                }
+            }
+            throw new IllegalTransitionException(this.toString());
+        }
+
+        private Association idleToActive() {
+            if (!this.suspended()) {
+                switch (this.branchState()) {
                 case IDLE:
-                    // OK; ACTIVE -> IDLE by way of end(), whether success or non-rollback failure
-                    break;
-                case ROLLBACK_ONLY:
-                    // OK; ACTIVE -> ROLLBACK_ONLY by way of end() with a rollback failure
-                    break;
-                default:
-                    throw new IllegalStateException("idleOrRollbackOnly: " + idleOrRollbackOnly);
+                    // OK; start(TMJOIN) was called and didn't fail
+                    // with an XAER_RB* code and we are not suspended
+                    //
+                    // Associated -> Associated (T1 -> T1; unchanged)
+                    // Idle       -> Active     (S2 -> S1)
+                    return new Association(BranchState.ACTIVE,
+                                           this.xid(),
+                                           false,
+                                           this.connection(),
+                                           this.priorAutoCommit());
                 }
-                break;
-            case IDLE:
-                switch (idleOrRollbackOnly) {
-                case ROLLBACK_ONLY:
-                    // OK; IDLE -> ROLLBACK_ONLY by way of start() failing
-                    break;
-                default:
-                    throw new IllegalStateException("idleOrRollbackOnly: " + idleOrRollbackOnly);
-                }
-                break;
-            default:
-                throw new IllegalStateException("this.branchState(): " + this.branchState());
             }
-            // T2 -> T0, T1 -> T0
-            return new Association(idleOrRollbackOnly,
-                                   this.xid(),
-                                   false,
-                                   this.connection(),
-                                   this.priorAutoCommit());
+            throw new IllegalTransitionException(this.toString());
+        }
+
+
+        private Association idleToRollbackOnly() {
+            if (!this.suspended()) {
+                switch (this.branchState()) {
+                case IDLE:
+                    // OK; start(*) was called and failed with an
+                    // XAER_RB* code and we are not suspended
+                    //
+                    // Associated -> Associated    (T1 -> T1; unchanged)
+                    // Idle       -> Rollback Only (S2 -> S4)
+                    return new Association(BranchState.ROLLBACK_ONLY,
+                                           this.xid(),
+                                           false,
+                                           this.connection(),
+                                           this.priorAutoCommit());
+                }
+            }
+            throw new IllegalTransitionException(this.toString());
         }
 
         private Association suspend() {
-            if (this.suspended()) {
-                throw new IllegalStateException();
+            if (!this.suspended()) {
+                switch (this.branchState()) {
+                case ACTIVE:
+                    // OK; end(TMSUSPEND) was called and we are not
+                    // suspended
+                    //
+                    // Associated -> Association Suspended (T1 -> T2)
+                    // Active     -> Idle                  (S1 -> S2)
+                    return new Association(BranchState.IDLE,
+                                           this.xid(),
+                                           true,
+                                           this.connection(),
+                                           this.priorAutoCommit());
+                }
             }
-            switch (this.branchState()) {
-            case ACTIVE:
-                // OK; end() was called
-                break;
-            default:
-                throw new IllegalStateException("branchState: " + this.branchState());
-            }
-            // T1 -> T2; S1 -> S2 by way of end()
-            return new Association(BranchState.IDLE,
-                                   this.xid(),
-                                   true,
-                                   this.connection(),
-                                   this.priorAutoCommit());
+            throw new IllegalTransitionException(this.toString());
         }
 
         private Association resume() {
             if (this.suspended()) {
                 switch (this.branchState()) {
                 case IDLE:
-                    // OK; start() was called
-                    break;
-                default:
-                    throw new IllegalStateException("branchState: " + this.branchState());
+                    // OK; start(TMRESUME) was called and we are
+                    // suspended
+                    //
+                    // Association Suspended -> Associated (T2 -> T1)
+                    // Idle                  -> Active     (S2 -> S1)
+                    return new Association(BranchState.ACTIVE,
+                                           this.xid(),
+                                           false,
+                                           this.connection(),
+                                           this.priorAutoCommit());
                 }
-                // T2 -> T1; S2 -> S1 by way of start()
-                return new Association(BranchState.ACTIVE,
-                                       this.xid(),
-                                       false,
-                                       this.connection(),
-                                       this.priorAutoCommit());
-            } else {
-                throw new IllegalStateException();
             }
+            throw new IllegalTransitionException(this.toString());
         }
 
         private Association commitAndReset() throws SQLException {
-            Association returnValue = this.runAndReset(this.connection()::commit);
-            // TODO: if the commit() fails, we want to invoke
-            // rollback(), right? Or do we let the TM eventually tell
-            // us to do so? The state tables will have the answer.
-            return returnValue;
+            Connection c = this.connection();
+            return this.runAndReset(c::commit, c::rollback);
         }
 
         private Association rollbackAndReset() throws SQLException {
-            return this.runAndReset(this.connection()::rollback);
+            return this.runAndReset(this.connection()::rollback, null);
         }
-        
-        private Association runAndReset(SQLRunnable r) throws SQLException {
+
+        private Association runAndReset(SQLRunnable r, SQLRunnable rollbackRunnable)
+            throws SQLException {
             Association a = null;
             SQLException sqlException = null;
             try {
                 r.run();
             } catch (SQLException e) {
                 sqlException = e;
+                if (rollbackRunnable != null) {
+                    try {
+                        rollbackRunnable.run();
+                    } catch (SQLException e2) {
+                        e.setNextException(e2);
+                    }
+                }
             } finally {
                 try {
                     a = this.reset();
@@ -704,7 +815,11 @@ public final class LocalXAResource2 implements XAResource {
             }
             return a;
         }
-        
+
+        private Association forgetAndReset() throws SQLException {
+            return this.reset();
+        }
+
         private Association reset() throws SQLException {
             this.connection().setAutoCommit(this.priorAutoCommit());
             return new Association(BranchState.NON_EXISTENT_TRANSACTION,
@@ -717,7 +832,7 @@ public final class LocalXAResource2 implements XAResource {
         private static interface SQLRunnable {
 
             public void run() throws SQLException;
-            
+
         }
 
         private static enum BranchState {
