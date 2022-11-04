@@ -1045,6 +1045,11 @@
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi-ui</artifactId>
+                <version>3.0.3-SNAPSHOT</version>
+            </dependency>
             <!-- CORS support -->
             <dependency>
                 <groupId>io.helidon.webserver.cors</groupId>
