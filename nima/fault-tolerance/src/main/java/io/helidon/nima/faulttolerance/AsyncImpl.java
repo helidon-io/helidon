@@ -19,7 +19,6 @@ package io.helidon.nima.faulttolerance;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -29,20 +28,17 @@ import io.helidon.common.LazyValue;
 import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
 
 /**
- * Implementation of {@code Async}. If no executor specified in builder, then it will
- * use {@link Executors#newVirtualThreadPerTaskExecutor}. Note that this default executor
- * is not configurable using Helidon's config.
+ * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
  */
 class AsyncImpl implements Async {
     private final LazyValue<? extends ExecutorService> executor;
 
     AsyncImpl() {
-        this.executor = LazyValue.create(Executors.newVirtualThreadPerTaskExecutor());
+        this(Async.builder());
     }
 
     AsyncImpl(Builder builder) {
-        this.executor = builder.executor() != null ? builder.executor()
-                : LazyValue.create(Executors.newVirtualThreadPerTaskExecutor());
+        this.executor = builder.executor();
     }
 
     @Override
@@ -74,7 +70,7 @@ class AsyncImpl implements Async {
     }
 
     /**
-     * Default {@code Async} instance that uses {@link Executors#newVirtualThreadPerTaskExecutor}.
+     * Default {@code Async} instance.
      */
     static final class DefaultAsyncInstance {
         private static final Async INSTANCE = new AsyncImpl();
