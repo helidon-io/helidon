@@ -218,18 +218,18 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public void enqueueAndWaitOn(Supplier<?> supplier) throws InterruptedException {
-            throw new IllegalStateException("Queue capacity is 0");
+        public void enqueueAndWaitOn(Supplier<?> supplier) {
+            throw new BulkheadException("Queue capacity is 0");
         }
 
         @Override
         public void dequeueAndRetract() {
-            throw new IllegalStateException("Queue capacity is 0");
+            throw new BulkheadException("Queue capacity is 0");
         }
 
         @Override
         public boolean remove(Supplier<?> supplier) {
-            throw new IllegalStateException("Queue capacity is 0");
+            throw new BulkheadException("Queue capacity is 0");
         }
     }
 

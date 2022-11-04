@@ -43,10 +43,10 @@ class AsyncTest {
     @Test
     void testCustomExecutorBuilder() {
         Async async = Async.builder()
-                .executor(FaultTolerance.executor())        // platform thread executor
+                .executor(FaultTolerance.executor())
                 .build();
         Thread thread = testAsync(async);
-        assertThat(thread.isVirtual(), is(false));
+        assertThat(thread.isVirtual(), is(true));
     }
 
     private Thread testAsync(Async async) {
