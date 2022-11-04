@@ -277,7 +277,7 @@ class BulkheadImpl implements Bulkhead {
             if (barrier != null) {
                 barrier.waitOn();
             } else {
-                throw new IllegalStateException("Queue is full");
+                throw new BulkheadException("Queue is full");
             }
         }
 
@@ -289,7 +289,7 @@ class BulkheadImpl implements Bulkhead {
                 if (barrier != null) {
                     barrier.retract();
                 } else {
-                    throw new IllegalStateException("Queue is empty");
+                    throw new BulkheadException("Queue is empty");
                 }
             } finally {
                 lock.unlock();
