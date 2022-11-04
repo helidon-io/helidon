@@ -1046,9 +1046,9 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.openapi</groupId>
-                <artifactId>helidon-openapi-ui</artifactId>
-                <version>3.0.3-SNAPSHOT</version>
+                <groupId>io.helidon.integrations.openapi-ui</groupId>
+                <artifactId>helidon-integrations-openapi-ui</artifactId>
+                <version>${helidon.version}</version>
             </dependency>
             <!-- CORS support -->
             <dependency>

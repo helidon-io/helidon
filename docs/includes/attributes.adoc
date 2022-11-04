@@ -205,7 +205,7 @@ endif::[]
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
 :mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
-:openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi.ui
+:openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
