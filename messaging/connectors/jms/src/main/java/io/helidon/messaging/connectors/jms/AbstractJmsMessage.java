@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.messaging.MessagingException;
+import io.helidon.messaging.NackHandler;
 
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
@@ -40,11 +42,12 @@ abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
     private Executor executor;
     private SessionMetadata sharedSessionEntry;
     private volatile boolean acked = false;
+    private final NackHandler nackHandler;
 
-    protected AbstractJmsMessage() {
-    }
-
-    protected AbstractJmsMessage(Executor executor, SessionMetadata sharedSessionEntry) {
+    protected AbstractJmsMessage(NackHandler nackHandler,
+                                 Executor executor,
+                                 SessionMetadata sharedSessionEntry) {
+        this.nackHandler = nackHandler;
         this.sharedSessionEntry = sharedSessionEntry;
         this.executor = executor;
     }
@@ -116,4 +119,8 @@ abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
                 });
     }
 
+    @Override
+    public Function<Throwable, CompletionStage<Void>> getNack() {
+        return this.nackHandler != null ? this.nackHandler.getNack(this) : reason -> CompletableFuture.completedFuture(null);
+    }
 }
