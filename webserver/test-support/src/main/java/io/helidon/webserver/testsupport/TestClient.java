@@ -43,6 +43,7 @@ import io.helidon.webserver.BackpressureStrategy;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.SocketConfiguration;
 
 /**
  * Client API designed to create request directly on {@link Routing} without a network layer.
@@ -252,6 +253,11 @@ public class TestClient {
         @Override
         public Single<Void> closeConnection() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SocketConfiguration socketConfiguration() {
+            return SocketConfiguration.create("@default");
         }
     }
 
