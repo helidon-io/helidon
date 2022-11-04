@@ -101,7 +101,7 @@ abstract class Request implements ServerRequest {
         this.headers = request.headers;
         this.content = request.content;
         this.eventListener = request.eventListener;
-        this.requestedUri = request.requestedUri;
+        this.requestedUri = LazyValue.create(this::createRequestedUri);
     }
 
     /**
