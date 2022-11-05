@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,16 +81,27 @@ class ProxyTest {
     }
 
     @Test
-    void testForceRelativeUris() {
+    void testForceRelativeUrisViaWebClientConfiguration() {
         Config config = Config.create();
         Proxy proxy = Proxy.create(config.get("proxy"));
         WebClientConfiguration webConfig = WebClientConfiguration.builder()
-                .config(config.get("force-relative-uris")).build();
-        boolean relativeUris = webConfig.relativeUris();
-        assertThat(relativizeNoProxy(URI.create("http://www.localhost/foo"), proxy, relativeUris).toString(),
-                is("/foo"));
-        assertThat(relativizeNoProxy(URI.create("http://identity.oci.com/foo/bar"), proxy, relativeUris).toString(),
-                is("/foo/bar"));
+                .config(config.get("force-relative-uris"))
+                .proxy(proxy)
+                .build();
+        validateRelativizeNoProxy(webConfig);
+    }
+
+    @Test
+    void testForceRelativeUrisViaWebClient() {
+        Proxy proxy = Proxy.builder()
+                .host("localhost")
+                .port(8080)
+                .build();
+        WebClientConfiguration webConfig = WebClient.builder()
+                .relativeUris(true)
+                .proxy(proxy)
+                .configuration();
+        validateRelativizeNoProxy(webConfig);
     }
 
     @Test
@@ -98,6 +109,15 @@ class ProxyTest {
         Config config = Config.create();
         Proxy proxy = Proxy.create(config.get("proxy"));
         assertThat(proxy.type(), is(Proxy.ProxyType.HTTP));
+    }
+
+    private void validateRelativizeNoProxy(WebClientConfiguration webConfig) {
+        boolean relativeUris = webConfig.relativeUris();
+        Proxy proxy = webConfig.proxy().get();
+        assertThat(relativizeNoProxy(URI.create("http://www.localhost/foo"), proxy, relativeUris).toString(),
+                   is("/foo"));
+        assertThat(relativizeNoProxy(URI.create("http://identity.oci.com/foo/bar"), proxy, relativeUris).toString(),
+                   is("/foo/bar"));
     }
 
     private URI address(String host, int port) {

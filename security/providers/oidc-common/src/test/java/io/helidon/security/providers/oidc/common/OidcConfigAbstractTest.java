@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,10 @@ abstract class OidcConfigAbstractTest {
                                    is("http://identity.oracle.com/authorization")),
                   () -> assertThat("Introspect endpoint",
                                    config.introspectEndpoint().getUri(),
-                                   is(URI.create("http://identity.oracle.com/introspect")))
+                                   is(URI.create("http://identity.oracle.com/introspect"))),
+                  () -> assertThat("Validate relativeUris flag",
+                                  config.relativeUris(),
+                                  is(true))
         );
     }
 
