@@ -205,6 +205,7 @@ public abstract class OpenAPISupport implements Service {
     public String webContext() {
         return webContext;
     }
+
     /**
      * Triggers preparation of the model from external code.
      */
