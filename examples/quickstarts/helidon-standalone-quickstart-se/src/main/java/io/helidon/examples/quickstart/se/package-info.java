@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,4 @@
  *
  * @see io.helidon.examples.quickstart.se.Main
  */
-@OpenAPIDefinition(info = @Info(title = "Helidon MP QuickStart Example",
-                                version = "1.0.0",
-                                description = "A very simple application to reply with friendly greetings")
-)
 package io.helidon.examples.quickstart.se;
