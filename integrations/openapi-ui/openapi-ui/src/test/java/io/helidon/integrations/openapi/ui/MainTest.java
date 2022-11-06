@@ -16,6 +16,7 @@
 package io.helidon.integrations.openapi.ui;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -100,18 +101,38 @@ public class MainTest {
                              OpenApiUiSupport.DEFAULT_UI_PREFIX);
     }
 
+    @Test
+    void testRedirectNoTrailingSlash() {
+        loadAndCheckMainPage(null, null, null, "/openapi-ui", false, 301);
+    }
+
+    @Test
+    void testRedirectWithTrailingSlash() {
+        loadAndCheckMainPage(null, null, null, "/openapi-ui/", false, 301);
+    }
+
     static void loadAndCheckMainPage(Config config,
                                      OpenAPISupport openAPISupport,
                                      OpenApiUiSupport uiSupport,
                                      String uiPathToCheck) {
+        loadAndCheckMainPage(config, openAPISupport, uiSupport, uiPathToCheck, true, 200);
+    }
+
+    static void loadAndCheckMainPage(Config config,
+                                     OpenAPISupport openAPISupport,
+                                     OpenApiUiSupport uiSupport,
+                                     String uiPathToCheck,
+                                     boolean followRedirects,
+                                     int expectedStatus) {
         run (config,
              openAPISupport,
              uiSupport,
              uiPathToCheck,
              webClient ->
                      webClient.get()
-                             .followRedirects(true)
+                             .followRedirects(followRedirects)
                              .accept(MediaType.TEXT_HTML),
+             expectedStatus,
              webClientResponse -> {
                 String html = null;
                  try {
@@ -123,7 +144,9 @@ public class MainTest {
                  }
 
                  // Don't inspect the HTML much; we don't want this test to depend too heavily on the U/I impl.
-                 assertThat("Returned HTML from U/I", html, containsString("<div id=\"swagger-ui\"></div>"));
+                 if (expectedStatus == 200) {
+                     assertThat("Returned HTML from U/I", html, containsString("https://helidon.io"));
+                 }
              });
     }
 
@@ -132,6 +155,7 @@ public class MainTest {
                     OpenApiUiSupport uiSupport,
                     String uiPathToTest,
                     Function<WebClient, WebClientRequestBuilder> operation,
+                    int expectedStatus,
                     Consumer<WebClientResponse> responseConsumer) {
         WebServer server = null;
 
@@ -149,7 +173,7 @@ public class MainTest {
                     .await(5, TimeUnit.SECONDS);
 
             assertThat("Status code in response getting main page",
-                       webClientResponse.status().code(), is(200));
+                       webClientResponse.status().code(), is(expectedStatus));
 
             try {
                 responseConsumer.accept(webClientResponse);
@@ -179,11 +203,15 @@ public class MainTest {
         if (config == null) {
             config = Config.create();
         }
+        Map<String, String> portConfig = Map.of("server.port", "8080");
+        Config configWithPort = Config.create(ConfigSources.create(portConfig), ConfigSources.create(config));
         WebServer webServer = null;
 
         try {
             try {
-                webServer = startServer(config, openApiSupport, uiSupport).get(5, TimeUnit.SECONDS);
+                // For the browser test set the server.port to 8080 so the human knows where to find the pages.
+
+                webServer = startServer(configWithPort, openApiSupport, uiSupport).get(5, TimeUnit.SECONDS);
             } catch (Exception e) {
                 fail("Error starting webserver for browser test", e);
             }

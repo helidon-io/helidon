@@ -52,6 +52,7 @@ The Helidon {flavor-uc} OpenAPI U/I component  lets you add that web page to you
 // end::overview[]
 
 // tag::usage[]
+// tag::usage-start[]
 == Usage
 ifdef::se-flavor[]
 You need to modify your application to create and register routing for the Helidon OpenAPI and Helidon OpenAPI U/I components. See the <<API,API>> section below for details.
@@ -67,8 +68,9 @@ The example below shows the U/I displayed for the Helidon QuickStart {flavor-uc}
 .OpenAPI U/I Screen for Helidon {flavor-uc} QuickStart Greeting Application
 image::{screen-capture-start}[align="center",title="Example OpenAPI U/I Screen"]
 
+// end::usage-start[]
 
-
+// tag::usage-expanded-screen[]
 With the OpenAPI U/I displayed, follow these steps to access one of your service's operations.
 
 . Find the operation you want to run and click on its row in the list.
@@ -87,7 +89,7 @@ The next image shows the screen after you submit the "Returns a personalized gre
 .Example OpenAPI U/I Screen
 image::{screen-capture-expanded}[align="center",title="Example OpenAPI U/I Screen"]
 
-
+// end::usage-expanded-screen[]
 // end::usage[]
 
 // tag::config-intro[]

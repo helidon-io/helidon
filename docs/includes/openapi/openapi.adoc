@@ -47,6 +47,14 @@ The SPI defines an interface you can implement in your application which can mas
 
 // end::overview[]
 
+// tag::mp-depc[]
+    <dependency>
+        <groupId>io.helidon.microprofile.openapi</groupId>
+        <artifactId>helidon-microprofile-openapi</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+// end::mp-depc[]
+
 // tag::furnish-openapi-info[]
 
 ==== Furnish OpenAPI information about your endpoints

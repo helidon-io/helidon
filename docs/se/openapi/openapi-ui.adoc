@@ -40,7 +40,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.openapi</groupId>
+    <groupId>io.helidon.integrations.openapi-ui</groupId>
     <artifactId>helidon-openapi-ui</artifactId>
 </dependency>
 ----

@@ -36,6 +36,7 @@
 
     <modules>
         <module>openapi-ui</module>
+        <module>cdi</module>
     </modules>
 
     <description>

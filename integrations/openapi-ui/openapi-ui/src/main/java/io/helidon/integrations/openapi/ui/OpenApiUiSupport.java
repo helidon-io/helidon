@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -102,7 +103,7 @@ public class OpenApiUiSupport extends HelidonRestServiceSupport {
 
         try {
             indexHtml = IndexHtmlCreator.createIndexHtml(options);
-            LOGGER.log(System.Logger.Level.INFO,
+            LOGGER.log(System.Logger.Level.DEBUG,
                        "Starting OpenAPI U/I at {0}, fetching OpenAPI document from {1}",
                        context(), openApiWebContext);
         } catch (IOException e) {
@@ -116,22 +117,23 @@ public class OpenApiUiSupport extends HelidonRestServiceSupport {
      */
     @Override
     public void update(Routing.Rules rules) {
-        // Serve static content from the external U/I component...
-        StaticContentSupport uiStaticSupport = StaticContentSupport.builder("META-INF/resources/openapi-ui")
-                        .build();
-        // ...and from here.
-        StaticContentSupport hereStaticSupport = StaticContentSupport.builder("helidon-openapi-ui")
-                .build();
-        rules
-                .get(context(), this::displayIndex)
-                .get(context() + "/", this::displayIndex)
-                .get(context() + "/index.html", this::displayIndex)
-                .register(context(), hereStaticSupport)
-                .register(context(), uiStaticSupport);
+        configureEndpoint(rules, rules);
     }
 
     @Override
     protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
+        // Serve static content from the external U/I component...
+        StaticContentSupport uiStaticSupport = StaticContentSupport.builder("META-INF/resources/openapi-ui")
+                .build();
+        // ...and from here.
+        StaticContentSupport hereStaticSupport = StaticContentSupport.builder("helidon-openapi-ui")
+                .build();
+        serviceEndpointRoutingRules
+                .get(context(), this::redirectToIndex)
+                .get(context() + "/", this::redirectToIndex)
+                .get(context() + "/index.html", this::displayIndex)
+                .register(context(), hereStaticSupport)
+                .register(context(), uiStaticSupport);
     }
 
     // For testing.
@@ -242,5 +244,11 @@ public class OpenApiUiSupport extends HelidonRestServiceSupport {
 
     private void displayIndex(ServerRequest request, ServerResponse response) {
         response.send(indexHtml);
+    }
+
+    private void redirectToIndex(ServerRequest request, ServerResponse response) {
+        response.status(Http.Status.MOVED_PERMANENTLY_301);
+        response.addHeader(Http.Header.LOCATION, context() + "/index.html");
+        response.send();
     }
 }

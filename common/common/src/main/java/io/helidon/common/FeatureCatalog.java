@@ -125,6 +125,10 @@ final class FeatureCatalog {
               "OpenAPI",
               "Open API support",
               "OpenAPI");
+        addSe("io.helidon.integrations.openapi.ui",
+              "OpenAPI U/I",
+              "Integration with OpenAPI U/I",
+              "OpenAPI-UI");
         addSe("io.helidon.security",
               "Security",
               "Security support",
@@ -295,6 +299,10 @@ final class FeatureCatalog {
               "Open API",
               "MicroProfile Open API spec implementation",
               "OpenAPI");
+        addMp("io.helidon.integrations.openapi.ui.cdi",
+              "OpenAPI U/I",
+              "Integration with OpenAPI U/I",
+              "OpenAPI-UI");
         add("io.helidon.microprofile.reactive",
             FeatureDescriptor.builder()
                     .name("Reactive")
