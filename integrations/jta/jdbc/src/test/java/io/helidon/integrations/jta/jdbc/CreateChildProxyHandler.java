@@ -16,7 +16,6 @@
 package io.helidon.integrations.jta.jdbc;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +26,7 @@ import java.util.function.Supplier;
 
 import static java.lang.reflect.Proxy.newProxyInstance;
 
-final class CreateChildProxyHandler<D, C> extends ConditionalInvocationHandler<D> {
+class CreateChildProxyHandler<D, C> extends ConditionalInvocationHandler<D> {
 
     private final BiFunction<? super D, ? super C, InvocationHandler> creator;
 
@@ -46,17 +45,16 @@ final class CreateChildProxyHandler<D, C> extends ConditionalInvocationHandler<D
 
     @Override
     @SuppressWarnings("unchecked")
-    protected final Object invoke(Object proxy, D delegate, Method method, Object[] arguments)
-        throws IllegalAccessException, InvocationTargetException {
+    protected Object invoke(Object proxy, D delegate, Method method, Object[] arguments) throws Throwable {
         return
             newProxyInstance(Thread.currentThread().getContextClassLoader(),
                              new Class<?>[] { this.childTypeFunction.apply(method) },
                              this.creator.apply(delegate, (C) method.invoke(delegate, arguments)));
     }
 
-    public static interface ChildInvocationHandlerCreator<P, C> {
+    static interface ChildInvocationHandlerCreator<P, C> {
 
-        public InvocationHandler create(P parent, C child, BiConsumer<? super C, ? super Throwable> errorNotifier);
+        InvocationHandler create(P parent, C child, BiConsumer<? super C, ? super Throwable> errorNotifier);
         
     }
   

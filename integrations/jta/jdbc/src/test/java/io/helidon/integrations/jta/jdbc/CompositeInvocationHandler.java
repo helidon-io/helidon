@@ -77,7 +77,7 @@ class CompositeInvocationHandler<D> extends ConditionalInvocationHandler<D> {
         }
     }
 
-    private ConditionalInvocationHandler<D> select(Object proxy, Method method, Object[] arguments) {
+    final ConditionalInvocationHandler<D> select(Object proxy, Method method, Object[] arguments) {
         for (ConditionalInvocationHandler<D> ih : this.list) {
             if (ih.handles(proxy, method, arguments)) {
                 return ih;

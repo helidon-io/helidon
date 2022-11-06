@@ -138,6 +138,14 @@ class ConditionalInvocationHandler<D> implements InvocationHandler {
          */
 
 
+        public ObjectMethods(D delegate) {
+          this(() -> delegate, ObjectMethods::sink);
+        }
+      
+        public ObjectMethods(Supplier<? extends D> delegate) {
+          this(delegate, ObjectMethods::sink);
+        }
+      
         public ObjectMethods(Supplier<? extends D> delegate, BiConsumer<? super D, ? super Throwable> errorNotifier) {
             super(delegate, ObjectMethods::test, errorNotifier);
         }
@@ -176,6 +184,7 @@ class ConditionalInvocationHandler<D> implements InvocationHandler {
             return method.getDeclaringClass() == Object.class;
         }
 
+        private static void sink(Object o1, Object o2) {}
 
     }
 

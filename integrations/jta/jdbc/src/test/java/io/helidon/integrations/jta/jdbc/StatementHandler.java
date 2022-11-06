@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-final class StatementHandler extends CompositeInvocationHandler<Statement> {
+class StatementHandler extends CompositeInvocationHandler<Statement> {
 
     StatementHandler(Connection proxiedCreator,
                      Statement delegate,
