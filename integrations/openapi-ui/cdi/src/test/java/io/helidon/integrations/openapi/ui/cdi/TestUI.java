@@ -51,7 +51,7 @@ class TestUI {
         assertThat("OpenAPI document status", response.getStatus(), is(200));
         assertThat("OpenAPI document",
                    response.readEntity(String.class),
-                   stringContainsInOrder(List.of("3.0.0", "/greet")));
+                   stringContainsInOrder(List.of("3.0.", "/greet")));
 
         response = webTarget
                 .path("/openapi-ui")
