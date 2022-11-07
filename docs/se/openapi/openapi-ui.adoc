@@ -1,0 +1,106 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= OpenAPI U/I
+:toc:
+:toc-placement: preamble
+:description: Helidon SE OpenAPI U/I Support
+:keywords: helidon, se, openapi u/i
+:rootdir: {docdir}/../..
+:incdir: {rootdir}/includes/openapi
+:ui-inc: {incdir}/openapi-ui.adoc
+:feature-name: OpenAPI U/I support
+
+include::{rootdir}/includes/se.adoc[]
+include::{rootdir}/includes/pages.adoc[]
+:javadoc-path: {openapi-ui-javadoc-base-url}/io/helidon/integrations/openapi/ui
+:openapi-javadoc-path: {openapi-javadoc-base-url}/io/helidon/openapi
+
+include::{ui-inc}[tag=preamble]
+
+include::{ui-inc}[tags=intro;overview]
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.openapi-ui</groupId>
+    <artifactId>helidon-openapi-ui</artifactId>
+</dependency>
+----
+
+Also add the following dependency.
+
+include::{openapi-page}[tag=depc]
+
+include::{ui-inc}[tag=usage]
+
+== API
+
+link:{javadoc-path}/OpenApiUiSupport.html[`OpenApiUiSupport`] is a WebServer service which displays the OpenAPI U/I page.
+
+This class needs information about the link:{openapi-javadoc-path}/OpenAPISupport.html[`OpenAPISupport`] instance in your application
+so your Helidon SE application must first create one.
+Then you create an instance of `OpenApiUiSupport` and add both to your application routing.
+
+The following example creates instances of both services.
+
+[source,java]
+.Create `OpenAPISupport` and `OpenApiUiSupport` instances
+----
+Config config = Config.create(); // <1>
+
+OpenAPISupport openApiSupport =
+    OpenAPISupport.create(config.get(OpenAPISupport.Builder.CONFIG_KEY)); // <2>
+
+OpenApiUiSupport openApiUiSupport =
+    OpenApiUiSupport.create(openApiSupport,
+                            config.get(OpenApiUiSupport.OPENAPI_UI_CONFIG_KEY)); // <3>
+----
+<1> Load the configuration.
+<2> Create the `OpenAPISupport` instance using configuration.
+<3> Create the `OpenApiUiSupport` instance using the `OpenAPISupport` instance and the U/I configuration.
+
+As with most Helidon services, you can create the `OpenAPISupport` and `OpenApiUiSupport` objects explicitly using their builders or, as shown here, using only configuration.
+
+Register both of these services, as well as your own services and others from Helidon.
+
+[source,java]
+.Register services for routing
+----
+Routing.builder()
+        .register(openApiSupport)
+        .register(openApiUiSupport)
+        // Add registrations of your service(s) and other Helidon services you need.
+        .build();
+----
+
+include::{ui-inc}[tag=config-intro]
+
+For example, the following configuration changes the path where you access the U/I.
+
+[source,yaml]
+.Example `application.yaml` configuration changing the U/I URL
+----
+openapi:
+  ui:
+    web-context: /my-openapi-ui
+----
+
+include::{ui-inc}[tag=config-details]

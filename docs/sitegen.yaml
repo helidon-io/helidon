@@ -173,6 +173,7 @@ backend:
                 sources:
                   - "openapi.adoc"
                   - "openapi-generator.adoc"
+                  - "openapi-ui.adoc"
               - type: "MENU"
                 title: "Integrations"
                 dir: "integrations"
@@ -384,6 +385,7 @@ backend:
                 sources:
                   - "openapi.adoc"
                   - "openapi-generator.adoc"
+                  - "openapi-ui.adoc"
               - type: "MENU"
                 title: "Integrations"
                 dir: "integrations"

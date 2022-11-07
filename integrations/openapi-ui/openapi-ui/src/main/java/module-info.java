@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,18 @@
  */
 
 /**
- * Quickstart MicroProfile example.
+ * Helidon SE OpenAPI U/I Support.
  */
-@OpenAPIDefinition(info = @Info(title = "Helidon MP QuickStart Example",
-                                version = "1.0.0",
-                                description = "A very simple application to reply with friendly greetings")
-)
-package io.helidon.examples.quickstart.mp;
+module io.helidon.integrations.openapi.ui {
 
-import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
-import org.eclipse.microprofile.openapi.annotations.info.Info;
+    requires transitive io.helidon.config;
+    requires io.helidon.config.metadata;
+    requires transitive io.helidon.openapi;
+    requires transitive io.helidon.servicecommon.rest;
+    requires transitive io.helidon.webserver;
+    requires io.helidon.webserver.staticcontent;
+
+    requires smallrye.open.api.ui;
+
+    exports io.helidon.integrations.openapi.ui;
+}

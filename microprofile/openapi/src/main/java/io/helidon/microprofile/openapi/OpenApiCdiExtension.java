@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,10 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  */
 public class OpenApiCdiExtension implements Extension {
 
+    /**
+     * Priority of the observer which creates the OpenAPISupport instance during start-up.
+     */
+    public static final int STARTUP_OBSERVER_PRIORITY = LIBRARY_BEFORE + 10;
     private static final String INDEX_PATH = "META-INF/jandex.idx";
 
     private static final Logger LOGGER = Logger.getLogger(OpenApiCdiExtension.class.getName());
@@ -80,6 +84,13 @@ public class OpenApiCdiExtension implements Extension {
         this(INDEX_PATH);
     }
 
+    /**
+     *
+     * @return the {@code OpenAPISupport} instance created by the extension
+     */
+    public OpenAPISupport service() {
+        return openApiSupport;
+    }
     OpenApiCdiExtension(String... indexPaths) throws IOException {
         this.indexPaths = indexPaths;
         List<URL> indexURLs = findIndexFiles(indexPaths);
@@ -101,7 +112,7 @@ public class OpenApiCdiExtension implements Extension {
         this.config = config;
     }
 
-    void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event) {
+    void registerOpenApi(@Observes @Priority(STARTUP_OBSERVER_PRIORITY) @Initialized(ApplicationScoped.class) Object event) {
         Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
         openApiSupport = new MPOpenAPIBuilder()
                 .config(mpConfig)
