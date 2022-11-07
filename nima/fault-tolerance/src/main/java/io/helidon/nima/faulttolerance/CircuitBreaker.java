@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.LazyValue;
 
@@ -107,7 +107,7 @@ public interface CircuitBreaker extends FtHandler {
         private int successThreshold = 1;
         // rolling window size to
         private int volume = 10;
-        private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
+        private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
         private String name = "CircuitBreaker-" + System.identityHashCode(this);
 
         private Builder() {
@@ -227,13 +227,13 @@ public interface CircuitBreaker extends FtHandler {
         /**
          * Executor service to schedule future tasks.
          * By default uses an executor configured on
-         * {@link io.helidon.nima.faulttolerance.FaultTolerance#scheduledExecutor(java.util.function.Supplier)}.
+         * {@link io.helidon.nima.faulttolerance.FaultTolerance#executor(java.util.function.Supplier)}.
          *
-         * @param scheduledExecutor executor to use
+         * @param executor executor to use
          * @return updated builder instance
          */
-        public Builder executor(ScheduledExecutorService scheduledExecutor) {
-            this.executor = LazyValue.create(scheduledExecutor);
+        public Builder executor(ExecutorService executor) {
+            this.executor = LazyValue.create(executor);
             return this;
         }
 
@@ -248,7 +248,7 @@ public interface CircuitBreaker extends FtHandler {
             return this;
         }
 
-        LazyValue<? extends ScheduledExecutorService> executor() {
+        LazyValue<? extends ExecutorService> executor() {
             return executor;
         }
 

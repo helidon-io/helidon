@@ -72,7 +72,7 @@ public interface Async {
      * Fluent API Builder for {@link Async}.
      */
     class Builder implements io.helidon.common.Builder<Builder, Async> {
-        private LazyValue<? extends ExecutorService> executor;
+        private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
 
         private Builder() {
         }

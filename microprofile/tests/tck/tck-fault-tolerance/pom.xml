@@ -93,6 +93,7 @@
                     <systemPropertyVariables>
                         <fault-tolerance.commandThreadPoolSize>32</fault-tolerance.commandThreadPoolSize>
                         <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
+                        <org.eclipse.microprofile.fault.tolerance.tck.timeout.multiplier>2.0</org.eclipse.microprofile.fault.tolerance.tck.timeout.multiplier>
                     </systemPropertyVariables>
                     <suiteXmlFiles>
                         <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
