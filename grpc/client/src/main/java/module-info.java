@@ -23,7 +23,6 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "gRPC Client", description = "Client for gRPC services",
         in = HelidonFlavor.SE,
-        invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA},
         path = "grpcClient")
 @Aot(description = "Experimental support in native image")
 module io.helidon.grpc.client {
