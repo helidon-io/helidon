@@ -388,7 +388,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 try {
                     long value = Long.parseLong(contentLength);
                     if (value > maxPayloadSize) {
-                        LOGGER.fine(() -> formatMsg("Payload length over max %d > %d", ctx, value, maxPayloadSize));
                         ignorePayload = true;
                         send413PayloadTooLarge(ctx, request);
                         return true;
