@@ -14,41 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.api;
+package io.helidon.pico;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Inherited;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.TYPE;
-
 /**
- * Indicates the desired startup sequence for a service class.
+ * Meta-annotation for an annotation that will trigger services annotated with it to become intercepted.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(TYPE)
-@Inherited
-public @interface RunLevel {
-
-    /**
-     * Represents an eager singleton.
-     */
-    int STARTUP = 0;
-
-    /**
-     * Anything > 0 is left to the underlying provider implementation's discretion for meaning; this is just a default for something
-     * that is deemed "other than startup".
-     */
-    int NORMAL = 100;
-
-    /**
-     * The service ranking applied when not declared explicitly.
-     *
-     * @return the startup int value, defaulting to {@link #NORMAL}
-     */
-    int value() default NORMAL;
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface InterceptedTrigger {
 
 }
