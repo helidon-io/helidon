@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
+package io.helidon.pico;
+
 /**
- * Pico API module.
+ * Represents the {@link jakarta.annotation.PostConstruct} method.
+ *
+ * @see Activator
  */
-module io.helidon.pico.api {
-    exports io.helidon.pico.api;
+@FunctionalInterface
+public interface PostConstructMethod {
+
+    /**
+     * Represents the post-construct method.
+     */
+    void postConstruct();
+
 }

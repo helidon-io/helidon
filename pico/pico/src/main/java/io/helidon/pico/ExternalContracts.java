@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.api;
+package io.helidon.pico;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -22,18 +22,28 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The Contract annotation is used to relay significance to the type. While remaining optional in its use, it is typically placed
- * on an interface definition to signify that the given type can be used for lookup in the service registry, or otherwise be
- * eligible for injection via standard @Inject. It could also be used on other types (e.g., abstract class) as well.
+ * Placed on the implementation of a service as an alternative to using a {@link Contract}.
  * <p>
- *
- * If the developer does not have access to the source to place this annotation on the interface definition then consider using
- * {@link ExternalContracts} instead - this annotation can be placed on the implementation class implementing the given interface.
- * See io.helidon.pico.spi.ServiceInfo#getContractsImplemented()
+ * Use this annotation when it is impossible to place an annotation on the interface itself - for instance of the interface comes
+ * from a 3rd party library provider.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(java.lang.annotation.ElementType.TYPE)
-public @interface Contract {
+public @interface ExternalContracts {
+
+    /**
+     * The advertised contract type(s) for the service class implementation.
+     *
+     * @return the external contract(s)
+     */
+    Class<?>[] value();
+
+    /**
+     * The optional set of module names where this contract is expected to reside.
+     *
+     * @return the optional module names
+     */
+    String[] moduleNames() default {};
 
 }

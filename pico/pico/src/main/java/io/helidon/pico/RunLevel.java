@@ -14,36 +14,41 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.api;
+package io.helidon.pico;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import static java.lang.annotation.ElementType.TYPE;
+
 /**
- * Placed on the implementation of a service as an alternative to using a {@link Contract}.
- * <p>
- * Use this annotation when it is impossible to place an annotation on the interface itself - for instance of the interface comes
- * from a 3rd party library/provider.
+ * Indicates the desired startup sequence for a service class.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(java.lang.annotation.ElementType.TYPE)
-public @interface ExternalContracts {
+@Target(TYPE)
+@Inherited
+public @interface RunLevel {
 
     /**
-     * The advertised contract type(s) for the service class implementation.
-     *
-     * @return the external contract(s)
+     * Represents an eager singleton.
      */
-    Class<?>[] value();
+    int STARTUP = 0;
 
     /**
-     * The optional set of module names where this contract is expected to reside.
-     *
-     * @return the optional module names
+     * Anything > 0 is left to the underlying provider implementation's discretion for meaning; this is just a default for something
+     * that is deemed "other than startup".
      */
-    String[] moduleNames() default {};
+    int NORMAL = 100;
+
+    /**
+     * The service ranking applied when not declared explicitly.
+     *
+     * @return the startup int value, defaulting to {@link #NORMAL}
+     */
+    int value() default NORMAL;
 
 }
