@@ -46,6 +46,27 @@ public interface SocketConfiguration {
     int DEFAULT_BACKLOG_SIZE = 1024;
 
     /**
+     * Creates a builder of {@link SocketConfiguration} class.
+     *
+     * @return a builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Create a default named configuration.
+     *
+     * @param name name of the socket
+     * @return a new socket configuration with defaults
+     */
+    static SocketConfiguration create(String name) {
+        return builder()
+                .name(name)
+                .build();
+    }
+
+    /**
      * Name of this socket.
      * Default to {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME} for the main and
      * default server socket. All other sockets must be named.
@@ -243,29 +264,34 @@ public interface SocketConfiguration {
      *
      * @return maximum length of the content of an upgrade request
      */
-    default int maxUpgradeContentLength(){
+    default int maxUpgradeContentLength() {
         return 64 * 1024;
     }
 
     /**
-     * Creates a builder of {@link SocketConfiguration} class.
-     *
-     * @return a builder
+     * Types of discovery of frontend uri. Defaults to {@link #HOST} when frontend uri discovery is disabled (uses only Host
+     * header and information about current request to determine scheme, host, port, and path).
+     * Defaults to {@link #FORWARDED} when discovery is enabled. Can be explicitly configured on socket configuration builder.
      */
-    static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Create a default named configuration.
-     *
-     * @param name name of the socket
-     * @return a new socket configuration with defaults
-     */
-    static SocketConfiguration create(String name) {
-        return builder()
-                .name(name)
-                .build();
+    enum RequestedUriDiscoveryType {
+        /**
+         * The {@link io.helidon.common.http.Http.Header#FORWARDED} header is used to discover the original requested URI.
+         */
+        FORWARDED,
+        /**
+         * The
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PROTO},
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_HOST},
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PORT},
+         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PREFIX}
+         * headers are used to discover the original requested URI.
+         */
+        X_FORWARDED,
+        /**
+         * This is the default, only the {@link io.helidon.common.http.Http.Header#HOST} header is used to discover
+         * requested URI.
+         */
+        HOST
     }
 
     /**
@@ -474,11 +500,13 @@ public interface SocketConfiguration {
          * @param type type to add
          * @return updated builder
          */
-        @ConfiguredOption(key = "requested-uri-discovery-types", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "requested-uri-discovery.types", kind = ConfiguredOption.Kind.LIST)
         B addRequestedUriDiscoveryType(RequestedUriDiscoveryType type);
 
         /**
-         * When set to {@code true}, {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType#FORWARDED} will be
+         * When set to {@code true}, unless you configure custom
+         * {@link #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)},
+         * {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType#FORWARDED} will be
          * used to discover client requested uri, available through {@link ServerRequest#requestedUri()}.
          * Discovery types can be configured explicitly.
          * This method does not modify requested uri discovery types if already customized by
@@ -487,7 +515,7 @@ public interface SocketConfiguration {
          * @param enabled whether to enable discovery
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(key = "requested-uri-discovery.enabled")
         B requestedUriDiscoveryEnabled(boolean enabled);
 
         /**
@@ -535,39 +563,14 @@ public interface SocketConfiguration {
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
 
-            config.get("requested-uri-discovery-enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
-            config.get("requested-uri-discovery-types").asList(RequestedUriDiscoveryType.class)
+            config.get("requested-uri-discovery.enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
+            config.get("requested-uri-discovery.types").asList(RequestedUriDiscoveryType.class)
                     .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
 
             return (B) this;
         }
     }
 
-    /**
-     * Types of discovery of frontend uri. Defaults to {@link #HOST} when frontend uri discovery is disabled (uses only Host
-     * header and information about current request to determine scheme, host, port, and path).
-     * Defaults to {@link #FORWARDED} when discovery is enabled. Can be explicitly configured on socket configuration builder.
-     */
-    enum RequestedUriDiscoveryType {
-        /**
-         * The {@link io.helidon.common.http.Http.Header#FORWARDED} header is used to discover the original requested URI.
-         */
-        FORWARDED,
-        /**
-         * The
-         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PROTO},
-         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_HOST},
-         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PORT},
-         * {@link io.helidon.common.http.Http.Header#X_FORWARDED_PREFIX}
-         * headers are used to discover the original requested URI.
-         */
-        X_FORWARDED,
-        /**
-         * This is the default, only the {@link io.helidon.common.http.Http.Header#HOST} header is used to discover
-         * requested URI.
-         */
-        HOST
-    }
     /**
      * The {@link io.helidon.webserver.SocketConfiguration} builder class.
      */
@@ -603,7 +606,7 @@ public interface SocketConfiguration {
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
         private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
-        private boolean requestedUriDiscoveryEnabled;
+        private Boolean requestedUriDiscoveryEnabled;
 
         private Builder() {
         }
@@ -616,6 +619,16 @@ public interface SocketConfiguration {
 
             if (null == name) {
                 throw new ConfigException("Socket name must be configured for each socket");
+            }
+            if (requestedUriDiscoveryEnabled == null) {
+                requestedUriDiscoveryEnabled = false;
+            }
+
+            if (requestedUriDiscoveryEnabled) {
+                // configure default type if enabled and no explicit types cconfigured
+                if (this.requestedUriDiscoveryTypes.isEmpty()) {
+                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
+                }
             }
 
             return new ServerBasicConfig.SocketConfig(this);

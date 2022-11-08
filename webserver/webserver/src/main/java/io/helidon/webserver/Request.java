@@ -218,45 +218,45 @@ abstract class Request implements ServerRequest {
         String path = null;
         String query = query();
 
+        boolean discovered = false;
         for (var type : bareRequest.socketConfiguration().requestedUriDiscoveryTypes()) {
             switch (type) {
             case FORWARDED -> {
                 List<Forwarded> forwardedList = Forwarded.create(headers);
                 if (!forwardedList.isEmpty()) {
                     Forwarded f = forwardedList.get(0);
-                    if (scheme == null) {
-                        scheme = f.proto().orElse(null);
-                    }
-                    if (host == null && authority == null) {
-                        authority = f.host().orElse(null);
-                    }
+                    scheme = f.proto().orElse(null);
+                    authority = f.host().orElse(null);
+                    discovered = true;
                 }
             }
             case X_FORWARDED -> {
-                if (scheme == null) {
-                    scheme = headers.first(Http.Header.X_FORWARDED_PROTO).orElse(null);
-                }
-                if (host == null && authority == null) {
-                    host = headers.first(Http.Header.X_FORWARDED_HOST).orElse(null);
-                }
-                if (port == -1 && authority == null) {
-                    port = headers.first(Http.Header.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
-                }
-
+                scheme = headers.first(Http.Header.X_FORWARDED_PROTO).orElse(null);
+                host = headers.first(Http.Header.X_FORWARDED_HOST).orElse(null);
+                port = headers.first(Http.Header.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
                 path = headers.first(Http.Header.X_FORWARDED_PREFIX)
                         .map(prefix -> {
                             String absolute = path().absolute().toString();
                             return prefix + (absolute.startsWith("/") ? "" : "/") + absolute;
                         })
                         .orElse(null);
+
+                // at least one header was present
+                discovered = scheme != null || host != null || port != -1 || path != null;
             }
             default -> {
-                if (host == null && authority == null) {
-                    authority = headers.first(Http.Header.HOST).orElse(null);
-                }
+                authority = headers.first(Http.Header.HOST).orElse(null);
+                discovered = authority != null;
             }
+            }
+
+            if (discovered) {
+                // do not look at the next header, we have already discovered the configured header
+                break;
             }
         }
+
+        // now we must fill values that were not discovered (to have a valid URI information)
         if (host == null && authority == null) {
             authority = headers.first(Http.Header.HOST).orElse(null);
         }
@@ -264,8 +264,14 @@ abstract class Request implements ServerRequest {
         if (path == null) {
             path = path().absolute().toString();
         }
+
         if (host == null && authority != null) {
-            Authority a = Authority.create(scheme, authority);
+            Authority a;
+            if (scheme == null) {
+                a = Authority.create(authority);
+            } else {
+                a = Authority.create(scheme, authority);
+            }
             if (a.host() != null) {
                 host = a.host();
             }
@@ -273,6 +279,10 @@ abstract class Request implements ServerRequest {
                 port = a.port();
             }
         }
+
+        /*
+        Discover final values to be used
+         */
 
         if (scheme == null) {
             if (port == 80) {
@@ -284,6 +294,11 @@ abstract class Request implements ServerRequest {
             }
         }
 
+        if (host == null) {
+            host = localAddress();
+        }
+
+        // we may still have -1, if port was not explicitly defined by a header - use default port of protocol
         if (port == -1) {
             if ("https".equals(scheme)) {
                 port = 443;
@@ -298,7 +313,16 @@ abstract class Request implements ServerRequest {
     }
 
     private record Authority(String host, int port) {
-        private static final Authority NULL_AUTHORITY = new Authority(null, -1);
+        static Authority create(String hostHeader) {
+            int colon = hostHeader.indexOf(':');
+            if (colon == -1) {
+                // we do not know the protocol, and there is no port defined
+                return new Authority(hostHeader, -1);
+            }
+            String hostString = hostHeader.substring(0, colon);
+            String portString = hostHeader.substring(colon + 1);
+            return new Authority(hostString, Integer.parseInt(portString));
+        }
         static Authority create(String scheme, String hostHeader) {
             int colon = hostHeader.indexOf(':');
             if (colon == -1) {
