@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * gRPC Client Module.
  */
+@Feature(value = "gRPC Client", description = "Client for gRPC services",
+        in = HelidonFlavor.SE,
+        invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = "grpcClient")
+@Aot(description = "Experimental support in native image")
 module io.helidon.grpc.client {
+    requires static io.helidon.common.features.api;
+
     exports io.helidon.grpc.client;
 
     requires transitive io.helidon.grpc.core;
