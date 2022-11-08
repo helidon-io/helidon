@@ -42,12 +42,25 @@ class ConditionalInvocationHandler<D> implements InvocationHandler {
      */
 
 
+    ConditionalInvocationHandler(D delegate) {
+        this(delegate, Predicate.TRUE, ConditionalInvocationHandler::sink);
+    }
+
+    ConditionalInvocationHandler(Supplier<? extends D> delegateSupplier) {
+        this(delegateSupplier, Predicate.TRUE, ConditionalInvocationHandler::sink);
+    }
+
+    ConditionalInvocationHandler(Supplier<? extends D> delegateSupplier,
+                                 Predicate<? super D> predicate) {
+        this(delegateSupplier, predicate, ConditionalInvocationHandler::sink);
+    }
+    
     ConditionalInvocationHandler(D delegate,
                                  Predicate<? super D> predicate,
                                  BiConsumer<? super D, ? super Throwable> errorNotifier) {
         this(() -> delegate, predicate, errorNotifier);
     }
-  
+
     ConditionalInvocationHandler(Supplier<? extends D> delegateSupplier,
                                  Predicate<? super D> predicate,
                                  BiConsumer<? super D, ? super Throwable> errorNotifier) {
@@ -70,7 +83,7 @@ class ConditionalInvocationHandler<D> implements InvocationHandler {
     final D delegate() {
         return this.delegateSupplier.get();
     }
-    
+
     final boolean handles(Object proxy, Method method, Object[] arguments) {
         return this.predicate.test(proxy, this.delegateSupplier, method, arguments);
     }
@@ -141,11 +154,11 @@ class ConditionalInvocationHandler<D> implements InvocationHandler {
         public ObjectMethods(D delegate) {
           this(() -> delegate, ObjectMethods::sink);
         }
-      
+
         public ObjectMethods(Supplier<? extends D> delegate) {
           this(delegate, ObjectMethods::sink);
         }
-      
+
         public ObjectMethods(Supplier<? extends D> delegate, BiConsumer<? super D, ? super Throwable> errorNotifier) {
             super(delegate, ObjectMethods::test, errorNotifier);
         }

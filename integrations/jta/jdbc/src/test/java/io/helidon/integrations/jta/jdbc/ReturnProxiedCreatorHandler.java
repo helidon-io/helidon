@@ -16,6 +16,7 @@
 package io.helidon.integrations.jta.jdbc;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -48,7 +49,7 @@ final class ReturnProxiedCreatorHandler<PC, D> extends ConditionalInvocationHand
                                 Set<? extends String> methodNames,
                                 BiConsumer<? super D, ? super Throwable> errorNotifier) {
         super(delegateSupplier,
-              proxiedCreator == null ? Predicate.FALSE : predicate(methodNames),
+              proxiedCreator == null ? Predicate.FALSE : predicate(methodNames, proxiedCreator),
               errorNotifier);
         this.proxiedCreator = proxiedCreator; // nullable on purpose
     }
@@ -70,13 +71,14 @@ final class ReturnProxiedCreatorHandler<PC, D> extends ConditionalInvocationHand
      */
 
 
-    private static <D> Predicate<? super D> predicate(Set<? extends String> methodNames) {
-        if (methodNames == null || methodNames.isEmpty()) {
+    private static <PC, D> Predicate<? super D> predicate(Set<? extends String> methodNames, PC proxiedCreator) {
+        Objects.requireNonNull(proxiedCreator, "proxiedCreator");
+        if (methodNames.isEmpty()) {
             return Predicate.FALSE;
         }
-        final Set<String> names = Set.copyOf(methodNames);
+        final Set<String> names = Set.copyOf(methodNames);        
         return (p, d, m, a) -> m.getParameterCount() == 0
-            && m.getReturnType().isInstance(p)
+            && m.getReturnType().isInstance(proxiedCreator)
             && names.contains(m.getName());
     }
 

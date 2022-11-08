@@ -31,7 +31,15 @@ class CreateChildProxyHandler<D, C> extends ConditionalInvocationHandler<D> {
     private final BiFunction<? super D, ? super C, InvocationHandler> creator;
 
     private final Function<? super Method, ? extends Class<? extends C>> childTypeFunction;
-    
+
+
+    CreateChildProxyHandler(Supplier<? extends D> delegateSupplier,
+                            Predicate<? super D> predicate,
+                            Function<? super Method, ? extends Class<? extends C>> childTypeFunction,
+                            ChildInvocationHandlerCreator<? super D, C> childInvocationHandlerCreator) {
+        this(delegateSupplier, predicate, childTypeFunction, childInvocationHandlerCreator, CreateChildProxyHandler::sink);
+    }
+                            
     CreateChildProxyHandler(Supplier<? extends D> delegateSupplier,
                             Predicate<? super D> predicate,
                             Function<? super Method, ? extends Class<? extends C>> childTypeFunction,
@@ -49,9 +57,12 @@ class CreateChildProxyHandler<D, C> extends ConditionalInvocationHandler<D> {
         return
             newProxyInstance(Thread.currentThread().getContextClassLoader(),
                              new Class<?>[] { this.childTypeFunction.apply(method) },
-                             this.creator.apply(delegate, (C) method.invoke(delegate, arguments)));
+                             // this.creator.apply(delegate, (C) method.invoke(delegate, arguments)));
+                             this.creator.apply((D) proxy, (C) method.invoke(delegate, arguments)));
     }
 
+    private static void sink(Object ignored0, Object ignored1) {}
+    
     static interface ChildInvocationHandlerCreator<P, C> {
 
         InvocationHandler create(P parent, C child, BiConsumer<? super C, ? super Throwable> errorNotifier);

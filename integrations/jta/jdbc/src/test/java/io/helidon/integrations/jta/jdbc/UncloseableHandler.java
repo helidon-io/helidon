@@ -31,11 +31,23 @@ final class UncloseableHandler<D> extends ConditionalInvocationHandler<D> {
 
     UncloseableHandler(D delegate,
                        java.util.function.Predicate<? super D> isClosedPredicate,
+                       Consumer<? super D> closedNotifier) {
+        this(() -> delegate, isClosedPredicate, closedNotifier, UncloseableHandler::sink);
+    }
+
+    UncloseableHandler(Supplier<? extends D> delegateSupplier,
+                       java.util.function.Predicate<? super D> isClosedPredicate,
+                       Consumer<? super D> closedNotifier) {
+        this(delegateSupplier, isClosedPredicate, closedNotifier, UncloseableHandler::sink);
+    }
+
+    UncloseableHandler(D delegate,
+                       java.util.function.Predicate<? super D> isClosedPredicate,
                        Consumer<? super D> closedNotifier,
                        BiConsumer<? super D, ? super Throwable> errorNotifier) {
         this(() -> delegate, isClosedPredicate, closedNotifier, errorNotifier);
     }
-    
+
     UncloseableHandler(Supplier<? extends D> delegateSupplier,
                        java.util.function.Predicate<? super D> isClosedPredicate,
                        Consumer<? super D> closedNotifier,
@@ -94,5 +106,7 @@ final class UncloseableHandler<D> extends ConditionalInvocationHandler<D> {
     }
 
     private static void sink(Object ignored) {}
+
+    private static void sink(Object ignored1, Object ignored2) {}
 
 }

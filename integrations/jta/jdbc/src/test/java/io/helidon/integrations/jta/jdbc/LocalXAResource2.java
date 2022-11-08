@@ -154,8 +154,7 @@ public final class LocalXAResource2 implements XAResource {
             }
         }
         throw new IllegalArgumentException(new XAException(XAER_DUPID)
-                                           .initCause(new IllegalArgumentException("xid: " + x
-                                                                                   + "; association: " + a)));
+                                           .initCause(new IllegalArgumentException("xid: " + x + "; association: " + a)));
     }
 
     @Override // XAResource
@@ -414,7 +413,15 @@ public final class LocalXAResource2 implements XAResource {
                                        Association a,
                                        Association.BranchState legalBranchState0,
                                        UnaryOperator<Association> f) {
-        return compute(x, a, EnumSet.of(legalBranchState0), f);
+        if (a == null) {
+            throw new IllegalArgumentException(new XAException(XAER_NOTA)
+                                               .initCause(new IllegalStateException("xid: " + x + "; association: " + a)));
+        }
+        if (legalBranchState0 == a.branchState()) {
+            return f.apply(a);
+        }
+        throw new IllegalArgumentException(new XAException(XAER_PROTO)
+                                           .initCause(new IllegalStateException("xid: " + x + "; association: " + a)));
     }
 
     private static Association compute(Xid x,
@@ -440,28 +447,41 @@ public final class LocalXAResource2 implements XAResource {
                                        UnaryOperator<Association> f) {
         if (a == null) {
             throw new IllegalArgumentException(new XAException(XAER_NOTA)
-                                               .initCause(new IllegalStateException("xid: " + x
-                                                                                    + "; association: " + a)));
+                                               .initCause(new IllegalStateException("xid: " + x + "; association: " + a)));
         }
         if (legalBranchStates.contains(a.branchState())) {
             return f.apply(a);
         }
         throw new IllegalArgumentException(new XAException(XAER_PROTO)
-                                           .initCause(new IllegalStateException("xid: " + x
-                                                                                + "; association: " + a)));
+                                           .initCause(new IllegalStateException("xid: " + x + "; association: " + a)));
     }
 
-    // (Remapping BiFunction.)
+    // (Remapping BiFunction. Must throw only
+    // IllegalArgumentException.)
     private static Association activeToIdle(Xid x, Association a) {
-        return a.activeToIdle();
+        try {
+            return a.activeToIdle();
+        } catch (UncheckedSQLException e) {
+            throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e.getCause()));
+        } catch (IllegalTransitionException e) {
+            throw new IllegalArgumentException(new XAException(XAER_PROTO).initCause(e));
+        }
     }
 
-    // (Remapping BiFunction.)
+    // (Remapping BiFunction. Must throw only
+    // IllegalArgumentException.)
     private static Association suspend(Xid x, Association a) {
-        return a.suspend();
+        try {
+            return a.suspend();
+        } catch (UncheckedSQLException e) {
+            throw new IllegalArgumentException(new XAException(XAER_RMERR).initCause(e.getCause()));
+        } catch (IllegalTransitionException e) {
+            throw new IllegalArgumentException(new XAException(XAER_PROTO).initCause(e));
+        }
     }
 
-    // (Remapping BiFunction.)
+    // (Remapping BiFunction. Must throw only
+    // IllegalArgumentException.)
     private static Association join(Xid x, Association a) {
         if (a != null && !a.suspended()) {
             switch (a.branchState()) {
@@ -476,11 +496,11 @@ public final class LocalXAResource2 implements XAResource {
             }
         }
         throw new IllegalArgumentException(new XAException(XAER_PROTO)
-                                           .initCause(new IllegalStateException("xid: " + x
-                                                                                + "; association: " + a)));
+                                           .initCause(new IllegalStateException("xid: " + x + "; association: " + a)));
     }
 
-    // (Remapping BiFunction.)
+    // (Remapping BiFunction. Must throw only
+    // IllegalArgumentException.)
     private static Association resume(Xid x, Association a) {
         if (a != null) {
             // TODO: actual resumption logic on a, then:
@@ -493,8 +513,7 @@ public final class LocalXAResource2 implements XAResource {
             }
         }
         throw new IllegalArgumentException(new XAException(XAER_NOTA)
-                                           .initCause(new IllegalArgumentException("xid: " + x
-                                                                                   + "; association: " + a)));
+                                           .initCause(new IllegalArgumentException("xid: " + x + "; association: " + a)));
     }
 
     // (UnaryOperator for supplying to compute() above.)
