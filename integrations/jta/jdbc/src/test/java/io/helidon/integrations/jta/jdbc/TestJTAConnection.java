@@ -96,7 +96,7 @@ final class TestJTAConnection {
         tm.begin();
 
         try (Connection physicalConnection = h2ds.getConnection();
-             Connection logicalConnection = JTAConnection.munge(tm, physicalConnection)) {
+             Connection logicalConnection = JTAConnection.connection(tm, physicalConnection)) {
 
 
           // JTAConnection makes proxy connections.

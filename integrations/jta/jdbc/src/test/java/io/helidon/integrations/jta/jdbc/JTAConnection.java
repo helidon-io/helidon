@@ -59,11 +59,12 @@ final class JTAConnection {
      */
 
 
-    public static Connection munge(TransactionManager tm, Connection canonicalConnection) {
-        return (Connection) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                                                   new Class<?>[] { Connection.class,
-                                                           Enlisted.class, LocalXAResource2.Enlistable.class },
-                                                   new Handler(tm, canonicalConnection));
+    public static Connection connection(TransactionManager tm, Connection canonicalConnection) {
+        return
+            (Connection)
+            Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
+                                   new Class<?>[] { Connection.class, Enlisted.class, LocalXAResource2.Enlistable.class },
+                                   new Handler(tm, canonicalConnection));
     }
 
 
