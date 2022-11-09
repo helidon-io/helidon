@@ -16,13 +16,23 @@
 
 package io.helidon.nima.webclient;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.nima.webclient.spi.DnsResolver;
 import io.helidon.nima.webclient.spi.DnsResolverProvider;
 
 /**
  * Provider of the {@link DefaultDnsResolver} instance.
  */
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultDnsResolverProvider implements DnsResolverProvider {
+
+    /**
+     * Create new instance of the {@link DefaultDnsResolverProvider}.
+     * This should be used only for purposes of SPI.
+     */
+    public DefaultDnsResolverProvider() {
+    }
 
     @Override
     public String resolverName() {

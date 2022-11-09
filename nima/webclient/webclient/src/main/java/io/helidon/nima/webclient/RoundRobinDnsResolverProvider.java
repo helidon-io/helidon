@@ -16,13 +16,22 @@
 
 package io.helidon.nima.webclient;
 
+import io.helidon.common.Weight;
 import io.helidon.nima.webclient.spi.DnsResolver;
 import io.helidon.nima.webclient.spi.DnsResolverProvider;
 
 /**
  * Provider of the {@link RoundRobinDnsResolver} instance.
  */
+@Weight(50)
 public final class RoundRobinDnsResolverProvider implements DnsResolverProvider {
+
+    /**
+     * Create new instance of the {@link RoundRobinDnsResolverProvider}.
+     * This should be used only for purposes of SPI.
+     */
+    public RoundRobinDnsResolverProvider() {
+    }
 
     @Override
     public String resolverName() {

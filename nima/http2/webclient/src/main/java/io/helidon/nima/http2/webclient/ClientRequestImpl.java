@@ -219,7 +219,6 @@ class ClientRequestImpl implements Http2ClientRequest {
     private Http2ClientStream reserveStream() {
         if (explicitConnection == null) {
             ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
-                                                            uri.authority(),
                                                             uri.host(),
                                                             uri.port(),
                                                             tls,

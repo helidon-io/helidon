@@ -388,7 +388,6 @@ class ClientRequestImpl implements Http1ClientRequest {
                 connection = new Http1ClientConnection(channelOptions,
                                                        connectionQueue,
                                                        new ConnectionKey(uri.scheme(),
-                                                                         uri.authority(),
                                                                          uri.host(),
                                                                          uri.port(),
                                                                          tls,
@@ -403,7 +402,6 @@ class ClientRequestImpl implements Http1ClientRequest {
             }
         } else {
             connection = new Http1ClientConnection(channelOptions, new ConnectionKey(uri.scheme(),
-                                                                                     uri.authority(),
                                                                                      uri.host(),
                                                                                      uri.port(),
                                                                                      tls,

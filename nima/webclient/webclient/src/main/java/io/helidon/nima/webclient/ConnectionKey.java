@@ -23,7 +23,6 @@ import io.helidon.nima.webclient.spi.DnsResolver;
  * Connection key instance contains all needed connection related information.
  *
  * @param scheme uri address scheme
- * @param authority uri address authority
  * @param host uri address host
  * @param port uri address port
  * @param tls TLS to be used in connection
@@ -31,7 +30,6 @@ import io.helidon.nima.webclient.spi.DnsResolver;
  * @param dnsAddressLookup DNS address lookup strategy
  */
 public record ConnectionKey(String scheme,
-                            String authority,
                             String host,
                             int port,
                             Tls tls,
