@@ -35,7 +35,6 @@ ${GRAALVM_HOME}/bin/native-image -Dhelidon.native.reflection.trace-parsing=true 
     -H:Name=helidon-tests-native-image-mp-1 \
     "-H:IncludeResources=logging.properties|meta-config.yaml|web/resource.txt|web/welcome.txt|verify-jwk.json|META-INF/native-image/tests/mp-1/resource-config.json|META-INF/beans.xml|META-INF/microprofile-config.properties|sign-jwk.json" \
     -H:+ReportExceptionStackTraces \
-    --no-server \
     -jar ./target/helidon-tests-native-image-mp-1.jar
 ```
 
