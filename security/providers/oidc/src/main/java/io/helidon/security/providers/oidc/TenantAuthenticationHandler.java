@@ -125,7 +125,7 @@ class TenantAuthenticationHandler {
                             return it;
                         });
 
-                tenantConfig.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, post, form);
+                OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);
 
                 return postJsonResponse(post,
                                         form.build(),
@@ -171,28 +171,30 @@ class TenantAuthenticationHandler {
 
         Optional<String> token = Optional.empty();
         try {
-            if (tenantConfig.useHeader()) {
-                token = token
-                        .or(() -> tenantConfig.headerHandler().extractToken(providerRequest.env().headers()));
+            if (defaultConfig.useHeader()) {
+                token = token.or(() -> defaultConfig.headerHandler().extractToken(providerRequest.env().headers()));
 
                 if (token.isEmpty()) {
                     missingLocations.add("header");
                 }
             }
 
-            if (tenantConfig.useParam()) {
-                token = token
-                        .or(() -> PARAM_HEADER_HANDLER.extractToken(providerRequest.env().headers()));
+            if (defaultConfig.useParam()) {
+                token = token.or(() -> PARAM_HEADER_HANDLER.extractToken(providerRequest.env().headers()));
+
+                if (token.isEmpty()) {
+                    token = token.or(() -> providerRequest.env().queryParams().first(defaultConfig.paramName()));
+                }
 
                 if (token.isEmpty()) {
                     missingLocations.add("query-param");
                 }
             }
 
-            if (tenantConfig.useCookie()) {
+            if (defaultConfig.useCookie()) {
                 if (token.isEmpty()) {
                     // only do this for cookies
-                    Optional<Single<String>> cookie = tenantConfig.tokenCookieHandler()
+                    Optional<Single<String>> cookie = defaultConfig.tokenCookieHandler()
                             .findCookie(providerRequest.env().headers());
                     if (cookie.isEmpty()) {
                         missingLocations.add("cookie");

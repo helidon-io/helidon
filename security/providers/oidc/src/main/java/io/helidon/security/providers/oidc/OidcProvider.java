@@ -19,6 +19,7 @@ package io.helidon.security.providers.oidc;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,9 +27,11 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.reactive.Single;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
@@ -72,6 +75,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  * </ul>
  */
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
+    private static final Logger LOGGER = Logger.getLogger(TenantAuthenticationHandler.class.getName());
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -133,21 +137,59 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
         String tenantId = tenantIdFinders.stream()
                 .map(tenantIdFinder -> tenantIdFinder.tenantId(providerRequest))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst()
-                .orElse(DEFAULT_TENANT_ID);
+                .orElseGet(() -> findTenantIdFromRedirects(providerRequest));
 
         return tenantAuthHandlers.computeValue(tenantId, () -> {
-            TenantConfig possibleConfig = tenantConfigFinders.stream()
-                    .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .findFirst()
-                    .orElse(oidcConfig.tenantConfig(tenantId));
-            Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
-            return Optional.of(new TenantAuthenticationHandler(oidcConfig, tenant, useJwtGroups, optional));
-        }).get().authenticate(tenantId, providerRequest);
+                    TenantConfig possibleConfig = tenantConfigFinders.stream()
+                            .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
+                            .flatMap(Optional::stream)
+                            .findFirst()
+                            .orElse(oidcConfig.tenantConfig(tenantId));
+                    Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
+                    return Optional.of(new TenantAuthenticationHandler(oidcConfig, tenant, useJwtGroups, optional));
+                }).get()
+                .authenticate(tenantId, providerRequest);
+    }
+
+    private String findTenantIdFromRedirects(ProviderRequest providerRequest) {
+        List<String> missingLocations = new LinkedList<>();
+        Optional<String> tenantId = Optional.empty();
+        missingLocations.add("tenant-id-finder");
+        if (oidcConfig.useParam()) {
+            tenantId = providerRequest.env().queryParams().first(OidcSupport.TENANT_PARAM_NAME);
+
+            if (tenantId.isEmpty()) {
+                missingLocations.add("query-param");
+            }
+        }
+        if (oidcConfig.useCookie() && tenantId.isEmpty()) {
+            tenantId = oidcConfig.tenantCookieHandler()
+                    .findCookie(providerRequest.env().headers())
+                    .stream()
+                    .map(this::getValueFromSingle)
+                    .findFirst();
+
+            if (tenantId.isEmpty()) {
+                missingLocations.add("cookie");
+            }
+        }
+        if (tenantId.isPresent()) {
+            return tenantId.get();
+        } else {
+            LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations);
+            LOGGER.finest(() -> "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
+            return DEFAULT_TENANT_ID;
+        }
+    }
+
+    private String getValueFromSingle(Single<String> cookieSingle) {
+        try {
+            return cookieSingle.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -227,8 +269,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             if (null == oidcConfig) {
                 throw new IllegalArgumentException("OidcConfig must be configured");
             }
-//            tenantConfigProviders.addService(config -> new DefaultTenantConfigProvider.DefaultTenantConfig(oidcConfig),
-//                                             DEFAULT_PRIORITY);
             tenantIdProviders.addService(new DefaultTenantIdProvider());
             tenantConfigFinders = tenantConfigProviders.build().asList().stream()
                     .map(provider -> provider.createTenantConfigFinder(config))
@@ -299,7 +339,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
             config.get("discover-tenant-config-providers").asBoolean().ifPresent(this::discoverTenantConfigProviders);
-            config.get("discover-tenant-ip-providers").asBoolean().ifPresent(this::discoverTenantIdProviders);
+            config.get("discover-tenant-id-providers").asBoolean().ifPresent(this::discoverTenantIdProviders);
             return this;
         }
 

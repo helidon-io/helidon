@@ -17,7 +17,6 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
-import java.util.Optional;
 
 import javax.json.JsonObject;
 import javax.ws.rs.client.Client;
@@ -53,15 +52,15 @@ public final class Tenant {
     private final URI introspectUri;
 
     private Tenant(TenantConfig tenantConfig,
-           URI tokenEndpointUri,
-           URI authorizationEndpointUri,
-           URI logoutEndpointUri,
-           String issuer,
-           Client appClient,
-           WebClient appWebClient,
-           WebTarget tokenEndpoint,
-           JwkKeys signJwk,
-           URI introspectUri) {
+                   URI tokenEndpointUri,
+                   URI authorizationEndpointUri,
+                   URI logoutEndpointUri,
+                   String issuer,
+                   Client appClient,
+                   WebClient appWebClient,
+                   WebTarget tokenEndpoint,
+                   JwkKeys signJwk,
+                   URI introspectUri) {
         this.tenantConfig = tenantConfig;
         this.tokenEndpointUri = tokenEndpointUri;
         this.authorizationEndpointUri = authorizationEndpointUri.toString();
@@ -85,32 +84,33 @@ public final class Tenant {
         WebClient webClient = oidcConfig.generalWebClient();
 
         Errors.Collector collector = Errors.collector();
-        OidcMetadata oidcMetadata = tenantConfig.oidcMetadata()
+
+        OidcMetadata oidcMetadata = OidcMetadata.builder()
+                .remoteEnabled(tenantConfig.useWellKnown())
+                .json(tenantConfig.oidcMetadata())
                 .webClient(webClient)
                 .identityUri(tenantConfig.identityUri())
                 .collector(collector)
                 .build();
 
         URI tokenEndpointUri = oidcMetadata.getOidcEndpoint(collector,
-                                                            tenantConfig.tokenEndpointUri(),
+                                                            tenantConfig.tenantTokenEndpointUri().orElse(null),
                                                             "token_endpoint",
                                                             "/oauth2/v1/token");
 
         URI authorizationEndpointUri = oidcMetadata.getOidcEndpoint(collector,
-                                                                    tenantConfig.authorizationEndpoint(),
+                                                                    tenantConfig.authorizationEndpoint().orElse(null),
                                                                     "authorization_endpoint",
                                                                     "/oauth2/v1/authorize");
 
         URI logoutEndpointUri = oidcMetadata.getOidcEndpoint(collector,
-                                                             tenantConfig.logoutEndpointUri(),
+                                                             tenantConfig.tenantLogoutEndpointUri().orElse(null),
                                                              "end_session_endpoint",
                                                              "oauth2/v1/userlogout");
 
-        String issuer = tenantConfig.issuer();
-        if (issuer == null) {
-            Optional<String> maybeIssuer = oidcMetadata.getString("issuer");
-            issuer = maybeIssuer.orElse(null);
-        }
+        String issuer = tenantConfig.tenantIssuer()
+                .or(() -> oidcMetadata.getString("issuer"))
+                .orElse(null);
 
         collector.collect().checkValid();
         WebClient.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
@@ -141,10 +141,8 @@ public final class Tenant {
         WebClient appWebClient = webClientBuilder.build();
         WebTarget tokenEndpoint = appClient.target(tokenEndpointUri);
 
-        JwkKeys signJwk = tenantConfig.signJwk();
-        URI introspectUri = tenantConfig.introspectUri();
-        if (tenantConfig.validateJwtWithJwk()) {
-            if (signJwk == null) {
+        JwkKeys signJwk = tenantConfig.tenantSignJwk().orElseGet(() -> {
+            if (tenantConfig.validateJwtWithJwk()) {
                 // not configured - use default location
                 URI jwkUri = oidcMetadata.getOidcEndpoint(collector,
                                                           null,
@@ -152,13 +150,13 @@ public final class Tenant {
                                                           null);
                 if (jwkUri != null) {
                     if ("idcs".equals(tenantConfig.serverType())) {
-                        signJwk = IdcsSupport.signJwk(appWebClient,
-                                                      webClient,
-                                                      tokenEndpointUri,
-                                                      jwkUri,
-                                                      tenantConfig.clientTimeout());
+                        return IdcsSupport.signJwk(appWebClient,
+                                                   webClient,
+                                                   tokenEndpointUri,
+                                                   jwkUri,
+                                                   tenantConfig.clientTimeout());
                     } else {
-                        signJwk = JwkKeys.builder()
+                        return JwkKeys.builder()
                                 .json(webClient.get()
                                               .uri(jwkUri)
                                               .request(JsonObject.class)
@@ -167,7 +165,10 @@ public final class Tenant {
                     }
                 }
             }
-        } else {
+            return null;
+        });
+        URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
+        if (!tenantConfig.validateJwtWithJwk()) {
             introspectUri = oidcMetadata.getOidcEndpoint(collector,
                                                          introspectUri,
                                                          "introspection_endpoint",

@@ -19,7 +19,6 @@ package io.helidon.security.providers.oidc.common;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Locale;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -28,15 +27,9 @@ import javax.json.JsonReaderFactory;
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.SetCookie;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.security.Security;
 import io.helidon.security.jwt.jwk.JwkKeys;
-import io.helidon.security.util.TokenHandler;
-
-import static io.helidon.security.providers.oidc.common.TenantConfig.DEFAULT_COOKIE_NAME;
-import static io.helidon.security.providers.oidc.common.TenantConfig.DEFAULT_COOKIE_USE;
 
 /**
  * Base builder of the OIDC config components.
@@ -44,42 +37,34 @@ import static io.helidon.security.providers.oidc.common.TenantConfig.DEFAULT_COO
 abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> implements Builder<T> {
 
     static final String DEFAULT_SERVER_TYPE = "@default";
+    static final String DEFAULT_BASE_SCOPES = "openid";
+    static final String DEFAULT_REALM = "helidon";
+    static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
+    static final int DEFAULT_TIMEOUT_SECONDS = 30;
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     @SuppressWarnings("unchecked")
     private final B me = (B) this;
 
-    private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
-            .cookieName(DEFAULT_COOKIE_NAME);
-    private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
-            .cookieName(DEFAULT_COOKIE_NAME + "_2");
-    private final OidcMetadata.Builder oidcMetadata = OidcMetadata.builder().remoteEnabled(true);
+    private JsonObject oidcMetadata;
     private OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
     private String clientId;
     private String clientSecret;
-    private String baseScopes = TenantConfig.DEFAULT_BASE_SCOPES;
-    private String realm = TenantConfig.DEFAULT_REALM;
+    private String baseScopes = DEFAULT_BASE_SCOPES;
+    private String realm = DEFAULT_REALM;
     private String issuer;
     private String audience;
     private String serverType;
-    private String paramName = TenantConfig.DEFAULT_PARAM_NAME;
-    private boolean useHeader = TenantConfig.DEFAULT_HEADER_USE;
     private URI authorizationEndpointUri;
     private URI logoutEndpointUri;
     private URI identityUri;
     private URI tokenEndpointUri;
-    private Duration clientTimeout = Duration.ofSeconds(TenantConfig.DEFAULT_TIMEOUT_SECONDS);
+    private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
     private JwkKeys signJwk;
-    private boolean validateJwtWithJwk = TenantConfig.DEFAULT_JWT_VALIDATE_JWK;
-    private boolean useParam = TenantConfig.DEFAULT_PARAM_USE;
+    private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
     private URI introspectUri;
-    private TokenHandler headerHandler = TokenHandler.builder()
-            .tokenHeader("Authorization")
-            .tokenPrefix("bearer ")
-            .build();
-    private boolean useCookie = DEFAULT_COOKIE_USE;
-    private boolean cookieSameSiteDefault = true;
     private String scopeAudience;
+    private boolean useWellKnown = true;
 
     BaseBuilder() {
     }
@@ -104,27 +89,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         config.get("client-id").asString().ifPresent(this::clientId);
         config.get("client-secret").asString().ifPresent(this::clientSecret);
         config.get("identity-uri").as(URI.class).ifPresent(this::identityUri);
-
-        // token handling
-        config.get("query-param-use").asBoolean().ifPresent(this::useParam);
-        config.get("query-param-name").asString().ifPresent(this::paramName);
-        config.get("header-use").asBoolean().ifPresent(this::useHeader);
-        config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
-        config.get("cookie-use").asBoolean().ifPresent(this::useCookie);
-        config.get("cookie-name").asString().ifPresent(this::cookieName);
-        config.get("cookie-name-id-token").asString().ifPresent(this::cookieNameIdToken);
-        config.get("cookie-domain").asString().ifPresent(this::cookieDomain);
-        config.get("cookie-path").asString().ifPresent(this::cookiePath);
-        config.get("cookie-max-age-seconds").asLong().ifPresent(this::cookieMaxAgeSeconds);
-        config.get("cookie-http-only").asBoolean().ifPresent(this::cookieHttpOnly);
-        config.get("cookie-secure").asBoolean().ifPresent(this::cookieSecure);
-        config.get("cookie-same-site").asString().ifPresent(this::cookieSameSite);
-        // encryption of cookies
-        config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
-        config.get("cookie-encryption-password").as(String.class)
-                .map(String::toCharArray)
-                .ifPresent(this::cookieEncryptionPassword);
-        config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
 
         // OIDC server configuration
         config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
@@ -364,8 +328,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      */
     @ConfiguredOption(key = "oidc-metadata.resource")
     public B oidcMetadata(Resource resource) {
-        this.oidcMetadata.json(JSON.createReader(resource.stream()).readObject());
-        return me;
+        return oidcMetadata(JSON.createReader(resource.stream()).readObject());
     }
 
     /**
@@ -376,19 +339,19 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      * @see #oidcMetadata(Resource)
      */
     public B oidcMetadata(JsonObject metadata) {
-        this.oidcMetadata.json(metadata);
+        this.oidcMetadata = metadata;
         return me;
     }
 
     /**
      * Configure base scopes.
-     * By default, this is {@value TenantConfig#DEFAULT_BASE_SCOPES}.
+     * By default, this is {@value #DEFAULT_BASE_SCOPES}.
      * If scope has a qualifier, it must be used here.
      *
      * @param scopes Space separated scopes to be required by default from OIDC server
      * @return updated builder instance
      */
-    @ConfiguredOption(value = TenantConfig.DEFAULT_BASE_SCOPES)
+    @ConfiguredOption(value = DEFAULT_BASE_SCOPES)
     public B baseScopes(String scopes) {
         this.baseScopes = scopes;
         return me;
@@ -404,8 +367,8 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      * @return updated builder instance
      */
     @ConfiguredOption("true")
-    public B oidcMetadataWellKnown(Boolean useWellKnown) {
-        oidcMetadata.remoteEnabled(useWellKnown);
+    public B oidcMetadataWellKnown(boolean useWellKnown) {
+        this.useWellKnown = useWellKnown;
         return me;
     }
 
@@ -425,58 +388,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     }
 
     /**
-     * A {@link TokenHandler} to
-     * process header containing a JWT.
-     * Default is "Authorization" header with a prefix "bearer ".
-     *
-     * @param tokenHandler token handler to use
-     * @return updated builder instance
-     */
-    @ConfiguredOption(key = "header-token")
-    public B headerTokenHandler(TokenHandler tokenHandler) {
-        this.headerHandler = tokenHandler;
-        return me;
-    }
-
-    /**
-     * Whether to expect JWT in a header field.
-     *
-     * @param useHeader set to true to use a header extracted with {@link #headerTokenHandler(TokenHandler)}
-     * @return updated builder instance
-     */
-    @ConfiguredOption(key = "header-use", value = "false")
-    public B useHeader(Boolean useHeader) {
-        this.useHeader = useHeader;
-        return me;
-    }
-
-    /**
-     * Name of a query parameter that contains the JWT token when parameter is used.
-     *
-     * @param paramName name of the query parameter to expect
-     * @return updated builder instance
-     */
-    @ConfiguredOption(key = "query-param-name", value = TenantConfig.DEFAULT_PARAM_NAME)
-    public B paramName(String paramName) {
-        this.paramName = paramName;
-        return me;
-    }
-
-    /**
-     * Whether to use a query parameter to send JWT token from application to this
-     * server.
-     *
-     * @param useParam whether to use a query parameter (true) or not (false)
-     * @return updated builder instance
-     * @see #paramName(String)
-     */
-    @ConfiguredOption(key = "query-param-use", value = "false")
-    public B useParam(Boolean useParam) {
-        this.useParam = useParam;
-        return me;
-    }
-
-    /**
      * Timeout of calls using web client.
      *
      * @param duration timeout
@@ -485,200 +396,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption(key = "client-timeout-millis", value = "30000")
     public B clientTimeout(Duration duration) {
         this.clientTimeout = duration;
-        return me;
-    }
-
-    /**
-     * Name of the encryption configuration available through {@link Security#encrypt(String, byte[])} and
-     * {@link Security#decrypt(String, String)}.
-     * If configured and encryption is enabled for any cookie,
-     * Security MUST be configured in global or current {@code io.helidon.common.context.Context} (this
-     * is done automatically in Helidon MP).
-     *
-     * @param cookieEncryptionName name of the encryption configuration in security used to encrypt/decrypt cookies
-     * @return updated builder
-     */
-    public B cookieEncryptionName(String cookieEncryptionName) {
-        this.tokenCookieBuilder.encryptionName(cookieEncryptionName);
-        this.idTokenCookieBuilder.encryptionName(cookieEncryptionName);
-        return me;
-    }
-
-    /**
-     * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
-     * using the cookie.
-     *
-     * @param cookieEncryptionPassword encryption password
-     * @return updated builder
-     */
-    public B cookieEncryptionPassword(char[] cookieEncryptionPassword) {
-        this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
-        this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
-
-        return me;
-    }
-
-    /**
-     * Whether to encrypt token cookie created by this microservice.
-     * Defaults to {@code false}.
-     *
-     * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-     *                               OIDC server {@code false}
-     * @return updated builder instance
-     */
-    public B cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
-        this.tokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
-        return me;
-    }
-
-    /**
-     * Whether to encrypt id token cookie created by this microservice.
-     * Defaults to {@code true}.
-     *
-     * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-     *                               OIDC server {@code false}
-     * @return updated builder instance
-     */
-    public B cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
-        this.idTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
-        return me;
-    }
-
-    /**
-     * When using cookie, used to set the SameSite cookie value. Can be
-     * "Strict" or "Lax"
-     *
-     * @param sameSite SameSite cookie attribute value
-     * @return updated builder instance
-     */
-    public B cookieSameSite(String sameSite) {
-        return cookieSameSite(SetCookie.SameSite.valueOf(sameSite.toUpperCase(Locale.ROOT)));
-    }
-
-    /**
-     * When using cookie, used to set the SameSite cookie value. Can be
-     * "Strict" or "Lax".
-     *
-     * @param sameSite SameSite cookie attribute
-     * @return updated builder instance
-     */
-    @ConfiguredOption(value = "LAX")
-    public B cookieSameSite(SetCookie.SameSite sameSite) {
-        this.tokenCookieBuilder.sameSite(sameSite);
-        this.idTokenCookieBuilder.sameSite(sameSite);
-        this.cookieSameSiteDefault = false;
-        return me;
-    }
-
-    /**
-     * When using cookie, if set to true, the Secure attribute will be configured.
-     * Defaults to false.
-     *
-     * @param secure whether the cookie should be secure (true) or not (false)
-     * @return updated builder instance
-     */
-    @ConfiguredOption("false")
-    public B cookieSecure(Boolean secure) {
-        this.tokenCookieBuilder.secure(secure);
-        this.idTokenCookieBuilder.secure(secure);
-        return me;
-    }
-
-    /**
-     * When using cookie, if set to true, the HttpOnly attribute will be configured.
-     * Defaults to {@value OidcCookieHandler.Builder#DEFAULT_HTTP_ONLY}.
-     *
-     * @param httpOnly whether the cookie should be HttpOnly (true) or not (false)
-     * @return updated builder instance
-     */
-    @ConfiguredOption("true")
-    public B cookieHttpOnly(Boolean httpOnly) {
-        this.tokenCookieBuilder.httpOnly(httpOnly);
-        this.idTokenCookieBuilder.httpOnly(httpOnly);
-        return me;
-    }
-
-    /**
-     * When using cookie, used to set MaxAge attribute of the cookie, defining how long
-     * the cookie is valid.
-     * Not used by default.
-     *
-     * @param age age in seconds
-     * @return updated builder instance
-     */
-    @ConfiguredOption
-    public B cookieMaxAgeSeconds(long age) {
-        this.tokenCookieBuilder.maxAge(age);
-        this.idTokenCookieBuilder.maxAge(age);
-        return me;
-    }
-
-    /**
-     * Path the cookie is valid for.
-     * Defaults to "/".
-     *
-     * @param path the path to use as value of cookie "Path" attribute
-     * @return updated builder instance
-     */
-    @ConfiguredOption(value = OidcCookieHandler.Builder.DEFAULT_PATH)
-    public B cookiePath(String path) {
-        this.tokenCookieBuilder.path(path);
-        this.idTokenCookieBuilder.path(path);
-        return me;
-    }
-
-    /**
-     * Domain the cookie is valid for.
-     * Not used by default.
-     *
-     * @param domain domain to use as value of cookie "Domain" attribute
-     * @return updated builder instance
-     */
-    @ConfiguredOption
-    public B cookieDomain(String domain) {
-        this.tokenCookieBuilder.domain(domain);
-        this.idTokenCookieBuilder.domain(domain);
-        return me;
-    }
-
-    /**
-     * Name of the cookie to use.
-     * Defaults to {@value TenantConfig#DEFAULT_COOKIE_NAME}.
-     *
-     * @param cookieName name of a cookie
-     * @return updated builder instance
-     */
-    @ConfiguredOption(value = DEFAULT_COOKIE_NAME)
-    public B cookieName(String cookieName) {
-        this.tokenCookieBuilder.cookieName(cookieName);
-        return me;
-    }
-
-    /**
-     * Name of the cookie to use for id token.
-     * Defaults to {@value TenantConfig#DEFAULT_COOKIE_NAME}_2.
-     *
-     * This cookie is only used when logout is enabled, as otherwise it is not needed.
-     * Content of this cookie is encrypted.
-     *
-     * @param cookieName name of a cookie
-     * @return updated builder instance
-     */
-    public B cookieNameIdToken(String cookieName) {
-        this.idTokenCookieBuilder.cookieName(cookieName);
-        return me;
-    }
-
-    /**
-     * Whether to use cookie to store JWT between requests.
-     * Defaults to {@value TenantConfig#DEFAULT_COOKIE_USE}.
-     *
-     * @param useCookie whether to use cookie to store JWT (true) or not (false))
-     * @return updated builder instance
-     */
-    @ConfiguredOption(key = "cookie-use", value = "true")
-    public B useCookie(Boolean useCookie) {
-        this.useCookie = useCookie;
         return me;
     }
 
@@ -700,20 +417,16 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         this.clientTimeout(Duration.ofMillis(millis));
     }
 
-    OidcCookieHandler.Builder tokenCookieBuilder() {
-        return tokenCookieBuilder;
-    }
-
-    OidcCookieHandler.Builder idTokenCookieBuilder() {
-        return idTokenCookieBuilder;
-    }
-
     OidcConfig.ClientAuthentication tokenEndpointAuthentication() {
         return tokenEndpointAuthentication;
     }
 
-    OidcMetadata.Builder oidcMetadata() {
+    JsonObject oidcMetadata() {
         return oidcMetadata;
+    }
+
+    public boolean useWellKnown() {
+        return useWellKnown;
     }
 
     String clientId() {
@@ -744,14 +457,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         return serverType;
     }
 
-    String paramName() {
-        return paramName;
-    }
-
-    boolean useHeader() {
-        return useHeader;
-    }
-
     URI authorizationEndpointUri() {
         return authorizationEndpointUri;
     }
@@ -780,24 +485,8 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         return validateJwtWithJwk;
     }
 
-    boolean useParam() {
-        return useParam;
-    }
-
     URI introspectUri() {
         return introspectUri;
-    }
-
-    TokenHandler headerHandler() {
-        return headerHandler;
-    }
-
-    boolean useCookie() {
-        return useCookie;
-    }
-
-    boolean cookieSameSiteDefault() {
-        return cookieSameSiteDefault;
     }
 
     String scopeAudience() {

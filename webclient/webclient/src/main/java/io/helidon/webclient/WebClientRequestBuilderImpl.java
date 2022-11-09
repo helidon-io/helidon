@@ -193,7 +193,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
                                                                               Http.Method.GET);
-        builder.headers(clientRequest.headers());
         builder.httpVersion = clientRequest.version();
         builder.proxy = clientRequest.proxy();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;

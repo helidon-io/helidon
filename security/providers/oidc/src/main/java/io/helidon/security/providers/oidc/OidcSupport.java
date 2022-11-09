@@ -17,6 +17,8 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +128,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * </table>
  */
 public final class OidcSupport implements Service {
-    static final String TENANT_PARAM_NAME = "tenant";
+    static final String TENANT_PARAM_NAME = "h_tenant";
     private static final Logger LOGGER = Logger.getLogger(OidcSupport.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
@@ -221,10 +223,9 @@ public final class OidcSupport implements Service {
         String tenantName = req.queryParams().first(TENANT_PARAM_NAME).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
         Tenant tenant = obtainCurrentTenant(tenantName);
-        TenantConfig tenantConfig = tenant.tenantConfig();
 
-        OidcCookieHandler idTokenCookieHandler = tenantConfig.idTokenCookieHandler();
-        OidcCookieHandler tokenCookieHandler = tenantConfig.tokenCookieHandler();
+        OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+        OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
 
         Optional<String> idTokenCookie = req.headers()
                 .cookies()
@@ -262,15 +263,14 @@ public final class OidcSupport implements Service {
 
     private Tenant obtainCurrentTenant(String tenantName) {
         return tenants.computeValue(tenantName,
-                             () -> Optional.of(oidcConfigFinders.stream()
-                                                       .map(finder -> finder.config(tenantName))
-                                                       .filter(Optional::isPresent)
-                                                       .map(tenantConfig -> Tenant.create(oidcConfig,
-                                                                                          tenantConfig.get()))
-                                                       .findFirst()
-                                                       .orElseGet(() -> Tenant.create(oidcConfig,
-                                                                                      oidcConfig.tenantConfig(tenantName)))))
-                .orElseGet(() -> Tenant.create(oidcConfig, oidcConfig.tenantConfig(tenantName)));
+                                    () -> oidcConfigFinders.stream()
+                                            .map(finder -> finder.config(tenantName))
+                                            .flatMap(Optional::stream)
+                                            .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
+                                            .findFirst()
+                                            .or(() -> Optional.of(Tenant.create(oidcConfig,
+                                                                                oidcConfig.tenantConfig(tenantName)))))
+                .get();
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -315,17 +315,17 @@ public final class OidcSupport implements Service {
         FormParams.Builder form = FormParams.builder()
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", redirectUri(req) + "?" + OidcSupport.TENANT_PARAM_NAME + "=" + tenantName);
+                .add("redirect_uri", redirectUri(req, tenantName));
 
         WebClientRequestBuilder post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
                 .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
 
-        tenantConfig.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, post, form);
+        OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
 
         OidcConfig.postJsonResponse(post,
                                     form.build(),
-                                    json -> processJsonResponse(req, res, json, tenantConfig),
+                                    json -> processJsonResponse(req, res, json, tenantName),
                                     (status, errorEntity) -> processError(res, status, errorEntity),
                                     (t, message) -> processError(res, t, message))
                 .ignoreElement();
@@ -349,35 +349,46 @@ public final class OidcSupport implements Service {
         }
     }
 
-    private String redirectUri(ServerRequest req) {
+    private String redirectUri(ServerRequest req, String tenantName) {
         Optional<String> host = req.headers().first("host");
+        String uri;
 
         if (host.isPresent()) {
             String scheme = req.isSecure() ? "https" : "http";
-            return oidcConfig.redirectUriWithHost(scheme + "://" + host.get());
+            uri = oidcConfig.redirectUriWithHost(scheme + "://" + host.get());
         } else {
-            return oidcConfig.redirectUriWithHost();
+            uri = oidcConfig.redirectUriWithHost();
         }
+        return uri + (uri.contains("?") ? "&" : "?") + OidcSupport.TENANT_PARAM_NAME + "=" + tenantName;
     }
 
-    private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json, TenantConfig tenantConfig) {
+    private String processJsonResponse(ServerRequest req,
+                                       ServerResponse res,
+                                       JsonObject json,
+                                       String tenantName) {
         String tokenValue = json.getString("access_token");
         String idToken = json.getString("id_token", null);
 
         //redirect to "state"
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
-        if (tenantConfig.useParam()) {
-            state = (state.contains("?") ? "&" : "?") + tenantConfig.paramName() + "=" + tokenValue;
+        if (oidcConfig.useParam()) {
+            state += (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
+            state += "&" + oidcConfig.paramNameTenant() + "=" + tenantName;
         }
 
         state = increaseRedirectCounter(state);
         res.headers().add(Http.Header.LOCATION, state);
 
-        if (tenantConfig.useCookie()) {
+        if (oidcConfig.useCookie()) {
             ResponseHeaders headers = res.headers();
 
-            OidcCookieHandler tokenCookieHandler = tenantConfig.tokenCookieHandler();
+            OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
+            tenantCookieHandler.createCookie(tenantName)
+                    .forSingle(builder -> headers.addCookie(builder.build()))
+                    .exceptionallyAccept(t -> sendError(res, t));
+
+            OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
             tokenCookieHandler.createCookie(tokenValue)
                     .forSingle(builder -> {
                         headers.addCookie(builder.build());

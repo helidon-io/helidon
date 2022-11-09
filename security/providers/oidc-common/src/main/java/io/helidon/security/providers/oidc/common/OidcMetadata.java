@@ -97,7 +97,6 @@ final class OidcMetadata {
     }
 
     static class Builder implements io.helidon.common.Builder<OidcMetadata> {
-        private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
         private boolean enableRemoteLoad;
         private JsonObject metadata;
         private WebClient webClient;
