@@ -1,0 +1,196 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.webserver;
+
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpRequest;
+import io.helidon.common.http.UriInfo;
+import io.helidon.common.reactive.Multi;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.FORWARDED;
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.HOST;
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.X_FORWARDED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class RequestedUriTest {
+    @ParameterizedTest
+    @MethodSource("testData")
+    void requestedUriTestForwarded(TestData testData) {
+        BareRequest bareRequest = mock(BareRequest.class);
+        SocketConfiguration sc = mock(SocketConfiguration.class);
+        when(bareRequest.bodyPublisher()).thenReturn(Multi.empty());
+        when(bareRequest.socketConfiguration()).thenReturn(sc);
+        WebServer webServer = mock(WebServer.class);
+
+        // set test "when"
+        when(bareRequest.uri()).thenReturn(testData.uri());
+        when(bareRequest.isSecure()).thenReturn(testData.isSecure());
+        when(sc.requestedUriDiscoveryTypes()).thenReturn(testData.discoveryTypes());
+        Request request = new TestRequest(bareRequest, webServer, new HashRequestHeaders(testData.headers()), testData.path());
+
+        assertThat(request.requestedUri(), is(testData.expectedUriInfo()));
+    }
+
+    private static Stream<TestData> testData() {
+        return Stream.of(
+                new TestData("Forwarded header",
+                             false,
+                             URI.create("http://localhost:9090/path"),
+                             List.of(FORWARDED),
+                             Map.of(
+                                     Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
+                                     Http.Header.X_FORWARDED_PORT, List.of("7879"),
+                                     Http.Header.X_FORWARDED_PROTO, List.of("xhttps"),
+                                     Http.Header.X_FORWARDED_PREFIX, List.of("/reversed"),
+                                     Http.Header.FORWARDED, List.of("host=myfhost:7878;proto=https"),
+                                     Http.Header.HOST, List.of("myhost:9999")
+                             ),
+                             path("/path"),
+                             new UriInfo("https", "myfhost", 7878, "/path", Optional.empty())),
+                new TestData("Forwarded header fallback to Host header",
+                             false,
+                             URI.create("http://localhost:9090/path"),
+                             List.of(FORWARDED),
+                             Map.of(
+                                     Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
+                                     Http.Header.X_FORWARDED_PORT, List.of("7879"),
+                                     Http.Header.X_FORWARDED_PROTO, List.of("xhttps"),
+                                     Http.Header.X_FORWARDED_PREFIX, List.of("/reversed"),
+                                     Http.Header.HOST, List.of("myhost:9999")
+                             ),
+                             path("/path"),
+                             new UriInfo("http", "myhost", 9999, "/path", Optional.empty())),
+                new TestData("X-Forwarded all headers",
+                             false,
+                             URI.create("http://localhost:9090/path"),
+                             List.of(X_FORWARDED),
+                             Map.of(
+                                     Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
+                                     Http.Header.X_FORWARDED_PORT, List.of("7879"),
+                                     Http.Header.X_FORWARDED_PROTO, List.of("xhttps"),
+                                     Http.Header.X_FORWARDED_PREFIX, List.of("/reversed"),
+                                     Http.Header.FORWARDED, List.of("host=myfhost:7878;proto=https"),
+                                     Http.Header.HOST, List.of("myhost:9999")
+                             ),
+                             path("/path"),
+                             new UriInfo("xhttps", "myxhost", 7879, "/reversed/path", Optional.empty())),
+                new TestData("X-Forwarded some headers",
+                             false,
+                             URI.create("http://localhost:9090/path"),
+                             List.of(X_FORWARDED),
+                             Map.of(
+                                     Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
+                                     Http.Header.X_FORWARDED_PREFIX, List.of("/reversed"),
+                                     Http.Header.FORWARDED, List.of("host=myfhost:7878;proto=https"),
+                                     Http.Header.HOST, List.of("myhost")
+                             ),
+                             path("/path"),
+                             new UriInfo("http", "myxhost", 80, "/reversed/path", Optional.empty())),
+                new TestData("X-Forwarded fallback to Host header",
+                             false,
+                             URI.create("http://localhost:9090/path"),
+                             List.of(X_FORWARDED),
+                             Map.of(
+                                     Http.Header.FORWARDED, List.of("host=myfhost:7878;proto=https"),
+                                     Http.Header.HOST, List.of("myhost:9999")
+                             ),
+                             path("/path"),
+                             new UriInfo("http", "myhost", 9999, "/path", Optional.empty())),
+                new TestData("Default (Host header)",
+                             false,
+                             URI.create("http://localhost:9090/path"),
+                             List.of(HOST),
+                             Map.of(
+                                     Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
+                                     Http.Header.X_FORWARDED_PORT, List.of("7879"),
+                                     Http.Header.X_FORWARDED_PROTO, List.of("xhttps"),
+                                     Http.Header.X_FORWARDED_PREFIX, List.of("/reversed"),
+                                     Http.Header.FORWARDED, List.of("host=myfhost:7878;proto=https"),
+                                     Http.Header.HOST, List.of("myhost:9999")
+                             ),
+                             path("/path"),
+                             new UriInfo("http", "myhost", 9999, "/path", Optional.empty()))
+        );
+
+    }
+
+    private static HttpRequest.Path path(String path) {
+        return new Request.Path(path, path, Map.of(), null);
+    }
+
+    private record TestData(String testDescription,
+                            boolean isSecure,
+                            URI uri,
+                            List<SocketConfiguration.RequestedUriDiscoveryType> discoveryTypes,
+                            Map<String, List<String>> headers,
+                            HttpRequest.Path path,
+                            UriInfo expectedUriInfo) {
+
+        @Override
+        public String toString() {
+            return testDescription();
+        }
+    }
+
+    private static class TestRequest extends Request {
+        private final HttpRequest.Path path;
+
+        TestRequest(BareRequest req, WebServer webServer, HashRequestHeaders headers, HttpRequest.Path path) {
+            super(req, webServer, headers);
+            this.path = path;
+        }
+
+        @Override
+        public HttpRequest.Path path() {
+            return path;
+        }
+
+        @Override
+        public void next() {
+
+        }
+
+        @Override
+        public void next(Throwable t) {
+
+        }
+
+        @Override
+        public Optional<SpanContext> spanContext() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Tracer tracer() {
+            return Tracer.global();
+        }
+    }
+}

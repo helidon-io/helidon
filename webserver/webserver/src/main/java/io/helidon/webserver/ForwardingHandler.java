@@ -340,11 +340,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // If a problem with the request URI, return 400 response
         BareRequestImpl bareRequest;
         try {
-            bareRequest = new BareRequestImpl(request,
-                                              requestContextRef.publisher(),
-                                              webServer,
-                                              ctx,
+            bareRequest = new BareRequestImpl(webServer,
+                                              soConfig,
                                               sslEngine,
+                                              ctx,
+                                              request,
+                                              requestContextRef.publisher(),
                                               requestId);
         } catch (IllegalArgumentException e) {
             send400BadRequest(ctx, request, e);
