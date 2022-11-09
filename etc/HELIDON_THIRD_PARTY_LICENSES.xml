@@ -3723,9 +3723,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </attribution>
         </dependency>
         <dependency>
-            <id>124427</id>
+            <id>132870</id>
             <name>gRPC-Java</name>
-            <version>1.45.1</version>
+            <version>1.49.2</version>
             <licensor>The gRPC Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
