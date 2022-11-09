@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.util.logging.Logger;
+import javax.transaction.xa.Xid;
 
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
@@ -96,7 +97,7 @@ final class TestJTAConnection {
         tm.begin();
 
         try (Connection physicalConnection = h2ds.getConnection();
-             Connection logicalConnection = JTAConnection.connection(tm, physicalConnection)) {
+             Connection logicalConnection = JTAConnection.connection(tm::getTransaction, physicalConnection)) {
 
 
           // JTAConnection makes proxy connections.

@@ -64,7 +64,7 @@ public final class LocalXAConnection extends SimplePooledConnection implements X
      */
     public LocalXAConnection(Connection physicalConnection) throws SQLException {
         super(physicalConnection);
-        this.xaResource = new LocalXAResource(physicalConnection);
+        this.xaResource = new LocalXAResource(xid -> physicalConnection);
     }
 
 

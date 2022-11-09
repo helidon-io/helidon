@@ -20,5 +20,5 @@ import java.sql.SQLException;
 interface SQLRunnable {
 
     void run() throws SQLException;
-  
+
 }

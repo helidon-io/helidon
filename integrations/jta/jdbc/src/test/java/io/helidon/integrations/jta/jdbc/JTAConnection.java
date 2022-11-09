@@ -27,7 +27,7 @@ import java.sql.Wrapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,7 +39,6 @@ import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
-import jakarta.transaction.TransactionManager;
 
 final class JTAConnection {
 
@@ -59,11 +58,11 @@ final class JTAConnection {
      */
 
 
-    public static Connection connection(TransactionManager tm, Connection canonicalConnection) {
+    public static Connection connection(TransactionSupplier tm, Connection canonicalConnection) {
         return
             (Connection)
             Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                                   new Class<?>[] { Connection.class, Enlisted.class, LocalXAResource2.Enlistable.class },
+                                   new Class<?>[] { Connection.class, Enlisted.class, LocalXAResource.Enlistable.class },
                                    new Handler(tm, canonicalConnection));
     }
 
@@ -81,10 +80,10 @@ final class JTAConnection {
          */
 
 
-        private static final Semaphore CONNECTION_SEMAPHORE = new Semaphore(1);
+        private static final ReentrantLock CONNECTION_LOCK = new ReentrantLock();
 
         // Deliberately not volatile.
-        // @GuardedBy("CONNECTION_SEMAPHORE") // in a manner of speaking
+        // @GuardedBy("CONNECTION_LOCK") // in a manner of speaking
         private static Connection CONNECTION;
 
 
@@ -93,7 +92,7 @@ final class JTAConnection {
          */
 
 
-        private final TransactionManager tm;
+        private final TransactionSupplier tm;
 
 
         /*
@@ -101,12 +100,12 @@ final class JTAConnection {
          */
 
 
-        private Handler(TransactionManager tm, Connection c) {
-            this(tm, new LocalXAResource2(Handler::connection), () -> c, Handler::sink);
+        private Handler(TransactionSupplier tm, Connection c) {
+            this(tm, new LocalXAResource(Handler::connection), () -> c, Handler::sink);
         }
 
-        private Handler(TransactionManager tm,
-                        LocalXAResource2 xaResource,
+        private Handler(TransactionSupplier tm,
+                        LocalXAResource xaResource,
                         Supplier<? extends Connection> cs,
                         Consumer<? super Connection> closedNotifier) {
             super(cs, createList(tm, xaResource, cs, closedNotifier));
@@ -121,15 +120,13 @@ final class JTAConnection {
 
         // (Method reference.)
         private static Connection connection(Xid ignored) {
-            // Ensure someone, namely the enlist() method, already
-            // acquired the 1-count Semaphore.
-            assert CONNECTION_SEMAPHORE.availablePermits() == 0;
+            assert CONNECTION_LOCK.isHeldByCurrentThread();
             return CONNECTION;
         }
 
         // (Method reference.)
         @SuppressWarnings("unchecked")
-        private static List<ConditionalInvocationHandler<Connection>> createList(final TransactionManager tm,
+        private static List<ConditionalInvocationHandler<Connection>> createList(final TransactionSupplier tm,
                                                                                  final XAResource xaResource,
                                                                                  Supplier<? extends Connection> cs,
                                                                                  Consumer<? super Connection> closedNotifier) {
@@ -144,19 +141,16 @@ final class JTAConnection {
             // that return Statement objects and those that return
             // DatabaseMetaData objects.  (Statement objects of course
             // can create ResultSet objects, so the same sort of
-            // handling has to propagate there as well.)  Some of
-            // those methods (the Statement-returning ones) also need
-            // to check the transaction status.
+            // handling has to propagate there as well.)  These
+            // methods also need to check the transaction status.
             returnValue.add(new CreateChildProxyHandler<Connection, Wrapper>(cs,
                                                                              Handler::test,
-                                                                             m -> (Class<? extends Wrapper>)m.getReturnType(),
+                                                                             m -> (Class<? extends Wrapper>) m.getReturnType(),
                                                                              Handler::createChildProxyHandler) {
-                    protected Object invoke(Object proxy, Connection delegate, Method method, Object[] arguments)
+                    @Override // CreateChildProxyHandler
+                    protected final Object invoke(Object proxy, Connection delegate, Method method, Object[] arguments)
                         throws Throwable {
-                        // String name = method.getName();
-                        // if (name.equals("createStatement") || name.startsWith("prepare")) {
                         enlist(tm, xaResource, delegate);
-                        // }
                         return super.invoke(proxy, delegate, method, arguments);
                     }
                 });
@@ -180,7 +174,7 @@ final class JTAConnection {
             // JTA transaction if it is active, then forward to the
             // delegate implementation.
             returnValue.add(new ConditionalInvocationHandler<>(cs) {
-                    @Override
+                    @Override // ConditionalInvocationHandler
                     protected final Object invoke(Object proxy, Connection delegate, Method method, Object[] arguments)
                         throws Throwable {
                         enlist(tm, xaResource, delegate);
@@ -191,12 +185,12 @@ final class JTAConnection {
             return returnValue;
         }
 
-        private static void enlist(TransactionManager tm, XAResource xaResource, Connection delegate) throws SQLException {
+        private static void enlist(TransactionSupplier tm, XAResource xaResource, Connection delegate) throws SQLException {
             if (tm != null) {
                 try {
                     Transaction t = tm.getTransaction();
                     if (t != null && t.getStatus() == Status.STATUS_ACTIVE) {
-                        CONNECTION_SEMAPHORE.acquire(1);
+                        CONNECTION_LOCK.lockInterruptibly();
                         try {
                             // (See the finally block below.)
                             assert CONNECTION == null;
@@ -211,27 +205,34 @@ final class JTAConnection {
                             // Transaction#enlistResource(XAResource),
                             // which is obligated to call
                             // XAResource#start(Xid, int) on the same
-                            // thread.
+                            // thread.  LocalXAResource's
+                            // implementation of start will use the
+                            // connection function we supplied earlier
+                            // to get the connection to enroll. It
+                            // will read from this static variable
+                            // under lock. When enlistResource
+                            // returns, there is no further need for
+                            // this connection, so we null it out.
                             CONNECTION = null;
-                            CONNECTION_SEMAPHORE.release(1);
+                            CONNECTION_LOCK.unlock();
                         }
                     }
                 } catch (InterruptedException e) {
-                    // The CONNECTION_SEMAPHORE could not be acquired
-                    // for some absolutely unfathomable reason. Make
-                    // sure the current thread keeps its interrupted
+                    // The CONNECTION_LOCK could not be acquired for
+                    // some absolutely unfathomable reason. Make sure
+                    // the current thread keeps its interrupted
                     // status.
                     //
                     // (Given the finally block above (which is the
-                    // only place where the CONNECTION_SEMAPHORE is
-                    // ever released, but, by the same token, it is a
+                    // only place where the CONNECTION_LOCK is ever
+                    // released, but, by the same token, it is a
                     // *finally block*, so it will *always happen*)
                     // and the connection() method which simply reads
-                    // CONNECTION while the CONNECTION_SEMAPHORE is
+                    // CONNECTION while the CONNECTION_LOCK is
                     // acquired, it's hard to see how this state could
                     // ever obtain. If, crazily, it did obtain, it's
                     // not immediately clear to me whether we should
-                    // try to release the CONNECTION_SEMAPHORE here or
+                    // try to unlock the CONNECTION_LOCK here or
                     // not. I opt not to do so to preserve semantics
                     // that might be useful for truly wild debugging.)
                     Thread.currentThread().interrupt();
@@ -390,7 +391,7 @@ final class JTAConnection {
                 if (m.getName().equals("getId")) {
                     return delegate instanceof Enlisted<?> e ? e.getId() : this.id;
                 } else if (m.getName().equals("enlist")) {
-                    if (delegate instanceof LocalXAResource2.Enlistable e) {
+                    if (delegate instanceof LocalXAResource.Enlistable e) {
                         e.enlist((Xid) arguments[0]);
                     } else {
                         this.id = (Xid) arguments[0];
@@ -411,14 +412,21 @@ final class JTAConnection {
             private static boolean test(Object proxy, Object delegate, Method m, Object arguments) {
                 return
                     (m.getDeclaringClass() == Enlisted.class && m.getName().equals("getId"))
-                    || (m.getDeclaringClass() == LocalXAResource2.Enlistable.class && m.getName().equals("enlist"));
+                    || (m.getDeclaringClass() == LocalXAResource.Enlistable.class && m.getName().equals("enlist"));
             }
 
         }
 
     }
 
-    private static interface Enlisted<T> {
+    @FunctionalInterface
+    static interface TransactionSupplier {
+
+        Transaction getTransaction() throws SystemException;
+        
+    }
+    
+    static interface Enlisted<T> {
 
 
         /*
