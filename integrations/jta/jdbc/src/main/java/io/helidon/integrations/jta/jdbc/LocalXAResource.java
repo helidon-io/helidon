@@ -41,7 +41,10 @@ import static javax.transaction.xa.XAException.XAER_NOTA;
 import static javax.transaction.xa.XAException.XAER_PROTO;
 import static javax.transaction.xa.XAException.XAER_RMERR;
 import static javax.transaction.xa.XAException.XAER_RMFAIL;
+<<<<<<< HEAD
 import static javax.transaction.xa.XAException.XA_RBROLLBACK;
+=======
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
 import static javax.transaction.xa.XAResource.TMENDRSCAN;
 import static javax.transaction.xa.XAResource.TMFAIL;
 import static javax.transaction.xa.XAResource.TMJOIN;
@@ -146,7 +149,17 @@ final class LocalXAResource implements XAResource {
                 .initCause(new IllegalArgumentException("xid: " + xid + "; flags: " + flagsToString(flags)));
         }
 
+<<<<<<< HEAD
         this.computeAssociation(XARoutine.START, xid, remappingFunction);
+=======
+        try {
+            this.associations.compute(xid, remappingFunction);
+        } catch (UncheckedXAException e) {
+            throw e.getCause();
+        } catch (RuntimeException e) {
+            throw (XAException) new XAException(XAER_RMERR).initCause(e);
+        }
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(this.getClass().getName(), "start");
@@ -155,14 +168,18 @@ final class LocalXAResource implements XAResource {
 
     // (Remapping BiFunction, used in start() above and supplied to computeAssociation() below.)
     private Association start(Xid x, Association a) {
+<<<<<<< HEAD
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(this.getClass().getName(), "start", new Object[] {x, a});
         }
         assert x != null; // x has already been vetted and is known to be non-null
+=======
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         if (a != null) {
             throw new UncheckedXAException((XAException) new XAException(XAER_DUPID)
                                            .initCause(new IllegalArgumentException("xid: " + x + "; association: " + a)));
         }
+<<<<<<< HEAD
         Connection c;
         try {
             c = this.connectionFunction.apply(x);
@@ -186,6 +203,16 @@ final class LocalXAResource implements XAResource {
             LOGGER.exiting(this.getClass().getName(), "start", a);
         }
         return a;
+=======
+        Connection c = this.connectionFunction.apply(x);
+        if (c == null) {
+            // Use XAER_RMFAIL instead of XAER_RMERR because a lack of
+            // a Connection is a fatal error.
+            throw new UncheckedXAException((XAException) new XAException(XAER_RMFAIL)
+                                           .initCause(new NullPointerException("connectionFunction.apply(" + x + ")")));
+        }
+        return new Association(Association.BranchState.ACTIVE, x, c);
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
     }
 
     @Override // XAResource
@@ -210,9 +237,19 @@ final class LocalXAResource implements XAResource {
                 .initCause(new IllegalArgumentException("xid: " + xid + "; flags: " + flagsToString(flags)));
         }
 
+<<<<<<< HEAD
         // Any XAException thrown can have any error code. The transaction will be marked as rollback only. See
         // https://github.com/jbosstm/narayana/blob/8ccaf0f85c7a76c227941d26cc3aa3fa9f05b160/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionImple.java#L978-L992.
         this.computeAssociation(XARoutine.END, xid, remappingFunction);
+=======
+        try {
+            this.associations.compute(xid, remappingFunction);
+        } catch (UncheckedXAException e) {
+            throw e.getCause();
+        } catch (RuntimeException e) {
+            throw (XAException) new XAException(XAER_RMERR).initCause(e);
+        }
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(this.getClass().getName(), "end");
@@ -235,6 +272,13 @@ final class LocalXAResource implements XAResource {
                                     LocalXAResource::prepare,
                                     false); // don't remove association on error
 
+<<<<<<< HEAD
+=======
+        Object association = computeAssociation(xid,
+                                                EnumSet.of(Association.BranchState.IDLE),
+                                                LocalXAResource::prepare,
+                                                false);
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         int returnValue = association == null ? XA_RDONLY : XA_OK;
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -306,11 +350,22 @@ final class LocalXAResource implements XAResource {
         }
         requireNonNullXid(xid);
 
+<<<<<<< HEAD
         this.computeAssociation(XARoutine.FORGET,
                                 xid,
                                 EnumSet.of(Association.BranchState.HEURISTICALLY_COMPLETED),
                                 LocalXAResource::forgetAndReset,
                                 false); // don't remove association on error
+=======
+        if (xid == null) {
+            throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
+        }
+
+        computeAssociation(xid,
+                           EnumSet.of(Association.BranchState.HEURISTICALLY_COMPLETED),
+                           LocalXAResource::forgetAndReset,
+                           false);
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(this.getClass().getName(), "forget");
@@ -360,8 +415,11 @@ final class LocalXAResource implements XAResource {
 
     @Override // XAResource
     public boolean setTransactionTimeout(int transactionTimeoutInSeconds) {
+<<<<<<< HEAD
         // (Interesting note: this is the first method that is called by the TransactionManager, i.e. before #start(Xid,
         // int).)
+=======
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(this.getClass().getName(), "setTransactionTimeout", transactionTimeoutInSeconds);
             LOGGER.exiting(this.getClass().getName(), "setTransactionTimeout", false);
@@ -374,9 +432,24 @@ final class LocalXAResource implements XAResource {
                                            BiFunction<? super Xid, ? super Association, ? extends Association> f)
         throws XAException {
         try {
+<<<<<<< HEAD
             return ASSOCIATIONS.compute(xid, f);
         } catch (RuntimeException e) {
             throw this.convert(xaRoutine, e);
+=======
+            return this.associations.compute(xid, (x, a) -> remap(x, a, legalBranchStates, f));
+        } catch (RuntimeException e) {
+            if (removeXidOnError) {
+                this.associations.remove(xid);
+            }
+            if (e.getCause() instanceof XAException xaException) {
+                throw xaException;
+            } else if (e instanceof IllegalTransitionException) {
+                throw (XAException) new XAException(XAER_PROTO).initCause(e);
+            } else {
+                throw (XAException) new XAException(XAER_RMERR).initCause(e);
+            }
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         }
     }
 
@@ -431,6 +504,7 @@ final class LocalXAResource implements XAResource {
      */
 
 
+<<<<<<< HEAD
     private static void requireNonNullXid(Xid xid) throws XAException {
         if (xid == null) {
             throw (XAException) new XAException(XAER_INVAL).initCause(new NullPointerException("xid"));
@@ -484,12 +558,17 @@ final class LocalXAResource implements XAResource {
     }
 
     // (Invoked only in context of a remapping BiFunction, from computeAssociation().)
+=======
+    // (Invoked only in context of a remapping BiFunction, from
+    // computeAssociation().)
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
     private static Association remap(Xid xid,
                                      Association a,
                                      EnumSet<Association.BranchState> legalBranchStates,
                                      UnaryOperator<Association> remapOperator) {
         if (a == null) {
             throw new UncheckedXAException((XAException) new XAException(XAER_NOTA)
+<<<<<<< HEAD
                                            .initCause(new NullPointerException("xid: " + xid + "; association: null")));
         } else if (!legalBranchStates.contains(a.branchState())) {
             throw new UncheckedXAException((XAException) new XAException(XAER_PROTO)
@@ -530,6 +609,32 @@ final class LocalXAResource implements XAResource {
         if (a == null) {
             throw new UncheckedXAException((XAException) new XAException(XAER_NOTA)
                                            .initCause(new NullPointerException("xid: " + x + "; association: null")));
+=======
+                                           .initCause(new NullPointerException("xid: " + xid + "; association: " + a)));
+        }
+        if (legalBranchStates.contains(a.branchState())) {
+            return remapOperator.apply(a);
+        }
+        throw new UncheckedXAException((XAException) new XAException(XAER_PROTO)
+                                       .initCause(new IllegalStateException("xid: " + xid + "; association: " + a)));
+    }
+
+    // (Remapping BiFunction.)
+    private static Association activeToIdle(Xid x, Association a) {
+        return a.activeToIdle();
+    }
+
+    // (Remapping BiFunction.)
+    private static Association suspend(Xid x, Association a) {
+        return a.suspend();
+    }
+
+    // (Remapping BiFunction.)
+    private static Association join(Xid x, Association a) {
+        if (a == null) {
+            throw new UncheckedXAException((XAException) new XAException(XAER_PROTO)
+                                           .initCause(new NullPointerException("xid: " + x + "; association: " + a)));
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         } else if (a.suspended()) {
             assert a.branchState() == Association.BranchState.IDLE;
             throw new UncheckedXAException((XAException) new XAException(XAER_PROTO)
@@ -537,6 +642,7 @@ final class LocalXAResource implements XAResource {
         }
         switch (a.branchState()) {
         case ACTIVE:
+<<<<<<< HEAD
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.logp(Level.FINE, Association.class.getName(), "join",
                             "Joining Association ({0}) in state ACTIVE", a);
@@ -580,12 +686,37 @@ final class LocalXAResource implements XAResource {
             LOGGER.entering(Association.class.getName(), "commitAndReset", new Object[] {a, onePhase});
         }
         assert a != null; // already vetted
+=======
+            return a;
+        case IDLE:
+            return a.idleToActive();
+        default:
+            throw new IllegalTransitionException("xid: " + x + "; association: " + a);
+        }
+    }
+
+    // (Remapping BiFunction.)
+    private static Association resume(Xid x, Association a) {
+        if (a == null) {
+            throw new UncheckedXAException((XAException) new XAException(XAER_NOTA)
+                                           .initCause(new NullPointerException("xid: " + x + "; association: " + a)));
+        }
+        return a.resume();
+    }
+
+    // (UnaryOperator for supplying via method reference to remap()
+    // above.)
+    private static Association commitAndReset(Association a) {
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         try {
             a = a.commitAndReset(onePhase);
         } catch (SQLException e) {
             throw new UncheckedSQLException(e);
+<<<<<<< HEAD
         } catch (XAException e) {
             throw new UncheckedXAException(e);
+=======
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         }
         assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
         if (LOGGER.isLoggable(Level.FINE)) {
@@ -599,7 +730,12 @@ final class LocalXAResource implements XAResource {
         return null;
     }
 
+<<<<<<< HEAD
     // (UnaryOperator for supplying via method reference to remap() above.)
+=======
+    // (UnaryOperator for supplying via method reference to remap()
+    // above.)
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
     private static Association rollbackAndReset(Association a) {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(Association.class.getName(), "rollbackAndReset", a);
@@ -622,7 +758,12 @@ final class LocalXAResource implements XAResource {
         return null;
     }
 
+<<<<<<< HEAD
     // (UnaryOperator for supplying via method reference to remap() above.)
+=======
+    // (UnaryOperator for supplying via method reference to remap()
+    // above.)
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
     private static Association prepare(Association a) {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(Association.class.getName(), "prepare", a);
@@ -642,13 +783,17 @@ final class LocalXAResource implements XAResource {
             }
         } catch (SQLException e) {
             throw new UncheckedSQLException(e);
+<<<<<<< HEAD
         }
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(Association.class.getName(), "preapre", a);
+=======
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         }
         return a;
     }
 
+<<<<<<< HEAD
     // (UnaryOperator for supplying via method reference to remap() above.)
     private static Association forgetAndReset(Association a) {
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -657,6 +802,13 @@ final class LocalXAResource implements XAResource {
         assert a != null; // already vetted
         try {
             a = a.forgetAndReset();
+=======
+    // (UnaryOperator for supplying via method reference to remap()
+    // above.)
+    private static Association forgetAndReset(Association a) {
+        try {
+            a = a.reset();
+>>>>>>> 5f35c17003 (Squashable commit; interim work)
         } catch (SQLException e) {
             throw new UncheckedSQLException(e);
         }
