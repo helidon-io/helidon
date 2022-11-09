@@ -19,6 +19,8 @@
  */
 module io.helidon.microprofile.cors {
 
+    requires java.logging;
+
     requires jakarta.ws.rs;
     requires io.helidon.config;
     requires io.helidon.config.mp;

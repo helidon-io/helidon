@@ -18,7 +18,6 @@ package io.helidon.microprofile.cors;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -54,6 +53,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(CrossOriginTest.CorsResource1.class)
 @AddBean(CrossOriginTest.CorsResource2.class)
 @AddBean(CrossOriginTest.CorsResource3.class)
+@AddBean(CrossOriginTest.CorsResource4.class)
+@AddBean(CrossOriginTest.CorsResource5.class)
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
 @AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
 @AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
@@ -106,7 +107,14 @@ class CrossOriginTest extends BaseCrossOriginTest {
 
     @RequestScoped
     @Path("/cors3")
+    @CrossOrigin(value = "http://config-beats-class-annotation.com",
+            allowMethods = {HttpMethod.PUT})
     static public class CorsResource3 {
+
+        @OPTIONS
+        public Response options() {
+            return Response.ok().build();
+        }
 
         @DELETE
         public Response deleteCors() {
@@ -145,6 +153,47 @@ class CrossOriginTest extends BaseCrossOriginTest {
         @CrossOrigin()
         public void optionsForMainPath() {
         }
+    }
+
+    @CrossOrigin(value = {"http://foo.bar"},
+            allowHeaders = {"X-foo"},
+            allowMethods = {HttpMethod.PUT},
+            maxAge = 600)
+    @Path("/cors4")
+    public static class CorsResource4 {
+
+        @OPTIONS
+        public Response optionsWithoutAnnotation() {
+            return Response.ok().build();
+        }
+
+        @PUT
+        public Response put() {
+            return Response.ok().build();
+        }
+    }
+
+    @CrossOrigin(value = {"http://foo.bar"},
+            allowHeaders = {"X-foo"},
+            allowMethods = {HttpMethod.PUT},
+            maxAge = 600)
+    @Path("/cors5")
+    public static class CorsResource5 {
+
+        @OPTIONS
+        @CrossOrigin(value = {"http://method.win"},
+                allowHeaders = {"X-method"},
+                allowMethods = {HttpMethod.DELETE},
+                maxAge = 900)
+        public Response optionsWithAnnotation() {
+            return Response.ok().build();
+        }
+
+        @DELETE
+        public Response delete() {
+            return Response.ok().build();
+        }
+
     }
 
     @Test
@@ -377,5 +426,74 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+    }
+
+    @Test
+    void testPreFlightInheritClassLevelCrossOrigin() {
+        Response res = target.path("/cors4")
+                .request()
+                .header(ORIGIN,"http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS), is("X-foo"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS), is("PUT"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE), is("600"));
+    }
+
+    @Test
+    void testActualAllowOriginFromClassLevelCrossOrigin() {
+        Response res = target.path("/cors4")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
+                .header(ACCESS_CONTROL_MAX_AGE, "600")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
+
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+    }
+
+    @Test
+    void testPreFlightMethodLevelAnnotationTakesPrecedenceOverClassLevel() {
+        Response res = target.path("/cors5")
+                .request()
+                .header(ORIGIN,"http://method.win")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-method")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "DELETE")
+                .options();
+
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://method.win"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS), is("X-method"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS), is("DELETE"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE), is("900"));
+    }
+
+    @Test
+    void testActualMethodLevelAnnotationTakesPrecedenceOverClassLevel() {
+        Response res = target.path("/cors5")
+                .request()
+                .header(ORIGIN,"http://method.win")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-method")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "DELETE")
+                .delete();
+
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://method.win"));
+    }
+
+    @Test
+    void testPreFlightConfigFileTakesPrecedenceOverClassLevelAnnotation() {
+        Response res = target.path("/cors3")
+                .request()
+                .header(ORIGIN, "http://config-beats-class-annotation.com")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
     }
 }
