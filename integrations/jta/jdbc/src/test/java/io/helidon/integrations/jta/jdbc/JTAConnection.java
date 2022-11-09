@@ -62,7 +62,7 @@ final class JTAConnection {
         return
             (Connection)
             Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                                   new Class<?>[] { Connection.class, Enlisted.class, LocalXAResource.Enlistable.class },
+                                   new Class<?>[] { Connection.class, Enlisted.class },
                                    new Handler(tm, canonicalConnection));
     }
 
@@ -130,7 +130,7 @@ final class JTAConnection {
                                                                                  final XAResource xaResource,
                                                                                  Supplier<? extends Connection> cs,
                                                                                  Consumer<? super Connection> closedNotifier) {
-            ArrayList<ConditionalInvocationHandler<Connection>> returnValue = new ArrayList<>(6);
+            ArrayList<ConditionalInvocationHandler<Connection>> returnValue = new ArrayList<>(5);
 
             // Handle equals(), hashCode(), wait(), notify(), toString(), etc.
             returnValue.add(new ObjectMethods<>(cs));
@@ -161,9 +161,6 @@ final class JTAConnection {
             // TODO: handle abort(Executor)? setAutoCommit(),
             // commit(), rollback(), setSavepoint(),
             // releaseSavepoint() etc.
-
-            // Handle getId() and enlist().
-            returnValue.add(new EnlistableHandler<>(cs));
 
             // Handle unwrap() and isWrapperFor() so that the proxied
             // connection, which also implements some of our
@@ -355,64 +352,6 @@ final class JTAConnection {
                     return iface.cast(proxy);
                 }
                 return delegate.unwrap(iface);
-            }
-
-        }
-
-        private static final class EnlistableHandler<D> extends ConditionalInvocationHandler<D> {
-
-
-            /*
-             * Instance fields.
-             */
-
-
-            private volatile Xid id;
-
-
-            /*
-             * Constructors.
-             */
-
-
-            private EnlistableHandler(Supplier<? extends D> delegateSupplier) {
-                super(delegateSupplier, EnlistableHandler::test);
-            }
-
-
-            /*
-             * Instance methods.
-             */
-
-
-            @Override // ConditionalInvocationHandler
-            @SuppressWarnings("unchecked")
-            protected Object invoke(Object proxy, D delegate, Method m, Object[] arguments) throws Throwable {
-                if (m.getName().equals("getId")) {
-                    return delegate instanceof Enlisted<?> e ? e.getId() : this.id;
-                } else if (m.getName().equals("enlist")) {
-                    if (delegate instanceof LocalXAResource.Enlistable e) {
-                        e.enlist((Xid) arguments[0]);
-                    } else {
-                        this.id = (Xid) arguments[0];
-                    }
-                    return null; // (void return type)
-                } else {
-                    return super.invoke(proxy, delegate, m, arguments);
-                }
-            }
-
-
-            /*
-             * Static methods.
-             */
-
-
-            // (Method reference.)
-            private static boolean test(Object proxy, Object delegate, Method m, Object arguments) {
-                return
-                    (m.getDeclaringClass() == Enlisted.class && m.getName().equals("getId"))
-                    || (m.getDeclaringClass() == LocalXAResource.Enlistable.class && m.getName().equals("enlist"));
             }
 
         }
