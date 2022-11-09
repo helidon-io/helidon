@@ -564,7 +564,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      * @param request Netty HTTP request
      * @param t associated throwable
      */
-    private void  send400BadRequest(ChannelHandlerContext ctx, HttpRequest request, Throwable t, String message) {
+    private void send400BadRequest(ChannelHandlerContext ctx, HttpRequest request, Throwable t, String message) {
         TransportResponse handlerResponse = directHandlers.handler(DirectHandler.EventType.BAD_REQUEST)
                 .handle(new DirectHandlerRequest(request),
                         DirectHandler.EventType.BAD_REQUEST,
