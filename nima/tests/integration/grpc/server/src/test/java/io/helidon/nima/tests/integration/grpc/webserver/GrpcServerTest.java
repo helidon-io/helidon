@@ -72,9 +72,12 @@ class GrpcServerTest {
     void afterEach() throws InterruptedException {
         blockingStub = null;
         stub = null;
-        channel.shutdownNow();
+        channel.shutdown();
         if (!channel.awaitTermination(10, TimeUnit.SECONDS)) {
             System.err.println("Failed to terminate channel");
+        }
+        if (!channel.isTerminated()) {
+            System.err.println("Channel is not terminated!!!");
         }
     }
 
