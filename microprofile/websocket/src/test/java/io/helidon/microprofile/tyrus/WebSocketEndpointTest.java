@@ -18,11 +18,13 @@ package io.helidon.microprofile.tyrus;
 
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * A test that registers a single annotated endpoint on the default WebSocket
  * context. See {@code WebSocketCdiExtension#DEFAULT_WEBSOCKET_PATH}.
  */
+@Disabled
 public class WebSocketEndpointTest extends WebSocketBaseTest {
 
     @BeforeAll

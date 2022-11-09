@@ -32,11 +32,13 @@ import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
  * A test that mixes Websocket endpoints and extensions in the same application.
  */
+@Disabled
 public class WebSocketExtensionEndpointTest {
 
     static SeContainer container;

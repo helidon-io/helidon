@@ -30,10 +30,10 @@ import jakarta.websocket.server.ServerApplicationConfig;
  */
 public final class WebSocketApplication {
 
-    private Class<? extends ServerApplicationConfig> applicationClass;
-    private Set<Class<?>> annotatedEndpoints;
-    private Set<Class<? extends Endpoint>> programmaticEndpoints;
-    private Set<Extension> extensions;
+    private final Class<? extends ServerApplicationConfig> applicationClass;
+    private final Set<Class<?>> annotatedEndpoints;
+    private final Set<Class<? extends Endpoint>> programmaticEndpoints;
+    private final Set<Extension> extensions;
 
     private WebSocketApplication(Builder builder) {
         this.applicationClass = builder.applicationClass;
@@ -94,9 +94,9 @@ public final class WebSocketApplication {
         private static final Logger LOGGER = Logger.getLogger(WebSocketApplication.Builder.class.getName());
 
         private Class<? extends ServerApplicationConfig> applicationClass;
-        private Set<Class<?>> annotatedEndpoints = new HashSet<>();
-        private Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
-        private Set<Extension> extensions = new HashSet<>();
+        private final Set<Class<?>> annotatedEndpoints = new HashSet<>();
+        private final Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
+        private final Set<Extension> extensions = new HashSet<>();
 
         /**
          * Updates an application class in the builder. Clears all results from scanning.

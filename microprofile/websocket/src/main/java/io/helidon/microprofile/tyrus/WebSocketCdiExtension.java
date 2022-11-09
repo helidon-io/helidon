@@ -27,8 +27,7 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.websocket.WebSocketRouting;
+import io.helidon.nima.websocket.webserver.WebSocketRouting;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -162,7 +161,7 @@ public class WebSocketCdiExtension implements Extension {
                     .threadNamePrefix("helidon-websocket-")
                     .build().get();
 
-            wsRoutingBuilder.executor(executorService);
+            // wsRoutingBuilder.executor(executorService);
 
             if (appClass.isPresent()) {
                 Class<? extends ServerApplicationConfig> c = appClass.get();
@@ -189,19 +188,19 @@ public class WebSocketCdiExtension implements Extension {
                 Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
 
                 // Register classes and configs
-                endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                // endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                // endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
 
                 // Create routing wsRoutingBuilder
-                addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, c.getName());
+                // addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, c.getName());
             } else {
                 // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
-                app.extensions().forEach(wsRoutingBuilder::extension);
+                // app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                // app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                // app.extensions().forEach(wsRoutingBuilder::extension);
 
                 // Create routing wsRoutingBuilder
-                serverCdiExtension.serverBuilder().addRouting(wsRoutingBuilder.build());
+                // serverCdiExtension.serverBuilder().addRouting(wsRoutingBuilder.build());
             }
 
         } catch (IllegalArgumentException e) {
@@ -213,6 +212,7 @@ public class WebSocketCdiExtension implements Extension {
         executorService.shutdown();
     }
 
+    /*
     private void addWsRouting(WebSocketRouting routing,
                              Optional<String> namedRouting,
                              boolean routingNameRequired,
@@ -240,6 +240,7 @@ public class WebSocketCdiExtension implements Extension {
             serverBuilder.addRouting(routing);
         }
     }
+     */
 
     private Optional<String> findContextRoot(io.helidon.config.Config config,
                                              Class<? extends ServerApplicationConfig> applicationClass) {

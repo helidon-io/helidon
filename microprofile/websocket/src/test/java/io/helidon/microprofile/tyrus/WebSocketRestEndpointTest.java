@@ -25,6 +25,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static jakarta.ws.rs.client.Entity.text;
@@ -34,6 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
  * A test that mixes Websocket endpoints and REST resources in the same
  * application.
  */
+@Disabled
 public class WebSocketRestEndpointTest extends WebSocketBaseTest {
 
     private static Client client;

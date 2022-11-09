@@ -28,6 +28,7 @@ import jakarta.websocket.Endpoint;
 import jakarta.websocket.server.ServerApplicationConfig;
 import jakarta.websocket.server.ServerEndpointConfig;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
  * {@code @RoutingPath} to register Websocket endpoints. The context for
  * Websocket endpoints is defined by the value of {@code @RoutingPath}.
  */
+@Disabled
 public class WebSocketEndpointAppTest extends WebSocketBaseTest {
 
     @BeforeAll
