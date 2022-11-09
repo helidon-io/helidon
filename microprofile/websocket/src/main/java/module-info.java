@@ -29,6 +29,7 @@ module io.helidon.microprofile.tyrus {
     requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
+    requires io.helidon.nima.webserver;
     requires io.helidon.nima.websocket.webserver;
 
     requires org.glassfish.tyrus.core;

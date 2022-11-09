@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,17 @@ package io.helidon.microprofile.tyrus;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
-import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.websocket.webserver.WebSocketRouting;
+import io.helidon.nima.webserver.WebServer;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.UnsatisfiedResolutionException;
@@ -52,7 +49,6 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  */
 public class WebSocketCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(WebSocketCdiExtension.class.getName());
-
     private static final String DEFAULT_WEBSOCKET_PATH = "/";
 
     private Config config;
@@ -60,7 +56,6 @@ public class WebSocketCdiExtension implements Extension {
     private ServerCdiExtension serverCdiExtension;
 
     private final WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
-    private ExecutorService executorService;
 
     void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
@@ -157,12 +152,6 @@ public class WebSocketCdiExtension implements Extension {
 
             LOGGER.info("Registering websocket application at " + rootPath);
 
-            executorService = ThreadPoolSupplier.builder()
-                    .threadNamePrefix("helidon-websocket-")
-                    .build().get();
-
-            // wsRoutingBuilder.executor(executorService);
-
             if (appClass.isPresent()) {
                 Class<? extends ServerApplicationConfig> c = appClass.get();
 
@@ -188,19 +177,19 @@ public class WebSocketCdiExtension implements Extension {
                 Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
 
                 // Register classes and configs
-                // endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                // endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
 
                 // Create routing wsRoutingBuilder
-                // addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, c.getName());
+                addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, c.getName());
             } else {
                 // Direct registration without calling application class
-                // app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                // app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
-                // app.extensions().forEach(wsRoutingBuilder::extension);
+                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                app.extensions().forEach(wsRoutingBuilder::extension);
 
                 // Create routing wsRoutingBuilder
-                // serverCdiExtension.serverBuilder().addRouting(wsRoutingBuilder.build());
+                serverCdiExtension.serverBuilder().addRouting(wsRoutingBuilder.build());
             }
 
         } catch (IllegalArgumentException e) {
@@ -208,11 +197,6 @@ public class WebSocketCdiExtension implements Extension {
         }
     }
 
-    void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        executorService.shutdown();
-    }
-
-    /*
     private void addWsRouting(WebSocketRouting routing,
                              Optional<String> namedRouting,
                              boolean routingNameRequired,
@@ -234,13 +218,12 @@ public class WebSocketCdiExtension implements Extension {
                     serverBuilder.addRouting(routing);
                 }
             } else {
-                serverBuilder.addNamedRouting(socket, routing);
+                serverBuilder.routerBuilder(socket).addRouting(routing);
             }
         } else {
             serverBuilder.addRouting(routing);
         }
     }
-     */
 
     private Optional<String> findContextRoot(io.helidon.config.Config config,
                                              Class<? extends ServerApplicationConfig> applicationClass) {

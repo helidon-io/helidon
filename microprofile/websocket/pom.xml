@@ -41,6 +41,10 @@
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.websocket</groupId>
             <artifactId>helidon-nima-websocket-webserver</artifactId>
         </dependency>
