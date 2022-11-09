@@ -4569,12 +4569,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-grpc-java: The gRPC Authors
+gRPC-Java: The gRPC Authors
 Apache 2.0
 Used by: [helidon-config-etcd, helidon-grpc-core, io.grpc]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 grpc-java (io.grpc:grpc-*)
-  Copyright 2014,2020 The gRPC Authors
+  Copyright 2014,2022 The gRPC Authors
   Copyright 2018, gRPC Authors All rights reserved.
   Copyright 2014 The gRPC Authors
 
@@ -4689,6 +4689,32 @@ Fourth Party Dependencies
   Copyright 2012,2019 The Netty Project
   Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
   Apache License Version 2.0
+
+                            The Netty Project
+                            =================
+
+Please visit the Netty web site for more information:
+
+  * https://netty.io/
+
+Copyright 2014 The Netty Project
+
+The Netty Project licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+  https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+Also, please refer to each LICENSE.<component>.txt file, which is located in
+the 'license' directory of the distribution file, for the license terms of the
+components that this product depends on.
+
 --------------------------------------------
 "proto-google-common-protos" (com.google.api.grpc:proto-google-common-protos)
   Copyright 2020 Google LLC
