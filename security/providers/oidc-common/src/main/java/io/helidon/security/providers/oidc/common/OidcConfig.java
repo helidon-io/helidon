@@ -239,7 +239,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * </tr>
  * <tr>
  *     <td>base-scopes</td>
- *     <td>{@value DEFAULT_BASE_SCOPES}</td>
+ *     <td>{@value Builder#DEFAULT_BASE_SCOPES}</td>
  *     <td>Configure scopes to be requested by default. If the scope has a qualifier, it must be included here</td>
  * </tr>
  * <tr>
@@ -336,7 +336,6 @@ public final class OidcConfig extends TenantConfigImpl {
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
     static final String TENANT_IDENT = "name";
-
     static final String DEFAULT_PARAM_NAME = "accessToken";
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
@@ -1051,6 +1050,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
             this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyHost,
                                                                                 proxyPort,
+                                                                                relativeUris,
                                                                                 clientTimeout());
             this.jaxrsClientBuilderSupplier = () -> OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
 
