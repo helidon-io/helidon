@@ -45,8 +45,8 @@ public class CharBuffer extends Writer {
     public void write(char[] cbuf, int off, int len) {
         if ((off < 0) || (off > cbuf.length) || (len < 0) || ((off + len) - cbuf.length > 0)) {
             throw new IndexOutOfBoundsException(
-                    "Could not write array (cbuf.length=" + cbuf.length + " off=" + off + " len=" + len + ") " +
-                    "into buffer (buffer.length=" + buffer.length + " count=" + count + ")");
+                    "Could not write array (cbuf.length=" + cbuf.length + " off=" + off + " len=" + len + ") "
+                    + "into buffer (buffer.length=" + buffer.length + " count=" + count + ")");
         }
         ensureCapacity(count + len);
         System.arraycopy(cbuf, off, buffer, count, len);
