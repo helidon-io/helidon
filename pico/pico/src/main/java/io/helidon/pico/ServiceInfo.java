@@ -19,17 +19,10 @@ package io.helidon.pico;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.LazyValue;
-
 /**
  * Describes a managed service or injection point.
  */
 public interface ServiceInfo extends ServiceInfoBasics {
-
-    /**
-     * Empty criteria will match anything and everything.
-     */
-    LazyValue<ServiceInfo> EMPTY_CRITERIA = LazyValue.create(() -> DefaultServiceInfo.builder().build());
 
     /**
      * The managed services external contracts / interfaces. These should also be contained within
@@ -61,6 +54,6 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param criteria the criteria to compare against
      * @return true if matches
      */
-    boolean matches(ServiceInfo criteria);
+    boolean matches(ServiceInfoCriteria criteria);
 
 }

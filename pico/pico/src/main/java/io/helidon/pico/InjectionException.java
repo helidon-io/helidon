@@ -29,7 +29,7 @@ public class InjectionException extends PicoServiceProviderException {
      *
      * @see io.helidon.pico.PicoServicesConfig
      */
-    private Optional<ActivationLog> activationLog;
+    private final ActivationLog activationLog;
 
     /**
      * Injection, or a required service lookup related exception.
@@ -38,6 +38,7 @@ public class InjectionException extends PicoServiceProviderException {
      */
     public InjectionException(String msg) {
         super(msg);
+        this.activationLog = null;
     }
 
     /**
@@ -48,7 +49,8 @@ public class InjectionException extends PicoServiceProviderException {
      * @param serviceProvider   the service provider
      */
     public InjectionException(String msg, Throwable cause, ServiceProvider<?> serviceProvider) {
-        this(msg, cause, serviceProvider, Optional.empty());
+        super(msg, cause, serviceProvider);
+        this.activationLog = null;
     }
 
     /**
@@ -62,7 +64,7 @@ public class InjectionException extends PicoServiceProviderException {
     public InjectionException(String msg,
                               Throwable cause,
                               ServiceProvider<?> serviceProvider,
-                              Optional<ActivationLog> log) {
+                              ActivationLog log) {
         super(msg, cause, serviceProvider);
         this.activationLog = log;
     }
@@ -73,7 +75,7 @@ public class InjectionException extends PicoServiceProviderException {
      * @return the optional activation log
      */
     public Optional<ActivationLog> activationLog() {
-        return activationLog;
+        return Optional.ofNullable(activationLog);
     }
 
 }

@@ -16,36 +16,44 @@
 
 package io.helidon.pico;
 
+import java.util.Optional;
+
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.Builder;
 
 /**
- * Combines the {@link io.helidon.pico.ServiceInfo} criteria along with the {@link io.helidon.pico.InjectionPointInfo} context
- * that the query applies to.
+ * Request to activate a service.
  *
- * @see io.helidon.pico.InjectionPointProvider
+ * @param <T> service type
  */
 @Builder
-public interface ContextualServiceQuery {
+public interface ActivationRequest<T> {
+    /**
+     * Target service provider.
+     *
+     * @return service provider
+     */
+    ServiceProvider<T> serviceProvider();
 
     /**
-     * The criteria to use for the lookup into {@link io.helidon.pico.Services}.
+     * Injection point context information.
      *
-     * @return the service info criteria
+     * @return injection point info
      */
-    ServiceInfoCriteria serviceInfo();
+    Optional<InjectionPointInfo> injectionPoint();
 
     /**
-     * The injection point context this search applies to.
+     * Ultimate target phase for activation.
      *
-     * @return the injection point context info
+     * @return phase to target
      */
-    InjectionPointInfo ipInfo();
+    ActivationPhase targetPhase();
 
     /**
-     * Set to true if there is an expectation that there is at least one match result from the search.
+     * Whether to throw an exception on failure to activate, or return an error activation result on activation.
      *
-     * @return true if it is expected there is at least a single match result
+     * @return whether to throw on failure
      */
-    boolean expected();
-
+    @ConfiguredOption("true")
+    boolean throwOnFailure();
 }

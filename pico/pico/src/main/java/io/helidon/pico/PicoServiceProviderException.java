@@ -44,17 +44,30 @@ public class PicoServiceProviderException extends PicoException {
      *
      * @param msg               the message
      * @param cause             the root cause
+     */
+    public PicoServiceProviderException(String msg,
+                                        Throwable cause) {
+        super(msg, cause);
+
+       if (cause instanceof PicoServiceProviderException) {
+           this.serviceProvider = ((PicoServiceProviderException) cause).serviceProvider().orElse(null);
+       } else {
+           this.serviceProvider = null;
+       }
+    }
+
+    /**
+     * A general purpose exception from Pico.
+     *
+     * @param msg               the message
+     * @param cause             the root cause
      * @param serviceProvider   the service provider
      */
     public PicoServiceProviderException(String msg,
                                         Throwable cause,
                                         ServiceProvider<?> serviceProvider) {
         super(msg, cause);
-        if (Objects.isNull(serviceProvider)) {
-            if (cause instanceof PicoServiceProviderException) {
-                serviceProvider = ((PicoServiceProviderException) cause).getServiceProvider().orElse(null);
-            }
-        }
+        Objects.requireNonNull(serviceProvider);
         this.serviceProvider = serviceProvider;
     }
 
@@ -63,7 +76,7 @@ public class PicoServiceProviderException extends PicoException {
      *
      * @return the optional / contextual service provider
      */
-    public Optional<ServiceProvider<?>> getServiceProvider() {
+    public Optional<ServiceProvider<?>> serviceProvider() {
         return Optional.ofNullable(serviceProvider);
     }
 
@@ -71,7 +84,7 @@ public class PicoServiceProviderException extends PicoException {
     public String getMessage() {
         return super.getMessage()
                 + (Objects.isNull(serviceProvider)
-                           ? "" : (": service provider: " + ServiceProvider.toDescription(serviceProvider)));
+                           ? "" : (": service provider: " + serviceProvider));
     }
 
 }

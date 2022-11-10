@@ -17,6 +17,7 @@
 package io.helidon.pico.builder.processor.tools;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -61,9 +62,6 @@ import io.helidon.pico.types.TypedElementName;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
 public class BuilderTypeTools implements TypeInfoCreator {
-
-    private final System.Logger logger = System.getLogger(getClass().getName());
-
     /**
      * Default constructor.
      */
@@ -109,7 +107,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
                 .typeKind(String.valueOf(element.getKind()))
                 .annotations(BuilderTypeTools.createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils()))
                 .elementInfo(elementInfo)
-                .superTypeInfo(toTypeInfo(annotation, element, processingEnv).orElse(null))
+                .update(it -> toTypeInfo(annotation, element, processingEnv).ifPresent(it::superTypeInfo))
                 .build());
     }
 
@@ -191,15 +189,19 @@ public class BuilderTypeTools implements TypeInfoCreator {
             return createTypeNameFromMirror(((ExecutableElement) type).getReturnType());
         }
 
-        String className = type.getSimpleName().toString();
+        List<String> classNames = new ArrayList<>();
+        classNames.add(type.getSimpleName().toString());
         while (Objects.nonNull(type.getEnclosingElement())
                 && ElementKind.PACKAGE != type.getEnclosingElement().getKind()) {
-            className = type.getEnclosingElement().getSimpleName() + "." + className;
+            classNames.add(type.getEnclosingElement().getSimpleName().toString());
             type = type.getEnclosingElement();
         }
-        return Optional.of(Objects.isNull(type.getEnclosingElement())
-                ? DefaultTypeName.create(type.toString(), className)
-                : DefaultTypeName.create(type.getEnclosingElement().toString(), className));
+        Collections.reverse(classNames);
+        String className = String.join(".", classNames);
+
+        Element packageName = type.getEnclosingElement() == null ? type : type.getEnclosingElement();
+
+        return Optional.of(DefaultTypeName.create(packageName.toString(), className));
     }
 
     /**
@@ -261,20 +263,21 @@ public class BuilderTypeTools implements TypeInfoCreator {
 
         if (typeMirror instanceof DeclaredType) {
             DeclaredType declaredType = (DeclaredType) typeMirror;
-            DefaultTypeName result = createTypeNameFromElement(declaredType.asElement()).orElse(null);
-            List<TypeName> typeParams = declaredType.getTypeArguments().stream()
+            List<TypeName> typeParams = declaredType.getTypeArguments()
+                    .stream()
                     .map(BuilderTypeTools::createTypeNameFromMirror)
-                    .filter(Optional::isPresent)
-                    .map(Optional::orElseThrow)
-                    .filter(Objects::nonNull)
+                    .flatMap(Optional::stream)
                     .collect(Collectors.toList());
-            if (!typeParams.isEmpty()) {
-                result = result.toBuilder().typeArguments(typeParams).build();
+
+            DefaultTypeName result = createTypeNameFromElement(declaredType.asElement()).orElse(null);
+            if (typeParams.isEmpty() || result == null) {
+                return Optional.ofNullable(result);
             }
-            return Optional.of(result);
+
+            return Optional.of(result.toBuilder().typeArguments(typeParams).build());
         }
 
-        throw new AssertionError("unknown type mirror: " + typeMirror);
+        throw new IllegalStateException("Unknown type mirror: " + typeMirror);
     }
 
     /**
@@ -301,10 +304,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
     public static Optional<AnnotationAndValue> createAnnotationAndValueFromMirror(AnnotationMirror am,
                                                                                   Elements elements) {
         Optional<DefaultTypeName> val = createTypeNameFromMirror(am.getAnnotationType());
-        if (val.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(DefaultAnnotationAndValue.create(val.get(), extractValues(am, Optional.of(elements))));
+
+        return val.map(it -> DefaultAnnotationAndValue.create(it, extractValues(am, elements)));
     }
 
     /**
@@ -330,12 +331,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
      * @return the extracted values
      */
     public static Map<String, String> extractValues(AnnotationMirror am,
-                                                    Optional<Elements> elements) {
-        if (elements.isPresent()) {
-            return extractValues(elements.get().getElementValuesWithDefaults(am));
-        }
-
-        return extractValues(am.getElementValues());
+                                                    Elements elements) {
+        return extractValues(elements.getElementValuesWithDefaults(am));
     }
 
     /**
@@ -384,14 +381,16 @@ public class BuilderTypeTools implements TypeInfoCreator {
                         createAnnotationAndValueListFromElement(((DeclaredType) returnType).asElement(), elements);
             }
             AnnotationValue annotationValue = ee.getDefaultValue();
-            defaultValue = Objects.isNull(annotationValue)
-                    ? null : annotationValue.accept(new ToStringAnnotationValueVisitor()
+            defaultValue = annotationValue == null
+                    ? null
+                    : annotationValue.accept(new ToStringAnnotationValueVisitor()
                                                             .mapBooleanToNull(true)
                                                             .mapVoidToNull(true)
                                                             .mapBlankArrayToNull(true)
                                                             .mapEmptyStringToNull(true)
                                                             .mapToSourceDeclaration(true), null);
         }
+        componentTypeNames = componentTypeNames == null ? List.of() : componentTypeNames;
 
         return DefaultTypedElementName.builder()
                 .typeName(type)

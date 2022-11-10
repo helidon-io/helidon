@@ -18,11 +18,17 @@
  * Pico API module.
  */
 module io.helidon.pico {
+    requires io.helidon.common;
+    requires io.helidon.common.config;
+    requires io.helidon.pico.types;
     requires static io.helidon.pico.builder;
+    requires static io.helidon.config.metadata;
+
     requires static jakarta.annotation;
     requires jakarta.inject;
-    requires io.helidon.common;
-    requires io.helidon.pico.types;
 
     exports io.helidon.pico;
+    exports io.helidon.pico.spi;
+
+    uses io.helidon.pico.spi.PicoServicesProvider;
 }

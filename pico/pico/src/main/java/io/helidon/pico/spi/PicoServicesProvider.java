@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.test.testsubjects;
+package io.helidon.pico.spi;
 
 import io.helidon.pico.PicoServices;
-import io.helidon.pico.Services;
 
-import jakarta.inject.Singleton;
+/**
+ * Java {@link java.util.ServiceLoader} provider interface to find implementation of {@link io.helidon.pico.PicoServices}.
+ */
+public interface PicoServicesProvider {
 
-@Singleton
-public class PicoServices3 implements PicoServices {
-    public PicoServices3() {
-    }
-
-    @Override
-    public Services services() {
-        return null;
-    }
-
+    /**
+     * Provide services implementation.
+     *
+     * @return Pico services
+     */
+    PicoServices services();
 }

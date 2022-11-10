@@ -16,43 +16,39 @@
 
 package io.helidon.pico;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.Weighted;
-
-import jakarta.inject.Singleton;
+import io.helidon.pico.builder.Builder;
+import io.helidon.pico.builder.Singular;
 
 /**
- * Basic service info that describes a service provider type.
+ * A criteria to discover service.
  */
-public interface ServiceInfoBasics extends Weighted {
-
+@Builder
+public interface ServiceInfoCriteria {
     /**
      * The managed service implementation {@link Class}.
      *
      * @return the service type name
      */
-    String serviceTypeName();
+    Optional<String> serviceTypeName();
 
     /**
      * The managed service assigned Scope's.
      *
      * @return the service scope type name
      */
-    default Set<String> scopeTypeNames() {
-        return Collections.singleton(Singleton.class.getName());
-    }
+    @Singular
+    Set<String> scopeTypeNames();
 
     /**
      * The managed service assigned Qualifier's.
      *
      * @return the service qualifiers
      */
-    default Set<QualifierAndValue> qualifiers() {
-        return Set.of();
-    }
+    @Singular
+    Set<QualifierAndValue> qualifiers();
 
     /**
      * The managed services advertised types (i.e., typically its interfaces).
@@ -60,46 +56,45 @@ public interface ServiceInfoBasics extends Weighted {
      * @see io.helidon.pico.ExternalContracts
      * @return the service contracts implemented
      */
-    default Set<String> contractsImplemented() {
-        return Set.of();
-    }
+    @Singular
+    Set<String> contractsImplemented();
 
     /**
      * The optional {@link RunLevel} ascribed to the service.
      *
      * @return the service's run level
      */
-    default int runLevel() {
-        return RunLevel.NORMAL;
-    }
+    Optional<Integer> runLevel();
 
     /**
      * Weight that was declared on the type itself.
      *
      * @return the declared weight
-     * @see #realizedWeight()
      */
-    default Optional<Double> declaredWeight() {
-        return Optional.of(weight());
-    }
+    Optional<Double> weight();
 
     /**
-     * The realized weight will use the default weight if no weight was specified directly.
+     * The managed services external contracts / interfaces. These should also be contained within
+     * {@link #contractsImplemented()}. External contracts are from other modules other than the module containing
+     * the implementation typically.
      *
-     * @return the realized weight
-     * @see #weight()
+     * @see io.helidon.pico.ExternalContracts
+     * @return the service external contracts implemented
      */
-    default double realizedWeight() {
-        return declaredWeight().orElse(weight());
-    }
+    @Singular
+    Set<String> externalContractsImplemented();
 
     /**
-     * Determines whether this matches the given contract.
+     * The management agent (i.e., the activator) that is responsible for creating and activating - typically build-time created.
      *
-     * @param contract the contract
-     * @return true if the service type name or the set of contracts implemented equals the provided contract
+     * @return the activator type name
      */
-    default boolean matchesContract(String contract) {
-        return contract.equals(serviceTypeName()) || contractsImplemented().contains(contract);
-    }
+    Optional<String> activatorTypeName();
+
+    /**
+     * The name of the ascribed module, if known.
+     *
+     * @return the module name
+     */
+    Optional<String> moduleName();
 }
