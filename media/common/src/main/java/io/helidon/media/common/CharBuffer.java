@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ public class CharBuffer extends Writer {
     @Override
     public void write(char[] cbuf, int off, int len) {
         if ((off < 0) || (off > cbuf.length) || (len < 0) || ((off + len) - cbuf.length > 0)) {
-            throw new IndexOutOfBoundsException();
+            throw new IndexOutOfBoundsException(
+                    "Could not write array (cbuf.length=" + cbuf.length + " off=" + off + " len=" + len + ") "
+                    + "into buffer (buffer.length=" + buffer.length + " count=" + count + ")");
         }
         ensureCapacity(count + len);
         System.arraycopy(cbuf, off, buffer, count, len);
@@ -95,7 +97,7 @@ public class CharBuffer extends Writer {
 
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) {
-            throw new OutOfMemoryError();
+            throw new OutOfMemoryError("Capacity overflow. minCapacity=" + minCapacity);
         }
         return (minCapacity > MAX_ARRAY_SIZE)
                ? Integer.MAX_VALUE
