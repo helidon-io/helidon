@@ -16,7 +16,6 @@
 
 package io.helidon.pico;
 
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -36,12 +35,6 @@ import java.util.Optional;
 public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
 
     /**
-     * Used to indicate that there is no ability to bind this service provider.
-     * @see ServiceProvider#serviceProviderBindable()
-     */
-    ServiceProviderBindable<?> NOT_BINDABLE = null;
-
-    /**
      * Called to inform a service provider the module name it is bound to. Will only be called when there is a non-null
      * module name associated for the given {@link Module}. A service provider can be associated with
      * 0..1 modules.
@@ -56,7 +49,7 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      * @return flag indicating whether this service provider is intercepted
      */
     default boolean isIntercepted() {
-        return Objects.nonNull(interceptor());
+        return interceptor().isPresent();
     }
 
     /**
@@ -74,41 +67,6 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
     default void interceptor(ServiceProvider<?> interceptor) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Returns the bindable contract of the service provider passed.
-     *
-     * @param serviceProvider the service provider
-     * @return the bindable provider of the service provider, or empty if the service provider does not support bind
-     */
-    @SuppressWarnings("unchecked")
-    static Optional<ServiceProviderBindable<?>> toBindableProvider(ServiceProvider<?> serviceProvider) {
-        if (serviceProvider instanceof ServiceProviderBindable) {
-            return Optional.of((ServiceProviderBindable<?>) serviceProvider);
-        }
-
-        return Objects.isNull(serviceProvider)
-                ? Optional.empty() : Optional.ofNullable((ServiceProviderBindable<?>) serviceProvider.serviceProviderBindable());
-    }
-
-    /**
-     * Returns the root provider of the service provider passed.
-     *
-     * @param serviceProvider the service provider
-     * @return the root provider of the service provider, falling back to the service provider passed
-     * @see #rootProvider()
-     */
-    @SuppressWarnings("unchecked")
-    static ServiceProvider<?> toRootProvider(ServiceProvider<?> serviceProvider) {
-        Optional<ServiceProviderBindable<?>> bindable = toBindableProvider(serviceProvider);
-        serviceProvider = bindable.orElse(null);
-        if (bindable.isPresent()) {
-            serviceProvider = bindable.get();
-        }
-
-        Optional<ServiceProvider<?>> rootProvider = ((ServiceProviderBindable<?>) serviceProvider).rootProvider();
-        return rootProvider.orElse(serviceProvider);
     }
 
     /**
@@ -160,16 +118,4 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
     default Optional<ServiceInjectionPlanBinder.Binder> injectionPlanBinder() {
         return Optional.empty();
     }
-
-    /**
-     * Returns true if the given service provider is intercepted.
-     *
-     * @param serviceProvider the service provider to check
-     * @return true if service provider is intercepted
-     */
-    static boolean isIntercepted(ServiceProvider<?> serviceProvider) {
-        return ((serviceProvider instanceof ServiceProviderBindable)
-                && ((ServiceProviderBindable<?>) serviceProvider).isIntercepted());
-    }
-
 }

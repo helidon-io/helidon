@@ -21,6 +21,7 @@ import io.helidon.pico.test.testsubjects.PicoServices2;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +38,7 @@ class ServiceLoaderTest {
     void testGetPicoServices() {
         PicoServices picoServices = PicoServices.picoServices().get();
         assertThat(picoServices, notNullValue());
-        assertThat(PicoServices2.class, sameInstance(picoServices.getClass()));
+        assertThat(picoServices, instanceOf(PicoServices2.class));
         assertThat(picoServices, sameInstance(PicoServices.picoServices().get()));
     }
 

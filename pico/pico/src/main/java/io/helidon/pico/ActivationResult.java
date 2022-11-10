@@ -127,17 +127,7 @@ public interface ActivationResult<T> {
      * @return true if successful
      */
     default boolean success() {
-        return success(finishingStatus());
-    }
-
-    /**
-     * Returns true if the provided result status was successful (i.e., not {@link ActivationStatus#FAILURE}).
-     *
-     * @param status the activation result status
-     * @return true if successful
-     */
-    static boolean success(ActivationStatus status) {
-        return (ActivationStatus.FAILURE != status);
+        return finishingStatus() != ActivationStatus.FAILURE;
     }
 
 }

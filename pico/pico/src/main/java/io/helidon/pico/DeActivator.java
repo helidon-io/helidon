@@ -32,22 +32,8 @@ public interface DeActivator<T> {
      * Deactivate a managed service. This will trigger any {@link jakarta.annotation.PreDestroy} method on the
      * underlying service type instance.
      *
-     * @param targetServiceProvider the service provider responsible for calling deactivate
-     * @param throwOnFailure        indicates whether the provider should throw if an error is observed
+     * @param request deactivation request
      * @return the result
      */
-    ActivationResult<T> deactivate(ServiceProvider<T> targetServiceProvider,
-                                   boolean throwOnFailure);
-
-    /**
-     * Deactivate a managed service. This will trigger any {@link jakarta.annotation.PreDestroy} method on the
-     * underlying service type instance.
-     *
-     * @param targetServiceProvider the service provider responsible for calling deactivate
-     * @return the result
-     */
-    default ActivationResult<T> deactivate(ServiceProvider<T> targetServiceProvider) {
-        return deactivate(targetServiceProvider, true);
-    }
-
+    ActivationResult<T> deactivate(DeActivationRequest<T> request);
 }

@@ -60,7 +60,7 @@ class MyConfigBeanTest {
 
     @Test
     void mixed() {
-        MyConfigBean val1 = MyConfigBeanManualImpl.builder().build();
+        MyConfigBean val1 = MyConfigBeanManualImpl.builder().name("initial").build();
         val1 = MyConfigBeanImpl.toBuilder(val1)
                 .name("test")
                 .enabled(true)

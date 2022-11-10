@@ -17,8 +17,12 @@
 package io.helidon.pico.builder.api.test;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import io.helidon.pico.builder.test.testsubjects.ComplexCaseImpl;
+import io.helidon.pico.builder.test.testsubjects.MyConfigBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,15 +33,18 @@ class ComplexCaseTest {
 
     @Test
     void testIt() {
+        // TODO: I think the declaration that should be allowed
+        Map<String, List<? extends MyConfigBean>> mapWithNull = new HashMap<>();
+        mapWithNull.put("key", null);
+
         ComplexCaseImpl val = ComplexCaseImpl.builder()
                 .name("name")
-                .addConfigBean(null)
-                .addKeyToConfigBean("key", null)
+                .mapOfKeyToConfigBeans(mapWithNull)
                 .setOfLists(Collections.singleton(Collections.singletonList(null)))
                 .build();
         assertThat(val.toString(),
                    equalTo("ComplexCase(name=name, enabled=false, port=8080, mapOfKeyToConfigBeans={key=null}, "
-                                   + "listOfConfigBeans=[null], setOfLists=[[null]])"));
+                                   + "listOfConfigBeans=[], setOfLists=[[null]])"));
     }
 
 }

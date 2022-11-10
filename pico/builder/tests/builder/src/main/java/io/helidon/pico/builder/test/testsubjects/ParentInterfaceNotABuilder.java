@@ -16,6 +16,8 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+import java.util.Optional;
+
 /**
  * Used for demonstrating (and testing) multi-inheritance of interfaces and the builders that are produced.
  *
@@ -34,8 +36,8 @@ public interface ParentInterfaceNotABuilder extends ParentOfParentInterfaceIsABu
      *
      * @return ignored, here for testing purposes only
      */
-    default char[] overrideMe() {
-        return new char[] {};
+    default Optional<char[]> overrideMe() {
+        return Optional.empty();
     }
 
     /**
