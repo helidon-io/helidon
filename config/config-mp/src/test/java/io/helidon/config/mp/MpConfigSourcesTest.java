@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PropertiesConfigParser;
@@ -97,6 +98,15 @@ public class MpConfigSourcesTest {
         assertThat(mpSource.getName(), is(LazyImpl.DESCRIPTION));
         assertThat("init called exactly once", lazy.inits.get(), is(1));
         assertThat("exists called exactly once", lazy.exists.get(), is(1));
+    }
+
+    @Test
+    void testMpConfigSourcesNullConfig() {
+        try {
+            MpConfigSources.create((Config) null);
+        } catch(NullPointerException npe) {
+            assertThat(npe.getMessage(), is("Config cannot be null"));
+        }
     }
 
     private static final class NodeImpl implements ConfigSource, NodeConfigSource {

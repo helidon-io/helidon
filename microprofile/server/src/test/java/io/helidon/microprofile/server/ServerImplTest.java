@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,13 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -106,6 +108,16 @@ class ServerImplTest {
             assertThat(second, startsWith("test2: helidon-"));
         } finally {
             server.stop();
+        }
+    }
+
+    @Test
+    void testServerNullConfig() {
+        try {
+            Server.builder()
+                    .config((Config) null).build();
+        } catch(NullPointerException npe) {
+            assertThat(npe.getMessage(), is("Config cannot be null"));
         }
     }
 
