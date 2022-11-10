@@ -25,8 +25,8 @@ include::{rootdir}/includes/mp.adoc[]
 
 == JAX-RS Applications
 
-NOTE: In this section we shall distinguish the notion of a JAX-RS `Application` subclass
-from a Helidon application. As we shall learn shortly, the latter may include zero or more
+NOTE: In this section we will distinguish the notion of a JAX-RS `Application` subclass
+from a Helidon application. The latter may include zero or more
 of the former.
 
 The JAX-RS specification defines the notion of an `Application` subclass whose methods return
@@ -62,12 +62,16 @@ The discovery phase is carried out as follows (in no particular order):
 If no `Application` subclasses are found, create a _synthetic_ `Application` subclass that includes
 all beans gathered in steps (2) and (3) and set the application path to be "/" &mdash;this is the path
 normally defined using the `@ApplicationPath` annotation.
+
+NOTE: Helidon treats `@Path` and `@Provided` as bean-defining annotations but, as stated above,
+`Application` subclasses may require additional annotations depending on the discovery mode.
+
 If one or more `Application` subclasses are found, call the `getClasses` and `getSingletons` methods
 in each subclass using the collections in steps (2) and (3) only as defaults, i.e. if these methods
 both return empty sets.
 
-NOTE: Helidon treats `@Path` and `@Provided` as bean-defining annotations but, as stated above,
-`Application` subclasses may require additional annotations depending on the discovery mode.
+NOTE: As noted above, the JAX-RS `Application` class exposes the `getSingletons` method which returns instances of resources, providers, or features. Currently Helidon can invoke this method multiple times. You should expect multiple invocations of the `getSingletons` method. If you want to return the same instances on all calls, then cache the values yourself.
+
 
 == Access to Application Instances
 
