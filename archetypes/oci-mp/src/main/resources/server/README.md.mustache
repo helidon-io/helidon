@@ -1,4 +1,4 @@
-# Helidon-Pegasus Server using MP
+# Helidon OCI Archetype Server using MP
 
 This module demonstrates a simple Hello World JAX-RS based application and is composed of the following:
 1. Server-side source code that will be generated using OpenApi tool based on an OpenApi specification document in the form
@@ -52,10 +52,7 @@ needs to be added. For example, to integrate with OCI logging, below is the exam
 
 ## Custom Logs Monitoring
 This Server application can also be configured to demonstrate OCI Custom Logs Monitoring using Unified Monitoring Agent 
-(not part of Helidon) which is a public offering that is comparable to the OCI internal tool called ChainSaw that works 
-with OCI internal logging called Lumberjack. It was added in this project to demonstrate a Chainsaw like capability that
-is used by Pegasus as the main logging processor (collect and send to logging service) and leveraged by internal OCI
-Services.
+(not part of Helidon). It was added in this project to demonstrate logging processor (collect and send to logging service) capabilities.
  
 The Unified Monitoring Agent uses FluentD which is an open source data collection tool. To set this up, please see the 
 details in [Creating Custom Logs](https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/custom_logs.htm#creating_custom_logs).
@@ -121,7 +118,7 @@ adding the following configuration in
 # OCI compartment ID where the metrics will be sent
 ocimetrics.compartmentId=ocid1.compartment.oc1..aaaaaaaalc3tlb3xcqpsbyvp72po6ybqopvycf7wdvl6gjpa7mry77pdkgza
 # OCI metric namespace
-ocimetrics.namespace=helidon_pegasus
+ocimetrics.namespace=helidon_oci
 # Delay in seconds before the 1st metrics transmission to OCI takes place.  Defaults to 1 second if not specified.
 ocimetrics.initialDelay=30
 # Interval in seconds between metrics transmission to OCI. Defaults to 60 seconds if not specified.
@@ -141,7 +138,7 @@ ocimetrics:
   # OCI compartment ID where the metrics will be sent
   compartmentId: ocid1.compartment.oc1..aaaaaaaalc3tlb3xcqpsbyvp72po6ybqopvycf7wdvl6gjpa7mry77pdkgza
   # OCI metric namespace
-  namespace: helidon_pegasus
+  namespace: helidon_oci
   # Delay in seconds before the 1st metrics transmission to OCI takes place.  Defaults to 1 second if not specified.
   initialDelay: 30
   # Interval in seconds between metrics transmission to OCI. Defaults to 60 seconds if not specified.

@@ -1,6 +1,6 @@
-# Helidon MP OCI Sample Application
+# Helidon OCI Archetype Application
 
-This repository contains a Helidon MP sample application that integrates with the OCI SDK and demonstrates the following:
+This repository contains a Helidon OCI Archetype application that integrates with the OCI SDK and demonstrates the following:
 
 1. Server code generation
 2. Client code generation

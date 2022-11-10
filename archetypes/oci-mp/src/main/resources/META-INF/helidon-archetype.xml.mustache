@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,27 +47,12 @@
                 <include>**/*.mustache</include>
             </includes>
         </template-set>
-        <template-set if="maven">
+        <template-set if="maven" transformations="packaged">
             <directory>.</directory>
             <includes>
                 <include>pom.xml.mustache</include>
-            </includes>
-        </template-set>
-        <template-set if="maven">
-            <directory>./server</directory>
-            <includes>
-                <include>pom.xml.mustache</include>
-                <include>README.md.mustache</include>
-                <include>Dockerfile.mustache</include>
-                <include>app.yaml.mustache</include>
-                <include>.dockerignore</include>
-            </includes>
-        </template-set>
-        <template-set if="maven">
-            <directory>./client</directory>
-            <includes>
-                <include>pom.xml.mustache</include>
-                <include>README.md.mustache</include>
+                <include>*/*.mustache</include>
+                <include>*/.dockerignore</include>
             </includes>
         </template-set>
     </template-sets>
@@ -88,11 +73,6 @@
             <directory>.</directory>
             <includes>
                 <include>*/src/main/resources/**</include>
-            </includes>
-        </file-set>
-        <file-set>
-            <directory>.</directory>
-            <includes>
                 <include>README.md</include>
             </includes>
         </file-set>
