@@ -32,6 +32,7 @@ import io.helidon.config.Config;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -113,12 +114,8 @@ class ServerImplTest {
 
     @Test
     void testServerNullConfig() {
-        try {
-            Server.builder()
-                    .config((Config) null).build();
-        } catch(NullPointerException npe) {
-            assertThat(npe.getMessage(), is("Config cannot be null"));
-        }
+        NullPointerException npe = assertThrows(NullPointerException.class, () -> Server.builder().config((Config) null).build());
+        assertThat(npe.getMessage(), is("Config cannot be null"));
     }
 
     private final class TestApplication1 extends Application {

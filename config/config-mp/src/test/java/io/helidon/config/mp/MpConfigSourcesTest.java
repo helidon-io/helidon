@@ -37,6 +37,7 @@ import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.ParsableSource;
 
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -102,11 +103,8 @@ public class MpConfigSourcesTest {
 
     @Test
     void testMpConfigSourcesNullConfig() {
-        try {
-            MpConfigSources.create((Config) null);
-        } catch(NullPointerException npe) {
-            assertThat(npe.getMessage(), is("Config cannot be null"));
-        }
+        NullPointerException npe = assertThrows(NullPointerException.class, () -> MpConfigSources.create((Config) null));
+        assertThat(npe.getMessage(), is("Config cannot be null"));
     }
 
     private static final class NodeImpl implements ConfigSource, NodeConfigSource {
