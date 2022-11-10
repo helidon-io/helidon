@@ -1,0 +1,14 @@
+# Helidon Metrics to OCI parameters
+ocimetrics:
+  # OCI compartment ID where the metrics will be sent
+  compartmentId: ocid1.tenancy.oc1..aaaaaaaa7lvqntgp5qsedivpeqpxyulfwkxcw376ob6fu3bg2aeydv3kp3pq
+  # OCI metric namespace
+  namespace: helidon_greet_namespace
+  # Delay in seconds before the 1st metrics transmission to OCI takes place.  Defaults to 1 second if not specified.
+  initialDelay: 10
+  # Interval in seconds between metrics transmission to OCI. Defaults to 60 seconds if not specified.
+  delay: 180
+  # Filter only the scopes that will be sent to OCI. This is optional and will default to all scopes if not specified.
+  scopes: [base, vendor, application]
+  # Enable or disable metric transmission to OCI. Defaults to true if not specified.
+  enabled: true

@@ -66,6 +66,12 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-oci-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <properties>
