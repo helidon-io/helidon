@@ -129,7 +129,9 @@ class GrpcServerTest {
         assertThat(strings, contains("A B C D"));
     }
 
+    // TODO requires analysis + fix
     @RepeatedTest(100)
+    @Disabled("Intermittent failures (timing related)")
     void testServerStream() throws Throwable {
         StringsCollector responseObserver = new StringsCollector();
         stub.split(StringMessage.newBuilder().setText("A B C D").build(), responseObserver);
