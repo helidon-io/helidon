@@ -95,7 +95,7 @@ class JTAHandler extends ConnectionHandler {
     private void enlist() throws SQLException {
         if (this.tm != null && this.xid == null) {
             try {
-                Enlister activeEnlister = this.activeEnlister();
+                XAResourceEnlister activeEnlister = this.activeEnlister();
                 if (activeEnlister != null) {
                     HANDOFF_LOCK.lock();
                     try {
@@ -122,12 +122,9 @@ class JTAHandler extends ConnectionHandler {
         }
     }
 
-    private Enlister activeEnlister() throws SystemException {
+    private XAResourceEnlister activeEnlister() throws SystemException {
         Transaction t = this.tm.getTransaction();
-        if (t != null && t.getStatus() == Status.STATUS_ACTIVE) {
-            return t::enlistResource;
-        }
-        return null;
+        return t == null || t.getStatus() != Status.STATUS_ACTIVE ? null : t::enlistResource;
     }
 
 
@@ -160,7 +157,7 @@ class JTAHandler extends ConnectionHandler {
     }
 
     @FunctionalInterface
-    static interface Enlister {
+    static interface XAResourceEnlister {
 
         boolean enlist(XAResource resource) throws RollbackException, SystemException;
 
