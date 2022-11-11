@@ -14,12 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.http2.webclient;
+package io.helidon.nima.webclient.spi;
 
-import io.helidon.nima.common.tls.Tls;
+/**
+ * Provider interface for custom DNS resolvers.
+ */
+public interface DnsResolverProvider {
 
-record ConnectionKey(String scheme,
-                     String authority,
-                     String host,
-                     int port,
-                     Tls tls) { }
+    /**
+     * Return name of the {@link DnsResolver}.
+     *
+     * @return dns resolver name
+     */
+    String resolverName();
+
+    /**
+     * Create new instance of the {@link DnsResolver}.
+     *
+     * @return new instance of the dns resolver
+     */
+    DnsResolver createDnsResolver();
+
+}

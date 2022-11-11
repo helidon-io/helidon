@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+import io.helidon.nima.webclient.DefaultDnsResolverProvider;
+import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
+import io.helidon.nima.webclient.NoDnsResolverProvider;
+import io.helidon.nima.webclient.spi.DnsResolverProvider;
+
 /**
  * WebClient API and HTTP/1.1 implementation.
  */
@@ -33,4 +38,7 @@ module io.helidon.nima.webclient {
      implementation available. The HTTP/1.1 client then implements the WebClient API...
      */
     exports io.helidon.nima.webclient.http1;
+
+    uses DnsResolverProvider;
+    provides DnsResolverProvider with RoundRobinDnsResolverProvider, DefaultDnsResolverProvider, NoDnsResolverProvider;
 }
