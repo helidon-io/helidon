@@ -352,7 +352,7 @@ public final class MpConfigSources {
      * @return a new MicroProfile Config config source
      */
     public static ConfigSource create(Config config) {
-        return new MpHelidonConfigSource(config);
+        return new MpHelidonConfigSource(Objects.requireNonNull(config, "Config cannot be null"));
     }
 
     /**
