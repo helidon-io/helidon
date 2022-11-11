@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import jakarta.transaction.RollbackException;
@@ -42,7 +43,7 @@ class JTAHandler extends ConnectionHandler {
     // Deliberately not volatile.
     // Null most of the time on purpose.
     // When not null, will contain either a Connection or a Xid.
-    // @GuardedBy("HANDOFF_LOCK") // in a manner of speaking
+    // @GuardedBy("HANDOFF_LOCK")
     private static Object HANDOFF;
 
 
@@ -50,7 +51,7 @@ class JTAHandler extends ConnectionHandler {
      * Instance fields.
      */
 
-    
+
     private final TransactionSupplier tm;
 
     private volatile Xid xid;
@@ -64,7 +65,7 @@ class JTAHandler extends ConnectionHandler {
     JTAHandler(Connection delegate, TransactionSupplier tm) {
         this(null, delegate, tm);
     }
-    
+
     JTAHandler(Handler handler, Connection delegate, TransactionSupplier tm) {
         super(handler, delegate);
         this.tm = tm;
@@ -75,7 +76,7 @@ class JTAHandler extends ConnectionHandler {
      * Instance methods.
      */
 
-    
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
         Object returnValue = UNHANDLED;
@@ -94,13 +95,12 @@ class JTAHandler extends ConnectionHandler {
     private void enlist() throws SQLException {
         if (this.tm != null && this.xid == null) {
             try {
-                Transaction t = tm.getTransaction();
-                if (t != null && t.getStatus() == Status.STATUS_ACTIVE) {
+                Enlister activeEnlister = this.activeEnlister();
+                if (activeEnlister != null) {
                     HANDOFF_LOCK.lock();
                     try {
                         HANDOFF = this.delegate();
-                        if (t.enlistResource(XA_RESOURCE)) {
-                            assert HANDOFF instanceof Xid;
+                        if (activeEnlister.enlist(XA_RESOURCE)) {
                             this.xid = (Xid) HANDOFF;
                         }
                     } finally {
@@ -122,11 +122,19 @@ class JTAHandler extends ConnectionHandler {
         }
     }
 
+    private Enlister activeEnlister() throws SystemException {
+        Transaction t = this.tm.getTransaction();
+        if (t != null && t.getStatus() == Status.STATUS_ACTIVE) {
+            return t::enlistResource;
+        }
+        return null;
+    }
+
 
     /*
      * Static methods.
      */
-    
+
 
     // (Method reference.)
     private static Connection connection(Xid xid) {
@@ -143,11 +151,18 @@ class JTAHandler extends ConnectionHandler {
      * Inner and nested classes.
      */
 
-    
+
     @FunctionalInterface
     static interface TransactionSupplier {
 
         Transaction getTransaction() throws SystemException;
+
+    }
+
+    @FunctionalInterface
+    static interface Enlister {
+
+        boolean enlist(XAResource resource) throws RollbackException, SystemException;
 
     }
 

@@ -30,33 +30,31 @@ class ConnectionHandler extends DelegatingHandler<Connection> {
     ConnectionHandler(Connection delegate) {
         this(null, delegate);
     }
-    
+
     ConnectionHandler(Handler handler, Connection delegate) {
-        super(new UnwrapHandler(new CreateChildProxyHandler(handler,
-                                                            (p, m, a) -> {
-                                                                if (m.getDeclaringClass() == Connection.class) {
-                                                                    Class<?> returnType = m.getReturnType();
-                                                                    String name = m.getName();
-                                                                    if (Statement.class.isAssignableFrom(returnType)
-                                                                        && (name.equals("createStatement")
-                                                                            || name.startsWith("prepare"))) {
-                                                                        return
-                                                                            new StatementHandler((Connection) p,
-                                                                                                 (Statement) m.invoke(delegate,
-                                                                                                                      a));
-                                                                    } else if (DatabaseMetaData.class == returnType
-                                                                               && name.equals("getMetaData")) {
-                                                                        return
-                                                                            new DatabaseMetaDataHandler((Connection) p,
-                                                                                                        (DatabaseMetaData)
-                                                                                                        m.invoke(delegate, a));
-                                                                    }
-                                                                }
-                                                                return null;
-                                                            }),
-                                delegate),
-              delegate,
-              m -> m.getDeclaringClass() == Connection.class);
+        super(
+            new UnwrapHandler(
+                new CreateChildProxyHandler(handler,
+                                            (p, m, a) -> {
+                                                if (m.getDeclaringClass() == Connection.class) {
+                                                    Class<?> returnType = m.getReturnType();
+                                                    String name = m.getName();
+                                                    if (Statement.class.isAssignableFrom(returnType)
+                                                        && (name.equals("createStatement") || name.startsWith("prepare"))) {
+                                                        return new StatementHandler((Connection) p,
+                                                                                    (Statement) m.invoke(delegate, a));
+                                                    } else if (DatabaseMetaData.class == returnType
+                                                               && name.equals("getMetaData")) {
+                                                        return new DatabaseMetaDataHandler((Connection) p,
+                                                                                           (DatabaseMetaData)
+                                                                                           m.invoke(delegate, a));
+                                                    }
+                                                }
+                                                return null;
+                                            }),
+                delegate),
+            delegate,
+            m -> m.getDeclaringClass() == Connection.class);
     }
 
 }

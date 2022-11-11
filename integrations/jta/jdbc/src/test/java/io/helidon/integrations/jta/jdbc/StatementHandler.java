@@ -27,24 +27,27 @@ class StatementHandler extends DelegatingHandler<Statement> {
     }
 
     StatementHandler(Handler handler, Connection proxiedCreator, Statement delegate) {
-        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(new CreateChildProxyHandler(handler,
-                                                                                            (p, m, a) -> {
-                                                                                                switch (m.getName()) {
-                                                                                                case "executeQuery":
-                                                                                                case "getGeneratedKeys":
-                                                                                                case "getResultSet":
-                                                                                                    return
-                                                                                                        new ResultSetHandler((Statement) p,
-                                                                                                                             (ResultSet) m.invoke(delegate, a));
-                                                                                                default:
-                                                                                                    return null;
-                                                                                                }
-                                                                                            }),
-                                                                proxiedCreator,
-                                                                Set.of("getConnection")),
-                                delegate),
-              delegate,
-              m -> Statement.class.isAssignableFrom(m.getDeclaringClass()));
+        super(
+            new UnwrapHandler(
+                new ReturnProxiedCreatorHandler(
+                    new CreateChildProxyHandler(handler,
+                                                (p, m, a) -> {
+                                                    switch (m.getName()) {
+                                                    case "executeQuery":
+                                                    case "getGeneratedKeys":
+                                                    case "getResultSet":
+                                                        return
+                                                            new ResultSetHandler((Statement) p,
+                                                                                 (ResultSet) m.invoke(delegate, a));
+                                                    default:
+                                                        return null;
+                                                    }
+                    }),
+                    proxiedCreator,
+                    "getConnection"),
+                delegate),
+            delegate,
+            m -> Statement.class.isAssignableFrom(m.getDeclaringClass()));
     }
 
 }

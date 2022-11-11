@@ -15,10 +15,11 @@
  */
 package io.helidon.integrations.jta.jdbc;
 
-import java.lang.reflect.Proxy;
 import java.sql.Connection;
 
 import jakarta.transaction.TransactionManager;
+
+import static java.lang.reflect.Proxy.newProxyInstance;
 
 final class JTAConnection {
 
@@ -41,11 +42,11 @@ final class JTAConnection {
     public static Connection connection(TransactionManager tm, Connection c) {
         return connection(Thread.currentThread().getContextClassLoader(), tm, c);
     }
-    
+
     public static Connection connection(ClassLoader classLoader, TransactionManager tm, Connection c) {
-        return (Connection) Proxy.newProxyInstance(classLoader,
-                                                   new Class<?>[] { Connection.class, Enlisted.class },
-                                                   new JTAHandler(c, tm::getTransaction));
+        return (Connection) newProxyInstance(classLoader,
+                                             new Class<?>[] { Connection.class, Enlisted.class },
+                                             new JTAHandler(c, tm::getTransaction));
     }
 
 }

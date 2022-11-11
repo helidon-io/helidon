@@ -26,7 +26,7 @@ class ResultSetHandler extends DelegatingHandler<ResultSet> {
     }
 
     ResultSetHandler(Handler handler, Statement proxiedCreator, ResultSet delegate) {
-        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, Set.of("getStatement")),
+        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, "getStatement"),
                                 delegate),
               delegate,
               m -> m.getDeclaringClass() == ResultSet.class);

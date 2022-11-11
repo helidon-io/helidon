@@ -23,20 +23,42 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 
 final class CreateChildProxyHandler extends Handler {
 
+
+    /*
+     * Instance fields.
+     */
+
+
     private final ChildInvocationHandlerCreator childInvocationHandlerCreator;
+
+
+    /*
+     * Constructors.
+     */
+
+
+    CreateChildProxyHandler(ChildInvocationHandlerCreator childInvocationHandlerCreator) {
+        this(null, childInvocationHandlerCreator);
+    }
 
     CreateChildProxyHandler(Handler handler, ChildInvocationHandlerCreator childInvocationHandlerCreator) {
         super(handler);
         this.childInvocationHandlerCreator = childInvocationHandlerCreator;
     }
-    
-    @Override
+
+
+    /*
+     * Instance methods.
+     */
+
+
+    @Override // Handler
     public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
         Object returnValue = super.invoke(proxy, method, arguments);
         if (returnValue == UNHANDLED && method.getDeclaringClass() != Object.class) { // easy optimization
             InvocationHandler childHandler = this.childInvocationHandlerCreator.create(proxy, method, arguments);
             if (childHandler != null) {
-                returnValue = newProxyInstance(Thread.currentThread().getContextClassLoader(),
+                returnValue = newProxyInstance(this.childInvocationHandlerCreator.classLoader(proxy, method, arguments),
                                                this.childInvocationHandlerCreator.interfaces(method),
                                                childHandler);
             }
@@ -44,15 +66,25 @@ final class CreateChildProxyHandler extends Handler {
         return returnValue;
     }
 
+
+    /*
+     * Inner and nested classes.
+     */
+
+
     @FunctionalInterface
     static interface ChildInvocationHandlerCreator {
 
         InvocationHandler create(Object proxy, Method method, Object[] arguments) throws IllegalAccessException, InvocationTargetException;
 
+        default ClassLoader classLoader(Object proxy, Method method, Object[] arguments) {
+            return Thread.currentThread().getContextClassLoader();
+        }
+
         default Class<?>[] interfaces(Method method) {
             return new Class<?>[] {method.getReturnType()};
         }
-        
+
     }
-  
+
 }

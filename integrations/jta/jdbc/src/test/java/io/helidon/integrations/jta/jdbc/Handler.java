@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 
 class Handler implements InvocationHandler {
 
-    static final Object UNHANDLED = new Object();
+    protected static final Object UNHANDLED = new Object();
 
     private final Handler handler;
 

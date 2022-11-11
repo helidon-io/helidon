@@ -26,7 +26,7 @@ class DatabaseMetaDataHandler extends DelegatingHandler<DatabaseMetaData> {
     }
 
     DatabaseMetaDataHandler(Handler handler, Connection proxiedCreator, DatabaseMetaData delegate) {
-        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, Set.of("getConnection")),
+        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, "getConnection"),
                                 delegate),
               delegate,
               m -> m.getDeclaringClass() == DatabaseMetaData.class);

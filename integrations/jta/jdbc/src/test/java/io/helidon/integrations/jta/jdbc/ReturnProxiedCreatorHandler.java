@@ -37,9 +37,19 @@ final class ReturnProxiedCreatorHandler extends Handler {
      */
 
 
-    ReturnProxiedCreatorHandler(Handler handler,
-                                Object proxiedCreator,
-                                Collection<? extends String> methodNames) {
+    ReturnProxiedCreatorHandler(Object proxiedCreator, String methodName) {
+        this(null, proxiedCreator, Set.of(methodName));
+    }
+    
+    ReturnProxiedCreatorHandler(Object proxiedCreator, Collection<? extends String> methodNames) {
+        this(null, proxiedCreator, methodNames);
+    }
+
+    ReturnProxiedCreatorHandler(Handler handler, Object proxiedCreator, String methodName) {
+        this(handler, proxiedCreator, Set.of(methodName));
+    }
+  
+    ReturnProxiedCreatorHandler(Handler handler, Object proxiedCreator, Collection<? extends String> methodNames) {
         super(handler);
         this.proxiedCreator = proxiedCreator; // nullable on purpose
         this.methodNames = methodNames == null ? Set.of() : Set.copyOf(methodNames);
