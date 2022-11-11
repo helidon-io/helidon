@@ -31,6 +31,8 @@ import io.helidon.security.annotations.Authenticated;
 @RequestScoped
 public class TestResource {
 
+    public static final String EXPECTED_TEST_MESSAGE = "Hello world";
+
     /**
      * Return hello world message.
      *
@@ -40,7 +42,7 @@ public class TestResource {
     @Authenticated
     @Produces(MediaType.TEXT_PLAIN)
     public String getDefaultMessage() {
-        return "Hello world";
+        return EXPECTED_TEST_MESSAGE;
     }
 
 }

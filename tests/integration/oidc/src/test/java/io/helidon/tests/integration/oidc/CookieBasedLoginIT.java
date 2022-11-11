@@ -16,87 +16,28 @@
 
 package io.helidon.tests.integration.oidc;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.Response;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.jersey.connector.HelidonProperties;
-import io.helidon.microprofile.server.Server;
-
-import dasniko.testcontainers.keycloak.KeycloakContainer;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@Testcontainers
-public class CookieBasedLoginIT {
-
-    private static final String EXPECTED_TEST_MESSAGE = "Hello world";
-
-    private static final ClientConfig CONFIG = new ClientConfig().property(ClientProperties.FOLLOW_REDIRECTS, Boolean.TRUE)
-            .property(ClientProperties.CONNECT_TIMEOUT, 10000000)
-            .property(ClientProperties.READ_TIMEOUT, 10000000)
-            .property(HelidonProperties.CONFIG, Config.builder()
-                    .addSource(ConfigSources.classpath("/cookie-login.yaml"))
-                    .build()
-                    .get("client"));
-    private static final Client CLIENT = ClientBuilder.newClient(CONFIG);
-
-    @Container
-    public static KeycloakContainer keycloakContainer = new KeycloakContainer()
-            .withRealmImportFiles("/test-realm.json", "/test2-realm.json")
-            // this enables KeycloakContainer to be reused across tests
-            .withReuse(true);
-
-    private static final int PORT = 7777;
-    private static Server server;
-
-    @BeforeAll
-    public static void beforeAll() {
-        System.setProperty("security.providers.1.oidc.identity-uri",
-                           keycloakContainer.getAuthServerUrl() + "realms/test/");
-        System.setProperty("security.providers.1.oidc.tenants.0.identity-uri",
-                           keycloakContainer.getAuthServerUrl() + "realms/test2/");
-        System.setProperty("security.providers.1.oidc.frontend-uri", "http://localhost:" + PORT);
-        //Needs to be done here because of the system property update above.
-        Config serverConfig = Config.builder()
-                .addSource(ConfigSources.classpath("/cookie-login.yaml"))
-                .build();
-        server = Server.builder()
-                .port(PORT)
-                .addResourceClass(TestResource.class)
-                .config(serverConfig)
-                .build()
-                .start();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        server.stop();
-    }
+public class CookieBasedLoginIT extends CommonLoginBase {
 
     @Test
-    public void testSuccessfulLogin() {
+    public void testSuccessfulLogin(WebTarget webTarget) {
         String formUri;
-        WebTarget webserverTarget = CLIENT.target("http://localhost:" + server.port());
-
         //greet endpoint is protected, and we need to get JWT token out of the Keycloak. We will get redirected to the Keycloak.
-        try (Response response = webserverTarget.path("/test")
+        try (Response response = client.target(webTarget.getUri())
+                .path("/test")
                 .request()
                 .header("helidon-tenant", "my-super-tenant")
                 .get()) {
@@ -109,25 +50,24 @@ public class CookieBasedLoginIT {
         Entity<Form> form = Entity.form(new Form().param("username", "userthree")
                                                 .param("password", "12345")
                                                 .param("credentialId", ""));
-        try (Response response = CLIENT.target(formUri).request().post(form)) {
+        try (Response response = client.target(formUri).request().post(form)) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
         }
 
         //next request should have cookie set, and we do not need to authenticate again
-        try (Response response = webserverTarget.path("/test").request().get()) {
+        try (Response response = client.target(webTarget.getUri()).path("/test").request().get()) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
         }
     }
 
     @Test
-    public void testFallbackToDefaultIfTenantNotFound() {
+    public void testFallbackToDefaultIfTenantNotFound(WebTarget webTarget) {
         String formUri;
-        WebTarget webserverTarget = CLIENT.target("http://localhost:" + server.port());
 
         //greet endpoint is protected, and we need to get JWT token out of the Keycloak. We will get redirected to the Keycloak.
-        try (Response response = webserverTarget.path("/test")
+        try (Response response = client.target(webTarget.getUri()).path("/test")
                 .request()
                 .header("helidon-tenant", "nonexistent")
                 .get()) {
@@ -142,7 +82,7 @@ public class CookieBasedLoginIT {
         Entity<Form> form = Entity.form(new Form().param("username", "userthree")
                                                 .param("password", "12345")
                                                 .param("credentialId", ""));
-        try (Response response = CLIENT.target(formUri).request().post(form)) {
+        try (Response response = client.target(formUri).request().post(form)) {
             //Keycloak for some reason sends 200 OK even if login failed
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             //Now we should not have our target endpoint response since authentication failed
@@ -156,7 +96,7 @@ public class CookieBasedLoginIT {
         form = Entity.form(new Form().param("username", "userone")
                                    .param("password", "12345")
                                    .param("credentialId", ""));
-        try (Response response = CLIENT.target(formUri).request().post(form)) {
+        try (Response response = client.target(formUri).request().post(form)) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
         }

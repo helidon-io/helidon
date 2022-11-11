@@ -44,6 +44,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
+@AddConfig(key = "security.providers.1.oidc.oidc-metadata-well-known", value = "false")
 public class TenantIdentificationIT {
 
     @Test
