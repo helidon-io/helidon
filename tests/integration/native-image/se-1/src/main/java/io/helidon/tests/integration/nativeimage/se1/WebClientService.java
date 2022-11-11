@@ -54,7 +54,7 @@ public class WebClientService implements Service {
         client = WebClient.builder()
                 .baseUri(context)
                 .addReader(JsonbSupport.reader())
-                .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.toString())
+                .addHeader(Http.HeaderValues.ACCEPT_JSON)
                 .config(config.get("client"))
                 .build();
     }
@@ -96,7 +96,7 @@ public class WebClientService implements Service {
                 response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                 StringWriter writer = new StringWriter();
                 t.printStackTrace(new PrintWriter(writer));
-                response.send("Failed to process request: " + writer.toString());
+                response.send("Failed to process request: " + writer);
             }
         });
     }
