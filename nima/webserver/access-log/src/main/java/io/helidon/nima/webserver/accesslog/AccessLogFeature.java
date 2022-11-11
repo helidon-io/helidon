@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.webserver.http.FilterChain;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -70,7 +70,7 @@ public final class AccessLogFeature implements HttpFeature, Weighted {
     }
 
     /**
-     * Create Access log support configured from {@link io.helidon.common.config.Config;}.
+     * Create Access log support configured from {@link io.helidon.config.Config}.
      *
      * @param config to configure a new access log support instance
      * @return a new access log support to be registered with WebServer routing

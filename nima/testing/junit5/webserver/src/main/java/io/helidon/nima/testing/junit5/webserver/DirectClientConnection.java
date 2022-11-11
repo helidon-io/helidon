@@ -23,7 +23,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;

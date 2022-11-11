@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.ListenerConfiguration;
 import io.helidon.nima.webserver.ListenerContext;

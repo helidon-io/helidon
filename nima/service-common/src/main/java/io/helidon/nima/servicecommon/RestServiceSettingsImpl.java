@@ -17,7 +17,7 @@ package io.helidon.nima.servicecommon;
 
 import java.util.Objects;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 
 /**

@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;

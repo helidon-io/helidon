@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.common.http.NotFoundException;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.nima.Nima;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;

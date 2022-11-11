@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -43,7 +43,7 @@ import static java.lang.System.Logger.Level.ERROR;
  *     <li>{@link io.helidon.nima.faulttolerance.Timeout} - time out a request if it takes too long</li>
  * </ul>
  *
- * @see #config(io.helidon.common.config.Config)
+ * @see #config(io.helidon.config.Config)
  * @see #executor()
  * @see #builder()
  */

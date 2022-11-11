@@ -19,7 +19,7 @@ package io.helidon.nima.webserver.http1.spi;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for HTTP/1.1 connection upgrade provider.
@@ -39,7 +39,7 @@ public interface Http1UpgradeProvider {
     /**
      * Creates an instance of HTTP/HTTP/1.1 connection upgrader.
      *
-     * @param config {@link io.helidon.common.config.Config;} configuration function that provides a value for any {@link #configKeys()}
+     * @param config {@link io.helidon.config.Config} configuration function that provides a value for any {@link #configKeys()}
      * @return new server HTTP/1.1 connection upgrade selector
      */
     Http1Upgrader create(Function<String, Config> config);

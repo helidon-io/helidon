@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.health.HealthCheck;

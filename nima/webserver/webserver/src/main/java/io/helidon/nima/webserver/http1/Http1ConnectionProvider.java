@@ -25,7 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;

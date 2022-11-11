@@ -17,7 +17,7 @@ package io.helidon.nima.webserver.cors;
 
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.cors.CorsSupportBase;

@@ -20,7 +20,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2StreamState;

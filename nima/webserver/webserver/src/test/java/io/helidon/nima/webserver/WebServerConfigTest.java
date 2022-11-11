@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;

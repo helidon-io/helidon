@@ -18,7 +18,7 @@ package io.helidon.nima.webserver.spi;
 
 import java.util.function.Function;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for server connection providers.

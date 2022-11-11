@@ -24,7 +24,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weighted;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.Nima;
 import io.helidon.nima.observe.spi.ObserveProvider;
 import io.helidon.nima.webserver.cors.CorsSupport;

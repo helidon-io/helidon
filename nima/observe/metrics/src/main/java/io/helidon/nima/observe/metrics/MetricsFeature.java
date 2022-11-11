@@ -23,7 +23,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.Registry;
@@ -61,7 +61,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * }</pre>
  * <p>
  * This class supports finer grained configuration using Helidon Config:
- * {@link #create(io.helidon.common.config.Config;)}. The following configuration parameters can be used:
+ * {@link #create(io.helidon.config.Config)}. The following configuration parameters can be used:
  * <table border="1">
  * <caption>Configuration parameters</caption>
  * <tr><th>key</th><th>default value</th><th>description</th></tr>
@@ -405,7 +405,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
          * If this method is not called,
          * {@link MetricsFeature} would use the shared
          * instance as provided by
-         * {@link io.helidon.metrics.api.RegistryFactory#getInstance(io.helidon.common.config.Config;)}
+         * {@link io.helidon.metrics.api.RegistryFactory#getInstance(io.helidon.config.Config)}
          *
          * @param factory factory to use in this metric support
          * @return updated builder instance

@@ -16,7 +16,7 @@
 
 package io.helidon.nima.observe.info;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.observe.spi.ObserveProvider;
 import io.helidon.nima.webserver.http.HttpRouting;
 

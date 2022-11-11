@@ -19,7 +19,7 @@ package io.helidon.nima.http2.webserver;
 import java.util.List;
 import java.util.function.Function;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.ListenerContext;
