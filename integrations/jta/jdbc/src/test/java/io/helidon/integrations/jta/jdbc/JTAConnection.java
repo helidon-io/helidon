@@ -23,7 +23,6 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 
 final class JTAConnection {
 
-
     /*
      * Constructors.
      */
