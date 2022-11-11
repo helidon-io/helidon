@@ -16,6 +16,7 @@
 
 package io.helidon.tracing.tests.it1;
 
+import java.lang.System.Logger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +57,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class OpentraceableClientE2ETest {
 
-    private static final int EXPECTED_TRACE_EVENTS_COUNT = 4;
+    private static final int EXPECTED_TRACE_EVENTS_COUNT = 5;
+    private static final int EXPECTED_DISTINCT_SPAN_COUNT = 4; // a span is reported twice, once by each of the two tracers
+
+    private static final Logger LOGGER = System.getLogger(OpentraceableClientE2ETest.class.getName());
+    private static final Logger.Level LEVEL = Logger.Level.DEBUG;
+    private static final boolean IS_LOGGABLE = LOGGER.isLoggable(LEVEL);
     private static final CountDownLatch EVENTS_LATCH = new CountDownLatch(EXPECTED_TRACE_EVENTS_COUNT);
+
     private static final Map<String, zipkin2.Span> EVENTS_MAP = new ConcurrentHashMap<>();
     private static WebServer server;
     private static Client client;
@@ -102,16 +109,28 @@ class OpentraceableClientE2ETest {
         start.end();
 
         if (!EVENTS_LATCH.await(10, TimeUnit.SECONDS)) {
-            fail("Expected " + EXPECTED_TRACE_EVENTS_COUNT + " trace events but received only: " + EVENTS_MAP.size());
+            fail("Timed out waiting to detect expected "
+                         + EXPECTED_TRACE_EVENTS_COUNT
+                         + "; remaining latch count: "
+                         + EVENTS_LATCH.getCount());
         }
+
+        assertThat("Spans reported", EVENTS_MAP.entrySet(), hasSize(EXPECTED_DISTINCT_SPAN_COUNT));
 
         TraceContext traceContext = ((BraveSpanContext) start.unwrap(io.opentracing.Span.class).context()).unwrap();
 
-        zipkin2.Span reportedSpan = EVENTS_MAP.remove(traceContext.traceIdString());
-        assertThat("Span with id " + reportedSpan.traceId() + " was not found in "
+        zipkin2.Span reportedSpan = EVENTS_MAP.get(traceContext.spanIdString());
+        assertThat("Explicitly-started span with id " + traceContext.spanIdString() + " was not found in "
                            + printSpans(EVENTS_MAP), reportedSpan, notNullValue());
-        assertSpanChain(reportedSpan, EVENTS_MAP);
-        assertThat(EVENTS_MAP.entrySet(), hasSize(0));
+        // Remove the reported span's parent, which was also reported, and start the ancestry check with it.
+        zipkin2.Span parentOfReportedSpan = EVENTS_MAP.remove(reportedSpan.parentId());
+        assertThat("Parent of explicitly-started span (parent ID = " + reportedSpan.parentId() + ") absent from "
+                + printSpans(EVENTS_MAP), parentOfReportedSpan, notNullValue());
+        if (IS_LOGGABLE) {
+            LOGGER.log(LEVEL, String.format("Starting ancestry check with span %s", parentOfReportedSpan.id()));
+        }
+        assertSpanChain(parentOfReportedSpan, EVENTS_MAP);
+        assertThat("Remaining EVENTS_MAP entries after ancestry check", EVENTS_MAP.entrySet(), hasSize(0));
     }
 
     /**
@@ -121,8 +140,22 @@ class OpentraceableClientE2ETest {
         Tracing braveTracing = Tracing.newBuilder()
                 .localServiceName(serviceName)
                 .spanReporter(span -> {
-                    EVENTS_MAP.put(span.traceId(), span);
+                    EVENTS_MAP.put(span.id(), span);
                     EVENTS_LATCH.countDown();
+                    if (IS_LOGGABLE) {
+                        LOGGER.log(LEVEL, String.format(
+                                           """
+                                           Service %10s recorded span %14s/%s, parent %s, trace %s; \
+                                           map size: %d; remaining latch count: %d \
+                                           """,
+                                   serviceName,
+                                   span.name(),
+                                   span.id(),
+                                   span.parentId(),
+                                   span.traceId(),
+                                   EVENTS_MAP.size(),
+                                   EVENTS_LATCH.getCount()));
+                    }
                 })
                 .build();
 
@@ -160,8 +193,18 @@ class OpentraceableClientE2ETest {
      */
     private void assertSpanChain(zipkin2.Span topSpan, Map<String, zipkin2.Span> spans) {
         if (spans.isEmpty()) {
+            if (IS_LOGGABLE) {
+                LOGGER.log(LEVEL, String.format("Map is empty for checking descendants of %14s/%s",
+                                                topSpan.name(),
+                                                topSpan.id()));
+            }
             // end the recursion
             return;
+        }
+        if (IS_LOGGABLE) {
+            LOGGER.log(LEVEL, String.format("Attempting removal and checking descendants of %14s/%s",
+                                            topSpan.name(),
+                                            topSpan.id()));
         }
         Optional<zipkin2.Span> removeSpan = findAndRemoveSpan(topSpan.id(), spans);
         assertSpanChain(removeSpan.orElseThrow(
