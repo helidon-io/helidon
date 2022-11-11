@@ -16,12 +16,10 @@
 package io.helidon.integrations.jta.jdbc;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
+import java.util.Collection;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
-final class ReturnProxiedCreatorHandler<PC, D> extends ConditionalInvocationHandler<D> {
+final class ReturnProxiedCreatorHandler extends Handler {
 
 
     /*
@@ -29,7 +27,9 @@ final class ReturnProxiedCreatorHandler<PC, D> extends ConditionalInvocationHand
      */
 
 
-    private final PC proxiedCreator;
+    private final Object proxiedCreator;
+
+    private final Set<String> methodNames;
 
 
     /*
@@ -37,21 +37,12 @@ final class ReturnProxiedCreatorHandler<PC, D> extends ConditionalInvocationHand
      */
 
 
-    ReturnProxiedCreatorHandler(PC proxiedCreator,
-                                D delegate,
-                                Set<? extends String> methodNames,
-                                BiConsumer<? super D, ? super Throwable> errorNotifier) {
-        this(proxiedCreator, () -> delegate, methodNames, errorNotifier);
-    }
-
-    ReturnProxiedCreatorHandler(PC proxiedCreator,
-                                Supplier<? extends D> delegateSupplier,
-                                Set<? extends String> methodNames,
-                                BiConsumer<? super D, ? super Throwable> errorNotifier) {
-        super(delegateSupplier,
-              proxiedCreator == null ? Predicate.FALSE : predicate(methodNames, proxiedCreator),
-              errorNotifier);
+    ReturnProxiedCreatorHandler(Handler handler,
+                                Object proxiedCreator,
+                                Collection<? extends String> methodNames) {
+        super(handler);
         this.proxiedCreator = proxiedCreator; // nullable on purpose
+        this.methodNames = methodNames == null ? Set.of() : Set.copyOf(methodNames);
     }
 
 
@@ -61,25 +52,16 @@ final class ReturnProxiedCreatorHandler<PC, D> extends ConditionalInvocationHand
 
 
     @Override
-    protected Object invoke(Object proxy, D delegate, Method method, Object[] args) {
-        return this.proxiedCreator;
-    }
-
-
-    /*
-     * Static methods.
-     */
-
-
-    private static <PC, D> Predicate<? super D> predicate(Set<? extends String> methodNames, PC proxiedCreator) {
-        Objects.requireNonNull(proxiedCreator, "proxiedCreator");
-        if (methodNames.isEmpty()) {
-            return Predicate.FALSE;
+    public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
+        Object returnValue = super.invoke(proxy, method, arguments);
+        if (returnValue == UNHANDLED
+            && method.getDeclaringClass() != Object.class // easy optimization
+            && method.getParameterCount() == 0
+            && method.getReturnType().isInstance(proxiedCreator)
+            && methodNames.contains(method.getName())) {
+            returnValue = proxiedCreator;
         }
-        final Set<String> names = Set.copyOf(methodNames);        
-        return (p, d, m, a) -> m.getParameterCount() == 0
-            && m.getReturnType().isInstance(proxiedCreator)
-            && names.contains(m.getName());
+        return returnValue;
     }
 
 }

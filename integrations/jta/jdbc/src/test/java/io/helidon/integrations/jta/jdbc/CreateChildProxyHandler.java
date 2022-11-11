@@ -16,56 +16,42 @@
 package io.helidon.integrations.jta.jdbc;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static java.lang.reflect.Proxy.newProxyInstance;
 
-class CreateChildProxyHandler<D, C> extends ConditionalInvocationHandler<D> {
+final class CreateChildProxyHandler extends Handler {
 
-    private final BiFunction<? super D, ? super C, InvocationHandler> creator;
+    private final ChildInvocationHandlerCreator childInvocationHandlerCreator;
 
-    private final Function<? super Method, ? extends Class<? extends C>> childTypeFunction;
-
-
-    CreateChildProxyHandler(Supplier<? extends D> delegateSupplier,
-                            Predicate<? super D> predicate,
-                            Function<? super Method, ? extends Class<? extends C>> childTypeFunction,
-                            ChildInvocationHandlerCreator<? super D, C> childInvocationHandlerCreator) {
-        this(delegateSupplier, predicate, childTypeFunction, childInvocationHandlerCreator, CreateChildProxyHandler::sink);
+    CreateChildProxyHandler(Handler handler, ChildInvocationHandlerCreator childInvocationHandlerCreator) {
+        super(handler);
+        this.childInvocationHandlerCreator = childInvocationHandlerCreator;
     }
-                            
-    CreateChildProxyHandler(Supplier<? extends D> delegateSupplier,
-                            Predicate<? super D> predicate,
-                            Function<? super Method, ? extends Class<? extends C>> childTypeFunction,
-                            ChildInvocationHandlerCreator<? super D, C> childInvocationHandlerCreator,
-                            BiConsumer<? super C, ? super Throwable> errorNotifier) {
-        super(delegateSupplier, predicate, null);
-        this.childTypeFunction = Objects.requireNonNull(childTypeFunction, "childTypeFunction");
-        Objects.requireNonNull(childInvocationHandlerCreator, "childInvocationHandlerCreator");
-        this.creator = (p, c) -> childInvocationHandlerCreator.create(p, c, errorNotifier);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Object invoke(Object proxy, D delegate, Method method, Object[] arguments) throws Throwable {
-        return
-            newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                             new Class<?>[] { this.childTypeFunction.apply(method) },
-                             // this.creator.apply(delegate, (C) method.invoke(delegate, arguments)));
-                             this.creator.apply((D) proxy, (C) method.invoke(delegate, arguments)));
-    }
-
-    private static void sink(Object ignored0, Object ignored1) {}
     
-    static interface ChildInvocationHandlerCreator<P, C> {
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] arguments) throws Throwable {
+        Object returnValue = super.invoke(proxy, method, arguments);
+        if (returnValue == UNHANDLED && method.getDeclaringClass() != Object.class) { // easy optimization
+            InvocationHandler childHandler = this.childInvocationHandlerCreator.create(proxy, method, arguments);
+            if (childHandler != null) {
+                returnValue = newProxyInstance(Thread.currentThread().getContextClassLoader(),
+                                               this.childInvocationHandlerCreator.interfaces(method),
+                                               childHandler);
+            }
+        }
+        return returnValue;
+    }
 
-        InvocationHandler create(P parent, C child, BiConsumer<? super C, ? super Throwable> errorNotifier);
+    @FunctionalInterface
+    static interface ChildInvocationHandlerCreator {
+
+        InvocationHandler create(Object proxy, Method method, Object[] arguments) throws IllegalAccessException, InvocationTargetException;
+
+        default Class<?>[] interfaces(Method method) {
+            return new Class<?>[] {method.getReturnType()};
+        }
         
     }
   

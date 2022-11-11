@@ -38,8 +38,6 @@ import org.junit.jupiter.api.Test;
 
 import static jakarta.transaction.Status.STATUS_NO_TRANSACTION;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -97,17 +95,28 @@ final class TestJTAConnection {
         tm.begin();
 
         try (Connection physicalConnection = h2ds.getConnection();
-             Connection logicalConnection = JTAConnection.connection(tm::getTransaction, physicalConnection)) {
-
+             Connection logicalConnection = JTAConnection.connection(tm, physicalConnection)) {
 
           // JTAConnection makes proxy connections.
           assertThat(logicalConnection, instanceOf(Proxy.class));
 
+          assertThat(logicalConnection, instanceOf(Enlisted.class));
+
           // Trigger an Object method; make sure nothing blows up
           logicalConnection.toString();
 
+          // Up until this point, the connection should not be enlisted.
+          assertThat(((Enlisted) logicalConnection).xid(), nullValue());
+          
           // Trigger harmless Connection method; make sure nothing blows up
           logicalConnection.getHoldability();
+
+          // Connection methods will cause enlistment to happen.
+          Xid xid = ((Enlisted) logicalConnection).xid();
+          assertThat(xid, not(nullValue()));
+
+          // Should get the same Xid back.
+          assertThat(((Enlisted) logicalConnection).xid(), sameInstance(xid));
 
           try (Statement s = logicalConnection.createStatement()) {
             assertThat(s, not(nullValue()));

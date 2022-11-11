@@ -15,47 +15,36 @@
  */
 package io.helidon.integrations.jta.jdbc;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
-import java.sql.Wrapper;
-import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
-class StatementHandler extends CompositeInvocationHandler<Statement> {
+class StatementHandler extends DelegatingHandler<Statement> {
 
-    StatementHandler(Connection proxiedCreator,
-                     Statement delegate,
-                     BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        this(proxiedCreator, () -> delegate, errorNotifier);
-    }
-  
-    StatementHandler(Connection proxiedCreator,
-                     Supplier<? extends Statement> delegateSupplier,
-                     BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        super(delegateSupplier,
-              List.of(new ObjectMethods<>(delegateSupplier, errorNotifier),
-                      new ReturnProxiedCreatorHandler<>(proxiedCreator, delegateSupplier, Set.of("getConnection"), errorNotifier),
-                      new CreateChildProxyHandler<>(delegateSupplier,
-                                                    StatementHandler::test,
-                                                    m -> ResultSet.class,
-                                                    ResultSetHandler::new,
-                                                    errorNotifier)));
+    StatementHandler(Connection proxiedCreator, Statement delegate) {
+        this(null, proxiedCreator, delegate);
     }
 
-    private static boolean test(Object proxy, Object delegate, Method method, Object arguments) {
-        if (method.getReturnType() == ResultSet.class) {
-            switch (method.getName()) {
-            case "executeQuery":
-            case "getGeneratedKeys":
-            case "getResultSet":
-                return true;
-            }
-        }
-        return false;
+    StatementHandler(Handler handler, Connection proxiedCreator, Statement delegate) {
+        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(new CreateChildProxyHandler(handler,
+                                                                                            (p, m, a) -> {
+                                                                                                switch (m.getName()) {
+                                                                                                case "executeQuery":
+                                                                                                case "getGeneratedKeys":
+                                                                                                case "getResultSet":
+                                                                                                    return
+                                                                                                        new ResultSetHandler((Statement) p,
+                                                                                                                             (ResultSet) m.invoke(delegate, a));
+                                                                                                default:
+                                                                                                    return null;
+                                                                                                }
+                                                                                            }),
+                                                                proxiedCreator,
+                                                                Set.of("getConnection")),
+                                delegate),
+              delegate,
+              m -> Statement.class.isAssignableFrom(m.getDeclaringClass()));
     }
-  
+
 }

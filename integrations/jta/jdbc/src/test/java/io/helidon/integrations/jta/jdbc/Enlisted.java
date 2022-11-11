@@ -15,21 +15,11 @@
  */
 package io.helidon.integrations.jta.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.Set;
+import javax.transaction.xa.Xid;
 
-class ResultSetHandler extends DelegatingHandler<ResultSet> {
+@FunctionalInterface
+interface Enlisted {
 
-    ResultSetHandler(Statement proxiedCreator, ResultSet delegate) {
-        this(null, proxiedCreator, delegate);
-    }
-
-    ResultSetHandler(Handler handler, Statement proxiedCreator, ResultSet delegate) {
-        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, Set.of("getStatement")),
-                                delegate),
-              delegate,
-              m -> m.getDeclaringClass() == ResultSet.class);
-    }
+  Xid xid();
 
 }

@@ -15,21 +15,8 @@
  */
 package io.helidon.integrations.jta.jdbc;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.Set;
+interface Enableable {
 
-class ResultSetHandler extends DelegatingHandler<ResultSet> {
-
-    ResultSetHandler(Statement proxiedCreator, ResultSet delegate) {
-        this(null, proxiedCreator, delegate);
-    }
-
-    ResultSetHandler(Handler handler, Statement proxiedCreator, ResultSet delegate) {
-        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, Set.of("getStatement")),
-                                delegate),
-              delegate,
-              m -> m.getDeclaringClass() == ResultSet.class);
-    }
-
+  void enable(boolean enabled);
+  
 }

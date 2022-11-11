@@ -15,18 +15,11 @@
  */
 package io.helidon.integrations.jta.jdbc;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Statement;
-import java.sql.Wrapper;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
-final class ConnectionHandler extends CompositeInvocationHandler<Connection> {
+class ConnectionHandler extends DelegatingHandler<Connection> {
 
 
     /*
@@ -34,72 +27,36 @@ final class ConnectionHandler extends CompositeInvocationHandler<Connection> {
      */
 
 
-    ConnectionHandler(Connection delegate,
-                      BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        this(() -> delegate, List.of(), errorNotifier);
+    ConnectionHandler(Connection delegate) {
+        this(null, delegate);
     }
-
-    ConnectionHandler(Connection delegate,
-                      List<? extends ConditionalInvocationHandler<Connection>> list,
-                      BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        this(() -> delegate, list, errorNotifier);
-    }
-
-    ConnectionHandler(Supplier<? extends Connection> delegateSupplier,
-                      BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        this(delegateSupplier, List.of(), errorNotifier);
-    }
-
-    ConnectionHandler(Supplier<? extends Connection> delegateSupplier,
-                      List<? extends ConditionalInvocationHandler<Connection>> list,
-                      BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        super(delegateSupplier, createList(delegateSupplier, list, errorNotifier));
-    }
-
-
-    /*
-     * Static methods.
-     */
-
-
-    @SuppressWarnings("unchecked")
-    private static List<ConditionalInvocationHandler<Connection>>
-        createList(Supplier<? extends Connection> delegateSupplier,
-                   List<? extends ConditionalInvocationHandler<Connection>> list,
-                   BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        List<ConditionalInvocationHandler<Connection>> returnValue = new ArrayList<>(list.size() + 2);
-        returnValue.add(new ObjectMethods<>(delegateSupplier, errorNotifier));
-        returnValue.add(new CreateChildProxyHandler<Connection, Wrapper>(delegateSupplier,
-                                                                         ConnectionHandler::test,
-                                                                         m -> (Class<? extends Wrapper>) m.getReturnType(),
-                                                                         ConnectionHandler::createChildProxyHandler,
-                                                                         errorNotifier));
-        returnValue.addAll(list);
-        return returnValue;
-    }
-
-    private static boolean test(Object proxy, Object delegate, Method method, Object arguments) {
-        if (method.getDeclaringClass() == Connection.class) {
-            Class<?> returnType = method.getReturnType();
-            String name = method.getName();
-            if (Statement.class.isAssignableFrom(returnType)) {
-                return name.equals("createStatement") || name.startsWith("prepare");
-            } else if (DatabaseMetaData.class == returnType) {
-                return name.equals("getMetaData");
-            }
-        }
-        return false;
-    }
-
-    private static InvocationHandler createChildProxyHandler(Connection proxiedCreator,
-                                                             Object childDelegate,
-                                                             BiConsumer<? super Wrapper, ? super Throwable> errorNotifier) {
-        if (childDelegate instanceof Statement statement) {
-            return new StatementHandler(proxiedCreator, statement, errorNotifier);
-        } else if (childDelegate instanceof DatabaseMetaData dmd) {
-            return new DatabaseMetaDataHandler(proxiedCreator, dmd, errorNotifier);
-        }
-        throw new IllegalArgumentException("childDelegate: " + childDelegate);
+    
+    ConnectionHandler(Handler handler, Connection delegate) {
+        super(new UnwrapHandler(new CreateChildProxyHandler(handler,
+                                                            (p, m, a) -> {
+                                                                if (m.getDeclaringClass() == Connection.class) {
+                                                                    Class<?> returnType = m.getReturnType();
+                                                                    String name = m.getName();
+                                                                    if (Statement.class.isAssignableFrom(returnType)
+                                                                        && (name.equals("createStatement")
+                                                                            || name.startsWith("prepare"))) {
+                                                                        return
+                                                                            new StatementHandler((Connection) p,
+                                                                                                 (Statement) m.invoke(delegate,
+                                                                                                                      a));
+                                                                    } else if (DatabaseMetaData.class == returnType
+                                                                               && name.equals("getMetaData")) {
+                                                                        return
+                                                                            new DatabaseMetaDataHandler((Connection) p,
+                                                                                                        (DatabaseMetaData)
+                                                                                                        m.invoke(delegate, a));
+                                                                    }
+                                                                }
+                                                                return null;
+                                                            }),
+                                delegate),
+              delegate,
+              m -> m.getDeclaringClass() == Connection.class);
     }
 
 }

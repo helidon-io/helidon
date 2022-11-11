@@ -17,26 +17,19 @@ package io.helidon.integrations.jta.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
-final class DatabaseMetaDataHandler extends CompositeInvocationHandler<DatabaseMetaData> {
+class DatabaseMetaDataHandler extends DelegatingHandler<DatabaseMetaData> {
 
-    DatabaseMetaDataHandler(Connection proxiedCreator,
-                            DatabaseMetaData delegate,
-                            BiConsumer<? super DatabaseMetaData, ? super Throwable> errorNotifier) {
-        this(proxiedCreator, () -> delegate, errorNotifier);
+    DatabaseMetaDataHandler(Connection proxiedCreator, DatabaseMetaData delegate) {
+        this(null, proxiedCreator, delegate);
     }
 
-    DatabaseMetaDataHandler(Connection proxiedCreator,
-                            Supplier<? extends DatabaseMetaData> delegateSupplier,
-                            BiConsumer<? super DatabaseMetaData, ? super Throwable> errorNotifier) {
-        super(delegateSupplier,
-              List.of(new ObjectMethods<>(delegateSupplier, errorNotifier),
-                      new ReturnProxiedCreatorHandler<>(proxiedCreator, delegateSupplier, Set.of("getConnection"), errorNotifier)),
-              errorNotifier);
+    DatabaseMetaDataHandler(Handler handler, Connection proxiedCreator, DatabaseMetaData delegate) {
+        super(new UnwrapHandler(new ReturnProxiedCreatorHandler(handler, proxiedCreator, Set.of("getConnection")),
+                                delegate),
+              delegate,
+              m -> m.getDeclaringClass() == DatabaseMetaData.class);
     }
 
 }

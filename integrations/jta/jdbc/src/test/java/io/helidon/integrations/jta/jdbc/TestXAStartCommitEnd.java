@@ -51,7 +51,6 @@ final class TestXAStartCommitEnd {
 
     private TestXAStartCommitEnd() throws SQLException {
         super();
-        // DriverManager.registerDriver(new com.arjuna.ats.jdbc.TransactionalDriver());
     }
 
     @BeforeEach
@@ -277,7 +276,7 @@ final class TestXAStartCommitEnd {
     @Test
     final void testUnenlisted() throws NotSupportedException, SystemException, SQLException {
         LOGGER.info("Starting testUnenlisted()");
-        
+
         // The default isolation level for H2 connections is
         // TRANSACTION_READ_COMMITTED.  See for yourself:
         // https://github.com/h2database/h2database/blob/version-2.1.212/h2/src/main/org/h2/engine/SessionLocal.java#L223
@@ -334,7 +333,7 @@ final class TestXAStartCommitEnd {
                SystemException,
                SQLException {
         LOGGER.info("Started testEnlistedCloseBeforeCommit()");
-        
+
         this.tm.begin();
 
         Connection logicalConnection;
@@ -371,7 +370,7 @@ final class TestXAStartCommitEnd {
         // afterCompletion(int) time that will call closeImpl() on the
         // ConnectionImple when the transaction is over
         // (https://github.com/jbosstm/narayana/blob/5.12.0.Final/ArjunaJTA/jdbc/classes/com/arjuna/ats/internal/jdbc/ConnectionImple.java#L989-L998).
-        // 
+        //
         // As part of its registration, it bumps the "use count" of
         // the ConnectionImple from 1 to 2
         // (https://github.com/jbosstm/narayana/blob/5.12.0.Final/ArjunaJTA/jdbc/classes/com/arjuna/ats/internal/jdbc/ConnectionSynchronization.java#L51).
@@ -411,5 +410,4 @@ final class TestXAStartCommitEnd {
         LOGGER.info("Ended testEnlistedCloseBeforeCommit()");
     }
 
->>>>>>> f83ff2dff (Squashable commit; initial work)
 }
