@@ -95,10 +95,10 @@ final class TestJTAConnection {
         tm.begin();
 
         try (Connection physicalConnection = h2ds.getConnection();
-             Connection logicalConnection = JTAConnection.connection(tm, physicalConnection)) {
+             Connection logicalConnection = JTAConnection.connection2(tm, (x, y) -> {}, physicalConnection)) {
 
           // JTAConnection makes proxy connections.
-          assertThat(logicalConnection, instanceOf(Proxy.class));
+          // assertThat(logicalConnection, instanceOf(Proxy.class));
 
           assertThat(logicalConnection, instanceOf(Enlisted.class));
 
@@ -120,10 +120,10 @@ final class TestJTAConnection {
 
           try (Statement s = logicalConnection.createStatement()) {
             assertThat(s, not(nullValue()));
-            assertThat(s, instanceOf(Proxy.class));
+            // assertThat(s, instanceOf(Proxy.class));
             assertThat(s.getConnection(), sameInstance(logicalConnection));
             try (ResultSet rs = s.executeQuery("SHOW TABLES")) {
-              assertThat(rs, instanceOf(Proxy.class));
+              // assertThat(rs, instanceOf(Proxy.class));
               assertThat(rs.getStatement(), sameInstance(s));
             }
           }

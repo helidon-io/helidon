@@ -18,7 +18,7 @@ package io.helidon.integrations.jta.jdbc;
 import java.lang.reflect.Method;
 import java.util.function.BiConsumer;
 
-final class UncloseableHandler extends DelegatingHandler<Object> implements Enableable {
+final class UnclosableHandler extends DelegatingHandler<Object> implements Enableable {
 
     private final BiConsumer<? super Enableable, ? super Object> closedNotifier;
 
@@ -26,7 +26,7 @@ final class UncloseableHandler extends DelegatingHandler<Object> implements Enab
 
     private volatile boolean closed;
 
-    UncloseableHandler(Handler handler, Object delegate, BiConsumer<? super Enableable, ? super Object> closedNotifier) {
+    UnclosableHandler(Handler handler, Object delegate, BiConsumer<? super Enableable, ? super Object> closedNotifier) {
         super(handler,
               delegate,
               m -> {

@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -28,6 +29,7 @@ import jakarta.transaction.Status;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 
+@Deprecated // replacing with non-proxy implementation
 class JTAHandler extends ConnectionHandler {
 
 
@@ -62,12 +64,15 @@ class JTAHandler extends ConnectionHandler {
      */
 
 
-    JTAHandler(Connection delegate, TransactionSupplier tm) {
-        this(null, delegate, tm);
+    JTAHandler(Connection delegate, TransactionSupplier tm, BiConsumer<? super Enableable, ? super Object> closedNotifier) {
+        this(null, delegate, tm, closedNotifier);
     }
 
-    JTAHandler(Handler handler, Connection delegate, TransactionSupplier tm) {
-        super(handler, delegate);
+    JTAHandler(Handler handler,
+               Connection delegate,
+               TransactionSupplier tm,
+               BiConsumer<? super Enableable, ? super Object> closedNotifier) {
+        super(new UnclosableHandler(handler, delegate, closedNotifier), delegate);
         this.tm = tm;
     }
 
