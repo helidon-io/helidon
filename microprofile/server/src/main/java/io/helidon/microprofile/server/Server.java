@@ -19,6 +19,7 @@ package io.helidon.microprofile.server;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -326,7 +327,7 @@ public interface Server {
         public Builder config(io.helidon.config.Config config) {
             this.config = ConfigProviderResolver.instance()
                     .getBuilder()
-                    .withSources(MpConfigSources.create(config))
+                    .withSources(MpConfigSources.create(Objects.requireNonNull(config, "Config cannot be null")))
                     .build();
 
             return this;
