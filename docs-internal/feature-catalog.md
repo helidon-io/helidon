@@ -71,14 +71,6 @@ This example provides full `plugins` tag, if exists, update only relevant sectio
 ## TODO
 The following modules should be refactored:
 ```java
-add("io.helidon.grpc.client",
-            FeatureDescriptor.builder()
-                    .name("gRPC Client")
-                    .description("Client for gRPC services")
-                    .path("grpcClient")
-                    .flavor(HelidonFlavor.SE)
-                    .nativeSupported(true)
-                    .nativeDescription("Experimental support in native image"));
         addSe("io.helidon.grpc.metrics",
               "Metrics",
               "Metrics for gRPC services",
