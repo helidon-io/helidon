@@ -36,12 +36,14 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
@@ -76,6 +78,8 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
 
     private final TransactionSupplier tm;
 
+    private final Consumer<? super Synchronization> tsr;
+
     private final BiConsumer<? super Enableable, ? super Object> closedNotifier;
 
     private volatile Xid xid;
@@ -87,10 +91,12 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
 
 
     private JTAConnection(TransactionSupplier tm,
+                          Consumer<? super Synchronization> tsr,
                           BiConsumer<? super Enableable, ? super Object> closedNotifier,
                           Connection delegate) {
         super(delegate, true, true);
         this.tm = tm;
+        this.tsr = tsr;
         this.closedNotifier = closedNotifier == null ? JTAConnection::sink : closedNotifier;
     }
 
@@ -478,23 +484,26 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
         return this.xid;
     }
 
+    private boolean enlisted() {
+        return this.xid() != null;
+    }
+
     private void enlist() throws SQLException {
         this.checkOpen();
-        if (this.tm != null && this.xid() == null) {
+        if (!this.enlisted()) {
             try {
-                XAResourceEnlister activeEnlister = this.activeEnlister();
-                if (activeEnlister != null) {
+                Transaction t = this.tm.getTransaction();
+                if (t != null && t.getStatus() == Status.STATUS_ACTIVE) {
                     HANDOFF_LOCK.lock();
                     try {
                         HANDOFF = this.delegate();
-                        if (activeEnlister.enlist(XA_RESOURCE)) {
+                        if (t.enlistResource(XA_RESOURCE)) {
                             this.xid = (Xid) HANDOFF;
-                            // TO DO: uncomment this once we have
-                            // registered an appropriate
-                            // synchronization to handle in-flight
-                            // close requests
-                            //
-                            // this.setCloseable(false);
+                            this.tsr.accept((Sync) status -> {
+                                    this.xid = null;
+                                    this.setCloseable(true);
+                                });
+                            this.setCloseable(false);
                         }
                     } finally {
                         HANDOFF = null;
@@ -503,21 +512,16 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
                 }
             } catch (RollbackException e) {
                 throw new SQLException(e.getMessage(),
-                                       "40000" /* transaction rollback, no subclass */,
+                                       "40000", // transaction rollback, no subclass
                                        e);
-            } catch (SystemException e) {
+            } catch (RuntimeException | SystemException e) {
                 // Hard to know what SQLState to use here. Either
-                // 25000 or 35000.
+                // 25000 or 35000 seems in the right area.
                 throw new SQLException(e.getMessage(),
-                                       "25000" /* invalid transaction state, no subclass */,
+                                       "25000", // invalid transaction state, no subclass
                                        e);
             }
         }
-    }
-
-    private XAResourceEnlister activeEnlister() throws SystemException {
-        Transaction t = this.tm.getTransaction();
-        return t == null || t.getStatus() != Status.STATUS_ACTIVE ? null : t::enlistResource;
     }
 
 
@@ -526,20 +530,8 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
      */
 
 
-    @Deprecated
-    public static Connection connection(TransactionManager tm, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
-        return connection(Thread.currentThread().getContextClassLoader(), tm, closedNotifier, c);
-    }
-
-    @Deprecated
-    public static Connection connection(ClassLoader classLoader, TransactionManager tm, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
-        return (Connection) newProxyInstance(classLoader,
-                                             new Class<?>[] { Connection.class, Enlisted.class },
-                                             new JTAHandler(c, tm::getTransaction, closedNotifier));
-    }
-
-    public static Connection connection2(TransactionManager tm, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
-        return new JTAConnection(tm::getTransaction, closedNotifier, c);
+    public static Connection connection(TransactionManager tm, Consumer<? super Synchronization> tsr, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
+        return new JTAConnection(tm::getTransaction, tsr, closedNotifier, c);
     }
 
     // (Method reference.)
@@ -552,13 +544,24 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
         }
     }
 
-    private static void sink(Object ignored0, Object ignored1) {}
+    // (Method reference.)
+    private static void sink(Object ignored0, Object ignored1) {
+
+    }
 
 
     /*
      * Inner and nested classes.
      */
 
+    @FunctionalInterface
+    static interface Sync extends Synchronization {
+
+        default void beforeCompletion() {
+
+        }
+
+    }
 
     @FunctionalInterface
     static interface TransactionSupplier {
@@ -567,11 +570,5 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
 
     }
 
-    @FunctionalInterface
-    static interface XAResourceEnlister {
-
-        boolean enlist(XAResource resource) throws RollbackException, SystemException;
-
-    }
 
 }

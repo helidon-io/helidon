@@ -29,7 +29,10 @@ import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 
+import com.arjuna.ats.jta.common.JTAEnvironmentBean;
+import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import static jakarta.transaction.Status.STATUS_NO_TRANSACTION;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -47,9 +51,13 @@ final class TestJTAConnection {
 
     private static final Logger LOGGER = Logger.getLogger(TestJTAConnection.class.getName());
 
+    private static final JTAEnvironmentBean jtaEnvironmentBean = new JTAEnvironmentBean();
+
     private JdbcDataSource h2ds;
 
     private TransactionManager tm;
+
+    private TransactionSynchronizationRegistry tsr;
 
     private TestJTAConnection() throws SQLException {
         super();
@@ -66,8 +74,13 @@ final class TestJTAConnection {
 
     @BeforeEach
     final void initializeTransactionManager() throws SystemException {
-        this.tm = com.arjuna.ats.jta.TransactionManager.transactionManager();
+        this.tm = jtaEnvironmentBean.getTransactionManager(); // com.arjuna.ats.jta.TransactionManager.transactionManager();
         this.tm.setTransactionTimeout(20 * 60); // 20 minutes for debugging
+    }
+
+    @BeforeEach
+    final void initializeTransactionSynchronizationRegistry() throws SystemException {
+        this.tsr = jtaEnvironmentBean.getTransactionSynchronizationRegistry();
     }
 
     @AfterEach
@@ -95,40 +108,71 @@ final class TestJTAConnection {
         tm.begin();
 
         try (Connection physicalConnection = h2ds.getConnection();
-             Connection logicalConnection = JTAConnection.connection2(tm, (x, y) -> {}, physicalConnection)) {
+             Connection logicalConnection = JTAConnection.connection(tm,
+                                                                     tsr::registerInterposedSynchronization,
+                                                                     (x, y) -> {},
+                                                                     physicalConnection)) {
 
-          // JTAConnection makes proxy connections.
-          // assertThat(logicalConnection, instanceOf(Proxy.class));
+            assertThat(logicalConnection, instanceOf(JTAConnection.class));
+            assertThat(logicalConnection, instanceOf(Enlisted.class));
+            assertThat(logicalConnection, instanceOf(ConditionallyCloseableConnection.class));
 
-          assertThat(logicalConnection, instanceOf(Enlisted.class));
+            // Trigger an Object method; make sure nothing blows up
+            // (in case we're using proxies).
+            logicalConnection.toString();
 
-          // Trigger an Object method; make sure nothing blows up
-          logicalConnection.toString();
+            // Up until this point, the connection should not be enlisted.
+            assertThat(((Enlisted) logicalConnection).xid(), nullValue());
 
-          // Up until this point, the connection should not be enlisted.
-          assertThat(((Enlisted) logicalConnection).xid(), nullValue());
-          
-          // Trigger harmless Connection method; make sure nothing blows up
-          logicalConnection.getHoldability();
+            // That means it should be closeable.
+            assertThat(((ConditionallyCloseableConnection) logicalConnection).isCloseable(), is(true));
+            assertThat(logicalConnection.isClosed(), is(false));
+            
+            // Trigger harmless Connection method; make sure nothing
+            // blows up.
+            logicalConnection.getHoldability();
 
-          // Connection methods will cause enlistment to happen.
-          Xid xid = ((Enlisted) logicalConnection).xid();
-          assertThat(xid, not(nullValue()));
+            // Almost all Connection methods will cause enlistment to
+            // happen.  getHoldability(), just invoked, is one of
+            // them.
+            Xid xid = ((Enlisted) logicalConnection).xid();
+            assertThat(xid, not(nullValue()));
 
-          // Should get the same Xid back.
-          assertThat(((Enlisted) logicalConnection).xid(), sameInstance(xid));
+            // That means the Connection is no longer closeable.
+            assertThat(((ConditionallyCloseableConnection) logicalConnection).isCloseable(), is(false));
 
-          try (Statement s = logicalConnection.createStatement()) {
-            assertThat(s, not(nullValue()));
-            // assertThat(s, instanceOf(Proxy.class));
-            assertThat(s.getConnection(), sameInstance(logicalConnection));
-            try (ResultSet rs = s.executeQuery("SHOW TABLES")) {
-              // assertThat(rs, instanceOf(Proxy.class));
-              assertThat(rs.getStatement(), sameInstance(s));
+            // Should be a no-op.
+            logicalConnection.close();
+            assertThat(logicalConnection.isClosed(), is(false));
+            
+            // Should get the same Xid back whenever we call xid()
+            // once we're enlisted.
+            assertThat(((Enlisted) logicalConnection).xid(), sameInstance(xid));
+
+            // Ensure JDBC constructs' backlinks work correctly.
+            try (Statement s = logicalConnection.createStatement()) {
+                assertThat(s, not(nullValue()));
+                assertThat(s.getConnection(), sameInstance(logicalConnection));
+                try (ResultSet rs = s.executeQuery("SHOW TABLES")) {
+                    assertThat(rs.getStatement(), sameInstance(s));
+                }
             }
-          }
 
-          tm.commit();
+            // Commit AND DISASSOCIATE the transaction, which can only
+            // happen with a call to TransactionManager.commit(), not
+            // just Transaction.commit().
+            tm.commit();
+
+            // Transaction is over; the Xid should be null.
+            assertThat(((Enlisted) logicalConnection).xid(), nullValue());
+
+            // Transaction is over; the connection should be closeable again.
+            assertThat(((ConditionallyCloseableConnection) logicalConnection).isCloseable(), is(true));
+
+            // We should be able to actually close it early.  The
+            // auto-close should not fail, either.
+            logicalConnection.close();
+            assertThat(logicalConnection.isClosed(), is(true));
         }
 
         LOGGER.info("Ending testSpike()");
