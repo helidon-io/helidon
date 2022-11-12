@@ -25,6 +25,7 @@ import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.SQLNonTransientException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
@@ -80,8 +81,6 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
 
     private final Consumer<? super Synchronization> tsr;
 
-    private final BiConsumer<? super Enableable, ? super Object> closedNotifier;
-
     private volatile Xid xid;
 
 
@@ -92,12 +91,10 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
 
     private JTAConnection(TransactionSupplier tm,
                           Consumer<? super Synchronization> tsr,
-                          BiConsumer<? super Enableable, ? super Object> closedNotifier,
                           Connection delegate) {
         super(delegate, true, true);
         this.tm = tm;
         this.tsr = tsr;
-        this.closedNotifier = closedNotifier == null ? JTAConnection::sink : closedNotifier;
     }
 
 
@@ -133,6 +130,12 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
     @Override // ConditionallyCloseableConnection
     public void setAutoCommit(boolean autoCommit) throws SQLException {
         this.enlist();
+        // NOTE
+        if (autoCommit && this.enlisted()) {
+            // "SQLException...if...setAutoCommit(true) is called
+            // while participating in a distributed transaction"
+            throw new SQLNonTransientException("Connection enlisted in transaction", "55000");
+        }
         super.setAutoCommit(autoCommit);
     }
 
@@ -145,12 +148,24 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
     @Override // ConditionallyCloseableConnection
     public void commit() throws SQLException {
         this.enlist();
+        // NOTE
+        if (this.enlisted()) {
+            // "SQLException...if...this method is called while
+            // participating in a distributed transaction"
+            throw new SQLNonTransientException("Connection enlisted in transaction", "55000");
+        }
         super.commit();
     }
 
     @Override // ConditionallyCloseableConnection
     public void rollback() throws SQLException {
         this.enlist();
+        // NOTE
+        if (this.enlisted()) {
+            // "SQLException...if...this method is called while
+            // participating in a distributed transaction"
+            throw new SQLNonTransientException("Connection enlisted in transaction", "55000");
+        }
         super.rollback();
     }
 
@@ -263,18 +278,36 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
     @Override // ConditionallyCloseableConnection
     public Savepoint setSavepoint() throws SQLException {
         this.enlist();
+        // NOTE
+        if (this.enlisted()) {
+            // "SQLException...if...this method is called while
+            // participating in a distributed transaction"
+            throw new SQLNonTransientException("Connection enlisted in transaction", "55000");
+        }
         return super.setSavepoint();
     }
 
     @Override // ConditionallyCloseableConnection
     public Savepoint setSavepoint(String name) throws SQLException {
         this.enlist();
+        // NOTE
+        if (this.enlisted()) {
+            // "SQLException...if...this method is called while
+            // participating in a distributed transaction"
+            throw new SQLNonTransientException("Connection enlisted in transaction", "55000");
+        }
         return super.setSavepoint(name);
     }
 
     @Override // ConditionallyCloseableConnection
     public void rollback(Savepoint savepoint) throws SQLException {
         this.enlist();
+        // NOTE
+        if (this.enlisted()) {
+            // "SQLException...if...this method is called while
+            // participating in a distributed transaction"
+            throw new SQLNonTransientException("Connection enlisted in transaction", "55000");
+        }
         super.rollback(savepoint);
     }
 
@@ -414,7 +447,16 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
 
     @Override // ConditionallyCloseableConnection
     public void abort(Executor executor) throws SQLException {
-        this.enlist();
+        // this.enlist(); // Deliberately omitted, but not by spec.
+
+        // NOTE
+        //
+        // abort(Executor) is a method that seems to be designed for
+        // an administrator, and so even if there is a transaction in
+        // progress we probably should allow closing.
+        //
+        // TO DO: should we heuristically roll back? Purge the Xid?
+        this.setCloseable(true);
         super.abort(executor);
     }
 
@@ -530,8 +572,10 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
      */
 
 
-    public static Connection connection(TransactionSupplier tm, Consumer<? super Synchronization> tsr, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
-        return new JTAConnection(tm, tsr, closedNotifier, c);
+    public static Connection connection(TransactionSupplier tm,
+                                        Consumer<? super Synchronization> tsr,
+                                        Connection c) {
+        return new JTAConnection(tm, tsr, c);
     }
 
     // (Method reference.)

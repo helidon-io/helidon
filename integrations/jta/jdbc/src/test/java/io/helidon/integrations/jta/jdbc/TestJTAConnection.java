@@ -110,7 +110,6 @@ final class TestJTAConnection {
         try (Connection physicalConnection = h2ds.getConnection();
              Connection logicalConnection = JTAConnection.connection(tm::getTransaction,
                                                                      tsr::registerInterposedSynchronization,
-                                                                     (x, y) -> {},
                                                                      physicalConnection)) {
 
             assertThat(logicalConnection, instanceOf(JTAConnection.class));
