@@ -530,8 +530,8 @@ final class JTAConnection extends ConditionallyCloseableConnection implements En
      */
 
 
-    public static Connection connection(TransactionManager tm, Consumer<? super Synchronization> tsr, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
-        return new JTAConnection(tm::getTransaction, tsr, closedNotifier, c);
+    public static Connection connection(TransactionSupplier tm, Consumer<? super Synchronization> tsr, BiConsumer<? super Enableable, ? super Object> closedNotifier, Connection c) {
+        return new JTAConnection(tm, tsr, closedNotifier, c);
     }
 
     // (Method reference.)
