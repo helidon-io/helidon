@@ -37,23 +37,17 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
-import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+
+import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
 
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
 import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
-import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
-
-import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
-
-import static java.lang.reflect.Proxy.newProxyInstance;
 
 final class JTAConnection extends ConditionallyCloseableConnection {
 
@@ -71,7 +65,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     // Null most of the time on purpose.
     // When not null, will contain either a Connection or a Xid.
     // @GuardedBy("HANDOFF_LOCK")
-    private static Object HANDOFF;
+    private static Object handoff;
 
 
     /*
@@ -132,8 +126,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (autoCommit && this.enlisted()) {
-            // "SQLException...if...setAutoCommit(true) is called
-            // while participating in a distributed transaction"
+            // "SQLException...if...setAutoCommit(true) is called while participating in a distributed transaction"
             throw new SQLNonTransientException("Connection enlisted in transaction", "25000");
         }
         super.setAutoCommit(autoCommit);
@@ -150,8 +143,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (this.enlisted()) {
-            // "SQLException...if...this method is called while
-            // participating in a distributed transaction"
+            // "SQLException...if...this method is called while participating in a distributed transaction"
             throw new SQLNonTransientException("Connection enlisted in transaction", "25000");
         }
         super.commit();
@@ -162,8 +154,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (this.enlisted()) {
-            // "SQLException...if...this method is called while
-            // participating in a distributed transaction"
+            // "SQLException...if...this method is called while participating in a distributed transaction"
             throw new SQLNonTransientException("Connection enlisted in transaction", "25000");
         }
         super.rollback();
@@ -280,13 +271,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (this.enlisted()) {
-            // "SQLException...if...this method is called while
-            // participating in a distributed transaction"
+            // "SQLException...if...this method is called while participating in a distributed transaction"
             //
-            // Use IBM's very descriptive 3B503 SQL state ("A
-            // SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT
-            // is not allowed in a trigger, function, or global
-            // transaction").
+            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
+            // not allowed in a trigger, function, or global transaction").
             throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
         }
         return super.setSavepoint();
@@ -297,13 +285,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (this.enlisted()) {
-            // "SQLException...if...this method is called while
-            // participating in a distributed transaction"
+            // "SQLException...if...this method is called while participating in a distributed transaction"
             //
-            // Use IBM's very descriptive 3B503 SQL state ("A
-            // SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT
-            // is not allowed in a trigger, function, or global
-            // transaction").
+            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
+            // not allowed in a trigger, function, or global transaction").
             throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
         }
         return super.setSavepoint(name);
@@ -314,13 +299,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (this.enlisted()) {
-            // "SQLException...if...this method is called while
-            // participating in a distributed transaction"
+            // "SQLException...if...this method is called while participating in a distributed transaction"
             //
-            // Use IBM's very descriptive 3B503 SQL state ("A
-            // SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT
-            // is not allowed in a trigger, function, or global
-            // transaction").
+            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
+            // not allowed in a trigger, function, or global transaction").
             throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
         }
         super.rollback(savepoint);
@@ -331,18 +313,13 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         this.enlist();
         // NOTE
         if (this.enlisted()) {
-            // "SQLException...if...the given Savepoint object is not a
-            // valid savepoint in the current transaction"
+            // "SQLException...if...the given Savepoint object is not a valid savepoint in the current transaction"
             //
-            // Use IBM's very descriptive 3B503 SQL state ("A
-            // SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT
-            // is not allowed in a trigger, function, or global
-            // transaction").
+            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
+            // not allowed in a trigger, function, or global transaction").
             //
-            // Interestingly JDBC doesn't mandate an exception being
-            // thrown here if the connection is enlisted in a global
-            // transaction, but it looks like SQLState 3B503 is often
-            // thrown in this case.
+            // Interestingly JDBC doesn't mandate an exception being thrown here if the connection is enlisted in a
+            // global transaction, but it looks like SQLState 3B503 is often thrown in this case.
             throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
         }
         super.releaseSavepoint(savepoint);
@@ -482,9 +459,8 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
         // NOTE
         //
-        // abort(Executor) is a method that seems to be designed for
-        // an administrator, and so even if there is a transaction in
-        // progress we probably should allow closing.
+        // abort(Executor) is a method that seems to be designed for an administrator, and so even if there is a
+        // transaction in progress we probably should allow closing.
         //
         // TO DO: should we heuristically roll back? Purge the Xid?
         this.setCloseable(true);
@@ -552,20 +528,17 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         return super.isWrapperFor(iface);
     }
 
-    // At the moment of this call, can this connection enlist in the
-    // transaction? Because the transaction may be rolled back at any
-    // point from any thread, a subsequent attempt to *actually*
-    // enlist may very well fail.
+    // At the moment of this call, can this connection enlist in the transaction? (Note that because the transaction may
+    // be rolled back at any point from any thread, a subsequent attempt to *actually* enlist may very well fail
+    // anyway.)
     private boolean enlistable() throws SQLException {
         try {
             return this.activeTransaction() && this.tsr.getResource("xid") == null;
         } catch (RuntimeException e) {
             // See
             // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-            // getTransactionImple() is called by Narayana's
-            // implementation of getResource().  getResource() is not
-            // documented to throw RuntimeException, only
-            // IllegalStateException. Nevertheless it does when a
+            // getTransactionImple() is called by Narayana's implementation of getResource().  getResource() is not
+            // documented to throw RuntimeException, only IllegalStateException. Nevertheless it does when a
             // SystemException is encountered.
             throw new SQLTransientException(e.getMessage(),
                                             "25000", // invalid transaction state
@@ -573,32 +546,27 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         }
     }
 
+    // Does a global transaction exist in Status.STATUS_ACTIVE state?
     private boolean activeTransaction() throws SQLException {
         try {
             return this.tsr.getTransactionStatus() == Status.STATUS_ACTIVE;
         } catch (RuntimeException e) {
             // See
             // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L153-L164;
-            // despite it not being documented, TCK-passing
-            // implementations of
-            // TransactionSynchronizationRegistry#getTransactionStatus()
-            // can apparently throw RuntimeException. Since
-            // getTransactionStatus() is specified to return "the
-            // result of executing TransactionManager.getStatus() in
-            // the context of the transaction bound to the current
-            // thread at the time this method is called", it follows
-            // that possible SystemExceptions thrown by
-            // TransactionManager#getStatus() implementations will
-            // have to be dealt with in *some* way, even though the
-            // javadoc for
-            // TransactionSynchronizationRegistry#getTransactionStatus()
-            // does not account for such a thing.
+            // despite it not being documented, TCK-passing implementations of
+            // TransactionSynchronizationRegistry#getTransactionStatus() can apparently throw RuntimeException. Since
+            // getTransactionStatus() is specified to return "the result of executing TransactionManager.getStatus() in
+            // the context of the transaction bound to the current thread at the time this method is called", it follows
+            // that possible SystemExceptions thrown by TransactionManager#getStatus() implementations will have to be
+            // dealt with in *some* way, even though the javadoc for
+            // TransactionSynchronizationRegistry#getTransactionStatus() does not account for such a thing.
             throw new SQLTransientException(e.getMessage(),
                                             "25000", // invalid transaction state
                                             e);
         }
     }
 
+    // Is the supplied global transaction both non-null and in the Status.STATUS_ACTIVE state?
     private boolean active(Transaction t) throws SQLException {
         try {
             return t != null && t.getStatus() == Status.STATUS_ACTIVE;
@@ -617,31 +585,29 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         }
     }
 
+    // Is the usage of this connection on this thread already enlisted with an active global transaction?
     private boolean enlisted() throws SQLException {
         try {
             return this.tsr.getResource("xid") != null;
         } catch (RuntimeException e) {
-            // Why do we catch RuntimeException and not something more
-            // specific?  See
+            // Why do we catch RuntimeException and not something more specific?  See
             // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-            // getTransactionImple() is called by Narayana's
-            // implementations of getResource() and putResource().
-            // getResource() and putResource() are not documented to
-            // throw RuntimeException, only
-            // IllegalStateException. Nevertheless a RuntimeException
-            // is thrown when a SystemException is encountered.
+            // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
+            // getResource() and putResource() are not documented to throw RuntimeException, only
+            // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is encountered.
             throw new SQLTransientException(e.getMessage(),
                                             "25000", // invalid transaction state
                                             e);
         }
     }
 
+    // Enlist the usage of this connection on this thread with the global transaction if possible and not already
+    // enlisted.
     private void enlist() throws SQLException {
         this.failWhenClosed();
 
         if (!this.activeTransaction() || this.enlisted()) {
             // We have determined either:
-            //
             // * there is no transaction at all
             // * there is a transaction but its state is not suitable
             // * there is a transaction in a suitable state but this
@@ -650,20 +616,12 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         }
 
         if (!super.getAutoCommit()) {
-            // super.getAutoCommit() (super on purpose) returned
-            // false. We don't want to permit enlistment because a
-            // local transaction may be in progress.  We use SQL state
-            // 25000 ("invalid transaction state, no subclass") even
-            // though it's unclear whether this indicates the
-            // SQL/local transaction or the XA branch transaction or
-            // both.
+            // super.getAutoCommit() (super on purpose) returned false. We don't want to permit enlistment because a
+            // local transaction may be in progress.
             //
-            // The exception is transient because a retry of the
-            // operation without any application-initiated change
-            // *might* work, however unlikely, because the global
-            // transaction might be rolled back or otherwise ended on
-            // another thread, in which case the condition causing
-            // this exception will not be triggered.
+            // The exception is transient because a retry of the operation without any application-initiated change
+            // *might* work, however unlikely, because the global transaction might be rolled back or otherwise ended on
+            // another thread, in which case the condition causing this exception will not be triggered.
             throw new SQLTransientException("autoCommit was false during transaction enlistment", "25000");
         }
 
@@ -672,82 +630,58 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         try {
             t = this.tm.getTransaction();
         } catch (RuntimeException | SystemException e) {
-            // While we checked the transaction status earlier, it
-            // could have changed, and so it is remotely possible
-            // that our transaction supplier will fail.
             throw new SQLTransientException(e.getMessage(),
                                             "25000", // invalid transaction state, no subclass
                                             e);
         }
 
-        // We got the Transaction, and although we checked the status
-        // earlier, it might be null or its status might have changed.
+        // We got the Transaction, and although we checked the status earlier, it might be null or its status might have
+        // changed.
         if (!active(t)) {
-            // See active(Transaction).  Either t was null or t was in
-            // an unsuitable state.
+            // See active(Transaction).  Either t was null or t was in an unsuitable state.
             //
-            // Although we called activeTransaction() earlier, a
-            // transaction may be rolled back at any moment by any
+            // Although we called activeTransaction() earlier, a transaction may be rolled back at any moment by any
             // thread so that's why we do another cheap check here.
             return;
         }
 
-        // Point of no return; we've made a best effort to ensure that
-        // (a) the Transaction we have is non-null, (b) the
-        // Transaction we have is active and (c) no Xid resource is
-        // present in the TransactionSynchronizationRegistry. The
-        // Transaction's status can still change at any point so we
-        // have to watch for various exceptions when we invoke methods
-        // on it.
+        // Point of no return; we've made a best effort to ensure that (a) the Transaction we have is non-null, (b) the
+        // Transaction we have is active and (c) no Xid resource is present in the
+        // TransactionSynchronizationRegistry. The Transaction's status can still change at any point so we have to
+        // watch for various exceptions when we invoke methods on it.
 
         boolean enlisted;
 
         HANDOFF_LOCK.lock();
         try {
-            assert HANDOFF == null;
+            assert handoff == null;
+            handoff = this.delegate();
 
-            // Under lock, set the HANDOFF to our underlying "real"
-            // connection.
-            HANDOFF = this.delegate();
-
-            if (enlisted = t.enlistResource(XA_RESOURCE)) {
-                // We called enlistResource(XAResource) successfully,
-                // which means its start(Xid, int) method was called
-                // on this thread (per spec), so under lock, and our
-                // connection function (see connection(Xid) elsewhere
-                // in this class) ran to completion. That means it
-                // safely set HANDOFF to the Xid identifying the
+            enlisted = t.enlistResource(XA_RESOURCE);
+            if (enlisted) {
+                // We called enlistResource(XAResource) successfully, which means its start(Xid, int) method was called
+                // on this thread (per spec), so under lock, and our connection function (see connection(Xid) elsewhere
+                // in this class) ran to completion. That means it safely set handoff to the Xid identifying the
                 // transaction.
 
-                // Put the Xid into the
-                // TransactionSynchronizationRegistry which will
-                // auto-clear it on transaction completion.  If this
-                // putResource() operation fails, we haven't changed
-                // state.
-                assert HANDOFF instanceof Xid;
-                this.tsr.putResource("xid", HANDOFF);
+                // Put the Xid into the TransactionSynchronizationRegistry which will auto-clear it on transaction
+                // completion.  If this putResource() operation fails, we haven't changed state.
+                assert handoff instanceof Xid;
+                this.tsr.putResource("xid", handoff);
             }
 
         } catch (RollbackException e) {
             // The enlistResource(XAResource) operation failed.
             //
-            // We use SQL state 40000 ("transaction rollback, no
-            // subclass") even though it's unclear whether this
-            // indicates the SQL/local transaction or the XA branch
-            // transaction or both.
+            // We use SQL state 40000 ("transaction rollback, no subclass") even though it's unclear whether this
+            // indicates the SQL/local transaction or the XA branch transaction or both.
             //
-            // It is unclear to me whether the exception is transient
-            // or not. I think it is non-transient because
-            // transactions are associated with a single thread, and
-            // once a transaction has entered the rolled back state it
-            // cannot move out of that state (only
-            // TransactionManager#rollback() can do that, not
-            // Transaction#rollback()), and a new transaction on the
-            // same thread cannot occur (because
-            // TransactionManager#begin() "[creates] a new transaction
-            // and [associates] it with the current thread"), so a
-            // retry of the same JDBC operation causing this condition
-            // on the same thread can never succeed.
+            // It is unclear to me whether the exception is transient or not. I think it is non-transient because
+            // transactions are associated with a single thread, and once a transaction has entered the rolled back
+            // state it cannot move out of that state (only TransactionManager#rollback() can do that, not
+            // Transaction#rollback()), and a new transaction on the same thread cannot occur (because
+            // TransactionManager#begin() "[creates] a new transaction and [associates] it with the current thread"), so
+            // a retry of the same JDBC operation causing this condition on the same thread can never succeed.
             throw new SQLNonTransientException(e.getMessage(),
                                                "40000", // transaction rollback, no subclass
                                                e);
@@ -755,67 +689,51 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             // The enlistResource(XAResource) operation failed, or the
             // putResource(Object, Object) operation failed.
             //
-            // Why do we catch RuntimeException and not something more
-            // specific?  See
+            // Why do we catch RuntimeException and not something more specific?  See
             // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-            // getTransactionImple() is called by Narayana's
-            // implementations of getResource() and putResource().
-            // getResource() and putResource() are not documented to
-            // throw RuntimeException, only
-            // IllegalStateException. Nevertheless a RuntimeException
-            // is thrown when a SystemException is encountered.
+            // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
+            // getResource() and putResource() are not documented to throw RuntimeException, only
+            // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is encountered.
             //
-            // Hard to know what SQLState to use here. 25000 ("invalid
-            // transaction state") seems close, even though it's
-            // unclear whether this indicates the SQL/local
-            // transaction or the XA branch transaction or both.
+            // Hard to know what SQLState to use here. 25000 ("invalid transaction state") seems close, even though it's
+            // unclear whether this indicates the SQL/local transaction or the XA branch transaction or both.
             //
-            // I think the exception is transient because either (a)
-            // the RuntimeException occurred because "the transaction
-            // in the target object [was] in the prepared state or the
-            // transaction [was] inactive" or (b) "the transaction
-            // manager [encountered] an unexpected error condition".
+            // I think the exception is transient because either (a) the RuntimeException occurred because "the
+            // transaction in the target object [was] in the prepared state or the transaction [was] inactive" or (b)
+            // "the transaction manager [encountered] an unexpected error condition".
             throw new SQLTransientException(e.getMessage(),
                                             "25000", // invalid transaction state, no subclass
                                             e);
         } finally {
-            // The HANDOFF has served its purpose (it exchanged our
+            // The handoff has served its purpose (it exchanged our
             // underlying "real" connection for a Xid). Set it back to
             // null.
-            HANDOFF = null;
+            handoff = null;
             HANDOFF_LOCK.unlock();
         }
 
         if (enlisted) {
-            // We perform additional operations upon successful
-            // enlistment without holding the HANDOFF_LOCK to keep the
+            // We perform additional operations upon successful enlistment without holding the HANDOFF_LOCK to keep the
             // critical section above as small as possible.
 
-            // Register a synchronization that restores
-            // closability to the connection.  If this fails, we
-            // haven't changed state.
+            // Register a synchronization that restores closability to the connection.  If this fails, we haven't
+            // changed state.
             try {
                 this.tsr.registerInterposedSynchronization((Sync) status -> this.setCloseable(true));
             } catch (RuntimeException e) {
-                // Why do we catch RuntimeException and not something
-                // more specific?  See
+                // Why do we catch RuntimeException and not something more specific?  See
                 // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-                // getTransactionImple() is called by Narayana's
-                // implementation of
-                // registerInterposedSynchronization(Synchronization),
-                // and although a generic RuntimeException is not
-                // supposed to be thrown by
-                // registerInterposedSynchronization(Synchronization)
-                // implementations, it is thrown anyway.
+                // getTransactionImple() is called by Narayana's implementation of
+                // registerInterposedSynchronization(Synchronization), and although a generic RuntimeException is not
+                // supposed to be thrown by registerInterposedSynchronization(Synchronization) implementations, it is
+                // thrown anyway.
                 throw new SQLTransientException(e.getMessage(),
                                                 "25000", // invalid transaction state, no subclass
                                                 e);
             }
 
-            // Make the connection not closeable while the
-            // transaction is not completed.  If this fails, the
-            // synchronization we registered will still run, but
-            // our state won't change.
+            // Make the connection not closeable while the transaction is not completed.  If this fails, the
+            // synchronization we registered will still run, but our state won't change.
             this.setCloseable(false);
         }
 
@@ -827,9 +745,9 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      */
 
 
-    public static Connection connection(TransactionSupplier tm,
-                                        TransactionSynchronizationRegistry tsr,
-                                        Connection c) {
+    static Connection connection(TransactionSupplier tm,
+                                 TransactionSynchronizationRegistry tsr,
+                                 Connection c) {
         return new JTAConnection(tm, tsr, c);
     }
 
@@ -837,9 +755,9 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     private static Connection connection(Xid xid) {
         assert HANDOFF_LOCK.isHeldByCurrentThread();
         try {
-            return (Connection) HANDOFF;
+            return (Connection) handoff;
         } finally {
-            HANDOFF = xid;
+            handoff = xid;
         }
     }
 
@@ -854,7 +772,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      */
 
     @FunctionalInterface
-    static interface Sync extends Synchronization {
+    interface Sync extends Synchronization {
 
         default void beforeCompletion() {
 
@@ -863,7 +781,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     }
 
     @FunctionalInterface
-    static interface TransactionSupplier {
+    interface TransactionSupplier {
 
         Transaction getTransaction() throws SystemException;
 
