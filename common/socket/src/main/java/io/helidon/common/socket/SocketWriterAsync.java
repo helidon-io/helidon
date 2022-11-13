@@ -110,6 +110,7 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
 
     private void run() {
         this.thread = Thread.currentThread();
+        this.thread.setName("[" + socket().socketId() + " " + socket().childSocketId() + "]");
         try {
             while (run) {
                 CompositeBufferData toWrite = BufferData.createComposite(writeQueue.take());  // wait if the queue is empty

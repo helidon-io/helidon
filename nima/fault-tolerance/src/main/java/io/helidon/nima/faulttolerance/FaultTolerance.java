@@ -54,7 +54,9 @@ public final class FaultTolerance {
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
 
     static {
-        EXECUTOR.set(LazyValue.create(Executors.newVirtualThreadPerTaskExecutor()));
+        EXECUTOR.set(LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                                                          .name("helidon-ft-", 0)
+                                                          .factory())));
     }
 
     private FaultTolerance() {
