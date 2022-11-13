@@ -88,7 +88,7 @@ class JTAHandler extends ConnectionHandler {
         Class<?> declaringClass = method.getDeclaringClass();
         if (declaringClass == Connection.class) {
             this.enlist();
-        } else if (declaringClass == Enlisted.class && method.getName().equals("xid")) {
+        } else if (method.getName().equals("xid")) {
             returnValue = this.xid;
         }
         if (returnValue == UNHANDLED) {

@@ -27,7 +27,9 @@ import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
 import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
+import jakarta.transaction.Status;
 import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
@@ -107,24 +109,30 @@ final class TestJTAConnection {
         LOGGER.info("Starting testSpike()");
         tm.begin();
 
-        try (Connection physicalConnection = h2ds.getConnection();
-             Connection logicalConnection = JTAConnection.connection(tm::getTransaction,
-                                                                     tsr::registerInterposedSynchronization,
-                                                                     physicalConnection)) {
+        Transaction t = tm.getTransaction();
+        assertThat(t, not(nullValue()));
 
-            assertThat(logicalConnection, instanceOf(JTAConnection.class));
-            assertThat(logicalConnection, instanceOf(Enlisted.class));
-            assertThat(logicalConnection, instanceOf(ConditionallyCloseableConnection.class));
+        // For this test, where transaction reaping is set to happen
+        // eons in the future, we can make this assertion.  For
+        // real-world scenarios, the reaper might have ended the
+        // transaction immediately on another thread.
+        assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
+        
+
+        try (Connection physicalConnection = h2ds.getConnection();
+             JTAConnection logicalConnection = (JTAConnection) JTAConnection.connection(tm::getTransaction,
+                                                                                        tsr,
+                                                                                        physicalConnection)) {
 
             // Trigger an Object method; make sure nothing blows up
             // (in case we're using proxies).
             logicalConnection.toString();
 
             // Up until this point, the connection should not be enlisted.
-            assertThat(((Enlisted) logicalConnection).xid(), nullValue());
+            assertThat(logicalConnection.xid(), nullValue());
 
             // That means it should be closeable.
-            assertThat(((ConditionallyCloseableConnection) logicalConnection).isCloseable(), is(true));
+            assertThat(logicalConnection.isCloseable(), is(true));
             assertThat(logicalConnection.isClosed(), is(false));
             
             // Trigger harmless Connection method; make sure nothing
@@ -134,11 +142,11 @@ final class TestJTAConnection {
             // Almost all Connection methods will cause enlistment to
             // happen.  getHoldability(), just invoked, is one of
             // them.
-            Xid xid = ((Enlisted) logicalConnection).xid();
+            Xid xid = logicalConnection.xid();
             assertThat(xid, not(nullValue()));
 
             // That means the Connection is no longer closeable.
-            assertThat(((ConditionallyCloseableConnection) logicalConnection).isCloseable(), is(false));
+            assertThat(logicalConnection.isCloseable(), is(false));
 
             // Should be a no-op.
             logicalConnection.close();
@@ -146,7 +154,7 @@ final class TestJTAConnection {
             
             // Should get the same Xid back whenever we call xid()
             // once we're enlisted.
-            assertThat(((Enlisted) logicalConnection).xid(), sameInstance(xid));
+            assertThat(logicalConnection.xid(), sameInstance(xid));
 
             // Ensure JDBC constructs' backlinks work correctly.
             try (Statement s = logicalConnection.createStatement()) {
@@ -163,15 +171,16 @@ final class TestJTAConnection {
             tm.commit();
 
             // Transaction is over; the Xid should be null.
-            assertThat(((Enlisted) logicalConnection).xid(), nullValue());
+            assertThat(logicalConnection.xid(), nullValue());
 
             // Transaction is over; the connection should be closeable again.
-            assertThat(((ConditionallyCloseableConnection) logicalConnection).isCloseable(), is(true));
+            assertThat(logicalConnection.isCloseable(), is(true));
 
             // We should be able to actually close it early.  The
             // auto-close should not fail, either.
             logicalConnection.close();
             assertThat(logicalConnection.isClosed(), is(true));
+            assertThat(logicalConnection.delegate().isClosed(), is(true));
         }
 
         LOGGER.info("Ending testSpike()");
