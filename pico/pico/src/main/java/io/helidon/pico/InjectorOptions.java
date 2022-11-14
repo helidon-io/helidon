@@ -18,7 +18,6 @@ package io.helidon.pico;
 
 import java.util.Optional;
 
-import io.helidon.common.LazyValue;
 import io.helidon.pico.builder.Builder;
 
 /**
@@ -28,11 +27,6 @@ import io.helidon.pico.builder.Builder;
  */
 @Builder
 public interface InjectorOptions {
-
-    /**
-     * Empty options is the same as passing no options, taking all the default values.
-     */
-    LazyValue<InjectorOptions> EMPTY_OPTIONS = LazyValue.create(() -> DefaultInjectorOptions.builder().build());
 
     /**
      * The optional starting phase for the {@link Activator} behind the {@link Injector}.

@@ -24,76 +24,62 @@ public enum ActivationPhase {
     /**
      * Starting state before anything happens activation-wise.
      */
-    INIT(0, false),
+    INIT(false),
 
     /**
      * Planned to be activated.
      */
-    PENDING(1, true),
+    PENDING(true),
 
     /**
      * Starting to be activated.
      */
-    ACTIVATION_STARTING(2, true),
+    ACTIVATION_STARTING(true),
 
     /**
      * Gathering dependencies.
      */
-    GATHERING_DEPENDENCIES(3, true),
+    GATHERING_DEPENDENCIES(true),
 
     /**
      * Constructing.
      */
-    CONSTRUCTING(4, true),
+    CONSTRUCTING(true),
 
     /**
      * Injecting (fields then methods).
      */
-    INJECTING(5, true),
+    INJECTING(true),
 
     /**
      * Calling any post construct method.
      */
-    POST_CONSTRUCTING(6, true),
+    POST_CONSTRUCTING(true),
 
     /**
      * Finishing post construct method.
      */
-    ACTIVATION_FINISHING(7, true),
+    ACTIVATION_FINISHING(true),
 
     /**
      * Service is active.
      */
-    ACTIVE(8, true),
+    ACTIVE(true),
 
     /**
      * About to call pre-destroy.
      */
-    PRE_DESTROYING(9, false),
+    PRE_DESTROYING(false),
 
     /**
      * Destroyed (after calling any pre-destroy).
      */
-    DESTROYED(10, false);
-
-    /**
-     * The sequence of activation or deactivation.
-     */
-    private final int sequence;
+    DESTROYED(false);
 
     /**
      * True if this phase is eligible for deactivation/shutdown.
      */
     private final boolean eligibleForDeactivation;
-
-    /**
-     * The sequence of activation or deactivation.
-     *
-     * @return the sequence
-     */
-    public int sequence() {
-        return sequence;
-    }
 
     /**
      * Determines whether this phase passes the gate for whether deactivation (PreDestroy) can be called.
@@ -106,8 +92,7 @@ public enum ActivationPhase {
         return eligibleForDeactivation;
     }
 
-    ActivationPhase(int value, boolean eligibleForDeactivation) {
-        this.sequence = value;
+    ActivationPhase(boolean eligibleForDeactivation) {
         this.eligibleForDeactivation = eligibleForDeactivation;
     }
 }

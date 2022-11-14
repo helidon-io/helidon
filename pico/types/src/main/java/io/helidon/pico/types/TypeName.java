@@ -44,7 +44,7 @@ public interface TypeName extends Comparable<TypeName> {
     /**
      * Functions the same as {@link Class#getPackageName()}.
      *
-     * @return the package name
+     * @return the package name, never null
      */
     String packageName();
 
@@ -82,6 +82,42 @@ public interface TypeName extends Comparable<TypeName> {
      * @return used to represent a wildcard (e.g., "? extends SomeType").
      */
     boolean wildcard();
+
+    /**
+     * Indicates whether this type is a {@code java.util.List}.
+     *
+     * @return if this is a list
+     */
+    default boolean isList() {
+        return "java.util.List".equals(name());
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.Set}.
+     *
+     * @return if this is a set
+     */
+    default boolean isSet() {
+        return "java.util.Set".equals(name());
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.Map}.
+     *
+     * @return if this is a map
+     */
+    default boolean isMap() {
+        return "java.util.Map".equals(name());
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.Optional}.
+     *
+     * @return if this is an optional
+     */
+    default boolean isOptional() {
+        return "java.util.Optional".equals(name());
+    }
 
     /**
      * Returns the list of generic type parameters, or an empty list if no generics are in use.

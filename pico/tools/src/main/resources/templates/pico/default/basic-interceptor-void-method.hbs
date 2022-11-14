@@ -1,0 +1,25 @@
+    @Override
+    public void {{elementName}}({{{elementArgs-declaration}}}) {{{elementThrows-declaration}}} {
+        if (Objects.isNull(interceptor)) {
+            delegate.get().{{elementName}}({{{elementArgs-declaration-notypes}}});
+        } else {
+            Provider<T> delegate = interceptor.providerFor(this.delegate, "{{elementName}}");
+            interceptor.beforeCall(delegate, "{{elementName}}"{{#elementArgs-declaration-notypes}}, {{{elementArgs-declaration-notypes}}}{{/elementArgs-declaration-notypes}});
+            Throwable t = null;
+            try {
+                delegate.get().{{elementName}}({{{elementArgs-declaration-notypes}}});
+            } catch (Throwable t1) {
+                t = t1;
+            } finally {
+                if (Objects.isNull(t)) {
+                    interceptor.afterCall(delegate, result, "{{elementName}}");
+                } else {
+                    RuntimeException re = interceptor.afterFailedCall(t, delegate, "{{elementName}}"{{#elementArgs-declaration-notypes}}, {{{elementArgs-declaration-notypes}}}{{/elementArgs-declaration-notypes}});
+                    {{#elementThrows}}if (t instanceof {{{.}}}) {
+                        throw ({{{.}}}) t;
+                    } {{/elementThrows}}
+                    throw re;
+                }
+            }
+        }
+    }

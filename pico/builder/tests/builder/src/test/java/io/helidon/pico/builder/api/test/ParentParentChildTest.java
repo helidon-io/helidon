@@ -17,6 +17,7 @@
 package io.helidon.pico.builder.api.test;
 
 import java.net.URI;
+import java.util.Optional;
 
 import io.helidon.pico.builder.test.testsubjects.ChildInterfaceIsABuilder;
 import io.helidon.pico.builder.test.testsubjects.ChildInterfaceIsABuilderImpl;
@@ -35,9 +36,9 @@ class ParentParentChildTest {
                 .childLevel(100)
                 .parentLevel(99)
                 .uri(URI.create("http://localhost"))
-                .empty((String) null)
+                .empty(Optional.empty())
                 .build();
-        assertThat(new String(child.overrideMe()), equalTo("override"));
+        assertThat(new String(child.overrideMe().get()), equalTo("override"));
         assertThat(child.uri().get().toString(), equalTo("http://localhost"));
         assertThat(child.empty().isEmpty(), is(true));
         assertThat(child.childLevel(), is(100L));
@@ -54,12 +55,12 @@ class ParentParentChildTest {
                 .overrideMe("password")
                 .build();
         assertThat(val.toString(),
-                equalTo("ChildInterfaceIsABuilder(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
+                equalTo("ChildInterfaceIsABuilder(uri=Optional.empty, empty=Optional.empty, parentLevel=0, childLevel=0, isChildLevel=true, "
                         + "overrideMe=not-null)"));
 
-        val = ChildInterfaceIsABuilderImpl.toBuilder(val).overrideMe((char[]) null).build();
+        val = ChildInterfaceIsABuilderImpl.toBuilder(val).overrideMe(Optional.empty()).build();
         assertThat(val.toString(),
-                equalTo("ChildInterfaceIsABuilder(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
+                equalTo("ChildInterfaceIsABuilder(uri=Optional.empty, empty=Optional.empty, parentLevel=0, childLevel=0, isChildLevel=true, "
                         + "overrideMe=null)"));
     }
 

@@ -50,6 +50,6 @@ class PickleBarrelTest {
 
         PickleBarrel pickleBarrel = pickleBarrelBuilder.addPickle(pickle).id("123").build();
         assertThat(pickleBarrel.toString(),
-               equalTo("PickleBarrel(id=123, type=null, pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
+               equalTo("PickleBarrel(id=123, type=Optional.empty, pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
     }
 }

@@ -23,15 +23,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.common.LazyValue;
-
 /**
  * Default implementation for {@link io.helidon.pico.types.TypeName}.
  */
 public class DefaultTypeName implements TypeName {
-    private static final boolean CALC_NAME = false;
-    private final LazyValue<String> name = CALC_NAME ? LazyValue.create(this::calcName) : null;
-    private final LazyValue<String> fqName = CALC_NAME ? LazyValue.create(this::calcFQName) : null;
     private final String packageName;
     private final String className;
     private final boolean primitive;
@@ -53,8 +48,7 @@ public class DefaultTypeName implements TypeName {
         this.array = b.array;
         this.wildcard = b.wildcard;
         this.generic = b.generic;
-        this.typeArguments = Objects.isNull(b.typeArguments)
-                ? Collections.emptyList() : Collections.unmodifiableList(b.typeArguments);
+        this.typeArguments = Collections.unmodifiableList(b.typeArguments);
     }
 
     /**
@@ -127,6 +121,7 @@ public class DefaultTypeName implements TypeName {
      * @return the TypeName for the provided type name
      */
     public static DefaultTypeName createFromTypeName(String typeName) {
+        Objects.requireNonNull(typeName);
         if (typeName.startsWith("? extends ")) {
             return createFromTypeName(typeName.substring(10).trim())
                     .toBuilder()
@@ -154,7 +149,9 @@ public class DefaultTypeName implements TypeName {
         }
 
         if (packageElements.isEmpty()) {
-            return create(null, typeName);
+            return DefaultTypeName.builder()
+                    .className(typeName)
+                    .build();
         }
 
         String packageName = String.join(".", packageElements);
@@ -221,7 +218,7 @@ public class DefaultTypeName implements TypeName {
 
     @Override
     public String name() {
-        return (null == name) ? calcName() : name.get();
+        return calcName();
     }
 
     @Override
@@ -231,7 +228,7 @@ public class DefaultTypeName implements TypeName {
 
     @Override
     public String fqName() {
-        return (null == fqName) ? calcFQName() : fqName.get();
+        return calcFQName();
     }
 
     /**
@@ -240,7 +237,7 @@ public class DefaultTypeName implements TypeName {
      * @return the name
      */
     protected String calcName() {
-        return (primitive || Objects.isNull(packageName()))
+        return (primitive || packageName().isEmpty())
                 ? className() : packageName() + "." + className();
     }
 
@@ -250,26 +247,26 @@ public class DefaultTypeName implements TypeName {
      * @return the fully qualified name
      */
     protected String calcFQName() {
-        String name = wildcard() ? "? extends " + name() : name();
+        StringBuilder nameBuilder = new StringBuilder(wildcard() ? "? extends " + name() : name());
 
         if (null != typeArguments && !typeArguments.isEmpty()) {
-            name += "<";
+            nameBuilder.append("<");
             int i = 0;
             for (TypeName param : typeArguments) {
                 if (i > 0) {
-                    name += ", ";
+                    nameBuilder.append(", ");
                 }
-                name += param.fqName();
+                nameBuilder.append(param.fqName());
                 i++;
             }
-            name += ">";
+            nameBuilder.append(">");
         }
 
         if (array()) {
-            name += "[]";
+            nameBuilder.append("[]");
         }
 
-        return name;
+        return nameBuilder.toString();
     }
 
 
@@ -305,14 +302,15 @@ public class DefaultTypeName implements TypeName {
     /**
      * The fluent builder.
      */
-    public static class Builder {
+    public static class Builder implements io.helidon.common.Builder<Builder, DefaultTypeName> {
+        private final List<TypeName> typeArguments = new ArrayList<>();
+
         private String packageName;
         private String className;
         private boolean primitive;
         private boolean array;
         private boolean wildcard;
         private boolean generic;
-        private List<TypeName> typeArguments;
 
         /**
          * Default ctor.
@@ -332,8 +330,19 @@ public class DefaultTypeName implements TypeName {
             this.array = val.array();
             this.wildcard = val.wildcard();
             this.generic = val.generic();
-            Collection<TypeName> args = val.typeArguments();
-            this.typeArguments = (Objects.isNull(args) || args.isEmpty()) ? Collections.emptyList() : new ArrayList<>(args);
+            this.typeArguments.addAll(val.typeArguments());
+        }
+
+        /**
+         * Builds the instance.
+         *
+         * @return the built instance
+         */
+        public DefaultTypeName build() {
+            Objects.requireNonNull(className, "Class name must be specified");
+            packageName = packageName == null ? "" : packageName;
+
+            return new DefaultTypeName(this);
         }
 
         /**
@@ -343,6 +352,7 @@ public class DefaultTypeName implements TypeName {
          * @return this fluent builder
          */
         public Builder packageName(String val) {
+            Objects.requireNonNull(val);
             this.packageName = val;
             return this;
         }
@@ -354,6 +364,7 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder className(String val) {
+            Objects.requireNonNull(val);
             this.className = val;
             return this;
         }
@@ -365,6 +376,7 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder type(Class<?> classType) {
+            Objects.requireNonNull(classType);
             Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
             packageName(componentType.getPackageName());
             className(componentType.getSimpleName());
@@ -379,6 +391,7 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder array(boolean val) {
+            Objects.requireNonNull(val);
             this.array = val;
             return this;
         }
@@ -390,6 +403,7 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder primitive(boolean val) {
+            Objects.requireNonNull(val);
             this.primitive = val;
             return this;
         }
@@ -401,6 +415,7 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder generic(boolean val) {
+            Objects.requireNonNull(val);
             this.generic = val;
             return this;
         }
@@ -412,6 +427,7 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder wildcard(boolean val) {
+            Objects.requireNonNull(val);
             this.wildcard = val;
             if (val) {
                 this.generic = true;
@@ -426,17 +442,10 @@ public class DefaultTypeName implements TypeName {
          * @return the fluent builder
          */
         public Builder typeArguments(Collection<TypeName> val) {
-            this.typeArguments = Objects.isNull(val) ? null : new ArrayList<>(val);
-            return (Objects.nonNull(val) && !val.isEmpty()) ? generic(true) : this;
-        }
-
-        /**
-         * Builds the instance.
-         *
-         * @return the built instance
-         */
-        public DefaultTypeName build() {
-            return new DefaultTypeName(this);
+            Objects.requireNonNull(val);
+            this.typeArguments.clear();
+            this.typeArguments.addAll(val);
+            return !val.isEmpty() ? generic(true) : this;
         }
     }
 

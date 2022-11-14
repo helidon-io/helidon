@@ -17,7 +17,6 @@
 package io.helidon.pico;
 
 import java.lang.annotation.Annotation;
-import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.pico.types.AnnotationAndValue;
@@ -94,8 +93,10 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @return qualifier
      */
     public static DefaultQualifierAndValue create(String qualifierTypeName, String val) {
-        Objects.requireNonNull(qualifierTypeName);
-        return create(DefaultTypeName.createFromTypeName(qualifierTypeName), val);
+        return (DefaultQualifierAndValue) builder()
+                .typeName(DefaultTypeName.createFromTypeName(qualifierTypeName))
+                .value(val)
+                .build();
     }
 
     /**
@@ -106,25 +107,9 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
      * @return qualifier
      */
     public static DefaultQualifierAndValue create(TypeName qualifierType, String val) {
-        Objects.requireNonNull(qualifierType);
         return (DefaultQualifierAndValue) builder()
                 .typeName(qualifierType)
                 .value(val)
-                .build();
-    }
-
-    /**
-     * Converts from a named contextual qualifier (e.g., {@link jakarta.inject.Named}).
-     *
-     * @param qualifierTypeName the qualifier
-     * @param values            the values
-     * @return qualifier
-     */
-    public static DefaultQualifierAndValue create(TypeName qualifierTypeName, Map<String, String> values) {
-        Objects.requireNonNull(qualifierTypeName);
-        return (DefaultQualifierAndValue) builder()
-                .typeName(qualifierTypeName)
-                .values(values)
                 .build();
     }
 
@@ -139,12 +124,11 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
             return (QualifierAndValue) annotationAndValue;
         }
 
-        DefaultAnnotationAndValue from = (DefaultAnnotationAndValue) annotationAndValue;
-        if (Objects.nonNull(annotationAndValue.values()) && !annotationAndValue.values().isEmpty()) {
-            return create(annotationAndValue.typeName(), from.values());
-        }
-
-        return create(annotationAndValue.typeName(), annotationAndValue.value().orElse(null));
+        return (QualifierAndValue) builder()
+                .typeName(annotationAndValue.typeName())
+                .values(annotationAndValue.values())
+                .update(it -> annotationAndValue.value().ifPresent(it::value))
+                .build();
     }
 
     @Override

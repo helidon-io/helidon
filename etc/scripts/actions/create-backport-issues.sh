@@ -70,7 +70,7 @@ readonly ISSUE=$(curl -s -X GET \
   "$GET_ISSUE_URL")
 
 # Get issue information
-readonly ISSUE_TITLE=$(echo "$ISSUE" | jq -r ".title")
+issue_title=$(echo "$ISSUE" | jq -r ".title")
 readonly ISSUE_ASSIGNEE=$(echo "$ISSUE" | jq -r ".assignee.login")
 readonly ISSUE_LABELS=$(echo "$ISSUE" | jq -r ".labels") # JSON Array
 
@@ -108,13 +108,16 @@ if [ ${#version_labels[@]} -eq 0 ]; then
   fi
 fi
 
+# Replace all instances of " with ' in the Issue Title to avoid JSON parsing issue
+issue_title=$(sed "s/\"/'/g" <<< "$issue_title")
+
 ############################################################
 # For each version that is not the issue's version, add backport
 ############################################################
 for version in ${VERSIONS[@]}; do
   if [ "$version" != "$HELIDON_VERSION" ]; then
     # Create issue for all other versions and add the same labels and assignee
-    new_issue_title="[$version] ${ISSUE_TITLE}"
+    new_issue_title="[$version] ${issue_title}"
     new_issue_text="Backport of #${ISSUE_NUMBER} for Helidon ${version}"
 
     # by default, add label for the version we are backporting into, and for backport itself
@@ -152,6 +155,14 @@ for version in ${VERSIONS[@]}; do
 
     new_issue_number=$(echo $new_issue | jq -r ".number")
     new_issue_url=$(echo $new_issue | jq -r ".html_url")
-    echo "Created issue for version ${version}, issue number: ${new_issue_number}, url: ${new_issue_url}"
+
+    # Print out the Github API Server response if unable to parse the issue number. Also display the
+    # json payload that was sent so it can be inspected for problems if such issue occur.
+    if [ "${new_issue_number}" == "null" ]; then
+      echo "Encountered an error while attempting to create an issue: $new_issue"
+      echo "Json payload: $new_issue_json"
+    else
+      echo "Created issue for version ${version}, issue number: ${new_issue_number}, url: ${new_issue_url}"
+    fi
   fi
 done

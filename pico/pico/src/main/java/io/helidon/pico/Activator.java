@@ -48,30 +48,8 @@ public interface Activator<T> {
     /**
      * Activate a managed service/provider.
      *
-     * @param targetServiceProvider the target service provider
-     * @param ipInfoCtx             the optional injection point context
-     * @param ultimateTargetPhase   the desired target phase for activation
-     * @param throwOnFailure        should the provider throw if an error is observed, alternatively will return a result with an
-     *                              error inside
+     * @param activationRequest activation request
      * @return the result of the activation
      */
-    ActivationResult<T> activate(ServiceProvider<T> targetServiceProvider,
-                                 InjectionPointInfo ipInfoCtx,
-                                 ActivationPhase ultimateTargetPhase,
-                                 boolean throwOnFailure);
-
-    /**
-     * Activate a managed service/provider.
-     *
-     * @param targetServiceProvider the target service provider
-     * @param ipInfoCtx             the optional injection point context
-     * @param ultimateTargetPhase   the desired target phase for activation
-     * @return the result of the activation
-     */
-    default ActivationResult<T> activate(ServiceProvider<T> targetServiceProvider,
-                                         InjectionPointInfo ipInfoCtx,
-                                         ActivationPhase ultimateTargetPhase) {
-        return activate(targetServiceProvider, ipInfoCtx, ultimateTargetPhase, true);
-    }
-
+    ActivationResult<T> activate(ActivationRequest<T> activationRequest);
 }

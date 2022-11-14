@@ -1,0 +1,2 @@
+io.helidon.pico.processor.spi.ExtensibleGetTemplateProducer
+io.helidon.pico.processor.spi.ExtensibleInterceptorProducer

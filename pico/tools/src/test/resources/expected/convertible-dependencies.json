@@ -1,0 +1,563 @@
+{
+    "dependencies" : [
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "driversSeatA",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.driversSeatA",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "driversSeatB",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.driversSeatB",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "spareTire",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.accessories.SpareTire",
+                    "identity" : "org.atinject.tck.auto.spareTire",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "cupholder",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.accessories.Cupholder",
+                    "identity" : "org.atinject.tck.auto.cupholder",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "engineProvider",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Engine",
+                    "identity" : "org.atinject.tck.auto.engineProvider",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldPlainSeat",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.fieldPlainSeat",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldDriversSeat",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.fieldDriversSeat",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldPlainTire",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.fieldPlainTire",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldSpareTire",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.fieldSpareTire",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldPlainSeatProvider",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.fieldPlainSeatProvider",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldDriversSeatProvider",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.fieldDriversSeatProvider",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldPlainTireProvider",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.fieldPlainTireProvider",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "FIELD",
+                    "elementName" : "fieldSpareTireProvider",
+                    "elementOffset" : null,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.fieldSpareTireProvider",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 1,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.<init>|8(1)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 2,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.<init>|8(2)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 3,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.<init>|8(3)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 4,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.<init>|8(4)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 5,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.<init>|8(5)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 6,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.<init>|8(6)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 7,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.<init>|8(7)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "CTOR",
+                    "elementName" : "<init>",
+                    "elementOffset" : 8,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.<init>|8(8)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectMethodWithZeroArgs",
+                    "elementOffset" : null,
+                    "elementTypeName" : "java.lang.Void",
+                    "identity" : "org.atinject.tck.auto.injectMethodWithZeroArgs|0",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 0,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectMethodWithNonVoidReturn",
+                    "elementOffset" : null,
+                    "elementTypeName" : "java.lang.Void",
+                    "identity" : "org.atinject.tck.auto.injectMethodWithNonVoidReturn|0",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 1,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(1)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 2,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(2)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 3,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(3)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 4,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(4)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : false,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 5,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(5)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 6,
+                    "elementTypeName" : "org.atinject.tck.auto.Seat",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(6)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 7,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(7)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        },
+        {
+            "ipDependencies" : [
+                {
+                    "access" : "PACKAGE_PRIVATE",
+                    "elementArgs" : 8,
+                    "elementKind" : "METHOD",
+                    "elementName" : "injectInstanceMethodWithManyArgs",
+                    "elementOffset" : 8,
+                    "elementTypeName" : "org.atinject.tck.auto.Tire",
+                    "identity" : "org.atinject.tck.auto.injectInstanceMethodWithManyArgs|8(8)",
+                    "listWrapped" : false,
+                    "optionalWrapped" : false,
+                    "providerWrapped" : true,
+                    "staticDecl" : false
+                }
+            ],
+            "resolved" : null
+        }
+    ],
+    "forServiceTypeName" : "org.atinject.tck.auto.Convertible"
+}

@@ -31,7 +31,7 @@ public interface ElementInfo {
     /**
      * The name assigned to constructors.
      */
-    String CTOR = "<init>";
+    String CONSTRUCTOR = "<init>";
 
     /**
      * The kind of injection target.
@@ -40,7 +40,7 @@ public interface ElementInfo {
         /**
          * The injectable constructor.  Note that there can be at most 1 injectable constructor.
          */
-        CTOR,
+        CONSTRUCTOR,
 
         /**
          * A field.
@@ -118,7 +118,7 @@ public interface ElementInfo {
      *
      * @return true if static receiver
      */
-    boolean staticDecl();
+    boolean staticDeclaration();
 
     /**
      * The enclosing class name for the element.

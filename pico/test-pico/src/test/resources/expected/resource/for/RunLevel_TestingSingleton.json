@@ -1,0 +1,78 @@
+{
+    "annoType" : {
+        "name" : "io.helidon.pico.api.RunLevel"
+    },
+    "basicServiceInfo" : {
+        "activatorTypeName" : null,
+        "contractsImplemented" : [ ],
+        "externalContractsImplemented" : [
+            "io.helidon.pico.spi.ext.Resetable",
+            "io.helidon.pico.testsubjects.ext.stacking.Intercepted"
+        ],
+        "moduleName" : null,
+        "qualifiers" : [
+            {
+                "qualifierTypeName" : "jakarta.inject.Named",
+                "value" : "testing"
+            }
+        ],
+        "realizedWeight" : 100.0,
+        "runLevel" : null,
+        "scopeTypeNames" : [ ],
+        "serviceTypeName" : "io.helidon.pico.testsubjects.ext.tbox.TestingSingleton",
+        "weight" : null
+    },
+    "elementAccess" : "PUBLIC",
+    "elementAnnotations" : [
+        {
+            "typeName" : {
+                "name" : "io.helidon.pico.api.RunLevel"
+            },
+            "value" : "1"
+        },
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Singleton"
+            },
+            "value" : null
+        },
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Named"
+            },
+            "value" : "testing"
+        }
+    ],
+    "elementArgs" : [ ],
+    "elementKind" : "CLASS",
+    "elementName" : "TestingSingleton",
+    "elementStatic" : false,
+    "elementType" : {
+        "name" : "io.helidon.pico.testsubjects.ext.tbox.TestingSingleton"
+    },
+    "enclosingClassAnnotations" : [
+        {
+            "typeName" : {
+                "name" : "io.helidon.pico.api.RunLevel"
+            },
+            "value" : "1"
+        },
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Singleton"
+            },
+            "value" : null
+        },
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Named"
+            },
+            "value" : "testing"
+        }
+    ],
+    "enclosingClassType" : {
+        "name" : "io.helidon.pico.testsubjects.ext.tbox.TestingSingleton"
+    },
+    "filerEnabled" : true,
+    "returnType" : null
+}

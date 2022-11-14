@@ -17,15 +17,14 @@
 package io.helidon.pico.test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
-import io.helidon.pico.test.testsubjects.PicoServices1;
-
-import io.helidon.pico.test.testsubjects.PicoServices2;
-import io.helidon.pico.test.testsubjects.PicoServices3;
+import io.helidon.pico.test.testsubjects.PicoServices1Provider;
+import io.helidon.pico.test.testsubjects.PicoServices2Provider;
+import io.helidon.pico.test.testsubjects.PicoServices3Provider;
 
 import org.junit.jupiter.api.Test;
 
@@ -72,11 +71,13 @@ class PriorityAndServiceTypeComparatorTest {
         assertThat(comparator.compare(null, new JustAClass()), is(greaterThan(0)));
         assertThat(comparator.compare(new JustAClass(), null), is(lessThan(0)));
 
-        ArrayList<?> list = new ArrayList<>(Arrays.asList(new PicoServices1(), new PicoServices2(), new PicoServices3()));
+        var list = new ArrayList<>(List.of(new PicoServices1Provider(),
+                                           new PicoServices2Provider(),
+                                           new PicoServices3Provider()));
         list.sort(comparator);
-        assertThat(list.get(0), instanceOf(PicoServices2.class));
-        assertThat(list.get(1), instanceOf(PicoServices3.class));
-        assertThat(list.get(2), instanceOf(PicoServices1.class));
+        assertThat(list.get(0), instanceOf(PicoServices2Provider.class));
+        assertThat(list.get(1), instanceOf(PicoServices3Provider.class));
+        assertThat(list.get(2), instanceOf(PicoServices1Provider.class));
     }
 
     static class DefaultWeight implements Weighted {

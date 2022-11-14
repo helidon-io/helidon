@@ -21,6 +21,7 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.pico.spi.PicoServicesProvider;
 
 /**
  * The holder for the active {@link PicoServices} instance.
@@ -36,9 +37,10 @@ class PicoServicesHolder {
     }
 
     private static Optional<PicoServices> load() {
-        return HelidonServiceLoader.create(ServiceLoader.load(PicoServices.class))
+        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class))
                 .asList()
                 .stream()
-                .findFirst();
+                .findFirst()
+                .map(PicoServicesProvider::services);
     }
 }

@@ -1,0 +1,27 @@
+package {{packageName}};
+
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+
+@javax.annotation.processing.Generated({{{generatedSticker}}})
+@Singleton
+@Named("{{annoTypeName}}")
+@Weight({{weight}})
+public class {{className}} {
+    private final Provider<{{enclosingClassTypeName.className}}> target;
+
+    @Inject
+    {{className}}(Provider<{{enclosingClassTypeName.className}}> target) {
+        this.target = target;
+    }
+
+    public Provider<{{enclosingClassTypeName.className}}> get{{enclosingClassTypeName.className}}() {
+        return target;
+    }
+
+}

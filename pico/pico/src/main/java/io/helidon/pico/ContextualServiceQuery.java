@@ -16,7 +16,6 @@
 
 package io.helidon.pico;
 
-import io.helidon.common.LazyValue;
 import io.helidon.pico.builder.Builder;
 
 /**
@@ -29,19 +28,11 @@ import io.helidon.pico.builder.Builder;
 public interface ContextualServiceQuery {
 
     /**
-     * Denotes a match to any (default) service, but required to be matched to at least one.
-     */
-    LazyValue<ContextualServiceQuery> EMPTY_BUT_REQUIRED = LazyValue.create(() -> DefaultContextualServiceQuery.builder()
-            .serviceInfo(ServiceInfo.EMPTY_CRITERIA.get())
-            .expected(true)
-            .build());
-
-    /**
      * The criteria to use for the lookup into {@link io.helidon.pico.Services}.
      *
      * @return the service info criteria
      */
-    ServiceInfo serviceInfo();
+    ServiceInfoCriteria serviceInfo();
 
     /**
      * The injection point context this search applies to.

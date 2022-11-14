@@ -1,0 +1,49 @@
+
+/**
+ * {{#header}}{{.}}
+ * {{/header}}
+ */
+package {{packagename}};
+
+import java.util.Optional;
+
+import io.helidon.pico.spi.Application;
+import io.helidon.pico.spi.ServiceInjectionPlanBinder;
+
+import jakarta.annotation.Generated;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
+
+/**
+ * {{#description}}{{.}}
+ * {{/description}}
+ */
+@Generated({{{generatedanno}}})
+@Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
+public class {{classname}} implements Application {
+{{#modulename}}
+    static final String NAME = "{{{.}}}";
+{{/modulename}}{{^modulename}}
+    static final String NAME = "unnamed";{{/modulename}}
+    static boolean enabled = true;
+
+    @Override
+    public Optional<String> getName() {
+        return Optional.of(NAME);
+    }
+
+    @Override
+    public String toString() {
+        return NAME + ":" + getClass().getName();
+    }
+
+    @Override
+    public void configure(ServiceInjectionPlanBinder binder) {
+        if (!enabled) {
+            return;
+        }
+{{#servicetypebindings}}
+        {{{.}}}{{/servicetypebindings}}
+    }
+
+}

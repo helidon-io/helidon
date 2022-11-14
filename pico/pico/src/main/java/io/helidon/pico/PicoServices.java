@@ -18,15 +18,24 @@ package io.helidon.pico;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Future;
-
-import io.helidon.common.Weighted;
 
 /**
  * Abstract factory for all services provided by a single Helidon Pico provider implementation.
  * An implementation of this interface must minimally supply a "services registry" - see {@link #services()}.
  */
-public interface PicoServices extends Weighted {
+public interface PicoServices {
+    /**
+     * Empty criteria will match anything and everything.
+     */
+    ServiceInfoCriteria EMPTY_CRITERIA = DefaultServiceInfoCriteria.builder().build();
+
+    /**
+     * Denotes a match to any (default) service, but required to be matched to at least one.
+     */
+    ContextualServiceQuery SERVICE_QUERY_REQUIRED = DefaultContextualServiceQuery.builder()
+            .serviceInfo(EMPTY_CRITERIA)
+            .expected(true)
+            .build();
 
     /**
      * Get {@link PicoServices} instance if available. The highest {@link io.helidon.common.Weighted} service will be loaded
@@ -61,7 +70,7 @@ public interface PicoServices extends Weighted {
      *
      * @return the injector, or empty if not available
      */
-    default Optional<? extends Injector> injector() {
+    default Optional<Injector> injector() {
         return Optional.empty();
     }
 
@@ -70,15 +79,14 @@ public interface PicoServices extends Weighted {
      *
      * @return the config, or empty if not available
      */
-    default Optional<? extends PicoServicesConfig> config() {
+    default Optional<PicoServicesConfig> config() {
         return Optional.empty();
     }
 
     /**
      * Attempts to perform a graceful {@link Injector#deactivate(Object, InjectorOptions)} on all managed
-     * service instances in the {@link Services} registry. Since deactivation can take some time to
-     * complete, a future is returned that can be used for tracking purposes. A dedicated thread is started to manage the
-     * deactivation/shutdown procedure for all active services in the registry.
+     * service instances in the {@link Services} registry.
+     * Deactivation is handled within the current thread.
      * <p>
      * If the service provider does not support shutdown an empty is returned.
      * <p>
@@ -91,13 +99,11 @@ public interface PicoServices extends Weighted {
      * order of {@link RunLevel} from the highest value down to the lowest value. If two services share
      * the same {@link RunLevel} value then the ordering will be based upon the implementation's comparator.
      * <p>
-     * Note that the service registry is NOT prevented from usage during or after shutdown. This means that it is possible
-     * for services to still be in an active state in the service registry even after shutdown is completed. If this is
-     * of concern then the recommendation is for the caller to repeatedly call shutdown() until the map contents are empty.
+     * When shutdown returns, it is guaranteed that all services were shutdown, or failed to shutdown.
      *
-     * @return a future of a map of all managed service types deactivated to any throwable observed during deactivation
+     * @return a map of all managed service types deactivated to results of deactivation
      */
-    default Optional<Future<Map<String, ActivationResult<?>>>> shutdown() {
+    default Optional<Map<String, ActivationResult<?>>> shutdown() {
         return Optional.empty();
     }
 

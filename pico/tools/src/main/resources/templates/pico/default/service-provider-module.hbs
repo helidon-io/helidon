@@ -1,0 +1,44 @@
+
+/**
+ * {{#header}}{{.}}
+ * {{/header}}
+ */
+package {{packagename}};
+
+import io.helidon.pico.spi.Module;
+import io.helidon.pico.spi.ServiceBinder;
+
+import jakarta.annotation.Generated;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
+import java.util.Optional;
+
+/**
+ * {{#description}}{{.}}
+ * {{/description}}
+ */
+@Generated({{{generatedanno}}})
+@Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
+public class {{classname}} implements Module {
+{{#modulename}}
+    static final String NAME = "{{{.}}}";
+{{/modulename}}{{^modulename}}
+    static final String NAME = "unnamed";{{/modulename}}
+
+    @Override
+    public Optional<String> getName() {
+        return Optional.of(NAME);
+    }
+
+    @Override
+    public String toString() {
+        return NAME + ":" + getClass().getName();
+    }
+
+    @Override
+    public void configure(ServiceBinder binder) {
+{{#activators}}        binder.bind({{{.}}}.INSTANCE);
+{{/activators}}
+    }
+
+}

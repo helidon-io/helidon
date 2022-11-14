@@ -1,0 +1,10 @@
+{{#header}}{{{.}}}{{/header}}{{#description}}
+/**
+ * {{#description}}{{{.}}}
+ * {{/description}}
+*/{{/description}}{{#generatedanno}}
+// @Generated({{{generatedanno}}}){{/generatedanno}}
+module {{{name}}} { {{#items}}{{#precomments}}
+{{{.}}}{{/precomments}}
+    {{{.}}};{{/items}}
+}

@@ -17,8 +17,7 @@
 package io.helidon.nima.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -26,6 +25,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import static io.helidon.nima.faulttolerance.FaultTolerance.toDelayedRunnable;
 import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
 import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
 
@@ -33,7 +33,7 @@ class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 
     private final long timeoutMillis;
-    private final LazyValue<? extends ScheduledExecutorService> executor;
+    private final LazyValue<? extends ExecutorService> executor;
     private final boolean currentThread;
     private final String name;
 
@@ -65,7 +65,7 @@ class TimeoutImpl implements Timeout {
             AtomicBoolean callReturned = new AtomicBoolean(false);
             AtomicBoolean interrupted = new AtomicBoolean(false);
 
-            ScheduledFuture<?> timeoutFuture = executor.get().schedule(() -> {
+            executor.get().submit(toDelayedRunnable(() -> {
                 interruptLock.lock();
                 try {
                     if (callReturned.compareAndSet(false, true)) {
@@ -75,8 +75,7 @@ class TimeoutImpl implements Timeout {
                 } finally {
                     interruptLock.unlock();
                 }
-
-            }, timeoutMillis, TimeUnit.MILLISECONDS);
+            }, timeoutMillis));
 
             try {
                 T result = supplier.get();
@@ -90,7 +89,6 @@ class TimeoutImpl implements Timeout {
                 interruptLock.lock();
                 try {
                     callReturned.set(true);
-                    timeoutFuture.cancel(false);
                     // Run invocation in current thread
                     // Clear interrupted flag here -- required for uninterruptible busy loops
                     if (Thread.interrupted()) {

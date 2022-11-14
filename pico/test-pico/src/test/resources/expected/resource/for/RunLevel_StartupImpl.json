@@ -1,0 +1,58 @@
+{
+  "annoType" : {
+    "name" : "io.helidon.pico.api.RunLevel"
+  },
+  "basicServiceInfo" : {
+    "activatorTypeName" : null,
+    "contractsImplemented" : [ ],
+    "externalContractsImplemented" : [ ],
+    "moduleName" : null,
+    "qualifiers" : [ ],
+    "realizedWeight" : 100.0,
+    "runLevel" : null,
+    "scopeTypeNames" : [ ],
+    "serviceTypeName" : "io.helidon.pico.testsubjects.ext.tbox.impl.StartupImpl",
+    "weight" : null
+  },
+  "elementAccess" : "PUBLIC",
+  "elementAnnotations" : [
+    {
+      "typeName" : {
+        "name" : "jakarta.inject.Singleton"
+      },
+      "value" : null
+    },
+    {
+      "typeName" : {
+        "name" : "io.helidon.pico.api.RunLevel"
+      },
+      "value" : "0"
+    }
+  ],
+  "elementArgs" : [ ],
+  "elementKind" : "CLASS",
+  "elementName" : "StartupImpl",
+  "elementStatic" : false,
+  "elementType" : {
+    "name" : "io.helidon.pico.testsubjects.ext.tbox.impl.StartupImpl"
+  },
+  "enclosingClassAnnotations" : [
+    {
+      "typeName" : {
+        "name" : "jakarta.inject.Singleton"
+      },
+      "value" : null
+    },
+    {
+      "typeName" : {
+        "name" : "io.helidon.pico.api.RunLevel"
+      },
+      "value" : "0"
+    }
+  ],
+  "enclosingClassType" : {
+    "name" : "io.helidon.pico.testsubjects.ext.tbox.impl.StartupImpl"
+  },
+  "filerEnabled" : true,
+  "returnType" : null
+}

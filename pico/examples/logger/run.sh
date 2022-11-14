@@ -1,0 +1,10 @@
+clear
+echo "RUN 1: (GUICE)"
+java -jar guice/target/pico-examples-logger-guice-4.0.0-SNAPSHOT-jar-with-dependencies.jar "hello guice"
+echo "RUN 2: (GUICE)"
+java -jar guice/target/pico-examples-logger-guice-4.0.0-SNAPSHOT-jar-with-dependencies.jar "hello guice"
+echo "========================"
+echo "RUN 1: (PICO))"
+java -jar pico/target/pico-examples-logger-pico-4.0.0-SNAPSHOT-jar-with-dependencies.jar "hello pico"
+echo "RUN 2: (PICO))"
+java -jar pico/target/pico-examples-logger-pico-4.0.0-SNAPSHOT-jar-with-dependencies.jar "hello pico"

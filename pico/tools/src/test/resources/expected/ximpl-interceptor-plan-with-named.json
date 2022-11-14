@@ -1,0 +1,230 @@
+{
+    "annotationTriggerTypeNames" : [
+        "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno",
+        "jakarta.inject.Named"
+    ],
+    "interceptedElements" : [
+        {
+            "elementInfo" : {
+                "access" : "PACKAGE_PRIVATE",
+                "elementArgs" : 0,
+                "elementKind" : "CTOR",
+                "elementName" : "<init>",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "methodIA1",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "methodIA2",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno",
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 1,
+                "elementKind" : "METHOD",
+                "elementName" : "methodIB",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [
+                    {
+                        "access" : "PUBLIC",
+                        "elementArgs" : 1,
+                        "elementKind" : "METHOD",
+                        "elementName" : "p1",
+                        "elementOffset" : 1,
+                        "elementTypeName" : "java.lang.String",
+                        "staticDecl" : false
+                    }
+                ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno",
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "close",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [
+                    "java.io.IOException",
+                    "java.lang.RuntimeException"
+                ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno",
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 3,
+                "elementKind" : "METHOD",
+                "elementName" : "methodX",
+                "elementOffset" : null,
+                "elementTypeName" : "long",
+                "parameterInfo" : [
+                    {
+                        "access" : "PUBLIC",
+                        "elementArgs" : 3,
+                        "elementKind" : "METHOD",
+                        "elementName" : "p1",
+                        "elementOffset" : 1,
+                        "elementTypeName" : "java.lang.String",
+                        "staticDecl" : false
+                    },
+                    {
+                        "access" : "PUBLIC",
+                        "elementArgs" : 3,
+                        "elementKind" : "METHOD",
+                        "elementName" : "p2",
+                        "elementOffset" : 2,
+                        "elementTypeName" : "int",
+                        "staticDecl" : false
+                    },
+                    {
+                        "access" : "PUBLIC",
+                        "elementArgs" : 3,
+                        "elementKind" : "METHOD",
+                        "elementName" : "p3",
+                        "elementOffset" : 3,
+                        "elementTypeName" : "boolean",
+                        "staticDecl" : false
+                    }
+                ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [
+                    "java.io.IOException",
+                    "java.lang.RuntimeException",
+                    "java.lang.AssertionError"
+                ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PACKAGE_PRIVATE",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "methodY",
+                "elementOffset" : null,
+                "elementTypeName" : "java.lang.String",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PROTECTED",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "methodZ",
+                "elementOffset" : null,
+                "elementTypeName" : "java.lang.String",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "jakarta.inject.Named"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PROTECTED",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "throwRuntimeException",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "jakarta.inject.Named"
+            ]
+        }
+    ],
+    "interceptedService" : {
+        "activatorTypeName" : null,
+        "contractsImplemented" : [ ],
+        "externalContractsImplemented" : [ ],
+        "moduleName" : null,
+        "qualifiers" : [ ],
+        "realizedWeight" : 100.0,
+        "runLevel" : null,
+        "scopeTypeNames" : [ ],
+        "serviceTypeName" : "io.helidon.pico.testsubjects.interceptor.X",
+        "weight" : null
+    },
+    "serviceLevelAnnotations" : [
+        {
+            "typeName" : "jakarta.inject.Named",
+            "value" : "ClassX"
+        },
+        {
+            "typeName" : "jakarta.inject.Qualifier",
+            "value" : null
+        },
+        {
+            "typeName" : "jakarta.inject.Scope",
+            "value" : null
+        },
+        {
+            "typeName" : "jakarta.inject.Singleton",
+            "value" : null
+        }
+    ]
+}
