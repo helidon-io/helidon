@@ -61,8 +61,9 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
     private static final ReentrantLock HANDOFF_LOCK = new ReentrantLock();
 
+    // Deliberately not final.
     // Deliberately not volatile.
-    // Null most of the time on purpose.
+    // null most of the time on purpose.
     // When not null, will contain either a Connection or a Xid.
     // @GuardedBy("HANDOFF_LOCK")
     private static Object handoff;
@@ -528,6 +529,25 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         return super.isWrapperFor(iface);
     }
 
+    @Override
+    public boolean isCloseable() throws SQLException {
+        return super.isCloseable() && !this.enlisted();
+    }
+
+    @Override
+    public void setCloseable(boolean closeable) {
+        if (closeable) {
+            try {
+                if (this.enlisted()) {
+                    throw new IllegalArgumentException("closeable: " + closeable);
+                }
+            } catch (SQLException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
+        super.setCloseable(closeable);
+    }
+
     // At the moment of this call, can this connection enlist in the transaction? (Note that because the transaction may
     // be rolled back at any point from any thread, a subsequent attempt to *actually* enlist may very well fail
     // anyway.)
@@ -585,12 +605,14 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         }
     }
 
-    // Is the usage of this connection on this thread already enlisted with an active global transaction?
+    // Is the usage of this connection on this thread already enlisted with a non-completed global transaction?
     private boolean enlisted() throws SQLException {
         try {
-            return this.tsr.getResource("xid") != null;
+            return this.activeTransaction() && this.tsr.getResource("xid") != null;
+        } catch (IllegalStateException noActiveTransaction) {
+            return false;
         } catch (RuntimeException e) {
-            // Why do we catch RuntimeException and not something more specific?  See
+            // Why do we catch RuntimeException as well here? See
             // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
             // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
             // getResource() and putResource() are not documented to throw RuntimeException, only
@@ -712,21 +734,19 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             HANDOFF_LOCK.unlock();
         }
 
-        if (enlisted) {
-            // We perform additional operations upon successful enlistment without holding the HANDOFF_LOCK to keep the
-            // critical section above as small as possible.
+        if (enlisted && super.isCloseable()) {
 
-            // Register a synchronization that restores closability to the connection.  If this fails, we haven't
-            // changed state.
+            // Register a synchronization that restores closability to the connection after the transaction has
+            // completed.  If this fails, we haven't changed state.
             try {
-                this.tsr.registerInterposedSynchronization((Sync) status -> this.setCloseable(true));
+                this.tsr.registerInterposedSynchronization((Sync) status -> super.setCloseable(true));
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException and not something more specific?  See
                 // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
                 // getTransactionImple() is called by Narayana's implementation of
-                // registerInterposedSynchronization(Synchronization), and although a generic RuntimeException is not
-                // supposed to be thrown by registerInterposedSynchronization(Synchronization) implementations, it is
-                // thrown anyway.
+                // registerInterposedSynchronization(Synchronization), and although a generic RuntimeException is
+                // not supposed to be thrown by registerInterposedSynchronization(Synchronization) implementations,
+                // it is thrown anyway.
                 throw new SQLTransientException(e.getMessage(),
                                                 "25000", // invalid transaction state, no subclass
                                                 e);
@@ -734,7 +754,8 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
             // Make the connection not closeable while the transaction is not completed.  If this fails, the
             // synchronization we registered will still run, but our state won't change.
-            this.setCloseable(false);
+            super.setCloseable(false);
+
         }
 
     }
@@ -771,6 +792,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      * Inner and nested classes.
      */
 
+
     @FunctionalInterface
     interface Sync extends Synchronization {
 
@@ -786,6 +808,5 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         Transaction getTransaction() throws SystemException;
 
     }
-
 
 }
