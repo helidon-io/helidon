@@ -20,7 +20,8 @@ final class GenerateVisitor {
     private GenerateVisitor() {
     }
 
-    static void appendAttributeVisitors(StringBuilder builder, DefaultBuilderCreator.BodyContext ctx) {
+    static void appendAttributeVisitors(StringBuilder builder,
+                                        BodyContext ctx) {
         if (ctx.doingConcreteType()) {
             return;
         }

@@ -30,7 +30,8 @@ final class GenerateJavadoc {
                                + "\t */\n");
     }
 
-    static void builderClass(StringBuilder builder, DefaultBuilderCreator.BodyContext ctx) {
+    static void builderClass(StringBuilder builder,
+                             BodyContext ctx) {
         builder.append("\n\t/**\n\t * Fluent API builder for {@code ")
                 .append(ctx.genericBuilderAcceptAliasDecl())
                 .append("}.\n\t *\n");
@@ -42,7 +43,8 @@ final class GenerateJavadoc {
         builder.append("\t */\n");
     }
 
-    static void builderMethod(StringBuilder builder, DefaultBuilderCreator.BodyContext ctx) {
+    static void builderMethod(StringBuilder builder,
+                              BodyContext ctx) {
         builder.append("\t/**\n"
                                + "\t * Creates a builder for this type.\n"
                                + "\t *\n");
@@ -51,7 +53,8 @@ final class GenerateJavadoc {
         builder.append("}\n\t */\n");
     }
 
-    static void toBuilderMethod(StringBuilder builder, DefaultBuilderCreator.BodyContext ctx) {
+    static void toBuilderMethod(StringBuilder builder,
+                                BodyContext ctx) {
         builder.append("\t/**\n"
                                + "\t * Creates a builder for this type, initialized with the attributes from the values passed"
                                + ".\n\n");
@@ -74,6 +77,15 @@ final class GenerateJavadoc {
                                + "\t\t */\n");
     }
 
+    static void accept(StringBuilder builder) {
+        builder.append("\t\t/**\n"
+                               + "\t\t * Accept and update from the provided value object.\n"
+                               + "\t\t *\n"
+                               + "\t\t * @param val the value object to copy from\n"
+                               + "\t\t * @return this instance typed to correct type\n"
+                               + "\t\t */\n");
+    }
+
     static void buildMethod(StringBuilder builder) {
         builder.append("\t\t/**\n"
                                + "\t\t * Builds the instance.\n"
@@ -92,7 +104,8 @@ final class GenerateJavadoc {
                                + "\t\t */\n");
     }
 
-    static void builderField(StringBuilder builder, TypedElementName method) {
+    static void builderField(StringBuilder builder,
+                             TypedElementName method) {
         builder.append("\t\t/**\n" + "\t\t * Field value for {@code ")
                 .append(method)
                 .append("()}.\n\t\t */\n");
@@ -106,7 +119,9 @@ final class GenerateJavadoc {
                                + "\t */\n");
     }
 
-    static void setter(StringBuilder builder, String beanAttributeName, TypedElementName method) {
+    static void setter(StringBuilder builder,
+                       String beanAttributeName,
+                       TypedElementName method) {
         builder.append("\t\t/**\n");
         builder.append("\t\t * Setter for '").append(beanAttributeName).append("'.\n");
         builder.append("\t\t *\n");
@@ -116,7 +131,9 @@ final class GenerateJavadoc {
         builder.append("\t\t */\n");
     }
 
-    static void singularSetter(StringBuilder builder, TypedElementName method, String beanAttributeName) {
+    static void singularSetter(StringBuilder builder,
+                               TypedElementName method,
+                               String beanAttributeName) {
         builder.append("\t\t/**\n");
         builder.append("\t\t * Singular setter for '").append(beanAttributeName).append("'.\n");
         builder.append("\t\t *\n");
@@ -143,7 +160,9 @@ final class GenerateJavadoc {
                                + "\t */\n");
     }
 
-    static void visitAttributes(StringBuilder builder, DefaultBuilderCreator.BodyContext ctx, String extraTabs) {
+    static void visitAttributes(StringBuilder builder,
+                                BodyContext ctx,
+                                String extraTabs) {
         builder.append(extraTabs).append("\t/**\n");
         builder.append(extraTabs).append("\t * Visits all attributes of " + ctx.typeInfo().typeName() + ", calling the {@link "
                                                  + "AttributeVisitor} for each.\n");

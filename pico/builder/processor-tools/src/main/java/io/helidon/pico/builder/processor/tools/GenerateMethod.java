@@ -19,7 +19,6 @@ package io.helidon.pico.builder.processor.tools;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.pico.builder.processor.tools.DefaultBuilderCreator.BodyContext;
 import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
