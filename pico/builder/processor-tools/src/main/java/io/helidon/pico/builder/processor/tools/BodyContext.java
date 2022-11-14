@@ -395,7 +395,7 @@ public class BodyContext {
 
         if (!builderAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
             builderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(BUILDER_ANNO_TYPE_NAME, typeInfo.annotations(), false).orElse(null);
+                    .findFirst(BUILDER_ANNO_TYPE_NAME.name(), typeInfo.annotations()).orElse(null);
             if (Objects.nonNull(builderAnnotation)) {
                 val = builderAnnotation.value(key).orElse(null);
             }
@@ -409,7 +409,7 @@ public class BodyContext {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (Objects.nonNull(superTypeInfo)) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(ctx.builderAnnotation.typeName(), superTypeInfo.annotations(), false);
+                    .findFirst(ctx.builderAnnotation.typeName().name(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
                 gatherAllAttributeNames(ctx, superTypeInfo);
             } else {
@@ -464,7 +464,7 @@ public class BodyContext {
 
             ctx.allTypeInfos.add(method);
             if (ctx.allAttributeNames.contains(beanAttributeName)) {
-                throw new AssertionError("duplicate attribute name: " + beanAttributeName + " processing " + typeInfo);
+                throw new IllegalStateException("duplicate attribute name: " + beanAttributeName + " processing " + typeInfo);
             }
             ctx.allAttributeNames.add(beanAttributeName);
         }

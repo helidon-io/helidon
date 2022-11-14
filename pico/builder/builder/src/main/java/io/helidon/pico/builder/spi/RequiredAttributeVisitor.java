@@ -71,11 +71,11 @@ public class RequiredAttributeVisitor implements AttributeVisitor {
     /**
      * Performs the validation. Any errors will result in a thrown error.
      *
-     * @throws java.lang.AssertionError when any attributes are in violation with the validation policy
+     * @throws java.lang.IllegalStateException when any attributes are in violation with the validation policy
      */
     public void validate() {
         if (!errors.isEmpty()) {
-            throw new AssertionError(String.join(", ", errors));
+            throw new IllegalStateException(String.join(", ", errors));
         }
     }
 

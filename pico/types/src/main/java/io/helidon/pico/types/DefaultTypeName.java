@@ -162,10 +162,11 @@ public class DefaultTypeName implements TypeName {
      * Throws an exception if the provided type name is not fully qualified, having a package and class name representation.
      *
      * @param name the type name to check
+     * @throws java.lang.IllegalStateException if the name is invalid
      */
     public static void ensureIsFQN(TypeName name) {
         if (!isFQN(name)) {
-            throw new AssertionError("needs to be a fully qualified name: " + name);
+            throw new IllegalStateException("needs to be a fully qualified name: " + name);
         }
     }
 

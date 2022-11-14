@@ -88,7 +88,7 @@ final class GenerateVisitor {
                                    + "\n"
                                    + "\t\tvoid validate() {\n"
                                    + "\t\t\tif (!errors.isEmpty()) {\n"
-                                   + "\t\t\t\tthrow new AssertionError(String.join(\", \", errors));\n"
+                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(String.join(\", \", errors));\n"
                                    + "\t\t\t}\n"
                                    + "\t\t}\n"
                                    + "\t}\n");

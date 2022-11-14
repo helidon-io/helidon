@@ -158,28 +158,6 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
     }
 
     /**
-     * Attempts to find the annotation in the provided collection, and if not found will throw an exception.
-     *
-     * @param annoTypeName  the annotation type name
-     * @param coll          the collection to search
-     * @param mustHaveValue true if the result must have a value
-     * @return the result of the find
-     * @throws java.lang.AssertionError if not found, or not found to have a non-blank value present
-     */
-    public static Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
-                                                         Collection<? extends AnnotationAndValue> coll,
-                                                         boolean mustHaveValue) {
-        assert (!annoTypeName.isBlank());
-        Optional<? extends AnnotationAndValue> result =  coll.stream()
-                .filter(it -> it.typeName().name().equals(annoTypeName))
-                .findFirst();
-        if (result.isPresent() && mustHaveValue && !result.get().hasNonBlankValue()) {
-            throw new AssertionError("Unable to find " + annoTypeName);
-        }
-        return result;
-    }
-
-    /**
      * Attempts to find the annotation in the provided collection.
      *
      * @param annoTypeName  the annotation type name
@@ -192,27 +170,6 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         return coll.stream()
                 .filter(it -> it.typeName().name().equals(annoTypeName))
                 .findFirst();
-    }
-
-    /**
-     * The same as calling {@link #findFirst(String, java.util.Collection)} with an added optional check for the value being
-     * present and non-blank.
-     *
-     * @param annoTypeName  the annotation type name
-     * @param coll          the collection to search
-     * @param mustHaveValue true if the result must have a non-blank value
-     * @return the result of the find
-     */
-    public static Optional<? extends AnnotationAndValue> findFirst(TypeName annoTypeName,
-                                                         Collection<? extends AnnotationAndValue> coll,
-                                                         boolean mustHaveValue) {
-        Optional<? extends AnnotationAndValue> result =  coll.stream()
-                .filter(it -> it.typeName().equals(annoTypeName))
-                .findFirst();
-        if (result.isPresent() && mustHaveValue && !result.get().hasNonBlankValue()) {
-            result = Optional.empty();
-        }
-        return result;
     }
 
     @Override

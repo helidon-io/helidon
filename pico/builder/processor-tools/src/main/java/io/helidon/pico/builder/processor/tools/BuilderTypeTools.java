@@ -240,7 +240,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
                 type = double.class;
                 break;
             default:
-                throw new AssertionError("unknown primitive type: " + kind);
+                throw new IllegalStateException("unknown primitive type: " + kind);
             }
 
             return Optional.of(DefaultTypeName.create(type));
