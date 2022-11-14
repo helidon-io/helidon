@@ -71,69 +71,6 @@ This example provides full `plugins` tag, if exists, update only relevant sectio
 ## TODO
 The following modules should be refactored:
 ```java
-        addSe("io.helidon.grpc.metrics",
-              "Metrics",
-              "Metrics for gRPC services",
-              "grpc", "Metrics");
-        addSe("io.helidon.grpc.metrics",
-              "Metrics",
-              "Metrics for gRPC client",
-              "grpcClient", "Metrics");
-        addSe("io.helidon.reactive.media.jsonp",
-              "JSON-P",
-              "Media support for Jakarta JSON Processing",
-              "WebServer", "Jsonp");
-        addSe("io.helidon.reactive.media.jsonp",
-              "JSON-P",
-              "Media support for Jakarta JSON Processing",
-              "WebClient", "Jsonp");
-        addSe("io.helidon.reactive.media.jsonb",
-              "JSON-B",
-              "Media support for Jakarta JSON Binding",
-              "WebServer", "Jsonb");
-        addSe("io.helidon.reactive.media.jsonb",
-              "JSON-B",
-              "Media support for Jakarta JSON Binding",
-              "WebClient", "Jsonb");
-        addSe("io.helidon.reactive.media.jackson",
-              "Jackson",
-              "Media support for Jackson",
-              "WebServer", "Jackson");
-        addSe("io.helidon.reactive.media.jackson",
-              "Jackson",
-              "Media support for Jackson",
-              "WebClient", "Jackson");
-        addSe("io.helidon.reactive.media.multipart",
-              "Multi-part",
-              "Media support for Multi-part entities",
-              "WebServer", "Multipart");
-        addSe("io.helidon.reactive.media.multipart",
-              "Multi-part",
-              "Media support for Multi-part entities",
-              "WebClient", "Multipart");
-        add("io.helidon.messaging",
-            FeatureDescriptor.builder()
-                    .name("Messaging")
-                    .description("Reactive messaging support")
-                    .path("Messaging")
-                    .flavor(HelidonFlavor.SE)
-                    .experimental(true));
-        addSe("io.helidon.metrics",
-              "Metrics",
-              "Metrics support",
-              "Metrics");
-        add("io.helidon.metrics.prometheus",
-            FeatureDescriptor.builder()
-                    .name("Prometheus")
-                    .description("Metrics support for Prometheus")
-                    .path("WebServer", "Prometheus")
-                    .nativeSupported(false)
-                    .flavor(HelidonFlavor.SE)
-        );
-        addSe("io.helidon.openapi",
-              "OpenAPI",
-              "Open API support",
-              "OpenAPI");
         addSe("io.helidon.webserver",
               "WebServer",
               "Helidon WebServer",
