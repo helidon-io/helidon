@@ -36,8 +36,17 @@ public interface ParentInterfaceNotABuilder extends ParentOfParentInterfaceIsABu
      *
      * @return ignored, here for testing purposes only
      */
-    default Optional<char[]> overrideMe() {
+    default Optional<char[]> maybeOverrideMe() {
         return Optional.empty();
+    }
+
+    /**
+     * The Pico Builder will ignore {@code default} and {@code static} functions.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    default char[] overrideMe() {
+        return "default".toCharArray();
     }
 
     /**

@@ -1065,6 +1065,8 @@ public class DefaultBuilderCreator implements BuilderCreator {
                 boolean isSet = !isMap && typeName.isSet();
                 if (isList || isSet) {
                     builder.append("(java.util.Collection) ");
+                } else if (isMap) {
+                    builder.append("(java.util.Map) ");
                 }
                 builder.append("val.").append(getterName).append("());\n");
             }
@@ -1346,7 +1348,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
                         // primitive types only if present or not
                         builder.append("(")
                                 .append(method.elementName())
-                                .append("().isEmpty() ? \"null\" : \"not-null\");\n");
+                                .append("().isEmpty() ? \"Optional.empty\" : \"not-empty\")");
                         handled = true;
                     }
                 }
@@ -1354,7 +1356,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
 
             if (!handled) {
                 if (typeName.array()) {
-                    builder.append("(").append(beanAttributeName).append(" == null ? null : ");
+                    builder.append("(").append(beanAttributeName).append(" == null ? \"null\" : ");
                     if (typeName.primitive()) {
                         builder.append("\"not-null\"");
                     } else {

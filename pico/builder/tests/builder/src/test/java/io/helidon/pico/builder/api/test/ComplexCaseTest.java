@@ -33,7 +33,6 @@ class ComplexCaseTest {
 
     @Test
     void testIt() {
-        // TODO: I think the declaration that should be allowed
         Map<String, List<? extends MyConfigBean>> mapWithNull = new HashMap<>();
         mapWithNull.put("key", null);
 
