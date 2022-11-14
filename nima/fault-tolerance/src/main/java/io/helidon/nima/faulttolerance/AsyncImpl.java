@@ -52,6 +52,8 @@ class AsyncImpl implements Async {
             }
         };
         Future<?> future = executor.get().submit(() -> {
+            Thread thread = Thread.currentThread();
+            thread.setName(thread.getName() + ": async");
             try {
                 T t = supplier.get();
                 result.complete(t);

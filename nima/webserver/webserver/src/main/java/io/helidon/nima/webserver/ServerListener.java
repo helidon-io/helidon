@@ -118,6 +118,11 @@ class ServerListener {
         this.contentEncodingContext = contentEncodingContext;
     }
 
+    @Override
+    public String toString() {
+        return socketName + " (" + configuredAddress + ")";
+    }
+
     int port() {
         return connectedPort;
     }
