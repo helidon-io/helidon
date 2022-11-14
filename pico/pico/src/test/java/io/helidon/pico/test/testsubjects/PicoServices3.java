@@ -16,25 +16,19 @@
 
 package io.helidon.pico.test.testsubjects;
 
-import io.helidon.common.Weight;
-
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.Services;
 
 import jakarta.inject.Singleton;
 
 @Singleton
-@Weight(PicoServices3.WEIGHT)
 public class PicoServices3 implements PicoServices {
-    static final double WEIGHT = 3;
-
-    @Override
-    public double weight() {
-        return WEIGHT;
+    public PicoServices3() {
     }
 
     @Override
     public Services services() {
         return null;
     }
+
 }

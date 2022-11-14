@@ -16,6 +16,7 @@
 
 package io.helidon.pico.builder.spi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,7 +39,7 @@ import io.helidon.pico.builder.AttributeVisitor;
  */
 @Deprecated
 public class RequiredAttributeVisitor implements AttributeVisitor {
-    private List<String> errors;
+    private final List<String> errors = new ArrayList<>();
 
     /**
      * Default constructor.
@@ -64,9 +65,6 @@ public class RequiredAttributeVisitor implements AttributeVisitor {
             return;
         }
 
-        if (Objects.isNull(errors)) {
-            errors = new java.util.LinkedList<>();
-        }
         errors.add("'" + attrName + "' is a required attribute and should not be null");
     }
 
@@ -76,7 +74,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor {
      * @throws java.lang.AssertionError when any attributes are in violation with the validation policy
      */
     public void validate() {
-        if (Objects.nonNull(errors) && !errors.isEmpty()) {
+        if (!errors.isEmpty()) {
             throw new AssertionError(String.join(", ", errors));
         }
     }

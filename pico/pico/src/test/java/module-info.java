@@ -17,7 +17,7 @@
 /**
  * Pico API / SPI test module.
  */
-module io.helidon.pico.spi.test {
+open module io.helidon.pico.spi.test {
     requires org.junit.jupiter.api;
     requires hamcrest.all;
     requires jakarta.inject;
@@ -29,8 +29,8 @@ module io.helidon.pico.spi.test {
     exports io.helidon.pico.test.testsubjects;
     exports io.helidon.pico.test;
 
-    provides io.helidon.pico.PicoServices with
-            io.helidon.pico.test.testsubjects.PicoServices1,
-            io.helidon.pico.test.testsubjects.PicoServices2,
-            io.helidon.pico.test.testsubjects.PicoServices3;
+    provides io.helidon.pico.spi.PicoServicesProvider with
+            io.helidon.pico.test.testsubjects.PicoServices1Provider,
+            io.helidon.pico.test.testsubjects.PicoServices2Provider,
+            io.helidon.pico.test.testsubjects.PicoServices3Provider;
 }

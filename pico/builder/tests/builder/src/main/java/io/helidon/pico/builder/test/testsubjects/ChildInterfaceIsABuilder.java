@@ -16,6 +16,8 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+import java.util.Optional;
+
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.Builder;
 
@@ -49,6 +51,6 @@ public interface ChildInterfaceIsABuilder extends ParentInterfaceNotABuilder {
      */
     @Override
     @ConfiguredOption("override")
-    char[] overrideMe();
+    Optional<char[]> overrideMe();
 
 }

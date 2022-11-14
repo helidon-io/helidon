@@ -16,7 +16,6 @@
 
 package io.helidon.pico;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +33,6 @@ import jakarta.inject.Provider;
  * @param <T> the type that the provider produces
  */
 public interface InjectionPointProvider<T> extends Provider<T> {
-
     /**
      * Get (or create) an instance of this service type using default/empty criteria and context.
      *
@@ -43,7 +41,8 @@ public interface InjectionPointProvider<T> extends Provider<T> {
      */
     @Override
     default T get() {
-        return findFirst(ContextualServiceQuery.EMPTY_BUT_REQUIRED.get()).get();
+        return first(PicoServices.SERVICE_QUERY_REQUIRED)
+                .orElseThrow(() -> new PicoException("Could not resolve a match for " + this));
     }
 
     /**
@@ -54,7 +53,7 @@ public interface InjectionPointProvider<T> extends Provider<T> {
      * @return the best service provider matching the criteria
      * @throws io.helidon.pico.PicoException if expected=true and resolution fails to resolve a match
      */
-    Optional<T> findFirst(ContextualServiceQuery query);
+    Optional<T> first(ContextualServiceQuery query);
 
     /**
      * Get (or create) a list of instances matching the criteria for the given injection point context.
@@ -64,8 +63,7 @@ public interface InjectionPointProvider<T> extends Provider<T> {
      *         supported
      */
     default List<T> list(ContextualServiceQuery query) {
-        Optional<T> instance = findFirst(query);
-        return instance.isEmpty() ? Collections.emptyList() : Collections.singletonList(instance.get());
+        return first(query).map(List::of).orElseGet(List::of);
     }
 
 }

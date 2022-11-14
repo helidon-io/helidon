@@ -70,7 +70,7 @@ class BulkheadImpl implements Bulkhead {
             return execute(supplier);
         }
 
-        if (queue.size() == queue.capacity()) {
+        if (queue.isFull()) {
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
@@ -143,10 +143,9 @@ class BulkheadImpl implements Bulkhead {
             throw toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
-            if (queue.size() > 0) {
-                queue.dequeueAndRetract();
-            } else {
-                inProgress.release();
+            boolean dequeued = queue.dequeueAndRetract();
+            if (!dequeued) {
+                inProgress.release();       // nothing dequeued, one more permit
             }
         }
     }
@@ -173,25 +172,28 @@ class BulkheadImpl implements Bulkhead {
         int size();
 
         /**
-         * Maximum number of suppliers in queue.
+         * Check if queue is full.
          *
-         * @return max number of suppliers
+         * @return outcome of test
          */
-        int capacity();
+        boolean isFull();
 
         /**
          * Enqueue supplier and block thread on barrier.
          *
          * @param supplier the supplier
+         * @return {@code true} if supplier was enqueued or {@code false} otherwise
          * @throws ExecutionException if exception encountered while blocked
          * @throws InterruptedException if blocking is interrupted
          */
-        void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException;
+        boolean enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException;
 
         /**
          * Dequeue supplier and retract its barrier.
+         *
+         * @return {@code true} if a supplier was dequeued or {@code false} otherwise
          */
-        void dequeueAndRetract();
+        boolean dequeueAndRetract();
 
         /**
          * Remove supplier from queue, if present.
@@ -213,23 +215,23 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public int capacity() {
-            return 0;
+        public boolean isFull() {
+            return true;
         }
 
         @Override
-        public void enqueueAndWaitOn(Supplier<?> supplier) throws InterruptedException {
-            throw new IllegalStateException("Queue capacity is 0");
+        public boolean enqueueAndWaitOn(Supplier<?> supplier) {
+            return false;
         }
 
         @Override
-        public void dequeueAndRetract() {
-            throw new IllegalStateException("Queue capacity is 0");
+        public boolean dequeueAndRetract() {
+            return false;
         }
 
         @Override
         public boolean remove(Supplier<?> supplier) {
-            throw new IllegalStateException("Queue capacity is 0");
+            return false;
         }
     }
 
@@ -261,53 +263,64 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public int capacity() {
-            return capacity;
-        }
-
-        @Override
-        public void enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
-            Barrier barrier = enqueue(supplier);
-            if (barrier != null) {
-                barrier.waitOn();
-            } else {
-                throw new IllegalStateException("Queue is full");
+        public boolean isFull() {
+            lock.lock();
+            try {
+                return queue.size() == capacity;
+            } finally {
+                lock.unlock();
             }
         }
 
         @Override
-        public void dequeueAndRetract() {
-            Barrier barrier = dequeue();
+        public boolean enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
+            Barrier barrier;
+            lock.lock();
+            try {
+                barrier = enqueue(supplier);
+            } finally {
+                lock.unlock();
+            }
             if (barrier != null) {
-                barrier.retract();
-            } else {
-                throw new IllegalStateException("Queue is empty");
+                barrier.waitOn();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean dequeueAndRetract() {
+            lock.lock();
+            try {
+                Barrier barrier = dequeue();
+                if (barrier != null) {
+                    barrier.retract();
+                    return true;
+                }
+                return false;
+            } finally {
+                lock.unlock();
             }
         }
 
         @Override
         public boolean remove(Supplier<?> supplier) {
-            return queue.remove(supplier);
+            lock.lock();
+            try {
+                return queue.remove(supplier);
+            } finally {
+                lock.unlock();
+            }
         }
 
         private Barrier dequeue() {
-            lock.lock();
-            try {
-                Supplier<?> supplier = queue.poll();
-                return supplier == null ? null : map.remove(supplier);
-            } finally {
-                lock.unlock();
-            }
+            Supplier<?> supplier = queue.poll();
+            return supplier == null ? null : map.remove(supplier);
         }
 
         private Barrier enqueue(Supplier<?> supplier) {
-            lock.lock();
-            try {
-                boolean added = queue.offer(supplier);
-                return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
-            } finally {
-                lock.unlock();
-            }
+            boolean added = queue.offer(supplier);
+            return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
         }
     }
 

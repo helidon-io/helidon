@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.pico.tools.creator;
+
+import io.helidon.pico.PicoServicesConfig;
+
+/**
+ * Request based to {@link ActivatorCreator} to produce the codegen artifacts (memory/model based representation only).
+ */
+public interface ActivatorCreatorRequest extends GeneralCreatorRequest {
+
+    /**
+     * Mandatory, qualifies what specifically should be generated.
+     *
+     * @return data specific requests for what is generated
+     */
+    ActivatorCreatorCodeGen getCodeGenRequest();
+
+    /**
+     * Optionally, the {@link PicoServicesConfig} related support configuration/directives to apply if any.
+     *
+     * @return "special" configuration settings, in the way of system-property like overrides
+     */
+    ActivatorCreatorConfigOptions getConfigOptions();
+
+}

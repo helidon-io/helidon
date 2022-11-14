@@ -1,0 +1,98 @@
+{
+    "annotationTriggerTypeNames" : [
+        "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno"
+    ],
+    "interceptedElements" : [
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "methodIA2",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 1,
+                "elementKind" : "METHOD",
+                "elementName" : "methodIB",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [
+                    {
+                        "access" : "PUBLIC",
+                        "elementArgs" : 1,
+                        "elementKind" : "METHOD",
+                        "elementName" : "p1",
+                        "elementOffset" : 1,
+                        "elementTypeName" : "java.lang.String",
+                        "staticDecl" : false
+                    }
+                ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [ ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno"
+            ]
+        },
+        {
+            "elementInfo" : {
+                "access" : "PUBLIC",
+                "elementArgs" : 0,
+                "elementKind" : "METHOD",
+                "elementName" : "close",
+                "elementOffset" : null,
+                "elementTypeName" : "void",
+                "parameterInfo" : [ ],
+                "staticDecl" : false,
+                "throwableTypeNames" : [
+                    "java.io.IOException",
+                    "java.lang.RuntimeException"
+                ]
+            },
+            "interceptedTriggerTypeNames" : [
+                "io.helidon.pico.testsubjects.interceptor.InterceptorBasedAnno"
+            ]
+        }
+    ],
+    "interceptedService" : {
+        "activatorTypeName" : null,
+        "contractsImplemented" : [ ],
+        "externalContractsImplemented" : [ ],
+        "moduleName" : null,
+        "qualifiers" : [ ],
+        "realizedWeight" : 100.0,
+        "runLevel" : null,
+        "scopeTypeNames" : [ ],
+        "serviceTypeName" : "io.helidon.pico.testsubjects.interceptor.X",
+        "weight" : null
+    },
+    "serviceLevelAnnotations" : [
+        {
+            "typeName" : "jakarta.inject.Named",
+            "value" : "ClassX"
+        },
+        {
+            "typeName" : "jakarta.inject.Qualifier",
+            "value" : null
+        },
+        {
+            "typeName" : "jakarta.inject.Scope",
+            "value" : null
+        },
+        {
+            "typeName" : "jakarta.inject.Singleton",
+            "value" : null
+        }
+    ]
+}

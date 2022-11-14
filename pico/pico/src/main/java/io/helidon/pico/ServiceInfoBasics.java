@@ -17,7 +17,6 @@
 package io.helidon.pico;
 
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -52,7 +51,7 @@ public interface ServiceInfoBasics extends Weighted {
      * @return the service qualifiers
      */
     default Set<QualifierAndValue> qualifiers() {
-        return Collections.emptySet();
+        return Set.of();
     }
 
     /**
@@ -62,7 +61,7 @@ public interface ServiceInfoBasics extends Weighted {
      * @return the service contracts implemented
      */
     default Set<String> contractsImplemented() {
-        return Collections.emptySet();
+        return Set.of();
     }
 
     /**
@@ -70,7 +69,7 @@ public interface ServiceInfoBasics extends Weighted {
      *
      * @return the service's run level
      */
-    default Integer runLevel() {
+    default int runLevel() {
         return RunLevel.NORMAL;
     }
 
@@ -101,56 +100,6 @@ public interface ServiceInfoBasics extends Weighted {
      * @return true if the service type name or the set of contracts implemented equals the provided contract
      */
     default boolean matchesContract(String contract) {
-        return (Objects.equals(serviceTypeName(), contract) || contractsImplemented().contains(contract));
+        return contract.equals(serviceTypeName()) || contractsImplemented().contains(contract);
     }
-
-    /**
-     * Determines whether this matches the given contract.
-     *
-     * @param contract the contract
-     * @return true if the service type name or the set of contracts implemented equals the provided contract
-     */
-    default boolean matchesContract(Class<?> contract) {
-        if (matchesContract(contract.getName())) {
-            return true;
-        }
-
-        Class<?>[] supers = contract.getInterfaces();
-        for (Class<?> iface : supers) {
-            if (matchesContract(iface)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns true if the criteria provided is non-null or there are referenced service types or contracts.
-     *
-     * @param serviceInfo the service info to inspect
-     * @return true if contracts specified
-     */
-    static boolean hasContracts(ServiceInfoBasics serviceInfo) {
-        if (Objects.isNull(serviceInfo)) {
-            return false;
-        }
-
-        return (!serviceInfo.contractsImplemented().isEmpty() || Objects.nonNull(serviceInfo.serviceTypeName()));
-    }
-
-    /**
-     * Returns true if the criteria provided is blank/empty.
-     *
-     * @param serviceInfo the service info to inspect
-     * @return true if no contracts specified
-     */
-    static boolean isBlank(ServiceInfoBasics serviceInfo) {
-        if (Objects.isNull(serviceInfo)) {
-            return true;
-        }
-
-        return (!hasContracts(serviceInfo) && serviceInfo.qualifiers().isEmpty());
-    }
-
 }

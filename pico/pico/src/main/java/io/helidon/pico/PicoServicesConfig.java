@@ -16,16 +16,15 @@
 
 package io.helidon.pico;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
+
+import io.helidon.common.config.Config;
 
 /**
  * Provides optional config by the provider implementation.
  */
 @Contract
-public interface PicoServicesConfig {
+public interface PicoServicesConfig extends Config {
 
     /**
      * The short name for pico.
@@ -53,7 +52,7 @@ public interface PicoServicesConfig {
     /**
      * The default deadlock detection timeout in millis.
      */
-    Long DEFAULT_DEADLOCK_TIMEOUT_IN_MILLIS = 10000L;
+    long DEFAULT_DEADLOCK_TIMEOUT_IN_MILLIS = 10000L;
 
     /**
      * Applicable for capturing activation logs.
@@ -62,7 +61,7 @@ public interface PicoServicesConfig {
     /**
      * The default value for this is false, meaning that the activation logs will not be recorded or logged.
      */
-    Boolean DEFAULT_ACTIVATION_LOGS_ENABLED = false;
+    boolean DEFAULT_ACTIVATION_LOGS_ENABLED = false;
 
     /**
      * The key that models the services registry, and whether the registry can expand dynamically after program startup.
@@ -71,7 +70,7 @@ public interface PicoServicesConfig {
     /**
      * The default value for this is false, meaning that the services registry cannot be changed during runtime.
      */
-    Boolean DEFAULT_SUPPORTS_DYNAMIC = false;
+    boolean DEFAULT_SUPPORTS_DYNAMIC = false;
 
     /**
      * The key that represents whether the provider support reflection, and reflection based activation/injection.
@@ -80,7 +79,7 @@ public interface PicoServicesConfig {
     /**
      * The default value for this is false, meaning no reflection is available or provided in the implementation.
      */
-    Boolean DEFAULT_SUPPORTS_REFLECTION = false;
+    boolean DEFAULT_SUPPORTS_REFLECTION = false;
 
     /**
      * Can the provider support compile-time activation/injection (i.e., {@link Activator}'s)?
@@ -89,7 +88,7 @@ public interface PicoServicesConfig {
     /**
      * The default value is true, meaning injection points are evaluated at compile-time.
      */
-    Boolean DEFAULT_SUPPORTS_COMPILE_TIME = true;
+    boolean DEFAULT_SUPPORTS_COMPILE_TIME = true;
 
     /**
      * Can the services registry activate services in a thread-safe manner?
@@ -98,7 +97,7 @@ public interface PicoServicesConfig {
     /**
      * The default is true, meaning the implementation is (or should be) thread safe.
      */
-    Boolean DEFAULT_SUPPORTS_THREAD_SAFE_ACTIVATION = true;
+    boolean DEFAULT_SUPPORTS_THREAD_SAFE_ACTIVATION = true;
 
     /**
      * The key to represent whether the provider support and is compliant w/ Jsr-330.
@@ -107,7 +106,7 @@ public interface PicoServicesConfig {
     /**
      * The default value is true.
      */
-    Boolean DEFAULT_SUPPORTS_JSR330 = true;
+    boolean DEFAULT_SUPPORTS_JSR330 = true;
 
     /**
      * Can the injector / activator support static injection?  Note: this is optional in Jsr-330
@@ -116,7 +115,7 @@ public interface PicoServicesConfig {
     /**
      * The default value is false.
      */
-    Boolean DEFAULT_SUPPORTS_STATIC = false;
+    boolean DEFAULT_SUPPORTS_STATIC = false;
     /**
      * Can the injector / activator support private injection?  Note: this is optional in Jsr-330
      */
@@ -124,7 +123,7 @@ public interface PicoServicesConfig {
     /**
      * The default value is false.
      */
-    Boolean DEFAULT_SUPPORTS_PRIVATE = false;
+    boolean DEFAULT_SUPPORTS_PRIVATE = false;
 
     /**
      * Indicates whether the {@link Module}(s) should be read at startup. The default value is true.
@@ -133,7 +132,7 @@ public interface PicoServicesConfig {
     /**
      * The default value is true.
      */
-    Boolean DEFAULT_BIND_MODULES = true;
+    boolean DEFAULT_BIND_MODULES = true;
 
     /**
      * Indicates whether the {@link Application}(s) should be used as an optimization at startup to
@@ -143,66 +142,27 @@ public interface PicoServicesConfig {
     /**
      * The default value is true.
      */
-    Boolean DEFAULT_BIND_APPLICATION = true;
+    boolean DEFAULT_BIND_APPLICATION = true;
 
     /**
-     * Supports a query mechanism to determine if properties are available/set.
+     * Shortcut method to obtain a String with a default value supplier.
      *
-     * @param <T> the type for the config value
-     * @param key the key to query for config
-     * @param defaultValueSupplier the default value
-     * @return the configuration value for the associated key, or else the default value supplied
+     * @param key configuration key
+     * @param defaultValueSupplier supplier of default value
+     * @return value
      */
-    <T> T value(String key, Supplier<T> defaultValueSupplier);
-
-    /**
-     * Return a string-type key value.
-     *
-     * @param key the key
-     * @return the value, or null if no key is found
-     */
-    default String stringValue(String key) {
-        Object val = value(key, null);
-        return Objects.nonNull(val) ? val.toString() : null;
+    default String asString(String key, Supplier<String> defaultValueSupplier) {
+        return get(key).asString().orElseGet(defaultValueSupplier);
     }
 
     /**
-     * Supports a properties-based mechanism to determine configuration.
+     * Shortcut method to obtain a String with a default value supplier.
      *
-     * @return all properties in this configuration
+     * @param key configuration key
+     * @param defaultValue default value
+     * @return value
      */
-    default Optional<Map<String, Object>> properties() {
-        return Optional.empty();
+    default String asString(String key, String defaultValue) {
+        return get(key).asString().orElse(defaultValue);
     }
-
-    /**
-     * Return a boolean-type key value.
-     *
-     * @param val the default value
-     * @return the value supplier
-     */
-    static Supplier<Boolean> defaultValue(Boolean val) {
-        return () -> val;
-    }
-
-    /**
-     * Return a string-type key value.
-     *
-     * @param val the default value
-     * @return the value supplier
-     */
-    static Supplier<String> defaultValue(String val) {
-        return () -> val;
-    }
-
-    /**
-     * Return a long-type key value.
-     *
-     * @param val the default value
-     * @return the value supplier
-     */
-    static Supplier<Long> defaultValue(Long val) {
-        return () -> val;
-    }
-
 }

@@ -28,7 +28,7 @@ class EdgeCasesTest {
 
     @Test
     void testIt() {
-        DefaultEdgeCases val = DefaultEdgeCases.toBuilder(null).build();
+        DefaultEdgeCases val = DefaultEdgeCases.builder().build();
         assertThat(val.optionalIntegerWithDefault().get(), is(-1));
         assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
 

@@ -78,19 +78,4 @@ public interface InjectionPointInfo extends ElementInfo {
      * @return The service info we are dependent upon.
      */
     ServiceInfo dependencyToServiceInfo();
-
-    /**
-     * Creates a pre-configured instance with an identity and a service type dependency.
-     *
-     * @param identity                  the identity
-     * @param dependencyToServiceInfo   the service type dependency
-     * @return the created instance
-     */
-    static DefaultInjectionPointInfo create(String identity,
-                                            ServiceInfo dependencyToServiceInfo) {
-        return DefaultInjectionPointInfo.builder()
-                .identity(identity)
-                .dependencyToServiceInfo(dependencyToServiceInfo)
-                .build();
-    }
 }

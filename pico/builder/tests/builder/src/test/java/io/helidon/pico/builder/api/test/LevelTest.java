@@ -50,12 +50,12 @@ class LevelTest {
                 .build();
         assertThat(val.toString(),
                    equalTo("Level2ManualImpl(level0StringAttribute=a, level1intAttribute=1, level1IntegerAttribute=null, "
-                                   + "level1booleanAttribute=false, level1BooleanAttribute=null, "
+                                   + "level1booleanAttribute=false, level1BooleanAttribute=Optional.empty, "
                                    + "level2Level0Info=[Level0ManualImpl(level0StringAttribute=1)], "
                                    + "level2ListOfLevel0s=[Level0ManualImpl(level0StringAttribute=1)], "
                                    + "level2MapOfStringToLevel1s={key=Level1ManualImpl(level0StringAttribute=1, "
                                    + "level1intAttribute=1, level1IntegerAttribute=1, level1booleanAttribute=true, "
-                                   + "level1BooleanAttribute=null)})"));
+                                   + "level1BooleanAttribute=Optional.empty)})"));
 
         Level2 val2 = Level2ManualImpl.builder()
                 .level0StringAttribute("a")
@@ -84,12 +84,12 @@ class LevelTest {
                 .addStringToLevel1("key", Level1ManualImpl.builder().build())
                 .build();
         assertThat(val.toString(), equalTo("Level2ManualImpl(level0StringAttribute=a, level1intAttribute=1, level1IntegerAttribute=null, "
-                             + "level1booleanAttribute=false, level1BooleanAttribute=null, "
+                             + "level1booleanAttribute=false, level1BooleanAttribute=Optional.empty, "
                              + "level2Level0Info=[Level0ManualImpl(level0StringAttribute=1)], "
                              + "level2ListOfLevel0s=[Level0ManualImpl(level0StringAttribute=1)], "
                              + "level2MapOfStringToLevel1s={key=Level1ManualImpl(level0StringAttribute=1, "
                              + "level1intAttribute=1, level1IntegerAttribute=1, level1booleanAttribute=true, "
-                             + "level1BooleanAttribute=null)})"));
+                             + "level1BooleanAttribute=Optional.empty)})"));
 
         Level2 val2 = Level2ManualImpl.toBldr(val).build();
         assertThat(val, equalTo(val2));
@@ -100,26 +100,22 @@ class LevelTest {
         Level2 val = Level2Impl.builder()
                 .level0StringAttribute("a")
                 .level1booleanAttribute(false)
-                .level1IntegerAttribute(null)
-                .level2Level0Info(null)
                 .level2Level0Info(Collections.singleton(Level0Impl.builder().build()))
                 .addLevel0(Level0Impl.builder().build())
                 .addStringToLevel1("key", Level1Impl.builder().build())
                 .build();
         assertThat(val.toString(),
-                   equalTo("Level2(level0StringAttribute=a, level1intAttribute=1, level1IntegerAttribute=null, "
-                                   + "level1booleanAttribute=false, level1BooleanAttribute=null, "
+                   equalTo("Level2(level0StringAttribute=a, level1intAttribute=1, level1IntegerAttribute=1, "
+                                   + "level1booleanAttribute=false, level1BooleanAttribute=Optional.empty, "
                                    + "level2Level0Info=[Level0(level0StringAttribute=1)], "
                                    + "level2ListOfLevel0s=[Level0(level0StringAttribute=1)], "
                                    + "level2MapOfStringToLevel1s={key=Level1(level0StringAttribute=1, "
                                    + "level1intAttribute=1, level1IntegerAttribute=1, level1booleanAttribute=true, "
-                                   + "level1BooleanAttribute=null)})"));
+                                   + "level1BooleanAttribute=Optional.empty)})"));
 
         Level2 val2 = Level2Impl.builder()
                 .level0StringAttribute("a")
                 .level1booleanAttribute(false)
-                .level1IntegerAttribute(null)
-                .level2Level0Info(null)
                 .level2Level0Info(Collections.singleton(Level0Impl.builder().build()))
                 .addLevel0(Level0Impl.builder().build())
                 .addStringToLevel1("key", Level1Impl.builder().build())
@@ -133,8 +129,6 @@ class LevelTest {
         Level2 val = Level2Impl.builder()
                 .level0StringAttribute("a")
                 .level1booleanAttribute(false)
-                .level1IntegerAttribute(null)
-                .level2Level0Info(null)
                 .level2Level0Info(Collections.singleton(Level0Impl.builder().build()))
                 .addLevel0(Level0Impl.builder().build())
                 .addStringToLevel1("key", Level1Impl.builder().build())
@@ -150,7 +144,7 @@ class LevelTest {
         m2.accept(m1.get());
         assertThat(m2.build().toString(),
                    equalTo("Level1(level0StringAttribute=hello, level1intAttribute=1, level1IntegerAttribute=1, "
-                                   + "level1booleanAttribute=true, level1BooleanAttribute=null)"));
+                                   + "level1booleanAttribute=true, level1BooleanAttribute=Optional.empty)"));
     }
 
     @Test
@@ -158,13 +152,13 @@ class LevelTest {
         Level2 val2 = Level2Impl.builder().build();
         assertThat(val2.toString(),
                    equalTo("Level2(level0StringAttribute=2, level1intAttribute=1, level1IntegerAttribute=1, "
-                                   + "level1booleanAttribute=true, level1BooleanAttribute=null, level2Level0Info=[], "
+                                   + "level1booleanAttribute=true, level1BooleanAttribute=Optional.empty, level2Level0Info=[], "
                                    + "level2ListOfLevel0s=[], level2MapOfStringToLevel1s={})"));
 
         Level1 val1 = Level1Impl.builder().build();
         assertThat(val1.toString(),
                 equalTo("Level1(level0StringAttribute=1, level1intAttribute=1, level1IntegerAttribute=1, "
-                        + "level1booleanAttribute=true, level1BooleanAttribute=null)"));
+                        + "level1booleanAttribute=true, level1BooleanAttribute=Optional.empty)"));
 
         Level0 val0 = Level0Impl.builder().build();
         assertThat(val0.toString(),

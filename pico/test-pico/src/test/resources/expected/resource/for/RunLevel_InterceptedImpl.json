@@ -1,0 +1,105 @@
+{
+    "annoType" : {
+        "name" : "io.helidon.pico.api.RunLevel"
+    },
+    "basicServiceInfo" : {
+        "activatorTypeName" : null,
+        "contractsImplemented" : [
+            "io.helidon.pico.testsubjects.ext.stacking.Intercepted"
+        ],
+        "externalContractsImplemented" : [ ],
+        "moduleName" : null,
+        "qualifiers" : [
+            {
+                "qualifierTypeName" : "io.helidon.pico.test.extended.resources.MyCompileTimeInheritableTestQualifier",
+                "value" : "InterceptedImpl"
+            },
+            {
+                "qualifierTypeName" : "jakarta.inject.Named",
+                "value" : "InterceptedImpl"
+            }
+        ],
+        "realizedWeight" : 100.0,
+        "runLevel" : null,
+        "scopeTypeNames" : [ ],
+        "serviceTypeName" : "io.helidon.pico.testsubjects.ext.stacking.InterceptedImpl",
+        "weight" : null
+    },
+    "elementAccess" : "PUBLIC",
+    "elementAnnotations" : [
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Singleton"
+            },
+            "value" : null
+        },
+        {
+            "typeName" : {
+                "name" : "io.helidon.common.Weight"
+            },
+            "value" : "100.0"
+        },
+        {
+            "typeName" : {
+                "name" : "io.helidon.pico.test.extended.resources.MyCompileTimeInheritableTestQualifier"
+            },
+            "value" : "InterceptedImpl"
+        },
+        {
+            "typeName" : {
+                "name" : "io.helidon.pico.api.RunLevel"
+            },
+            "value" : "1"
+        },
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Named"
+            },
+            "value" : "InterceptedImpl"
+        }
+    ],
+    "elementArgs" : [ ],
+    "elementKind" : "CLASS",
+    "elementName" : "InterceptedImpl",
+    "elementStatic" : false,
+    "elementType" : {
+        "name" : "io.helidon.pico.testsubjects.ext.stacking.InterceptedImpl"
+    },
+    "enclosingClassAnnotations" : [
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Singleton"
+            },
+            "value" : null
+        },
+        {
+            "typeName" : {
+                "name" : "io.helidon.common.Weight"
+            },
+            "value" : "100.0"
+        },
+        {
+            "typeName" : {
+                "name" : "io.helidon.pico.test.extended.resources.MyCompileTimeInheritableTestQualifier"
+            },
+            "value" : "InterceptedImpl"
+        },
+        {
+            "typeName" : {
+                "name" : "io.helidon.pico.api.RunLevel"
+            },
+            "value" : "1"
+        },
+        {
+            "typeName" : {
+                "name" : "jakarta.inject.Named"
+            },
+            "value" : "InterceptedImpl"
+        }
+    ],
+    "enclosingClassType" : {
+        "name" : "io.helidon.pico.testsubjects.ext.stacking.InterceptedImpl"
+    },
+    "filerEnabled" : true,
+    "returnType" : null
+}

@@ -16,11 +16,7 @@
 
 package io.helidon.pico;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Weighted;
 
@@ -66,7 +62,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      * Note that this is similar in nature to RequestScope, except the "official" request scope is bound to the
      * web request. Here, we are speaking about contextually any caller asking for a new instance of the service in
      * question. The requester in question will ideally be able to identify itself to this provider via
-     * {@link InjectionPointProvider#findFirst(ContextualServiceQuery)} so that this provider can properly
+     * {@link InjectionPointProvider#first(ContextualServiceQuery)} so that this provider can properly
      * service the "provide" request.
      *
      * @return true if the service provider provides per-request instances for each caller.
@@ -134,65 +130,4 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      * @see ServiceProviderBindable
      */
     ServiceProvider<T> serviceProviderBindable();
-
-    /**
-     * Attempts to convert the provider argument to a {@link ServiceProvider} for proper
-     * description, falling back to {@link String#valueOf(Object)}.
-     *
-     * @param provider the provider / instance
-     * @return the description for the provider
-     */
-    static String toDescription(Object provider) {
-        if (provider instanceof Optional) {
-            provider = ((Optional<?>) provider).orElse(null);
-        }
-
-        if (provider instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) provider).description();
-        }
-        return String.valueOf(provider);
-    }
-
-    /**
-     * Streams and converts a list of providers to a list of {@link #toDescription(Object)} for each.
-     *
-     * @param coll the collection of service provider / instances
-     * @return the logical string representations for the collection provided
-     */
-    static List<String> toDescriptions(Collection<?> coll) {
-        if (Objects.isNull(coll)) {
-            return null;
-        }
-
-        return coll.stream().map(ServiceProvider::toDescription).collect(Collectors.toList());
-    }
-
-    /**
-     * Converts a provider to a physical identity.
-     *
-     * @param provider the provider
-     * @return the description for the provider
-     */
-    static String toIdentity(Object provider) {
-        if (provider instanceof Optional) {
-            provider = ((Optional<?>) provider).orElse(null);
-        }
-
-        if (provider instanceof ServiceProvider) {
-            return ((ServiceProvider<?>) provider).identity();
-        }
-
-        return provider.getClass().getSimpleName();
-    }
-
-    /**
-     * Stream / converts a list of providers to their identities via {@link #identity()}.
-     *
-     * @param coll the collection of service providers
-     * @return the identity string representation for the collection provided
-     */
-    static List<String> toIdentities(Collection<?> coll) {
-        return coll.stream().map(ServiceProvider::toIdentity).collect(Collectors.toList());
-    }
-
 }

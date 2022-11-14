@@ -1,0 +1,44 @@
+package {{packageName}};
+
+import java.util.Objects;
+import java.util.Optional;
+
+import io.helidon.common.Weight;
+import io.helidon.pico.spi.ext.TypeInterceptor;
+
+import jakarta.annotation.Generated;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+
+@Generated({{{generatedSticker}}})
+@Singleton
+@Weight({{weight}})
+public class {{className}}<T extends {{interceptedTypeName}}> implements {{interceptedTypeName}}, TypeInterceptor<T> {
+
+    private final Provider<T> delegate;
+    private final TypeInterceptor<T> interceptor;
+
+    @Inject
+    {{className}}(Provider<T> delegate, @Named("{{generatedTypeName}}") Optional<TypeInterceptor<T>> interceptor) {
+        this.delegate = delegate;
+        this.interceptor = interceptor.isPresent() ? interceptor.get().interceptorFor(delegate) : null;
+    }
+
+    @Override
+    public TypeInterceptor<T> interceptorFor(Provider<T> delegate) {
+        return interceptor;
+    }
+
+    @Override
+    public Provider<T> providerFor(Provider<T> delegate, String methodName, Object... methodArgs) {
+        return delegate;
+    }
+
+    // --- begin intercepted methods of {{interceptedTypeName}} ---
+{{#interceptedMethods}}{{{.}}}
+{{/interceptedMethods}}
+    // --- end intercepted methods of {{interceptedTypeName}} ---
+
+}

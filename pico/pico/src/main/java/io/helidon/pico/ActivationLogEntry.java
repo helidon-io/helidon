@@ -16,7 +16,7 @@
 
 package io.helidon.pico;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import io.helidon.pico.builder.Builder;
@@ -30,7 +30,7 @@ import io.helidon.pico.builder.Builder;
  * @param <T> the service type
  */
 @Builder
-interface ActivationLogEntry<T> {
+public interface ActivationLogEntry<T> {
 
     /**
      * The activation event.
@@ -94,7 +94,7 @@ interface ActivationLogEntry<T> {
      *
      * @return the time of the event
      */
-    OffsetDateTime time();
+    Instant time();
 
     /**
      * Any observed error during activation.
@@ -108,6 +108,6 @@ interface ActivationLogEntry<T> {
      *
      * @return the thread id
      */
-    Long getThreadId();
+    long threadId();
 
 }
