@@ -71,14 +71,6 @@ This example provides full `plugins` tag, if exists, update only relevant sectio
 ## TODO
 The following modules should be refactored:
 ```java
-        addSe("io.helidon.grpc.metrics",
-              "Metrics",
-              "Metrics for gRPC services",
-              "grpc", "Metrics");
-        addSe("io.helidon.grpc.metrics",
-              "Metrics",
-              "Metrics for gRPC client",
-              "grpcClient", "Metrics");
         addSe("io.helidon.reactive.media.jsonp",
               "JSON-P",
               "Media support for Jakarta JSON Processing",
