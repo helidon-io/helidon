@@ -88,7 +88,7 @@ class ConnectionHandler implements Runnable {
 
     @Override
     public final void run() {
-        Thread.currentThread().setName("[" + socket.socketId() + " " + socket.childSocketId() + "]");
+        Thread.currentThread().setName("[" + socket.socketId() + " " + socket.childSocketId() + "] Nima socket");
         if (LOGGER.isLoggable(DEBUG)) {
             ctx.log(LOGGER, DEBUG, "accepted socket from %s", socket.remotePeer().host());
         }
