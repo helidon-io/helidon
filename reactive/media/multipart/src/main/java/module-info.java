@@ -20,9 +20,9 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Media MultiPart support classes.
  */
-@Feature(value = "JSON-P",
-        description = "Media support for Jakarta JSON Processing",
-        path = {"WebServer", "WebClient", "Jsonb"},
+@Feature(value = "Multi-part",
+        description = "Media support for Multi-part entities",
+        path = {"WebServer", "WebClient", "Multipart"},
         in = HelidonFlavor.SE)
 module io.helidon.reactive.media.multipart {
     requires static io.helidon.common.features.api;
