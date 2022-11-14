@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Media MultiPart support classes.
  */
+@Feature(value = "JSON-P",
+        description = "Media support for Jakarta JSON Processing",
+        path = {"WebServer", "WebClient", "Jsonb"},
+        in = HelidonFlavor.SE)
 module io.helidon.reactive.media.multipart {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
