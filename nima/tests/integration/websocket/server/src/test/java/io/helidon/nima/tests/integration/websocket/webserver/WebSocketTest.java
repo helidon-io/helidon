@@ -85,8 +85,8 @@ class WebSocketTest {
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 
-        ws.sendText("Hello", true);
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal");
+        ws.sendText("Hello", true).get(5, TimeUnit.SECONDS);
+        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
         List<String> results = listener.getResults();
         assertThat(results, contains("Hello"));
@@ -101,9 +101,9 @@ class WebSocketTest {
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 
-        ws.sendText("First", true);
-        ws.sendText("Second", true);
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal");
+        ws.sendText("First", true).get(5, TimeUnit.SECONDS);
+        ws.sendText("Second", true).get(5, TimeUnit.SECONDS);
+        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
         assertThat(listener.getResults(), contains("First", "Second"));
     }
 
@@ -116,10 +116,10 @@ class WebSocketTest {
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 
-        ws.sendText("First", false);
-        ws.sendText("Second", true);
-        ws.sendText("Third", true);
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal");
+        ws.sendText("First", false).get(5, TimeUnit.SECONDS);
+        ws.sendText("Second", true).get(5, TimeUnit.SECONDS);
+        ws.sendText("Third", true).get(5, TimeUnit.SECONDS);
+        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
         assertThat(listener.getResults(), contains("FirstSecond", "Third"));
     }
