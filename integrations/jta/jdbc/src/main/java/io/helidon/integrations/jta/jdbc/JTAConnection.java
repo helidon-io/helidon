@@ -529,13 +529,17 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         return super.isWrapperFor(iface);
     }
 
-    @Override
+    @Override // ConditionallyCloseableConnection
     public boolean isCloseable() throws SQLException {
+        // this.checkOpen(); // Deliberately omitted
+        // this.enlist(); // Deliberately omitted
         return super.isCloseable() && !this.enlisted();
     }
 
-    @Override
+    @Override // ConditionallyCloseableConnection
     public void setCloseable(boolean closeable) {
+        // this.checkOpen(); // Deliberately omitted
+        // this.enlist(); // Deliberately omitted
         if (closeable) {
             try {
                 if (this.enlisted()) {
@@ -548,26 +552,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         super.setCloseable(closeable);
     }
 
-    // At the moment of this call, can this connection enlist in the transaction? (Note that because the transaction may
-    // be rolled back at any point from any thread, a subsequent attempt to *actually* enlist may very well fail
-    // anyway.)
-    private boolean enlistable() throws SQLException {
-        try {
-            return this.activeTransaction() && this.tsr.getResource("xid") == null;
-        } catch (RuntimeException e) {
-            // See
-            // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-            // getTransactionImple() is called by Narayana's implementation of getResource().  getResource() is not
-            // documented to throw RuntimeException, only IllegalStateException. Nevertheless it does when a
-            // SystemException is encountered.
-            throw new SQLTransientException(e.getMessage(),
-                                            "25000", // invalid transaction state
-                                            e);
-        }
-    }
-
     // Does a global transaction exist in Status.STATUS_ACTIVE state?
     private boolean activeTransaction() throws SQLException {
+        this.failWhenClosed();
+
         try {
             return this.tsr.getTransactionStatus() == Status.STATUS_ACTIVE;
         } catch (RuntimeException e) {
@@ -597,7 +585,9 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         }
     }
 
-    Xid xid() {
+    Xid xid() throws SQLException {
+        this.failWhenClosed();
+
         try {
             return (Xid) this.tsr.getResource("xid");
         } catch (IllegalStateException e) {
@@ -607,6 +597,8 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
     // Is the usage of this connection on this thread already enlisted with a non-completed global transaction?
     private boolean enlisted() throws SQLException {
+        this.failWhenClosed();
+
         try {
             return this.activeTransaction() && this.tsr.getResource("xid") != null;
         } catch (IllegalStateException noActiveTransaction) {
