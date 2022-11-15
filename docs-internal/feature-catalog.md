@@ -71,14 +71,6 @@ This example provides full `plugins` tag, if exists, update only relevant sectio
 ## TODO
 The following modules should be refactored:
 ```java
-        addSe("io.helidon.webserver",
-              "WebServer",
-              "Helidon WebServer",
-              "WebServer");
-        addSe("io.helidon.webserver.accesslog",
-              "Access Log",
-              "Access log support",
-              "WebServer", "AccessLog");
         addSe("io.helidon.webserver.cors",
               "CORS",
               "CORS support for WebServer",
