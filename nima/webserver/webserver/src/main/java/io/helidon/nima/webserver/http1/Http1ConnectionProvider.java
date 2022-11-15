@@ -251,8 +251,10 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
             List<Http1UpgradeProvider> providers = upgradeProviders.build().asList();
             Map<String, Http1UpgradeProvider> providerMap = new HashMap<>();
 
-            for (Http1UpgradeProvider upgradeProvider : providers) {
-                providerMap.put(upgradeProvider.supportedProtocol(), upgradeProvider);
+            for (Http1UpgradeProvider upgradeProvider : providers) {        // sorted by weight
+                if (!providerMap.containsKey(upgradeProvider.supportedProtocol())) {
+                    providerMap.put(upgradeProvider.supportedProtocol(), upgradeProvider);
+                }
             }
             return Map.copyOf(providerMap);
         }

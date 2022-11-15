@@ -32,7 +32,7 @@
     <description>Helidon MP integration with Tyrus</description>
 
     <properties>
-        <surefire.argLine>-Dmp.initializer.allow=true</surefire.argLine>
+        <surefire.argLine>-Dmp.initializer.allow=true --enable-preview</surefire.argLine>
     </properties>
 
     <dependencies>
@@ -51,6 +51,10 @@
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>
             <artifactId>tyrus-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>

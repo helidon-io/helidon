@@ -19,6 +19,7 @@
  */
 module io.helidon.microprofile.tyrus {
     requires java.logging;
+    requires java.net.http;
     requires jakarta.inject;
     requires jakarta.interceptor.api;
 
@@ -33,12 +34,18 @@ module io.helidon.microprofile.tyrus {
     requires io.helidon.nima.websocket.webserver;
 
     requires org.glassfish.tyrus.core;
+    requires org.glassfish.tyrus.server;
+    requires org.glassfish.tyrus.spi;
 
     exports io.helidon.microprofile.tyrus;
 
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.tyrus to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
-    provides org.glassfish.tyrus.core.ComponentProvider with io.helidon.microprofile.tyrus.HelidonComponentProvider;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
+    provides org.glassfish.tyrus.core.ComponentProvider
+            with io.helidon.microprofile.tyrus.HelidonComponentProvider;
+    provides io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider
+            with io.helidon.microprofile.tyrus.TyrusUpgradeProvider;
 }

@@ -15,7 +15,17 @@
  */
 package io.helidon.microprofile.tyrus;
 
+import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
 import jakarta.websocket.server.ServerEndpointConfig;
 
-record WebSocketRoute(String path, Class<?> endpointClass, ServerEndpointConfig serverEndpointConfig) {
+record TyrusRoute(String path,
+                  Class<?> endpointClass,
+                  ServerEndpointConfig serverEndpointConfig,
+                  PathMatcher pathMatcher) {
+
+    PathMatchers.MatchResult accepts(HttpPrologue prologue) {
+        return pathMatcher.match(prologue.uriPath());
+    }
 }

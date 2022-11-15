@@ -16,12 +16,19 @@
 
 package io.helidon.microprofile.tyrus;
 
-import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.WebSocket.Listener;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.nima.websocket.CloseCodes;
+
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.websocket.CloseReason;
@@ -35,16 +42,28 @@ import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
- * Class WebSocketBaseTest.
+ * Base class for WebSocket/Tyrus echo tests.
  */
-@Disabled
 public abstract class WebSocketBaseTest {
+    private static final int WAIT_MILLIS = 50000000;
+    private static final int INVOCATION_COUNTER = 10;
+    private static final String HELLO_WORLD = "Hello World";
 
     static SeContainer container;
+
+    private final HttpClient client;
+
+    WebSocketBaseTest() {
+        client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+    }
 
     @AfterAll
     static void destroyClass() {
@@ -60,10 +79,20 @@ public abstract class WebSocketBaseTest {
 
     @Test
     public void testEchoAnnot() throws Exception {
+        EchoListener listener = new EchoListener();
         URI echoUri = URI.create("ws://localhost:" + port() + context() + "/echoAnnot");
-        EchoClient echoClient = new EchoClient(echoUri);
-        echoClient.echo("hi", "how are you?");
-        echoClient.shutdown();
+        java.net.http.WebSocket ws = client.newWebSocketBuilder()
+                .buildAsync(echoUri, listener)
+                .get(WAIT_MILLIS, TimeUnit.SECONDS);
+
+        await(ws.sendText(HELLO_WORLD, true));
+        assertThat(listener.awaitEcho(), is(HELLO_WORLD));
+
+        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get();
+    }
+
+    public void await(CompletableFuture<?> future) throws Exception {
+        future.get(WAIT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     @ServerEndpoint("/echoAnnot")
@@ -71,28 +100,24 @@ public abstract class WebSocketBaseTest {
         private static final Logger LOGGER = Logger.getLogger(EchoEndpointAnnot.class.getName());
 
         @OnOpen
-        public void onOpen(Session session) throws IOException {
+        public void onOpen(Session session) {
             LOGGER.info("OnOpen called");
-            verifyRunningThread(session, LOGGER);
         }
 
         @OnMessage
         public void echo(Session session, String message) throws Exception {
             LOGGER.info("OnMessage called '" + message + "'");
             session.getBasicRemote().sendObject(message);
-            verifyRunningThread(session, LOGGER);
         }
 
         @OnError
-        public void onError(Throwable t, Session session) throws IOException {
+        public void onError(Throwable t, Session session) {
             LOGGER.info("OnError called");
-            verifyRunningThread(session, LOGGER);
         }
 
         @OnClose
-        public void onClose(Session session) throws IOException {
+        public void onClose(Session session) {
             LOGGER.info("OnClose called");
-            verifyRunningThread(session, LOGGER);
         }
     }
 
@@ -128,18 +153,23 @@ public abstract class WebSocketBaseTest {
         }
     }
 
-    /**
-     * Verify that endpoint methods are running in a Helidon thread pool.
-     *
-     * @param session Websocket session.
-     * @param logger A logger.
-     * @throws IOException Exception during close.
-     */
-    private static void verifyRunningThread(Session session, Logger logger) throws IOException {
-        Thread thread = Thread.currentThread();
-        if (!thread.getName().contains("helidon")) {
-            logger.warning("Websocket handler running in incorrect thread " + thread);
-            session.close();
+    private static class EchoListener implements Listener {
+
+        private final CompletableFuture<String> echoFuture = new CompletableFuture<>();
+
+        @Override
+        public void onOpen(java.net.http.WebSocket webSocket) {
+            webSocket.request(INVOCATION_COUNTER);
+        }
+
+        @Override
+        public CompletionStage<?> onText(java.net.http.WebSocket webSocket, CharSequence data, boolean last) {
+            echoFuture.complete(String.valueOf(data));
+            return null;
+        }
+
+       String awaitEcho() throws Exception {
+            return echoFuture.get(WAIT_MILLIS, TimeUnit.MILLISECONDS);
         }
     }
 }

@@ -30,7 +30,7 @@ import io.helidon.nima.websocket.CloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
-class WsConnection implements ServerConnection, WsSession {
+public class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 
     private final ConnectionContext ctx;
@@ -46,16 +46,16 @@ class WsConnection implements ServerConnection, WsSession {
     private boolean sendContinuation;
     private boolean closeSent;
 
-    WsConnection(ConnectionContext ctx,
+    public WsConnection(ConnectionContext ctx,
                  HttpPrologue prologue,
                  WritableHeaders<?> headers,
                  String wsKey,
-                 WebSocket wsRoute) {
+                 WsListener listener) {
         this.ctx = ctx;
         this.prologue = prologue;
         this.headers = headers;
         this.wsKey = wsKey;
-        this.listener = wsRoute.listener();
+        this.listener = listener;
         this.dataReader = ctx.dataReader();
     }
 
@@ -113,7 +113,15 @@ class WsConnection implements ServerConnection, WsSession {
         throw new CloseConnectionException("Aborting from WebSocket");
     }
 
-    private boolean processFrame(ClientFrame frame) {
+    protected WsListener listener() {
+        return listener;
+    }
+
+    protected ConnectionContext connectionContext() {
+        return ctx;
+    }
+
+    protected boolean processFrame(ClientFrame frame) {
         // TODO listener.onError should be called for errors
         BufferData payload = frame.unmasked();
         switch (frame.opCode()) {
@@ -161,7 +169,7 @@ class WsConnection implements ServerConnection, WsSession {
         return true;
     }
 
-    private ClientFrame readFrame() {
+    protected ClientFrame readFrame() {
         /*
          Frame header
          */

@@ -22,20 +22,24 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Routing;
 import jakarta.websocket.Extension;
+import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.server.ServerEndpointConfig;
 
 /**
  * WebSocket specific routing.
  */
-public class WebSocketRouting implements Routing {
+public class TyrusRouting implements Routing {
+    private static final TyrusRouting EMPTY = TyrusRouting.builder().build();
 
     private final Set<Extension> extensions;
-    private final List<WebSocketRoute> routes;
+    private final List<TyrusRoute> routes;
     private final ExecutorService executorService;
 
-    private WebSocketRouting(Builder builder) {
+    private TyrusRouting(Builder builder) {
         this.routes = builder.routes;
         this.extensions = builder.extensions;
         this.executorService = builder.executorService;
@@ -50,18 +54,20 @@ public class WebSocketRouting implements Routing {
         return new Builder();
     }
 
-    /*
-    @Override
-    public void route(BareRequest bareRequest, BareResponse bareResponse) {
-        throw new UnsupportedOperationException("Not used in case of websocket routing");
-    }
+    /**
+     * Emtpy WebSocket routing.
+     *
+     * @return empty routing
      */
+    public static TyrusRouting empty() {
+        return EMPTY;
+    }
 
     Set<Extension> getExtensions() {
         return extensions;
     }
 
-    List<WebSocketRoute> getRoutes() {
+    List<TyrusRoute> getRoutes() {
         return routes;
     }
 
@@ -70,14 +76,29 @@ public class WebSocketRouting implements Routing {
     }
 
     /**
-     * Fluent API builder for {@link WebSocketRouting}.
+     * Returns {@code true} if this route corresponds to one of the registered or
+     * discovered WS endpoint.
+     *
+     * @param prologue HTTP prologue
+     * @return outcome of test
+     */
+    TyrusRoute findRoute(HttpPrologue prologue) {
+        for (TyrusRoute route : routes) {
+            PathMatchers.MatchResult accepts = route.accepts(prologue);
+            if (accepts.accepted()) {
+                return route;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Fluent API builder for {@link TyrusRouting}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, Routing> {
 
-        private final List<WebSocketRoute> routes = new ArrayList<>();
-        // a purposefully mutable extensions
-
-        private final Set<Extension> extensions = new HashSet<>();
+        private final List<TyrusRoute> routes = new ArrayList<>();
+        private final Set<Extension> extensions = new HashSet<>();      // mutable
         private ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
         private Builder() {
@@ -91,7 +112,7 @@ public class WebSocketRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(String path, Class<?> endpointClass) {
-            this.routes.add(new WebSocketRoute(path, endpointClass, null));
+            this.routes.add(new TyrusRoute(path, endpointClass, null, PathMatchers.pattern(path)));
             return this;
         }
 
@@ -102,7 +123,13 @@ public class WebSocketRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(Class<?> endpointClass) {
-            this.routes.add(new WebSocketRoute("/", endpointClass, null));
+            ServerEndpoint annot = endpointClass.getAnnotation(ServerEndpoint.class);
+            if (annot == null) {
+                throw new IllegalArgumentException("Endpoint class " + endpointClass.getName()
+                        + " missing @ServerEndpoint");
+            }
+            this.routes.add(new TyrusRoute("/", endpointClass, null,
+                    PathMatchers.pattern(annot.value())));
             return this;
         }
 
@@ -114,7 +141,7 @@ public class WebSocketRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(String path, ServerEndpointConfig serverEndpointConfig) {
-            this.routes.add(new WebSocketRoute(path, null, serverEndpointConfig));
+            this.routes.add(new TyrusRoute(path, null, serverEndpointConfig, PathMatchers.pattern(path)));
             return this;
         }
 
@@ -125,12 +152,14 @@ public class WebSocketRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(ServerEndpointConfig serverEndpointConfig) {
-            this.routes.add(new WebSocketRoute("/", null, serverEndpointConfig));
+            this.routes.add(new TyrusRoute("/", null, serverEndpointConfig,
+                    PathMatchers.pattern(serverEndpointConfig.getPath())));
             return this;
         }
 
         /**
          * Add Jakarta WebSocket extension.
+         *
          * @param extension Jakarta WebSocket extension
          * @return updated builder
          */
@@ -151,8 +180,8 @@ public class WebSocketRouting implements Routing {
         }
 
         @Override
-        public WebSocketRouting build() {
-            return new WebSocketRouting(this);
+        public TyrusRouting build() {
+            return new TyrusRouting(this);
         }
     }
 }
