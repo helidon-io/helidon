@@ -70,6 +70,7 @@ public class GreetResource implements GreetApi {
     @ConfigProperty(name = "oci.monitoring.namespace") private String namespace;
     @Inject
     @ConfigProperty(name = "oci.logging.id") private String loggingId;
+
     /**
      * The greeting message provider.
      */
@@ -136,8 +137,11 @@ public class GreetResource implements GreetApi {
     }
 
     /**
-     * creates GreetResponse POJO that will contain the response data and
+     * Creates GreetResponse POJO that will contain the response data and
      * will be processed using Jackson.
+     *
+     * @param who the name to greet
+     * @return {@link GreetResponse}
      */
     private GreetResponse createGreetResponse(String who) {
         GreetResponse greetResponse = new GreetResponse();
@@ -153,8 +157,8 @@ public class GreetResource implements GreetApi {
 
     /**
      * Developers do not need to explicitly publish Helidon metrics (declared using annotations or registered with the
-     * MetricRegistry explicitly). This method shows how user code could publish directly to OCI metrics without using
-     * Helidon metrics.
+     * MetricRegistry explicitly). This method shows how user code could publish their application metrics directly to OCI \
+     * metrics.
      */
     private void publishMetric(String name) {
         // See https://github.com/oracle/oci-java-sdk/blob/v2.14.1/bmc-examples/src/main/java/MonitoringMetricPostExample.java#L72-L121
@@ -183,7 +187,6 @@ public class GreetResource implements GreetApi {
             .postMetricDataDetails(postMetricDataDetails)
             .build();
 
-        // monitoringClient.setEndpoint(monitoringClient.getEndpoint().replaceFirst("telemetry\\.", "telemetry-ingestion."));
         try {
             this.monitoringClient.postMetricData(postMetricDataRequest);
             LOGGER.info("publishMetric successfully sends metric to OCI monitoring service");
@@ -194,7 +197,7 @@ public class GreetResource implements GreetApi {
     }
 
     /**
-     * A method a user might write to publish logs.
+     * A method a user may use to publish logs.
      */
     private void publishLog(String name) {
         Date entryDateTime = Date.from(Instant.now());
