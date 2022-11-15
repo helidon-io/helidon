@@ -260,6 +260,12 @@ public interface SocketConfiguration {
     List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes();
 
     /**
+     * Whitelist for host names
+     * @return
+     */
+    Whitelist requestedUriWhitelist();
+
+    /**
      * Maximum length of the content of an upgrade request.
      *
      * @return maximum length of the content of an upgrade request

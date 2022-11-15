@@ -1,0 +1,62 @@
+test-allow-1:
+test-allow-2:  
+  allow:
+    all: true
+test-allow-3:
+  allow:
+    exact: "first"
+test-allow-4:
+  allow:
+    exact: ["first", "www.helidon.io"]
+test-allow-5:
+  allow:
+    prefix: "www.helidon.io"
+test-allow-6:
+  allow:
+    suffix: [".helidon.io"]
+test-allow-7:
+  allow:
+    pattern: "f.*t"
+test-allow-8:
+  allow:
+    pattern: "f.*t"
+    suffix: ".helidon.io"
+test-deny-1:
+  allow:
+    all: true
+  deny:
+    exact: "first"
+test-deny-2:
+  allow:
+    all: true
+  deny:
+    exact: ["first", "www.helidon.io"]
+test-deny-3:
+  allow:
+    all: true
+  deny:
+    prefix: "www.helidon.io"
+test-deny-4:
+  allow:
+    all: true
+  deny:
+    suffix: [".helidon.io"]
+test-deny-5:
+  allow:
+    all: true
+  deny:
+    pattern: "f.*t"
+test-deny-6:
+  allow:
+    all: true
+  deny:
+    pattern: "f.*t"
+    suffix: ".helidon.io"
+test-combined-1:
+  allow:
+    prefix: "f"
+    suffix: "helidon.io"
+    exact: ""
+  deny:
+    exact: "www.helidon.io"
+    suffix: "st"
