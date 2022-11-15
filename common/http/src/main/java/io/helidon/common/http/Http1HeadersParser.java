@@ -27,10 +27,13 @@ import io.helidon.common.buffers.LazyString;
  */
 public final class Http1HeadersParser {
     // TODO expand set of fastpath headers
-    private static final byte[] HD_HOST = (HeaderEnum.HOST.defaultCase() + ": ").getBytes(StandardCharsets.UTF_8);
-    private static final byte[] HD_ACCEPT = (HeaderEnum.ACCEPT.defaultCase() + ": ").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] HD_HOST = (HeaderEnum.HOST.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] HD_ACCEPT = (HeaderEnum.ACCEPT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
     private static final byte[] HD_CONNECTION =
-            (HeaderEnum.CONNECTION.defaultCase() + ": ").getBytes(StandardCharsets.UTF_8);
+            (HeaderEnum.CONNECTION.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] HD_USER_AGENT =
+            (HeaderEnum.USER_AGENT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
 
     private Http1HeadersParser() {
     }
@@ -53,7 +56,7 @@ public final class Http1HeadersParser {
                 return headers;
             }
 
-            Http.HeaderName header = readHeaderName(reader, headers, maxLength, validate);
+            Http.HeaderName header = readHeaderName(reader, maxLength, validate);
             maxLength -= header.defaultCase().length() + 2;
             int eol = reader.findNewLine(maxLength);
             if (eol == maxLength) {
@@ -72,7 +75,6 @@ public final class Http1HeadersParser {
     }
 
     private static Http.HeaderName readHeaderName(DataReader reader,
-                                                  WritableHeaders<?> headers,
                                                   int maxLength,
                                                   boolean validate) {
         switch (reader.lookup()) {
@@ -94,6 +96,12 @@ public final class Http1HeadersParser {
                 return HeaderEnum.CONNECTION;
             }
         }
+        case (byte) 'U' -> {
+            if (reader.startsWith(HD_USER_AGENT)) {
+                reader.skip(HD_USER_AGENT.length);
+                return HeaderEnum.USER_AGENT;
+            }
+        }
         default -> {
         }
         }
@@ -109,10 +117,8 @@ public final class Http1HeadersParser {
             HttpToken.validate(headerName);
         }
         Http.HeaderName header = Http.Header.create(headerName);
-        reader.skip(1);
-        if (Bytes.SPACE_BYTE != reader.read()) {
-            throw new IllegalArgumentException("Invalid header, space not after colon: " + reader.debugDataHex());
-        }
+        reader.skip(1); // skip the colon character
+
         return header;
     }
 }
