@@ -75,7 +75,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  * </ul>
  */
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    private static final Logger LOGGER = Logger.getLogger(TenantAuthenticationHandler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OidcProvider.class.getName());
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
