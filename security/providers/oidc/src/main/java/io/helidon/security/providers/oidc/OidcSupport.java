@@ -17,6 +17,8 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +128,6 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * </table>
  */
 public final class OidcSupport implements Service {
-    static final String TENANT_PARAM_NAME = "h_tenant";
     private static final Logger LOGGER = Logger.getLogger(OidcSupport.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
@@ -218,7 +219,7 @@ public final class OidcSupport implements Service {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        String tenantName = req.queryParams().first(TENANT_PARAM_NAME).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
+        String tenantName = req.queryParams().first(oidcConfig.paramNameTenant()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
         Tenant tenant = obtainCurrentTenant(tenantName);
 
@@ -303,7 +304,7 @@ public final class OidcSupport implements Service {
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
-        String tenantName = req.queryParams().first(TENANT_PARAM_NAME).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
+        String tenantName = req.queryParams().first(oidcConfig.paramNameTenant()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
         Tenant tenant = obtainCurrentTenant(tenantName);
         TenantConfig tenantConfig = tenant.tenantConfig();
@@ -357,7 +358,7 @@ public final class OidcSupport implements Service {
         } else {
             uri = oidcConfig.redirectUriWithHost();
         }
-        return uri + (uri.contains("?") ? "&" : "?") + OidcSupport.TENANT_PARAM_NAME + "=" + tenantName;
+        return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.paramNameTenant()) + "=" + encode(tenantName);
     }
 
     private String processJsonResponse(ServerRequest req,
@@ -371,8 +372,8 @@ public final class OidcSupport implements Service {
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            state += (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
-            state += "&" + oidcConfig.paramNameTenant() + "=" + tenantName;
+            state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + tokenValue;
+            state += "&" + encode(oidcConfig.paramNameTenant()) + "=" + encode(tenantName);
         }
 
         state = increaseRedirectCounter(state);
@@ -407,6 +408,10 @@ public final class OidcSupport implements Service {
         }
 
         return "done";
+    }
+
+    private String encode(String toEncode) {
+        return URLEncoder.encode(toEncode, StandardCharsets.UTF_8);
     }
 
     private void sendError(ServerResponse response, Throwable t) {

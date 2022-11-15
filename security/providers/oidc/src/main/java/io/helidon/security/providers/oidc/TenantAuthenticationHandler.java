@@ -75,7 +75,7 @@ class TenantAuthenticationHandler {
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
 
     private final boolean optional;
-    private final OidcConfig defaultConfig;
+    private final OidcConfig oidcConfig;
     private final TenantConfig tenantConfig;
     private final Tenant tenant;
     private final boolean useJwtGroups;
@@ -83,14 +83,14 @@ class TenantAuthenticationHandler {
     private final BiConsumer<StringBuilder, String> scopeAppender;
     private final Pattern attemptPattern;
 
-    TenantAuthenticationHandler(OidcConfig defaultConfig, Tenant tenant, boolean useJwtGroups, boolean optional) {
-        this.defaultConfig = defaultConfig;
+    TenantAuthenticationHandler(OidcConfig oidcConfig, Tenant tenant, boolean useJwtGroups, boolean optional) {
+        this.oidcConfig = oidcConfig;
         this.tenant = tenant;
         this.tenantConfig = tenant.tenantConfig();
         this.useJwtGroups = useJwtGroups;
         this.optional = optional;
 
-        attemptPattern = Pattern.compile(".*?" + defaultConfig.redirectAttemptParam() + "=(\\d+).*");
+        attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
         if (tenantConfig.validateJwtWithJwk()) {
             this.jwtValidator = (signedJwt, collector) -> {
                 JwkKeys jwk = tenant.signJwk();
@@ -171,19 +171,19 @@ class TenantAuthenticationHandler {
 
         Optional<String> token = Optional.empty();
         try {
-            if (defaultConfig.useHeader()) {
-                token = token.or(() -> defaultConfig.headerHandler().extractToken(providerRequest.env().headers()));
+            if (oidcConfig.useHeader()) {
+                token = token.or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()));
 
                 if (token.isEmpty()) {
                     missingLocations.add("header");
                 }
             }
 
-            if (defaultConfig.useParam()) {
+            if (oidcConfig.useParam()) {
                 token = token.or(() -> PARAM_HEADER_HANDLER.extractToken(providerRequest.env().headers()));
 
                 if (token.isEmpty()) {
-                    token = token.or(() -> providerRequest.env().queryParams().first(defaultConfig.paramName()));
+                    token = token.or(() -> providerRequest.env().queryParams().first(oidcConfig.paramName()));
                 }
 
                 if (token.isEmpty()) {
@@ -191,10 +191,10 @@ class TenantAuthenticationHandler {
                 }
             }
 
-            if (defaultConfig.useCookie()) {
+            if (oidcConfig.useCookie()) {
                 if (token.isEmpty()) {
                     // only do this for cookies
-                    Optional<Single<String>> cookie = defaultConfig.tokenCookieHandler()
+                    Optional<Single<String>> cookie = oidcConfig.tokenCookieHandler()
                             .findCookie(providerRequest.env().headers());
                     if (cookie.isEmpty()) {
                         missingLocations.add("cookie");
@@ -264,11 +264,11 @@ class TenantAuthenticationHandler {
                                                  String code,
                                                  String description,
                                                  String tenantId) {
-        if (defaultConfig.shouldRedirect()) {
+        if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
             String state = origUri(providerRequest);
             int redirectAttempt = redirectAttempt(state);
-            if (redirectAttempt >= defaultConfig.maxRedirects()) {
+            if (redirectAttempt >= oidcConfig.maxRedirects()) {
                 return errorResponseNoRedirect(code, description, status);
             }
 
@@ -294,7 +294,7 @@ class TenantAuthenticationHandler {
             String authorizationEndpoint = tenant.authorizationEndpointUri();
             String nonce = UUID.randomUUID().toString();
             String redirectUri =
-                    encode(redirectUri(providerRequest.env()) + "?" + OidcSupport.TENANT_PARAM_NAME + "=" + tenantId);
+                    encode(redirectUri(providerRequest.env()) + "?" + oidcConfig.paramNameTenant() + "=" + tenantId);
 
 
             StringBuilder queryString = new StringBuilder("?");
@@ -322,12 +322,12 @@ class TenantAuthenticationHandler {
         for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
             if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
                 String firstHost = entry.getValue().get(0);
-                return defaultConfig.redirectUriWithHost(defaultConfig.forceHttpsRedirects() ? "https" : env.transport()
+                return oidcConfig.redirectUriWithHost(oidcConfig.forceHttpsRedirects() ? "https" : env.transport()
                         + "://" + firstHost);
             }
         }
 
-        return defaultConfig.redirectUriWithHost();
+        return oidcConfig.redirectUriWithHost();
     }
 
     private CompletionStage<AuthenticationResponse> failOrAbstain(String message) {
