@@ -20,6 +20,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.transaction.xa.Xid;
 
@@ -28,11 +30,15 @@ import jakarta.transaction.HeuristicRollbackException;
 import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
+import com.arjuna.ats.arjuna.common.Uid;
+import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
+import com.arjuna.ats.arjuna.coordinator.listener.ReaperMonitor;
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
 import org.h2.jdbcx.JdbcDataSource;
@@ -48,6 +54,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class TestJTAConnection {
 
@@ -184,6 +191,70 @@ final class TestJTAConnection {
         }
 
         LOGGER.info("Ending testSpike()");
+    }
+
+    @Test
+    final void testTimeout() throws InterruptedException, NotSupportedException, RollbackException, SystemException {
+        LOGGER.info("Starting testTimeout()");
+
+        tm.setTransactionTimeout(1); // 1 second; the minimum
+        tm.begin();
+
+        // For this test, where transaction reaping is set to happen
+        // soon, it still won't happen in under 1000 milliseconds, so
+        // this assertion is OK. For real-world scenarios, you
+        // shouldn't assume anything about the initial status.
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
+
+        CountDownLatch latch = new CountDownLatch(1);
+        Thread mainThread = Thread.currentThread();
+        
+        tsr.registerInterposedSynchronization(new Synchronization() {
+                public void beforeCompletion() {
+                    
+                }
+                public void afterCompletion(int status) {
+                    assertThat(status, is(Status.STATUS_ROLLEDBACK));
+                    assertThat(Thread.currentThread(), not(mainThread));
+                    latch.countDown();
+                }                    
+            });
+        
+        // Wait for the transaction to roll back on the reaper thread.
+        // The transaction timeout is 1 second; this waits for 2
+        // seconds.  If this fails with an InterruptedException, which
+        // should be impossible, check the logs for Narayana warning
+        // that the assertion in the synchronization above failed.
+        latch.await(1100L, TimeUnit.MILLISECONDS);
+
+        // In this case, we never issued a rollback ourselves and we
+        // never acquired a Transaction.  Here we show that you can
+        // get a Transaction that is initially in a rolled back state.
+        //
+        // Verify there *was* a transaction but now it is rolled
+        // back, so is essentially useless other than as a
+        // tombstone.
+        Transaction t = tm.getTransaction();
+        assertThat(t, not(nullValue()));
+        assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
+
+        // Verify that all the other status accessors return the
+        // same thing.
+        assertThat(tm.getStatus(), is(Status.STATUS_ROLLEDBACK));
+        assertThat(tsr.getTransactionStatus(), is(Status.STATUS_ROLLEDBACK));
+
+        // Verify that indeed you cannot enlist any XAResource in
+        // the transaction when it is in the rolled back state.
+        assertThrows(IllegalStateException.class, () -> t.enlistResource(JTAConnection.XA_RESOURCE));
+
+        // Verify that even though the current transaction is
+        // rolled back you can still roll it back and disassociate
+        // it from the current thread.
+        tm.rollback();
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+
+        // The Transaction remains in status Status.STATUS_ROLLEDBACK.
+        assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
     }
 
 }

@@ -67,7 +67,8 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      * The {@link LocalXAResource} singleton responsible for managing a {@link JTAConnection}'s participation in a
      * {@link Transaction}.
      */
-    private static final LocalXAResource XA_RESOURCE = new LocalXAResource(JTAConnection::connection);
+    // Non-private for testing only.
+    static final LocalXAResource XA_RESOURCE = new LocalXAResource(JTAConnection::connection);
 
     /**
      * A {@link ReentrantLock} guarding access to and modification of the {@link #handoff} field.
@@ -672,7 +673,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      *
      * @see Status
      */
-    private boolean nonCompletedTransaction() throws SQLException {
+    private boolean activeOrMarkedRollbackTransaction() throws SQLException {
         try {
             switch (this.tsr.getTransactionStatus()) {
                 // See https://www.eclipse.org/lists/jta-dev/msg00264.html.
@@ -709,15 +710,18 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      */
     Xid xid() throws SQLException {
         this.failWhenClosed();
-        if (this.nonCompletedTransaction()) {
+        if (this.activeOrMarkedRollbackTransaction()) {
             // Do what we can to avoid the potential getResource(Object)-implied map lookup and IllegalStateException
-            // construction by checking to see if the status constitutes an "active" status (in the sense used only by
-            // TransactionSynchronizationRegistry, and nowhere else.  Interestingly, that includes
-            // STATUS_MARKED_ROLLBACK.  "Active" here, and apparently only here, really means non-completed.  See
+            // construction by checking to see if the status constitutes an "active" status (but in the sense used only
+            // by TransactionSynchronizationRegistry's putResource(Object, Object) method documentation, and nowhere
+            // else). Interestingly, that includes Status.STATUS_MARKED_ROLLBACK. "Active" here, and apparently only
+            // here, really means "known and not yet prepared". Status.STATUS_ACTIVE and
+            // Status.STATUS_MARKED_FOR_ROLLBACK are the only transaction states where it is permissible to invoke
+            // TransactionSynchronizationRegistry#getReource(Object). See
             // https://www.eclipse.org/lists/jta-dev/msg00264.html.
             try {
                 return (Xid) this.tsr.getResource("xid");
-            } catch (IllegalStateException noNonCompletedTransaction) {
+            } catch (IllegalStateException e) {
                 return null;
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException as well here? See
@@ -736,25 +740,30 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     }
 
     /**
-     * Returns {@code true} if and only if this {@link JTAConnection} is associated with a {@linkplain
-     * #nonCompletedTransaction() non-completed JTA transaction}.
+     * Returns {@code true} if and only if this {@link JTAConnection} is associated with a JTA transaction whose
+     * {@linkplain Transaction#getStatus() status} is one of {@link Status#STATUS_ACTIVE} or {@link
+     * Status#STATUS_MARKED_ROLLBACK} as a result of a prior {@link #enlist()} invocation on the current thread.
      *
      * @return {@code true} if and only if this {@link JTAConnection} is associated with a {@linkplain
-     * #nonCompletedTransaction() non-completed JTA transaction}; {@code false} in all other cases
+     * #activeOrMarkedRollbackTransaction() JTA transaction whose status is known and not yet prepared}; {@code false}
+     * in all other cases
      *
      * @exception SQLException if invoked on a closed connection or the enlisted status could not be acquired
      */
     private boolean enlisted() throws SQLException {
         this.failWhenClosed();
-        if (this.nonCompletedTransaction()) {
+        if (this.activeOrMarkedRollbackTransaction()) {
             // Do what we can to avoid the potential getResource(Object)-implied map lookup and IllegalStateException
-            // construction by checking to see if the status constitutes an "active" status (in the sense used only by
-            // TransactionSynchronizationRegistry, and nowhere else.  Interestingly, that includes
-            // STATUS_MARKED_ROLLBACK.  "Active" here, and apparently only here, really means non-completed.  See
+            // construction by checking to see if the status constitutes an "active" status (but in the sense used only
+            // by TransactionSynchronizationRegistry's putResource(Object, Object) method documentation, and nowhere
+            // else). Interestingly, that includes Status.STATUS_MARKED_ROLLBACK, so "active" here, and apparently only
+            // here, really means "known and not yet prepared". Status.STATUS_ACTIVE and
+            // Status.STATUS_MARKED_FOR_ROLLBACK are the only transaction states where it is permissible to invoke
+            // TransactionSynchronizationRegistry#getReource(Object). See
             // https://www.eclipse.org/lists/jta-dev/msg00264.html.
             try {
-                return this.tsr.getResource("xid") != null;
-            } catch (IllegalStateException noNonCompletedTransaction) {
+                return this.tsr.getResource(JTAConnection.class.getName()) == this;
+            } catch (IllegalStateException e) {
                 return false;
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException as well here? See
@@ -781,7 +790,6 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      */
     private void enlist() throws SQLException {
         this.failWhenClosed();
-
         if (!this.activeTransaction() || this.enlisted()) {
             // We have determined either:
             // * there is no transaction at all
@@ -789,7 +797,6 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             // * there is a transaction in Status.STATUS_ACTIVE state but this connection is already enlisted with it
             return;
         }
-
         if (!super.getAutoCommit()) {
             // super.getAutoCommit() (super. on purpose, not this.) returned false. We don't want to permit enlistment
             // because a local transaction may be in progress.
@@ -826,12 +833,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         // asynchronous rollback, for example) so we have to watch for various exceptions when we invoke methods on it.
 
         boolean enlisted;
-
         HANDOFF_LOCK.lock();
         try {
             assert handoff == null;
             handoff = this.delegate();
-
             enlisted = t.enlistResource(XA_RESOURCE);
             if (enlisted) {
                 // We called enlistResource(XAResource) successfully, which means its start(Xid, int) method was called
@@ -841,13 +846,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
                 // Put the Xid into the TransactionSynchronizationRegistry which will auto-clear it on transaction
                 // completion.  If this putResource() operation fails, we haven't changed state.
-                assert handoff instanceof Xid;
-                this.tsr.putResource("xid", handoff);
-            } else {
-                // It is unclear what a false return value indicates, other than, simply, enlistment didn't happen for
-                // inscrutable reasons. See https://www.eclipse.org/lists/jta-dev/msg00259.html.
+                if (handoff instanceof Xid) {
+                    this.tsr.putResource("xid", handoff);
+                }
             }
-
         } catch (RollbackException e) {
             // The enlistResource(XAResource) operation failed.
             //
@@ -864,17 +866,13 @@ final class JTAConnection extends ConditionallyCloseableConnection {
                                                "40000", // transaction rollback, no subclass
                                                e);
         } catch (RuntimeException | SystemException e) {
-            // The enlistResource(XAResource) operation failed, or the
-            // putResource(Object, Object) operation failed.
+            // The enlistResource(XAResource) operation failed, or the putResource(Object, Object) operation failed.
             //
             // Why do we catch RuntimeException and not something more specific?  See
             // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
             // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
             // getResource() and putResource() are not documented to throw RuntimeException, only
             // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is encountered.
-            //
-            // Hard to know what SQLState to use here. 25000 ("invalid transaction state") seems close, even though it's
-            // unclear whether this indicates the SQL/local transaction or the XA branch transaction or both.
             //
             // I think the exception is transient because either (a) the RuntimeException occurred because "the
             // transaction in the target object [was] in the prepared state or the transaction [was] inactive" or (b)
@@ -890,28 +888,40 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             HANDOFF_LOCK.unlock();
         }
 
-        if (enlisted && super.isCloseable()) {
-
-            // Register a Synchronization (a callback) that restores closability to the connection after the transaction
-            // has completed (committed or rolled back).  If this fails, we haven't changed state.
+        if (enlisted) {
             try {
-                this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
+                this.tsr.putResource(JTAConnection.class.getName(), this);
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException and not something more specific?  See
                 // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
                 // getTransactionImple() is called by Narayana's implementation of
-                // registerInterposedSynchronization(Synchronization), and although a generic RuntimeException is
-                // not supposed to be thrown by registerInterposedSynchronization(Synchronization) implementations,
-                // it is thrown anyway.
+                // registerInterposedSynchronization(Synchronization), and although a generic RuntimeException is not
+                // supposed to be thrown by registerInterposedSynchronization(Synchronization) implementations, it is
+                // thrown anyway.
                 throw new SQLTransientException(e.getMessage(),
                                                 "25000", // invalid transaction state, no subclass
                                                 e);
             }
-
-            // Make the connection not closeable while the transaction is not completed.  If this fails, the
-            // synchronization we registered will still run, but our state won't change.
-            super.setCloseable(false);
-
+            if (super.isCloseable()) {
+                // Register a Synchronization (a callback) that restores closability to the connection after the
+                // transaction has completed (committed or rolled back).  If this fails, we haven't changed state.
+                try {
+                    this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
+                } catch (RuntimeException e) {
+                    // Why do we catch RuntimeException and not something more specific?  See
+                    // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
+                    // getTransactionImple() is called by Narayana's implementation of
+                    // registerInterposedSynchronization(Synchronization), and although a generic RuntimeException is
+                    // not supposed to be thrown by registerInterposedSynchronization(Synchronization) implementations,
+                    // it is thrown anyway.
+                    throw new SQLTransientException(e.getMessage(),
+                                                    "25000", // invalid transaction state, no subclass
+                                                    e);
+                }
+                // Make the connection not closeable while the transaction is not completed.  If this fails, the
+                // synchronization we registered will still run, but our state won't change.
+                super.setCloseable(false);
+            }
         }
 
     }
