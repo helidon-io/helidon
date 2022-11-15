@@ -221,11 +221,12 @@ final class TestJTAConnection {
             });
         
         // Wait for the transaction to roll back on the reaper thread.
-        // The transaction timeout is 1 second; this waits for 2
-        // seconds.  If this fails with an InterruptedException, which
-        // should be impossible, check the logs for Narayana warning
-        // that the assertion in the synchronization above failed.
-        latch.await(1100L, TimeUnit.MILLISECONDS);
+        // The transaction timeout is 1 second (see above); this waits
+        // for 2 seconds max.  If this fails with an
+        // InterruptedException, which should be impossible, check the
+        // logs for Narayana warning that the assertions in the
+        // synchronization above failed.
+        latch.await(2000L, TimeUnit.MILLISECONDS);
 
         // In this case, we never issued a rollback ourselves and we
         // never acquired a Transaction.  Here we show that you can
@@ -247,14 +248,18 @@ final class TestJTAConnection {
         // the transaction when it is in the rolled back state.
         assertThrows(IllegalStateException.class, () -> t.enlistResource(JTAConnection.XA_RESOURCE));
 
-        // Verify that even though the current transaction is
-        // rolled back you can still roll it back and disassociate
-        // it from the current thread.
+        // Verify that even though the current transaction is rolled
+        // back you can still roll it back again (no-op) and
+        // disassociate it from the current thread.
         tm.rollback();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
 
-        // The Transaction remains in status Status.STATUS_ROLLEDBACK.
+        // The Transaction itself remains in status
+        // Status.STATUS_ROLLEDBACK. Notably it never enters
+        // Status.STATUS_NO_TRANSACTION.
         assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
+
+        LOGGER.info("Ending testTimeout()");
     }
 
 }
