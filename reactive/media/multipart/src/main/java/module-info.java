@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Multi-part",
         description = "Media support for Multi-part entities",
-        path = {"WebServer", "WebClient", "Multipart"},
+        path = {"Media", "Multipart"},
         in = HelidonFlavor.SE)
 module io.helidon.reactive.media.multipart {
     requires static io.helidon.common.features.api;

@@ -27,7 +27,7 @@ import io.helidon.reactive.media.jackson.JacksonSupport;
  */
 @Feature(value = "Jackson",
         description = "Media support for Jackson",
-        path = {"WebServer", "WebClient", "Jackson"},
+        path = {"Media", "Jackson"},
         in = HelidonFlavor.SE)
 module io.helidon.reactive.media.jackson {
     requires static io.helidon.common.features.api;
