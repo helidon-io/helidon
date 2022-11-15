@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Experimental;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Incubating;
 
 /**
  * Support for Micrometer in Helidon SE.
  */
-@Experimental
+@Incubating
 @Feature(value = "Micrometer",
         description = "Micrometer integration",
         in = HelidonFlavor.SE,
         path = "Micrometer")
-@Aot
 module io.helidon.integrations.micrometer {
     requires static io.helidon.common.features.api;
 
