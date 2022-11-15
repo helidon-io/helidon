@@ -12,12 +12,12 @@ This repository contains a Helidon OCI Archetype application that integrates wit
 8. Health and Liveness checks
 9. Configuration profiles for switching between `config_file` and `instance_principal` configurations
 
-This Project demonstrates API-driven development approach where the practice of designing and building APIs is done first, 
+This project demonstrates OpenApi-driven development approach where the practice of designing and building APIs is done first, 
 then creating the rest of an application around them is implemented next. Below are the modules that are part of this project:
 
 1. [Spec](src/spec/README.md) - Contains OpenApi v3.0.3 specification documentation that will be used as input for
    both the [server](src/server/README.md) and [client](src/client/README.md) modules in generating server and client side code
-2. [Server](src/server/README.md) - Generates server-side JaxRS service and model source code which are used to implement
+2. [Server](src/server/README.md) - Generates server-side JAX-RS service and model source code which are used to implement
    business logic for the [server](src/server/README.md) application
 3. [Client](src/client/README.md) - Generates client-side microprofile rest client and model source code which can be
    injected/initialized into the client application for the purpose of accessing the [server](src/server/README.md) application

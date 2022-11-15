@@ -1,9 +1,10 @@
 # Helidon OCI Archetype Server using MP
 
 This module demonstrates a simple Hello World JAX-RS based application and is composed of the following:
+
 1. Server-side source code that will be generated using OpenApi tool based on an OpenApi specification document in the form
    of [api.yaml](../spec/api.yaml) as an input. The generated source code will be located in
-   [target/generated-sources/server/src/main/java/__pkg__//server](target/generated-sources/server/src/main/java/__pkg__//server)
+   [target/generated-sources/server/src/main/java/__pkg__/server](target/generated-sources/server/src/main/java/__pkg__/server)
    and will have the following components:
    * A JAX-RS base interface
    * A model source code that will represent a JSON object
@@ -35,7 +36,7 @@ added as a dependency in the application's [pom.xml](pom.xml):
             <scope>runtime</scope>
         </dependency>
 ```
-Along with this dependency, the OCI common sdk library and the OCI service library that's going to be used also 
+Along with this dependency, the OCI SDK common library and the OCI service library that's going to be used also
 needs to be added. For example, to integrate with OCI logging, below is the example of the dependency declaration:
 ```xml
         <dependency>
@@ -54,14 +55,12 @@ needs to be added. For example, to integrate with OCI logging, below is the exam
 This Server application can also be configured to demonstrate OCI Custom Logs Monitoring using Unified Monitoring Agent 
 (not part of Helidon). It was added in this project to demonstrate logging processor (collect and send to logging service) capabilities.
  
-The Unified Monitoring Agent uses FluentD which is an open source data collection tool. To set this up, please see the 
-details in [Creating Custom Logs](https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/custom_logs.htm#creating_custom_logs).
+To set this up, please see the details in [Creating Custom Logs](https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/custom_logs.htm#creating_custom_logs).
 See [OCI IAM Setup for Custom Logs](#oci-iam-setup-for-custom-logs) section below as well. After this exercise, it is expected that 
-a Log Group and Log OCI resources had been created. Please take note of the
-custom log that got created as its used in this configuration setup as it will be used in the next section. Furthermore, Helidon logging also 
-needs to be set up so that the log data can be persisted into a file that was designated to be the log file that the 
-Unified Monitoring Agent will process. Below is an example of the configuration that needs to be set up in 
-[logging.properties](src/main/resources/logging.properties).
+a Log Group and Log OCI resources had been created. Please take note of the custom log that got created as its used in this configuration
+setup as it will be used in the next section. Furthermore, Helidon logging also needs to be set up so that the log data can be persisted
+into a file that was designated to be the log file that the Unified Monitoring Agent will process. Below is an example of the configuration
+that needs to be set up in [logging.properties](src/main/resources/logging.properties).
 
 ```properties
 handlers=io.helidon.common.HelidonConsoleHandler, java.util.logging.FileHandler
@@ -116,9 +115,9 @@ adding the following configuration in
 
 ```properties
 # OCI compartment ID where the metrics will be sent
-ocimetrics.compartmentId=ocid1.compartment.oc1..aaaaaaaalc3tlb3xcqpsbyvp72po6ybqopvycf7wdvl6gjpa7mry77pdkgza
+ocimetrics.compartmentId=<your monitoring compartment id>
 # OCI metric namespace
-ocimetrics.namespace=helidon_oci
+ocimetrics.namespace=<your monitoring namespace e.g. helidon_oci>
 # Delay in seconds before the 1st metrics transmission to OCI takes place.  Defaults to 1 second if not specified.
 ocimetrics.initialDelay=30
 # Interval in seconds between metrics transmission to OCI. Defaults to 60 seconds if not specified.
@@ -136,9 +135,9 @@ Alternatively, this can also be configured in yaml format and added to [src/main
 ```yaml
 ocimetrics:
   # OCI compartment ID where the metrics will be sent
-  compartmentId: ocid1.compartment.oc1..aaaaaaaalc3tlb3xcqpsbyvp72po6ybqopvycf7wdvl6gjpa7mry77pdkgza
+  compartmentId: <your monitoring compartment id>
   # OCI metric namespace
-  namespace: helidon_oci
+  namespace: <your monitoring namespace e.g. helidon_oci>
   # Delay in seconds before the 1st metrics transmission to OCI takes place.  Defaults to 1 second if not specified.
   initialDelay: 30
   # Interval in seconds between metrics transmission to OCI. Defaults to 60 seconds if not specified.
@@ -255,7 +254,7 @@ to replace the configured value of `server.port` (currently set to `8080`), all 
 ## System Requirements:
 1. JDK 11+
 2. mvn 3.8.3+
-3. Helidon 2.5.4
+3. Helidon 2.5.4+
 
 ## Build and test
 As mentioned in introduction, we are showcasing how to use generated client for testing. This requires to have [client module build first](../client/README.md#build) else you will get compilation errors in test.

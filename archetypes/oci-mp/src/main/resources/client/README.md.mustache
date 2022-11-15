@@ -2,27 +2,28 @@
 
 This module demonstrates how to generate a Helidon Microprofile restful microservice-based client, using OpenApi tool, that communicates with a Helidon MP service endpoint.
 
-1. Client-side source code that will be generated using OpenApi tool based on an OpenApi specification document in the form 
+1. Client-side source code will be generated using OpenApi tool based on an OpenApi specification document in the form
 of [api.yaml](../spec/api.yaml) as an input. The generated source code will be located in 
-[target/generated-sources/client/src/main/java/{{package}}/client](target/generated-sources/client/src/main/java/{{package}}/client)
+[target/generated-sources/client/src/main/java/__pkg__/client](target/generated-sources/client/src/main/java/__pkg__/client)
 and will have the following components:
-   * A microprofile rest client interface (that will automatically be registered with CDI). Please check out 
+   * A microprofile rest client interface (that can be registered with CDI). Please check out
      [Microprofile Rest Client](https://helidon.io/docs/v2/#/mp/restclient/09_rest-client) for more
      information about this concept.
    * A Json-based request/response model.
-2. The generated microProfile rest client interface called [GreetApi.java](target/generated-sources/client/src/main/java/{{package}}/client/api/GreetApi)
+2. The generated Microprofile rest client interface called [GreetApi.java](target/generated-sources/client/src/main/java/__pkg__/client/api/GreetApi)
 then can be injected using `@RestClient` or initialized using `RestClientBuilder` by end user application along with generated model classes for the request/response.
 
-## Generator Configuration:
+## Generator Configuration
 The generator configuration can be customized in [pom.xml](pom.xml). See [documentation](https://openapi-generator.tech/docs/generators/java) for detailed information on each option.
 
-## System Requirements:
+## System Requirements
 1. JDK 11+ 
 2. mvn 3.8.3+
-3. Helidon 2.5.4
+3. Helidon 2.5.4+
 
 ## Build 
-Just run: 
+Just run
+
 ```bash
 mvn clean install
 ``` 
@@ -30,8 +31,8 @@ mvn clean install
 ## Distribution
 As part of the [build](#build), a zip file in 
 [target/{{artifactId}}-client-distribution.zip](target/{{artifactId}}-client-distribution.zip)
-will be created that can be used to distribute/deploy to other machines such as an OCI VM instance. This zip file can be 
-securely copied over by tools like `scp (secure copy)` to another machine's directory and unzipped.
+will be created that can be distributed. This zip file can be securely copied over by tools like
+`scp (secure copy)` to another machine's directory and unzipped.
 1. Upload to a remote machine using scp
    ```bash
    $ scp target/{{artifactId}}-client-distribution.zip user@DESTINATION_HOST:/home/user

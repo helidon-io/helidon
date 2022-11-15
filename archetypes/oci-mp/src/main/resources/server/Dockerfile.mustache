@@ -10,12 +10,14 @@ ADD pom.xml .
 ADD client/pom.xml client/pom.xml
 ADD server/pom.xml server/pom.xml
 ADD spec/api.yaml spec/api.yaml
+RUN mvn -pl server package --am -DskipTests -DskipAssembly
 
 # Do the Maven build!
 # Incremental docker builds will resume here when you change sources
 ADD client/src client/src
 ADD server/src server/src
-RUN mvn -pl server package --am -DskipTests -DskipAssembly && echo "Build done!"
+RUN mvn -pl server package --am -DskipTests -DskipAssembly
+RUN echo "Build done!"
 
 # 2nd stage, build the runtime image
 FROM openjdk:11-jre-slim
