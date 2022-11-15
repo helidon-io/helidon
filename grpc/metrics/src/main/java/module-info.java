@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "gRPC Metrics", description = "Metrics for gRPC services",
         in = HelidonFlavor.SE,
-        path = "grpc")
+        path = {"grpc", "Metrics"})
 module io.helidon.grpc.metrics {
     requires static io.helidon.common.features.api;
 
