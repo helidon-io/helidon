@@ -219,7 +219,7 @@ public final class OidcSupport implements Service {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        String tenantName = req.queryParams().first(oidcConfig.paramNameTenant()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
+        String tenantName = req.queryParams().first(oidcConfig.tenantParamName()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
         Tenant tenant = obtainCurrentTenant(tenantName);
 
@@ -304,7 +304,7 @@ public final class OidcSupport implements Service {
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
-        String tenantName = req.queryParams().first(oidcConfig.paramNameTenant()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
+        String tenantName = req.queryParams().first(oidcConfig.tenantParamName()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
         Tenant tenant = obtainCurrentTenant(tenantName);
         TenantConfig tenantConfig = tenant.tenantConfig();
@@ -358,7 +358,7 @@ public final class OidcSupport implements Service {
         } else {
             uri = oidcConfig.redirectUriWithHost();
         }
-        return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.paramNameTenant()) + "=" + encode(tenantName);
+        return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
     }
 
     private String processJsonResponse(ServerRequest req,
@@ -373,7 +373,7 @@ public final class OidcSupport implements Service {
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + tokenValue;
-            state += "&" + encode(oidcConfig.paramNameTenant()) + "=" + encode(tenantName);
+            state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
         }
 
         state = increaseRedirectCounter(state);

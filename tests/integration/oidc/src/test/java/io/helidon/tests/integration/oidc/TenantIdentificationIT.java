@@ -45,11 +45,11 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 @AddConfig(key = "security.providers.1.oidc.oidc-metadata-well-known", value = "false")
-public class TenantIdentificationIT {
+class TenantIdentificationIT {
 
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "host-header")
-    public void testHostHeaderTenantId(WebTarget webTarget) {
+    void testHostHeaderTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
             String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
@@ -60,7 +60,7 @@ public class TenantIdentificationIT {
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "token-handler")
     @AddConfig(key = "security.providers.1.oidc.tenant-id-handler.header", value = "test-tenant-name")
-    public void testTokenHandlerTenantId(WebTarget webTarget) {
+    void testTokenHandlerTenantId(WebTarget webTarget) {
         String expectedTenantName = "test-tenant";
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false)
                 .path("/test")
@@ -76,7 +76,7 @@ public class TenantIdentificationIT {
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "domain")
     @AddConfig(key = "security.providers.1.oidc.tenant-id-domain-level", value = "1")
-    public void testDomainTenantId(WebTarget webTarget) {
+    void testDomainTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
             String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
@@ -86,7 +86,7 @@ public class TenantIdentificationIT {
 
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "none")
-    public void testNoneTenantId(WebTarget webTarget) {
+    void testNoneTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
             String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);

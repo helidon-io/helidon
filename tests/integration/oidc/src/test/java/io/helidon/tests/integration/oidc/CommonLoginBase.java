@@ -36,10 +36,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
-public class CommonLoginBase {
+class CommonLoginBase {
 
     @Container
-    public static final KeycloakContainer KEYCLOAK_CONTAINER = new KeycloakContainer()
+    static final KeycloakContainer KEYCLOAK_CONTAINER = new KeycloakContainer()
             .withRealmImportFiles("/test-realm.json", "/test2-realm.json")
             // this enables KeycloakContainer to be reused across tests
             .withReuse(true);

@@ -73,7 +73,7 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Issuer", config.issuer(), nullValue()),
                   () -> assertThat("Client without authentication", config.generalClient(), notNullValue()),
                   () -> assertThat("Client with authentication", config.appClient(), notNullValue()),
-                  () -> assertThat("JWK Keys", config.signJwk(), nullValue())
+                  () -> assertThat("JWK Keys", config.signJwk(), notNullValue())
         );
     }
 

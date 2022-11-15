@@ -369,7 +369,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final LazyValue<Tenant> defaultTenant;
     private final boolean useParam;
     private final String paramName;
-    private final String paramNameTenant;
+    private final String tenantParamName;
     private final boolean useHeader;
     private final TokenHandler headerHandler;
     private final boolean useCookie;
@@ -397,7 +397,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
-        this.paramNameTenant = builder.paramNameTenant;
+        this.tenantParamName = builder.tenantParamName;
         this.useHeader = builder.useHeader;
         this.headerHandler = builder.headerHandler;
         this.useCookie = builder.useCookie;
@@ -508,10 +508,10 @@ public final class OidcConfig extends TenantConfigImpl {
      * Tenant query parameter name.
      *
      * @return name of the tenant query parameter to use
-     * @see Builder#paramNameTenant(String)
+     * @see Builder#paramTenantName(String)
      */
-    public String paramNameTenant() {
-        return paramNameTenant;
+    public String tenantParamName() {
+        return tenantParamName;
     }
 
     /**
@@ -993,7 +993,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private Supplier<WebClient.Builder> webClientBuilderSupplier;
         private Supplier<ClientBuilder> jaxrsClientBuilderSupplier;
         private String paramName = DEFAULT_PARAM_NAME;
-        private String paramNameTenant = DEFAULT_TENANT_PARAM_NAME;
+        private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;
         private boolean useParam = DEFAULT_PARAM_USE;
 
@@ -1085,13 +1085,13 @@ public final class OidcConfig extends TenantConfigImpl {
             // token handling
             config.get("query-param-use").asBoolean().ifPresent(this::useParam);
             config.get("query-param-name").asString().ifPresent(this::paramName);
-            config.get("query-param-tenant-name").asString().ifPresent(this::paramNameTenant);
+            config.get("query-param-tenant-name").asString().ifPresent(this::paramTenantName);
             config.get("header-use").asBoolean().ifPresent(this::useHeader);
             config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
             config.get("cookie-use").asBoolean().ifPresent(this::useCookie);
             config.get("cookie-name").asString().ifPresent(this::cookieName);
             config.get("cookie-name-id-token").asString().ifPresent(this::cookieNameIdToken);
-            config.get("cookie-name-tenant").asString().ifPresent(this::cookieNameTenant);
+            config.get("cookie-name-tenant").asString().ifPresent(this::cookieTenantName);
             config.get("cookie-domain").asString().ifPresent(this::cookieDomain);
             config.get("cookie-path").asString().ifPresent(this::cookiePath);
             config.get("cookie-max-age-seconds").asLong().ifPresent(this::cookieMaxAgeSeconds);
@@ -1399,9 +1399,9 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param paramName name of the query parameter to expect
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "query-param-name", value = DEFAULT_PARAM_NAME)
-        public Builder paramNameTenant(String paramName) {
-            this.paramNameTenant = paramName;
+        @ConfiguredOption(key = "query-param-tenant-name", value = DEFAULT_TENANT_PARAM_NAME)
+        public Builder paramTenantName(String paramName) {
+            this.tenantParamName = paramName;
             return this;
         }
 
@@ -1630,7 +1630,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
-        public Builder cookieNameTenant(String cookieName) {
+        public Builder cookieTenantName(String cookieName) {
             this.tenantCookieBuilder.cookieName(cookieName);
             return this;
         }

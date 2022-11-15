@@ -294,7 +294,7 @@ class TenantAuthenticationHandler {
             String authorizationEndpoint = tenant.authorizationEndpointUri();
             String nonce = UUID.randomUUID().toString();
             String redirectUri =
-                    encode(redirectUri(providerRequest.env()) + "?" + oidcConfig.paramNameTenant() + "=" + tenantId);
+                    encode(redirectUri(providerRequest.env()) + "?" + oidcConfig.tenantParamName() + "=" + tenantId);
 
 
             StringBuilder queryString = new StringBuilder("?");

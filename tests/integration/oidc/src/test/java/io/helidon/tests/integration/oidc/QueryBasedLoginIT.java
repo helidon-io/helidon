@@ -36,10 +36,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @AddConfig(key = "security.providers.1.oidc.cookie-use", value = "false")
 @AddConfig(key = "security.providers.1.oidc.query-param-use", value = "true")
-public class QueryBasedLoginIT extends CommonLoginBase {
+class QueryBasedLoginIT extends CommonLoginBase {
 
     @Test
-    public void testSuccessfulLogin(WebTarget webTarget) {
+    void testSuccessfulLogin(WebTarget webTarget) {
         String formUri;
         client.property(ClientProperties.FOLLOW_REDIRECTS, Boolean.FALSE);
         WebTarget target = client.target(webTarget.getUri());
@@ -90,7 +90,7 @@ public class QueryBasedLoginIT extends CommonLoginBase {
     }
 
     @Test
-    public void testFallbackToDefaultIfTenantNotFound(WebTarget webTarget) {
+    void testFallbackToDefaultIfTenantNotFound(WebTarget webTarget) {
         String formUri;
         WebTarget webserverTarget = client.target(webTarget.getUri());
 

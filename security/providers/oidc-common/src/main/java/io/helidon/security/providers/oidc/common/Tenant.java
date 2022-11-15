@@ -165,7 +165,7 @@ public final class Tenant {
                     }
                 }
             }
-            return null;
+            return JwkKeys.builder().build();
         });
         URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
         if (!tenantConfig.validateJwtWithJwk()) {

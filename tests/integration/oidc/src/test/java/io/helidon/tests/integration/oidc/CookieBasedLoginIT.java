@@ -30,7 +30,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class CookieBasedLoginIT extends CommonLoginBase {
+class CookieBasedLoginIT extends CommonLoginBase {
 
     @Test
     public void testSuccessfulLogin(WebTarget webTarget) {
