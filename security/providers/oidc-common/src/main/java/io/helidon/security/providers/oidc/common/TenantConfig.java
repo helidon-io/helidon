@@ -161,12 +161,36 @@ public interface TenantConfig {
      */
     Optional<URI> authorizationEndpoint();
 
+    /**
+     * Client secret.
+     *
+     * @return configured client secret
+     * @see BaseBuilder#clientSecret(String)
+     */
     String clientSecret();
 
+    /**
+     * Server type.
+     *
+     * @return configured server type
+     * @see BaseBuilder#serverType(String)
+     */
     String serverType();
 
+    /**
+     * OIDC metadata.
+     *
+     * @return configured oidc metadata
+     * @see BaseBuilder#oidcMetadata(JsonObject)
+     */
     JsonObject oidcMetadata();
 
+    /**
+     * Whether to use OIDC well known metadata.
+     *
+     * @return configured oidc metadata
+     * @see BaseBuilder#oidcMetadataWellKnown(boolean)
+     */
     boolean useWellKnown();
 
     /**

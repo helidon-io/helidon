@@ -324,6 +324,9 @@ public final class OidcConfig extends TenantConfigImpl {
      * Default name of the header we expect JWT in.
      */
     public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
+    /**
+     * Default tenant query param name.
+     */
     public static final String DEFAULT_TENANT_PARAM_NAME = "h_tenant";
     static final String DEFAULT_REDIRECT_URI = "/oidc/redirect";
     static final String DEFAULT_LOGOUT_URI = "/oidc/logout";
