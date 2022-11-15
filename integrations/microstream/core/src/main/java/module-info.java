@@ -28,7 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE,
         path = "Microstream"
 )
-@Aot(value = false)
+@Aot(false)
 module io.helidon.integrations.microstream {
     requires static io.helidon.common.features.api;
 
