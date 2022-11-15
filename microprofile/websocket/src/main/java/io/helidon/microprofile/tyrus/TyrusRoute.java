@@ -18,6 +18,7 @@ package io.helidon.microprofile.tyrus;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.PathMatcher;
 import io.helidon.common.http.PathMatchers;
+
 import jakarta.websocket.server.ServerEndpointConfig;
 
 record TyrusRoute(String path,

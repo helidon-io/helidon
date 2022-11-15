@@ -41,6 +41,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
+
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.Extension;
@@ -51,6 +52,9 @@ import org.glassfish.tyrus.core.TyrusWebSocketEngine;
 import org.glassfish.tyrus.server.TyrusServerContainer;
 import org.glassfish.tyrus.spi.WebSocketEngine;
 
+/**
+ * Tyrus connection upgrade provider.
+ */
 @Weight(Weighted.DEFAULT_WEIGHT + 100)      // higher than base class
 public class TyrusUpgradeProvider extends WsUpgradeProvider {
     private static final Logger LOGGER = Logger.getLogger(TyrusUpgradeProvider.class.getName());
@@ -60,6 +64,9 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
     private final TyrusRouting tyrusRouting;
     private final WebSocketEngine engine;
 
+    /**
+     * @deprecated This constructor is only to be used by {@link java.util.ServiceLoader}.
+     */
     @Deprecated()
     public TyrusUpgradeProvider() {
         WebSocketCdiExtension extension = CDI.current().select(WebSocketCdiExtension.class).get();
