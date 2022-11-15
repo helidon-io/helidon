@@ -18,7 +18,6 @@ package io.helidon.pico.types;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
     protected DefaultAnnotationAndValue(Builder b) {
         this.typeName = b.typeName;
         this.value = b.value;
-        this.values = Objects.isNull(b.values) ? Collections.emptyMap() : Collections.unmodifiableMap(b.values);
+        this.values = Map.copyOf(b.values);
     }
 
     @Override
@@ -109,7 +108,9 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @return the new instance
      */
     public static DefaultAnnotationAndValue create(Class<? extends Annotation> annoType) {
-        return create(annoType, (String) null);
+        return builder()
+                .type(annoType)
+                .build();
     }
 
     /**
@@ -157,64 +158,18 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
     }
 
     /**
-     * Attempts to find the annotation in the provided collection, and if not found will throw an exception.
-     *
-     * @param annoTypeName  the annotation type name
-     * @param coll          the collection to search
-     * @param mustHaveValue true if the result must have a value
-     * @return the result of the find
-     * @throws java.lang.AssertionError if not found, or not found to have a non-blank value present
-     */
-    public static AnnotationAndValue getFirst(String annoTypeName,
-                                               Collection<? extends AnnotationAndValue> coll,
-                                               boolean mustHaveValue) {
-        assert (!annoTypeName.isBlank());
-        Objects.requireNonNull(coll, "collection is required");
-        Optional<? extends AnnotationAndValue> result =  coll.stream()
-                .filter(it -> it.typeName().name().equals(annoTypeName))
-                .findFirst();
-        if (result.isPresent() && mustHaveValue && !result.get().hasNonBlankValue()) {
-            result = Optional.empty();
-        }
-        return result.orElseThrow(() -> new AssertionError("Unable to find " + annoTypeName));
-    }
-
-    /**
      * Attempts to find the annotation in the provided collection.
      *
      * @param annoTypeName  the annotation type name
      * @param coll          the collection to search
-     * @return the result of the find.
+     * @return the result of the find
      */
     public static Optional<? extends AnnotationAndValue> findFirst(String annoTypeName,
                                                          Collection<? extends AnnotationAndValue> coll) {
         assert (!annoTypeName.isBlank());
-        Objects.requireNonNull(coll, "collection is required");
         return coll.stream()
                 .filter(it -> it.typeName().name().equals(annoTypeName))
                 .findFirst();
-    }
-
-    /**
-     * The same as calling {@link #findFirst(String, java.util.Collection)} with an added optional check for the value being
-     * present and non-blank.
-     *
-     * @param annoTypeName  the annotation type name
-     * @param coll          the collection to search
-     * @param mustHaveValue true if the result must have a non-blank value
-     * @return the result of the find.
-     */
-    public static Optional<? extends AnnotationAndValue> findFirst(TypeName annoTypeName,
-                                                         Collection<? extends AnnotationAndValue> coll,
-                                                         boolean mustHaveValue) {
-        Objects.requireNonNull(coll, "collection is required");
-        Optional<? extends AnnotationAndValue> result =  coll.stream()
-                .filter(it -> it.typeName().equals(annoTypeName))
-                .findFirst();
-        if (result.isPresent() && mustHaveValue && !result.get().hasNonBlankValue()) {
-            result = Optional.empty();
-        }
-        return result;
     }
 
     @Override
@@ -234,17 +189,23 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
 
 
     /**
-     * The fluent builder.
+     * Fluent API builder for {@link io.helidon.pico.types.DefaultAnnotationAndValue}.
      */
-    public static class Builder {
+    public static class Builder implements io.helidon.common.Builder<Builder, DefaultAnnotationAndValue> {
+        private final Map<String, String> values = new LinkedHashMap<>();
+
         private TypeName typeName;
         private String value;
-        private Map<String, String> values;
 
         /**
          * Default ctor.
          */
         protected Builder() {
+        }
+
+        @Override
+        public DefaultAnnotationAndValue build() {
+            return new DefaultAnnotationAndValue(this);
         }
 
         /**
@@ -254,6 +215,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
          * @return this fluent builder
          */
         public Builder typeName(TypeName val) {
+            Objects.requireNonNull(val);
             this.typeName = val;
             return this;
         }
@@ -265,6 +227,7 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
          * @return this fluent builder
          */
         public Builder value(String val) {
+            Objects.requireNonNull(val);
             this.value = val;
             return this;
         }
@@ -276,19 +239,21 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
          * @return this fluent builder
          */
         public Builder values(Map<String, String> val) {
-            this.values = new LinkedHashMap<>(val);
+            Objects.requireNonNull(val);
+            this.values.clear();
+            this.values.putAll(val);
             return this;
         }
 
         /**
-         * Build the instance.
+         * Annotation type name from annotation type.
          *
-         * @return the built instance
+         * @param annoType annotation class
+         * @return updated builder
          */
-        public DefaultAnnotationAndValue build() {
-            Objects.requireNonNull(typeName, "type name is required");
-            return new DefaultAnnotationAndValue(this);
+        public Builder type(Class<? extends Annotation> annoType) {
+            Objects.requireNonNull(annoType);
+            return typeName(DefaultTypeName.create(annoType));
         }
     }
-
 }

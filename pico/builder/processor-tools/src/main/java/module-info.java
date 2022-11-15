@@ -15,7 +15,7 @@
  */
 
 /**
- * The Pico Builder tools module.
+ * The Pico Builder Processor Tools module.
  */
 module io.helidon.pico.builder.processor.tools {
     requires java.compiler;

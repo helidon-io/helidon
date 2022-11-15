@@ -19,12 +19,10 @@ package io.helidon.pico.builder.processor;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -37,6 +35,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
@@ -55,15 +54,15 @@ import io.helidon.pico.types.TypeName;
  * The processor for handling any annotation having a {@link io.helidon.pico.builder.BuilderTrigger}.
  */
 public class BuilderProcessor extends AbstractProcessor {
-
     private static final System.Logger LOGGER = System.getLogger(BuilderProcessor.class.getName());
-
-    private TypeInfoCreator tools;
-    private final LinkedHashSet<Element> elementsProcessed = new LinkedHashSet<>();
-
     private static final Map<TypeName, Set<BuilderCreator>> PRODUCERS_BY_ANNOTATION = new LinkedHashMap<>();
     private static final Set<Class<? extends Annotation>> ALL_ANNO_TYPES_HANDLED = new LinkedHashSet<>();
     private static final List<BuilderCreator> PRODUCERS = initialize();
+
+    private final LinkedHashSet<Element> elementsProcessed = new LinkedHashSet<>();
+
+    private TypeInfoCreator tools;
+    private Elements elementUtils;
 
     /**
      * Default constructor.
@@ -72,41 +71,29 @@ public class BuilderProcessor extends AbstractProcessor {
     public BuilderProcessor() {
     }
 
-    private static List<BuilderCreator> initialize() {
-        try {
-            // note: it is important to use this class' CL since maven will not give us the "right" one.
-            List<BuilderCreator> producers = HelidonServiceLoader
-                    .create(ServiceLoader.load(BuilderCreator.class, BuilderCreator.class.getClassLoader()))
-                    .asList();
-            producers.forEach(producer -> {
-                producer.supportedAnnotationTypes().forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.create(annoType), (k, v) -> {
-                        if (Objects.isNull(v)) {
-                            v = new LinkedHashSet<>();
-                        }
-                        v.add(producer);
-                        return v;
-                    });
-                });
-            });
-            producers.sort(Weights.weightComparator());
-            producers.forEach(p -> ALL_ANNO_TYPES_HANDLED.addAll(p.supportedAnnotationTypes()));
-            return producers;
-        } catch (Throwable t) {
-            RuntimeException e = new RuntimeException("Failed to initialize", t);
-            LOGGER.log(System.Logger.Level.ERROR, e.getMessage(), e);
-            throw e;
-        }
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        return ALL_ANNO_TYPES_HANDLED.stream().map(Class::getName).collect(Collectors.toSet());
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latestSupported();
     }
 
     @Override
     public void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
-        tools = HelidonServiceLoader.create(
+        this.elementUtils = processingEnv.getElementUtils();
+        this.tools = HelidonServiceLoader.create(
                         ServiceLoader.load(TypeInfoCreator.class, TypeInfoCreator.class.getClassLoader()))
-                .asList().stream().findFirst().orElse(null);
-        if (Objects.isNull(tools)) {
+                .asList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (tools == null) {
             String msg = "no available " + TypeInfoCreator.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
@@ -121,24 +108,9 @@ public class BuilderProcessor extends AbstractProcessor {
         LOGGER.log(System.Logger.Level.DEBUG, BuilderCreator.class.getSimpleName() + "s: " + PRODUCERS);
     }
 
-    Set<BuilderCreator> getProducersForType(TypeName annoTypeName) {
-        Set<BuilderCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
-        return Objects.isNull(set) ? null : Collections.unmodifiableSet(set);
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
-    }
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        return ALL_ANNO_TYPES_HANDLED.stream().map(Class::getName).collect(Collectors.toSet());
-    }
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (roundEnv.processingOver() || Objects.isNull(tools) || PRODUCERS.isEmpty()) {
+        if (roundEnv.processingOver() || tools == null || PRODUCERS.isEmpty()) {
             elementsProcessed.clear();
             return false;
         }
@@ -170,18 +142,21 @@ public class BuilderProcessor extends AbstractProcessor {
     /**
      * Process the annotation for the given element.
      *
-     * @param annoType  the annotation that triggered processing
-     * @param element   the element being processed
+     * @param annoType the annotation that triggered processing
+     * @param element  the element being processed
      * @throws IOException if unable to write the generated class
      */
     protected void process(Class<? extends Annotation> annoType, Element element) throws IOException {
         AnnotationMirror am = BuilderTypeTools.findAnnotationMirror(annoType.getName(),
-                                                                    element.getAnnotationMirrors()).orElse(null);
+                                                                    element.getAnnotationMirrors())
+                .orElseThrow(() -> new IllegalArgumentException("Cannot find annotation mirror for " + annoType
+                                                                        + " on " + element));
+
         AnnotationAndValue builderAnnotation = BuilderTypeTools
-                .createAnnotationAndValueFromMirror(am, processingEnv.getElementUtils()).get();
+                .createAnnotationAndValueFromMirror(am, elementUtils).get();
         TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element).orElse(null);
-        TypeInfo typeInfo = tools.createTypeInfo(builderAnnotation, typeName, (TypeElement) element, processingEnv).orElse(null);
-        if (Objects.isNull(typeInfo)) {
+        Optional<TypeInfo> typeInfo = tools.createTypeInfo(builderAnnotation, typeName, (TypeElement) element, processingEnv);
+        if (typeInfo.isEmpty()) {
             String msg = "Nothing to process, skipping: " + element;
             LOGGER.log(System.Logger.Level.WARNING, msg);
             processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg);
@@ -190,7 +165,7 @@ public class BuilderProcessor extends AbstractProcessor {
 
         Set<BuilderCreator> creators = getProducersForType(DefaultTypeName.create(annoType));
         Optional<List<TypeAndBody>> result = creators.stream()
-                .map(it -> it.create(typeInfo, builderAnnotation))
+                .map(it -> it.create(typeInfo.get(), builderAnnotation))
                 .filter(it -> !it.isEmpty())
                 .findFirst();
         if (result.isEmpty()) {
@@ -205,7 +180,7 @@ public class BuilderProcessor extends AbstractProcessor {
     /**
      * Performs the actual code generation of the given type and body model object.
      *
-     * @param codegens  the model objects to be code generated
+     * @param codegens the model objects to be code generated
      * @throws IOException if unable to write the generated class
      */
     protected void codegen(List<TypeAndBody> codegens) throws IOException {
@@ -215,6 +190,33 @@ public class BuilderProcessor extends AbstractProcessor {
                 os.write(typeAndBody.body());
             }
         }
+    }
+
+    private static List<BuilderCreator> initialize() {
+        try {
+            // note: it is important to use this class' CL since maven will not give us the "right" one.
+            List<BuilderCreator> producers = HelidonServiceLoader
+                    .create(ServiceLoader.load(BuilderCreator.class, BuilderCreator.class.getClassLoader()))
+                    .asList();
+            producers.forEach(producer -> {
+                producer.supportedAnnotationTypes().forEach(annoType -> {
+                    PRODUCERS_BY_ANNOTATION.computeIfAbsent(DefaultTypeName.create(annoType), it -> new LinkedHashSet<>())
+                            .add(producer);
+                });
+            });
+            producers.sort(Weights.weightComparator());
+            producers.forEach(p -> ALL_ANNO_TYPES_HANDLED.addAll(p.supportedAnnotationTypes()));
+            return producers;
+        } catch (Throwable t) {
+            RuntimeException e = new RuntimeException("Failed to initialize", t);
+            LOGGER.log(System.Logger.Level.ERROR, e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private Set<BuilderCreator> getProducersForType(TypeName annoTypeName) {
+        Set<BuilderCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
+        return set == null ? Set.of() : Set.copyOf(set);
     }
 
 }

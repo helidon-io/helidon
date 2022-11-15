@@ -17,6 +17,7 @@
 package io.helidon.pico.builder.api.test.testsubjects;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.pico.builder.test.testsubjects.Level1;
 
@@ -119,8 +120,8 @@ public class Level1ManualImpl extends Level0ManualImpl implements Level1 {
      * @return ignored, here for testing only
      */
     @Override
-    public Boolean getLevel1BooleanAttribute() {
-        return level1BooleanAttribute;
+    public Optional<Boolean> getLevel1BooleanAttribute() {
+        return Optional.ofNullable(level1BooleanAttribute);
     }
 
     /**
@@ -176,7 +177,7 @@ public class Level1ManualImpl extends Level0ManualImpl implements Level1 {
             this.level1intAttribute = val.getLevel1intAttribute();
             this.level1IntegerAttribute = val.getLevel1IntegerAttribute();
             this.level1booleanAttribute = val.getLevel1booleanAttribute();
-            this.level1BooleanAttribute = val.getLevel1BooleanAttribute();
+            val.getLevel1BooleanAttribute().ifPresent(this::level1BooleanAttribute);
         }
 
         /**

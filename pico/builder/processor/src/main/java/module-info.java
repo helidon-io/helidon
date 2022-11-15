@@ -28,4 +28,7 @@ module io.helidon.pico.builder.processor {
     exports io.helidon.pico.builder.processor;
 
     provides javax.annotation.processing.Processor with io.helidon.pico.builder.processor.BuilderProcessor;
+
+    uses io.helidon.pico.builder.processor.spi.BuilderCreator;
+    uses io.helidon.pico.builder.processor.spi.TypeInfoCreator;
 }

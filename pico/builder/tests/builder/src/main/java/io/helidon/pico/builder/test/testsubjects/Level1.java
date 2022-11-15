@@ -16,6 +16,8 @@
 
 package io.helidon.pico.builder.test.testsubjects;
 
+import java.util.Optional;
+
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.Builder;
 
@@ -65,6 +67,6 @@ public interface Level1 extends Level0 {
      *
      * @return ignored, here for testing purposes only
      */
-    Boolean getLevel1BooleanAttribute();
+    Optional<Boolean> getLevel1BooleanAttribute();
 
 }

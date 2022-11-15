@@ -16,12 +16,11 @@
 
 package io.helidon.pico.builder.processor.spi;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,11 +47,18 @@ public class DefaultTypeInfo implements TypeInfo {
     protected DefaultTypeInfo(Builder b) {
         this.typeName = b.typeName;
         this.typeKind = b.typeKind;
-        this.annotations = Objects.isNull(b.annotations)
-                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(b.annotations));
-        this.elementInfo = Objects.isNull(b.elementInfo)
-                ? Collections.emptyList() : Collections.unmodifiableList(new LinkedList<>(b.elementInfo));
+        this.annotations = Collections.unmodifiableList(new LinkedList<>(b.annotations));
+        this.elementInfo = Collections.unmodifiableList(new LinkedList<>(b.elementInfo));
         this.superTypeInfo = b.superTypeInfo;
+    }
+
+    /**
+     * Creates a new builder for this type.
+     *
+     * @return the fluent builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -96,32 +102,32 @@ public class DefaultTypeInfo implements TypeInfo {
                 + ", superTypeInfo=" + superTypeInfo();
     }
 
-
-    /**
-     * Creates a new builder for this type.
-     *
-     * @return the fluent builder
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-
     /**
      * Builder for this type.
      */
-    public static class Builder {
+    public static class Builder implements io.helidon.common.Builder<Builder, DefaultTypeInfo> {
+        private final List<AnnotationAndValue> annotations = new ArrayList<>();
+        private final List<TypedElementName> elementInfo = new ArrayList<>();
+
         private TypeName typeName;
         private String typeKind;
-        private List<AnnotationAndValue> annotations;
-        private List<TypedElementName> elementInfo;
-        private Map<TypedElementName, String> defaultValueMap;
+
         private TypeInfo superTypeInfo;
 
         /**
          * Default constructor.
          */
         protected Builder() {
+        }
+
+        /**
+         * Builds the instance.
+         *
+         * @return the built instance
+         */
+        @Override
+        public DefaultTypeInfo build() {
+            return new DefaultTypeInfo(this);
         }
 
         /**
@@ -153,7 +159,9 @@ public class DefaultTypeInfo implements TypeInfo {
          * @return this fluent builder
          */
         public Builder annotations(Collection<AnnotationAndValue> val) {
-            this.annotations = new LinkedList<>(Objects.requireNonNull(val));
+            Objects.requireNonNull(val);
+            this.annotations.clear();
+            this.annotations.addAll(val);
             return this;
         }
 
@@ -164,9 +172,7 @@ public class DefaultTypeInfo implements TypeInfo {
          * @return this fluent builder
          */
         public Builder addAnnotation(AnnotationAndValue val) {
-            if (Objects.isNull(annotations)) {
-                annotations = new LinkedList<>();
-            }
+            Objects.requireNonNull(val);
             annotations.add(Objects.requireNonNull(val));
             return this;
         }
@@ -178,7 +184,9 @@ public class DefaultTypeInfo implements TypeInfo {
          * @return this fluent builder
          */
         public Builder elementInfo(Collection<TypedElementName> val) {
-            this.elementInfo = new LinkedList<>(Objects.requireNonNull(val));
+            Objects.requireNonNull(val);
+            this.elementInfo.clear();
+            this.elementInfo.addAll(val);
             return this;
         }
 
@@ -189,36 +197,8 @@ public class DefaultTypeInfo implements TypeInfo {
          * @return this fluent builder
          */
         public Builder addElementInfo(TypedElementName val) {
-            if (Objects.isNull(elementInfo)) {
-                elementInfo = new LinkedList<>();
-            }
+            Objects.requireNonNull(val);
             elementInfo.add(Objects.requireNonNull(val));
-            return this;
-        }
-
-        /**
-         * Sets the defaultValueMap to val.
-         *
-         * @param val the value
-         * @return this fluent builder
-         */
-        public Builder defaultValueMap(Map<TypedElementName, String> val) {
-            this.defaultValueMap = new LinkedHashMap<>(Objects.requireNonNull(val));
-            return this;
-        }
-
-        /**
-         * Adds a singular defaultValue val.
-         *
-         * @param key the key
-         * @param val the value
-         * @return this fluent builder
-         */
-        public Builder addDefaultValue(TypedElementName key, String val) {
-            if (Objects.isNull(defaultValueMap)) {
-                defaultValueMap = new LinkedHashMap<>();
-            }
-            defaultValueMap.put(key, val);
             return this;
         }
 
@@ -229,17 +209,9 @@ public class DefaultTypeInfo implements TypeInfo {
          * @return this fluent builder
          */
         public Builder superTypeInfo(TypeInfo val) {
+            Objects.requireNonNull(val);
             this.superTypeInfo = val;
             return this;
-        }
-
-        /**
-         * Builds the instance.
-         *
-         * @return the built instance
-         */
-        public DefaultTypeInfo build() {
-            return new DefaultTypeInfo(this);
         }
     }
 

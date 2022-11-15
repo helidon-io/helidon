@@ -17,12 +17,14 @@
 package io.helidon.pico.builder.api.test;
 
 import java.net.URI;
+import java.util.Optional;
 
 import io.helidon.pico.builder.test.testsubjects.ChildInterfaceIsABuilder;
 import io.helidon.pico.builder.test.testsubjects.ChildInterfaceIsABuilderImpl;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,9 +37,9 @@ class ParentParentChildTest {
                 .childLevel(100)
                 .parentLevel(99)
                 .uri(URI.create("http://localhost"))
-                .empty((String) null)
+                .empty(Optional.empty())
                 .build();
-        assertThat(new String(child.overrideMe()), equalTo("override"));
+        assertThat(new String(child.maybeOverrideMe().get()), equalTo("override"));
         assertThat(child.uri().get().toString(), equalTo("http://localhost"));
         assertThat(child.empty().isEmpty(), is(true));
         assertThat(child.childLevel(), is(100L));
@@ -51,16 +53,22 @@ class ParentParentChildTest {
     @Test
     void ensureCharArraysAreHiddenFromToStringOutput() {
         ChildInterfaceIsABuilderImpl val = ChildInterfaceIsABuilderImpl.builder()
-                .overrideMe("password")
                 .build();
         assertThat(val.toString(),
-                equalTo("ChildInterfaceIsABuilder(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
-                        + "overrideMe=not-null)"));
+                   equalTo("ChildInterfaceIsABuilder(uri=Optional.empty, empty=Optional.empty, parentLevel=0, childLevel=0, "
+                                   + "isChildLevel=true, maybeOverrideMe=not-empty, overrideMe=not-null)"));
+        assertThat(val.overrideMe(), equalTo("override2".toCharArray()));
+        assertThat(val.maybeOverrideMe().orElseThrow(), equalTo("override".toCharArray()));
 
-        val = ChildInterfaceIsABuilderImpl.toBuilder(val).overrideMe((char[]) null).build();
+        val = ChildInterfaceIsABuilderImpl.toBuilder(val)
+                .maybeOverrideMe(Optional.empty())
+                .overrideMe("pwd")
+                .build();
         assertThat(val.toString(),
-                equalTo("ChildInterfaceIsABuilder(uri=null, empty=null, parentLevel=0, childLevel=0, isChildLevel=true, "
-                        + "overrideMe=null)"));
+                   equalTo("ChildInterfaceIsABuilder(uri=Optional.empty, empty=Optional.empty, parentLevel=0, childLevel=0, "
+                                   + "isChildLevel=true, maybeOverrideMe=Optional.empty, overrideMe=not-null)"));
+        assertThat(val.overrideMe(), equalTo("pwd".toCharArray()));
+        assertThat(val.maybeOverrideMe(), optionalEmpty());
     }
 
 }

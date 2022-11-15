@@ -34,7 +34,7 @@ class PickleBarrelTest {
     @Test
     void testIt() {
         DefaultPickle.Builder pickleBuilder = DefaultPickle.builder().size(Optional.of(Pickle.Size.MEDIUM));
-        AssertionError e = assertThrows(AssertionError.class, pickleBuilder::build);
+        Exception e = assertThrows(IllegalStateException.class, pickleBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'type' is a required attribute and should not be null"));
 
@@ -44,12 +44,12 @@ class PickleBarrelTest {
                equalTo("Pickle(type=DILL, size=Optional[MEDIUM])"));
 
         DefaultPickleBarrel.Builder pickleBarrelBuilder = DefaultPickleBarrel.builder();
-        e = assertThrows(AssertionError.class, pickleBarrelBuilder::build);
+        e = assertThrows(IllegalStateException.class, pickleBarrelBuilder::build);
         assertThat(e.getMessage(),
                equalTo("'id' is a required attribute and should not be null"));
 
         PickleBarrel pickleBarrel = pickleBarrelBuilder.addPickle(pickle).id("123").build();
         assertThat(pickleBarrel.toString(),
-               equalTo("PickleBarrel(id=123, type=null, pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
+               equalTo("PickleBarrel(id=123, type=Optional.empty, pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
     }
 }
