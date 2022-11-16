@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import javax.json.JsonObject;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -54,6 +56,8 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
+
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
  * OIDC integration requires web resources to be exposed through a web server.
@@ -219,7 +223,7 @@ public final class OidcSupport implements Service {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        String tenantName = req.queryParams().first(oidcConfig.tenantParamName()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
+        String tenantName = findTenantName(req);
 
         Tenant tenant = obtainCurrentTenant(tenantName);
 
@@ -258,6 +262,44 @@ public final class OidcSupport implements Service {
                             .send();
                 })
                 .exceptionallyAccept(t -> sendError(res, t));
+    }
+
+    private String findTenantName(ServerRequest request) {
+        List<String> missingLocations = new LinkedList<>();
+        Optional<String> tenantId = Optional.empty();
+        if (oidcConfig.useParam()) {
+            tenantId = request.queryParams().first(oidcConfig.tenantParamName());
+
+            if (tenantId.isEmpty()) {
+                missingLocations.add("query-param");
+            }
+        }
+        if (oidcConfig.useCookie() && tenantId.isEmpty()) {
+            tenantId = oidcConfig.tenantCookieHandler()
+                    .findCookie(request.headers().toMap())
+                    .stream()
+                    .map(this::getValueFromSingle)
+                    .findFirst();
+
+            if (tenantId.isEmpty()) {
+                missingLocations.add("cookie");
+            }
+        }
+        if (tenantId.isPresent()) {
+            return tenantId.get();
+        } else {
+            LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations);
+            LOGGER.finest(() -> "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
+            return DEFAULT_TENANT_ID;
+        }
+    }
+
+    private String getValueFromSingle(Single<String> cookieSingle) {
+        try {
+            return cookieSingle.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Tenant obtainCurrentTenant(String tenantName) {
