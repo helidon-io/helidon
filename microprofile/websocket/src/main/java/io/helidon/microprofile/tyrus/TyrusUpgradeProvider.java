@@ -78,6 +78,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
     @Override
     public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
+        // Check required header
         String wsKey;
         if (headers.contains(WS_KEY)) {
             wsKey = headers.get(WS_KEY).value();
@@ -85,14 +86,14 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
             // this header is required
             return null;
         }
-        // protocol version
+
+        // Verify protocol version
         String version;
         if (headers.contains(WS_VERSION)) {
             version = headers.get(WS_VERSION).value();
         } else {
             version = SUPPORTED_VERSION;
         }
-
         if (!SUPPORTED_VERSION.equals(version)) {
             throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)
@@ -119,6 +120,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
             return null;
         }
 
+        // Validate origin
         if (!anyOrigin()) {
             if (headers.contains(Http.Header.ORIGIN)) {
                 String origin = headers.get(Http.Header.ORIGIN).value();
@@ -143,13 +145,12 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.log(Level.FINE, "Upgraded to websocket version " + version);
         }
-
         return new TyrusConnection(ctx, upgradeInfo);
     }
 
     TyrusServerContainer initializeTyrus() {
         // Collect endpoint classes -- TODO others
-        Set<Class<?>> allEndpointClasses = tyrusRouting.getRoutes()
+        Set<Class<?>> allEndpointClasses = tyrusRouting.routes()
                 .stream()
                 .map(TyrusRoute::endpointClass)
                 .collect(Collectors.toSet());
@@ -170,7 +171,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
             @Override
             public Set<Extension> getInstalledExtensions() {
-                return tyrusRouting.getExtensions();
+                return tyrusRouting.extensions();
             }
 
             @Override
@@ -181,8 +182,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
         // Register classes with context path "/"
         WebSocketEngine engine = tyrusServerContainer.getWebSocketEngine();
-
-        tyrusRouting.getRoutes().forEach(wsRoute -> {
+        tyrusRouting.routes().forEach(wsRoute -> {
             try {
                 if (wsRoute.serverEndpointConfig() != null) {
                     LOGGER.log(Level.FINE, () -> "Registering ws endpoint "
@@ -202,7 +202,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
     }
 
     WebSocketEngine.UpgradeInfo protocolHandshake(WritableHeaders<?> headers) {
-        LOGGER.fine("Initiating WebSocket handshake ...");
+        LOGGER.log(Level.FINE, "Initiating WebSocket handshake with Tyrus...");
 
         // Create Tyrus request context, copy request headers and query params
         Map<String, String[]> paramsMap = new HashMap<>();

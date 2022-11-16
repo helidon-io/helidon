@@ -73,7 +73,7 @@ class TyrusConnection implements ServerConnection, WsSession {
 
     @Override
     public WsSession send(String text, boolean last) {
-        return this;        // never called
+        return this;
     }
 
     @Override

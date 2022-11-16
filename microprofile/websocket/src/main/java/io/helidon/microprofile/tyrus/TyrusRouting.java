@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.PathMatchers;
@@ -30,20 +28,15 @@ import jakarta.websocket.Extension;
 import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.server.ServerEndpointConfig;
 
-/**
- * WebSocket specific routing.
- */
 public class TyrusRouting implements Routing {
     private static final TyrusRouting EMPTY = TyrusRouting.builder().build();
 
     private final Set<Extension> extensions;
     private final List<TyrusRoute> routes;
-    private final ExecutorService executorService;
 
     private TyrusRouting(Builder builder) {
         this.routes = builder.routes;
         this.extensions = builder.extensions;
-        this.executorService = builder.executorService;
     }
 
     /**
@@ -64,16 +57,12 @@ public class TyrusRouting implements Routing {
         return EMPTY;
     }
 
-    Set<Extension> getExtensions() {
+    Set<Extension> extensions() {
         return extensions;
     }
 
-    List<TyrusRoute> getRoutes() {
+    List<TyrusRoute> routes() {
         return routes;
-    }
-
-    ExecutorService getExecutorService() {
-        return executorService;
     }
 
     /**
@@ -100,7 +89,6 @@ public class TyrusRouting implements Routing {
 
         private final List<TyrusRoute> routes = new ArrayList<>();
         private final Set<Extension> extensions = new HashSet<>();      // mutable
-        private ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
         private Builder() {
         }
@@ -166,17 +154,6 @@ public class TyrusRouting implements Routing {
          */
         public Builder extension(Extension extension) {
             this.extensions.add(extension);
-            return this;
-        }
-
-        /**
-         * ExecutorService supplying threads for execution of endpoint methods.
-         *
-         * @param executorService executorService supplying threads for execution of endpoint methods
-         * @return updated builder
-         */
-        public Builder executor(ExecutorService executorService) {
-            this.executorService = executorService;
             return this;
         }
 
