@@ -171,16 +171,16 @@ public class TyrusCdiExtension implements Extension {
                 Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
 
                 // Register classes and configs
-                endpointClasses.forEach(tyrusRoutingBuilder::endpoint);
-                endpointConfigs.forEach(tyrusRoutingBuilder::endpoint);
+                endpointClasses.forEach(cl -> tyrusRoutingBuilder.endpoint(rootPath, cl));
+                endpointConfigs.forEach(cf -> tyrusRoutingBuilder.endpoint(rootPath, cf));
 
                 // Create routing wsRoutingBuilder
                 tyrusRouting = tyrusRoutingBuilder.build();
                 addWsRouting(tyrusRouting, namedRouting, routingNameRequired, c.getName());
             } else {
                 // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(tyrusRoutingBuilder::endpoint);
-                app.programmaticEndpoints().forEach(tyrusRoutingBuilder::endpoint);
+                app.annotatedEndpoints().forEach(cl -> tyrusRoutingBuilder.endpoint(rootPath, cl));
+                app.programmaticEndpoints().forEach(ep -> tyrusRoutingBuilder.endpoint(rootPath, ep));
                 app.extensions().forEach(tyrusRoutingBuilder::extension);
 
                 // Create routing wsRoutingBuilder

@@ -149,7 +149,6 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
     }
 
     TyrusServerContainer initializeTyrus() {
-        // Collect endpoint classes -- TODO others
         Set<Class<?>> allEndpointClasses = tyrusRouting.routes()
                 .stream()
                 .map(TyrusRoute::endpointClass)

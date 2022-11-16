@@ -104,7 +104,8 @@ public class TyrusRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(String path, Class<?> endpointClass) {
-            this.routes.add(new TyrusRoute(path, endpointClass, null, PathMatchers.pattern(path)));
+            this.routes.add(new TyrusRoute(path, endpointClass, null,
+                    PathMatchers.pattern(pathConcat(path, serverEndpoint(endpointClass)))));
             return this;
         }
 
@@ -115,14 +116,7 @@ public class TyrusRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(Class<?> endpointClass) {
-            ServerEndpoint annot = endpointClass.getAnnotation(ServerEndpoint.class);
-            if (annot == null) {
-                throw new IllegalArgumentException("Endpoint class " + endpointClass.getName()
-                        + " missing @ServerEndpoint");
-            }
-            this.routes.add(new TyrusRoute("/", endpointClass, null,
-                    PathMatchers.pattern(annot.value())));
-            return this;
+            return endpoint("/", endpointClass);
         }
 
         /**
@@ -133,7 +127,8 @@ public class TyrusRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(String path, ServerEndpointConfig serverEndpointConfig) {
-            this.routes.add(new TyrusRoute(path, null, serverEndpointConfig, PathMatchers.pattern(path)));
+            this.routes.add(new TyrusRoute(path, null, serverEndpointConfig,
+                    PathMatchers.pattern(pathConcat(path, serverEndpointConfig.getPath()))));
             return this;
         }
 
@@ -144,9 +139,7 @@ public class TyrusRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(ServerEndpointConfig serverEndpointConfig) {
-            this.routes.add(new TyrusRoute("/", null, serverEndpointConfig,
-                    PathMatchers.pattern(serverEndpointConfig.getPath())));
-            return this;
+            return endpoint("/", serverEndpointConfig);
         }
 
         /**
@@ -163,6 +156,30 @@ public class TyrusRouting implements Routing {
         @Override
         public TyrusRouting build() {
             return new TyrusRouting(this);
+        }
+
+        private static String pathConcat(String rootPath, String path) {
+            StringBuilder result = new StringBuilder();
+            if (rootPath.equals("/")) {
+                rootPath = "";
+            } else if (!rootPath.startsWith("/")) {
+                result.append("/");
+            }
+            result.append(rootPath);
+            if (!rootPath.endsWith("/") && !path.startsWith("/")) {
+                result.append("/");
+            }
+            result.append(path);
+            return result.toString();
+        }
+
+        private static String serverEndpoint(Class<?> endpointClass) {
+            ServerEndpoint annot = endpointClass.getAnnotation(ServerEndpoint.class);
+            if (annot == null) {
+                throw new IllegalArgumentException("Endpoint class " + endpointClass.getName()
+                        + " missing @ServerEndpoint");
+            }
+            return annot.value();
         }
     }
 }

@@ -44,7 +44,7 @@ class EchoEndpointProgTest extends EchoEndpointBaseTest {
     @Test
     public void testEchoProg() throws Exception {
         EchoListener listener = new EchoListener();
-        URI echoUri = URI.create("ws://localhost:" + serverPort() + "/echoProg");
+        URI echoUri = URI.create("ws://localhost:" + serverPort() + "/web/echoProg");
         java.net.http.WebSocket ws = httpClient().newWebSocketBuilder()
                 .buildAsync(echoUri, listener)
                 .get(WAIT_MILLIS, TimeUnit.SECONDS);
@@ -55,7 +55,7 @@ class EchoEndpointProgTest extends EchoEndpointBaseTest {
     }
 
     @Dependent
-    // @RoutingPath("/web") TODO
+    @RoutingPath("/web")
     public static class EndpointApplication implements ServerApplicationConfig {
         @Override
         public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpoints) {
