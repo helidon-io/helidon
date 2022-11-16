@@ -16,7 +16,6 @@
 
     <properties>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
-        <version.plugin.assembly>3.3.0</version.plugin.assembly>
     </properties>
 
     <dependencies>
@@ -37,20 +36,26 @@
             <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.json.bind</groupId>
-            <artifactId>jakarta.json.bind-api</artifactId>
-        </dependency>
-        <!-- TODO: confirm with TV
-        <dependency>
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
-            <version>${version.jackson.databind.nullable}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-binding</artifactId>
+            <artifactId>jersey-media-json-jackson</artifactId>
         </dependency>
-        -->
+        <!-- This is required since we are using default dateLibrary i.e. java8 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.health</groupId>
             <artifactId>helidon-microprofile-health</artifactId>
@@ -76,11 +81,6 @@
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-monitoring</artifactId>
-        </dependency>
-        <!-- This should have come as transitive dep from oci sdk common -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         <!-- Allows Helidon Metrics to be pushed to OCI Monitoring Service -->
         <dependency>
@@ -124,7 +124,7 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>server-dependencies</id>
+                        <id>copy-libs</id>
                     </execution>
                 </executions>
             </plugin>
@@ -133,25 +133,7 @@
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>server-jandex</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>server-jar</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>server-exec</id>
+                        <id>make-index</id>
                     </execution>
                 </executions>
             </plugin>
@@ -179,7 +161,7 @@
                                 <helidonVersion>{{helidonVersion}}</helidonVersion>
                                 <library>mp</library>
                                 <modelPackage>{{package}}.server.model</modelPackage>
-                                <serializationLibrary>jsonb</serializationLibrary>
+                                <serializationLibrary>jackson</serializationLibrary>
                             </configOptions>
                         </configuration>
                     </execution>
@@ -198,13 +180,12 @@
     </build>
     <profiles>
         <profile>
-            <id>zip-assembly</id>
+            <id>zip</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <version>${version.plugin.assembly}</version>
                         <executions>
                             <execution>
                                 <id>distro-assembly</id>

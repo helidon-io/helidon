@@ -15,9 +15,21 @@
     <name>{{name}}</name>
 
     <properties>
+        <version.lib.jackson.databind.nullable>0.2.3</version.lib.jackson.databind.nullable>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.openapi>6.2.1</version.plugin.openapi>
+        <version.plugin.assembly>3.3.0</version.plugin.assembly>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.openapitools</groupId>
+                <artifactId>jackson-databind-nullable</artifactId>
+                <version>${version.lib.jackson.databind.nullable}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <pluginManagement>
@@ -40,6 +52,11 @@
                     <groupId>org.openapitools</groupId>
                     <artifactId>openapi-generator-maven-plugin</artifactId>
                     <version>${version.plugin.openapi}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${version.plugin.assembly}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
