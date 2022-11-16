@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
@@ -25,7 +24,6 @@ import io.helidon.common.features.api.HelidonFlavor;
         description = "Scheduling of periodical tasks",
         in = HelidonFlavor.SE,
         path = "Scheduling")
-@Aot
 module io.helidon.scheduling {
     requires static io.helidon.common.features.api;
 
