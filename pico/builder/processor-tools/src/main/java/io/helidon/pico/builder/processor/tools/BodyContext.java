@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.pico.builder.processor.spi.TypeInfo;
-import io.helidon.pico.builder.spi.BeanUtils;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
 import io.helidon.pico.types.TypeName;
