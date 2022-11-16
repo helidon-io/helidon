@@ -47,13 +47,13 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 /**
  * Configure Tyrus related things.
  */
-public class WebSocketCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(WebSocketCdiExtension.class.getName());
+public class TyrusCdiExtension implements Extension {
+    private static final Logger LOGGER = Logger.getLogger(TyrusCdiExtension.class.getName());
     private static final String DEFAULT_WEBSOCKET_PATH = "/";
 
     private Config config;
     private ServerCdiExtension serverCdiExtension;
-    private final WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
+    private final TyrusApplication.Builder appBuilder = TyrusApplication.builder();
     private volatile TyrusRouting tyrusRouting;
 
     void prepareRuntime(@Observes @RuntimeStart Config config) {
@@ -132,7 +132,7 @@ public class WebSocketCdiExtension implements Extension {
 
     private void registerWebSockets() {
         try {
-            WebSocketApplication app = appBuilder.build();
+            TyrusApplication app = appBuilder.build();
 
             // If application present call its methods
             TyrusRouting.Builder tyrusRoutingBuilder = TyrusRouting.builder();

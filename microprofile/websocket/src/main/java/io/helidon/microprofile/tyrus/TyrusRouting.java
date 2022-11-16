@@ -28,6 +28,9 @@ import jakarta.websocket.Extension;
 import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.server.ServerEndpointConfig;
 
+/**
+ * Routing class for Tyrus.
+ */
 public class TyrusRouting implements Routing {
     private static final TyrusRouting EMPTY = TyrusRouting.builder().build();
 

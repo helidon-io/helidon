@@ -28,14 +28,14 @@ import jakarta.websocket.server.ServerApplicationConfig;
 /**
  * Represents a websocket application with class and config endpoints.
  */
-public final class WebSocketApplication {
+public final class TyrusApplication {
 
     private final Class<? extends ServerApplicationConfig> applicationClass;
     private final Set<Class<?>> annotatedEndpoints;
     private final Set<Class<? extends Endpoint>> programmaticEndpoints;
     private final Set<Extension> extensions;
 
-    private WebSocketApplication(Builder builder) {
+    private TyrusApplication(Builder builder) {
         this.applicationClass = builder.applicationClass;
         this.annotatedEndpoints = builder.annotatedEndpoints;
         this.programmaticEndpoints = builder.programmaticEndpoints;
@@ -43,7 +43,7 @@ public final class WebSocketApplication {
     }
 
     /**
-     * A new fluent API builder to create a customized {@link WebSocketApplication}.
+     * A new fluent API builder to create a customized {@link TyrusApplication}.
      *
      * @return a new builder instance
      */
@@ -88,10 +88,10 @@ public final class WebSocketApplication {
     }
 
     /**
-     * Fluent API builder to create {@link WebSocketApplication} instances.
+     * Fluent API builder to create {@link TyrusApplication} instances.
      */
     public static class Builder {
-        private static final Logger LOGGER = Logger.getLogger(WebSocketApplication.Builder.class.getName());
+        private static final Logger LOGGER = Logger.getLogger(TyrusApplication.Builder.class.getName());
 
         private Class<? extends ServerApplicationConfig> applicationClass;
         private final Set<Class<?>> annotatedEndpoints = new HashSet<>();
@@ -164,8 +164,8 @@ public final class WebSocketApplication {
          *
          * @return The application.
          */
-        public WebSocketApplication build() {
-            return new WebSocketApplication(this);
+        public TyrusApplication build() {
+            return new TyrusApplication(this);
         }
     }
 }

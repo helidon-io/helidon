@@ -69,7 +69,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
      */
     @Deprecated()
     public TyrusUpgradeProvider() {
-        WebSocketCdiExtension extension = CDI.current().select(WebSocketCdiExtension.class).get();
+        TyrusCdiExtension extension = CDI.current().select(TyrusCdiExtension.class).get();
         Objects.requireNonNull(extension);
         this.tyrusRouting = extension.tyrusRouting();
         TyrusServerContainer tyrusServerContainer = initializeTyrus();
@@ -161,12 +161,12 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
             @Override
             public void register(Class<?> endpointClass) {
-                throw new UnsupportedOperationException("Use TyrusWebSocketEngine for registration");
+                throw new UnsupportedOperationException("Cannot register endpoint class");
             }
 
             @Override
             public void register(ServerEndpointConfig serverEndpointConfig) {
-                throw new UnsupportedOperationException("Use TyrusWebSocketEngine for registration");
+                throw new UnsupportedOperationException("Cannot register ServerEndpointConfig");
             }
 
             @Override
@@ -182,16 +182,16 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
         // Register classes with context path "/"
         WebSocketEngine engine = tyrusServerContainer.getWebSocketEngine();
-        tyrusRouting.routes().forEach(wsRoute -> {
+        tyrusRouting.routes().forEach(route -> {
             try {
-                if (wsRoute.serverEndpointConfig() != null) {
+                if (route.serverEndpointConfig() != null) {
                     LOGGER.log(Level.FINE, () -> "Registering ws endpoint "
-                            + wsRoute.path()
-                            + wsRoute.serverEndpointConfig().getPath());
-                    engine.register(wsRoute.serverEndpointConfig(), wsRoute.path());
+                            + route.path()
+                            + route.serverEndpointConfig().getPath());
+                    engine.register(route.serverEndpointConfig(), route.path());
                 } else {
-                    LOGGER.log(Level.FINE, () -> "Registering annotated ws endpoint " + wsRoute.path());
-                    engine.register(wsRoute.endpointClass(), wsRoute.path());
+                    LOGGER.log(Level.FINE, () -> "Registering annotated ws endpoint " + route.path());
+                    engine.register(route.endpointClass(), route.path());
                 }
             } catch (DeploymentException e) {
                 throw new RuntimeException(e);

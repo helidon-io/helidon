@@ -43,7 +43,7 @@ module io.helidon.microprofile.tyrus {
     opens io.helidon.microprofile.tyrus to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
+            with io.helidon.microprofile.tyrus.TyrusCdiExtension;
     provides org.glassfish.tyrus.core.ComponentProvider
             with io.helidon.microprofile.tyrus.HelidonComponentProvider;
     provides io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider
