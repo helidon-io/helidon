@@ -144,7 +144,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
             LOGGER.log(Level.FINE, "Upgraded to websocket version " + version);
         }
 
-        return new TyrusConnection(ctx, prologue, headers, wsKey, upgradeInfo);
+        return new TyrusConnection(ctx, upgradeInfo);
     }
 
     TyrusServerContainer initializeTyrus() {

@@ -22,13 +22,11 @@ import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.websocket.CloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
-import io.helidon.nima.websocket.webserver.WsConnection;
 
 import jakarta.websocket.CloseReason;
 import org.glassfish.tyrus.spi.CompletionHandler;
@@ -36,26 +34,30 @@ import org.glassfish.tyrus.spi.Connection;
 import org.glassfish.tyrus.spi.WebSocketEngine;
 import org.glassfish.tyrus.spi.Writer;
 
-import static jakarta.websocket.CloseReason.CloseCodes.NORMAL_CLOSURE;
 import static jakarta.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
 import static jakarta.websocket.CloseReason.CloseCodes.getCloseCode;
 
-class TyrusConnection extends WsConnection {
+/**
+ * A server connection that passes and receives buffers from Tyrus. Note that this
+ * connection does not handle framing, it simply passes raw bytes to Tyrus where
+ * that takes place.
+ */
+class TyrusConnection implements ServerConnection, WsSession {
     private static final Logger LOGGER = Logger.getLogger(TyrusConnection.class.getName());
 
-    TyrusConnection(ConnectionContext ctx,
-                    HttpPrologue prologue,
-                    WritableHeaders<?> headers,
-                    String wsKey,
-                    WebSocketEngine.UpgradeInfo upgradeInfo) {
-        super(ctx, prologue, headers, wsKey, new TyrusListener(upgradeInfo, ctx));
+    private final ConnectionContext ctx;
+    private final WebSocketEngine.UpgradeInfo upgradeInfo;
+    private final TyrusListener listener;
+
+    TyrusConnection(ConnectionContext ctx, WebSocketEngine.UpgradeInfo upgradeInfo) {
+        this.ctx = ctx;
+        this.upgradeInfo = upgradeInfo;
+        this.listener = new TyrusListener();
     }
 
     @Override
     public void handle() {
-        DataReader dataReader = connectionContext().dataReader();
-        TyrusListener listener = (TyrusListener) listener();
-
+        DataReader dataReader = ctx.dataReader();
         listener.onOpen(this);
         while (true) {
             try {
@@ -63,23 +65,46 @@ class TyrusConnection extends WsConnection {
                 listener.receive(this, buffer, true);
             } catch (Exception e) {
                 listener.onError(this, e);
-                this.close(CloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                listener.onClose(this, CloseCodes.UNEXPECTED_CONDITION, e.getMessage());
                 return;
             }
         }
     }
 
-    static class TyrusListener implements WsListener {
+    @Override
+    public WsSession send(String text, boolean last) {
+        return this;        // never called
+    }
+
+    @Override
+    public WsSession send(BufferData bufferData, boolean last) {
+        return this;
+    }
+
+    @Override
+    public WsSession ping(BufferData bufferData) {
+        return this;
+    }
+
+    @Override
+    public WsSession pong(BufferData bufferData) {
+        return this;
+    }
+
+    @Override
+    public WsSession close(int code, String reason) {
+        return this;
+    }
+
+    @Override
+    public WsSession abort() {
+        return this;
+    }
+
+    class TyrusListener implements WsListener {
         private static final int MAX_RETRIES = 5;
 
         private Connection connection;
-        private final ConnectionContext ctx;
-        private final WebSocketEngine.UpgradeInfo upgradeInfo;
-
-        TyrusListener(WebSocketEngine.UpgradeInfo upgradeInfo, ConnectionContext ctx) {
-            this.upgradeInfo = upgradeInfo;
-            this.ctx = ctx;
-        }
 
         @Override
         public void receive(WsSession session, String text, boolean last) {
@@ -108,7 +133,6 @@ class TyrusConnection extends WsConnection {
             Writer writer = new Writer() {
                 @Override
                 public void close() {
-                    session.close(NORMAL_CLOSURE.getCode(), "");
                 }
 
                 @Override
@@ -122,8 +146,14 @@ class TyrusConnection extends WsConnection {
             connection = upgradeInfo.createConnection(writer, TyrusListener::close);
         }
 
+        /**
+         * Writes a buffer to Tyrus. May retry a few times given that Tyrus may
+         * not be able to read all bytes at once.
+         *
+         * @param session the session
+         * @param nioBuffer the buffer to write
+         */
         private void writeToTyrus(WsSession session, ByteBuffer nioBuffer) {
-            // Pass all data to Tyrus spi
             int retries = MAX_RETRIES;
             while (nioBuffer.remaining() > 0 && retries-- > 0) {
                 connection.getReadHandler().handle(nioBuffer);
@@ -132,7 +162,6 @@ class TyrusConnection extends WsConnection {
             // If we can't push all data to Tyrus, cancel and report problem
             if (retries == 0) {
                 String reason = "Tyrus did not consume all data after " + MAX_RETRIES + " retries";
-                session.close(UNEXPECTED_CONDITION.getCode(), reason);
                 connection.close(new CloseReason(UNEXPECTED_CONDITION, reason));
             }
         }
