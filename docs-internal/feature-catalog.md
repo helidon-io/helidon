@@ -71,37 +71,6 @@ This example provides full `plugins` tag, if exists, update only relevant sectio
 ## TODO
 The following modules should be refactored:
 ```java
-        add("io.helidon.messaging",
-            FeatureDescriptor.builder()
-                    .name("Messaging")
-                    .description("Reactive messaging support")
-                    .path("Messaging")
-                    .flavor(HelidonFlavor.SE)
-                    .experimental(true));
-        addSe("io.helidon.metrics",
-              "Metrics",
-              "Metrics support",
-              "Metrics");
-        add("io.helidon.metrics.prometheus",
-            FeatureDescriptor.builder()
-                    .name("Prometheus")
-                    .description("Metrics support for Prometheus")
-                    .path("WebServer", "Prometheus")
-                    .nativeSupported(false)
-                    .flavor(HelidonFlavor.SE)
-        );
-        addSe("io.helidon.openapi",
-              "OpenAPI",
-              "Open API support",
-              "OpenAPI");
-        addSe("io.helidon.webserver",
-              "WebServer",
-              "Helidon WebServer",
-              "WebServer");
-        addSe("io.helidon.webserver.accesslog",
-              "Access Log",
-              "Access log support",
-              "WebServer", "AccessLog");
         addSe("io.helidon.webserver.cors",
               "CORS",
               "CORS support for WebServer",
