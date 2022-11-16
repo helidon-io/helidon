@@ -4,8 +4,7 @@ This module demonstrates how to generate a Helidon Microprofile restful microser
 
 1. Client-side source code will be generated using OpenApi tool based on an OpenApi specification document in the form
 of [api.yaml](../spec/api.yaml) as an input. The generated source code will be located in 
-[target/generated-sources/client/src/main/java/__pkg__/client](target/generated-sources/client/src/main/java/__pkg__/client)
-and will have the following components:
+target.generated-sources.client.src.main.java.{{package}}.client and will have the following components:
    * A microprofile rest client interface (that can be registered with CDI). Please check out
      [Microprofile Rest Client](https://helidon.io/docs/v2/#/mp/restclient/09_rest-client) for more
      information about this concept.
@@ -26,18 +25,4 @@ Just run
 
 ```bash
 mvn clean install
-``` 
-
-## Distribution
-As part of the [build](#build), a zip file in 
-[target/{{artifactId}}-client-distribution.zip](target/{{artifactId}}-client-distribution.zip)
-will be created that can be distributed. This zip file can be securely copied over by tools like
-`scp (secure copy)` to another machine's directory and unzipped.
-1. Upload to a remote machine using scp
-   ```bash
-   $ scp target/{{artifactId}}-client-distribution.zip user@DESTINATION_HOST:/home/user
-   ```
-2. Unzip (will extract to `{{artifactId}}-client` directory) and run
-   ```bash
-   $ unzip {{artifactId}}-client-distribution.zip
-   ```
+```

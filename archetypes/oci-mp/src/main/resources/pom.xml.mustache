@@ -4,8 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-applications-project</artifactId>
+        <artifactId>helidon-applications</artifactId>
         <version>{{helidonVersion}}</version>
+        <relativePath/>
     </parent>
     <groupId>{{groupId}}</groupId>
     <artifactId>{{artifactId}}</artifactId>
@@ -14,7 +15,6 @@
     <name>{{name}}</name>
 
     <properties>
-        <version.plugin.assembly>3.3.0</version.plugin.assembly>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
         <version.plugin.openapi>6.2.1</version.plugin.openapi>
     </properties>
@@ -40,28 +40,6 @@
                     <groupId>org.openapitools</groupId>
                     <artifactId>openapi-generator-maven-plugin</artifactId>
                     <version>${version.plugin.openapi}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${version.plugin.assembly}</version>
-                    <configuration>
-                        <skipAssembly>${skipAssembly}</skipAssembly>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>distro-assembly</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>single</goal>
-                            </goals>
-                            <configuration>
-                                <descriptors>
-                                    <descriptor>../assembly/distribution.xml</descriptor>
-                                </descriptors>
-                            </configuration>
-                        </execution>
-                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

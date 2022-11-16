@@ -14,11 +14,6 @@
     <version>{{version}}</version>
     <name>{{name}} Client</name>
 
-    <properties>
-        <json-api-version>1.1.4</json-api-version>
-        <cxf-rt-rs-extension-providers_version>3.2.7</cxf-rt-rs-extension-providers_version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.rest-client</groupId>
@@ -28,24 +23,9 @@
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-api</artifactId>
         </dependency>
-        <!-- Enable Jackson in Jersey. -->
         <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-jackson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.json</groupId>
-            <artifactId>javax.json-api</artifactId>
-            <version>${json-api-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-rs-extension-providers</artifactId>
-            <version>${cxf-rt-rs-extension-providers_version}</version>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
         </dependency>
     </dependencies>
 
@@ -54,10 +34,20 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>client-dependencies</id>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>client-jandex</id>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.openapitools</groupId>
@@ -71,26 +61,23 @@
                         <configuration>
                             <inputSpec>${project.basedir}/../spec/api.yaml</inputSpec>
                             <generatorName>java-helidon-client</generatorName>
-                            <library>mp</library>
                             <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
                             <generateApiTests>false</generateApiTests>
                             <generateApiDocumentation>false</generateApiDocumentation>
-                            <addCompileSourceRoot>true</addCompileSourceRoot>
                             <output>${project.build.directory}/generated-sources/client</output>
-                            <apiPackage>{{package}}.client.api</apiPackage>
-                            <modelPackage>{{package}}.client.model</modelPackage>
                             <configOptions>
-                                <dateLibrary>java8-localdatetime</dateLibrary>
+                                <apiPackage>{{package}}.client.api</apiPackage>
                                 <configKey>GreetClient</configKey>
+                                <fullProject>false</fullProject>
                                 <helidonVersion>{{helidonVersion}}</helidonVersion>
+                                <library>mp</library>
+                                <modelPackage>{{package}}.client.model</modelPackage>
+                                <serializationLibrary>jsonb</serializationLibrary>
                             </configOptions>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
