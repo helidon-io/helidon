@@ -59,6 +59,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
+                            <skip>${skipOpenApiGenerate}</skip>
                             <inputSpec>${project.basedir}/../spec/api.yaml</inputSpec>
                             <generatorName>java-helidon-client</generatorName>
                             <generateModelTests>false</generateModelTests>

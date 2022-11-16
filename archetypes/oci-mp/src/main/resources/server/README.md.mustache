@@ -4,8 +4,7 @@ This module demonstrates a simple Hello World JAX-RS based application and is co
 
 1. Server-side source code that will be generated using OpenApi tool based on an OpenApi specification document in the form
    of [api.yaml](../spec/api.yaml) as an input. The generated source code will be located in
-   [target/generated-sources/server/src/main/java/__pkg__/server](target/generated-sources/server/src/main/java/__pkg__/server)
-   and will have the following components:
+   target.generated-sources.server.src.main.java.{{package}}.server and will have the following components:
    * A JAX-RS base interface
    * A model source code that will represent a JSON object
 2. A server application that will implement the generated JAX-RS base interface to add a simple hello world
@@ -14,13 +13,10 @@ greet logic. Furthermore, it will also include OCI SDK integration with OCI Logg
    
 ## OCI SDK integration
 Helidon provides easy integration with the OCI SDK by injecting SDK clients. This server application provides a sample
-demonstration for both the OCI Monitoring and Logging SDK in [GreetResource.java](src/main/java/__pkg__/GreetResource.java) with simple annotations like below:
+demonstration for both the OCI Monitoring and Logging SDK in src.main.java.{{package}}.server.GreetResource.java with simple annotations like below:
 ```java
-    // OCI SDK integration of monitoring and logging
     @Inject
-    private Monitoring monitoringClient;
-    @Inject
-    private Logging loggingClient;
+    public GreetResource(Monitoring monitoringClient, Logging loggingClient, ...)
 ```
 Authentication can be configured and is explained in [Application Configuration](#application-configuration)
 section with the use of `oci.auth-strategy` property in [microprofile-config.properties](src/main/resources/META-INF/microprofile-config.properties).
@@ -164,7 +160,7 @@ particularly the following relevant sections:
 1. `Controlling Metrics Behavior` - has various options to manage the behaviour of the helidon metrics
 2. `Application-Specific Metrics Data` - allows application-specific metrics to be created using CDI.
 
-As part of the example, some of the methods in [GreetResource.java](src/main/java/__pkg__/GreetResource.java)
+As part of the example, some of the methods in src.main.java.{{package}}.server.GreetResource.java
 where annotated with Application-Specific metrics such as @Counted, @Metered and @Timed as shown below:
 ```java
     @Counted(name = "getDefaultMessage", absolute = true)
@@ -197,8 +193,7 @@ Helidon supports built-in and custom liveness and readiness health checks. Refer
 [MicroProfile Health](https://helidon.io/docs/v2/#/mp/health/01_introduction) for an overview and how to set up this
 feature. For more details on how to use it including creating custom health checks, check out 
 [Helidon MP Health Check Guide](https://helidon.io/docs/v2/#/mp/guides/04_health). 
-[GreetLivenessCheck.java](src/main/java/__pkg__/GreetLivenessCheck.java) and 
-[GreetReadinessCheck.java](src/main/java/__pkg__/GreetReadinessCheck.java) had been added
+src.main.java.{{package}}.server.GreetLivenessCheck.java and src.main.java.{{package}}.server.GreetReadinessCheck.java had been added
 in the application to demonstrate custom liveness and readiness check, respectively. Liveness can be retrieved via
 `/health/live` and readiness via `/health/ready`. Check out [Run and exercise the application](#run-and-exercise-the-application)
 for examples of retrieving health checks statuses.
@@ -311,22 +306,6 @@ principal when running it in an oci compute instance.
    {"outcome":"UP","status":"UP","checks":[{"name":"CustomReadinessCheck","state":"UP","status":"UP","data":{"time":1646361474774}}]}
    ```
 
-## Distribution
-As part of the [build](#build-and-test), a zip file in 
-[target/{{artifactId}}-server-distribution.zip](target/{{artifactId}}-server-distribution.zip)
-will be created that can be used to distribute/deploy to other machines such as an OCI VM instance. This zip file can be
-securely copied over by tools like `scp (secure copy)` to another machine's directory, unzipped and
-[run](#run-and-exercise-the-application).
-1. Upload to a remote machine using scp
-   ```bash
-   $ scp target/{{artifactId}}-server-distribution.zip user@DESTINATION_HOST:/home/user
-   ```
-2. Unzip (will extract to `{{artifactId}}-server` directory) and run
-   ```bash
-   $ unzip {{artifactId}}-server-distribution.zip
-   $ java -jar {{artifactId}}-server/{{artifactId}}-server.jar
-   ```
-
 ## Build and run using docker
 1. Build docker image
    ```
@@ -390,4 +369,24 @@ curl -X GET http://localhost:31431/greet
 After you’re done, remove the application from Kubernetes
 ```
 kubectl delete -f app.yaml
+```
+
+## Distribution
+As part of the [build](#build-and-test), a zip file in
+[target/{{artifactId}}-server-distribution.zip](target/{{artifactId}}-server-distribution.zip)
+can be created that can be used to distribute/deploy to other machines such as an OCI VM instance. This zip file can be
+securely copied over by tools like `scp (secure copy)` to another machine's directory, unzipped and
+[run](#run-and-exercise-the-application).
+1. Generate zip assembly
+```bash
+mvn clean package -Pzip-assembly
+```
+2. Upload to a remote machine using scp
+```bash
+$ scp target/{{artifactId}}-server-distribution.zip user@DESTINATION_HOST:/home/user
+```
+3. Unzip (will extract to `{{artifactId}}-server` directory) and run
+```bash
+$ unzip {{artifactId}}-server-distribution.zip
+$ java -jar {{artifactId}}-server/{{artifactId}}-server.jar
 ```
