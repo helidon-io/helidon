@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Microprofile metrics implementation.
  *
  * @see org.eclipse.microprofile.metrics
  */
+@Feature(value = "Metrics",
+        description = "MicroProfile metrics spec implementation",
+        in = HelidonFlavor.MP,
+        path = "Metrics"
+)
 module io.helidon.microprofile.metrics {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires static jakarta.cdi;
