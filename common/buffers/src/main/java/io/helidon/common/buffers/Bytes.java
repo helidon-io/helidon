@@ -64,6 +64,10 @@ public final class Bytes {
      * {@code %} byte.
      */
     public static final byte PERCENT_BYTE = (byte) '%';
+    /**
+     * Horizontal tabulator byte.
+     */
+    public static final byte TAB_BYTE = (byte) '\t';
 
     private Bytes() {
     }
