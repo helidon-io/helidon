@@ -120,7 +120,7 @@ public class TyrusCdiExtension implements Extension {
             appBuilder.extension(instance);
         } catch (NoSuchMethodException e) {
             LOGGER.warning(() -> "Extension does not have no-args constructor for "
-                    + extension.getAnnotatedType().getJavaClass() + "! Skppping.");
+                    + extension.getAnnotatedType().getJavaClass() + "! Skipping.");
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Unable to load WebSocket extension", e);
         }
