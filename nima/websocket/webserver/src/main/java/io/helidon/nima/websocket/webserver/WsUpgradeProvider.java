@@ -43,19 +43,47 @@ import io.helidon.nima.webserver.spi.ServerConnection;
 public class WsUpgradeProvider implements Http1UpgradeProvider {
     private static final System.Logger LOGGER = System.getLogger(WsUpgradeProvider.class.getName());
 
+    private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
+    private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
+    private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
+    private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
+
+    /**
+     * Websocket key header name.
+     */
     protected static final HeaderName WS_KEY = Header.create("Sec-WebSocket-Key");
+
+    /**
+     * Websocket version header name.
+     */
     protected static final HeaderName WS_VERSION = Header.create("Sec-WebSocket-Version");
+
+    /**
+     * Websocket protocol header name.
+     */
     protected static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
-    protected static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
-    protected static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
-    protected static final Base64.Decoder B64_DECODER = Base64.getDecoder();
-    protected static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
+
+    /**
+     * Switching response prefix.
+     */
     protected static final String SWITCHING_PROTOCOL_PREFIX = "HTTP/1.1 101 Switching Protocols\r\n"
             + "Connection: Upgrade\r\n"
             + "Upgrade: websocket\r\n"
             + "Sec-WebSocket-Accept: ";
+
+    /**
+     * Switching response suffix.
+     */
     protected static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
+
+    /**
+     * Supported version.
+     */
     protected static final String SUPPORTED_VERSION = "13";
+
+    /**
+     * Supported version header.
+     */
     protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
 
     private final Set<String> origins;

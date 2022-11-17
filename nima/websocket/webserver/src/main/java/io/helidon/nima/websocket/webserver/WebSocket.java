@@ -24,7 +24,7 @@ import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Route;
 import io.helidon.nima.websocket.WsListener;
 
-public class WebSocket implements Route {
+class WebSocket implements Route {
     private final PathMatcher pathMatcher;
     private final Supplier<WsListener> listenerSupplier;
 
