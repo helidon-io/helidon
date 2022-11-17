@@ -325,6 +325,7 @@ public class DelegatingStatement<S extends Statement> implements Statement {
     public Connection getConnection() throws SQLException {
         checkOpen();
         // NOTE
+        checkOpen();
         return this.connection;
     }
 

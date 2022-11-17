@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.sql.SQLException;
-import java.util.Map;
+// import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -25,24 +25,24 @@ import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import javax.transaction.xa.XAResource;
 
-import io.helidon.integrations.jta.jdbc.JtaDataSource;
+import io.helidon.integrations.jta.jdbc.JtaDataSource2;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.BeforeDestroyed;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
+// import jakarta.enterprise.context.BeforeDestroyed;
+// import jakarta.enterprise.context.Initialized;
+// import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
-import jakarta.transaction.Synchronization;
+// import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
-import jakarta.transaction.TransactionScoped;
+// import jakarta.transaction.TransactionScoped;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
 @ApplicationScoped
@@ -107,12 +107,12 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * Object#equals(Object)} and {@link Object#hashCode()} methods do
      * not behave in such a way that their underlying contextual
      * instances can be tested for equality.  When these {@link
-     * DataSource}s are wrapped by {@link JtaDataSource} instances, we
-     * need to ensure that the same {@link JtaDataSource} is handed
-     * out each time a given data source name is supplied.  This
-     * {@link ConcurrentMap} provides those semantics.</p>
+     * DataSource}s are wrapped by {@link JtaDataSource2} instances,
+     * we need to ensure that the same {@link JtaDataSource2} is
+     * handed out each time a given data source name is supplied.
+     * This {@link ConcurrentMap} provides those semantics.</p>
      *
-     * @see JtaDataSource
+     * @see JtaDataSource2
      *
      * @see <a
      * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#client_proxy_invocation">section
@@ -302,7 +302,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * <p>In many cases this method simply returns the supplied {@link
      * DataSource} unmodified.</p>
      *
-     * <p>In many other cases, a new {@link JtaDataSource} wrapping
+     * <p>In many other cases, a new {@link JtaDataSource2} wrapping
      * the supplied {@link DataSource} and providing emulated JTA
      * semantics is returned instead.</p>
      *
@@ -323,7 +323,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
     private DataSource convert(final DataSource dataSource, final boolean jta, final String dataSourceName)
         throws SQLException {
         final DataSource returnValue;
-        if (!jta || dataSource == null || (dataSource instanceof JtaDataSource)) {
+        if (!jta || dataSource == null || (dataSource instanceof JtaDataSource2)) {
             returnValue = dataSource;
         } else if (dataSource instanceof XADataSource) {
             // Edge case
@@ -331,23 +331,26 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       k -> new JtaDataSource(dataSource, this::activeTransaction));
-            this.registerSynchronizationIfTransactionIsActive(returnValue);
+                                                       // k -> new JtaDataSource(dataSource, this::activeTransaction));
+                                                       k -> new JtaDataSource2(this.transactionManager, this.tsr, dataSource));
+            // this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;
     }
 
+    /*
     private void registerSynchronizationIfTransactionIsActive(final Object dataSource) {
         if (dataSource instanceof Synchronization && this.tsr.getTransactionStatus() == Status.STATUS_ACTIVE) {
             this.tsr.registerInterposedSynchronization((Synchronization) dataSource);
         }
     }
+    */
 
     /*
      * CDI Observer methods.
      */
 
-    /**
+    /*
      * Invoked by CDI when the {@linkplain TransactionScoped
      * transaction scope} becomes active, which definitionally happens
      * when a new JTA transaction begins.
@@ -370,11 +373,13 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @see
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
      */
+    /*
     private void whenTransactionStarts(@Observes @Initialized(TransactionScoped.class) final Object event) {
         this.dataSourcesByName.forEach((ignoredKey, dataSource) -> this.registerSynchronizationIfTransactionIsActive(dataSource));
     }
+    */
 
-    /**
+    /*
      * Invoked by CDI when the application scope is about to be
      * destroyed, signalling the end of the program.
      *
@@ -385,8 +390,10 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      *
      * @see BeforeDestroyed
      */
+    /*
     private void whenApplicationTerminates(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event) {
         this.dataSourcesByName.clear();
     }
+    */
 
 }

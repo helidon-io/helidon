@@ -362,7 +362,7 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see Connection#close()
      */
-    public void setClooseable(boolean closeable) {
+    public void setCloseable(boolean closeable) {
         // this.checkOpen(); // Deliberately omitted.
         this.closeable = closeable;
         if (closeable) {

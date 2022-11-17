@@ -56,9 +56,9 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-final class TestJTAConnection {
+final class TestJtaConnection {
 
-    private static final Logger LOGGER = Logger.getLogger(TestJTAConnection.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TestJtaConnection.class.getName());
 
     private static final JTAEnvironmentBean jtaEnvironmentBean = new JTAEnvironmentBean();
 
@@ -68,13 +68,14 @@ final class TestJTAConnection {
 
     private TransactionSynchronizationRegistry tsr;
 
-    private TestJTAConnection() throws SQLException {
+    private TestJtaConnection() throws SQLException {
         super();
     }
 
     @BeforeEach
     final void initializeH2DataSource() throws SQLException {
         JdbcDataSource ds = new JdbcDataSource();
+        // Use TRACE_LEVEL_FILE=4 to turn on slf4j logging.
         ds.setURL("jdbc:h2:mem:test;INIT=SET TRACE_LEVEL_FILE=4");
         ds.setUser("sa");
         ds.setPassword("sa");
@@ -124,10 +125,9 @@ final class TestJTAConnection {
         // real-world scenarios, the reaper might have ended the
         // transaction immediately on another thread.
         assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
-        
 
         try (Connection physicalConnection = h2ds.getConnection();
-             JTAConnection logicalConnection = (JTAConnection) JTAConnection.connection(tm::getTransaction,
+             JtaConnection logicalConnection = (JtaConnection) JtaConnection.connection(tm::getTransaction,
                                                                                         tsr,
                                                                                         physicalConnection)) {
 
@@ -246,7 +246,7 @@ final class TestJTAConnection {
 
         // Verify that indeed you cannot enlist any XAResource in
         // the transaction when it is in the rolled back state.
-        assertThrows(IllegalStateException.class, () -> t.enlistResource(JTAConnection.XA_RESOURCE));
+        assertThrows(IllegalStateException.class, () -> t.enlistResource(JtaConnection.XA_RESOURCE));
 
         // Verify that even though the current transaction is rolled
         // back you can still roll it back again (no-op) and

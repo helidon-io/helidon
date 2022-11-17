@@ -30,8 +30,10 @@
     <name>Helidon CDI Integrations JPA</name>
 
     <properties>
-      <doclint>-syntax</doclint>
-      <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <doclint>-syntax</doclint>
+        <eclipselink.skip>false</eclipselink.skip>
+        <hibernate.skip>false</hibernate.skip>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
@@ -225,13 +227,13 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <skip>false</skip>
+                            <skip>${eclipselink.skip}</skip>
                         </configuration>
                     </execution>
                     <execution>
                         <id>default-test</id>
                         <configuration>
-                            <skip>false</skip>
+                            <skip>${eclipselink.skip}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -245,7 +247,7 @@
                                 <classpathDependencyExclude>org.eclipse.persistence:org.eclipse.persistence.jpa</classpathDependencyExclude>
                             </classpathDependencyExcludes>
                             <reportNameSuffix>hibernate</reportNameSuffix>
-                            <skip>false</skip>
+                            <skip>${hibernate.skip}</skip>
                             <testClassesDirectory>${project.build.directory}/hibernate/test-classes</testClassesDirectory>
                         </configuration>
                     </execution>

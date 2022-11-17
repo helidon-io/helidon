@@ -41,7 +41,7 @@ public class Author implements Serializable {
             nullable = false,
             updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
 
     @Basic(optional = false)
     @Column(name = "NAME",

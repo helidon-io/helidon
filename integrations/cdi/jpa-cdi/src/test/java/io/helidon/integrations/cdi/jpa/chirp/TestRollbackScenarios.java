@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -85,7 +86,7 @@ class TestRollbackScenarios {
 
     @BeforeEach
     void startCdiContainer() {
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
         assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
@@ -93,8 +94,12 @@ class TestRollbackScenarios {
 
     @AfterEach
     void shutDownCdiContainer() {
-        if (this.cdiContainer != null) {
-            this.cdiContainer.close();
+        try {
+
+        } finally {
+            if (this.cdiContainer != null) {
+                this.cdiContainer.close();
+            }
         }
     }
 
@@ -123,8 +128,8 @@ class TestRollbackScenarios {
         return this.transactionManager;
     }
 
-    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
-                            final TransactionManager tm) throws SystemException {
+    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event, TransactionManager tm)
+        throws SystemException {
         // If an assertion fails, or some other error happens in the
         // CDI container, there may be a current transaction that has
         // neither been committed nor rolled back.  Because the
@@ -135,8 +140,13 @@ class TestRollbackScenarios {
         // JVM).  CDI, thankfully, will fire an event for the
         // application context shutting down, even in the case of
         // errors.
-        if (tm.getStatus() != Status.STATUS_NO_TRANSACTION) {
-            tm.rollback();
+        try {
+            this.jpaTransactionScopedSynchronizedEntityManager.getEntityManagerFactory().getCache().evictAll();
+            this.jpaTransactionScopedSynchronizedEntityManager.clear();
+        } finally {
+            if (tm.getStatus() != Status.STATUS_NO_TRANSACTION) {
+                tm.rollback();
+            }
         }
     }
 
@@ -158,12 +168,12 @@ class TestRollbackScenarios {
 
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
-        final TestRollbackScenarios self = self();
+        TestRollbackScenarios self = self();
         assertThat(self, notNullValue());
 
         // Get the EntityManager that is synchronized with and scoped
         // to a JTA transaction.
-        final EntityManager em = self.getJpaTransactionScopedSynchronizedEntityManager();
+        EntityManager em = self.getJpaTransactionScopedSynchronizedEntityManager();
         assertThat(em, notNullValue());
         assertThat(em.isOpen(), is(true));
 
@@ -176,8 +186,9 @@ class TestRollbackScenarios {
 
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
-        final TransactionManager tm = self.getTransactionManager();
+        TransactionManager tm = self.getTransactionManager();
         assertThat(tm, notNullValue());
+        tm.setTransactionTimeout(20 * 60); // 20 minutes for debugging
         tm.begin();
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
 
@@ -186,7 +197,18 @@ class TestRollbackScenarios {
 
         // Create a JPA entity and insert it.
         Author author = new Author("Abraham Lincoln");
+        assertThat(author.getId(), is(nullValue()));
+
         em.persist(author);
+
+        // For Eclipselink: Haven't gone to the database yet, so no
+        // generated identifier yet.
+        //
+        // For Hibernate: apparently persist() actually goes to the
+        // database and whether or not it actually inserts the author
+        // (need to check), it generates the identifier (!).
+
+        // assertThat(author.getId(), is(nullValue()));
 
         // Commit the transaction.  Because we're relying on the
         // default flush mode, this will cause a flush to the
@@ -231,20 +253,39 @@ class TestRollbackScenarios {
         tm.commit();
         assertThat(em.contains(author), is(false));
 
+        // Create a new unmanaged Author.
+        author = new Author("John Kennedy");
+        assertThat(author.getId(), is(nullValue()));
+
+        tm.begin();
+        em.persist(author);
+
+        assertThat(em.contains(author), is(true));
+
+        // For Eclipselink: Haven't gone to the database yet, so no
+        // generated identifier yet.
+        //
+        // For Hibernate: apparently persist() actually goes to the
+        // database and whether or not it actually inserts the author
+        // (need to check), it generates the identifier (!).
+        // assertThat(author.getId(), is(nullValue())); // the id is generated and we haven't gone to the db yet
+
         // Perform a rollback "in the middle" of a sequence of
         // operations and observe that the EntityManager is in the
         // proper state throughout.
-        author = new Author("John Kennedy");
-        tm.begin();
-        em.persist(author);
-        assertThat(em.contains(author), is(true));
         tm.rollback();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         assertThat(em.contains(author), is(false));
+
+
+        assertThat(author.getId(), is(nullValue()));
+
+        // Try to remove the now-detached author outside of a
+        // transaction. Should fail.
         try {
           em.remove(author);
           fail("remove() was allowed to complete without a transaction");
-        } catch (final IllegalArgumentException | TransactionRequiredException expected) {
+        } catch (IllegalArgumentException | TransactionRequiredException expected) {
           // The javadocs say only that either of these exceptions may
           // be thrown in this case but do not indicate which one is
           // preferred.  EclipseLink 2.7.4 throws a
@@ -254,22 +295,36 @@ class TestRollbackScenarios {
           // which is related.
         }
 
-        // author is detached; prove it.
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+        assertThat(em.contains(author), is(false));
+        assertThat(author.getId(), is(nullValue()));
+
+        // Start a transaction.
         tm.begin();
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
         assertThat(em.isJoinedToTransaction(), is(true));
+
+        // author is still detached
         assertThat(em.contains(author), is(false));
         em.detach(author); // redundant; just making a point
         assertThat(em.contains(author), is(false));
+        assertThat(author.getId(), is(nullValue()));
+
+        // Try again to remove the detached author, but this time in a
+        // transaction.  Shouldn't matter; should also fail.
         try {
           em.remove(author);
           // We shouldn't get here because author is detached but with
           // EclipseLink 2.7.4 we do.  See
           // https://bugs.eclipse.org/bugs/show_bug.cgi?id=553117.
-        } catch (final IllegalArgumentException expected) {
+          // fail("remove() was allowed to accept a detached object");
+        } catch (IllegalArgumentException expected) {
 
         }
         tm.rollback();
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+        assertThat(em.contains(author), is(false));
+        assertThat(author.getId(), is(nullValue()));
 
         // Remove the author properly.
         tm.begin();
@@ -277,6 +332,7 @@ class TestRollbackScenarios {
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(em.contains(author), is(false));
         author = em.merge(author);
+        assertThat(em.contains(author), is(true));
         em.remove(author);
         tm.commit();
         assertThat(em.contains(author), is(false));
@@ -291,13 +347,13 @@ class TestRollbackScenarios {
         try {
           em.persist(author);
           fail("Transaction rolled back but persist still happened");
-        } catch (final TransactionRequiredException expected) {
+        } catch (TransactionRequiredException expected) {
 
         }
         tm.rollback();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
 
-        tm.setTransactionTimeout(60); // 60 seconds; the usual default
+        tm.setTransactionTimeout(0); // set the timeout back to the default (that's what 0 means (!))
 
     }
 

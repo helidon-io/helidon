@@ -21,11 +21,11 @@
                         https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <Class name="io.helidon.integrations.jta.jdbc.JTAConnection"/>
+        <Class name="io.helidon.integrations.jta.jdbc.JtaConnection"/>
         <Bug pattern="EXTERNAL_CONFIG_CONTROL"/>
     </Match>
     <Match>
-        <Class name="io.helidon.integrations.jta.jdbc.JTAConnection"/>
+        <Class name="io.helidon.integrations.jta.jdbc.JtaConnection"/>
         <Bug pattern="SQL_INJECTION_JDBC"/>
     </Match>
     <Match>

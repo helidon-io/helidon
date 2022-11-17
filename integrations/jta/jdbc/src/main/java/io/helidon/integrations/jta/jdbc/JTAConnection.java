@@ -55,7 +55,7 @@ import jakarta.transaction.TransactionSynchronizationRegistry;
  *
  * @see #connection(TransactionSupplier, TransactionSynchronizationRegistry, Connection)
  */
-final class JTAConnection extends ConditionallyCloseableConnection {
+final class JtaConnection extends ConditionallyCloseableConnection {
 
 
     /*
@@ -64,11 +64,11 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
 
     /**
-     * The {@link LocalXAResource} singleton responsible for managing a {@link JTAConnection}'s participation in a
+     * The {@link LocalXAResource} singleton responsible for managing a {@link JtaConnection}'s participation in a
      * {@link Transaction}.
      */
     // Non-private for testing only.
-    static final LocalXAResource XA_RESOURCE = new LocalXAResource(JTAConnection::connection);
+    static final LocalXAResource XA_RESOURCE = new LocalXAResource(JtaConnection::connection);
 
     /**
      * A {@link ReentrantLock} guarding access to and modification of the {@link #handoff} field.
@@ -76,7 +76,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     private static final ReentrantLock HANDOFF_LOCK = new ReentrantLock();
 
     /**
-     * A field used to "hand off" a {@link JTAConnection}'s {@linkplain #delegate() delegate} to the {@link #XA_RESOURCE
+     * A field used to "hand off" a {@link JtaConnection}'s {@linkplain #delegate() delegate} to the {@link #XA_RESOURCE
      * LocalXAResource} singleton, and to "hand back" the {@link Xid} that the {@link #XA_RESOURCE LocalXAResource}
      * singleton identifies the current transaction with.
      *
@@ -89,10 +89,11 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      *
      * @see #enlist()
      */
-    // Deliberately not final.
-    // Deliberately not volatile.
-    // null most of the time on purpose.
-    // When not null, will contain either a Connection or a Xid.
+    // Deliberately NOT final.
+    // Deliberately NOT volatile.
+    // Usually null.
+    // When not null, will very briefly contain either a Connection or a Xid.
+    // Variable name is not capitalized because Checkstyle prevents it for some reason.
     // @GuardedBy("HANDOFF_LOCK")
     private static Object handoff;
 
@@ -126,10 +127,10 @@ final class JTAConnection extends ConditionallyCloseableConnection {
 
 
     /**
-     * Creates a new {@link JTAConnection}.
+     * Creates a new {@link JtaConnection}.
      *
      * @param transactionSupplier a {@link TransactionSupplier}; must not be {@code null}; often {@link
-     * jakarta.transaction.TransactionManager#getTransaction() ransactionManager::getTransaction}
+     * jakarta.transaction.TransactionManager#getTransaction() transactionManager::getTransaction}
      *
      * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
@@ -138,10 +139,12 @@ final class JTAConnection extends ConditionallyCloseableConnection {
      *
      * @exception NullPointerException if any parameter is {@code null}
      */
-    private JTAConnection(TransactionSupplier transactionSupplier,
+    private JtaConnection(TransactionSupplier transactionSupplier,
                           TransactionSynchronizationRegistry transactionSynchronizationRegistry,
                           Connection delegate) {
-        super(delegate, true, true);
+        super(delegate,
+              true, // closeable
+              true); // strict isClosed checking
         this.tm = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
         this.tsr = Objects.requireNonNull(transactionSynchronizationRegistry, "transactionSynchronizationRegistry");
     }
@@ -645,12 +648,12 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     }
 
     /**
-     * Returns the {@link Xid} under which this {@link JTAConnection} is associated with a non-completed JTA
+     * Returns the {@link Xid} under which this {@link JtaConnection} is associated with a non-completed JTA
      * transaction, or {@code null} if there is no such association.
      *
      * <p>This method may, and often will, return {@code null}.</p>
      *
-     * @return the {@link Xid} under which this {@link JTAConnection} is associated with a non-completed JTA
+     * @return the {@link Xid} under which this {@link JtaConnection} is associated with a non-completed JTA
      * transaction; {@code null} if there is no such association
      *
      * @exception SQLException if invoked on a closed connection or the {@link Xid} could not be acquired
@@ -687,11 +690,11 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     }
 
     /**
-     * Returns {@code true} if and only if this {@link JTAConnection} is associated with a JTA transaction whose
+     * Returns {@code true} if and only if this {@link JtaConnection} is associated with a JTA transaction whose
      * {@linkplain Transaction#getStatus() status} is one of {@link Status#STATUS_ACTIVE} or {@link
      * Status#STATUS_MARKED_ROLLBACK} as a result of a prior {@link #enlist()} invocation on the current thread.
      *
-     * @return {@code true} if and only if this {@link JTAConnection} is associated with a {@linkplain
+     * @return {@code true} if and only if this {@link JtaConnection} is associated with a {@linkplain
      * #activeOrMarkedRollbackTransaction() JTA transaction whose status is known and not yet prepared}; {@code false}
      * in all other cases
      *
@@ -709,7 +712,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             // TransactionSynchronizationRegistry#getReource(Object). See
             // https://www.eclipse.org/lists/jta-dev/msg00264.html.
             try {
-                return this.tsr.getResource(JTAConnection.class.getName()) == this;
+                return this.tsr.getResource(JtaConnection.class.getName()) == this;
             } catch (IllegalStateException e) {
                 return false;
             } catch (RuntimeException e) {
@@ -739,11 +742,13 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     }
 
     /**
-     * Attempts to enlist this {@link JTAConnection} in the current JTA transaction, if there is one, and its status is
-     * {@link Status#STATUS_ACTIVE}, and this {@link JTAConnection} is not already {@linkplain #enlisted() enlisted}.
+     * Attempts to enlist this {@link JtaConnection} in the current JTA transaction, if there is one, and its status is
+     * {@link Status#STATUS_ACTIVE}, and this {@link JtaConnection} is not already {@linkplain #enlisted() enlisted}.
      *
      * @exception SQLException if invoked on a closed connection or a transaction-related error occurs, or if the return
-     * value of an invocation of this {@link JTAConnection}'s {@link #getAutoCommit()} method returns {@code false}
+     * value of an invocation of the {@link #getAutoCommit()} method returns {@code false}
+     *
+     * @see #enlisted()
      */
     private void enlist() throws SQLException {
         this.failWhenClosed();
@@ -795,8 +800,8 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, "25000");
         }
         try {
-          if (this.tsr.getResource(JTAConnection.class.getName()) == this) {
-              return; // (We were already enlisted.)
+          if (this.tsr.getResource(JtaConnection.class.getName()) == this) {
+              return;
           }
         } catch (RuntimeException e) {
             throw new SQLTransientException(e.getMessage(), "25000", e);
@@ -806,7 +811,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
             // because a local transaction may be in progress.
             throw new SQLTransientException("autoCommit was false during transaction enlistment", "25000");
         }
-        Transaction t = this.transaction();        
+        Transaction t = this.transaction();
         try {
             // t won't be null because the status was, at one point, Status.STATUS_ACTIVE.
             transactionStatus = t.getStatus();
@@ -871,7 +876,7 @@ final class JTAConnection extends ConditionallyCloseableConnection {
         }
         if (enlisted) {
             try {
-                this.tsr.putResource(JTAConnection.class.getName(), this);
+                this.tsr.putResource(JtaConnection.class.getName(), this);
             } catch (RuntimeException e) {
                 throw new SQLTransientException(e.getMessage(), "25000", e);
             }
@@ -920,9 +925,33 @@ final class JTAConnection extends ConditionallyCloseableConnection {
     static Connection connection(TransactionSupplier transactionSupplier,
                                  TransactionSynchronizationRegistry transactionSynchronizationRegistry,
                                  Connection nonXaConnection) {
-        return new JTAConnection(transactionSupplier, transactionSynchronizationRegistry, nonXaConnection);
+        return new JtaConnection(transactionSupplier, transactionSynchronizationRegistry, nonXaConnection);
     }
 
+    /**
+     * Returns the {@link Connection} delegate found as the value of the {@link #handoff} field, and sets the {@link
+     * #handoff} field to the supplied {@link Xid}.
+     *
+     * <p>This method is supplied to the {@link LocalXAResource#LocalXAResource(Function)} constructor as a method
+     * reference and is not called by instances of this class.</p>
+     *
+     * <p>When this method is invoked, it must be guaranteed that the {@link #HANDOFF_LOCK} be {@linkplain
+     * ReentrantLock#isHeldByCurrentThread held by the current thread}.</p>
+     *
+     * @param xid the {@link Xid} of the global transaction that is starting; it is guaranteed by {@link
+     * LocalXAResource} that this will never be {@code null}
+     *
+     * @return the {@link Connection} found as the value of the {@link #handoff} field; when this method returns the
+     * value of the {@link #handoff} field will be the supplied {@link Xid}
+     *
+     * @see #handoff
+     *
+     * @see #HANDOFF_LOCK
+     *
+     * @see #enlist()
+     *
+     * @see LocalXAResource#LocalXAResource(Function)
+     */
     // (Method reference.)
     private static Connection connection(Xid xid) {
         assert HANDOFF_LOCK.isHeldByCurrentThread();
