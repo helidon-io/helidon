@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * gRPC client implementation for Helidon MP.
  */
+@Feature(value = "gRPC Client",
+        description = "Client for gRPC services",
+        in = HelidonFlavor.MP,
+        path = "grpcClient"
+)
+@Aot(false)
 module io.helidon.microprofile.grpc.client {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires jakarta.cdi;
