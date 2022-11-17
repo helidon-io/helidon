@@ -89,6 +89,12 @@
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-spi</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
         <!-- To keep HK2 from complaining when run with Java9+ -->
         <dependency>
             <groupId>jakarta.activation</groupId>
@@ -142,6 +148,19 @@
                     <childDelegation>true</childDelegation>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <runOrder>alphabetical</runOrder>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>
