@@ -28,6 +28,7 @@ public class LazyString {
     private final Charset charset;
 
     private String stringValue;
+    private String owsLessValue;
 
     /**
      * New instance.
@@ -57,11 +58,52 @@ public class LazyString {
         this.charset = charset;
     }
 
+    /**
+     * Strip optional whitespace(s) from beginning and end of the String.
+     * Defined by the HTTP specification, OWS is a sequence of zero to n space and/or horizontal tab characters.
+     *
+     * @return string without optional leading and trailing whitespaces
+     */
+    public String stripOws() {
+        if (owsLessValue == null) {
+            int newOffset = offset;
+            int newLength = length;
+            for (int i = offset; i < offset + length; i++) {
+                if (isOws(buffer[i])) {
+                    newOffset = i + 1;
+                    newLength = length - (newOffset - offset);
+                } else {
+                    // no more white space, go from the end now
+                    break;
+                }
+            }
+            // now we need to go from the end of the string
+            for (int i = offset + length - 1; i > newOffset; i--) {
+                if (isOws(buffer[i])) {
+                    newLength--;
+                } else {
+                    break;
+                }
+            }
+            newLength = Math.max(newLength, 0);
+            owsLessValue = new String(buffer, newOffset, newLength, charset);
+        }
+
+        return owsLessValue;
+    }
+
     @Override
     public String toString() {
         if (stringValue == null) {
             stringValue = new String(buffer, offset, length, charset);
         }
         return stringValue;
+    }
+
+    private boolean isOws(byte aByte) {
+        return switch (aByte) {
+            case Bytes.SPACE_BYTE, Bytes.TAB_BYTE -> true;
+            default -> false;
+        };
     }
 }
