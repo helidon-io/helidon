@@ -54,6 +54,13 @@ public interface ComplexCase extends MyConfigBean {
     Set<List<Object>> getSetOfLists();
 
     /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    Class<?> getClassType();
+
+    /**
      * The Pico Builder will ignore {@code default} and {@code static} functions.
      *
      * @return ignored, here for testing purposes only

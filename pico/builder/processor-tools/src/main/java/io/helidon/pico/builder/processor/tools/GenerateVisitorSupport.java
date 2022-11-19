@@ -16,11 +16,11 @@
 
 package io.helidon.pico.builder.processor.tools;
 
-final class GenerateVisitor {
-    private GenerateVisitor() {
+final class GenerateVisitorSupport {
+    private GenerateVisitorSupport() {
     }
 
-    static void appendAttributeVisitors(StringBuilder builder,
+    static void appendExtraInnerClasses(StringBuilder builder,
                                         BodyContext ctx) {
         if (ctx.doingConcreteType()) {
             return;

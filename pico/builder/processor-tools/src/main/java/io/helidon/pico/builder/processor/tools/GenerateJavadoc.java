@@ -48,7 +48,7 @@ final class GenerateJavadoc {
         builder.append("\t/**\n"
                                + "\t * Creates a builder for this type.\n"
                                + "\t *\n");
-        builder.append("\t * @return A builder for {@link ");
+        builder.append("\t * @return a builder for {@link ");
         builder.append(ctx.typeInfo().typeName());
         builder.append("}\n\t */\n");
     }
@@ -56,10 +56,10 @@ final class GenerateJavadoc {
     static void toBuilderMethod(StringBuilder builder,
                                 BodyContext ctx) {
         builder.append("\t/**\n"
-                               + "\t * Creates a builder for this type, initialized with the attributes from the values passed"
-                               + ".\n\n");
+                               + "\t * Creates a builder for this type, initialized with the attributes from the values passed.\n"
+                               + "\t *\n");
         builder.append("\t * @param val the value to copy to initialize the builder attributes\n");
-        builder.append("\t * @return A builder for {@link ").append(ctx.typeInfo().typeName());
+        builder.append("\t * @return a builder for {@link ").append(ctx.typeInfo().typeName());
         builder.append("}\n\t */\n");
     }
 

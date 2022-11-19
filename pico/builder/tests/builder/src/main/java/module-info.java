@@ -20,6 +20,7 @@
 module io.helidon.pico.builder.test.builder {
     requires static com.fasterxml.jackson.annotation;
     requires static io.helidon.config.metadata;
-    requires io.helidon.pico.builder;
+
     requires io.helidon.common;
+    requires io.helidon.pico.builder;
 }

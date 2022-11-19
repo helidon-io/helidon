@@ -36,6 +36,11 @@
     <name>Helidon Pico Builder Project</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <!-- Helidon Pico Builder should be backward compatible with Java 11 -->
+        <version.java>11</version.java>
+    </properties>
+
     <modules>
         <module>builder</module>
         <module>processor-spi</module>
