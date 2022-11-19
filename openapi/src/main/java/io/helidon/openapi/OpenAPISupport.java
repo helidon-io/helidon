@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -111,7 +112,11 @@ public abstract class OpenAPISupport implements Service {
      */
     public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaType.APPLICATION_OPENAPI_YAML;
 
-    private enum QueryParameterRequestedFormat {
+    /**
+     * Some logic related to the possible format values as requested in the query
+     * parameter {@value OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER}.
+     */
+    enum QueryParameterRequestedFormat {
         JSON(MediaType.APPLICATION_JSON), YAML(MediaType.APPLICATION_OPENAPI_YAML);
 
         static QueryParameterRequestedFormat chooseFormat(String format) {
@@ -129,7 +134,10 @@ public abstract class OpenAPISupport implements Service {
         }
     }
 
-    private static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
+    /**
+     * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
+     */
+    static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";
 
     private static final Logger LOGGER = Logger.getLogger(OpenAPISupport.class.getName());
 
@@ -146,6 +154,8 @@ public abstract class OpenAPISupport implements Service {
     private static SnakeYAMLParserHelper<ExpandedTypeDescription> helper = null;
 
     private static final Lock HELPER_ACCESS = new ReentrantLock(true);
+
+    private static final Predicate<MediaType> TEXT_MEDIA_TYPE = (mt -> mt.type().equals("text"));
 
     private final String webContext;
 
@@ -165,6 +175,8 @@ public abstract class OpenAPISupport implements Service {
 
     private final Lock modelAccess = new ReentrantLock(true);
 
+    private final OpenApiUi ui;
+
     /**
      * Creates a new instance of {@code OpenAPISupport}.
      *
@@ -178,11 +190,13 @@ public abstract class OpenAPISupport implements Service {
         openApiConfig = builder.openAPIConfig();
         openApiStaticFile = builder.staticFile();
         indexViewsSupplier = builder.indexViewsSupplier();
+        ui = prepareUi(builder);
     }
 
     @Override
     public void update(Routing.Rules rules) {
         configureEndpoint(rules);
+        ui.update(rules);
     }
 
     /**
@@ -211,6 +225,13 @@ public abstract class OpenAPISupport implements Service {
      */
     protected void prepareModel() {
         model();
+    }
+
+    private OpenApiUi prepareUi(Builder<?> builder) {
+
+        OpenApiUi.Builder uiBuilder = Objects.requireNonNullElse(builder.uiBuilder,
+                                                                 OpenApiUi.builder().config(builder.uiConfigNode));
+        return uiBuilder.build(this::prepareDocument, webContext);
     }
 
     private OpenAPI model() {
@@ -405,6 +426,14 @@ public abstract class OpenAPISupport implements Service {
 
         try {
             final MediaType resultMediaType = chooseResponseMediaType(req);
+            if (resultMediaType == null) {
+                req.next();
+                return;
+            } else if (TEXT_MEDIA_TYPE.test(resultMediaType)) {
+                // The U/I handles text.
+                ui.prepareTextResponseFromMainEndpoint(req, resp);
+                return;
+            }
             final String openAPIDocument = prepareDocument(resultMediaType);
             resp.status(Http.Status.OK_200);
             resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.toString());
@@ -421,10 +450,9 @@ public abstract class OpenAPISupport implements Service {
      *
      * @param resultMediaType requested media type
      * @return String containing the formatted OpenAPI document
-     * @throws IOException in case of errors serializing the OpenAPI document
      * from its underlying data
      */
-    String prepareDocument(MediaType resultMediaType) throws IOException {
+    String prepareDocument(MediaType resultMediaType) {
         OpenAPIMediaType matchingOpenAPIMediaType
                 = OpenAPIMediaType.byMediaType(resultMediaType)
                 .orElseGet(() -> {
@@ -480,7 +508,7 @@ public abstract class OpenAPISupport implements Service {
         }
 
         final Optional<MediaType> requestedMediaType = req.headers()
-                .bestAccepted(OpenAPIMediaType.preferredOrdering());
+                .bestAccepted(OpenAPIMediaType.PREFERRED_ORDERING);
 
         final MediaType resultMediaType = requestedMediaType
                 .orElseGet(() -> {
@@ -666,18 +694,19 @@ public abstract class OpenAPISupport implements Service {
          * @return MediaTypes in order that we recognize them as OpenAPI
          * content.
          */
-        private static MediaType[] preferredOrdering() {
-            return new MediaType[]{
-                    MediaType.APPLICATION_OPENAPI_YAML,
-                    MediaType.APPLICATION_X_YAML,
-                    MediaType.APPLICATION_YAML,
-                    MediaType.APPLICATION_OPENAPI_JSON,
-                    MediaType.APPLICATION_JSON,
-                    MediaType.TEXT_X_YAML,
-                    MediaType.TEXT_YAML,
-                    MediaType.TEXT_PLAIN
-            };
-        }
+        private static final MediaType[] PREFERRED_ORDERING =
+                new MediaType[] {
+                        MediaType.APPLICATION_OPENAPI_YAML,
+                        MediaType.APPLICATION_X_YAML,
+                        MediaType.APPLICATION_YAML,
+                        MediaType.APPLICATION_OPENAPI_JSON,
+                        MediaType.APPLICATION_JSON,
+                        MediaType.TEXT_X_YAML,
+                        MediaType.TEXT_YAML,
+                        MediaType.TEXT_PLAIN,
+                        MediaType.TEXT_HTML
+                };
+
     }
 
     /**
@@ -742,6 +771,9 @@ public abstract class OpenAPISupport implements Service {
         private Optional<String> staticFilePath = Optional.empty();
         private CrossOriginConfig crossOriginConfig = null;
 
+        private OpenApiUi.Builder uiBuilder = null;
+
+        private Config uiConfigNode = Config.empty();
 
         /**
          * Set various builder attributes from the specified {@code Config} object.
@@ -763,6 +795,8 @@ public abstract class OpenAPISupport implements Service {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
+            config.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_PREFIX)
+                    .ifExists(c -> uiConfigNode = c);
             return identity();
         }
 

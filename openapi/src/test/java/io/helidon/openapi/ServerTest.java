@@ -19,6 +19,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -28,6 +29,8 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -145,12 +148,17 @@ public class ServerTest {
      * @throws Exception in case of errors sending the request or receiving the
      * response
      */
-    @Test
-    public void checkExplicitResponseMediaTypeViaHeaders() throws Exception {
-        connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_YAML);
-        connectAndConsumePayload(MediaType.APPLICATION_YAML);
-        connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_JSON);
-        connectAndConsumePayload(MediaType.APPLICATION_JSON);
+    @ParameterizedTest
+    @MethodSource()
+    public void checkExplicitResponseMediaTypeViaHeaders(MediaType testMediaType) throws Exception {
+        connectAndConsumePayload(testMediaType);
+    }
+
+    static Stream<MediaType> checkExplicitResponseMediaTypeViaHeaders() {
+        return Stream.of(MediaType.APPLICATION_OPENAPI_YAML,
+                         MediaType.APPLICATION_YAML,
+                         MediaType.APPLICATION_OPENAPI_JSON,
+                         MediaType.APPLICATION_JSON);
     }
 
     @Test
@@ -164,17 +172,6 @@ public class ServerTest {
                                           GREETING_PATH,
                                           "format=YAML",
                                           MediaType.APPLICATION_OPENAPI_YAML);
-    }
-
-    /**
-     * Makes sure that the response is correct if the request specified no
-     * explicit Accept.
-     *
-     * @throws Exception error sending the request or receiving the response
-     */
-    @Test
-    public void checkDefaultResponseMediaType() throws Exception {
-        connectAndConsumePayload(null);
     }
 
     @Test
