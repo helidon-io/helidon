@@ -40,10 +40,11 @@ class ComplexCaseTest {
                 .name("name")
                 .mapOfKeyToConfigBeans(mapWithNull)
                 .setOfLists(Collections.singleton(Collections.singletonList(null)))
+                .classType(Object.class)
                 .build();
         assertThat(val.toString(),
                    equalTo("ComplexCase(name=name, enabled=false, port=8080, mapOfKeyToConfigBeans={key=null}, "
-                                   + "listOfConfigBeans=[], setOfLists=[[null]])"));
+                                   + "listOfConfigBeans=[], setOfLists=[[null]], classType=class java.lang.Object)"));
     }
 
 }

@@ -300,4 +300,12 @@ class DefaultTypeNameTest {
         assertThat(objTypeName.className(), equalTo("Boolean"));
     }
 
+    @Test
+    void extendsTypeName() {
+        TypeName extendsName = DefaultTypeName.createExtendsTypeName(create(Map.class));
+        assertThat(extendsName.fqName(), equalTo("? extends java.util.Map"));
+        assertThat(extendsName.declaredName(), equalTo("java.util.Map"));
+        assertThat(extendsName.name(), equalTo("java.util.Map"));
+    }
+
 }

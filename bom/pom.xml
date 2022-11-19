@@ -1425,6 +1425,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Pico Config Builder -->
+            <dependency>
+                <groupId>io.helidon.pico.builder.config</groupId>
+                <artifactId>helidon-pico-builder-config</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico.builder.config</groupId>
+                <artifactId>helidon-pico-builder-config-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 </project>

@@ -45,6 +45,8 @@ import static io.helidon.pico.builder.processor.tools.DefaultBuilderCreator.SUPP
  * Represents the context of the body being code generated.
  */
 public class BodyContext {
+    static final String TAG_META_PROPS = "__META_PROPS";
+
     private final boolean doingConcreteType;
     private final TypeName implTypeName;
     private final TypeInfo typeInfo;
@@ -110,7 +112,7 @@ public class BodyContext {
      *
      * @return true if we are processing the concrete type
      */
-    protected boolean doingConcreteType() {
+    public boolean doingConcreteType() {
         return doingConcreteType;
     }
 
@@ -119,7 +121,7 @@ public class BodyContext {
      *
      * @return the type name
      */
-    protected TypeName implTypeName() {
+    public TypeName implTypeName() {
         return implTypeName;
     }
 
@@ -128,7 +130,7 @@ public class BodyContext {
      *
      * @return the type info
      */
-    protected TypeInfo typeInfo() {
+    public TypeInfo typeInfo() {
         return typeInfo;
     }
 
@@ -137,7 +139,7 @@ public class BodyContext {
      *
      * @return the builder annotation
      */
-    protected AnnotationAndValue builderAnnotation() {
+    public AnnotationAndValue builderAnnotation() {
         return builderAnnotation;
     }
 
@@ -155,7 +157,7 @@ public class BodyContext {
      *
      * @return the list of type elements
      */
-    protected List<TypedElementName> allTypeInfos() {
+    public List<TypedElementName> allTypeInfos() {
         return allTypeInfos;
     }
 
@@ -164,7 +166,7 @@ public class BodyContext {
      *
      * @return the list of attribute names
      */
-    protected List<String> allAttributeNames() {
+    public List<String> allAttributeNames() {
         return allAttributeNames;
     }
 
@@ -173,7 +175,7 @@ public class BodyContext {
      *
      * @return the parent type name
      */
-    protected AtomicReference<TypeName> parentTypeName() {
+    public AtomicReference<TypeName> parentTypeName() {
         return parentTypeName;
     }
 
@@ -236,7 +238,7 @@ public class BodyContext {
      *
      * @return the list type
      */
-    protected String listType() {
+    public String listType() {
         return listType;
     }
 
@@ -245,7 +247,7 @@ public class BodyContext {
      *
      * @return the map type
      */
-    protected String mapType() {
+    public String mapType() {
         return mapType;
     }
 
@@ -254,7 +256,7 @@ public class BodyContext {
      *
      * @return the set type
      */
-    protected String setType() {
+    public String setType() {
         return setType;
     }
 
@@ -263,7 +265,7 @@ public class BodyContext {
      *
      * @return true if current has parent
      */
-    protected boolean hasParent() {
+    public boolean hasParent() {
         return hasParent;
     }
 
@@ -281,7 +283,7 @@ public class BodyContext {
      *
      * @return the generic declaration
      */
-    protected String genericBuilderClassDecl() {
+    public String genericBuilderClassDecl() {
         return genericBuilderClassDecl;
     }
 

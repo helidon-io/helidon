@@ -26,7 +26,7 @@ final class GenerateMethod {
     private GenerateMethod() {
     }
 
-    static void builderMethods(StringBuilder builder,
+    static String builderMethods(StringBuilder builder,
                                BodyContext ctx) {
         GenerateJavadoc.builderMethod(builder, ctx);
         builder.append("\tpublic static Builder");
@@ -40,6 +40,8 @@ final class GenerateMethod {
         builder.append("\t\tObjects.requireNonNull(val);\n");
         builder.append("\t\treturn builder().accept(val);\n");
         builder.append("\t}\n\n");
+
+        return "public static Builder toBuilder({args})";
     }
 
     static void stringToCharSetter(StringBuilder builder,
@@ -60,7 +62,7 @@ final class GenerateMethod {
     static void internalMetaAttributes(StringBuilder builder) {
         GenerateJavadoc.internalMetaAttributes(builder);
         builder.append("\tpublic static Map<String, Map<String, Object>> __metaAttributes() {\n"
-                               + "\t\treturn META_PROPS;\n"
+                               + "\t\treturn ").append(BodyContext.TAG_META_PROPS).append(";\n"
                                + "\t}\n\n");
     }
 

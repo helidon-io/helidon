@@ -36,6 +36,15 @@
     <name>Helidon Pico Builder Tests Project</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <!--        <maven.javadoc.skip>true</maven.javadoc.skip>-->
+        <spotbugs.skip>true</spotbugs.skip>
+        <dependency-check.skip>true</dependency-check.skip>
+        <helidon.services.skip>true</helidon.services.skip>
+    </properties>
+
     <modules>
         <module>builder</module>
     </modules>
