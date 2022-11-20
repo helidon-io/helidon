@@ -143,12 +143,13 @@ class name of your class.
 // end::furnish-openapi-info[]
 
 // tag::usage-access-endpoint[]
-=== Accessing the REST Endpoint
+=== Accessing the REST Endpoints
+==== Accessing `/openapi`
 Once you add the {flavor-uc} OpenAPI dependency to your
 ifdef::mp-flavor[project,]
 ifdef::se-flavor[project and add code to create the `OpenAPISupport` object to your routing,]
-your application will automatically respond to the built-in endpoint --
-`/openapi` -- and it will return the OpenAPI document describing the endpoints
+your application automatically responds to the built-in endpoint --
+`/openapi` -- and it returns the OpenAPI document describing the endpoints
 in your application.
 
 By default, per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML.
@@ -159,6 +160,10 @@ That is what Helidon returns, by default.
 In addition, a client can specify the HTTP header `Accept` as either `application/vnd.oai.openapi+json` or
 `application/json` to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON`
 or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.
+
+==== Accessing `/openapi/ui`
+Further, at the endpoint `/openapi/ui` Helidon responds with a browser-friendly representation of the OpenAPI document. By default, Helidon sends an HTML or a plain text response, depending on the `Accept` header in the request.
+
 // end::usage-access-endpoint[]
 
 // tag::api[]

@@ -30,6 +30,7 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
+import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -77,6 +78,14 @@ public class TestUi {
             .webContext(GREETING_OPENAPI_PATH)
             .config(OPENAPI_CONFIG_DISABLED_CORS);
 
+    private static final String ALTERNATE_UI_WEB_CONTEXT = "/my-ui";
+    static final Supplier<OpenAPISupport.Builder<?>> ALTERNATE_UI_WEB_CONTEXT_OPENAPI_SUPPORT_BUILDER_SUPPLIER
+            = () -> OpenAPISupport.builder()
+            .staticFile("src/test/resources/openapi-greeting.yml")
+            .config(OPENAPI_CONFIG_DISABLED_CORS)
+            .ui(OpenApiUi.builder()
+                        .webContext(ALTERNATE_UI_WEB_CONTEXT));
+
     private static WebServer sharedWebServer;
 
     private static WebClient sharedWebClient;
@@ -97,21 +106,11 @@ public class TestUi {
     @Test
     void checkMinimalUi() throws Exception {
 
-        WebClientResponse response = sharedWebClient.get()
+        verifyHtmlTextResponse(sharedWebClient.get()
                 .path(GREETING_OPENAPI_PATH + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT)
                 .accept(MediaType.TEXT_HTML)
                 .submit()
-                .await(15, TimeUnit.SECONDS);
-
-        assertThat("Response code from U/I", response.status().code(), is(200));
-        assertThat("Media type returned from U/I",
-                   response.headers().contentType(),
-                   OptionalMatcher.value(MediaTypeMatcher.test(MediaType.TEXT_HTML)));
-
-        String output = response.content().as(String.class).get();
-        assertThat("Plain text document", output, Matchers.allOf(
-                Matchers.containsString("openapi: 3"),
-                Matchers.containsString("<html")));
+                .await(15, TimeUnit.SECONDS));
     }
 
     @Test
@@ -122,7 +121,7 @@ public class TestUi {
                 .submit()
                 .await(15, TimeUnit.SECONDS);
 
-        assertThat("Status accepting HTML to main endpoint",
+        assertThat("Status simulating browser to main endpoint",
                    response.status().code(),
                    is(Http.Status.OK_200.code()));
         assertThat("Content-Type",
@@ -132,11 +131,51 @@ public class TestUi {
 
     @Test
     void checkPlainTextResponse() throws ExecutionException, InterruptedException {
-        WebClientResponse response = sharedWebClient.get()
-                .path(GREETING_OPENAPI_PATH)
-                .accept(MediaType.TEXT_PLAIN)
+        verifyPlainTextResponse(sharedWebClient.get()
+                                        .path(GREETING_OPENAPI_PATH)
+                                        .accept(MediaType.TEXT_PLAIN)
+                                        .submit()
+                                        .await(Duration.ofSeconds(15)));
+    }
+
+    @Test
+    void checkAlternateUiWebContext() throws ExecutionException, InterruptedException {
+        WebServer ws = TestUtil.startServer(ALTERNATE_UI_WEB_CONTEXT_OPENAPI_SUPPORT_BUILDER_SUPPLIER.get());
+        try {
+            WebClient wc = WebClient.builder()
+                    .baseUri("http://localhost:" + ws.port())
+                    .build();
+
+            verifyPlainTextResponse(wc.get()
+                                            .path(ALTERNATE_UI_WEB_CONTEXT)
+                                            .accept(MediaType.TEXT_PLAIN)
+                                            .submit()
+                                            .await(Duration.ofSeconds(15)));
+
+        } finally {
+            ws.shutdown();
+        }
+    }
+
+    @Test
+    void checkPlainTextAtSubresource() throws ExecutionException, InterruptedException {
+        verifyPlainTextResponse(sharedWebClient.get()
+                                        .path(GREETING_OPENAPI_PATH + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT)
+                                        .accept(MediaType.TEXT_PLAIN)
+                                        .submit()
+                                        .await(Duration.ofSeconds(15)));
+    }
+
+    @Test
+    void checkHtmlAtSubresource() throws ExecutionException, InterruptedException {
+        verifyHtmlTextResponse(sharedWebClient.get()
+                .path(GREETING_OPENAPI_PATH + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT)
+                .accept(MediaType.TEXT_HTML)
                 .submit()
-                .await(Duration.ofSeconds(15));
+                .await(Duration.ofSeconds(15)));
+    }
+
+    private void verifyPlainTextResponse(WebClientResponse response) throws ExecutionException, InterruptedException {
         assertThat("Status accessing U/I for PLAIN", response.status().code(), is(200));
         assertThat("Returned media type accessing U/I",
                    response.headers().contentType(),
@@ -145,6 +184,16 @@ public class TestUi {
                    response.content().as(String.class).get(),
                    allOf(not(containsString("<html")),
                          containsString("openapi: 3")));
+    }
 
+    private void verifyHtmlTextResponse(WebClientResponse response) throws ExecutionException, InterruptedException {
+        assertThat("Status accessing U/I for HTML", response.status().code(), is(200));
+        assertThat("Returned media type accessing U/I",
+                   response.headers().contentType(),
+                   OptionalMatcher.value(MediaTypeMatcher.test(MediaType.TEXT_HTML)));
+        assertThat("U/I HTML response content",
+                   response.content().as(String.class).get(),
+                   allOf(containsString("<html"),
+                         containsString("openapi: 3")));
     }
 }
