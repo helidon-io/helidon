@@ -16,6 +16,7 @@
 package io.helidon.openapi;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -46,6 +47,29 @@ public class TestUi {
 
     private static final Config OPENAPI_CONFIG_DISABLED_CORS = Config.create(
             ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+
+    private static final MediaType[] SIMULATED_BROWSER_ACCEPT = new MediaType[] {
+            MediaType.TEXT_HTML,
+            MediaType.APPLICATION_XHTML_XML,
+            MediaType.builder()
+                    .type(MediaType.APPLICATION_XML.type())
+                    .subtype(MediaType.APPLICATION_XML.subtype())
+                    .parameters(Map.of("q", "0.9"))
+                    .build(),
+            MediaType.builder()
+                    .type("image")
+                    .subtype("webp")
+                    .build(),
+            MediaType.builder()
+                    .type("image")
+                    .subtype("apng")
+                    .build(),
+            MediaType.builder()
+                    .type(MediaType.WILDCARD_VALUE)
+                    .subtype(MediaType.WILDCARD_VALUE)
+                    .parameters(Map.of("q", "0.8"))
+                    .build()
+    };
 
     static final Supplier<OpenAPISupport.Builder<?>> GREETING_OPENAPI_SUPPORT_BUILDER_SUPPLIER
             = () -> OpenAPISupport.builder()
@@ -91,16 +115,19 @@ public class TestUi {
     }
 
     @Test
-    void checkHtmlRejectedFromMainEndpoint() throws Exception {
+    void checkSimulatedBrowserAccessToMainEndpoint() throws Exception {
         WebClientResponse response = sharedWebClient.get()
                 .path(GREETING_OPENAPI_PATH)
-                .accept(MediaType.TEXT_HTML)
+                .accept(SIMULATED_BROWSER_ACCEPT)
                 .submit()
                 .await(15, TimeUnit.SECONDS);
 
         assertThat("Status accepting HTML to main endpoint",
                    response.status().code(),
-                   is(Http.Status.NOT_FOUND_404.code()));
+                   is(Http.Status.OK_200.code()));
+        assertThat("Content-Type",
+                   response.headers().contentType(),
+                   OptionalMatcher.value(is(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE)));
     }
 
     @Test

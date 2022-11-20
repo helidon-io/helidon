@@ -52,8 +52,9 @@ public interface OpenApiUi extends Service {
      *
      * @param request the request for HTML content
      * @param response the response which could be prepared and sent
+     * @return whether the U/I did respond to the request
      */
-    void prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response);
+    boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response);
 
     /**
      * Builder for an {@code OpenApiUi}.

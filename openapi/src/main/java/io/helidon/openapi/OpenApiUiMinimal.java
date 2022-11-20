@@ -79,21 +79,18 @@ class OpenApiUiMinimal extends OpenApiUiBase {
     }
 
     @Override
-    public void prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
+    public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
         // The minimal implementation does not honor HTML at the main endpoint to keep the same browser behavior users saw
         // before the U/I enhancement.
-        if (!isEnabled()) {
-            request.next();
-        } else {
-            request.headers()
-                    .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES)
-                    .filter(mt -> !mt.test(MediaType.TEXT_HTML))
-                    .ifPresentOrElse(mt -> sendText(request, response, mt),
-                                     request::next);
-        }
+        return isEnabled()
+                && request.headers()
+                        .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES)
+                        .filter(mt -> !mt.test(MediaType.TEXT_HTML))
+                        .map(mt -> sendText(request, response, mt))
+                        .orElse(false);
     }
 
-    private void sendText(ServerRequest request, ServerResponse response, MediaType mediaType) {
+    private boolean sendText(ServerRequest request, ServerResponse response, MediaType mediaType) {
         try {
             response
                     .addHeader(Http.Header.CONTENT_TYPE, mediaType.toString())
@@ -103,6 +100,7 @@ class OpenApiUiMinimal extends OpenApiUiBase {
             response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
                     .send("Error formatting OpenAPI output. See server log.");
         }
+        return true;
     }
 
     private void sendText(ServerRequest request, ServerResponse response) {
