@@ -17,15 +17,20 @@
 package io.helidon.nima.webserver.http;
 
 /**
- * A runnable that can throw a checked exception.
- * This is to allow users to throw exception from their routes (and these will either end in an
- * {@link io.helidon.common.http.InternalServerException}, or will be handled by exception handler.
+ * The routing error handler.
+ * Can be mapped to the error cause in {@link io.helidon.nima.webserver.http.HttpRouting}.
+ *
+ * @param <T> type of throwable handled by this handler
+ * @see io.helidon.nima.webserver.http.HttpRouting.Builder#error(Class, ErrorHandler)
  */
-interface Executable {
+@FunctionalInterface
+public interface ErrorHandler<T extends Throwable> {
     /**
-     * Execute with a possible checked exception.
+     * Error handling consumer.
      *
-     * @throws Exception any exception
+     * @param req the server request
+     * @param res the server response
+     * @param throwable the cause of the error
      */
-    void execute() throws Exception;
+    void handle(ServerRequest req, ServerResponse res, T throwable);
 }

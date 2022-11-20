@@ -18,6 +18,7 @@ package io.helidon.nima.webserver.http;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
@@ -44,7 +45,7 @@ public final class Filters implements ServerLifecycle {
     /**
      * Create filters.
      *
-     * @param errorHandlers
+     * @param errorHandlers error handlers to handle thrown exceptions
      * @param filters       list of filters to use
      * @return filters
      */
@@ -71,7 +72,7 @@ public final class Filters implements ServerLifecycle {
      * @param routingExecutor this handler is called after all filters finish processing
      *                        (unless a filter does not invoke the chain)
      */
-    public void filter(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Executable routingExecutor) {
+    public void filter(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Callable<Void> routingExecutor) {
         if (noFilters) {
             errorHandlers.runWithErrorHandling(ctx, request, response, routingExecutor);
             return;
@@ -86,16 +87,16 @@ public final class Filters implements ServerLifecycle {
         private final ConnectionContext ctx;
         private final ErrorHandlers errorHandlers;
         private final Iterator<Filter> filters;
-        private final Executable routingExecutor;
-        private RoutingRequest request;
-        private RoutingResponse response;
+        private final Callable<Void> routingExecutor;
+        private final RoutingRequest request;
+        private final RoutingResponse response;
 
         private FilterChainImpl(ConnectionContext ctx,
                                 ErrorHandlers errorHandlers,
                                 List<Filter> filters,
                                 RoutingRequest request,
                                 RoutingResponse response,
-                                Executable routingExecutor) {
+                                Callable<Void> routingExecutor) {
             this.ctx = ctx;
             this.errorHandlers = errorHandlers;
             this.filters = filters.iterator();
@@ -122,8 +123,9 @@ public final class Filters implements ServerLifecycle {
             }
         }
 
-        private void runNextFilter() {
+        private Void runNextFilter() {
             filters.next().filter(this, request, response);
+            return null;
         }
     }
 

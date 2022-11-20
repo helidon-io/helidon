@@ -18,6 +18,10 @@ package io.helidon.nima.webserver.http;
 
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 
 import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
@@ -32,8 +36,25 @@ import io.helidon.nima.webserver.ConnectionContext;
  */
 public final class ErrorHandlers {
     private static final System.Logger LOGGER = System.getLogger(ErrorHandlers.class.getName());
+    private final IdentityHashMap<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers;
 
-    ErrorHandlers() {
+    private ErrorHandlers(IdentityHashMap<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers) {
+        this.errorHandlers = errorHandlers;
+    }
+
+    /**
+     * Create error handlers.
+     *
+     * @param errorHandlers map of type to error handler
+     * @return new error handlers
+     */
+    public static ErrorHandlers create(Map<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers) {
+        return new ErrorHandlers(new IdentityHashMap<>(errorHandlers));
+    }
+
+    @Override
+    public String toString() {
+        return "ErrorHandlers for " + errorHandlers.keySet();
     }
 
     /**
@@ -45,9 +66,9 @@ public final class ErrorHandlers {
      * @param response HTTP server response
      * @param task     task to execute
      */
-    public void runWithErrorHandling(ConnectionContext ctx, ServerRequest request, ServerResponse response, Executable task) {
+    public void runWithErrorHandling(ConnectionContext ctx, ServerRequest request, ServerResponse response, Callable<Void> task) {
         try {
-            task.execute();
+            task.call();
         } catch (CloseConnectionException | UncheckedIOException e) {
             // these errors must "bubble up"
             throw e;
@@ -65,10 +86,26 @@ public final class ErrorHandlers {
         } catch (InternalServerException e) {
             // this is the place error handling must be done
             // check if error handler exists for cause - if so, use it
-            if (hasErrorHandler(e.getCause())) {
-                handleError(ctx, request, response, e.getCause());
+            ErrorHandler errorHandler = null;
+            Throwable exception = null;
+
+            if (e.getCause() != null) {
+                var maybeEh = errorHandler(e.getCause().getClass());
+                if (maybeEh.isPresent()) {
+                    errorHandler = maybeEh.get();
+                    exception = e.getCause();
+                }
+            }
+
+            if (errorHandler == null) {
+                errorHandler = errorHandler(e.getClass()).orElse(null);
+                exception = e;
+            }
+
+            if (errorHandler == null) {
+                unhandledError(ctx, request, response, exception);
             } else {
-                handleError(ctx, request, response, e);
+                handleError(ctx, request, response, exception, errorHandler);
             }
         } catch (HttpException e) {
             handleError(ctx, request, response, e);
@@ -79,6 +116,26 @@ public final class ErrorHandlers {
                 throw new UncheckedIOException(se);
             }
             handleError(ctx, request, response, e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    <T extends Throwable> Optional<ErrorHandler<T>> errorHandler(Class<T> exceptionClass) {
+        // then look for error handlers that handle supertypes of this exception from lower to higher
+        Class<? extends Throwable> throwableClass = exceptionClass;
+        while (true) {
+            // first look for exact match
+            ErrorHandler<?> errorHandler = errorHandlers.get(throwableClass);
+            if (errorHandler != null) {
+                return Optional.of((ErrorHandler<T>) errorHandler);
+            }
+            if (!Throwable.class.isAssignableFrom(throwableClass)) {
+                return Optional.empty();
+            }
+            if (throwableClass == Throwable.class) {
+                return Optional.empty();
+            }
+            throwableClass = (Class<? extends Throwable>) throwableClass.getSuperclass();
         }
     }
 
@@ -102,12 +159,13 @@ public final class ErrorHandlers {
         ctx.directHandlers().handle(e, response, keepAlive);
     }
 
-    private boolean hasErrorHandler(Throwable cause) {
-        // TODO needs implementation (separate issue)
-        return true;
+    private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
+        errorHandler(e.getClass())
+                .ifPresentOrElse(it -> handleError(ctx, request, response, e, (ErrorHandler<Throwable>) it),
+                                 () -> unhandledError(ctx, request, response, e));
     }
 
-    private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
+    private void unhandledError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
         // to be handled by error handler
         handleRequestException(ctx, request, response, RequestException.builder()
                 .cause(e)
@@ -127,5 +185,18 @@ public final class ErrorHandlers {
                 .setKeepAlive(e.keepAlive())
                 .request(DirectTransportRequest.create(request.prologue(), request.headers()))
                 .build());
+    }
+
+    private void handleError(ConnectionContext ctx,
+                             ServerRequest request,
+                             ServerResponse response,
+                             Throwable e,
+                             ErrorHandler<Throwable> it) {
+        try {
+            it.handle(request, response, e);
+        } catch (Exception ex) {
+            ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to handle exception.", ex);
+            unhandledError(ctx, request, response, e);
+        }
     }
 }
