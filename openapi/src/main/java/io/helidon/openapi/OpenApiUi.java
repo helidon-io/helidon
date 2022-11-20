@@ -59,7 +59,7 @@ public interface OpenApiUi extends Service {
     /**
      * Builder for an {@code OpenApiUi}.
      */
-    @Configured(prefix = Builder.OPENAPI_UI_CONFIG_PREFIX)
+    @Configured(prefix = Builder.OPENAPI_UI_CONFIG_PREFIX, provides = OpenApiUi.class)
     interface Builder {
 
         /**
