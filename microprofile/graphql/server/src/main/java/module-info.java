@@ -14,12 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 
 /**
  * GraphQL microprofile server module.
  */
+@Feature(value = "GraphQL",
+        description = "MicroProfile GraphQL spec implementation",
+        in = HelidonFlavor.MP,
+        path = "GraphQL"
+)
+@Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.microprofile.graphql.server {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires java.desktop;
 
