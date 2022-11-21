@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
 
 /**
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
  */
+@Feature(value = "Server",
+        description = "Server for Helidon MP",
+        in = HelidonFlavor.MP,
+        path = "Server"
+)
 module io.helidon.microprofile.server {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.nima.webserver;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.jersey.server;
