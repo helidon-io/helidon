@@ -41,7 +41,6 @@ import io.helidon.pico.builder.processor.spi.BuilderCreator;
 import io.helidon.pico.builder.processor.spi.DefaultTypeAndBody;
 import io.helidon.pico.builder.processor.spi.TypeAndBody;
 import io.helidon.pico.builder.processor.spi.TypeInfo;
-import io.helidon.pico.builder.spi.BeanUtils;
 import io.helidon.pico.builder.spi.RequiredAttributeVisitor;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;

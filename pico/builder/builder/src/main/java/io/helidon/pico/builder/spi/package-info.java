@@ -15,6 +15,6 @@
  */
 
 /**
- * Builder runtime tooling spi utilities and helpers.
+ * Builder runtime tooling SPI.
  */
 package io.helidon.pico.builder.spi;
