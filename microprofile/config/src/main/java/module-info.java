@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * CDI extension for microprofile config implementation.
  *
  * @see org.eclipse.microprofile.config
  */
+@Feature(value = "Config",
+        description = "MicroProfile configuration spec implementation",
+        in = HelidonFlavor.MP,
+        path = "Config"
+)
 module io.helidon.microprofile.config {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.cdi;
     requires jakarta.inject;
