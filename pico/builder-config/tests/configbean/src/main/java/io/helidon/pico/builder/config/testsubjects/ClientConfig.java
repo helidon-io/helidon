@@ -14,23 +14,40 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.config.test.testsubjects;
+package io.helidon.pico.builder.config.testsubjects;
 
 import java.util.Map;
 
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.config.ConfigBean;
-import io.helidon.pico.builder.config.testsubjects.CommonConfig;
 
+/**
+ * For testing purpose.
+ */
 @ConfigBean(drivesActivation = false)
 public interface ClientConfig extends CommonConfig {
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     @ConfiguredOption("default")
     @Override
     String name();
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     int serverPort();
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     Map<String, String> headers();
 
 }

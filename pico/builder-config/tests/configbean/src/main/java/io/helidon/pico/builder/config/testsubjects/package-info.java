@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.config.fakes.config;
-
-public enum FakeNettyClientAuth {
-    NONE,
-    OPTIONAL,
-    REQUIRE;
-
-    private FakeNettyClientAuth() {
-    }
-}
+/**
+ * ConfigBean test subjects.
+ */
+package io.helidon.pico.builder.config.testsubjects;
