@@ -21,16 +21,39 @@ import java.util.List;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.config.ConfigBean;
 
+/**
+ * For testing purpose.
+ */
 @ConfigBean
 public interface CommonConfig {
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     String name();
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     @ConfiguredOption(required = true)
     int port();
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     List<String> cipherSuites();
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     char[] pwd();
 
 }

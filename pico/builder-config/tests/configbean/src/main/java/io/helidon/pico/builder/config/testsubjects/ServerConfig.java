@@ -21,13 +21,26 @@ import java.util.Optional;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.builder.config.ConfigBean;
 
+/**
+ * For testing purpose.
+ */
 @ConfigBean(atLeastOne = true)
 public interface ServerConfig extends CommonConfig {
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     @ConfiguredOption("default")
     @Override
     String name();
 
+    /**
+     * For testing purpose.
+     *
+     * @return for testing purposes
+     */
     Optional<String> description();
 
 }
