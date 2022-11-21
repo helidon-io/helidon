@@ -28,7 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "CDI"
 )
 module io.helidon.microprofile.cdi {
-    requires static io.helidon.common.features.api;
+    requires io.helidon.common.features.api;
 
 
     // needed for Unsafe used from Weld
