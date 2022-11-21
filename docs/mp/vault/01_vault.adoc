@@ -33,10 +33,6 @@ Vault integration supports the following:
 * *Authentication Methods*: Token, Kubernetes (k8s), AppRole
 * *Other Sys Operations and Configurations*
 
-=== Experimental
-
-WARNING: Helidon Vault support is still experimental and not intended for production use. APIs and features have not yet been fully tested and are subject to change.
-
 === Sys Operations
 
 Each of these features is implemented as a separate module, with the Vault class binding them together. In Helidon MP, with injection, this binding is done automatically, and you can simply inject your favorite secret engine.
