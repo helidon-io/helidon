@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +34,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -42,12 +47,28 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 
 /**
  * {@link MultiTest} test.
  */
 public class MultiTest {
+
+    private static ExecutorService exec;
+
+    @BeforeAll
+    static void beforeAll() {
+        exec = Executors.newFixedThreadPool(4);
+    }
+
+    @AfterAll
+    static void afterAll() throws InterruptedException {
+        exec.shutdown();
+        if (!exec.awaitTermination(5, TimeUnit.SECONDS)) {
+            exec.shutdownNow();
+        }
+    }
 
     @Test
     public void testJust() {
@@ -669,6 +690,30 @@ public class MultiTest {
         assertThat(subscriber2.getSubcription(), is(not(nullValue())));
         assertThat(subscriber2.getSubcription(), is(not(EmptySubscription.INSTANCE)));
         assertThat(subscriber2.getLastError(), is(nullValue()));
+    }
+
+    @Test
+    void testForEachCompletionStage() {
+        List<String> flags = Collections.synchronizedList(new ArrayList<>(8));
+        Multi.just(200, 150, 100, 50)
+                .log()
+                .forEachCompletionStage(i -> CompletableFuture.runAsync(() -> {
+                    flags.add("entering " + i);
+                    try {
+                        Thread.sleep(i);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    flags.add("leaving " + i);
+                }, exec))
+                .await();
+
+        assertThat(flags, contains(
+                "entering 200", "leaving 200",
+                "entering 150", "leaving 150",
+                "entering 100", "leaving 100",
+                "entering 50", "leaving 50"
+        ));
     }
 
     private static class MultiTestSubscriber<T> extends TestSubscriber<T> {
