@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.spi;
+package io.helidon.pico.builder.processor.tools;
 
 import java.util.Collections;
 import java.util.List;
