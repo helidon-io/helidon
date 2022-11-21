@@ -20,6 +20,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.openapi.OpenAPISupport;
+import io.helidon.openapi.OpenApiUi;
 
 import io.smallrye.openapi.ui.Option;
 import org.junit.jupiter.api.Test;
@@ -39,15 +40,14 @@ class TestConfig {
 
         Config config = Config.create(ConfigSources.create(settings));
         Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY);
-        OpenAPISupport openAPISupport = OpenAPISupport.create(openApiConfig);
-        OpenApiUiSupport uiSupport = OpenApiUiSupport.builder(openAPISupport)
-                .config(openApiConfig.get(OpenApiUiSupport.OPENAPI_UI_SUBCONFIG_KEY))
+        OpenApiUiFull.Builder uiSupportBuilder = OpenApiUiFull.builder()
+                .config(openApiConfig.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_PREFIX));
+        OpenAPISupport openAPISupportBuilder = OpenAPISupport.builder()
+                .config(openApiConfig)
+                .ui(uiSupportBuilder)
                 .build();
 
         // Check a simple option setting.
-        assertThat("Overridden title value", uiSupport.options().get(Option.title), is(newTitle));
-
-        // The OpenApiUiSupport.Builder should set certain options using the value from OpenAPISupport or OpenApiUi.
-        assertThat("Option for OpenAPI endpoint", uiSupport.options().get(Option.url), is(newContext));
+        assertThat("Overridden title value", uiSupportBuilder.uiOptions().get(Option.title), is(newTitle));
     }
 }

@@ -16,7 +16,6 @@
 package io.helidon.integrations.openapi.ui;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +30,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.openapi.OpenAPISupport;
+import io.helidon.openapi.OpenApiUi;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
@@ -39,13 +39,15 @@ import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class MainTest {
+class MainTest {
 
     private static final String RUN_BROWSER_TEST_PROPERTY = "io.helidon.openapi.ui.test.runForBrowser";
 
@@ -65,16 +67,17 @@ public class MainTest {
     @Test
     @EnabledIfSystemProperty(named = RUN_BROWSER_TEST_PROPERTY, matches=".*")
     void browserDefaults() throws InterruptedException {
-        browser(null, null, null);
+        browser(null, null, null, null);
     }
 
     @Test
     void testMainUiPageWithDefaultSettings() {
         // Use defaults for the OpenAPI endpoint and the U/I endpoint.
         loadAndCheckMainPage(null, // load config from normal sources
+                             null,
                              null, // create OpenAPISupport from config
-                             null, // create OpenApiUiSupport from config
-                             OpenApiUiSupport.DEFAULT_UI_PREFIX
+                             null, // create OpenApiUiFull from config
+                             OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT
         );
     }
 
@@ -84,6 +87,7 @@ public class MainTest {
         Map<String, String> settings = Map.of("openapi.ui.web-context", "/openapi-ui-x");
         Config config = Config.create(ConfigSources.create(settings));
         loadAndCheckMainPage(config,
+                             null,
                              null,
                              null,
                              "/openapi-ui-x");
@@ -98,35 +102,36 @@ public class MainTest {
         loadAndCheckMainPage(config,
                              null,
                              null,
-                             OpenApiUiSupport.DEFAULT_UI_PREFIX);
+                             null,
+                             "/openapi-x" + OpenApiUi.UI_WEB_SUBCONTEXT);
     }
 
-    @Test
-    void testRedirectNoTrailingSlash() {
-        loadAndCheckMainPage(null, null, null, "/openapi-ui", false, 301);
-    }
-
-    @Test
-    void testRedirectWithTrailingSlash() {
-        loadAndCheckMainPage(null, null, null, "/openapi-ui/", false, 301);
+    @ParameterizedTest
+    @ValueSource(strings = {"/openapi", "/openapi/"})
+    void testRedirect(String testPath) {
+        loadAndCheckMainPage(null, null, null, null,
+                             testPath, false, 307);
     }
 
     static void loadAndCheckMainPage(Config config,
+                                     OpenAPISupport.Builder<?> openAPISupportBuilder,
                                      OpenAPISupport openAPISupport,
-                                     OpenApiUiSupport uiSupport,
+                                     OpenApiUi.Builder<?, ?> uiSupportBuilder,
                                      String uiPathToCheck) {
-        loadAndCheckMainPage(config, openAPISupport, uiSupport, uiPathToCheck, true, 200);
+        loadAndCheckMainPage(config, openAPISupportBuilder, openAPISupport, uiSupportBuilder, uiPathToCheck, true, 200);
     }
 
     static void loadAndCheckMainPage(Config config,
+                                     OpenAPISupport.Builder<?> openAPISupportBuilder,
                                      OpenAPISupport openAPISupport,
-                                     OpenApiUiSupport uiSupport,
+                                     OpenApiUi.Builder<?, ?> uiSupportBuilder,
                                      String uiPathToCheck,
                                      boolean followRedirects,
                                      int expectedStatus) {
         run (config,
+             openAPISupportBuilder,
              openAPISupport,
-             uiSupport,
+             uiSupportBuilder,
              uiPathToCheck,
              webClient ->
                      webClient.get()
@@ -151,8 +156,9 @@ public class MainTest {
     }
 
     static void run(Config config,
+                    OpenAPISupport.Builder<?> openApiSupportBuilder,
                     OpenAPISupport openApiSupport,
-                    OpenApiUiSupport uiSupport,
+                    OpenApiUi.Builder<?, ?> uiSupportBuilder,
                     String uiPathToTest,
                     Function<WebClient, WebClientRequestBuilder> operation,
                     int expectedStatus,
@@ -160,7 +166,7 @@ public class MainTest {
         WebServer server = null;
 
         try {
-            server = startServer(config, openApiSupport, uiSupport).get();
+            server = startServer(config, openApiSupportBuilder, openApiSupport, uiSupportBuilder).get();
             String baseUri = "http://localhost:" + server.port();
             WebClient.Builder webClientBuilder = WebClient.builder()
                     .baseUri(baseUri);
@@ -192,11 +198,16 @@ public class MainTest {
     }
 
     static void browser(Config config,
+                        OpenAPISupport.Builder<?> openApiSupportBuilder,
                         OpenAPISupport openApiSupport,
-                        OpenApiUiSupport uiSupport) {
+                        OpenApiUi.Builder<?, ?> uiSupportBuilder) {
         String minutesToStayUpText = System.getProperty(RUN_BROWSER_TEST_PROPERTY);
         if (minutesToStayUpText == null) {
             return;
+        }
+        // If the property is defined but not given a value, Java reports "true".
+        if (Boolean.parseBoolean(minutesToStayUpText)) {
+            minutesToStayUpText = "5";
         }
         long minutesToStayUp = (minutesToStayUpText.length() > 0 ? Long.parseUnsignedLong(minutesToStayUpText) : 5);
 
@@ -211,7 +222,7 @@ public class MainTest {
             try {
                 // For the browser test set the server.port to 8080 so the human knows where to find the pages.
 
-                webServer = startServer(configWithPort, openApiSupport, uiSupport).get(5, TimeUnit.SECONDS);
+                webServer = startServer(configWithPort, openApiSupportBuilder, openApiSupport, uiSupportBuilder).get(5, TimeUnit.SECONDS);
             } catch (Exception e) {
                 fail("Error starting webserver for browser test", e);
             }
@@ -228,8 +239,9 @@ public class MainTest {
     }
 
     static Single<WebServer> startServer(Config config,
+                                         OpenAPISupport.Builder<?> openApiSupportBuilder,
                                          OpenAPISupport openApiSupport,
-                                         OpenApiUiSupport uiSupport) throws IOException {
+                                         OpenApiUi.Builder<?, ?> uiSupportBuilder) throws IOException {
 
         // load logging configuration
         LogConfig.configureRuntime();
@@ -240,7 +252,7 @@ public class MainTest {
         }
 
         // Get webserver config from the "server" section of application.yaml and register JSON support
-        Single<WebServer> server = WebServer.builder(createRouting(config, openApiSupport, uiSupport))
+        Single<WebServer> server = WebServer.builder(createRouting(config, openApiSupportBuilder, openApiSupport, uiSupportBuilder))
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build()
@@ -265,26 +277,34 @@ public class MainTest {
      *
      * @param config configuration of this server
      * @param openApiSupport {@code OpenAPISupport} instance to register with routing; null -> create one using config
-     * @param uiSupport {@code OpenApiUiSupport} instance to register with routing; null -> create one using config
+     * @param uiSupportBuilder {@code OpenApiUiFull.Builder} instance to use in registering with routing;
+     *                                                            null -> create one using config
      * @return routing configured with a health check, and a service
      */
     private static Routing createRouting(Config config,
+                                         OpenAPISupport.Builder<?> openApiSupportBuilder,
                                          OpenAPISupport openApiSupport,
-                                         OpenApiUiSupport uiSupport) throws IOException {
+                                         OpenApiUi.Builder<?, ?> uiSupportBuilder) throws IOException {
+
+        if (uiSupportBuilder == null) {
+            uiSupportBuilder = OpenApiUiFull.builder()
+                    .config(config.get(OpenAPISupport.Builder.CONFIG_KEY)
+                                    .get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_PREFIX));
+        }
+        if (openApiSupportBuilder == null) {
+            openApiSupportBuilder = OpenAPISupport.builder()
+                    .config(config.get(OpenAPISupport.Builder.CONFIG_KEY));
+        }
 
         if (openApiSupport == null) {
-            openApiSupport = OpenAPISupport.create(config.get(OpenAPISupport.Builder.CONFIG_KEY));
+            openApiSupportBuilder.ui(uiSupportBuilder);
+            openApiSupport = openApiSupportBuilder.build();
         }
-        if (uiSupport == null) {
-            uiSupport = OpenApiUiSupport.create(openApiSupport,
-                                                config.get(OpenAPISupport.Builder.CONFIG_KEY)
-                                                      .get(OpenApiUiSupport.OPENAPI_UI_SUBCONFIG_KEY));
-        }
+
         GreetService greetService = new GreetService(config);
-        return Routing.builder()
+        Routing.Builder routingBuilder = Routing.builder()
                 .register(openApiSupport)
-                .register(uiSupport)
-                .register("/greet", greetService)
-                .build();
+                .register("/greet", greetService);
+        return routingBuilder.build();
     }
 }

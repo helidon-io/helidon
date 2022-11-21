@@ -30,8 +30,6 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
-import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -107,7 +105,7 @@ public class TestUi {
     void checkMinimalUi() throws Exception {
 
         verifyHtmlTextResponse(sharedWebClient.get()
-                .path(GREETING_OPENAPI_PATH + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT)
+                .path(GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT)
                 .accept(MediaType.TEXT_HTML)
                 .submit()
                 .await(15, TimeUnit.SECONDS));
@@ -160,7 +158,7 @@ public class TestUi {
     @Test
     void checkPlainTextAtSubresource() throws ExecutionException, InterruptedException {
         verifyPlainTextResponse(sharedWebClient.get()
-                                        .path(GREETING_OPENAPI_PATH + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT)
+                                        .path(GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT)
                                         .accept(MediaType.TEXT_PLAIN)
                                         .submit()
                                         .await(Duration.ofSeconds(15)));
@@ -169,7 +167,7 @@ public class TestUi {
     @Test
     void checkHtmlAtSubresource() throws ExecutionException, InterruptedException {
         verifyHtmlTextResponse(sharedWebClient.get()
-                .path(GREETING_OPENAPI_PATH + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT)
+                .path(GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT)
                 .accept(MediaType.TEXT_HTML)
                 .submit()
                 .await(Duration.ofSeconds(15)));

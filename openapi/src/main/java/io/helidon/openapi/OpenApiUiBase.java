@@ -15,29 +15,57 @@
  */
 package io.helidon.openapi;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 
 /**
  * Common base class for implementations of @link OpenApiUi}.
  */
 public abstract class OpenApiUiBase implements OpenApiUi {
 
+    private static final Logger LOGGER = Logger.getLogger(OpenApiUiBase.class.getName());
+
     private static final LazyValue<OpenApiUiFactory> UI_FACTORY = LazyValue.create(OpenApiUiBase::loadUiFactory);
+
+    private static final String HTML_PREFIX = """
+            <!doctype html>
+            <html lang="en-US">
+                <head>
+                    <meta charset="utf-8"/>
+                    <title>OpenAPI Document</title>
+                </head>
+                <body>
+                    <pre>
+            """;
+    private static final String HTML_SUFFIX = """
+                    </pre>
+                </body>
+            </html>
+            """;
+    private final Map<MediaType, String> preparedDocuments = new HashMap<>();
 
     /**
      *
+     * @param <T> type of the {@code OpenApiUiBase} to be built
+     * @param <B> type of the builder for T
      * @return a builder for the currently-available implementation of {@link OpenApiUi}.
      */
-    static OpenApiUi.Builder builder() {
+    static <B extends OpenApiUi.Builder<B, T>, T extends OpenApiUi>  B builder() {
         return UI_FACTORY.get().builder();
     }
 
@@ -53,11 +81,11 @@ public abstract class OpenApiUiBase implements OpenApiUi {
      * @param documentPreparer function returning an OpenAPI document represented as a specified {@link MediaType}
      * @param openAPIWebContext final web context for the {@code OpenAPISupport} service
      */
-    protected OpenApiUiBase(Builder builder, Function<MediaType, String> documentPreparer, String openAPIWebContext) {
+    protected OpenApiUiBase(Builder<?, ?> builder, Function<MediaType, String> documentPreparer, String openAPIWebContext) {
         this.documentPreparer = documentPreparer;
         isEnabled = builder.isEnabled;
         webContext = Objects.requireNonNullElse(builder.webContext,
-                                                openAPIWebContext + OpenApiUi.DEFAULT_UI_WEB_SUBCONTEXT);
+                                                openAPIWebContext + OpenApiUi.UI_WEB_SUBCONTEXT);
         options.putAll(builder.options);
     }
 
@@ -83,7 +111,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
      *
      * @return web context this U/I implementation responds at
      */
-    protected String webContent() {
+    protected String webContext() {
         return webContext;
     }
 
@@ -95,6 +123,40 @@ public abstract class OpenApiUiBase implements OpenApiUi {
         return Collections.unmodifiableMap(options);
     }
 
+    /**
+     * Indicates which media types the concrete implementation handles as static text--that is,
+     * by replying with a simple document as formatted by
+     * {@link io.helidon.openapi.OpenAPISupport#prepareDocument(io.helidon.common.http.MediaType)} (as opposed
+     * to an interactive U/I).
+     *
+     * @return array of {@link MediaType} to process as normal text
+     */
+    protected abstract MediaType[] staticTextMediaTypes();
+
+    protected boolean sendText(ServerRequest request, ServerResponse response, MediaType mediaType) {
+        try {
+            response
+                    .addHeader(Http.Header.CONTENT_TYPE, mediaType.toString())
+                    .send(prepareDocument(request.queryParams(), mediaType));
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Error formatting OpenAPI output as " + mediaType, e);
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                    .send("Error formatting OpenAPI output. See server log.");
+        }
+        return true;
+    }
+
+    protected void sendText(ServerRequest request, ServerResponse response) {
+        if (!isEnabled()) {
+            request.next();
+        } else {
+            request.headers()
+                    .bestAccepted(staticTextMediaTypes())
+                    .ifPresentOrElse(mt -> sendText(request, response, mt),
+                                     request::next);
+        }
+    }
+
     private static OpenApiUiFactory loadUiFactory() {
         return HelidonServiceLoader.builder(ServiceLoader.load(OpenApiUiFactory.class))
                 .addService(OpenApiUiMinimalFactory.create(), Integer.MAX_VALUE)
@@ -103,32 +165,58 @@ public abstract class OpenApiUiBase implements OpenApiUi {
                 .next();
     }
 
+    private String prepareDocument(Parameters queryParameters, MediaType mediaType) throws IOException {
+        String result = null;
+        if (preparedDocuments.containsKey(mediaType)) {
+            return preparedDocuments.get(mediaType);
+        }
+        MediaType resultMediaType = queryParameters
+                .first(OpenAPISupport.OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER)
+                .map(OpenAPISupport.QueryParameterRequestedFormat::chooseFormat)
+                .map(OpenAPISupport.QueryParameterRequestedFormat::mediaType)
+                .orElse(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE);
+
+        result = prepareDocument(resultMediaType);
+        if (mediaType.test(MediaType.TEXT_HTML)) {
+            result = embedInHtml(result);
+        }
+        preparedDocuments.put(resultMediaType, result);
+        return result;
+    }
+
+    private String embedInHtml(String text) {
+        return HTML_PREFIX + text + HTML_SUFFIX;
+    }
+
     /**
      * Common base builder implementation for creating a new {@code OpenApiUi}.
+     *
+     * @param <T> type of the {@code OpenApiUiBase} to be built
+     * @param <B> type of the builder for T
      */
-    public abstract static class Builder implements OpenApiUi.Builder {
+    public abstract static class Builder<B extends Builder<B, T>, T extends OpenApiUi> implements OpenApiUi.Builder<B, T> {
 
         private final Map<String, String> options = new HashMap<>();
         private boolean isEnabled = true;
         private String webContext;
 
         @Override
-        public OpenApiUi.Builder options(Map<String, String> options) {
+        public B options(Map<String, String> options) {
             this.options.clear();
             this.options.putAll(options);
-            return this;
+            return identity();
         }
 
         @Override
-        public OpenApiUi.Builder isEnabled(boolean isEnabled) {
+        public B isEnabled(boolean isEnabled) {
             this.isEnabled = isEnabled;
-            return this;
+            return identity();
         }
 
         @Override
-        public OpenApiUi.Builder webContext(String webContext) {
+        public B webContext(String webContext) {
             this.webContext = webContext;
-            return this;
+            return identity();
         }
     }
 }

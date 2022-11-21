@@ -897,13 +897,13 @@ public abstract class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         @ConfiguredOption(type = OpenApiUi.class)
-        public B ui(OpenApiUi.Builder uiBuilder) {
+        public B ui(OpenApiUi.Builder<?, ?> uiBuilder) {
             Objects.requireNonNull(uiBuilder, "U/I must be non-null");
             this.uiBuilder = uiBuilder;
             return identity();
         }
 
-        OpenApiUi.Builder ui() {
+        OpenApiUi.Builder<?, ?> ui() {
             if (uiBuilder == null) {
                 uiBuilder = OpenApiUi.builder();
             }

@@ -35,14 +35,16 @@ public interface OpenApiUi extends Service {
      * Default subcontext within the {@link OpenAPISupport} instance's web context
      * (which itself defaults to {@value OpenAPISupport#DEFAULT_WEB_CONTEXT}.
      */
-    String DEFAULT_UI_WEB_SUBCONTEXT = "/ui";
+    String UI_WEB_SUBCONTEXT = "/ui";
 
     /**
      * Creates a builder for a new {@code OpenApiUi} instance.
      *
+     * @param <T> type of the {@code OpenApiUi} to be built
+     * @param <B> type of the builder for T
      * @return new builder
      */
-    static Builder builder() {
+    static <B extends Builder<B, T>, T extends OpenApiUi> Builder<B, T> builder() {
         return OpenApiUiBase.builder();
     }
 
@@ -58,9 +60,12 @@ public interface OpenApiUi extends Service {
 
     /**
      * Builder for an {@code OpenApiUi}.
+     *
+     * @param <T> type of the {@code OpenApiUi} to be build
+     * @param <B> type of the builder for T
      */
     @Configured(prefix = Builder.OPENAPI_UI_CONFIG_PREFIX, provides = OpenApiUi.class)
-    interface Builder {
+    interface Builder<B extends Builder<B, T>, T extends OpenApiUi> {
 
         /**
          * Config prefix within the {@value OpenAPISupport.Builder#CONFIG_KEY} section containing U/I settings.
@@ -89,7 +94,7 @@ public interface OpenApiUi extends Service {
          * @return updated builder
          */
         @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
-        Builder options(Map<String, String> options);
+        B options(Map<String, String> options);
 
         /**
          * Sets whether the U/I should be enabled.
@@ -98,7 +103,7 @@ public interface OpenApiUi extends Service {
          * @return updated builder
          */
         @ConfiguredOption(value = "true")
-        Builder isEnabled(boolean isEnabled);
+        B isEnabled(boolean isEnabled);
 
         /**
          * Sets the entire web context (not just the suffix) where the U/I response.
@@ -107,7 +112,7 @@ public interface OpenApiUi extends Service {
          * @return updated builder
          */
         @ConfiguredOption(description = "web context (path) where the U/I will respond")
-        Builder webContext(String webContext);
+        B webContext(String webContext);
 
         /**
          * Updates the builder using the specified config node at {@value OPENAPI_UI_CONFIG_PREFIX} within the
@@ -116,11 +121,20 @@ public interface OpenApiUi extends Service {
          * @param uiConfig config node containing the U/I settings
          * @return updated builder
          */
-        default Builder config(Config uiConfig) {
+        default B config(Config uiConfig) {
             uiConfig.get(ENABLED_CONFIG_KEY).asBoolean().ifPresent(this::isEnabled);
             uiConfig.get(WEB_CONTEXT_CONFIG_KEY).asString().ifPresent(this::webContext);
             uiConfig.get(OPTIONS_CONFIG_KEY).asMap().ifPresent(this::options);
-            return this;
+            return identity();
+        }
+
+        /**
+         *
+         * @return correctly-typed self
+         */
+        @SuppressWarnings("unchecked")
+        default B identity() {
+            return (B) this;
         }
 
         /**

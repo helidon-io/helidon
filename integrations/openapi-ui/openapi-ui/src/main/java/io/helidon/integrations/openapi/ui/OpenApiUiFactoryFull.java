@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.openapi;
+package io.helidon.integrations.openapi.ui;
+
+import io.helidon.openapi.OpenApiUiBase;
+import io.helidon.openapi.OpenApiUiFactory;
 
 /**
- * Behavior for factories able to provide new builders of {@link OpenApiUi} instances.
+ * Implementation of the {@link io.helidon.openapi.OpenApiUiFactory} contract for a full implementation of
+ * {@link io.helidon.openapi.OpenApiUi}.
  */
-public interface OpenApiUiFactory {
+public class OpenApiUiFactoryFull implements OpenApiUiFactory {
 
     /**
-     *
-     * @param <T> type of the {@link OpenApiUi} to be built
-     * @param <B> type of the builder for T
-     * @return a builder for the selected type of concrete {@link OpenApiUi}.
+     * Creates a new instance of the factory for a full U/I implementation.
      */
-    <B extends OpenApiUi.Builder<B, T>, T extends OpenApiUi> B builder();
+    public OpenApiUiFactoryFull() {
+    }
+
+    @Override
+    public OpenApiUiBase.Builder<?, ?> builder() {
+        return OpenApiUiFull.builder();
+    }
 }

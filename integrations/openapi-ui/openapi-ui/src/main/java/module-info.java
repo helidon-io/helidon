@@ -19,6 +19,7 @@
  */
 module io.helidon.integrations.openapi.ui {
 
+    requires java.logging;
     requires transitive io.helidon.config;
     requires io.helidon.config.metadata;
     requires transitive io.helidon.openapi;
