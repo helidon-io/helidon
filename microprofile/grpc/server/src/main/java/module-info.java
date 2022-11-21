@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * gRPC microprofile server module
  */
+@Feature(value = "gRPC Server",
+        description = "Server for gRPC services",
+        in = HelidonFlavor.MP,
+        path = "grpc"
+)
+@Aot(false)
 module io.helidon.microprofile.grpc.server {
+    requires static io.helidon.common.features.api;
+
     exports io.helidon.microprofile.grpc.server;
     exports io.helidon.microprofile.grpc.server.spi;
 
