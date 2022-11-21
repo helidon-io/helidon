@@ -41,12 +41,6 @@ import io.helidon.nima.webserver.spi.ServerConnection;
  * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to WebSocket.
  */
 public class WsUpgradeProvider implements Http1UpgradeProvider {
-    private static final System.Logger LOGGER = System.getLogger(WsUpgradeProvider.class.getName());
-
-    private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
-    private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
-    private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
-    private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
 
     /**
      * Websocket key header name.
@@ -85,6 +79,12 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
      * Supported version header.
      */
     protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
+
+    private static final System.Logger LOGGER = System.getLogger(WsUpgradeProvider.class.getName());
+    private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
+    private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
+    private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
+    private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
 
     private final Set<String> origins;
     private final boolean anyOrigin;
