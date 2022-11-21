@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * MP Rest client.
  *
  * @see org.eclipse.microprofile.rest.client
  */
+@Feature(value = "REST Client",
+        description = "MicroProfile REST client spec implementation",
+        in = HelidonFlavor.MP,
+        path = "REST Client"
+)
+@Aot(description = "Does not support execution of default methods on interfaces.")
 module io.helidon.microprofile.restclient {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires microprofile.rest.client.api;
     requires io.helidon.common.context;
