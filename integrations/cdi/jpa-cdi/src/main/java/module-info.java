@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Provides classes and interfaces that integrate the
  * provider-independent parts of <a
@@ -24,8 +27,14 @@
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
+@Feature(value = "JPA",
+        description = "Jakarta persistence API support for Helidon MP",
+        in = HelidonFlavor.MP,
+        path = "JPA"
+)
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.jpa {
+    requires static io.helidon.common.features.api;
 
     // Static metamodel generation requires access to java.compiler at
     // compile time only.
