@@ -28,9 +28,6 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "CDI"
 )
 module io.helidon.microprofile.cdi {
-    requires io.helidon.common.features.api;
-
-
     // needed for Unsafe used from Weld
     requires jdk.unsupported;
     requires java.logging;
@@ -40,6 +37,7 @@ module io.helidon.microprofile.cdi {
 
     requires io.helidon.common;
     requires io.helidon.logging.common;
+    requires io.helidon.common.features.api;
     requires io.helidon.common.features;
     requires io.helidon.config;
     requires io.helidon.config.mp;
