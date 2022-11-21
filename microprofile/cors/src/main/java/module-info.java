@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Support for CORS.
  */
+@Feature(value = "CORS",
+        description = "CORS support for Server",
+        in = HelidonFlavor.MP,
+        path = {"Server", "CORS"}
+)
 module io.helidon.microprofile.cors {
+    requires static io.helidon.common.features.api;
 
     requires jakarta.ws.rs;
     requires io.helidon.config;
