@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * CDI implementation enhancements for Helidon MP.
  *
  * @see jakarta.enterprise.context
  */
+@Feature(value = "CDI",
+        description = "Jakarta CDI implementation",
+        in = HelidonFlavor.MP,
+        path = "CDI"
+)
 module io.helidon.microprofile.cdi {
     // needed for Unsafe used from Weld
     requires jdk.unsupported;
