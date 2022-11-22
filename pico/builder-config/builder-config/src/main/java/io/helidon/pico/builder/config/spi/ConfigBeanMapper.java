@@ -25,6 +25,7 @@ import io.helidon.common.config.spi.ConfigMapper;
  *
  * @param <C> the config type
  */
+@FunctionalInterface
 public interface ConfigBeanMapper<C extends Config> extends ConfigMapper<C> {
 
     /**
@@ -35,6 +36,7 @@ public interface ConfigBeanMapper<C extends Config> extends ConfigMapper<C> {
      * @param <T> the config bean type
      * @return the config bean generated
      */
-    <T> T map(T cfg, Class<T> configBeanType);
+    @Override
+    <T> T map(C cfg, Class<T> configBeanType);
 
 }

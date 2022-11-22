@@ -19,6 +19,7 @@ package io.helidon.pico.builder.config.spi;
 /**
  * Java {@link java.util.ServiceLoader} provider interface to find implementation of {@link ConfigResolver}.
  */
+@FunctionalInterface
 public interface ConfigResolverProvider {
 
     /**

@@ -21,6 +21,7 @@ package io.helidon.pico.builder.config.spi;
  *
  * @see ConfigBeanBuilderValidatorHolder
  */
+@FunctionalInterface
 public interface ConfigBeanBuilderValidatorProvider {
 
     /**
