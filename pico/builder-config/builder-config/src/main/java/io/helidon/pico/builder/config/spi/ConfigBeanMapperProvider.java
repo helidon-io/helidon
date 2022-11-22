@@ -21,6 +21,7 @@ package io.helidon.pico.builder.config.spi;
  *
  * @see ConfigBeanMapperHolder
  */
+@FunctionalInterface
 public interface ConfigBeanMapperProvider {
 
     /**

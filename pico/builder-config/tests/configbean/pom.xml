@@ -101,40 +101,8 @@
                             <artifactId>helidon-pico-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-<!--                        &lt;!&ndash; the rest of these dependencies should have come in transitively, but they are not - need to investigate why &ndash;&gt;-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico</groupId>-->
-<!--                            <artifactId>helidon-pico-processor</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico.builder</groupId>-->
-<!--                            <artifactId>helidon-pico-builder-processor</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico.config</groupId>-->
-<!--                            <artifactId>helidon-pico-config-api</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico</groupId>-->
-<!--                            <artifactId>helidon-pico-api</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
