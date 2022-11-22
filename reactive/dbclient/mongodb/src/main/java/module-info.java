@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.dbclient.mongodb.MongoDbClientProvider;
 import io.helidon.reactive.dbclient.spi.DbClientProvider;
 
 /**
  * Helidon Common Mapper.
  */
+@Feature(value = "mongo",
+        description = "Reactive database client with reactive mongo driver",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "mongo"}
+)
 module io.helidon.reactive.dbclient.mongodb {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires java.sql;
 
