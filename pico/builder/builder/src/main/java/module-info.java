@@ -15,7 +15,7 @@
  */
 
 /**
- * The Pico Builder module.
+ * The Pico Builder API / SPI module.
  */
 module io.helidon.pico.builder {
     exports io.helidon.pico.builder;
