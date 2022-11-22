@@ -97,7 +97,7 @@ public class CharBuffer extends Writer {
 
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) {
-            throw new OutOfMemoryError("Capacity overflow. minCapacity=" + minCapacity);
+            throw new OutOfCapacityException("Capacity overflow. minCapacity=" + minCapacity);
         }
         return (minCapacity > MAX_ARRAY_SIZE)
                ? Integer.MAX_VALUE
