@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -68,8 +69,7 @@ public class FileServiceTest {
 
     @Test
     @Order(1)
-    public void testUpload(WebTarget target) throws IOException {
-        Path tempDirectory = Files.createTempDirectory(null);
+    public void testUpload(WebTarget target, @TempDir Path tempDirectory) throws IOException {
         File file = Files.write(tempDirectory.resolve("foo.txt"), "bar\n".getBytes(StandardCharsets.UTF_8)).toFile();
         MultiPart multipart = new MultiPart()
                 .bodyPart(new FileDataBodyPart("file[]", file, MediaType.APPLICATION_OCTET_STREAM_TYPE));
