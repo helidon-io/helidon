@@ -14,15 +14,27 @@
  * limitations under the License.
  */
 
+package io.helidon.common.config.spi;
+
+import java.util.Map;
+import java.util.function.Function;
+
+import io.helidon.common.config.Config;
+
 /**
- * Helidon Common Config Library.
+ * Provides mapping functions that convert a {@code Config}
+ * subtree to specific Java types.
+ *
+ * @param <C> the Config type
  */
-module io.helidon.common.config {
-    requires io.helidon.common;
+@FunctionalInterface
+public interface ConfigMapperProvider<C extends Config> {
 
-    uses io.helidon.common.config.spi.ConfigMapperProvider;
-    uses io.helidon.common.config.spi.ConfigProvider;
+    /**
+     * Returns a map of mapper functions associated with appropriate target type ({@code Class<?>}.
+     *
+     * @return a map of config mapper functions, never {@code null}
+     */
+    Map<Class<?>, Function<C, ?>> mappers();
 
-    exports io.helidon.common.config;
-    exports io.helidon.common.config.spi;
 }
