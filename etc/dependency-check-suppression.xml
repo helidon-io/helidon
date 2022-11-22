@@ -402,5 +402,14 @@
    <cve>CVE-2022-45129</cve>
 </suppress>
 
+<!-- False Positive. This is a WLS CVE that somehow is getting associated with Tyrus 2.0.4 via oracle javase 2.0.4 -->
+<suppress>
+   <notes><![CDATA[
+   file name: tyrus-container-jdk-client-2.0.4.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.glassfish\.tyrus/tyrus\-container\-jdk\-client@.*$</packageUrl>
+   <cve>CVE-2020-2801</cve>
+</suppress>
+
 
 </suppressions>
