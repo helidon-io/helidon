@@ -22,13 +22,12 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.CoreMatchers.not;
@@ -44,9 +43,9 @@ import static org.hamcrest.core.Is.is;
  */
 public class DirectoryConfigSourceTest {
 
-    @RegisterExtension
-    static TemporaryFolderExt folder = TemporaryFolderExt.build();
-    
+    @TempDir
+    File tempFolder;
+
     @Test
     public void testDescriptionMandatory() {
         ConfigSource configSource = ConfigSources.directory("secrets").build();
@@ -71,7 +70,7 @@ public class DirectoryConfigSourceTest {
 
     @Test
     public void testLoadEmptyDirectory() throws IOException {
-        DirectoryConfigSource configSource = ConfigSources.directory(folder.newFolder().getAbsolutePath())
+        DirectoryConfigSource configSource = ConfigSources.directory(tempFolder.getAbsolutePath())
                 .build();
 
         Optional<ConfigContent.NodeContent> maybeContent = configSource.load();
@@ -93,11 +92,10 @@ public class DirectoryConfigSourceTest {
 
     @Test
     public void testLoadDirectory() throws IOException {
-        File folder = DirectoryConfigSourceTest.folder.newFolder();
-        Files.write(Files.createFile(new File(folder, "username").toPath()), "libor".getBytes());
-        Files.write(Files.createFile(new File(folder, "password").toPath()), "^ery$ecretP&ssword".getBytes());
+        Files.write(Files.createFile(new File(tempFolder, "username").toPath()), "libor".getBytes());
+        Files.write(Files.createFile(new File(tempFolder, "password").toPath()), "^ery$ecretP&ssword".getBytes());
 
-        DirectoryConfigSource configSource = ConfigSources.directory(folder.getAbsolutePath())
+        DirectoryConfigSource configSource = ConfigSources.directory(tempFolder.getAbsolutePath())
                 .build();
 
         Optional<ConfigContent.NodeContent> maybeContent = configSource.load();
