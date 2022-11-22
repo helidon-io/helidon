@@ -33,7 +33,7 @@ import io.helidon.common.config.spi.ConfigProvider;
  * (2) programmatically via the {@link #config(io.helidon.common.config.Config)} method. The {@link #config()} method will
  * apply the following strategy to resolve and cache the global config instance:
  * <ol>
- *     <li>if the instance is already been established and cached then use it.</li>
+ *     <li>if the instance has already been established and cached then use it.</li>
  *     <li>if the instance has programmatically been set then use it - this is the same as the cached instance.</li>
  *     <li>use the service loader to resolve the config instance, and if found then cache it.</li>
  * </ol>
@@ -42,7 +42,7 @@ import io.helidon.common.config.spi.ConfigProvider;
  * method.
  * <p>
  * Note that this class is not thread safe. If the global configuration must be set programmatically then it should therefore
- * be set on the main thread typically early in the jvm lifecycle.
+ * be set on the main thread, and typically early in the jvm lifecycle.
  *
  * @see io.helidon.common.config.spi.ConfigProvider
  */

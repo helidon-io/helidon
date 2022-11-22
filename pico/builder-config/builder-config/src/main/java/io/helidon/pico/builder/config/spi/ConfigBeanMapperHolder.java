@@ -46,7 +46,7 @@ public class ConfigBeanMapperHolder {
      * @return the config bean mapper
      */
     @SuppressWarnings({"rawTypes", "unchecked"})
-    public static <CB> Optional<ConfigBeanMapper<CB>> configBeanMapperFor(Class<CB> configBeanType) {
+    public static <CB> Optional<ConfigBeanMapper> configBeanMapperFor(Class<CB> configBeanType) {
         return (Optional) INSTANCE.get();
     }
 

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.config.PropertiesConfigParser;
-
 /**
  * Helidon SE Config module.
  *
@@ -43,7 +41,8 @@ module io.helidon.config {
     uses io.helidon.config.spi.PollingStrategyProvider;
     uses io.helidon.config.spi.ChangeWatcherProvider;
 
-    provides io.helidon.config.spi.ConfigParser with PropertiesConfigParser;
+    provides io.helidon.config.spi.ConfigParser
+            with io.helidon.config.PropertiesConfigParser;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;

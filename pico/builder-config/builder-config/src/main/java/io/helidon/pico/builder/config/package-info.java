@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon Pico Config Builder API.
+ * Helidon Pico ConfigBean Builder API.
  */
 package io.helidon.pico.builder.config;
