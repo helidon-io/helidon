@@ -67,6 +67,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class KafkaMpTest extends AbstractKafkaTest{
@@ -411,7 +412,9 @@ class KafkaMpTest extends AbstractKafkaTest{
     void kafkaProduceWithNack() throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.fine(() -> "==========> test kafkaProduceWithNack()");
         AbstractSampleBean.Channel14 kafkaProdBean = cdiContainer.select(AbstractSampleBean.Channel14.class).get();
-        assertThat(kafkaProdBean.getNacked().get(5, TimeUnit.SECONDS), Matchers.instanceOf(Throwable.class));
+        Throwable t = kafkaProdBean.getNacked().get(5, TimeUnit.SECONDS);
+        assertNotNull(t);
+        assertThat(t.getCause(), Matchers.instanceOf(org.apache.kafka.common.errors.TimeoutException.class));
     }
 
     @Test
