@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Time attribute validator.
  */
+@Feature(value = "Time",
+        description = "ABAC Time based attribute validator",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
+        path = {"Security", "Provider", "ABAC", "Time"}
+)
 module io.helidon.security.abac.time {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.security.providers.abac;
 
     exports io.helidon.security.abac.time;

@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Security integration with Helidon Webserver.
  */
+@Feature(value = "WebServer",
+        description = "Security integration with web server",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
+        path = {"Security", "Integration", "WebServer"}
+)
 module io.helidon.security.integration.webserver {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.annotation;
 
