@@ -40,7 +40,7 @@ public final class JtaDataSource2 extends AbstractDataSource {
 
     private final TransactionSynchronizationRegistry tsr;
 
-    private final SQLExceptionConverter sqlExceptionConverter;
+    private final ExceptionConverter exceptionConverter;
 
     /**
      * Creates a new {@link JtaDataSource2}.
@@ -51,26 +51,26 @@ public final class JtaDataSource2 extends AbstractDataSource {
      *
      * @param ds a {@link DataSource} that is not XA-compliant; must not be {@code null}
      *
-     * @param sqlExceptionConverter a {@link SQLExceptionConverter}; may be {@code null} in which case a default
+     * @param exceptionConverter a {@link ExceptionConverter}; may be {@code null} in which case a default
      * implementation will be used instead
      */
     // Undefined behavior if ds ends up supplying the return value of an invocation of XAConnection#getConnection().
     public JtaDataSource2(TransactionManager tm,
                           TransactionSynchronizationRegistry tsr,
-                          SQLExceptionConverter sqlExceptionConverter,
+                          ExceptionConverter exceptionConverter,
                           DataSource ds) {
         super();
         this.ds = Objects.requireNonNull(ds, "ds");
         this.tm = Objects.requireNonNull(tm, "tm");
         this.tsr = Objects.requireNonNull(tsr, "tsr");
-        this.sqlExceptionConverter = sqlExceptionConverter;
+        this.exceptionConverter = exceptionConverter;
     }
 
     @Override // DataSource
     public Connection getConnection(String username, String password) throws SQLException {
         return JtaConnection.connection(this.tm::getTransaction,
                                         this.tsr,
-                                        this.sqlExceptionConverter,
+                                        this.exceptionConverter,
                                         this.ds.getConnection(username, password));
     }
 
@@ -78,7 +78,7 @@ public final class JtaDataSource2 extends AbstractDataSource {
     public Connection getConnection() throws SQLException {
         return JtaConnection.connection(this.tm::getTransaction,
                                         this.tsr,
-                                        this.sqlExceptionConverter,
+                                        this.exceptionConverter,
                                         this.ds.getConnection());
     }
 

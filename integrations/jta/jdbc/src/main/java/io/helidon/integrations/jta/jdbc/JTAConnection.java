@@ -80,7 +80,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private final TransactionSynchronizationRegistry tsr;
 
-    private final SQLExceptionConverter sqlExceptionConverter;
+    private final ExceptionConverter exceptionConverter;
 
 
     /*
@@ -103,14 +103,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private JtaConnection(TransactionSupplier transactionSupplier,
                           TransactionSynchronizationRegistry transactionSynchronizationRegistry,
-                          SQLExceptionConverter sqlExceptionConverter,
+                          ExceptionConverter exceptionConverter,
                           Connection delegate) {
         super(delegate,
               true, // closeable
               true); // strict isClosed checking; always a good thing
         this.tm = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
         this.tsr = Objects.requireNonNull(transactionSynchronizationRegistry, "transactionSynchronizationRegistry");
-        this.sqlExceptionConverter = sqlExceptionConverter; // nullable
+        this.exceptionConverter = exceptionConverter; // nullable
     }
 
 
@@ -854,7 +854,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      *
      * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
-     * @param sqlExceptionConverter a {@link SQLExceptionConverter}; may be {@code null} in which case a default
+     * @param exceptionConverter a {@link ExceptionConverter}; may be {@code null} in which case a default
      * implementation will be used instead
      *
      * @param nonXaConnection a {@link Connection} that was not sourced from an invocation of {@link
@@ -866,9 +866,9 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     static Connection connection(TransactionSupplier transactionSupplier,
                                  TransactionSynchronizationRegistry transactionSynchronizationRegistry,
-                                 SQLExceptionConverter sqlExceptionConverter,
+                                 ExceptionConverter exceptionConverter,
                                  Connection nonXaConnection) {
-        return new JtaConnection(transactionSupplier, transactionSynchronizationRegistry, sqlExceptionConverter, nonXaConnection);
+        return new JtaConnection(transactionSupplier, transactionSynchronizationRegistry, exceptionConverter, nonXaConnection);
     }
 
 

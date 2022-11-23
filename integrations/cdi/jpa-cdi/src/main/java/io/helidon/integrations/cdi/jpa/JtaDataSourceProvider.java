@@ -25,7 +25,7 @@ import javax.sql.XADataSource;
 import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jta.jdbc.JtaDataSource2;
-import io.helidon.integrations.jta.jdbc.SQLExceptionConverter;
+import io.helidon.integrations.jta.jdbc.ExceptionConverter;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -88,7 +88,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
     private final TransactionSynchronizationRegistry tsr;
 
-    private final SQLExceptionConverter sqlExceptionConverter;
+    private final ExceptionConverter exceptionConverter;
 
     /**
      * A {@link ConcurrentMap} (usually a {@link ConcurrentHashMap})
@@ -140,7 +140,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         this.objects = null;
         this.transactionManager = null;
         this.tsr = null;
-        this.sqlExceptionConverter = null;
+        this.exceptionConverter = null;
         this.dataSourcesByName = null;
     }
 
@@ -168,8 +168,8 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         this.transactionManager = Objects.requireNonNull(transactionManager);
         this.tsr = Objects.requireNonNull(tsr);
         this.dataSourcesByName = new ConcurrentHashMap<>();
-        Instance<SQLExceptionConverter> i = objects.select(SQLExceptionConverter.class);
-        this.sqlExceptionConverter = i.isUnsatisfied() ? null : i.get();
+        Instance<ExceptionConverter> i = objects.select(ExceptionConverter.class);
+        this.exceptionConverter = i.isUnsatisfied() ? null : i.get();
     }
 
 
@@ -327,7 +327,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
                                                        k -> new JtaDataSource2(this.transactionManager,
                                                                                this.tsr,
-                                                                               this.sqlExceptionConverter,
+                                                                               this.exceptionConverter,
                                                                                dataSource));
         }
         return returnValue;
