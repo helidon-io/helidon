@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Incubating;
+
 /**
  * Helidon WebClient.
  */
+@Incubating
+@Feature(value = "Web Client",
+        description = "Reactive web client",
+        in = HelidonFlavor.SE,
+        path = "Web Client"
+)
 module io.helidon.reactive.webclient {
+    requires static io.helidon.common.features.api;
 
     requires java.logging;
     
