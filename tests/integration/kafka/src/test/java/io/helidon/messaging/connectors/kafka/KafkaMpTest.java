@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -54,6 +55,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -209,6 +211,13 @@ class KafkaMpTest extends AbstractKafkaTest{
                 "mp.messaging.incoming.test-channel-13.group.id", "sameGroup",
                 "mp.messaging.incoming.test-channel-13.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-13.value.deserializer", StringDeserializer.class.getName()));
+        p.putAll(Map.of(
+                "mp.messaging.outgoing.test-channel-14.connector", KafkaConnector.CONNECTOR_NAME,
+                "mp.messaging.outgoing.test-channel-14.max.block.ms", "100",
+                "mp.messaging.outgoing.test-channel-14.bootstrap.servers", KAFKA_SERVER,
+                "mp.messaging.outgoing.test-channel-14.topic", UNEXISTING_TOPIC,
+                "mp.messaging.outgoing.test-channel-14.key.serializer", LongSerializer.class.getName(),
+                "mp.messaging.outgoing.test-channel-14.value.serializer", StringSerializer.class.getName()));
         return p;
     }
 
@@ -253,6 +262,7 @@ class KafkaMpTest extends AbstractKafkaTest{
         classes.add(AbstractSampleBean.Channel9.class);
         classes.add(AbstractSampleBean.Channel11.class);
         classes.add(AbstractSampleBean.Channel12.class);
+        classes.add(AbstractSampleBean.Channel14.class);
         classes.add(MessagingCdiExtension.class);
 
         Map<String, String> p = new HashMap<>(cdiConfig());
@@ -396,6 +406,15 @@ class KafkaMpTest extends AbstractKafkaTest{
         Thread.sleep(1000);
         assertEquals(Collections.emptyList(), kafkaConsumingBean.consumed());
         kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_10);
+    }
+
+    @Test
+    void kafkaProduceWithNack() throws InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.fine(() -> "==========> test kafkaProduceWithNack()");
+        AbstractSampleBean.Channel14 kafkaProdBean = cdiContainer.select(AbstractSampleBean.Channel14.class).get();
+        Throwable t = kafkaProdBean.getNacked().get(5, TimeUnit.SECONDS);
+        assertNotNull(t);
+        assertThat(t.getCause(), Matchers.instanceOf(org.apache.kafka.common.errors.TimeoutException.class));
     }
 
     @Test
