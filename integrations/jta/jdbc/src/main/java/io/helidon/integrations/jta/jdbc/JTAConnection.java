@@ -37,9 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.function.BiFunction;
 
-import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
@@ -82,7 +80,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private final TransactionSynchronizationRegistry tsr;
 
-    private final BiFunction<? super LocalXAResource.Routine, ? super SQLException, ? extends XAException> sqlExceptionConverter;
+    private final SQLExceptionConverter sqlExceptionConverter;
 
 
     /*
@@ -105,8 +103,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private JtaConnection(TransactionSupplier transactionSupplier,
                           TransactionSynchronizationRegistry transactionSynchronizationRegistry,
-                          BiFunction<? super LocalXAResource.Routine, ? super SQLException, ? extends XAException>
-                          sqlExceptionConverter,
+                          SQLExceptionConverter sqlExceptionConverter,
                           Connection delegate) {
         super(delegate,
               true, // closeable
@@ -857,6 +854,9 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      *
      * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
+     * @param sqlExceptionConverter a {@link SQLExceptionConverter}; may be {@code null} in which case a default
+     * implementation will be used instead
+     *
      * @param nonXaConnection a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
      *
@@ -866,8 +866,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     static Connection connection(TransactionSupplier transactionSupplier,
                                  TransactionSynchronizationRegistry transactionSynchronizationRegistry,
-                                 BiFunction<? super LocalXAResource.Routine, ? super SQLException, ? extends XAException>
-                                 sqlExceptionConverter,
+                                 SQLExceptionConverter sqlExceptionConverter,
                                  Connection nonXaConnection) {
         return new JtaConnection(transactionSupplier, transactionSynchronizationRegistry, sqlExceptionConverter, nonXaConnection);
     }

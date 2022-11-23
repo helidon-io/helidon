@@ -40,6 +40,8 @@ public final class JtaDataSource2 extends AbstractDataSource {
 
     private final TransactionSynchronizationRegistry tsr;
 
+    private final SQLExceptionConverter sqlExceptionConverter;
+
     /**
      * Creates a new {@link JtaDataSource2}.
      *
@@ -48,23 +50,36 @@ public final class JtaDataSource2 extends AbstractDataSource {
      * @param tsr a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
      * @param ds a {@link DataSource} that is not XA-compliant; must not be {@code null}
+     *
+     * @param sqlExceptionConverter a {@link SQLExceptionConverter}; may be {@code null} in which case a default
+     * implementation will be used instead
      */
     // Undefined behavior if ds ends up supplying the return value of an invocation of XAConnection#getConnection().
-    public JtaDataSource2(TransactionManager tm, TransactionSynchronizationRegistry tsr, DataSource ds) {
+    public JtaDataSource2(TransactionManager tm,
+                          TransactionSynchronizationRegistry tsr,
+                          SQLExceptionConverter sqlExceptionConverter,
+                          DataSource ds) {
         super();
         this.ds = Objects.requireNonNull(ds, "ds");
         this.tm = Objects.requireNonNull(tm, "tm");
         this.tsr = Objects.requireNonNull(tsr, "tsr");
+        this.sqlExceptionConverter = sqlExceptionConverter;
     }
 
     @Override // DataSource
     public Connection getConnection(String username, String password) throws SQLException {
-        return JtaConnection.connection(this.tm::getTransaction, this.tsr, null, this.ds.getConnection(username, password));
+        return JtaConnection.connection(this.tm::getTransaction,
+                                        this.tsr,
+                                        this.sqlExceptionConverter,
+                                        this.ds.getConnection(username, password));
     }
 
     @Override // DataSource
     public Connection getConnection() throws SQLException {
-        return JtaConnection.connection(this.tm::getTransaction, this.tsr, null, this.ds.getConnection());
+        return JtaConnection.connection(this.tm::getTransaction,
+                                        this.tsr,
+                                        this.sqlExceptionConverter,
+                                        this.ds.getConnection());
     }
 
 }

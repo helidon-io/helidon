@@ -25,6 +25,7 @@ import javax.sql.XADataSource;
 import javax.transaction.xa.XAResource;
 
 import io.helidon.integrations.jta.jdbc.JtaDataSource2;
+import io.helidon.integrations.jta.jdbc.SQLExceptionConverter;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -87,6 +88,8 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
     private final TransactionSynchronizationRegistry tsr;
 
+    private final SQLExceptionConverter sqlExceptionConverter;
+
     /**
      * A {@link ConcurrentMap} (usually a {@link ConcurrentHashMap})
      * that stores {@link JtaDataSource} instances under their names.
@@ -137,6 +140,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         this.objects = null;
         this.transactionManager = null;
         this.tsr = null;
+        this.sqlExceptionConverter = null;
         this.dataSourcesByName = null;
     }
 
@@ -164,13 +168,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         this.transactionManager = Objects.requireNonNull(transactionManager);
         this.tsr = Objects.requireNonNull(tsr);
         this.dataSourcesByName = new ConcurrentHashMap<>();
+        Instance<SQLExceptionConverter> i = objects.select(SQLExceptionConverter.class);
+        this.sqlExceptionConverter = i.isUnsatisfied() ? null : i.get();
     }
 
 
     /*
      * Instance methods.
      */
-    
+
 
     /**
      * Supplies a {@link DataSource}.
@@ -319,7 +325,10 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       k -> new JtaDataSource2(this.transactionManager, this.tsr, dataSource));
+                                                       k -> new JtaDataSource2(this.transactionManager,
+                                                                               this.tsr,
+                                                                               this.sqlExceptionConverter,
+                                                                               dataSource));
         }
         return returnValue;
     }
