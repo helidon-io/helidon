@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * IDCS role mapper.
  */
+@Feature(value = "IDCS Role Mapper",
+        description = "Security provider role mapping - Oracle IDCS",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "IdcsRoleMapper"}
+)
+@Aot(false)
 module io.helidon.security.providers.idcs.mapper {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.security;

@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * JWT provider.
  */
+@Feature(value = "JWT",
+        description = "Security provider for JWT based authentication",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "JWT"}
+)
 module io.helidon.security.providers.jwt {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.security;

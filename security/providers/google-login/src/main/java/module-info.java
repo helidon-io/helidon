@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Google login authentication provider.
  */
+@Feature(value = "Google Login",
+        description = "Security provider for Google login button authentication and outbound",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "Google-Login"}
+)
+@Aot(false)
 module io.helidon.security.providers.google.login {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.security;
