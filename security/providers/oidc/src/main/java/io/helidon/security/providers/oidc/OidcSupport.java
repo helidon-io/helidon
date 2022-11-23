@@ -290,7 +290,7 @@ public final class OidcSupport implements Service {
             return Single.just(tenantId.get());
         } else {
             if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations + "\n"
+                LOGGER.finest("Missing tenant id, could not find in either of: " + missingLocations + "\n"
                         + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
             }
             return Single.just(DEFAULT_TENANT_ID);
