@@ -223,8 +223,11 @@ public final class OidcSupport implements Service {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
-        String tenantName = findTenantName(req);
+        findTenantName(req)
+                .forSingle(tenantName -> processTenantLogout(req, res, tenantName));
+    }
 
+    private void processTenantLogout(ServerRequest req, ServerResponse res, String tenantName) {
         Tenant tenant = obtainCurrentTenant(tenantName);
 
         OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
@@ -264,7 +267,7 @@ public final class OidcSupport implements Service {
                 .exceptionallyAccept(t -> sendError(res, t));
     }
 
-    private String findTenantName(ServerRequest request) {
+    private Single<String> findTenantName(ServerRequest request) {
         List<String> missingLocations = new LinkedList<>();
         Optional<String> tenantId = Optional.empty();
         if (oidcConfig.useParam()) {
@@ -275,30 +278,22 @@ public final class OidcSupport implements Service {
             }
         }
         if (oidcConfig.useCookie() && tenantId.isEmpty()) {
-            tenantId = oidcConfig.tenantCookieHandler()
-                    .findCookie(request.headers().toMap())
-                    .stream()
-                    .map(this::getValueFromSingle)
-                    .findFirst();
+            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+                    .findCookie(request.headers().toMap());
 
-            if (tenantId.isEmpty()) {
-                missingLocations.add("cookie");
+            if (cookie.isPresent()) {
+                return cookie.get();
             }
+            missingLocations.add("cookie");
         }
         if (tenantId.isPresent()) {
-            return tenantId.get();
+            return Single.just(tenantId.get());
         } else {
-            LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations);
-            LOGGER.finest(() -> "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
-            return DEFAULT_TENANT_ID;
-        }
-    }
-
-    private String getValueFromSingle(Single<String> cookieSingle) {
-        try {
-            return cookieSingle.get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations + "\n"
+                        + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
+            }
+            return Single.just(DEFAULT_TENANT_ID);
         }
     }
 

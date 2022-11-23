@@ -27,6 +27,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -135,12 +136,16 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        String tenantId = tenantIdFinders.stream()
+        Single<String> tenantIdSingle = tenantIdFinders.stream()
                 .map(tenantIdFinder -> tenantIdFinder.tenantId(providerRequest))
                 .flatMap(Optional::stream)
                 .findFirst()
+                .map(Single::just)
                 .orElseGet(() -> findTenantIdFromRedirects(providerRequest));
+        return  tenantIdSingle.flatMapCompletionStage(tenantId -> authenticateWithTenant(tenantId, providerRequest));
+    }
 
+    private CompletionStage<AuthenticationResponse> authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
         return tenantAuthHandlers.computeValue(tenantId, () -> {
                     TenantConfig possibleConfig = tenantConfigFinders.stream()
                             .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
@@ -153,7 +158,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 .authenticate(tenantId, providerRequest);
     }
 
-    private String findTenantIdFromRedirects(ProviderRequest providerRequest) {
+    private Single<String> findTenantIdFromRedirects(ProviderRequest providerRequest) {
         List<String> missingLocations = new LinkedList<>();
         Optional<String> tenantId = Optional.empty();
         missingLocations.add("tenant-id-finder");
@@ -165,30 +170,22 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
         }
         if (oidcConfig.useCookie() && tenantId.isEmpty()) {
-            tenantId = oidcConfig.tenantCookieHandler()
-                    .findCookie(providerRequest.env().headers())
-                    .stream()
-                    .map(this::getValueFromSingle)
-                    .findFirst();
+            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+                    .findCookie(providerRequest.env().headers());
 
-            if (tenantId.isEmpty()) {
-                missingLocations.add("cookie");
+            if (cookie.isPresent()) {
+                return cookie.get();
             }
+            missingLocations.add("cookie");
         }
         if (tenantId.isPresent()) {
-            return tenantId.get();
+            return Single.just(tenantId.get());
         } else {
-            LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations);
-            LOGGER.finest(() -> "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
-            return DEFAULT_TENANT_ID;
-        }
-    }
-
-    private String getValueFromSingle(Single<String> cookieSingle) {
-        try {
-            return cookieSingle.get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(() -> "Missing tenant id, could not find in either of: " + missingLocations + "\n"
+                        + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
+            }
+            return Single.just(DEFAULT_TENANT_ID);
         }
     }
 
