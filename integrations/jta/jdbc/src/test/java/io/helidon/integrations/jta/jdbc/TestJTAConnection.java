@@ -103,6 +103,7 @@ final class TestJtaConnection {
             break;
         }
         this.tm.setTransactionTimeout(0);
+        assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
     }
 
     @DisplayName("Spike")
@@ -118,7 +119,6 @@ final class TestJtaConnection {
         tm.begin();
 
         Transaction t = tm.getTransaction();
-        assertThat(t, not(nullValue()));
 
         // For this test, where transaction reaping is set to happen
         // eons in the future, we can make this assertion.  For
@@ -129,6 +129,7 @@ final class TestJtaConnection {
         try (Connection physicalConnection = h2ds.getConnection();
              JtaConnection logicalConnection = (JtaConnection) JtaConnection.connection(tm::getTransaction,
                                                                                         tsr,
+                                                                                        null,
                                                                                         physicalConnection)) {
 
             // Trigger an Object method; make sure nothing blows up
@@ -141,7 +142,7 @@ final class TestJtaConnection {
             // That means it should be closeable.
             assertThat(logicalConnection.isCloseable(), is(true));
             assertThat(logicalConnection.isClosed(), is(false));
-            
+
             // Trigger harmless Connection method; make sure nothing
             // blows up.
             logicalConnection.getHoldability();
@@ -158,10 +159,13 @@ final class TestJtaConnection {
             // Should be a no-op.
             logicalConnection.close();
             assertThat(logicalConnection.isClosed(), is(false));
-            
+
             // Should get the same Xid back whenever we call xid()
             // once we're enlisted.
             assertThat(logicalConnection.xid(), sameInstance(xid));
+
+            // Make sure the XAResource recorded the association.
+            assertThat(LocalXAResource.ASSOCIATIONS.size(), not(0));
 
             // Ensure JDBC constructs' backlinks work correctly.
             try (Statement s = logicalConnection.createStatement()) {
@@ -183,6 +187,9 @@ final class TestJtaConnection {
             // Transaction is over; the connection should be closeable again.
             assertThat(logicalConnection.isCloseable(), is(true));
 
+            // Make sure the XAResource removed the association.
+            assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
+
             // We should be able to actually close it early.  The
             // auto-close should not fail, either.
             logicalConnection.close();
@@ -197,29 +204,30 @@ final class TestJtaConnection {
     final void testTimeout() throws InterruptedException, NotSupportedException, RollbackException, SystemException {
         LOGGER.info("Starting testTimeout()");
 
-        tm.setTransactionTimeout(1); // 1 second; the minimum
+        tm.setTransactionTimeout(1); // 1 second; the minimum settable value (0 means "use the default" (!))
         tm.begin();
 
         // For this test, where transaction reaping is set to happen
         // soon, it still won't happen in under 1000 milliseconds, so
-        // this assertion is OK. For real-world scenarios, you
+        // this assertion is OK unless the testing environment is
+        // completely pathological. For real-world scenarios, you
         // shouldn't assume anything about the initial status.
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
 
         CountDownLatch latch = new CountDownLatch(1);
         Thread mainThread = Thread.currentThread();
-        
+
         tsr.registerInterposedSynchronization(new Synchronization() {
                 public void beforeCompletion() {
-                    
+
                 }
                 public void afterCompletion(int status) {
                     assertThat(status, is(Status.STATUS_ROLLEDBACK));
                     assertThat(Thread.currentThread(), not(mainThread));
                     latch.countDown();
-                }                    
+                }
             });
-        
+
         // Wait for the transaction to roll back on the reaper thread.
         // The transaction timeout is 1 second (see above); this waits
         // for 2 seconds max.  If this fails with an
@@ -246,7 +254,7 @@ final class TestJtaConnection {
 
         // Verify that indeed you cannot enlist any XAResource in
         // the transaction when it is in the rolled back state.
-        assertThrows(IllegalStateException.class, () -> t.enlistResource(JtaConnection.XA_RESOURCE));
+        assertThrows(IllegalStateException.class, () -> t.enlistResource(new NoOpXAResource()));
 
         // Verify that even though the current transaction is rolled
         // back you can still roll it back again (no-op) and
@@ -258,6 +266,8 @@ final class TestJtaConnection {
         // Status.STATUS_ROLLEDBACK. Notably it never enters
         // Status.STATUS_NO_TRANSACTION.
         assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
+
+        assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
 
         LOGGER.info("Ending testTimeout()");
     }

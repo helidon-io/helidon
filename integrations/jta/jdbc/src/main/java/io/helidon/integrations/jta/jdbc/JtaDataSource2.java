@@ -59,12 +59,12 @@ public final class JtaDataSource2 extends AbstractDataSource {
 
     @Override // DataSource
     public Connection getConnection(String username, String password) throws SQLException {
-        return JtaConnection.connection(this.tm::getTransaction, this.tsr, this.ds.getConnection(username, password));
+        return JtaConnection.connection(this.tm::getTransaction, this.tsr, null, this.ds.getConnection(username, password));
     }
 
     @Override // DataSource
     public Connection getConnection() throws SQLException {
-        return JtaConnection.connection(this.tm::getTransaction, this.tsr, this.ds.getConnection());
+        return JtaConnection.connection(this.tm::getTransaction, this.tsr, null, this.ds.getConnection());
     }
 
 }

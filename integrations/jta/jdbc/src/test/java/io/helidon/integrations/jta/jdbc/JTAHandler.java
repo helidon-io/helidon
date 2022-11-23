@@ -38,7 +38,7 @@ class JTAHandler extends ConnectionHandler {
      */
 
 
-    private static final LocalXAResource XA_RESOURCE = new LocalXAResource(JTAHandler::connection);
+  private static final LocalXAResource XA_RESOURCE = new LocalXAResource(JTAHandler::connection, null);
 
     private static final ReentrantLock HANDOFF_LOCK = new ReentrantLock();
 

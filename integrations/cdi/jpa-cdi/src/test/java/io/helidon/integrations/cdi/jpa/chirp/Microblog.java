@@ -33,6 +33,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -42,6 +43,7 @@ import jakarta.persistence.UniqueConstraint;
  */
 @Access(value = AccessType.FIELD)
 @Entity(name = "Microblog")
+@SequenceGenerator(allocationSize = 1, initialValue = 1, name = "MICROBLOG", sequenceName = "MICROBLOG_SEQ")
 @Table(
     name = "MICROBLOG",
     uniqueConstraints = {
@@ -62,7 +64,7 @@ public class Microblog implements Serializable {
         name = "ID",
         updatable = false
     )
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(generator = "MICROBLOG", strategy = GenerationType.SEQUENCE)
     @Id
     private Integer id;
 

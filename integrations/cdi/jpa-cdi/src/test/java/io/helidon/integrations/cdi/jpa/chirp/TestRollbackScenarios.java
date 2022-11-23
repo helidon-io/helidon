@@ -141,8 +141,8 @@ class TestRollbackScenarios {
         // application context shutting down, even in the case of
         // errors.
         try {
-            this.jpaTransactionScopedSynchronizedEntityManager.getEntityManagerFactory().getCache().evictAll();
             this.jpaTransactionScopedSynchronizedEntityManager.clear();
+            this.jpaTransactionScopedSynchronizedEntityManager.getEntityManagerFactory().getCache().evictAll();
         } finally {
             if (tm.getStatus() != Status.STATUS_NO_TRANSACTION) {
                 tm.rollback();
@@ -200,14 +200,6 @@ class TestRollbackScenarios {
         assertThat(author.getId(), is(nullValue()));
 
         em.persist(author);
-
-        // For Eclipselink: Haven't gone to the database yet, so no
-        // generated identifier yet.
-        //
-        // For Hibernate: apparently persist() actually goes to the
-        // database and whether or not it actually inserts the author
-        // (need to check), it generates the identifier (!).
-
         // assertThat(author.getId(), is(nullValue()));
 
         // Commit the transaction.  Because we're relying on the
@@ -260,15 +252,12 @@ class TestRollbackScenarios {
         tm.begin();
         em.persist(author);
 
-        assertThat(em.contains(author), is(true));
+        // This assertion depends on the ID generation strategy,
+        // sadly, and will not necessarily work across JPA providers
+        // for identity column ID generation.
+        assertThat(author.getId(), is(2));
 
-        // For Eclipselink: Haven't gone to the database yet, so no
-        // generated identifier yet.
-        //
-        // For Hibernate: apparently persist() actually goes to the
-        // database and whether or not it actually inserts the author
-        // (need to check), it generates the identifier (!).
-        // assertThat(author.getId(), is(nullValue())); // the id is generated and we haven't gone to the db yet
+        assertThat(em.contains(author), is(true));
 
         // Perform a rollback "in the middle" of a sequence of
         // operations and observe that the EntityManager is in the
@@ -277,8 +266,7 @@ class TestRollbackScenarios {
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         assertThat(em.contains(author), is(false));
 
-
-        assertThat(author.getId(), is(nullValue()));
+        assertThat(author.getId(), is(2));
 
         // Try to remove the now-detached author outside of a
         // transaction. Should fail.
@@ -297,7 +285,7 @@ class TestRollbackScenarios {
 
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         assertThat(em.contains(author), is(false));
-        assertThat(author.getId(), is(nullValue()));
+        assertThat(author.getId(), is(2));
 
         // Start a transaction.
         tm.begin();
@@ -308,7 +296,7 @@ class TestRollbackScenarios {
         assertThat(em.contains(author), is(false));
         em.detach(author); // redundant; just making a point
         assertThat(em.contains(author), is(false));
-        assertThat(author.getId(), is(nullValue()));
+        assertThat(author.getId(), is(2));
 
         // Try again to remove the detached author, but this time in a
         // transaction.  Shouldn't matter; should also fail.
@@ -324,7 +312,7 @@ class TestRollbackScenarios {
         tm.rollback();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         assertThat(em.contains(author), is(false));
-        assertThat(author.getId(), is(nullValue()));
+        assertThat(author.getId(), is(2));
 
         // Remove the author properly.
         tm.begin();

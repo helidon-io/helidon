@@ -69,9 +69,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 )
 class TestJpaTransactionScopedSynchronizedEntityManager {
 
+    /*
     static {
         System.setProperty("jpaAnnotationRewritingEnabled", "true");
     }
+    */
 
     private SeContainer cdiContainer;
 
@@ -221,10 +223,9 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
         final TransactionManager tm = self.getTransactionManager();
-        assertThat(tm, notNullValue());
-        tm.setTransactionTimeout(60 * 20); // TODO: set to 20 minutes for debugging purposes only
+        tm.setTransactionTimeout(60 * 20); // Set to 20 minutes for debugging purposes only
 
-        // New transaction.
+        // Create a new transaction.
         tm.begin();
 
         // Grab the TransactionScoped context while the transaction is
@@ -248,16 +249,17 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Start another transaction.
         tm.begin();
         assertThat(transactionScopedContext.isActive(), is(true));
+        assertThat(em.isJoinedToTransaction(), is(true));
 
         // Persist our Author.
         assertThat(author1.getId(), nullValue());
         em.persist(author1);
         assertThat(em.contains(author1), is(true));
 
-        // A persist() doesn't flush(), so no ID should have been
-        // generated yet.
-        // assertNull(author1.getId());
-
+        // We're using sequences for ID generation, so persist() will
+        // cause an ID to be installed.
+        assertThat(author1.getId(), is(1));
+        
         // Commit the transaction and flush changes to the database.
         tm.commit();
 
@@ -290,19 +292,20 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Start a new transaction.
         tm.begin();
         assertThat(transactionScopedContext.isActive(), is(true));
+        assertThat(em.isJoinedToTransaction(), is(true));
 
         // Remove the Author we successfully committed before.  We
         // have to merge because author1 became detached a few lines
         // above.
         author1 = em.merge(author1);
-        assertThat(author1, notNullValue());
+        assertThat(author1.getId(), is(1));
         assertThat(em.contains(author1), is(true));
         em.remove(author1);
         assertThat(em.contains(author1), is(false));
+        assertThat(author1.getId(), is(1));
 
         // Commit and flush the removal.
         tm.commit();
-
         assertThat(em.isJoinedToTransaction(), is(false));
         assertThat(transactionScopedContext.isActive(), is(false));
 
@@ -314,20 +317,25 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertTableRowCount(dataSource, "AUTHOR", 0);
 
         // Start a new transaction, merge our detached author1, and
-        // commit.  This will bump the author's ID and put a row in
-        // the database.
+        // commit.
         tm.begin();
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(transactionScopedContext.isActive(), is(true));
+
+        // Actually, this really should throw an
+        // IllegalArgumentException, since author1 was
+        // removed. Neither Eclipselink nor Hibernate throws an
+        // exception here.
         author1 = em.merge(author1);
+        
+        assertThat(em.contains(author1), is(true));
+        assertThat(author1.getId(), is(1));
+
         tm.commit();
         assertThat(em.isJoinedToTransaction(), is(false));
         assertThat(em.contains(author1), is(false));
         assertThat(transactionScopedContext.isActive(), is(false));
-
-        // Now that the commit and accompanying flush have
-        // happened, our author's ID has changed.
-        assertThat(author1.getId(), is(2));
+        assertThat(author1.getId(), is(1));
 
         // Make sure the database contains the changes.
         try (final Connection connection = dataSource.getConnection();
@@ -335,14 +343,13 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
              final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR");) {
             assertThat(resultSet, notNullValue());
             assertThat(resultSet.next(), is(true));
-            assertThat(resultSet.getInt(1), is(2));
+            assertThat(resultSet.getInt(1), is(1));
             assertThat(resultSet.getString(2), is("Abraham Lincoln"));
             assertThat(resultSet.next(), is(false));
         }
 
         // Discard author1 in this unit test so we'll get a
-        // NullPointerException if we try to use him again.  (After
-        // all it's confusing now that author1 has 2 for an ID!)
+        // NullPointerException if we try to use him again.
         author1 = null;
 
         // Let's find the new author that got merged in.  We'll use a
@@ -351,10 +358,10 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(transactionScopedContext.isActive(), is(true));
 
-        Author author2 = em.find(Author.class, Integer.valueOf(2));
+        Author author2 = em.find(Author.class, Integer.valueOf(1));
         assertThat(author2, notNullValue());
         assertThat(em.contains(author2), is(true));
-        assertThat(author2.getId(), is(2));
+        assertThat(author2.getId(), is(1));
         assertThat(author2.getName(), is("Abraham Lincoln"));
 
         // No need, really, but it's what a @Transactional method
@@ -369,18 +376,18 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(transactionScopedContext.isActive(), is(true));
 
-        author2 = em.find(Author.class, Integer.valueOf(2));
+        author2 = em.find(Author.class, Integer.valueOf(1));
         assertThat(author2, notNullValue());
 
         // Remember that finding an entity causes it to become
         // managed.
         assertThat(em.contains(author2), is(true));
 
-        assertThat(author2.getId(), is(2));
+        assertThat(author2.getId(), is(1));
         assertThat(author2.getName(), is("Abraham Lincoln"));
 
         author2.setName("Abe Lincoln");
-        assertThat(author2.getId(), is(2));
+        assertThat(author2.getId(), is(1));
         assertThat(author2.getName(), is("Abe Lincoln"));
 
         tm.commit();
@@ -394,7 +401,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
              final ResultSet resultSet = statement.executeQuery("SELECT ID, NAME FROM AUTHOR");) {
             assertThat(resultSet, notNullValue());
             assertThat(resultSet.next(), is(true));
-            assertThat(resultSet.getInt(1), is(2));
+            assertThat(resultSet.getInt(1), is(1));
             assertThat(resultSet.getString(2), is("Abe Lincoln"));
             assertThat(resultSet.next(), is(false));
         }
@@ -404,10 +411,10 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(transactionScopedContext.isActive(), is(true));
 
-        author2 = em.find(Author.class, Integer.valueOf(2));
+        author2 = em.find(Author.class, Integer.valueOf(1));
         assertThat(author2, notNullValue());
         assertThat(em.contains(author2), is(true));
-        assertThat(author2.getId(), is(2));
+        assertThat(author2.getId(), is(1));
         assertThat(author2.getName(), is("Abe Lincoln"));
 
         // No need, really, but it's what a @Transactional method

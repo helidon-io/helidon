@@ -25,6 +25,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceContextType;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.SynchronizationType;
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -87,7 +89,7 @@ class TestExtendedSynchronizedEntityManager {
 
     @BeforeEach
     void startCdiContainer() {
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
         assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
@@ -121,8 +123,8 @@ class TestExtendedSynchronizedEntityManager {
         return this.transactionManager;
     }
 
-    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
-                            final TransactionManager tm) throws SystemException {
+    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event,
+                            TransactionManager tm) throws SystemException {
         // If an assertion fails, or some other error happens in the
         // CDI container, there may be a current transaction that has
         // neither been committed nor rolled back.  Because the
@@ -155,13 +157,13 @@ class TestExtendedSynchronizedEntityManager {
 
         // Get a CDI contextual reference to this test instance.  It
         // is important to use "self" in this test instead of "this".
-        final TestExtendedSynchronizedEntityManager self =
+        TestExtendedSynchronizedEntityManager self =
             this.cdiContainer.select(TestExtendedSynchronizedEntityManager.class).get();
         assertThat(self, notNullValue());
 
         // Get the EntityManager that is synchronized with but whose
         // persistence context extends past a single JTA transaction.
-        final EntityManager em = self.getExtendedSynchronizedEntityManager();
+        EntityManager em = self.getExtendedSynchronizedEntityManager();
         assertThat(em, notNullValue());
         assertThat(em.isOpen(), is(true));
 
@@ -174,16 +176,19 @@ class TestExtendedSynchronizedEntityManager {
 
         // Create a JPA entity and try to insert it.  Should be just
         // fine.
-        final Author author = new Author("Abraham Lincoln");
+        Author author = new Author("Abraham Lincoln");
 
         // With an EXTENDED EntityManager, persisting outside of a
         // transaction is OK.
         em.persist(author);
 
+        // Our PersistenceContextType is EXTENDED, not TRANSACTION, so
+        // the underlying persistence context spans transactions.
+        assertThat(em.contains(author), is(true));
+
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
-        final TransactionManager tm = self.getTransactionManager();
-        assertThat(tm, notNullValue());
+        TransactionManager tm = self.getTransactionManager();
         tm.begin();
 
         // Now magically our EntityManager should be joined to it.
@@ -193,20 +198,34 @@ class TestExtendedSynchronizedEntityManager {
         // is no longer joined to it.
         tm.rollback();
         assertThat(em.isJoinedToTransaction(), is(false));
+        assertThat(em.contains(author), is(false));
 
         // Start another transaction and persist our Author.
         tm.begin();
-        em.persist(author);
-        assertThat(em.contains(author), is(true));
-        tm.commit();
 
-        // The transaction is over, so our EntityManager is not joined
-        // to one anymore.
-        assertThat(em.isJoinedToTransaction(), is(false));
+        try {
+            // See
+            // https://www.baeldung.com/hibernate-detached-entity-passed-to-persist#trying-to-persist-a-detached-entity
+            // and
+            // https://hibernate.atlassian.net/browse/HHH-15738. Eclipselink
+            // handles all this just fine.
+            em.persist(author);
 
-        // Our PersistenceContextType is EXTENDED, not TRANSACTION, so
-        // the underlying persistence context spans transactions.
-        assertThat(em.contains(author), is(true));
+            assertThat(em.contains(author), is(true));
+            tm.commit();
+
+            // The transaction is over, so our EntityManager is not
+            // joined to one anymore.
+            assertThat(em.isJoinedToTransaction(), is(false));
+
+            // Our PersistenceContextType is EXTENDED, not
+            // TRANSACTION, so the underlying persistence context
+            // spans transactions.
+            assertThat(em.contains(author), is(true));
+        } catch (PersistenceException hhh15738) {
+            assertThat(tm.getStatus(), is(Status.STATUS_MARKED_ROLLBACK));
+            tm.rollback();
+        }
     }
 
 }

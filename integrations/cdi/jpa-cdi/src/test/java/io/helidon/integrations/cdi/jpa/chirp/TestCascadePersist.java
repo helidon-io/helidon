@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DataSourceDefinition(
     name = "chirp",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:TestCascadePersist;MODE=LEGACY;INIT=SET TRACE_LEVEL_FILE=4\\;SET DB_CLOSE_DELAY=-1",
+    url = "jdbc:h2:mem:TestCascadePersist;DB_CLOSE_DELAY=-1;MODE=LEGACY;INIT=SET TRACE_LEVEL_FILE=4\\;RUNSCRIPT FROM 'classpath:chirp.ddl'\\;",
     serverName = "",
     properties = {
         "user=sa"
@@ -95,8 +95,8 @@ class TestCascadePersist {
     void startCdiContainerAndRunDDL() throws SQLException {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
-        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
+        /*
         final DataSource ds = this.cdiContainer.select(DataSource.class).get();
         assertThat(ds, notNullValue());
         try (final Connection connection = ds.getConnection();
@@ -104,6 +104,7 @@ class TestCascadePersist {
             assertThat(statement, notNullValue());
             statement.executeUpdate("RUNSCRIPT FROM 'classpath:chirp.ddl'");
         }
+        */
     }
 
     @AfterEach
@@ -188,7 +189,7 @@ class TestCascadePersist {
         // entering a method annotated
         // with @Transactional(TxType.REQUIRES_NEW) or similar.
         final TransactionManager tm = self.getTransactionManager();
-        assertThat(tm, notNullValue());
+        tm.setTransactionTimeout(20 * 60); // 20 minutes for debugging
         tm.begin();
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
 
@@ -228,12 +229,9 @@ class TestCascadePersist {
 
         // Let's check the database directly.
         final DataSource ds = this.cdiContainer.select(DataSource.class).get();
-        assertThat(ds, notNullValue());
         try (final Connection connection = ds.getConnection();
              final Statement statement = connection.createStatement()) {
-            assertThat(statement, notNullValue());
             ResultSet rs = statement.executeQuery("SELECT COUNT(1) FROM MICROBLOG");
-            assertThat(rs, notNullValue());
             try {
                 assertThat(rs.next(), is(true));
                 assertThat(rs.getInt(1), is(1));
@@ -241,7 +239,6 @@ class TestCascadePersist {
                 rs.close();
             }
             rs = statement.executeQuery("SELECT COUNT(1) FROM AUTHOR");
-            assertThat(rs, notNullValue());
             try {
                 assertThat(rs.next(), is(true));
                 assertThat(rs.getInt(1), is(1));
@@ -291,11 +288,11 @@ class TestCascadePersist {
         // functioned properly.  Let's make sure.
         try (final Connection connection = ds.getConnection();
              final Statement statement = connection.createStatement()) {
-            assertThat(statement, notNullValue());
+            assertThat(connection.getTransactionIsolation(), is(Connection.TRANSACTION_READ_COMMITTED));
             ResultSet rs = statement.executeQuery("SELECT COUNT(1) FROM CHIRP");
-            assertThat(rs, notNullValue());
             try {
                 assertThat(rs.next(), is(true));
+                // XXX This fails from time to time, returning 1 or 2.
                 assertThat(rs.getInt(1), is(0));
             } finally {
                 rs.close();
