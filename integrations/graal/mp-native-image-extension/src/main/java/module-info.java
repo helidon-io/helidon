@@ -18,7 +18,6 @@
  */
 module io.helidon.graal.nativeimage.mp {
     requires jakarta.cdi;
-    requires svm;
     requires io.helidon.graal.nativeimage;
     requires jakarta.json;
     requires org.graalvm.sdk;

@@ -22,7 +22,6 @@ module io.helidon.graal.nativeimage {
     requires io.helidon.logging.jul;
     requires io.github.classgraph;
     requires io.helidon.config.mp;
-    requires svm;
     requires org.graalvm.sdk;
     requires jakarta.json;
 
