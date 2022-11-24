@@ -116,6 +116,8 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
                                 subscription.request(backpressure);
                             }
                         });
+                    } else {
+                        message.nack(exception);
                     }
                 });
     }
