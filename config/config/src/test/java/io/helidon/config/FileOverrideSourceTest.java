@@ -19,12 +19,10 @@ package io.helidon.config;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,9 +34,6 @@ import static org.hamcrest.core.Is.is;
 public class FileOverrideSourceTest {
 
     private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
-
-    @RegisterExtension
-    static TemporaryFolderExt folder = TemporaryFolderExt.build();
 
     private static String getDir() {
         return Paths.get("").toAbsolutePath() + RELATIVE_PATH_TO_RESOURCE;

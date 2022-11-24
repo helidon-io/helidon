@@ -33,6 +33,7 @@ import static java.util.Arrays.stream;
  * A JUnit5 extension to provide injection support of {@link TemporaryFolder}
  * instances.
  */
+@Deprecated
 public class TemporaryFolderExtension implements AfterEachCallback,
                                                  TestInstancePostProcessor,
                                                  ParameterResolver {
