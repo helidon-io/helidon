@@ -21,12 +21,6 @@ package io.helidon.reactive.media.common;
 public class OutOfCapacityException extends RuntimeException {
 
     /**
-     * New exception without a cause and message.
-     */
-    public OutOfCapacityException() {
-    }
-
-    /**
      * New exception with a message and without a cause.
      * @param message message to use
      */
@@ -34,22 +28,4 @@ public class OutOfCapacityException extends RuntimeException {
         super(message);
     }
 
-    /**
-     * New exception with a cause and message.
-     *
-     * @param message message to use
-     * @param cause throwable that caused this exception
-     */
-    public OutOfCapacityException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    /**
-     * New exception with a cause and without a message.
-     *
-     * @param cause throwable that caused this exception
-     */
-    public OutOfCapacityException(Throwable cause) {
-        super(cause);
-    }
 }
