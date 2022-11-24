@@ -42,7 +42,7 @@ set the `GRAALVM_HOME` environment variable to point at your GraalVM installatio
 [source,bash]
 ----
 # Your path might be different
-export GRAALVM_HOME=/usr/local/graalvm-ce-21.3.0/Contents/Home/
+export GRAALVM_HOME=/usr/local/graalvm-ce-22.3.0/Contents/Home/
 ----
 
 Then install the optional `native-image` command:

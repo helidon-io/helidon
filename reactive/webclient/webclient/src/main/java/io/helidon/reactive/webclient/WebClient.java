@@ -368,6 +368,17 @@ public interface WebClient {
         }
 
         /**
+         * Add a default header (such as accept).
+         *
+         * @param headerValue header name and value
+         * @return updated builder instance
+         */
+        public Builder addHeader(Http.HeaderValue headerValue) {
+            configuration.defaultHeader(headerValue);
+            return this;
+        }
+
+        /**
          * Sets base uri for each request.
          *
          * @param uri base uri
