@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.config.etcd.EtcdWatcherProvider;
 
 /**
  * Etcd config source implementation.
  */
-@Feature(value = "etcd",
-        description = "Config source based on etcd",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"Config", "etcd"}
-)
-@Aot(false)
 module io.helidon.config.etcd {
-    requires static io.helidon.common.features.api;
 
     requires java.logging;
     requires transitive io.helidon.config;
