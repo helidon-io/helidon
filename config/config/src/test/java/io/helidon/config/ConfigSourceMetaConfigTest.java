@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
-import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
@@ -31,7 +30,7 @@ import com.xebialabs.restito.server.StubServer;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 import static com.xebialabs.restito.builder.stub.StubHttp.whenHttp;
 import static com.xebialabs.restito.semantics.Action.status;
@@ -53,9 +52,6 @@ public class ConfigSourceMetaConfigTest {
     private static final String TEST_ENV_VAR_VALUE = "This Is My ENV VARS Value.";
     private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
 
-    @RegisterExtension
-    public TemporaryFolderExt folder = TemporaryFolderExt.build();
-
     @Test
     @ExtendWith(RestoreSystemPropertiesExt.class)
     public void testSystemProperties() {
@@ -65,9 +61,9 @@ public class ConfigSourceMetaConfigTest {
                 ObjectNode.builder()
                         .addValue("type", "system-properties")
                         .build()));
-        
+
         ConfigSource source = singleSource(metaConfig);
-        
+
         assertThat(source, is(instanceOf(AbstractConfigSource.class)));
 
         Config config = justFrom(source);
@@ -132,8 +128,7 @@ public class ConfigSourceMetaConfigTest {
     }
 
     @Test
-    public void testDirectory() throws IOException {
-        File folder = this.folder.newFolder();
+    public void testDirectory(@TempDir File folder) throws IOException {
         Files.write(Files.createFile(new File(folder, "username").toPath()), "libor".getBytes());
         Files.write(Files.createFile(new File(folder, "password").toPath()), "^ery$ecretP&ssword".getBytes());
 

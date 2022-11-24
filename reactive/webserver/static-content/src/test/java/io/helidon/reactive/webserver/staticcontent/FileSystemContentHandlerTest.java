@@ -16,6 +16,7 @@
 
 package io.helidon.reactive.webserver.staticcontent;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,14 +28,12 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.testsupport.TemporaryFolder;
-import io.helidon.reactive.webserver.testsupport.TemporaryFolderExtension;
 import io.helidon.reactive.webserver.testsupport.TestClient;
 import io.helidon.reactive.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,23 +41,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests {@link FileSystemContentHandler}.
  */
-@ExtendWith(TemporaryFolderExtension.class)
 class FileSystemContentHandlerTest {
 
-    private TemporaryFolder folder;
+    @TempDir
+    File tempDir;
 
     @BeforeEach
     public void createContent() throws IOException {
         // root
-        Path root = folder.root().toPath();
+        Path root = tempDir.toPath();
         Files.writeString(root.resolve("index.html"), "Index HTML");
         Files.writeString(root.resolve("foo.txt"), "Foo TXT");
         // css
-        Path cssDir = folder.newFolder("css").toPath();
+        Path cssDir = Files.createDirectory(tempDir.toPath().resolve("css"));
         Files.writeString(cssDir.resolve("a.css"), "A CSS");
         Files.writeString(cssDir.resolve("b.css"), "B CSS");
         // bar
-        Path other = folder.newFolder("other").toPath();
+        Path other = Files.createDirectory(tempDir.toPath().resolve("other"));
         Files.writeString(other.resolve("index.html"), "Index HTML");
     }
 
@@ -73,7 +72,7 @@ class FileSystemContentHandlerTest {
     @Test
     void serveFile() throws Exception {
         Routing routing = Routing.builder()
-                                 .register("/some", StaticContentSupport.create(folder.root().toPath()))
+                                 .register("/some", StaticContentSupport.create(tempDir.toPath()))
                                  .build();
         // /some/foo.txt
         TestResponse response = TestClient.create(routing)
@@ -109,7 +108,7 @@ class FileSystemContentHandlerTest {
     @Test
     void serveIndex() throws Exception {
         Routing routing = Routing.builder()
-                .register(StaticContentSupport.builder(folder.root().toPath())
+                .register(StaticContentSupport.builder(tempDir.toPath())
                                               .welcomeFileName("index.html")
                                               .contentType("css", MediaTypes.TEXT_PLAIN)
                                               .build())

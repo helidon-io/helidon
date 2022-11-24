@@ -29,6 +29,7 @@ import static java.nio.file.FileVisitResult.CONTINUE;
 /**
  * A helper class that represents a temporary folder.
  */
+@Deprecated
 public class TemporaryFolder {
 
     private File rootFolder;

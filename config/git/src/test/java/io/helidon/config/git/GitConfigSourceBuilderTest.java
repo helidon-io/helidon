@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
@@ -40,7 +39,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 import static io.helidon.config.PollingStrategies.regular;
 import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
@@ -56,9 +55,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     private Git git;
-
-    @RegisterExtension
-    static TemporaryFolderExt folder = TemporaryFolderExt.build();
+    @TempDir
+    File tempDir;
 
     @BeforeEach
     public void setUp(TestInfo testInfo) throws Exception {
@@ -120,8 +118,6 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testDirectory() throws IOException, GitAPIException, InterruptedException, Exception {
-        File tempDir = folder.newFolder();
-
         try (Git clone = Git.cloneRepository()
                 .setURI(fileUri())
                 .setDirectory(tempDir)
@@ -141,32 +137,29 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testDirectoryEmpty() throws IOException, Exception {
-        Path tempDir = folder.newFolder().toPath();
-
         try (GitConfigSource source = GitConfigSource
                 .builder()
                 .path("application.properties")
                 .uri(URI.create(fileUri()))
-                .directory(tempDir)
+                .directory(tempDir.toPath())
                 .parser(ConfigParsers.properties())
                 .build()) {
 
             source.init(null);
 
-            assertThat(tempDir.resolve("application.properties").toFile().exists(), is(true));
+            assertThat(tempDir.toPath().resolve("application.properties").toFile().exists(), is(true));
         }
     }
 
     @Test
     public void testDirNotEmpty() throws IOException {
-        Path tempDir = folder.newFolder().toPath();
         final ConfigException ce = assertThrows(ConfigException.class, () -> {
-            tempDir.resolve("dust").toFile().createNewFile();
+            tempDir.toPath().resolve("dust").toFile().createNewFile();
             GitConfigSource
                     .builder()
                     .path("application.properties")
                     .uri(URI.create(fileUri()))
-                    .directory(tempDir)
+                    .directory(tempDir.toPath())
                     .parser(ConfigParsers.properties())
                     .build()
                     .init(null);
@@ -212,48 +205,42 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testDescriptionWithDirAndUri() throws IOException, GitAPIException, Exception {
-        Path dir = folder.newFolder().toPath();
-
         try (Git clone = Git.cloneRepository()
                 .setURI(fileUri())
-                .setDirectory(dir.toFile())
+                .setDirectory(tempDir)
                 .call();
                 GitConfigSource source = GitConfigSource.builder()
                         .path("application.conf")
                         .uri(URI.create(fileUri()))
-                        .directory(dir)
+                        .directory(tempDir.toPath())
                         .build()) {
 
             source.init(null);
 
-            assertThat(source.description(), is(String.format("GitConfig[%s|%s#application.conf]", dir, fileUri())));
+            assertThat(source.description(), is(String.format("GitConfig[%s|%s#application.conf]", tempDir, fileUri())));
         }
     }
 
     @Test
     public void testDescriptionWithDir() throws IOException, GitAPIException, Exception {
-        Path dir = folder.newFolder().toPath();
-
         try (Git clone = Git.cloneRepository()
                 .setURI(fileUri())
-                .setDirectory(dir.toFile())
+                .setDirectory(tempDir)
                 .call();
                 GitConfigSource source = GitConfigSource.builder()
                         .path("application.conf")
-                        .directory(dir)
+                        .directory(tempDir.toPath())
                         .build()) {
 
-            assertThat(source.description(), is(String.format("GitConfig[%s#application.conf]", dir)));
+            assertThat(source.description(), is(String.format("GitConfig[%s#application.conf]", tempDir)));
         }
     }
 
     @Test
     public void testDescriptionWithUri() throws IOException, GitAPIException, Exception {
-        Path dir = folder.newFolder().toPath();
-
         try (Git clone = Git.cloneRepository()
                 .setURI(fileUri())
-                .setDirectory(dir.toFile())
+                .setDirectory(tempDir)
                 .call();
                 GitConfigSource source = GitConfigSource.builder()
                         .path("application.conf")
@@ -287,12 +274,10 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
     @Test
     public void testFromConfigAll() throws IOException {
-        Path directory = folder.newFolder().toPath();
-
         Config metaConfig = Config.builder(ConfigSources.create(Map.of("path", "application.properties",
                                                                        "uri", fileUri(),
                                                                        "branch", "test",
-                                                                       "directory", directory.toString())))
+                                                                       "directory", tempDir.toPath().toString())))
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
                 .build();
@@ -301,13 +286,11 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         assertThat(builder.target().path(), is("application.properties"));
         assertThat(builder.target().uri(), is(URI.create(fileUri())));
         assertThat(builder.target().branch(), is("test"));
-        assertThat(builder.target().directory(), is(directory));
+        assertThat(builder.target().directory(), is(tempDir.toPath()));
     }
 
     @Test
     public void testSourceFromConfigByClass() throws Exception {
-        Path directory = folder.newFolder().toPath();
-
         Config metaConfig = Config.builder(ConfigSources.create(ObjectNode.builder()
                                                                         .addValue("type",
                                                                                   GitConfigSourceProvider.TYPE)
@@ -315,7 +298,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                                                                                 .addValue("path", "application.properties")
                                                                                 .addValue("uri", fileUri())
                                                                                 .addValue("branch", "test")
-                                                                                .addValue("directory", directory.toString())
+                                                                                .addValue("directory", tempDir.toPath().toString())
                                                                                 .build())
                                                                         .build()))
                 .disableEnvironmentVariablesSource()
@@ -326,21 +309,19 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
             assertThat(gitSource.gitEndpoint().path(), is("application.properties"));
             assertThat(gitSource.gitEndpoint().uri(), is(URI.create(fileUri())));
             assertThat(gitSource.gitEndpoint().branch(), is("test"));
-            assertThat(gitSource.gitEndpoint().directory(), is(directory));
+            assertThat(gitSource.gitEndpoint().directory(), is(tempDir.toPath()));
         }
     }
 
     @Test
     public void testSourceFromConfigByType() throws Exception {
-        Path directory = folder.newFolder().toPath();
-
         Config metaConfig = Config.builder(ConfigSources.create(ObjectNode.builder()
                                                                         .addValue("type", "git")
                                                                         .addObject("properties", ObjectNode.builder()
                                                                                 .addValue("path", "application.properties")
                                                                                 .addValue("uri", fileUri())
                                                                                 .addValue("branch", "test")
-                                                                                .addValue("directory", directory.toString())
+                                                                                .addValue("directory", tempDir.toPath().toString())
                                                                                 .build())
                                                                         .build()))
                 .disableSystemPropertiesSource()
@@ -351,7 +332,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
             assertThat(gitSource.gitEndpoint().path(), is("application.properties"));
             assertThat(gitSource.gitEndpoint().uri(), is(URI.create(fileUri())));
             assertThat(gitSource.gitEndpoint().branch(), is("test"));
-            assertThat(gitSource.gitEndpoint().directory(), is(directory));
+            assertThat(gitSource.gitEndpoint().directory(), is(tempDir.toPath()));
         }
     }
 }
