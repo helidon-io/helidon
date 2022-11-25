@@ -24,6 +24,8 @@
 :feature-name: Testing with JUnit
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>

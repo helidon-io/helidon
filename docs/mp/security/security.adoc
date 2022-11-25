@@ -16,6 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:toc:
+:toc-placement: preamble
 = Adding Security
 :description: Helidon MicroProfile security
 :keywords: helidon, microprofile, micro-profile
@@ -24,6 +26,14 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Protecting Helidon Endpoints, Protecting Helidon Endpoints>>
+
+== Overview
 To add security, such as protecting
 resource methods with authentication, to a MicroProfile application, add the Helidon
  security integration dependency to your project.
@@ -38,7 +48,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-=== Securing a JAX-RS Resource
+== Usage
 
 For JAX-RS resources, declare security by adding annotations to a resource class or
  method.

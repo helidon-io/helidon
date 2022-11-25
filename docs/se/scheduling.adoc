@@ -25,6 +25,7 @@
 :feature-name: Scheduling
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/se.adoc[]
 
 == Contents
 

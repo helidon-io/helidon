@@ -22,6 +22,8 @@
 :feature-name: Testing with TestNG
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/mp.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>

@@ -25,6 +25,8 @@
 :feature-name: Reactive Messaging
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/se.adoc[]
+
 == Contents
 
 - <<Overview, Overview>>
