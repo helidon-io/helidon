@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Vault integration.
  */
+@Feature(value = "HCP Vault",
+        description = "Vault integration",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = "HCP Vault"
+)
 module io.helidon.integrations.vault {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires transitive jakarta.json;
 
