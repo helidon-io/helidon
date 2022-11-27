@@ -233,13 +233,17 @@ final class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public SQLWarning getWarnings() throws SQLException {
-        this.enlist();
+        // Don't check enlistment, because if an error occurs *during* enlistment, often the error handler will want to
+        // check or clear warnings.
+        // this.enlist();
         return super.getWarnings();
     }
 
     @Override // ConditionallyCloseableConnection
     public void clearWarnings() throws SQLException {
-        this.enlist();
+        // Don't check enlistment, because if an error occurs *during* enlistment, often the error handler will want to
+        // check or clear warnings.
+        // this.enlist();
         super.clearWarnings();
     }
 
@@ -714,101 +718,129 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private void enlist() throws SQLException {
         this.failWhenClosed();
+
         // In what follows, there are some general error-handling principles:
         //
         // * All RuntimeExceptions and SystemExceptions are converted to SQLExceptions.
         // * Most SQLExceptions are SQLTransientExceptions, since a retry without application intervention may encounter
         //   a Transaction in a different state, and the operation may succeed.
         // * Most SQLExceptions have a SQL State of 25000, which is documented to be "invalid transaction state".
-        // * Some JTA operations supposedly throw only IllegalStateException, but some JTA implementations also
+        // * Some JTA operations supposedly throw only IllegalStateException, but those JTA implementations also
         //   incorrectly throw RuntimeException.
         //
-        // A JTA transaction may change its state from another thread. Status checks are therefore momentary.
+        // A JTA transaction may have its state changed from another thread. Status checks are therefore momentary.
         //
-        // Some JTA transaction statuses are effectively terminal:
+        // The Status.STATUS_ACTIVE state indicates that operations on this connection on the current thread
+        // should be associated with the current global transaction.
         //
-        // * Status.STATUS_COMMITTED
-        // * Status.STATUS_MARKED_ROLLBACK (only one possible outcome, viz. rollback)
-        // * Status.STATUS_NO_TRANSACTION (transactions are thread-specific so this won't change)
-        // * Status.STATUS_ROLLEDBACK
+        // Other JTA transaction statuses are terminal or effectively terminal:
         //
-        // Terminal states are nice because if this connection was enlisted, its autoCommit setting will have been
-        // restored and there will be no executing an operation outside of an expected transaction context.
+        // * Status.STATUS_COMMITTED (the transaction is committed but not disassociated from the current thread)
+        // * Status.STATUS_NO_TRANSACTION (there is no transaction of any kind)
+        // * Status.STATUS_ROLLED_BACK (the transaction is rolled back but not disassociated from the current thread)
         //
-        // Other JTA states are *interim*. It's important to throw exceptions in these cases.
+        // Still other statuses are interim. They arise because once a global transaction has ceased to be in the
+        // Status.STATUS_ACTIVE state, the two-phase commit process may be started and completed afterwards on any
+        // thread. In such a case we want to prevent an accident where an operation on this connection somehow gets
+        // applied as part of the *local* SQL transaction representing a branch of the *global* transaction:
+        //
+        // * Status.STATUS_COMMITTING
+        // * Status.STATUS_PREPARED
+        // * Status.STATUS_PREPARING
+        // * Status.STATUS_ROLLING_BACK
+        // * Status.STATUS_UNKNOWN
+        //
+        // Finally Status.STATUS_MARKED_ROLLBACK is special: it indicates that there will be no possible outcome other
+        // than rollback. It is not terminal and it is not really interim. For simplicity, we want to treat it as if it
+        // were interim.
         //
         // A return from this method must mean that either (a) this connection is not enlisted, and any operations that
         // get carried out are OK to execute outside of a JTA transaction, or (b) this connection is enlisted in the
         // current JTA transaction.  Where this is not honored it should be considered a bug.
+
+        // Quick check of transaction status that does not require the JTA implementation to instantiate a (possibly
+        // useless) Transaction object. Guaranteed not to throw RuntimeException.
         int transactionStatus = this.transactionStatus();
+
         switch (transactionStatus) {
         case Status.STATUS_ACTIVE:
             // Continue.
             break;
         case Status.STATUS_COMMITTED:
-        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_NO_TRANSACTION:
         case Status.STATUS_ROLLEDBACK:
-            // Terminal or effectively terminal. Return.
+            // Terminal; the two-phase commit process has already happened. Return.
             return;
         case Status.STATUS_COMMITTING:
+        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
-            // Interim. Throw.
+            // Interim or effectively interim. Throw to prevent accidental side effects.
             throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus, "25000");
         case Status.STATUS_UNKNOWN:
         default:
             // Unexpected or illegal. Throw.
             throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, "25000");
         }
+
         try {
           if (this.tsr.getResource(JtaConnection.class.getName()) == this) {
+              // Operations on the current thread on this connection are already enlisted. Return.
               return;
           }
         } catch (RuntimeException e) {
             throw new SQLTransientException(e.getMessage(), "25000", e);
         }
+
         if (!super.getAutoCommit()) {
             // super.getAutoCommit() (super. on purpose, not this.) returned false. We don't want to permit enlistment,
             // because a local transaction may be in progress.
-            throw new SQLTransientException("autoCommit was false during transaction enlistment", "25000");
+            throw new SQLTransientException("autoCommit was false during active transaction enlistment", "25000");
         }
+
+        // Guaranteed to not throw RuntimeException.
         Transaction t = this.transaction();
+
         try {
-            // t won't be null because the status was, at one point, Status.STATUS_ACTIVE, and there's no permitted
-            // state machine transition from STATUS_ACTIVE to STATUS_NO_TRANSACTION.
+            // t is guaranteed by spec not to be null because the status was, at one point, Status.STATUS_ACTIVE on the
+            // current thread.
             transactionStatus = t.getStatus();
         } catch (RuntimeException | SystemException e) {
             throw new SQLTransientException(e.getMessage(), "25000", e);
         }
+
         switch (transactionStatus) {
         case Status.STATUS_ACTIVE:
             // Continue.
             break;
         case Status.STATUS_COMMITTED:
-        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_ROLLEDBACK:
-            // Terminal or effectively terminal. Return.
+            // Terminal. Return.
             return;
         case Status.STATUS_COMMITTING:
+        case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
-            // Interim. Throw.
+            // Interim or effectively interim. Throw to prevent accidental side effects.
             throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus, "25000");
         case Status.STATUS_NO_TRANSACTION:
-            // Impossible state machine transition. Throw.
+            // Impossible state machine transition since t is non-null and at least at one earlier point on this thread
+            // the status was Status.STATUS_ACTIVE. Even if somehow the global transaction is disassociated from the
+            // current thread, the Transaction object's status will never, by spec, go to
+            // Status.STATUS_NO_TRANSACTION. See
+            // https://groups.google.com/g/narayana-users/c/eYVUmhE9QZg/m/xbBh2CsBBQAJ.
             throw new AssertionError(); // per spec
         case Status.STATUS_UNKNOWN:
         default:
-            // Unexpected. Throw.
+            // Unexpected or illegal. Throw.
             throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, "25000");
         }
-        // Point of no return. We have (a) ensured that the Transaction is non-null, (b) tried to ensure the Transaction
-        // has a status of Status.STATUS_ACTIVE and (c) ensured we aren't already enlisted. The Transaction's status can
-        // still change at any point (as a result of asynchronous rollback, for example) so we have to watch for various
-        // exceptions when we invoke methods on it.
+
+        // Point of no return. We have ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE
+        // and ensured we aren't already enlisted. The Transaction's status can still change at any point (as a result
+        // of asynchronous rollback, for example) so we have to watch for various exceptions.
         try {
             t.enlistResource(new LocalXAResource(xid -> {
                         this.tsr.putResource(JtaConnection.class.getName(), JtaConnection.this);
