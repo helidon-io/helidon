@@ -22,6 +22,10 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MetricStoreTests {
@@ -55,5 +59,74 @@ class MetricStoreTests {
 
         assertThrows(IllegalArgumentException.class, () ->
                 store.getOrRegisterMetric(meta2, Counter.class, NO_TAGS));
+    }
+
+    @Test
+    void testSameNameNoTags() {
+        Metadata metadata = Metadata.builder()
+                .withName("a")
+                .withType(MetricType.COUNTER)
+                .build();
+
+        NoOpMetricRegistry registry = NoOpMetricRegistry.create(MetricRegistry.Type.APPLICATION);
+
+        MetricStore<NoOpMetric> store = MetricStore.create(REGISTRY_SETTINGS,
+                                                           NoOpMetricRegistry.NO_OP_METRIC_FACTORIES,
+                                                           null,
+                                                           null,
+                                                           MetricRegistry.Type.APPLICATION,
+                                                           NoOpMetric.class,
+                                                           registry::toImpl);
+
+        Counter counter1 = store.getOrRegisterMetric(metadata, Counter.class, NO_TAGS);
+        Counter counter2 = store.getOrRegisterMetric(metadata, Counter.class, NO_TAGS);
+        assertThat("Counters with no tags", counter1, is(counter2));
+    }
+
+    @Test
+    void testSameNameSameTwoTags() {
+        Tag[] tags = {new Tag("foo", "1"), new Tag("bar", "1")};
+        Metadata metadata = Metadata.builder()
+                .withName("a")
+                .withType(MetricType.COUNTER)
+                .build();
+
+        NoOpMetricRegistry registry = NoOpMetricRegistry.create(MetricRegistry.Type.APPLICATION);
+
+        MetricStore<NoOpMetric> store = MetricStore.create(REGISTRY_SETTINGS,
+                                                           NoOpMetricRegistry.NO_OP_METRIC_FACTORIES,
+                                                           null,
+                                                           null,
+                                                           MetricRegistry.Type.APPLICATION,
+                                                           NoOpMetric.class,
+                                                           registry::toImpl);
+
+        Counter counter1 = store.getOrRegisterMetric(metadata, Counter.class, tags);
+        Counter counter2 = store.getOrRegisterMetric(metadata, Counter.class, tags);
+        assertThat("Counters with same two tags", counter1, is(counter2));
+    }
+
+    @Test
+    void testSameNameOverlappingButDifferentTags() {
+        Tag[] tags1 = {new Tag("foo", "1"), new Tag("bar", "1"), new Tag("baz", "1")};
+        Tag[] tags2 = {new Tag("foo", "1"), new Tag("bar", "1")};
+        Metadata metadata = Metadata.builder()
+                .withName("a")
+                .withType(MetricType.COUNTER)
+                .build();
+
+        NoOpMetricRegistry registry = NoOpMetricRegistry.create(MetricRegistry.Type.APPLICATION);
+
+        MetricStore<NoOpMetric> store = MetricStore.create(REGISTRY_SETTINGS,
+                                                           NoOpMetricRegistry.NO_OP_METRIC_FACTORIES,
+                                                           null,
+                                                           null,
+                                                           MetricRegistry.Type.APPLICATION,
+                                                           NoOpMetric.class,
+                                                           registry::toImpl);
+
+        Counter counter1 = store.getOrRegisterMetric(metadata, Counter.class, tags1);
+        Counter counter2 = store.getOrRegisterMetric(metadata, Counter.class, tags2);
+        assertThat("Counters with overlapping but different tags", counter1, not(is(counter2)));
     }
 }
