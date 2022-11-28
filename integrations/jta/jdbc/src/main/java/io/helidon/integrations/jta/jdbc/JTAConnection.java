@@ -27,7 +27,6 @@ import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.SQLTransientException;
-import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.ShardingKey;
@@ -53,7 +52,7 @@ import jakarta.transaction.TransactionSynchronizationRegistry;
 /**
  * A JDBC 4.3-compliant {@link ConditionallyCloseableConnection} that can participate in a {@link Transaction}.
  *
- * @see #connection(TransactionSupplier, TransactionSynchronizationRegistry, Connection)
+ * @see #connection(TransactionSupplier, TransactionSynchronizationRegistry, ExceptionConverter, Connection)
  */
 final class JtaConnection extends ConditionallyCloseableConnection {
 
@@ -64,12 +63,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
 
 
     /**
-     * A supplier of {@link Transaction} objects.  Often {@link jakarta.transaction.TransactionManager#getTransaction()
-     * transactionManager::getTransaction}.
+     * A supplier of {@link Transaction} objects.  Often initialized to {@link
+     * jakarta.transaction.TransactionManager#getTransaction() transactionManager::getTransaction}.
      *
      * <p>This field is never {@code null}.</p>
      *
      * @see TransactionSupplier
+     *
+     * @see jakarta.transaction.TransactionManager#getTransaction()
      */
     private final TransactionSupplier tm;
 
@@ -77,9 +78,20 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      * A {@link TransactionSynchronizationRegistry}.
      *
      * <p>This field is never {@code null}.</p>
+     *
+     * @see TransactionSynchronizationRegistry
      */
     private final TransactionSynchronizationRegistry tsr;
 
+    /**
+     * An {@link ExceptionConverter}.
+     *
+     * <p>This field may be {@code null}.</p>
+     *
+     * @see ExceptionConverter
+     *
+     * @see LocalXAResource#LocalXAResource(Function, ExceptionConverter)
+     */
     private final ExceptionConverter exceptionConverter;
 
 
@@ -180,16 +192,6 @@ final class JtaConnection extends ConditionallyCloseableConnection {
     }
 
     @Override // ConditionallyCloseableConnection
-    public void close() throws SQLException {
-        super.close();
-    }
-
-    @Override // ConditionallyCloseableConnection
-    public boolean isClosed() throws SQLException {
-        return super.isClosed();
-    }
-
-    @Override // ConditionallyCloseableConnection
     public DatabaseMetaData getMetaData() throws SQLException {
         this.enlist();
         return super.getMetaData();
@@ -229,22 +231,6 @@ final class JtaConnection extends ConditionallyCloseableConnection {
     public int getTransactionIsolation() throws SQLException {
         this.enlist();
         return super.getTransactionIsolation();
-    }
-
-    @Override // ConditionallyCloseableConnection
-    public SQLWarning getWarnings() throws SQLException {
-        // Don't check enlistment, because if an error occurs *during* enlistment, often the error handler will want to
-        // check or clear warnings.
-        // this.enlist();
-        return super.getWarnings();
-    }
-
-    @Override // ConditionallyCloseableConnection
-    public void clearWarnings() throws SQLException {
-        // Don't check enlistment, because if an error occurs *during* enlistment, often the error handler will want to
-        // check or clear warnings.
-        // this.enlist();
-        super.clearWarnings();
     }
 
     @Override // ConditionallyCloseableConnection
@@ -536,18 +522,6 @@ final class JtaConnection extends ConditionallyCloseableConnection {
     }
 
     @Override // ConditionallyCloseableConnection
-    public <T> T unwrap(Class<T> iface) throws SQLException {
-        // this.enlist(); // Deliberately omitted per spec.
-        return super.unwrap(iface);
-    }
-
-    @Override // ConditionallyCloseableConnection
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        // this.enlist(); // Deliberately omitted per spec.
-        return super.isWrapperFor(iface);
-    }
-
-    @Override // ConditionallyCloseableConnection
     public boolean isCloseable() throws SQLException {
         // this.checkOpen(); // Deliberately omitted
         // this.enlist(); // Deliberately omitted
@@ -799,11 +773,11 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("autoCommit was false during active transaction enlistment", "25000");
         }
 
-        // Guaranteed to not throw RuntimeException.
+        // Guaranteed not to throw RuntimeException.
         Transaction t = this.transaction();
 
         try {
-            // t is guaranteed by spec not to be null because the status was, at one point, Status.STATUS_ACTIVE on the
+            // t is guaranteed by spec to be non-null because the status was, at one point, Status.STATUS_ACTIVE on the
             // current thread.
             transactionStatus = t.getStatus();
         } catch (RuntimeException | SystemException e) {
@@ -843,18 +817,18 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         // of asynchronous rollback, for example) so we have to watch for various exceptions.
         try {
             t.enlistResource(new LocalXAResource(xid -> {
-                        this.tsr.putResource(JtaConnection.class.getName(), JtaConnection.this);
-                        this.tsr.putResource("xid", xid);
-                        try {
-                            if (super.isCloseable()) {
-                                this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
-                                super.setCloseable(false);
-                            }
-                        } catch (SQLException e) {
-                            throw new UncheckedSQLException(e);
-                        }
-                        return this.delegate();
-            }, null));
+                this.tsr.putResource(JtaConnection.class.getName(), JtaConnection.this);
+                this.tsr.putResource("xid", xid);
+                try {
+                    if (super.isCloseable()) {
+                        this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
+                        super.setCloseable(false);
+                    }
+                } catch (SQLException e) {
+                    throw new UncheckedSQLException(e);
+                }
+                return this.delegate();
+            }, this.exceptionConverter));
         } catch (RollbackException e) {
             // The enlistResource(XAResource) operation failed because the transaction was rolled back. We use SQL state
             // 40000 ("transaction rollback, no subclass") even though it's unclear whether this indicates the SQL/local

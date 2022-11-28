@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 import javax.sql.DataSource;
+import javax.sql.XADataSource;
 
 import io.helidon.integrations.jdbc.AbstractDataSource;
 
@@ -27,20 +28,28 @@ import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
 /**
- * An {@link AbstractDataSource} that wraps another {@link DataSource} that is known to not behave correctly in the
- * presence of JTA transaction management, such as one supplied by any of several freely and commercially available
- * connection pools, and that makes such a non-JTA-aware {@link DataSource} behave as sensibly as possible in the
- * presence of a JTA-managed transaction.
+ * An {@link AbstractDataSource} that wraps another {@link DataSource} that might not behave correctly in the presence
+ * of JTA transaction management, such as one supplied by any of several freely and commercially available connection
+ * pools, and that makes a non-JTA-aware {@link DataSource} behave as sensibly as possible in the presence of a
+ * JTA-managed transaction.
  */
 public final class JtaDataSource2 extends AbstractDataSource {
 
-    private final DataSource ds;
 
-    private final TransactionManager tm;
+    /*
+     * Instance fields.
+     */
 
-    private final TransactionSynchronizationRegistry tsr;
 
-    private final ExceptionConverter exceptionConverter;
+    private final AuthenticatedConnectionSupplier acs;
+
+    private final UnauthenticatedConnectionSupplier uacs;
+
+
+    /*
+     * Constructors.
+     */
+
 
     /**
      * Creates a new {@link JtaDataSource2}.
@@ -49,37 +58,55 @@ public final class JtaDataSource2 extends AbstractDataSource {
      *
      * @param tsr a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
-     * @param ds a {@link DataSource} that is not XA-compliant; must not be {@code null}
+     * @param ec an {@link ExceptionConverter}; may be {@code null} in which case a default implementation will be used
+     * instead
      *
-     * @param exceptionConverter a {@link ExceptionConverter}; may be {@code null} in which case a default
-     * implementation will be used instead
+     * @param ds a {@link DataSource} that may not be XA-compliant; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code tm}, {@code tsr} or {@code ds} is {@code null}
      */
     // Undefined behavior if ds ends up supplying the return value of an invocation of XAConnection#getConnection().
-    public JtaDataSource2(TransactionManager tm,
-                          TransactionSynchronizationRegistry tsr,
-                          ExceptionConverter exceptionConverter,
-                          DataSource ds) {
+    public JtaDataSource2(TransactionManager tm, TransactionSynchronizationRegistry tsr, ExceptionConverter ec, DataSource ds) {
         super();
-        this.ds = Objects.requireNonNull(ds, "ds");
-        this.tm = Objects.requireNonNull(tm, "tm");
-        this.tsr = Objects.requireNonNull(tsr, "tsr");
-        this.exceptionConverter = exceptionConverter;
+        if (Objects.requireNonNull(ds, "ds") instanceof XADataSource) {
+            // Some connection pools offer an object that implements both DataSource and XADataSource. If so, assume
+            // they know what they're doing.
+            this.acs = ds::getConnection;
+            this.uacs = ds::getConnection;
+        } else {
+            this.acs = (u, p) -> JtaConnection.connection(tm::getTransaction, tsr, ec, ds.getConnection(u, p));
+            this.uacs = () -> JtaConnection.connection(tm::getTransaction, tsr, ec, ds.getConnection());
+        }
     }
 
     @Override // DataSource
     public Connection getConnection(String username, String password) throws SQLException {
-        return JtaConnection.connection(this.tm::getTransaction,
-                                        this.tsr,
-                                        this.exceptionConverter,
-                                        this.ds.getConnection(username, password));
+        return this.acs.getConnection(username, password);
     }
 
     @Override // DataSource
     public Connection getConnection() throws SQLException {
-        return JtaConnection.connection(this.tm::getTransaction,
-                                        this.tsr,
-                                        this.exceptionConverter,
-                                        this.ds.getConnection());
+        return this.uacs.getConnection();
+    }
+
+
+    /*
+     * Inner and nested classes.
+     */
+
+
+    @FunctionalInterface
+    private interface UnauthenticatedConnectionSupplier {
+
+        Connection getConnection() throws SQLException;
+
+    }
+
+    @FunctionalInterface
+    private interface AuthenticatedConnectionSupplier {
+
+        Connection getConnection(String username, String password) throws SQLException;
+
     }
 
 }
