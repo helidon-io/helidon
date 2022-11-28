@@ -21,12 +21,6 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
-record ConnectionKey(Http.Method method,
-                     String scheme,
-                     String host,
-                     int port,
-                     boolean priorKnowledge,
-                     Tls tls,
-                     DnsResolver dnsResolver,
-                     DnsAddressLookup dnsAddressLookup) {
+record ConnectionKey(Http.Method method, String scheme, String host, int port, boolean priorKnowledge, Tls tls,
+                     DnsResolver dnsResolver, DnsAddressLookup dnsAddressLookup) {
 }

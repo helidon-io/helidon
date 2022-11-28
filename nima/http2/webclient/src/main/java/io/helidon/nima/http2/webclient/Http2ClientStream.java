@@ -186,27 +186,27 @@ class Http2ClientStream implements Http2Stream {
 
     @Override
     public void rstStream(Http2RstStream rstStream) {
-
+        //FIXME: reset stream
     }
 
     @Override
     public void windowUpdate(Http2WindowUpdate windowUpdate) {
-
+        //FIXME: win update
     }
 
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
-
+        throw new UnsupportedOperationException("Not applicable on client.");
     }
 
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
-
+        throw new UnsupportedOperationException("Not applicable on client.");
     }
 
     @Override
     public void priority(Http2Priority http2Priority) {
-
+        //FIXME: priority
     }
 
     @Override
@@ -216,12 +216,14 @@ class Http2ClientStream implements Http2Stream {
 
     @Override
     public Http2StreamState streamState() {
-        return null;
+        //FIXME: State check
+        throw new UnsupportedOperationException("Not implemented yet!");
     }
 
     @Override
     public FlowControl flowControl() {
-        return null;
+        //FIXME: Flow control
+        throw new UnsupportedOperationException("Not implemented yet!");
     }
 
     class ClientOutputStream extends OutputStream {

@@ -60,7 +60,6 @@ import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2LoggingFrameListener;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
-import io.helidon.nima.http2.Http2Util;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
@@ -82,6 +81,8 @@ class Http2ClientConnection {
             Upgrade: h2c\r
             HTTP2-Settings: %s\r\n\r
             """;
+    private static final byte[] PRIOR_KNOWLEDGE_PREFACE =
+            "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
     private final ExecutorService executor;
     private final SocketOptions socketOptions;
@@ -286,7 +287,7 @@ class Http2ClientConnection {
     }
 
     private void sendPreface(boolean sendSettings){
-        dataWriter.writeNow(BufferData.create(Http2Util.PRIOR_KNOWLEDGE_PREFACE));
+        dataWriter.writeNow(BufferData.create(PRIOR_KNOWLEDGE_PREFACE));
         if (sendSettings) {
             // §3.5 Preface bytes must be followed by setting frame
             Http2Settings http2Settings = Http2Settings.builder()

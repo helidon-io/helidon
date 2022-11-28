@@ -23,11 +23,7 @@ import java.util.Arrays;
  * HTTP/2 utility.
  */
 public final class Http2Util {
-
-    /**
-     * Prior knowledge preface.
-     */
-    public static final byte[] PRIOR_KNOWLEDGE_PREFACE =
+    private static final byte[] PRIOR_KNOWLEDGE_PREFACE =
             "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     /**
      * Length of prior knowledge preface.
