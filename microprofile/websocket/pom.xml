@@ -32,7 +32,7 @@
     <description>Helidon MP integration with Tyrus</description>
 
     <properties>
-        <surefire.argLine>-Dmp.initializer.allow=true</surefire.argLine>
+        <surefire.argLine>-Dmp.initializer.allow=true --enable-preview</surefire.argLine>
     </properties>
 
     <dependencies>
@@ -41,8 +41,28 @@
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-websocket</artifactId>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.websocket</groupId>
+            <artifactId>helidon-nima-websocket-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-container-jdk-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -68,8 +88,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.server</groupId>
-            <artifactId>helidon-microprofile-server</artifactId>
+            <groupId>org.glassfish.tyrus</groupId>
+            <artifactId>tyrus-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
