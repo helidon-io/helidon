@@ -196,7 +196,6 @@ public abstract class OpenAPISupport implements Service {
     @Override
     public void update(Routing.Rules rules) {
         configureEndpoint(rules);
-        ui.update(rules);
     }
 
     /**
@@ -210,6 +209,7 @@ public abstract class OpenAPISupport implements Service {
         rules.get(this::registerJsonpSupport)
                 .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
+        ui.update(rules);
     }
 
     /**
@@ -796,7 +796,7 @@ public abstract class OpenAPISupport implements Service {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
-            config.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_PREFIX)
+            config.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY)
                     .ifExists(c -> ui().config(c));
             return identity();
         }

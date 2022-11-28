@@ -40,7 +40,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     private static final Logger LOGGER = Logger.getLogger(OpenApiUiBase.class.getName());
 
-    private static final LazyValue<OpenApiUiFactory> UI_FACTORY = LazyValue.create(OpenApiUiBase::loadUiFactory);
+    private static final LazyValue<OpenApiUiFactory<?, ?>> UI_FACTORY = LazyValue.create(OpenApiUiBase::loadUiFactory);
 
     private static final String HTML_PREFIX = """
             <!doctype html>
@@ -61,11 +61,9 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     /**
      *
-     * @param <T> type of the {@code OpenApiUiBase} to be built
-     * @param <B> type of the builder for T
      * @return a builder for the currently-available implementation of {@link OpenApiUi}.
      */
-    static <B extends OpenApiUi.Builder<B, T>, T extends OpenApiUi>  B builder() {
+    static OpenApiUi.Builder<?, ?>  builder() {
         return UI_FACTORY.get().builder();
     }
 
@@ -82,6 +80,9 @@ public abstract class OpenApiUiBase implements OpenApiUi {
      * @param openAPIWebContext final web context for the {@code OpenAPISupport} service
      */
     protected OpenApiUiBase(Builder<?, ?> builder, Function<MediaType, String> documentPreparer, String openAPIWebContext) {
+        Objects.requireNonNull(builder.documentPreparer, "Builder's documentPreparer must be non-null");
+        Objects.requireNonNull(builder.openApiSupportWebContext,
+                               "Builder's OpenAPISupport web context must be non-null");
         this.documentPreparer = documentPreparer;
         isEnabled = builder.isEnabled;
         webContext = Objects.requireNonNullElse(builder.webContext,
@@ -199,6 +200,8 @@ public abstract class OpenApiUiBase implements OpenApiUi {
         private final Map<String, String> options = new HashMap<>();
         private boolean isEnabled = true;
         private String webContext;
+        private Function<MediaType, String> documentPreparer;
+        private String openApiSupportWebContext;
 
         @Override
         public B options(Map<String, String> options) {
@@ -217,6 +220,34 @@ public abstract class OpenApiUiBase implements OpenApiUi {
         public B webContext(String webContext) {
             this.webContext = webContext;
             return identity();
+        }
+
+        @Override
+        public B documentPreparer(Function<MediaType, String> documentPreparer) {
+            this.documentPreparer = documentPreparer;
+            return identity();
+        }
+
+        @Override
+        public B openApiSupportWebContext(String openApiWebContext) {
+            this.openApiSupportWebContext = openApiWebContext;
+            return identity();
+        }
+
+        /**
+         *
+         * @return OpenAPI web context
+         */
+        public String openApiSupportWebContext() {
+            return openApiSupportWebContext;
+        }
+
+        /**
+         *
+         * @return document preparer
+         */
+        public Function<MediaType, String> documentPreparer() {
+            return documentPreparer;
         }
     }
 }

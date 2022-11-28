@@ -24,7 +24,6 @@
 :rootdir: {docdir}/../..
 :incdir: {rootdir}/includes/openapi
 :ui-inc: {incdir}/openapi-ui.adoc
-:feature-name: OpenAPI U/I support
 
 include::{rootdir}/includes/se.adoc[]
 include::{rootdir}/includes/pages.adoc[]
@@ -35,62 +34,64 @@ include::{ui-inc}[tag=preamble]
 
 include::{ui-inc}[tags=intro;overview]
 
-include::{rootdir}/includes/dependencies.adoc[]
+include::{ui-inc}[tag=dependencies]
 
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.integrations.openapi-ui</groupId>
-    <artifactId>helidon-openapi-ui</artifactId>
-</dependency>
-----
-
-Also add the following dependency.
+Also, make sure your project has the following dependency.
 
 include::{openapi-page}[tag=depc]
+
+This dependency allows your application to create, configure, and register the `OpenAPISupport` service.
 
 include::{ui-inc}[tag=usage]
 
 == API
+You can control some of the behavior of the U/I programmatically in two steps:
 
-link:{javadoc-path}/OpenApiUiSupport.html[`OpenApiUiSupport`] is a WebServer service which displays the OpenAPI U/I page.
+. Create an link:{javadoc-path}/OpenApiUi.Builder.html[`OpenApiUi.Builder`] and invoke methods on it to set the U/I behavior.
+. Invoke the `ui` method on link:{openapi-javadoc-base-url}/io.helidon.openapi.OpenAPISupport.Builder.html[`OpenAPISupport.Builder`], passing the `OpenApiUi.Builder` you prepared above.
 
-This class needs information about the link:{openapi-javadoc-path}/OpenAPISupport.html[`OpenAPISupport`] instance in your application
-so your Helidon SE application must first create one.
-Then you create an instance of `OpenApiUiSupport` and add both to your application routing.
-
-The following example creates instances of both services.
+The following example illustrates these steps.
 
 [source,java]
-.Create `OpenAPISupport` and `OpenApiUiSupport` instances
+.Create `OpenApiUiSupport` and `OpenAPISupport` instances
 ----
 Config config = Config.create(); // <1>
+Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY)); // <2>
+
+OpenApiUi.Builder uiBuilder =
+    OpenApiUi.builder() // <3>
+        .config(openApiConfig.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY); // <4>
 
 OpenAPISupport openApiSupport =
-    OpenAPISupport.create(config.get(OpenAPISupport.Builder.CONFIG_KEY)); // <2>
+    OpenAPISupport.builder()
+        .config.get()
+        .ui(uiBuilder) // <5>
+        .build();
 
-OpenApiUiSupport openApiUiSupport =
-    OpenApiUiSupport.create(openApiSupport,
-                            config.get(OpenApiUiSupport.OPENAPI_UI_CONFIG_KEY)); // <3>
+
 ----
 <1> Load the configuration.
-<2> Create the `OpenAPISupport` instance using configuration.
-<3> Create the `OpenApiUiSupport` instance using the `OpenAPISupport` instance and the U/I configuration.
+<2> Extract the `OpenAPISupport` config.
+<3> Create the `OpenApiUi.Builder` instance.
+<4> Use the `ui` configuration (which is contained within the `OpenAPISupport` config) to assign the behavior of the U/I as set in the configuration. You could also invoke other methods on the U/I builder to further tailor the U/I behavior.
+<5> Create the `OpenAPISupport` instance using the `OpenApiUi.Builder` just created. You can refine the behavior of the `OpenAPISupport` object by invoking additional methods on its builder before invoking its `build` method.
 
-As with most Helidon services, you can create the `OpenAPISupport` and `OpenApiUiSupport` objects explicitly using their builders or, as shown here, using only configuration.
-
-Register both of these services, as well as your own services and others from Helidon.
+Register the `OpenAPISupport` service, as well as your own services and others from Helidon.
 
 [source,java]
 .Register services for routing
 ----
 Routing.builder()
         .register(openApiSupport)
-        .register(openApiUiSupport)
         // Add registrations of your service(s) and other Helidon services you need.
         .build();
 ----
 
+[NOTE]
+====
+The `webContext(String)` method on `OpenApiUi.Builder`  sets the web context where the U/I should respond instead of the default `/openapi/ui`.
+Helidon uses the provided string to set the _entire_ web context for the U/I, not as a suffix appended to the web context for the `OpenAPISupport` service.
+====
 include::{ui-inc}[tag=config-intro]
 
 For example, the following configuration changes the path where you access the U/I.

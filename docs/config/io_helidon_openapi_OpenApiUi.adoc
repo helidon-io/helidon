@@ -48,7 +48,7 @@ ui
 |===
 |key |type |default value |description
 
-|`is-enabled` |boolean |`true` |Sets whether the U/I should be enabled.
+|`enabled` |boolean |`true` |Sets whether the U/I should be enabled.
 |`options` |Map&lt;string, string&gt; |{nbsp} |Sets implementation-specific U/I options.
 |`web-context` |string |{nbsp} |web context (path) where the U/I will respond
 

@@ -15,8 +15,6 @@
  */
 package io.helidon.openapi;
 
-import java.util.function.Function;
-
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -36,7 +34,7 @@ class OpenApiUiMinimal extends OpenApiUiBase {
      *
      * @return new builder for an {@code OpenApiUiMinimal} service
      */
-    static OpenApiUi.Builder<?, ?> builder() {
+    static OpenApiUiMinimal.Builder builder() {
         return new Builder();
     }
 
@@ -45,8 +43,8 @@ class OpenApiUiMinimal extends OpenApiUiBase {
             MediaType.TEXT_PLAIN
     };
 
-    private OpenApiUiMinimal(Builder builder, Function<MediaType, String> documentPreparer, String openAPISupportWebContext) {
-        super(builder, documentPreparer, openAPISupportWebContext);
+    private OpenApiUiMinimal(Builder builder) {
+        super(builder, builder.documentPreparer(), builder.openApiSupportWebContext());
     }
 
     @Override
@@ -74,8 +72,8 @@ class OpenApiUiMinimal extends OpenApiUiBase {
     static class Builder extends OpenApiUiBase.Builder<Builder, OpenApiUiMinimal> {
 
         @Override
-        public OpenApiUi build(Function<MediaType, String> documentPreparer, String openAPIWebContext) {
-            return new OpenApiUiMinimal(this, documentPreparer, openAPIWebContext);
+        public OpenApiUiMinimal build() {
+            return new OpenApiUiMinimal(this);
         }
     }
 }

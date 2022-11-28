@@ -13,19 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.openapi;
-
-/**
- * Behavior for factories able to provide new builders of {@link OpenApiUi} instances.
- *
- * @param <T> type of the {@link OpenApiUi} to be built
- * @param <B> type of the builder for T
- */
-public interface OpenApiUiFactory<B extends OpenApiUi.Builder<B, T>, T extends OpenApiUi> {
-
-    /**
-     *
-     * @return a builder for the selected type of concrete {@link OpenApiUi}.
-     */
-    B builder();
+package io.helidon.integrations.openapi.ui;public class CdiTestsUtil {
 }

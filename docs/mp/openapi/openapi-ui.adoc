@@ -25,7 +25,6 @@
 :incdir: {rootdir}/includes/openapi
 :openapi-inc: {incdir}/openapi.adoc
 :ui-inc: {incdir}/openapi-ui.adoc
-:feature-name: OpenAPI U/I support
 
 include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/pages.adoc[]
@@ -36,18 +35,9 @@ include::{ui-inc}[tag=preamble]
 
 include::{ui-inc}[tags=intro;overview]
 
-include::{rootdir}/includes/dependencies.adoc[]
+include::{ui-inc}[tag=dependencies]
 
-[source,xml]
-----
-    <dependency>
-        <groupId>io.helidon.integrations.openapi-ui</groupId>
-        <artifactId>helidon-integrations-openapi-ui-cdi</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-----
-
-Also add the following dependency for OpenAPI support in your Helidon MP application.
+Also make sure your project has the following dependency to include OpenAPI support in your Helidon MP application.
 [source,xml]
 ----
 include::{openapi-inc}[tag=mp-depc]

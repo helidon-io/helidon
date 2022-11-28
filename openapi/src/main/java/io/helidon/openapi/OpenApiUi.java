@@ -40,11 +40,9 @@ public interface OpenApiUi extends Service {
     /**
      * Creates a builder for a new {@code OpenApiUi} instance.
      *
-     * @param <T> type of the {@code OpenApiUi} to be built
-     * @param <B> type of the builder for T
      * @return new builder
      */
-    static <B extends Builder<B, T>, T extends OpenApiUi> Builder<B, T> builder() {
+    static Builder<?, ?> builder() {
         return OpenApiUiBase.builder();
     }
 
@@ -64,13 +62,13 @@ public interface OpenApiUi extends Service {
      * @param <T> type of the {@code OpenApiUi} to be build
      * @param <B> type of the builder for T
      */
-    @Configured(prefix = Builder.OPENAPI_UI_CONFIG_PREFIX, provides = OpenApiUi.class)
-    interface Builder<B extends Builder<B, T>, T extends OpenApiUi> {
+    @Configured(prefix = Builder.OPENAPI_UI_CONFIG_KEY)
+    interface Builder<B extends Builder<B, T>, T extends OpenApiUi> extends io.helidon.common.Builder<B, T> {
 
         /**
          * Config prefix within the {@value OpenAPISupport.Builder#CONFIG_KEY} section containing U/I settings.
          */
-        String OPENAPI_UI_CONFIG_PREFIX = "ui";
+        String OPENAPI_UI_CONFIG_KEY = "ui";
 
         /**
          * Config key for the {@code enabled} setting.
@@ -102,7 +100,7 @@ public interface OpenApiUi extends Service {
          * @param isEnabled true/false
          * @return updated builder
          */
-        @ConfiguredOption(value = "true")
+        @ConfiguredOption(key = "enabled", value = "true")
         B isEnabled(boolean isEnabled);
 
         /**
@@ -115,7 +113,7 @@ public interface OpenApiUi extends Service {
         B webContext(String webContext);
 
         /**
-         * Updates the builder using the specified config node at {@value OPENAPI_UI_CONFIG_PREFIX} within the
+         * Updates the builder using the specified config node at {@value OPENAPI_UI_CONFIG_KEY} within the
          * {@value OpenAPISupport.Builder#CONFIG_KEY} config section.
          *
          * @param uiConfig config node containing the U/I settings
@@ -138,6 +136,27 @@ public interface OpenApiUi extends Service {
         }
 
         /**
+         * Assigns how the OpenAPI U/I can obtain a formatted document for a given media type.
+         * <p>
+         *     Developers typically do not invoke this method. Helidon invokes it internally.
+         * </p>
+         *
+         * @param documentPreparer the function for obtaining the formatted document
+         * @return updated builder
+         */
+        B documentPreparer(Function<MediaType, String> documentPreparer);
+
+        /**
+         * Assigns the web context the {@code OpenAPISupport} instance uses.
+         * <p>
+         *     Developers typically do not invoke this method. Helidon invokes it internally.
+         * </p>
+         * @param openApiWebContext the web context used by the {@code OpenAPISupport} service
+         * @return updated builder
+         */
+        B openApiSupportWebContext(String openApiWebContext);
+
+        /**
          * Creates a new {@link OpenApiUi} from the builder.
          *
          * @param documentPreparer function which converts a {@link MediaType} into the corresponding expression of the OpenAPI
@@ -145,6 +164,10 @@ public interface OpenApiUi extends Service {
          * @param openAPIWebContext web context for the OpenAPI instance
          * @return new {@code OpenApiUi}
          */
-        OpenApiUi build(Function<MediaType, String> documentPreparer, String openAPIWebContext);
+        default OpenApiUi build(Function<MediaType, String> documentPreparer, String openAPIWebContext) {
+            documentPreparer(documentPreparer);
+            openApiSupportWebContext(openAPIWebContext);
+            return build();
+        }
     }
 }

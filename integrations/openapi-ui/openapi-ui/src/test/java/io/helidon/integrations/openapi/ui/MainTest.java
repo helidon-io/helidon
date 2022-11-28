@@ -289,7 +289,7 @@ class MainTest {
         if (uiSupportBuilder == null) {
             uiSupportBuilder = OpenApiUiFull.builder()
                     .config(config.get(OpenAPISupport.Builder.CONFIG_KEY)
-                                    .get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_PREFIX));
+                                    .get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY));
         }
         if (openApiSupportBuilder == null) {
             openApiSupportBuilder = OpenAPISupport.builder()

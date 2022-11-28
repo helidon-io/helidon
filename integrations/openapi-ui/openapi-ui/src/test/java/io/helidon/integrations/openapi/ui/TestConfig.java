@@ -41,7 +41,7 @@ class TestConfig {
         Config config = Config.create(ConfigSources.create(settings));
         Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY);
         OpenApiUiFull.Builder uiSupportBuilder = OpenApiUiFull.builder()
-                .config(openApiConfig.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_PREFIX));
+                .config(openApiConfig.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY));
         OpenAPISupport openAPISupportBuilder = OpenAPISupport.builder()
                 .config(openApiConfig)
                 .ui(uiSupportBuilder)

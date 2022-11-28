@@ -23,6 +23,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :se-flavor:
 
 // tag::preamble[]
+:feature-name: Helidon OpenAPI U/I support
 :screen-capture-start: openapi-ui-screen-capture-greeting-{flavor-lc}-start.png
 :screen-capture-expanded: openapi-ui-screen-capture-greeting-{flavor-lc}-expanded.png
 // end::preamble[]
@@ -42,28 +43,43 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 // tag::overview[]
 == Overview
 
-SmallRye offers an OpenAPI user interface link:{smallrye-openapi-ui-base-url}[component] which displays, as part of your application, a web page from which users can invoke the operations declared in your application's OpenAPI document.
-The U/I lists, for each declared endpoint, the HTTP method it uses, any input parameters, and example output (if included in the OpenAPI document) and allows you to submit a request to the endpoint.
-While not generally suitable for end-users, the OpenAPI U/I can be very useful for demonstrating and "test driving" your service's endpoints.
+SmallRye offers an link:{smallrye-openapi-ui-base-url}[OpenAPI user interface component] which displays a web page based on your application's OpenAPI document.
+Through that U/I, users can invoke the operations declared in the document.
+While not generally suitable for end-users, the OpenAPI U/I can be useful for demonstrating and "test driving" your service's endpoints.
 
-The Helidon {flavor-uc} OpenAPI U/I component  lets you add that web page to your application very simply.
+The Helidon OpenAPI component allows you to integrate the SmallRye U/I into your application, adding the U/I web page to your application very simply.
 
 
 // end::overview[]
+
+// tag::dependencies[]
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.openapi-ui</groupId>
+    <artifactId>helidon-integrations-openapi-ui</artifactId>
+</dependency>
+----
+
+// end::dependencies[]
 
 // tag::usage[]
 // tag::usage-start[]
 == Usage
 ifdef::se-flavor[]
-You need to modify your application to create and register routing for the Helidon OpenAPI and Helidon OpenAPI U/I components. See the <<API,API>> section below for details.
+Make sure your application creates a Helidon `OpenAPISupport` instance and registers it for routing (described in detail on link:{openapi-page}[the Helidon OpenAPI page]). `OpenAPISupport` automatically prepares the OpenAPI U/I if you also declare a dependency on the Helidon OpenAPI U/I integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the U/I behavior.
 endif::se-flavor[]
 
-After you
-ifdef::se-flavor[modify, build,]
-ifdef::mp-flavor[build]
-and start your service, access the OpenAPI U/I at `http://your-host:your-port/openapi-ui`. You can configure the web context part of the URL (`/openapi-ui`) if you want to use a different path. See the <<Configuration,configuration>> section below.
+After you modify, build, and start your Helidon {flavor-uc} service, you can access the OpenAPI U/I by default at `http://your-host:your-port/openapi/ui`.
+Helidon also uses conventional content negotiation at `http://your-host:your-port/openapi` returning the U/I to browsers (or any client that accepts HTML) and the OpenAPI document otherwise.
 
-The example below shows the U/I displayed for the Helidon QuickStart {flavor-uc} greeting application.
+You can customize the path using
+ifdef::se-flavor[either the API or ]
+xref:Configuration[configuration].
+
+The example below shows the U/I if you modify the Helidon QuickStart {flavor-uc} greeting application.
 
 .OpenAPI U/I Screen for Helidon {flavor-uc} QuickStart Greeting Application
 image::{screen-capture-start}[align="center",title="Example OpenAPI U/I Screen"]
@@ -77,7 +93,7 @@ With the OpenAPI U/I displayed, follow these steps to access one of your service
 . The U/I expands the operation, showing any input parameters and the possible responses. Click the "Try it out" button in the operation's row.
 . The U/I now allows you to type into the input parameter field(s) to the right of each parameter name. Enter any required parameter values (first highlighted rectangle), then click "Execute" (highlighted arrow).
 . Just below the "Execute" button the U/I shows several sections: +
-* the equivalent `curl` command for submitting the request,
+* the equivalent `curl` command for submitting the request with your inputs,
 * the URL used for the request, and
 * a new "Server response" section (second highlighted rectangle) containing several items from the response: +
 ** HTTP status code
@@ -94,23 +110,50 @@ image::{screen-capture-expanded}[align="center",title="Example OpenAPI U/I Scree
 
 // tag::config-intro[]
 == Configuration
-To control how the Helidon OpenAPI U/I service behaves, add an `openapi.ui` section to
+To use configuration to control how the Helidon OpenAPI U/I service behaves, add an `openapi.ui` section to
 ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
 ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
-include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUiSupport.adoc[tag=config,leveloffset=+1]
-The default `web-context` value is `/openapi-ui`.
+include::{rootdir}/config/io_helidon_openapi_OpenApiUi.adoc[tag=config,leveloffset=+1]
+The default U/I `web-context` value is the web context for your `OpenAPISupport` service with the added suffix `/ui`. If you use the default web context for both `OpenAPISupport` and the U/I, the U/I responds at `/openapi/ui`.
 
 // end::config-intro[]
 
 // tag::config-details[]
 
-Recall that you can xref:{openapi-page}#config[configure the Helidon OpenAPI component] to change the URL where it serves the OpenAPI document.
-If you do so, Helidon automatically tells the U/I component to use that configured OpenAPI URL, not the default.
-You do not need to configure the U/I yourself to reflect the change.
+You can use configuration to affect the U/I path in two ways.
 
-The SmallRye OpenAPI U/I component accepts several options, but they are of minimal use to application developers and they must be passed programmatically.
-Helidon allows you to specify these values using configuration in the `openapi.ui.options` section and then passes the corresponding options programmatically to SmallRye for you.
+* Configure the OpenAPI endpoint path (the `/openapi` part).
++
+Recall that you can xref:{openapi-page}#config[configure the Helidon OpenAPI component] to change where it serves the OpenAPI document.
++
+.Configuring the OpenAPI web context
+[source,yaml]
+----
+openapi:
+  web-context: /my-openapi
+----
+In this case, the path for the U/I component is your customized OpenAPI path with `/ui` as a suffix.
+With the example above, the U/I responds at `/my-openapi/ui` and
+Helidon uses standard content negotiation at `/my-openapi`.
+* Separately, configure the entire web context path for the U/I independently from the web context for OpenAPI.
++
+.Configuring the OpenAPI U/I web context
+[source,yaml]
+----
+openapi:
+  ui:
+    web-context: /my-ui
+----
+
+[NOTE]
+====
+The `ui.web-context` setting assigns the _entire_ web-context for the U/I, not the suffix appended the `OpenAPISupport` endpoint.
+====
+With this configuration, the U/I responds at `/my-ui` regardless of the path for OpenAPI itself.
+
+The SmallRye OpenAPI U/I component accepts several options, but they are of minimal use to application developers and they must be passed to the SmallRye U/I code programmatically.
+Helidon allows you to specify these values using configuration in the `openapi.ui.options` section. Helidon then passes the corresponding options to SmallRye for you.
 To configure any of these settings, use the enum values--they are all lower case--declared in  the SmallRye link:{smallrye-openapi-ui-base-url}/src/main/java/io/smallrye/openapi/ui/Option.java[`Option.java`] class as the keys in your Helidon configuration.
 
 [NOTE]
