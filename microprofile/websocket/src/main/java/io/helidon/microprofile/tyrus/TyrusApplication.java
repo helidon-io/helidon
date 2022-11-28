@@ -28,14 +28,14 @@ import jakarta.websocket.server.ServerApplicationConfig;
 /**
  * Represents a websocket application with class and config endpoints.
  */
-public final class WebSocketApplication {
+public final class TyrusApplication {
 
-    private Class<? extends ServerApplicationConfig> applicationClass;
-    private Set<Class<?>> annotatedEndpoints;
-    private Set<Class<? extends Endpoint>> programmaticEndpoints;
-    private Set<Extension> extensions;
+    private final Class<? extends ServerApplicationConfig> applicationClass;
+    private final Set<Class<?>> annotatedEndpoints;
+    private final Set<Class<? extends Endpoint>> programmaticEndpoints;
+    private final Set<Extension> extensions;
 
-    private WebSocketApplication(Builder builder) {
+    private TyrusApplication(Builder builder) {
         this.applicationClass = builder.applicationClass;
         this.annotatedEndpoints = builder.annotatedEndpoints;
         this.programmaticEndpoints = builder.programmaticEndpoints;
@@ -43,7 +43,7 @@ public final class WebSocketApplication {
     }
 
     /**
-     * A new fluent API builder to create a customized {@link WebSocketApplication}.
+     * A new fluent API builder to create a customized {@link TyrusApplication}.
      *
      * @return a new builder instance
      */
@@ -88,15 +88,15 @@ public final class WebSocketApplication {
     }
 
     /**
-     * Fluent API builder to create {@link WebSocketApplication} instances.
+     * Fluent API builder to create {@link TyrusApplication} instances.
      */
     public static class Builder {
-        private static final Logger LOGGER = Logger.getLogger(WebSocketApplication.Builder.class.getName());
+        private static final Logger LOGGER = Logger.getLogger(TyrusApplication.Builder.class.getName());
 
         private Class<? extends ServerApplicationConfig> applicationClass;
-        private Set<Class<?>> annotatedEndpoints = new HashSet<>();
-        private Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
-        private Set<Extension> extensions = new HashSet<>();
+        private final Set<Class<?>> annotatedEndpoints = new HashSet<>();
+        private final Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
+        private final Set<Extension> extensions = new HashSet<>();
 
         /**
          * Updates an application class in the builder. Clears all results from scanning.
@@ -164,8 +164,8 @@ public final class WebSocketApplication {
          *
          * @return The application.
          */
-        public WebSocketApplication build() {
-            return new WebSocketApplication(this);
+        public TyrusApplication build() {
+            return new TyrusApplication(this);
         }
     }
 }
