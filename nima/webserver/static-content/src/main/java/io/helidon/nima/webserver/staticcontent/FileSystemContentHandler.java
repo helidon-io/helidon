@@ -44,7 +44,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     FileSystemContentHandler(StaticContentSupport.FileSystemBuilder builder) {
         super(builder);
 
-        this.root = builder.root();
+        this.root = builder.root().toAbsolutePath().normalize();
         this.cacheInMemory = new HashSet<>(builder.cacheInMemory());
     }
 
@@ -77,7 +77,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return false;
         }
 
-        String rawPath = req.path().rawPath();
+        String rawPath = req.prologue().uriPath().rawPath();
 
         String relativePath = root.relativize(path).toString();
         String requestedResource = rawPath.endsWith("/") ? relativePath + "/" : relativePath;
@@ -168,8 +168,27 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return;
         }
 
-        byte[] fileBytes = Files.readAllBytes(path);
+        if (Files.isDirectory(path)) {
+            try (var paths = Files.newDirectoryStream(path)) {
+                    paths.forEach(child -> {
+                    if (!Files.isDirectory(child)) {
+                        // we need to use forward slash even on Windows
+                        String childResource = root.relativize(child).toString().replace('\\', '/');
+                        try {
+                            addToInMemoryCache(childResource, child);
+                        } catch (IOException e) {
+                            LOGGER.log(Level.WARNING, "File " + child + " cannot be added to in memory cache", e);
+                        }
+                    }
+                });
+            }
+        } else {
+            addToInMemoryCache(resource, path);
+        }
+    }
 
+    private void addToInMemoryCache(String resource, Path path) throws IOException {
+        byte[] fileBytes = Files.readAllBytes(path);
         cacheInMemory(resource, detectType(fileName(path)), fileBytes, lastModified(path));
     }
 
@@ -177,6 +196,6 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         if (requestedPath.isEmpty()) {
             return root;
         }
-        return root.resolve(requestedPath).normalize();
+        return root.resolve(requestedPath).toAbsolutePath().normalize();
     }
 }
