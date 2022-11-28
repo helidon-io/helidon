@@ -207,6 +207,18 @@ public final class LruCache<K, V> {
         return capacity;
     }
 
+    /**
+     * Clear all records in the cache.
+     */
+    public void clear() {
+        writeLock.lock();
+        try {
+            backingMap.clear();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
     // for unit testing
     V directGet(K key) {
         return backingMap.get(key);

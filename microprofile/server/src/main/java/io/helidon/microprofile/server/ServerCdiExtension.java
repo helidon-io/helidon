@@ -447,6 +447,13 @@ public class ServerCdiExtension implements Extension {
         config.get("tmp-dir")
                 .as(Path.class)
                 .ifPresent(cpBuilder::tmpDir);
+
+        config.get("cache-in-memory")
+                .asList(String.class)
+                .stream()
+                .flatMap(List::stream)
+                .forEach(cpBuilder::addCacheInMemory);
+
         StaticContentSupport staticContent = cpBuilder.build();
 
         if (context.exists()) {

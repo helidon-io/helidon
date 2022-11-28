@@ -20,11 +20,18 @@ import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpException;
@@ -33,7 +40,7 @@ import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.PathMatchers;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
-import io.helidon.common.uri.UriQuery;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
@@ -44,13 +51,16 @@ import io.helidon.nima.webserver.http.ServerResponse;
 abstract class StaticContentHandler implements StaticContentSupport {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
 
+    private final Map<String, CachedHandlerInMemory> inMemoryCache = new ConcurrentHashMap<>();
+    private final LruCache<String, CachedHandler> handlerCache;
     private final String welcomeFilename;
     private final Function<String, String> resolvePathFunction;
-    private int webServerCounter = 0;
+    private final AtomicInteger webServerCounter = new AtomicInteger();
 
     StaticContentHandler(StaticContentSupport.Builder<?> builder) {
         this.welcomeFilename = builder.welcomeFileName();
         this.resolvePathFunction = builder.resolvePathFunction();
+        this.handlerCache = builder.handlerCache();
     }
 
     /**
@@ -100,23 +110,16 @@ abstract class StaticContentHandler implements StaticContentSupport {
         }
     }
 
-    /**
-     * Validates {@code If-Modify-Since} and {@code If-Unmodify-Since} headers and react accordingly.
-     * Returns {@code true} only if response was sent.
-     *
-     * @param modified        the last modification instance. If {@code null} then method just returns {@code false}.
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.common.http.RequestException if (un)modify since header is checked
-     */
     static void processModifyHeaders(Instant modified,
                                      ServerRequestHeaders requestHeaders,
-                                     ServerResponseHeaders responseHeaders) {
+                                     ServerResponseHeaders responseHeaders,
+                                     BiConsumer<ServerResponseHeaders, Instant> setModified) {
         if (modified == null) {
             return;
         }
+
         // Last-Modified
-        responseHeaders.lastModified(modified);
+        setModified.accept(responseHeaders, modified);
         // If-Modified-Since
         Optional<Instant> ifModSince = requestHeaders
                 .ifModifiedSince()
@@ -134,6 +137,21 @@ abstract class StaticContentHandler implements StaticContentSupport {
     }
 
     /**
+     * Validates {@code If-Modify-Since} and {@code If-Unmodify-Since} headers and react accordingly.
+     * Returns {@code true} only if response was sent.
+     *
+     * @param modified        the last modification instance. If {@code null} then method just returns {@code false}.
+     * @param requestHeaders  an HTTP request headers
+     * @param responseHeaders an HTTP response headers
+     * @throws io.helidon.common.http.RequestException if (un)modify since header is checked
+     */
+    static void processModifyHeaders(Instant modified,
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders) {
+        processModifyHeaders(modified, requestHeaders, responseHeaders, ServerResponseHeaders::lastModified);
+    }
+
+    /**
      * If provided {@code condition} is {@code true} then throws not found {@link io.helidon.common.http.RequestException}.
      *
      * @param condition if condition is true then throws an exception otherwise not
@@ -145,37 +163,17 @@ abstract class StaticContentHandler implements StaticContentSupport {
         }
     }
 
-    /**
-     * Redirects to the given location.
-     *
-     * @param request  request used to obtain query parameters for redirect
-     * @param response a server response to use
-     * @param location a location to redirect
-     */
-    static void redirect(ServerRequest request, ServerResponse response, String location) {
-        UriQuery query = request.query();
-        String locationWithQuery;
-        if (query.isEmpty()) {
-            locationWithQuery = location;
-        } else {
-            locationWithQuery = location + "?" + query.rawValue();
-        }
-
-        response.status(Http.Status.MOVED_PERMANENTLY_301);
-        response.header(Header.LOCATION, locationWithQuery);
-        response.send();
-    }
-
     @Override
-    public synchronized void beforeStart() {
-        webServerCounter++;
+    public void beforeStart() {
+        webServerCounter.incrementAndGet();
     }
 
     @Override
     public void afterStop() {
-        webServerCounter--;
-        if (webServerCounter <= 0) {
-            webServerCounter = 0;
+        int i = webServerCounter.decrementAndGet();
+
+        if (i <= 0) {
+            webServerCounter.set(0);
             releaseCache();
         }
     }
@@ -191,6 +189,8 @@ abstract class StaticContentHandler implements StaticContentSupport {
      * Should release cache (if any exists).
      */
     void releaseCache() {
+        handlerCache.clear();
+        inMemoryCache.clear();
     }
 
     /**
@@ -245,6 +245,51 @@ abstract class StaticContentHandler implements StaticContentSupport {
         return welcomeFilename;
     }
 
+    /**
+     * Cache in memory.
+     * Only use when explicitly requested by a user, we NEVER clear the cache during runtime. If you cache too much,
+     * you run out of memory.
+     *
+     * @param resource resource identifier (such as relative path), MUST be normalized and MUST exist to prevent caching
+     *                 records based on user's requests (that could cause us to cache the same resource multiple time using
+     *                 relative paths)
+     * @param handler  in memory handler
+     */
+    void cacheInMemory(String resource, CachedHandlerInMemory handler) {
+        inMemoryCache.put(resource, handler);
+    }
+
+    /**
+     * Get in memory handler (if one is registered).
+     *
+     * @param resource resource to find
+     * @return handler if found
+     */
+    Optional<CachedHandlerInMemory> cacheInMemory(String resource) {
+        return Optional.ofNullable(inMemoryCache.get(resource));
+    }
+
+    /**
+     * Find either in-memory cache or cached record.
+     *
+     * @param resource resource to locate cache record for
+     * @return cached handler
+     */
+
+    Optional<CachedHandler> cacheHandler(String resource) {
+        return cacheInMemory(resource)
+                .map(CachedHandler.class::cast)
+                .or(() -> handlerCache.get(resource));
+    }
+
+    void cacheHandler(String resource, CachedHandler cachedResource) {
+        handlerCache.put(resource, cachedResource);
+    }
+
+    LruCache<String, CachedHandler> handlerCache() {
+        return handlerCache;
+    }
+
     private static String unquoteETag(String etag) {
         if (etag == null || etag.isEmpty()) {
             return etag;
@@ -256,5 +301,40 @@ abstract class StaticContentHandler implements StaticContentSupport {
             etag = etag.substring(1, etag.length() - 1);
         }
         return etag;
+    }
+
+    void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Optional<Instant> lastModified) {
+        int contentLength = bytes.length;
+        Http.HeaderValue contentLengthHeader = Http.Header.create(Http.Header.CONTENT_LENGTH, contentLength);
+
+        CachedHandlerInMemory inMemoryResource;
+        if (lastModified.isEmpty()) {
+            inMemoryResource = new CachedHandlerInMemory(contentType,
+                                                         null,
+                                                         null,
+                                                         bytes,
+                                                         contentLength,
+                                                         contentLengthHeader);
+        } else {
+            // we can cache this, as this is a jar record
+            Http.HeaderValue lastModifiedHeader = Http.Header.create(Http.Header.LAST_MODIFIED,
+                                                                     true,
+                                                                     false,
+                                                                     formatLastModified(lastModified.get()));
+
+            inMemoryResource = new CachedHandlerInMemory(contentType,
+                                                         lastModified.get(),
+                                                         (headers, instant) -> headers.set(lastModifiedHeader),
+                                                         bytes,
+                                                         contentLength,
+                                                         contentLengthHeader);
+        }
+
+        cacheInMemory(resource, inMemoryResource);
+    }
+
+    static String formatLastModified(Instant lastModified) {
+        ZonedDateTime dt = ZonedDateTime.ofInstant(lastModified, ZoneId.systemDefault());
+        return dt.format(Http.DateTime.RFC_1123_DATE_TIME);
     }
 }
