@@ -19,7 +19,6 @@ package io.helidon.tracing.zipkin;
 import java.util.List;
 
 import io.helidon.tracing.Tag;
-import io.helidon.tracing.opentracing.OpenTracing;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -36,6 +35,7 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     private final Tracer tracer;
     private final Tracer.SpanBuilder spanBuilder;
     private final List<Tag<?>> tags;
+    private boolean isClient;
 
     ZipkinSpanBuilder(Tracer tracer, Tracer.SpanBuilder spanBuilder, List<Tag<?>> tags) {
         this.tracer = tracer;
@@ -63,6 +63,9 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
 
     @Override
     public Tracer.SpanBuilder withTag(String key, String value) {
+        if ("span.kind".equals(key)) {
+            isClient = "client".equals(value);
+        }
         spanBuilder.withTag(key, value);
         return this;
     }
@@ -88,12 +91,14 @@ class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     @Override
     public Span start() {
         Span span = spanBuilder.start();
-        span.log("sr");
 
-        io.helidon.tracing.Span helidonSpan = OpenTracing.create(tracer, span);
-        tags.forEach(tag -> tag.apply(helidonSpan));
+        if (isClient) {
+            span.log("cs");
+        } else {
+            span.log("sr");
+        }
 
-        return new ZipkinSpan(span);
+        return new ZipkinSpan(span, isClient);
     }
 
     @Override
