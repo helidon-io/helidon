@@ -23,8 +23,8 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @HelidonTest
@@ -44,19 +44,23 @@ public class TestJBatchEndpoint {
 
         Integer responseJobId = jsonObject.getInt("Started a job with Execution ID: ");
         assertNotNull(responseJobId, "Response Job Id");
+        boolean result = false;
+        for (int i = 1; i < 10; i++) {
+            //Wait a bit for it to complete
+            Thread.sleep(i*1000);
 
-        //Wait a bit for it to complete
-        Thread.sleep(3000);
+            //Examine the results
+            jsonObject = webTarget
+                    .path("batch/status/" + responseJobId)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get(JsonObject.class);
 
-        //Examine the results
-        jsonObject = webTarget
-                .path("batch/status/" + responseJobId)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class);
+            String responseString = jsonObject.toString();
+            result = responseString.equals("{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}");
 
-        String responseString = jsonObject.toString();
+            if (result) break;
+        }
 
-        assertEquals("{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}",
-                responseString, "Job Result string");
+        assertTrue(result, "Job Result string");
     }
 }
