@@ -23,7 +23,7 @@
        version="3.0"
        bean-discovery-mode="annotated">
     <scan>
-        <exclude name="io.helidon.integrations.cdi.jpa.JtaDataSourceProvider">
+        <exclude name="io.helidon.integrations.cdi.jpa.JtaAdaptingDataSourceProvider">
             <if-class-not-available name="jakarta.transaction.Transaction"/>
         </exclude>
         <exclude name="io.helidon.integrations.cdi.jpa.BeanManagerBackedDataSourceProvider">

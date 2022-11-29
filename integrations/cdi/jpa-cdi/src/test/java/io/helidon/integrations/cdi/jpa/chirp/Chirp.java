@@ -23,17 +23,13 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 @Access(value = AccessType.FIELD)
 @Entity(name = "Chirp")
-@SequenceGenerator(allocationSize = 1, initialValue = 1, name = "CHIRP", sequenceName = "CHIRP_SEQ")
 @Table(name = "CHIRP")
 public class Chirp implements Serializable {
 
@@ -45,7 +41,6 @@ public class Chirp implements Serializable {
         nullable = false,
         updatable = false
     )
-    @GeneratedValue(generator = "CHIRP", strategy = GenerationType.SEQUENCE)
     @Id
     private Integer id;
 
@@ -83,8 +78,9 @@ public class Chirp implements Serializable {
         super();
     }
 
-    public Chirp(final Microblog microblog, final String contents) {
+    public Chirp(final int id, final Microblog microblog, final String contents) {
         super();
+        this.id = id;
         this.setMicroblog(microblog);
         this.setContents(contents);
     }

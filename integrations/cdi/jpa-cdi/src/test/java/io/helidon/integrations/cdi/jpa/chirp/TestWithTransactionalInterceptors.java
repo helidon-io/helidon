@@ -244,7 +244,7 @@ class TestWithTransactionalInterceptors {
         assertAuthorTableIsEmpty();
 
         // Persist an Author.
-        Author author = new Author("Abraham Lincoln");
+        Author author = new Author(1, "Abraham Lincoln");
         em.persist(author);
         assertThat(em.contains(author), is(true));
     }

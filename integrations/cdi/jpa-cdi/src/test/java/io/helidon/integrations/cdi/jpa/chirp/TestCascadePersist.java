@@ -197,24 +197,18 @@ class TestCascadePersist {
         assertThat(em.isJoinedToTransaction(), is(true));
 
         // Create an author but don't persist him explicitly.
-        Author author = new Author("Abraham Lincoln");
-
-        // No trip to the database has happened yet, so the author's
-        // identifier isn't set yet.
-        assertThat(author.getId(), nullValue());
+        Author author = new Author(1, "Abraham Lincoln");
+        assertThat(author.getId(), is(1));
 
         // Set up a blog for that Author.
-        Microblog blog = new Microblog(author, "Gettysburg Address Draft 1");
+        Microblog blog = new Microblog(1, author, "Gettysburg Address Draft 1");
 
         // Persist the blog.  The Author should be persisted too.
         em.persist(blog);
         assertThat(em.contains(blog), is(true));
         assertThat(em.contains(author), is(true));
 
-        // Commit the transaction.  Because we're relying on the
-        // default flush mode, this will cause a flush to the
-        // database, which, in turn, will result in identifier
-        // generation.
+        // Commit the transaction.
         tm.commit();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         assertThat(author.getId(), is(1));
@@ -259,9 +253,9 @@ class TestCascadePersist {
         blog = newBlog;
 
         // Now let's have our author write some stuff.
-        final Chirp chirp1 = new Chirp(blog, "Four score and seven years ago");
-        final Chirp chirp2 = new Chirp(blog, "our fathers brought forth on this continent,");
-        final Chirp chirp3 = new Chirp(blog, "a new nation, conceived in Liberty, "
+        final Chirp chirp1 = new Chirp(1, blog, "Four score and seven years ago");
+        final Chirp chirp2 = new Chirp(2, blog, "our fathers brought forth on this continent,");
+        final Chirp chirp3 = new Chirp(3, blog, "a new nation, conceived in Liberty, "
                                        + "and dedicated to the proposition that all men are created "
                                        + "equal. Now we are engaged in a great civil war, testing "
                                        + "whether that nation, or any nation so conceived and so "

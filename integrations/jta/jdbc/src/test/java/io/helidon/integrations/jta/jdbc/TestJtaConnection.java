@@ -127,6 +127,7 @@ final class TestJtaConnection {
         try (Connection physicalConnection = h2ds.getConnection();
              JtaConnection logicalConnection = (JtaConnection) JtaConnection.connection(tm::getTransaction,
                                                                                         tsr,
+                                                                                        true,
                                                                                         null,
                                                                                         physicalConnection)) {
 

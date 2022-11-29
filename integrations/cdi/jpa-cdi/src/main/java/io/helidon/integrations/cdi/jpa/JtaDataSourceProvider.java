@@ -16,6 +16,7 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,23 +25,27 @@ import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import javax.transaction.xa.XAResource;
 
-import io.helidon.integrations.jta.jdbc.ExceptionConverter;
-import io.helidon.integrations.jta.jdbc.JtaAdaptingDataSource;
+import io.helidon.integrations.jta.jdbc.JtaDataSource;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.BeforeDestroyed;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionScoped;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
-@ApplicationScoped
+@Deprecated(forRemoval = true, since = "3.0.3")
 class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
 
 
@@ -88,8 +93,6 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
 
     private final TransactionSynchronizationRegistry tsr;
 
-    private final ExceptionConverter exceptionConverter;
-
     /**
      * A {@link ConcurrentMap} (usually a {@link ConcurrentHashMap})
      * that stores {@link JtaDataSource} instances under their names.
@@ -104,12 +107,12 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * Object#equals(Object)} and {@link Object#hashCode()} methods do
      * not behave in such a way that their underlying contextual
      * instances can be tested for equality.  When these {@link
-     * DataSource}s are wrapped by {@link JtaAdaptingDataSource} instances,
-     * we need to ensure that the same {@link JtaAdaptingDataSource} is
-     * handed out each time a given data source name is supplied.
-     * This {@link ConcurrentMap} provides those semantics.</p>
+     * DataSource}s are wrapped by {@link JtaDataSource} instances, we
+     * need to ensure that the same {@link JtaDataSource} is handed
+     * out each time a given data source name is supplied.  This
+     * {@link ConcurrentMap} provides those semantics.</p>
      *
-     * @see JtaAdaptingDataSource
+     * @see JtaDataSource
      *
      * @see <a
      * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#client_proxy_invocation">section
@@ -140,7 +143,6 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         this.objects = null;
         this.transactionManager = null;
         this.tsr = null;
-        this.exceptionConverter = null;
         this.dataSourcesByName = null;
     }
 
@@ -160,16 +162,14 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * {@code transactionManager} or {@code tsr} is {@code null}
      */
     @Inject
-    JtaDataSourceProvider(Instance<Object> objects,
-                          TransactionManager transactionManager,
-                          TransactionSynchronizationRegistry tsr) {
+    JtaDataSourceProvider(final Instance<Object> objects,
+                          final TransactionManager transactionManager,
+                          final TransactionSynchronizationRegistry tsr) {
         super();
         this.objects = Objects.requireNonNull(objects);
         this.transactionManager = Objects.requireNonNull(transactionManager);
         this.tsr = Objects.requireNonNull(tsr);
         this.dataSourcesByName = new ConcurrentHashMap<>();
-        Instance<ExceptionConverter> i = objects.select(ExceptionConverter.class);
-        this.exceptionConverter = i.isUnsatisfied() ? null : i.get();
     }
 
 
@@ -185,13 +185,13 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * {@code null}.</p>
      *
      * @param jta if {@code true}, the {@link DataSource} that is
-     * returned will be enrolled in JTA-compliant transactions
+     * returned may be enrolled in JTA-compliant transactions
      *
-     * @param useDefaultJta if {@code true}, and if the {@code jta}
-     * parameter value is {@code true}, the supplied {@code
-     * dataSourceName} may be ignored and a default {@link DataSource}
-     * that will be enrolled in JTA-compliant transactions will be
-     * returned if possible
+     * @param useDefaultJta if {@code true}, and if the {@code
+     * jta} parameter value is {@code true}, the supplied {@code
+     * dataSourceName} may be ignored and a default {@link
+     * DataSource} eligible for enrolling in JTA-compliant
+     * transactions will be returned if possible
      *
      * @param dataSourceName the name of the {@link DataSource} to
      * return; may be {@code null}; ignored if both {@code jta}
@@ -208,15 +208,15 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @see PersistenceUnitInfoBean#getNonJtaDataSource()
      */
     @Override
-    public DataSource getDataSource(boolean jta,
-                                    boolean useDefaultJta,
-                                    String dataSourceName) {
-        DataSource returnValue;
+    public DataSource getDataSource(final boolean jta,
+                                    final boolean useDefaultJta,
+                                    final String dataSourceName) {
+        final DataSource returnValue;
         if (jta) {
             try {
                 if (dataSourceName == null) {
                     if (useDefaultJta) {
-                        Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class);
+                        final Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class);
                         if (xaDataSources.isUnsatisfied()) {
                             returnValue = this.convert(this.objects.select(DataSource.class).get(), jta, null);
                         } else {
@@ -226,19 +226,18 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
                         returnValue = null;
                     }
                 } else {
-                    Named named = NamedLiteral.of(dataSourceName);
-                    Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class, named);
+                    final Named named = NamedLiteral.of(dataSourceName);
+                    final Instance<XADataSource> xaDataSources = this.objects.select(XADataSource.class, named);
                     if (xaDataSources.isUnsatisfied()) {
                         returnValue = this.convert(this.objects.select(DataSource.class, named).get(), jta, dataSourceName);
                     } else {
                         returnValue = this.convert(xaDataSources.get(), jta, dataSourceName);
                     }
                 }
-            } catch (SQLException sqlException) {
+            } catch (final SQLException sqlException) {
                 throw new IllegalStateException(sqlException.getMessage(), sqlException);
             }
         } else if (dataSourceName == null) {
-            // There is no default to use.
             returnValue = null;
         } else {
             returnValue = this.objects.select(DataSource.class, NamedLiteral.of(dataSourceName)).get();
@@ -266,25 +265,33 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @exception NullPointerException if {@code xaDataSource} is
      * {@code null}
      */
-    private DataSource convert(XADataSource xaDataSource, boolean jta, String dataSourceName)
+    @SuppressWarnings("removal")
+    private DataSource convert(final XADataSource xaDataSource, final boolean jta, final String dataSourceName)
         throws SQLException {
         Objects.requireNonNull(xaDataSource);
-        return
+        final DataSource returnValue =
             this.dataSourcesByName
             .computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                             ignoredKey -> xaDataSource instanceof DataSource ds
-                             ? ds
-                             : new XADataSourceWrappingDataSource(xaDataSource,
-                                                                  this::enlistResource));
+                             ignoredKey -> new XADataSourceWrappingDataSource(xaDataSource,
+                                                                              this::enlistResource));
+        return returnValue;
     }
 
-    private void enlistResource(XAResource resource) {
+    private boolean activeTransaction() {
         try {
-            Transaction transaction = this.transactionManager.getTransaction();
+            return this.transactionManager.getStatus() == Status.STATUS_ACTIVE;
+        } catch (final SystemException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private void enlistResource(final XAResource resource) {
+        try {
+            final Transaction transaction = this.transactionManager.getTransaction();
             if (transaction != null && transaction.getStatus() == Status.STATUS_ACTIVE) {
                 transaction.enlistResource(resource);
             }
-        } catch (RollbackException | SystemException e) {
+        } catch (final RollbackException | SystemException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
@@ -296,7 +303,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * <p>In many cases this method simply returns the supplied {@link
      * DataSource} unmodified.</p>
      *
-     * <p>In many other cases, a new {@link JtaAdaptingDataSource} wrapping
+     * <p>In many other cases, a new {@link JtaDataSource} wrapping
      * the supplied {@link DataSource} and providing emulated JTA
      * semantics is returned instead.</p>
      *
@@ -314,10 +321,11 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * @return a {@link DataSource} representing the supplied {@link
      * DataSource}, or {@code null}
      */
-    private DataSource convert(DataSource dataSource, boolean jta, String dataSourceName)
+    @SuppressWarnings("removal")
+    private DataSource convert(final DataSource dataSource, final boolean jta, final String dataSourceName)
         throws SQLException {
-        DataSource returnValue;
-        if (!jta || dataSource == null || (dataSource instanceof JtaAdaptingDataSource)) {
+        final DataSource returnValue;
+        if (!jta || dataSource == null || (dataSource instanceof JtaDataSource)) {
             returnValue = dataSource;
         } else if (dataSource instanceof XADataSource) {
             // Edge case
@@ -325,12 +333,62 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       k -> new JtaAdaptingDataSource(this.transactionManager,
-                                                                                      this.tsr,
-                                                                                      this.exceptionConverter,
-                                                                                      dataSource));
+                                                       k -> new JtaDataSource(dataSource, this::activeTransaction));
+            this.registerSynchronizationIfTransactionIsActive(returnValue);
         }
         return returnValue;
+    }
+
+    private void registerSynchronizationIfTransactionIsActive(final Object dataSource) {
+        if (dataSource instanceof Synchronization && this.tsr.getTransactionStatus() == Status.STATUS_ACTIVE) {
+            this.tsr.registerInterposedSynchronization((Synchronization) dataSource);
+        }
+    }
+
+    /*
+     * CDI Observer methods.
+     */
+
+    /**
+     * Invoked by CDI when the {@linkplain TransactionScoped
+     * transaction scope} becomes active, which definitionally happens
+     * when a new JTA transaction begins.
+     *
+     * <p>This implementation ensures that any {@link DataSource} that
+     * is also a {@link Synchronization} that is stored in the {@link
+     * #dataSourcesByName} field is {@linkplain
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
+     * registered} with the new tranaction.</p>
+     *
+     * @param event ignored by this method
+     *
+     * @exception NullPointerException if {@code tsr} is {@code null}
+     * for any reason
+     *
+     * @see #dataSourcesByName
+     *
+     * @see TransactionScoped
+     *
+     * @see
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
+     */
+    private void whenTransactionStarts(@Observes @Initialized(TransactionScoped.class) final Object event) {
+        this.dataSourcesByName.forEach((ignoredKey, dataSource) -> this.registerSynchronizationIfTransactionIsActive(dataSource));
+    }
+
+    /**
+     * Invoked by CDI when the application scope is about to be
+     * destroyed, signalling the end of the program.
+     *
+     * <p>This implementation calls {@link Map#clear()} on the {@link
+     * #dataSourcesByName} field value.</p>
+     *
+     * @param event ignored by this method
+     *
+     * @see BeforeDestroyed
+     */
+    private void whenApplicationTerminates(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event) {
+        this.dataSourcesByName.clear();
     }
 
 }

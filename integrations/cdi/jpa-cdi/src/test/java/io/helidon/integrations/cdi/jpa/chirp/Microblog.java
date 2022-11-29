@@ -27,13 +27,10 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -43,7 +40,6 @@ import jakarta.persistence.UniqueConstraint;
  */
 @Access(value = AccessType.FIELD)
 @Entity(name = "Microblog")
-@SequenceGenerator(allocationSize = 1, initialValue = 1, name = "MICROBLOG", sequenceName = "MICROBLOG_SEQ")
 @Table(
     name = "MICROBLOG",
     uniqueConstraints = {
@@ -64,7 +60,6 @@ public class Microblog implements Serializable {
         name = "ID",
         updatable = false
     )
-    @GeneratedValue(generator = "MICROBLOG", strategy = GenerationType.SEQUENCE)
     @Id
     private Integer id;
 
@@ -104,8 +99,9 @@ public class Microblog implements Serializable {
         super();
     }
 
-    public Microblog(final Author author, final String name) {
+    public Microblog(final int id, final Author author, final String name) {
         super();
+        this.id = id;
         this.author = Objects.requireNonNull(author);
         this.name = Objects.requireNonNull(name);
     }

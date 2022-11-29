@@ -210,7 +210,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // Create a JPA entity and try to insert it.  This should fail
         // because according to JPA a TransactionRequiredException
         // will be thrown.
-        Author author1 = new Author("Abraham Lincoln");
+        Author author1 = new Author(1, "Abraham Lincoln");
         try {
             em.persist(author1);
             fail("A TransactionRequiredException should have been thrown");
@@ -218,7 +218,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
 
         }
         assertThat(em.contains(author1), is(false));
-        assertThat(author1.getId(), nullValue());
+        assertThat(author1.getId(), is(1));
 
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
@@ -244,7 +244,7 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertThat(em.isJoinedToTransaction(), is(false));
         assertThat(transactionScopedContext.isActive(), is(false));
         assertThat(em.contains(author1), is(false));
-        assertThat(author1.getId(), nullValue());
+        assertThat(author1.getId(), is(1));
 
         // Start another transaction.
         tm.begin();
@@ -252,14 +252,10 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertThat(em.isJoinedToTransaction(), is(true));
 
         // Persist our Author.
-        assertThat(author1.getId(), nullValue());
+        assertThat(author1.getId(), is(1));
         em.persist(author1);
         assertThat(em.contains(author1), is(true));
 
-        // We're using sequences for ID generation, so persist() will
-        // cause an ID to be installed.
-        assertThat(author1.getId(), is(1));
-        
         // Commit the transaction and flush changes to the database.
         tm.commit();
 

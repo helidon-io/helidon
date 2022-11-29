@@ -176,7 +176,7 @@ class TestExtendedSynchronizedEntityManager {
 
         // Create a JPA entity and try to insert it.  Should be just
         // fine.
-        Author author = new Author("Abraham Lincoln");
+        Author author = new Author(1, "Abraham Lincoln");
 
         // With an EXTENDED EntityManager, persisting outside of a
         // transaction is OK.

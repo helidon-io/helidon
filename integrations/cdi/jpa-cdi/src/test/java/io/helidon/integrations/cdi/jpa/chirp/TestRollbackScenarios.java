@@ -196,8 +196,8 @@ class TestRollbackScenarios {
         assertThat(em.isJoinedToTransaction(), is(true));
 
         // Create a JPA entity and insert it.
-        Author author = new Author("Abraham Lincoln");
-        assertThat(author.getId(), is(nullValue()));
+        Author author = new Author(1, "Abraham Lincoln");
+        assertThat(author.getId(), is(1));
 
         em.persist(author);
         // assertThat(author.getId(), is(nullValue()));
@@ -246,8 +246,8 @@ class TestRollbackScenarios {
         assertThat(em.contains(author), is(false));
 
         // Create a new unmanaged Author.
-        author = new Author("John Kennedy");
-        assertThat(author.getId(), is(nullValue()));
+        author = new Author(2, "John Kennedy");
+        assertThat(author.getId(), is(2));
 
         tm.begin();
         em.persist(author);
@@ -327,7 +327,7 @@ class TestRollbackScenarios {
 
         // Cause a timeout-tripped rollback.
         tm.setTransactionTimeout(1); // 1 second
-        author = new Author("Woodrow Wilson");
+        author = new Author(3, "Woodrow Wilson");
         tm.begin();
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
         Thread.sleep(1500L); // 1.5 seconds (arbitrarily greater than 1 second)

@@ -84,6 +84,16 @@ final class JtaConnection extends ConditionallyCloseableConnection {
     private final TransactionSynchronizationRegistry tsr;
 
     /**
+     * Whether any {@link Synchronization}s registered by this {@link JtaConnection}
+     * should be registered as interposed synchronizations.
+     *
+     * @see TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)
+     *
+     * @see Transaction#registerSynchronization(Synchronization)
+     */
+    private final boolean interposedSynchronizations;
+
+    /**
      * An {@link ExceptionConverter}.
      *
      * <p>This field may be {@code null}.</p>
@@ -108,6 +118,11 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      *
      * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
+     * @param interposedSynchronizations whether any {@link Synchronization}s registered by this {@link JtaConnection}
+     * should be registered as interposed synchronizations; see {@link
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
+     * Transaction#registerSynchronization(Synchronization)}
+     *
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
      *
@@ -115,6 +130,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private JtaConnection(TransactionSupplier transactionSupplier,
                           TransactionSynchronizationRegistry transactionSynchronizationRegistry,
+                          boolean interposedSynchronizations,
                           ExceptionConverter exceptionConverter,
                           Connection delegate) {
         super(delegate,
@@ -122,6 +138,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
               true); // strict isClosed checking; always a good thing
         this.tm = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
         this.tsr = Objects.requireNonNull(transactionSynchronizationRegistry, "transactionSynchronizationRegistry");
+        this.interposedSynchronizations = interposedSynchronizations;
         this.exceptionConverter = exceptionConverter; // nullable
     }
 
@@ -742,15 +759,15 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_COMMITTED:
         case Status.STATUS_NO_TRANSACTION:
         case Status.STATUS_ROLLEDBACK:
-            // Terminal; the two-phase commit process has already happened, or there's no transaction at all. Return
-            // without enlisting.
+            // Terminal; the two-phase commit process has already happened, or there's no transaction at all. Very
+            // common. Return without enlisting.
             return;
         case Status.STATUS_COMMITTING:
         case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
-            // Interim or effectively interim. Throw to prevent accidental side effects.
+            // Interim or effectively interim. Extremely uncommon. Throw to prevent accidental side effects.
             throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus, "25000");
         case Status.STATUS_UNKNOWN:
         default:
@@ -760,7 +777,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
 
         try {
           if (this.tsr.getResource(JtaConnection.class.getName()) == this) {
-              // Operations on the current thread on this connection are already enlisted. Return.
+              // Operations on the current thread on this connection are already enlisted. Very common. Return.
               return;
           }
         } catch (RuntimeException e) {
@@ -835,7 +852,15 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         this.tsr.putResource("xid", xid);
         try {
             if (super.isCloseable()) {
-                this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
+                if (this.interposedSynchronizations) {
+                    this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
+                } else {
+                    try {
+                        this.tm.getTransaction().registerSynchronization((Sync) this::superSetCloseableTrue);
+                    } catch (RollbackException | SystemException e) {
+                        throw new IllegalStateException(e.getMessage(), e);
+                    }
+                }
                 super.setCloseable(false);
             }
         } catch (SQLException e) {
@@ -864,6 +889,11 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      *
      * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
      *
+     * @param interposedSynchronizations whether any {@link Synchronization}s registered by the {@link JtaConnection}
+     * should be registered as interposed synchronizations; see {@link
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
+     * Transaction#registerSynchronization(Synchronization)}
+     *
      * @param exceptionConverter a {@link ExceptionConverter}; may be {@code null} in which case a default
      * implementation will be used instead
      *
@@ -876,9 +906,15 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     static Connection connection(TransactionSupplier transactionSupplier,
                                  TransactionSynchronizationRegistry transactionSynchronizationRegistry,
+                                 boolean interposedSynchronizations,
                                  ExceptionConverter exceptionConverter,
                                  Connection nonXaConnection) {
-        return new JtaConnection(transactionSupplier, transactionSynchronizationRegistry, exceptionConverter, nonXaConnection);
+        return
+            new JtaConnection(transactionSupplier,
+                              transactionSynchronizationRegistry,
+                              interposedSynchronizations,
+                              exceptionConverter,
+                              nonXaConnection);
     }
 
 
@@ -888,7 +924,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
 
 
     /**
-     * A {@link Synchronization}.
+     * A functional {@link Synchronization}.
      *
      * @see Synchronization
      */
@@ -905,29 +941,6 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         default void beforeCompletion() {
 
         }
-
-    }
-
-    /**
-     * A supplier of {@link Transaction}s.
-     *
-     * @see Transaction
-     *
-     * @see jakarta.transaction.TransactionManager#getTransaction()
-     */
-    @FunctionalInterface
-    interface TransactionSupplier {
-
-        /**
-         * Returns the current {@link Transaction} representing the transaction context of the calling thread, or {@code
-         * null} if there is no such context at invocation time.
-         *
-         * @return the current {@link Transaction} representing the transaction context of the calling thread, or {@code
-         * null} if there is no such context at invocation time
-         *
-         * @exception SystemException if there was an unexpected error condition
-         */
-        Transaction getTransaction() throws SystemException;
 
     }
 

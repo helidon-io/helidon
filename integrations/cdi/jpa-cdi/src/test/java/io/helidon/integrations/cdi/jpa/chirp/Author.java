@@ -23,15 +23,11 @@ import jakarta.persistence.AccessType;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 @Access(value = AccessType.FIELD)
 @Entity(name = "Author")
-@SequenceGenerator(allocationSize = 1, initialValue = 1, name = "AUTHOR", sequenceName = "AUTHOR_SEQ")
 @Table(name = "AUTHOR")
 public class Author implements Serializable {
 
@@ -42,7 +38,6 @@ public class Author implements Serializable {
             insertable = true,
             nullable = false,
             updatable = false)
-    @GeneratedValue(generator = "AUTHOR", strategy = GenerationType.SEQUENCE)
     Integer id;
 
     @Basic(optional = false)
@@ -58,8 +53,9 @@ public class Author implements Serializable {
         super();
     }
 
-    public Author(final String name) {
+    public Author(final int id, final String name) {
         super();
+        this.id = id;
         this.setName(name);
     }
 

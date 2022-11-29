@@ -179,7 +179,7 @@ class TestJpaTransactionScopedUnsynchronizedEntityManager {
         // Create a JPA entity and try to insert it.  This should fail
         // because according to JPA a TransactionRequiredException
         // will be thrown.
-        final Author author = new Author("Abraham Lincoln");
+        final Author author = new Author(1, "Abraham Lincoln");
         try {
             em.persist(author);
             fail("A TransactionRequiredException should have been thrown");
