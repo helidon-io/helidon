@@ -27,7 +27,7 @@ public @interface AnnotationCase {
      * Also demonstrates how default values are handled on the generated builder.
      *
      * @return "hello"
-     * @see io.helidon.pico.builder.test.testsubjects.DefaultAnnotationCaseExt (generated code)
+     * @see DefaultAnnotationCaseExt (generated code)
      */
     String value() default "hello";
 
@@ -35,7 +35,7 @@ public @interface AnnotationCase {
      * Demonstrates how string array defaults work on the generated builder.
      *
      * @return "a", "b", "c"
-     * @see io.helidon.pico.builder.test.testsubjects.DefaultAnnotationCaseExt (generated code)
+     * @see DefaultAnnotationCaseExt (generated code)
      */
     String[] strArr() default {"a", "b", "c"};
 

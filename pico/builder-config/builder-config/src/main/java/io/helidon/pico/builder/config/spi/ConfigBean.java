@@ -16,18 +16,12 @@
 
 package io.helidon.pico.builder.config.spi;
 
-import java.util.Optional;
-
-import io.helidon.builder.AttributeVisitor;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.spi.ConfigProvider;
-
 /**
- * These methods are in common between generated config bean and config bean builder types.
+ * Every {@link io.helidon.pico.builder.config.ConfigBean}-annotated type will also implement this contract.
  *
  * @deprecated this is for internal use only
  */
-public interface GeneratedConfigCommon extends ConfigProvider {
+public interface ConfigBean extends ConfigBeanCommon {
 
 /*
   Important Note: caution should be exercised to avoid any 0-arg or 1-arg method. This is because it might clash with generated
@@ -36,27 +30,17 @@ public interface GeneratedConfigCommon extends ConfigProvider {
  */
 
     /**
-     * Returns the configuration assigned to the generated config bean.
+     * Set the instance id of this config bean.
      *
-     * @return the configuration assigned
+     * @param val the new instance identifier
      */
-    @Override
-    Optional<Config> __config();
+    void __instanceId(String val);
 
     /**
-     * Returns the {@link io.helidon.pico.builder.config.ConfigBean}-annotated type.
+     * Returns the existing instance identifier.
      *
-     * @return the config bean type
+     * @return the instance identifier
      */
-    Class<?> __configBeanType();
-
-    /**
-     * Visits all attributes with the provided {@link io.helidon.builder.AttributeVisitor}.
-     *
-     * @param visitor           the visitor
-     * @param userDefinedCtx    any user-defined context
-     */
-    void visitAttributes(AttributeVisitor visitor,
-                         Object userDefinedCtx);
+    String __instanceId();
 
 }

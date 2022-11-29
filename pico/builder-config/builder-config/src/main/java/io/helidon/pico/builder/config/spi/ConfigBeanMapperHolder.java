@@ -28,7 +28,7 @@ import io.helidon.common.LazyValue;
  * @see ConfigBeanMapperProvider
  */
 public class ConfigBeanMapperHolder {
-    private static final LazyValue<Optional<ConfigBeanMapper<?>>> INSTANCE = LazyValue.create(ConfigBeanMapperHolder::load);
+    private static final LazyValue<Optional<ConfigBeanMapper>> INSTANCE = LazyValue.create(ConfigBeanMapperHolder::load);
 
     private ConfigBeanMapperHolder() {
     }
@@ -42,15 +42,14 @@ public class ConfigBeanMapperHolder {
      * type at some point in the future.
      *
      * @param configBeanType the config bean type to map
-     * @param <CB> the config bean type
      * @return the config bean mapper
      */
     @SuppressWarnings({"rawTypes", "unchecked"})
-    public static <CB> Optional<ConfigBeanMapper> configBeanMapperFor(Class<CB> configBeanType) {
-        return (Optional) INSTANCE.get();
+    public static Optional<ConfigBeanMapper> configBeanMapperFor(Class<?> configBeanType) {
+        return INSTANCE.get();
     }
 
-    private static Optional<ConfigBeanMapper<?>> load() {
+    private static Optional<ConfigBeanMapper> load() {
         Optional<ConfigBeanMapperProvider> provider = HelidonServiceLoader
                 .create(ServiceLoader.load(ConfigBeanMapperProvider.class, ConfigBeanMapperProvider.class.getClassLoader()))
                 .asList()

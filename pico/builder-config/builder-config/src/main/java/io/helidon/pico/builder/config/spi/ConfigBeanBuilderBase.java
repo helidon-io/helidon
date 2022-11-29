@@ -19,16 +19,16 @@ package io.helidon.pico.builder.config.spi;
 import io.helidon.common.config.Config;
 
 /**
- * Minimal implementation for the {@link GeneratedConfigBeanBuilder}.
+ * Minimal implementation for the {@link ConfigBeanBuilder}.
  *
  * @deprecated this is for internal use only
  */
-public abstract class GeneratedConfigBeanBuilderBase extends GeneratedConfigBeanBase implements GeneratedConfigBeanBuilder {
+public abstract class ConfigBeanBuilderBase extends ConfigBeanBase implements ConfigBeanBuilder {
 
     /**
      * Default constructor. Reserved for internal use.
      */
-    protected GeneratedConfigBeanBuilderBase() {
+    protected ConfigBeanBuilderBase() {
     }
 
     @Override

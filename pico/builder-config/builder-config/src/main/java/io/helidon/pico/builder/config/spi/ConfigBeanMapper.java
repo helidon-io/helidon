@@ -17,26 +17,23 @@
 package io.helidon.pico.builder.config.spi;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.config.spi.ConfigMapper;
 
 /**
  * Maps a {@link io.helidon.common.config.Config} instance to a newly created
  * {@link io.helidon.pico.builder.config.ConfigBean}-annotated type instance.
- *
- * @param <C> the config type
  */
 @FunctionalInterface
-public interface ConfigBeanMapper<C extends Config> extends ConfigMapper<C> {
+public interface ConfigBeanMapper /* extends ConfigMapper<C> */ {
 
     /**
      * Translate the provided configuration into the appropriate config bean for this service type.
      *
      * @param cfg            the config
      * @param configBeanType the config bean type
+     * @param <C> the config type
      * @param <T> the config bean type
      * @return the config bean generated
      */
-    @Override
-    <T> T map(C cfg, Class<T> configBeanType);
+    <C extends Config, T> T map(C cfg, Class<T> configBeanType);
 
 }

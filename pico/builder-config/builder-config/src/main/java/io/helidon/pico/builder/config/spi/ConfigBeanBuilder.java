@@ -19,13 +19,11 @@ package io.helidon.pico.builder.config.spi;
 import io.helidon.common.config.Config;
 
 /**
- * Reserved for internal use!
- * <p>
- * Every {@link io.helidon.pico.builder.config.ConfigBean}-annotated type will also implement this contract.
+ * Every {@link io.helidon.pico.builder.config.ConfigBean}-annotated *builder* type will implement this contract.
  *
  * @deprecated
  */
-public interface GeneratedConfigBeanBuilder extends GeneratedConfigCommon {
+public interface ConfigBeanBuilder extends ConfigBeanCommon {
 
 /*
   Important Note: caution should be exercised to avoid any 0-arg or 1-arg method. This is because it might clash with generated

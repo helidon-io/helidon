@@ -26,8 +26,14 @@
     Initialization vector is not static.
     -->
 <!--    <Match>-->
-<!--        <Class name="io.helidon.pico.builder.config.GeneratedConfigBean"/>-->
-<!--        <Method name="__instanceId" />-->
-<!--        <Bug pattern="PATTERN" />-->
+<!--        &lt;!&ndash; inheritance of the same interface from common/config &ndash;&gt;-->
+<!--        <Class name="io.helidon.pico.builder.config.spi.ConfigMapper"/>-->
+<!--        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>-->
 <!--    </Match>-->
+<!--    <Match>-->
+<!--        &lt;!&ndash; inheritance of the same interface from common/config &ndash;&gt;-->
+<!--        <Class name="io.helidon.pico.builder.config.spi.ConfigMapperProvider"/>-->
+<!--        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>-->
+<!--    </Match>-->
+
 </FindBugsFilter>

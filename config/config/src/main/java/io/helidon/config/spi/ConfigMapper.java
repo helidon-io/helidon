@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.helidon.config.MissingValueException;
  * Config mapper is provided to {@link ConfigMapperProvider} to help transformation of
  * complex structures.
  */
-public interface ConfigMapper extends io.helidon.common.config.spi.ConfigMapper<Config> {
+public interface ConfigMapper {
 
     /**
      * Convert the specified {@code Config} node into the target type specified by {@link GenericType}.
@@ -60,7 +60,6 @@ public interface ConfigMapper extends io.helidon.common.config.spi.ConfigMapper<
      * @throws ConfigMappingException in case the mapper fails to map the existing configuration value
      *                                to an instance of a given Java type
      */
-    @Override
     <T> T map(Config config, Class<T> type) throws MissingValueException, ConfigMappingException;
 
     /**

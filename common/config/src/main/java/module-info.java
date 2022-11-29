@@ -18,11 +18,5 @@
  * Helidon Common Config Library.
  */
 module io.helidon.common.config {
-    requires io.helidon.common;
-
-    uses io.helidon.common.config.spi.ConfigMapperProvider;
-    uses io.helidon.common.config.spi.ConfigProvider;
-
     exports io.helidon.common.config;
-    exports io.helidon.common.config.spi;
 }

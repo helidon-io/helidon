@@ -22,18 +22,18 @@ import java.util.Optional;
 import io.helidon.common.config.Config;
 
 /**
- * Minimal implementation for the {@link GeneratedConfigCommon}. This is the base for generated config beans.
+ * Minimal implementation for the {@link ConfigBeanCommon}. This is the base for generated config beans.
  *
  * @deprecated this is for internal use only
  */
-public abstract class GeneratedConfigBeanBase implements GeneratedConfigCommon {
+public abstract class ConfigBeanBase implements ConfigBeanCommon {
     private Config cfg;
     private String instanceId;
 
     /**
      * Protected constructor for initializing the generated config bean instance variables.
      */
-    protected GeneratedConfigBeanBase() {
+    protected ConfigBeanBase() {
     }
 
     @Override

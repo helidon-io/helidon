@@ -29,6 +29,6 @@ public interface ConfigBeanMapperProvider {
      *
      * @return the global config bean mapper instance
      */
-    ConfigBeanMapper<?> configBeanMapper();
+    ConfigBeanMapper configBeanMapper();
 
 }

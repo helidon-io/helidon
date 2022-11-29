@@ -106,8 +106,9 @@ public class BuilderTypeTools implements TypeInfoCreator {
         return Optional.of(DefaultTypeInfo.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))
-                                   .annotations(BuilderTypeTools.createAnnotationAndValueListFromElement(element,
-                                                                                                         processingEnv.getElementUtils()))
+                                   .annotations(BuilderTypeTools
+                                                        .createAnnotationAndValueListFromElement(element,
+                                                                                         processingEnv.getElementUtils()))
                                    .elementInfo(elementInfo)
                                    .update(it -> toTypeInfo(annotation, element, processingEnv).ifPresent(it::superTypeInfo))
                                    .build());

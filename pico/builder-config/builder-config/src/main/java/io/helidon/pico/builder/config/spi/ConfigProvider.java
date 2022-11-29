@@ -16,33 +16,31 @@
 
 package io.helidon.pico.builder.config.spi;
 
-/**
- * Reserved for internal use!
- * <p>
- * Every {@link io.helidon.pico.builder.config.ConfigBean}-annotated type will also implement this contract.
- *
- * @deprecated this is for internal use only
- */
-public interface GeneratedConfigBean extends GeneratedConfigCommon {
+import java.util.Optional;
 
+import io.helidon.common.config.Config;
+
+/**
+ * Generated {@link io.helidon.pico.builder.config.ConfigBean}-annotated types and the associated builder types implement
+ * this contract.
+ */
+@FunctionalInterface
+public interface ConfigProvider /* extends Supplier<Config>*/ {
 /*
   Important Note: caution should be exercised to avoid any 0-arg or 1-arg method. This is because it might clash with generated
   methods. If its necessary to have a 0 or 1-arg method then the convention of prefixing the method with two underscores should be
   used.
+
+  Conceptually this is the same as {@code Supplier<Config>}. However, the get() method imposed by supplier may
+  clash with generated code
  */
 
     /**
-     * Set the instance id of this config bean.
+     * Optionally provides a configuration instance.
      *
-     * @param val the new instance identifier
+     * @return the optional configuration
      */
-    void __instanceId(String val);
-
-    /**
-     * Returns the existing instance identifier.
-     *
-     * @return the instance identifier
-     */
-    String __instanceId();
+    // note that this needs to have double underscore since it is available in generated code
+    Optional<Config> __config();
 
 }

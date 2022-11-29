@@ -38,12 +38,12 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.Contract;
 import io.helidon.pico.ExternalContracts;
 import io.helidon.pico.builder.config.ConfigBean;
+import io.helidon.pico.builder.config.spi.ConfigBeanBase;
+import io.helidon.pico.builder.config.spi.ConfigBeanBuilderBase;
 import io.helidon.pico.builder.config.spi.ConfigBeanBuilderValidator;
 import io.helidon.pico.builder.config.spi.ConfigBeanInfo;
 import io.helidon.pico.builder.config.spi.ConfigResolver;
 import io.helidon.pico.builder.config.spi.DefaultConfigResolverRequest;
-import io.helidon.pico.builder.config.spi.GeneratedConfigBeanBase;
-import io.helidon.pico.builder.config.spi.GeneratedConfigBeanBuilderBase;
 import io.helidon.pico.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.pico.builder.config.spi.ResolutionCtx;
 import io.helidon.pico.types.AnnotationAndValue;
@@ -56,8 +56,8 @@ import io.helidon.pico.types.TypedElementName;
  * A specialization of {@link DefaultBuilderCreator} that supports the additional add-ons to the builder generated classes that
  * binds to the config sub-system.
  *
- * @see io.helidon.pico.builder.config.spi.GeneratedConfigBean
- * @see io.helidon.pico.builder.config.spi.GeneratedConfigBeanBuilder
+ * @see io.helidon.pico.builder.config.spi.ConfigBean
+ * @see io.helidon.pico.builder.config.spi.ConfigBeanBuilder
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class ConfigBeanBuilderCreator extends DefaultBuilderCreator {
@@ -89,12 +89,12 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreator {
 
     @Override
     protected Optional<TypeName> baseExtendsTypeName(BodyContext ctx) {
-        return Optional.of(DefaultTypeName.create(GeneratedConfigBeanBase.class));
+        return Optional.of(DefaultTypeName.create(ConfigBeanBase.class));
     }
 
     @Override
     protected Optional<TypeName> baseExtendsBuilderTypeName(BodyContext ctx) {
-        return Optional.of(DefaultTypeName.create(GeneratedConfigBeanBuilderBase.class));
+        return Optional.of(DefaultTypeName.create(ConfigBeanBuilderBase.class));
     }
 
     @Override

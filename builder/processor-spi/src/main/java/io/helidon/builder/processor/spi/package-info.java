@@ -17,7 +17,7 @@
 /**
  * The Pico Builder Processor SPI module provides these definitions:
  * <ol>
- *     <li>{@link io.helidon.pico.builder.processor.spi.BuilderCreator} - responsible for code generating the implementation w/
+ *     <li>{@link io.helidon.builder.processor.spi.BuilderCreator} - responsible for code generating the implementation w/
  *     a fluent builder.</li>
  *     <li>{@link io.helidon.builder.processor.spi.TypeInfoCreator} - responsible for code generating the model object for
  *     the target interface.</li>

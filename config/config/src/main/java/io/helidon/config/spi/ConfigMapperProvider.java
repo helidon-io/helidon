@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import io.helidon.config.Config;
  * @see Config.Builder#disableMapperServices()
  */
 @FunctionalInterface
-public interface ConfigMapperProvider extends io.helidon.common.config.spi.ConfigMapperProvider<Config> {
+public interface ConfigMapperProvider {
     /**
      * Default priority of the mapper provider if registered by {@link Config.Builder} automatically.
      */
@@ -59,7 +59,6 @@ public interface ConfigMapperProvider extends io.helidon.common.config.spi.Confi
      * @return a map of config mapper functions, never {@code null}, though this may return an empty map if
      * {@link #mapper(Class)} is used instead
      */
-    @Override
     Map<Class<?>, Function<Config, ?>> mappers();
 
     /**

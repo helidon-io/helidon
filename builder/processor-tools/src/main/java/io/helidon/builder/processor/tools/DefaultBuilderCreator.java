@@ -52,7 +52,7 @@ import static io.helidon.builder.processor.tools.BodyContext.TAG_META_PROPS;
 import static io.helidon.builder.processor.tools.BodyContext.toBeanAttributeName;
 
 /**
- * Default implementation for {@link io.helidon.pico.builder.processor.spi.BuilderCreator}.
+ * Default implementation for {@link BuilderCreator}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
 public class DefaultBuilderCreator implements BuilderCreator {
