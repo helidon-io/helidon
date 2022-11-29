@@ -55,9 +55,9 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
     private Class<?> testClass;
     private WebServer server;
-    private LazyValue<SocketHttpClient> socketHttpClient =
+    private final LazyValue<SocketHttpClient> socketHttpClient =
             LazyValue.create(() -> SocketHttpClient.create(server.port()));
-    private LazyValue<Http1Client> httpClient =
+    private final LazyValue<Http1Client> httpClient =
             LazyValue.create(() -> WebClient.builder()
                     .baseUri("http://localhost:" + server.port())
                     .build());
@@ -133,7 +133,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
             if (socketAnnot != null) {
                 String portName = socketAnnot.value();
-                socketHttpClient = LazyValue.create(() -> SocketHttpClient.create(server.port(portName)));
+                return SocketHttpClient.create(server.port(portName));
             }
 
             return socketHttpClient.get();
@@ -144,9 +144,9 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
             if (socketAnnot != null) {
                 String portName = socketAnnot.value();
-                httpClient = LazyValue.create(() -> WebClient.builder()
+                return WebClient.builder()
                                 .baseUri("http://localhost:" + server.port(portName))
-                                .build());
+                                .build();
             }
 
             return httpClient.get();

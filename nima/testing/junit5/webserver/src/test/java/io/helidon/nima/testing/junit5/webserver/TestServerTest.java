@@ -28,6 +28,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @ServerTest
 class TestServerTest {
@@ -69,6 +70,13 @@ class TestServerTest {
     }
 
     @Test
+    void testSocketClientMixedInjectedParameter(@Socket("socket") SocketHttpClient socketClient1, SocketHttpClient socketClient2) {
+        assertThat(socketClient1, notNullValue());
+        assertThat(socketClient2, notNullValue());
+        assertNotEquals(socketClient1, socketClient2);
+    }
+
+    @Test
     void testHttpClientInjected() {
         assertThat(httpClient, notNullValue());
     }
@@ -81,6 +89,13 @@ class TestServerTest {
     @Test
     void testHttpClientNamedInjectedParameter(@Socket("socket") Http1Client httpClient) {
         assertThat(httpClient, notNullValue());
+    }
+
+    @Test
+    void testHttpClientMixedInjectedParameter(@Socket("socket") Http1Client httpClient1, Http1Client httpClient2) {
+        assertThat(httpClient1, notNullValue());
+        assertThat(httpClient2, notNullValue());
+        assertNotEquals(httpClient1, httpClient2);
     }
 
     @Test
