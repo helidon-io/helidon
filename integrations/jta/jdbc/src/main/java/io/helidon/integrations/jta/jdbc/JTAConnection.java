@@ -692,7 +692,6 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private void enlist() throws SQLException {
         this.failWhenClosed();
-
         // In what follows, there are some general error-handling principles:
         //
         // * All RuntimeExceptions and SystemExceptions are converted to SQLExceptions.
@@ -743,7 +742,8 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_COMMITTED:
         case Status.STATUS_NO_TRANSACTION:
         case Status.STATUS_ROLLEDBACK:
-            // Terminal; the two-phase commit process has already happened. Return.
+            // Terminal; the two-phase commit process has already happened, or there's no transaction at all. Return
+            // without enlisting.
             return;
         case Status.STATUS_COMMITTING:
         case Status.STATUS_MARKED_ROLLBACK:
@@ -768,8 +768,10 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         }
 
         if (!super.getAutoCommit()) {
-            // super.getAutoCommit() (super. on purpose, not this.) returned false. We don't want to permit enlistment,
-            // because a local transaction may be in progress.
+            // There is, as far as we can tell, an active global transaction that hasn't asynchronously changed state
+            // yet, and super.getAutoCommit() (super. on purpose, not this.) returned false, and we haven't enlisted
+            // with the active global transaction yet, so autoCommit was disabled on purpose by the caller. In this
+            // case, we don't want to permit enlistment, because a local transaction may be in progress.
             throw new SQLTransientException("autoCommit was false during active transaction enlistment", "25000");
         }
 
@@ -777,8 +779,8 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         Transaction t = this.transaction();
 
         try {
-            // t is guaranteed by spec to be non-null because the status was, at one point, Status.STATUS_ACTIVE on the
-            // current thread.
+            // t is guaranteed by spec to be non-null because the status was, at one point above, Status.STATUS_ACTIVE on the
+            // current thread (by definition).
             transactionStatus = t.getStatus();
         } catch (RuntimeException | SystemException e) {
             throw new SQLTransientException(e.getMessage(), "25000", e);
@@ -790,7 +792,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             break;
         case Status.STATUS_COMMITTED:
         case Status.STATUS_ROLLEDBACK:
-            // Terminal. Return.
+            // Terminal. Return without enlisting.
             return;
         case Status.STATUS_COMMITTING:
         case Status.STATUS_MARKED_ROLLBACK:
@@ -812,23 +814,11 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, "25000");
         }
 
-        // Point of no return. We have ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE
-        // and ensured we aren't already enlisted. The Transaction's status can still change at any point (as a result
-        // of asynchronous rollback, for example) so we have to watch for various exceptions.
+        // Point of no return. We ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE and
+        // ensured we aren't already enlisted and our autoCommit status is true. The Transaction's status can still
+        // change at any point (as a result of asynchronous rollback, for example) so we have to watch for exceptions.
         try {
-            t.enlistResource(new LocalXAResource(xid -> {
-                this.tsr.putResource(JtaConnection.class.getName(), JtaConnection.this);
-                this.tsr.putResource("xid", xid);
-                try {
-                    if (super.isCloseable()) {
-                        this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
-                        super.setCloseable(false);
-                    }
-                } catch (SQLException e) {
-                    throw new UncheckedSQLException(e);
-                }
-                return this.delegate();
-            }, this.exceptionConverter));
+            t.enlistResource(new LocalXAResource(this::connectionFunction, this.exceptionConverter));
         } catch (RollbackException e) {
             // The enlistResource(XAResource) operation failed because the transaction was rolled back. We use SQL state
             // 40000 ("transaction rollback, no subclass") even though it's unclear whether this indicates the SQL/local
@@ -838,6 +828,20 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             // The enlistResource(XAResource) operation failed, or the putResource(Object, Object) operation failed.
             throw new SQLTransientException(e.getMessage(), "25000", e);
         }
+    }
+
+    private Connection connectionFunction(Xid xid) {
+        this.tsr.putResource(JtaConnection.class.getName(), JtaConnection.this);
+        this.tsr.putResource("xid", xid);
+        try {
+            if (super.isCloseable()) {
+                this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
+                super.setCloseable(false);
+            }
+        } catch (SQLException e) {
+            throw new UncheckedSQLException(e);
+        }
+        return this.delegate();
     }
 
     // (Used only by reference in enlist() above.)

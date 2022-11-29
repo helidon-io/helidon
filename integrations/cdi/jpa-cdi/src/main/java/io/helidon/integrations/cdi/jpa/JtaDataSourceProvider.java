@@ -24,8 +24,8 @@ import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import javax.transaction.xa.XAResource;
 
-import io.helidon.integrations.jta.jdbc.JtaDataSource2;
 import io.helidon.integrations.jta.jdbc.ExceptionConverter;
+import io.helidon.integrations.jta.jdbc.JtaAdaptingDataSource;
 import io.helidon.integrations.jta.jdbc.XADataSourceWrappingDataSource;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -104,12 +104,12 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * Object#equals(Object)} and {@link Object#hashCode()} methods do
      * not behave in such a way that their underlying contextual
      * instances can be tested for equality.  When these {@link
-     * DataSource}s are wrapped by {@link JtaDataSource2} instances,
-     * we need to ensure that the same {@link JtaDataSource2} is
+     * DataSource}s are wrapped by {@link JtaAdaptingDataSource} instances,
+     * we need to ensure that the same {@link JtaAdaptingDataSource} is
      * handed out each time a given data source name is supplied.
      * This {@link ConcurrentMap} provides those semantics.</p>
      *
-     * @see JtaDataSource2
+     * @see JtaAdaptingDataSource
      *
      * @see <a
      * href="https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html#client_proxy_invocation">section
@@ -296,7 +296,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
      * <p>In many cases this method simply returns the supplied {@link
      * DataSource} unmodified.</p>
      *
-     * <p>In many other cases, a new {@link JtaDataSource2} wrapping
+     * <p>In many other cases, a new {@link JtaAdaptingDataSource} wrapping
      * the supplied {@link DataSource} and providing emulated JTA
      * semantics is returned instead.</p>
      *
@@ -317,7 +317,7 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
     private DataSource convert(DataSource dataSource, boolean jta, String dataSourceName)
         throws SQLException {
         DataSource returnValue;
-        if (!jta || dataSource == null || (dataSource instanceof JtaDataSource2)) {
+        if (!jta || dataSource == null || (dataSource instanceof JtaAdaptingDataSource)) {
             returnValue = dataSource;
         } else if (dataSource instanceof XADataSource) {
             // Edge case
@@ -325,10 +325,10 @@ class JtaDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvide
         } else {
             returnValue =
                 this.dataSourcesByName.computeIfAbsent(dataSourceName == null ? NULL_DATASOURCE_NAME : dataSourceName,
-                                                       k -> new JtaDataSource2(this.transactionManager,
-                                                                               this.tsr,
-                                                                               this.exceptionConverter,
-                                                                               dataSource));
+                                                       k -> new JtaAdaptingDataSource(this.transactionManager,
+                                                                                      this.tsr,
+                                                                                      this.exceptionConverter,
+                                                                                      dataSource));
         }
         return returnValue;
     }

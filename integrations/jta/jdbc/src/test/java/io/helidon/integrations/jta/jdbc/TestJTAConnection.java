@@ -120,10 +120,8 @@ final class TestJtaConnection {
 
         Transaction t = tm.getTransaction();
 
-        // For this test, where transaction reaping is set to happen
-        // eons in the future, we can make this assertion.  For
-        // real-world scenarios, the reaper might have ended the
-        // transaction immediately on another thread.
+        // For this test, where transaction reaping is set to happen eons in the future, we can make this assertion.
+        // For real-world scenarios, the reaper might have ended the transaction immediately on another thread.
         assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
 
         try (Connection physicalConnection = h2ds.getConnection();
@@ -132,8 +130,7 @@ final class TestJtaConnection {
                                                                                         null,
                                                                                         physicalConnection)) {
 
-            // Trigger an Object method; make sure nothing blows up
-            // (in case we're using proxies).
+            // Trigger an Object method; make sure nothing blows up (in case we're using proxies).
             logicalConnection.toString();
 
             // Up until this point, the connection should not be enlisted.
@@ -143,12 +140,10 @@ final class TestJtaConnection {
             assertThat(logicalConnection.isCloseable(), is(true));
             assertThat(logicalConnection.isClosed(), is(false));
 
-            // Trigger harmless Connection method; make sure nothing
-            // blows up.
+            // Trigger harmless Connection method; make sure nothing blows up.
             logicalConnection.getHoldability();
 
-            // Almost all Connection methods will cause enlistment to
-            // happen.  getHoldability(), just invoked, is one of
+            // Almost all Connection methods will cause enlistment to happen.  getHoldability(), just invoked, is one of
             // them.
             Xid xid = logicalConnection.xid();
             assertThat(xid, not(nullValue()));
@@ -160,8 +155,7 @@ final class TestJtaConnection {
             logicalConnection.close();
             assertThat(logicalConnection.isClosed(), is(false));
 
-            // Should get the same Xid back whenever we call xid()
-            // once we're enlisted.
+            // Should get the same Xid back whenever we call xid() once we're enlisted.
             assertThat(logicalConnection.xid(), sameInstance(xid));
 
             // Make sure the XAResource recorded the association.
@@ -176,9 +170,8 @@ final class TestJtaConnection {
                 }
             }
 
-            // Commit AND DISASSOCIATE the transaction, which can only
-            // happen with a call to TransactionManager.commit(), not
-            // just Transaction.commit().
+            // Commit AND DISASSOCIATE the transaction, which can only happen with a call to
+            // TransactionManager.commit(), not just Transaction.commit().
             tm.commit();
 
             // Transaction is over; the Xid should be null.
@@ -190,8 +183,7 @@ final class TestJtaConnection {
             // Make sure the XAResource removed the association.
             assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
 
-            // We should be able to actually close it early.  The
-            // auto-close should not fail, either.
+            // We should be able to actually close it early.  The auto-close should not fail, either.
             logicalConnection.close();
             assertThat(logicalConnection.isClosed(), is(true));
             assertThat(logicalConnection.delegate().isClosed(), is(true));
@@ -207,11 +199,9 @@ final class TestJtaConnection {
         tm.setTransactionTimeout(1); // 1 second; the minimum settable value (0 means "use the default" (!))
         tm.begin();
 
-        // For this test, where transaction reaping is set to happen
-        // soon, it still won't happen in under 1000 milliseconds, so
-        // this assertion is OK unless the testing environment is
-        // completely pathological. For real-world scenarios, you
-        // shouldn't assume anything about the initial status.
+        // For this test, where transaction reaping is set to happen soon, it still won't happen in under 1000
+        // milliseconds, so this assertion is OK unless the testing environment is completely pathological. For
+        // real-world scenarios, you shouldn't assume anything about the initial status.
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -228,42 +218,33 @@ final class TestJtaConnection {
                 }
             });
 
-        // Wait for the transaction to roll back on the reaper thread.
-        // The transaction timeout is 1 second (see above); this waits
-        // for 2 seconds max.  If this fails with an
-        // InterruptedException, which should be impossible, check the
-        // logs for Narayana warning that the assertions in the
-        // synchronization above failed.
+        // Wait for the transaction to roll back on the reaper thread.  The transaction timeout is 1 second (see above);
+        // this waits for 2 seconds max.  If this fails with an InterruptedException, which should be impossible, check
+        // the logs for Narayana warning that the assertions in the synchronization above failed.
         latch.await(2000L, TimeUnit.MILLISECONDS);
 
-        // In this case, we never issued a rollback ourselves and we
-        // never acquired a Transaction.  Here we show that you can
-        // get a Transaction that is initially in a rolled back state.
+        // In this case, we never issued a rollback ourselves and we never acquired a Transaction.  Here we show that
+        // you can get a Transaction that is initially in a rolled back state.
         //
-        // Verify there *was* a transaction but now it is rolled
-        // back, so is essentially useless other than as a
+        // Verify there *was* a transaction but now it is rolled back, so is essentially useless other than as a
         // tombstone.
         Transaction t = tm.getTransaction();
         assertThat(t, not(nullValue()));
         assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
 
-        // Verify that all the other status accessors return the
-        // same thing.
+        // Verify that all the other status accessors return the same thing.
         assertThat(tm.getStatus(), is(Status.STATUS_ROLLEDBACK));
         assertThat(tsr.getTransactionStatus(), is(Status.STATUS_ROLLEDBACK));
 
-        // Verify that indeed you cannot enlist any XAResource in
-        // the transaction when it is in the rolled back state.
+        // Verify that indeed you cannot enlist any XAResource in the transaction when it is in the rolled back state.
         assertThrows(IllegalStateException.class, () -> t.enlistResource(new NoOpXAResource()));
 
-        // Verify that even though the current transaction is rolled
-        // back you can still roll it back again (no-op) and
+        // Verify that even though the current transaction is rolled back you can still roll it back again (no-op) and
         // disassociate it from the current thread.
         tm.rollback();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
 
-        // The Transaction itself remains in status
-        // Status.STATUS_ROLLEDBACK. Notably it never enters
+        // The Transaction itself remains in status Status.STATUS_ROLLEDBACK. Notably it never enters
         // Status.STATUS_NO_TRANSACTION.
         assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
 

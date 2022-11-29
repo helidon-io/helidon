@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -927,8 +926,6 @@ final class LocalXAResource implements XAResource {
             throws SQLException, XAException {
             // If rollbackRunnable is non-null, then we're doing a commit.
             Association a;
-            // TO DO: take onePhase into account to figure out what to do with the exceptions. Certain XA_RB* codes can
-            // be used only when onePhase is true.
             SQLException sqlException = null;
             try {
                 r.run();
@@ -965,7 +962,7 @@ final class LocalXAResource implements XAResource {
                 }
             } finally {
                 try {
-                    a = this.reset(sqlException, onePhase);
+                    a = this.reset();
                 } catch (SQLException e) {
                     a = null;
                     if (sqlException == null) {
@@ -987,13 +984,6 @@ final class LocalXAResource implements XAResource {
         }
 
         private Association reset() throws SQLException {
-            return this.reset(null, false);
-        }
-
-        private Association reset(SQLException sqlException, boolean onePhase) throws SQLException {
-            // TO DO: the SQLException passed in here is to allow this method to decide whether to place the Association
-            // it returns into a rollback state (XAER_RB*) or heuristic state. As of this writing it is ignored but
-            // everything else is in place to deal with it properly.
             Connection connection = this.connection();
             connection.setAutoCommit(this.priorAutoCommit());
             if (LOGGER.isLoggable(Level.FINE)) {
