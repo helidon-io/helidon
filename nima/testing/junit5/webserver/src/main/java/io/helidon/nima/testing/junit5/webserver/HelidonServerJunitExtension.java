@@ -133,6 +133,8 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
             if (socketAnnot != null) {
                 String portName = socketAnnot.value();
+                // Explicitly handle @default routing
+                if (portName.equals(WebServer.DEFAULT_SOCKET_NAME)) return socketHttpClient.get();
                 return SocketHttpClient.create(server.port(portName));
             }
 
@@ -144,6 +146,8 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
             if (socketAnnot != null) {
                 String portName = socketAnnot.value();
+                // Explicitly handle @default routing
+                if (portName.equals(WebServer.DEFAULT_SOCKET_NAME)) return httpClient.get();
                 return WebClient.builder()
                                 .baseUri("http://localhost:" + server.port(portName))
                                 .build();
