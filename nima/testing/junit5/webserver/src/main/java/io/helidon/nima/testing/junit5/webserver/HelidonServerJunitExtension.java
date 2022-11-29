@@ -55,9 +55,9 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
     private Class<?> testClass;
     private WebServer server;
-    private final LazyValue<SocketHttpClient> socketHttpClient =
+    private LazyValue<SocketHttpClient> socketHttpClient =
             LazyValue.create(() -> SocketHttpClient.create(server.port()));
-    private final LazyValue<Http1Client> httpClient =
+    private LazyValue<Http1Client> httpClient =
             LazyValue.create(() -> WebClient.builder()
                     .baseUri("http://localhost:" + server.port())
                     .build());
@@ -129,9 +129,26 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         Class<?> paramType = parameterContext.getParameter().getType();
         if (paramType.equals(SocketHttpClient.class)) {
+            Socket socketAnnot = parameterContext.getParameter().getAnnotation(Socket.class);
+
+            if (socketAnnot != null) {
+                String portName = socketAnnot.value();
+                socketHttpClient = LazyValue.create(() -> SocketHttpClient.create(server.port(portName)));
+            }
+
             return socketHttpClient.get();
         }
         if (paramType.equals(Http1Client.class)) {
+
+            Socket socketAnnot = parameterContext.getParameter().getAnnotation(Socket.class);
+
+            if (socketAnnot != null) {
+                String portName = socketAnnot.value();
+                httpClient = LazyValue.create(() -> WebClient.builder()
+                                .baseUri("http://localhost:" + server.port(portName))
+                                .build());
+            }
+
             return httpClient.get();
         }
         if (paramType.equals(WebServer.class)) {

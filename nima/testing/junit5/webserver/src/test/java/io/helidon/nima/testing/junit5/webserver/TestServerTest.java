@@ -64,12 +64,22 @@ class TestServerTest {
     }
 
     @Test
+    void testSocketClientNamedInjectedParameter(@Socket("socket") SocketHttpClient socketClient) {
+        assertThat(socketClient, notNullValue());
+    }
+
+    @Test
     void testHttpClientInjected() {
         assertThat(httpClient, notNullValue());
     }
 
     @Test
     void testHttpClientInjectedParameter(Http1Client httpClient) {
+        assertThat(httpClient, notNullValue());
+    }
+
+    @Test
+    void testHttpClientNamedInjectedParameter(@Socket("socket") Http1Client httpClient) {
         assertThat(httpClient, notNullValue());
     }
 
