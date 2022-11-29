@@ -32,6 +32,7 @@ import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
  */
 class AsyncImpl implements Async {
     private final LazyValue<? extends ExecutorService> executor;
+    private final CompletableFuture<Async> onStart;
 
     AsyncImpl() {
         this(Async.builder());
@@ -39,6 +40,7 @@ class AsyncImpl implements Async {
 
     AsyncImpl(Builder builder) {
         this.executor = builder.executor();
+        this.onStart = builder.onStart();
     }
 
     @Override
@@ -54,6 +56,9 @@ class AsyncImpl implements Async {
         Future<?> future = executor.get().submit(() -> {
             Thread thread = Thread.currentThread();
             thread.setName(thread.getName() + ": async");
+            if (onStart != null) {
+                onStart.complete(this);
+            }
             try {
                 T t = supplier.get();
                 result.complete(t);
