@@ -61,6 +61,22 @@ public interface Async {
     }
 
     /**
+     * Convenience method to avoid having to call {@link #create()}. Also accepts
+     * an {@code onStart} future to inform of async task startup.
+     *
+     * @param supplier supplier of value (or a method reference)
+     * @param onStart future completed when async task starts
+     * @param <T> type of returned value
+     * @return a future that is a "promise" of the future result
+     */
+    static <T> CompletableFuture<T> invokeStatic(Supplier<T> supplier, CompletableFuture<Async> onStart) {
+        return new Builder()
+                .onStart(onStart)
+                .build()
+                .invoke(supplier);
+    }
+
+    /**
      * A new builder to build a customized {@link Async} instance.
      * @return a new builder
      */
@@ -73,6 +89,7 @@ public interface Async {
      */
     class Builder implements io.helidon.common.Builder<Builder, Async> {
         private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
+        private CompletableFuture<Async> onStart;
 
         private Builder() {
         }
@@ -104,8 +121,23 @@ public interface Async {
             return this;
         }
 
+        /**
+         * Configure future that shall be completed when async task starts.
+         *
+         * @param onStart future completed when async task starts
+         * @return updated builder instance
+         */
+        public Builder onStart(CompletableFuture<Async> onStart) {
+            this.onStart = onStart;
+            return this;
+        }
+
         LazyValue<? extends ExecutorService> executor() {
             return executor;
+        }
+
+        CompletableFuture<Async> onStart() {
+            return onStart;
         }
     }
 }
