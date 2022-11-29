@@ -80,11 +80,11 @@
     <!-- interfaces implemented by generated code, ensuring methods don't interfere with the interlaced methods from the user -->
     <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigProvider.java"
             checks="MethodName"/>
-    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/GeneratedConfigBean.java"
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBean.java"
             checks="MethodName"/>
-    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/GeneratedConfigBeanBase.java"
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBeanBase.java"
             checks="MethodName"/>
-    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/GeneratedConfigCommon.java"
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigCommon.java"
             checks="MethodName"/>
 
 </suppressions>
