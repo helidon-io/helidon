@@ -414,7 +414,7 @@ class MetricStore<M extends HelidonMetric> {
             return null;
         }
         for (MetricID metricID : metricIDsForName) {
-            if (metricID.getName().equals(metricName) && Arrays.equals(metricID.getTagsAsArray(), tags)) {
+            if (metricID.getName().equals(metricName) && tagsMatch(tags, metricID.getTags())) {
                 return allMetrics.get(metricID);
             }
         }
@@ -554,6 +554,14 @@ class MetricStore<M extends HelidonMetric> {
         } finally {
             lock.unlock();
         }
+    }
+
+    private static boolean tagsMatch(Tag[] tags, Map<String, String> tagMap) {
+        Map<String, String> newTags = new TreeMap<>();
+        for (Tag tag : tags) {
+            newTags.put(tag.getTagName(), tag.getTagValue());
+        }
+        return newTags.equals(tagMap);
     }
 
     private static void enforceConsistentMetadata(Metadata existingMetadata, Metadata newMetadata) {
