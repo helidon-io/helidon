@@ -44,7 +44,7 @@ public interface ConfigBeanCommon extends ConfigProvider {
     Optional<Config> __config();
 
     /**
-     * Returns the {@link io.helidon.pico.builder.config.ConfigBean}-annotated type,
+     * Returns the {@link io.helidon.pico.builder.config.ConfigBean}-annotated type.
      *
      * @return the config bean type
      */

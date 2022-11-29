@@ -84,7 +84,7 @@
             checks="MethodName"/>
     <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBeanBase.java"
             checks="MethodName"/>
-    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigCommon.java"
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBeanCommon.java"
             checks="MethodName"/>
 
 </suppressions>
