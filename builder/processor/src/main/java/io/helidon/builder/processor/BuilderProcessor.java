@@ -39,13 +39,13 @@ import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.Weights;
 import io.helidon.builder.processor.spi.BuilderCreator;
 import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreator;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weights;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;

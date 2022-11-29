@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates multi-level inheritance for the generated builder.

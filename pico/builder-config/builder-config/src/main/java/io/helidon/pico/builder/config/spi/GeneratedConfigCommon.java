@@ -18,9 +18,9 @@ package io.helidon.pico.builder.config.spi;
 
 import java.util.Optional;
 
+import io.helidon.builder.AttributeVisitor;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.spi.ConfigProvider;
-import io.helidon.builder.AttributeVisitor;
 
 /**
  * These methods are in common between generated config bean and config bean builder types.

@@ -16,8 +16,8 @@
 
 package io.helidon.pico;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Request to {@link io.helidon.pico.DeActivator#deactivate(DeActivationRequest)}.
@@ -26,6 +26,7 @@ import io.helidon.builder.Builder;
  */
 @Builder
 public interface DeActivationRequest<T> {
+
     /**
      * Create a request with defaults.
      *
@@ -52,4 +53,5 @@ public interface DeActivationRequest<T> {
      */
     @ConfiguredOption("true")
     boolean throwOnFailure();
+
 }

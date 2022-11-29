@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates builder usages when the parent in a plain old interface (and not a target of the builder annotation), while this

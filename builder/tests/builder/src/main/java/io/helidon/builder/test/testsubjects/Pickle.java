@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * A pickle. Demonstrates the use of enumerated types, optionals, and validation on builders.

@@ -16,9 +16,9 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.metadata.ConfiguredValue;
-import io.helidon.builder.Builder;
 
 /**
  * Used for demonstrating and testing the Pico Builder.

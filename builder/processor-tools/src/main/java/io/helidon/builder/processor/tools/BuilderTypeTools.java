@@ -44,11 +44,11 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.builder.processor.spi.DefaultTypeInfo;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreator;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
 import io.helidon.pico.types.DefaultTypeName;
@@ -57,11 +57,12 @@ import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 /**
- * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreator}. This also contains an abundance of other
- * useful methods used for annotation processing.
+ * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreator}. This also contains an abundance of
+ * other useful methods used for annotation processing.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
 public class BuilderTypeTools implements TypeInfoCreator {
+
     /**
      * Default constructor.
      */
@@ -103,19 +104,20 @@ public class BuilderTypeTools implements TypeInfoCreator {
 
         Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv);
         return Optional.of(DefaultTypeInfo.builder()
-                .typeName(typeName)
-                .typeKind(String.valueOf(element.getKind()))
-                .annotations(BuilderTypeTools.createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils()))
-                .elementInfo(elementInfo)
-                .update(it -> toTypeInfo(annotation, element, processingEnv).ifPresent(it::superTypeInfo))
-                .build());
+                                   .typeName(typeName)
+                                   .typeKind(String.valueOf(element.getKind()))
+                                   .annotations(BuilderTypeTools.createAnnotationAndValueListFromElement(element,
+                                                                                                         processingEnv.getElementUtils()))
+                                   .elementInfo(elementInfo)
+                                   .update(it -> toTypeInfo(annotation, element, processingEnv).ifPresent(it::superTypeInfo))
+                                   .build());
     }
 
     /**
      * Translation the arguments to a collection of {@link io.helidon.pico.types.TypedElementName}'s.
      *
-     * @param element           the typed element (i.e., class)
-     * @param processingEnv     the processing env
+     * @param element       the typed element (i.e., class)
+     * @param processingEnv the processing env
      * @return the collection of typed elements
      */
     protected Collection<TypedElementName> toElementInfo(TypeElement element, ProcessingEnvironment processingEnv) {
@@ -130,7 +132,7 @@ public class BuilderTypeTools implements TypeInfoCreator {
     /**
      * Returns true if the executable element passed is acceptable for processing (i.e., not a static and not a default method).
      *
-     * @param ee    the executable element
+     * @param ee the executable element
      * @return true if not default and not static
      */
     protected boolean canAccept(ExecutableElement ee) {
@@ -257,8 +259,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
         if (typeMirror instanceof ArrayType) {
             ArrayType arrayType = (ArrayType) typeMirror;
             return Optional.of(createTypeNameFromMirror(arrayType.getComponentType()).orElseThrow().toBuilder()
-                    .array(true)
-                    .build());
+                                       .array(true)
+                                       .build());
         }
 
         if (typeMirror instanceof DeclaredType) {
@@ -283,12 +285,12 @@ public class BuilderTypeTools implements TypeInfoCreator {
     /**
      * Locate an annotation mirror by name.
      *
-     * @param annotationType    the annotation type to search for
-     * @param ams               the collection to search through
+     * @param annotationType the annotation type to search for
+     * @param ams            the collection to search through
      * @return the annotation mirror, or empty if not found
      */
     public static Optional<? extends AnnotationMirror> findAnnotationMirror(String annotationType,
-                                                                  Collection<? extends AnnotationMirror> ams) {
+                                                                            Collection<? extends AnnotationMirror> ams) {
         return ams.stream()
                 .filter(it -> annotationType.equals(it.getAnnotationType().toString()))
                 .findFirst();
@@ -297,8 +299,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
     /**
      * Creates an instance from an annotation mirror during annotation processing.
      *
-     * @param am        the annotation mirror
-     * @param elements  the elements
+     * @param am       the annotation mirror
+     * @param elements the elements
      * @return the new instance or empty if the annotation mirror passed is invalid
      */
     public static Optional<AnnotationAndValue> createAnnotationAndValueFromMirror(AnnotationMirror am,
@@ -311,8 +313,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
     /**
      * Creates an instance from a variable element during annotation processing.
      *
-     * @param e the variable/type element
-     * @param elements  the elements
+     * @param e        the variable/type element
+     * @param elements the elements
      * @return the list of annotations extracted from the element
      */
     public static List<AnnotationAndValue> createAnnotationAndValueListFromElement(Element e,
@@ -326,8 +328,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
     /**
      * Extracts values from the annotation mirror value.
      *
-     * @param am        the annotation mirror
-     * @param elements  the optional elements
+     * @param am       the annotation mirror
+     * @param elements the optional elements
      * @return the extracted values
      */
     public static Map<String, String> extractValues(AnnotationMirror am,
@@ -357,8 +359,8 @@ public class BuilderTypeTools implements TypeInfoCreator {
      * Creates an instance of a {@link TypedElementName} given its type and variable element from
      * annotation processing.
      *
-     * @param v         the element (from annotation processing)
-     * @param elements  the elements
+     * @param v        the element (from annotation processing)
+     * @param elements the elements
      * @return the created instance
      */
     public static TypedElementName createTypedElementNameFromElement(Element v,
@@ -384,11 +386,11 @@ public class BuilderTypeTools implements TypeInfoCreator {
             defaultValue = annotationValue == null
                     ? null
                     : annotationValue.accept(new ToStringAnnotationValueVisitor()
-                                                            .mapBooleanToNull(true)
-                                                            .mapVoidToNull(true)
-                                                            .mapBlankArrayToNull(true)
-                                                            .mapEmptyStringToNull(true)
-                                                            .mapToSourceDeclaration(true), null);
+                                                     .mapBooleanToNull(true)
+                                                     .mapVoidToNull(true)
+                                                     .mapBlankArrayToNull(true)
+                                                     .mapEmptyStringToNull(true)
+                                                     .mapToSourceDeclaration(true), null);
         }
         componentTypeNames = componentTypeNames == null ? List.of() : componentTypeNames;
 

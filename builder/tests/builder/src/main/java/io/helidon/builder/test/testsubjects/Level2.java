@@ -19,9 +19,9 @@ package io.helidon.builder.test.testsubjects;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates multi-level inheritance for the generated builder.
