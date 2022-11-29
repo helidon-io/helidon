@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * aka KeyConfig.

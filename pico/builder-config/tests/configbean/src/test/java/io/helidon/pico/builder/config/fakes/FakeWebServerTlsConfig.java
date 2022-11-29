@@ -24,7 +24,7 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.LazyValue;
-import io.helidon.pico.builder.Singular;
+import io.helidon.builder.Singular;
 import io.helidon.pico.builder.config.ConfigBean;
 
 /**

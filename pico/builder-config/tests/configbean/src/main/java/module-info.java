@@ -27,5 +27,5 @@ module io.helidon.pico.builder.config.tests.test.config {
     requires io.helidon.common.config;
     requires io.helidon.pico;
     requires io.helidon.pico.builder.config;
-    requires io.helidon.pico.builder;
+    requires io.helidon.builder;
 }

@@ -19,7 +19,7 @@ package io.helidon.pico;
 import java.util.Optional;
 
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Request to activate a service.

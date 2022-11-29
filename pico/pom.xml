@@ -46,7 +46,6 @@
     <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
         <module>types</module>
-        <module>builder</module>
         <module>builder-config</module>
         <module>pico</module>
 <!--        <module>config</module>-->

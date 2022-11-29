@@ -18,7 +18,7 @@ package io.helidon.pico;
 
 import java.util.Optional;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Provides optional, contextual tunings to the {@link Injector}.

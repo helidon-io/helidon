@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.Singular;
+import io.helidon.builder.Singular;
 import io.helidon.pico.builder.config.ConfigBean;
 
 /**

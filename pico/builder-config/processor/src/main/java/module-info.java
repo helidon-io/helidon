@@ -23,16 +23,16 @@ module io.helidon.pico.builder.config.processor {
     requires io.helidon.common.config;
     requires io.helidon.config.metadata;
     requires io.helidon.pico.builder.config;
-    requires io.helidon.pico.builder.processor;
-    requires io.helidon.pico.builder.processor.spi;
-    requires io.helidon.pico.builder.processor.tools;
+    requires io.helidon.builder.processor;
+    requires io.helidon.builder.processor.spi;
+    requires io.helidon.builder.processor.tools;
     requires io.helidon.pico.types;
     requires io.helidon.pico;
 
     exports io.helidon.pico.builder.config.processor.tools;
 
-    uses io.helidon.pico.builder.processor.spi.BuilderCreator;
+    uses io.helidon.builder.processor.spi.BuilderCreator;
 
-    provides io.helidon.pico.builder.processor.spi.BuilderCreator
+    provides io.helidon.builder.processor.spi.BuilderCreator
             with io.helidon.pico.builder.config.processor.tools.ConfigBeanBuilderCreator;
 }

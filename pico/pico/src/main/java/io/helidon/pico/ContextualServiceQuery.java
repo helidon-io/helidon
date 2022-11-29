@@ -16,7 +16,7 @@
 
 package io.helidon.pico;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Combines the {@link io.helidon.pico.ServiceInfo} criteria along with the {@link io.helidon.pico.InjectionPointInfo} context

@@ -38,8 +38,8 @@
             <artifactId>helidon-pico-builder-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico.builder</groupId>
-            <artifactId>helidon-pico-builder-processor</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-processor</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>

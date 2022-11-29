@@ -18,7 +18,7 @@ package io.helidon.pico.builder.config.spi;
 
 import java.util.Optional;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * An extension of {@link io.helidon.pico.builder.config.spi.ConfigResolverRequest} for handling {@link java.util.Map}-like

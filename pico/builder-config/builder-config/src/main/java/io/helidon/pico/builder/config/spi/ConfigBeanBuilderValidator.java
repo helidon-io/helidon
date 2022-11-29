@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.pico.builder.AttributeVisitor;
+import io.helidon.builder.AttributeVisitor;
 
 /**
  * Validates a {@link io.helidon.pico.builder.config.ConfigBean} generated builder type instance bean the builder build() is

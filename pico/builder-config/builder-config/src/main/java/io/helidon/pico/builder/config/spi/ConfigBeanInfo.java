@@ -18,12 +18,12 @@ package io.helidon.pico.builder.config.spi;
 
 import java.util.Objects;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 import io.helidon.pico.builder.config.ConfigBean;
 
 /**
  * Represents all the attributes belonging to {@link io.helidon.pico.builder.config.ConfigBean} available in a
- * {@link io.helidon.pico.builder.Builder} style usage pattern.
+ * {@link io.helidon.builder.Builder} style usage pattern.
  */
 @Builder(implPrefix = "Meta")
 public interface ConfigBeanInfo extends ConfigBean {

@@ -40,8 +40,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.pico.builder</groupId>
-            <artifactId>helidon-pico-builder</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor -->
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -88,8 +93,8 @@
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.pico.builder</groupId>
-                            <artifactId>helidon-pico-builder-processor</artifactId>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

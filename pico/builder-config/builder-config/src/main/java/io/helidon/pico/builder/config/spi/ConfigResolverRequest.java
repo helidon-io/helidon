@@ -18,7 +18,7 @@ package io.helidon.pico.builder.config.spi;
 
 import java.util.Optional;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Used in conjunction with {@link io.helidon.pico.builder.config.spi.ConfigResolver}.

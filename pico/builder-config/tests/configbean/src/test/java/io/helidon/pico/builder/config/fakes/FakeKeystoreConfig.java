@@ -19,7 +19,7 @@ package io.helidon.pico.builder.config.fakes;
 import java.util.List;
 
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.Singular;
+import io.helidon.builder.Singular;
 import io.helidon.pico.builder.config.ConfigBean;
 
 /**

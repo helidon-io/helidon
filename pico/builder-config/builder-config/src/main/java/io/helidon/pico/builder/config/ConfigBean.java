@@ -21,13 +21,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.pico.builder.BuilderTrigger;
+import io.helidon.builder.BuilderTrigger;
 
 /**
- * A {@code ConfigBean} is another {@link io.helidon.pico.builder.BuilderTrigger} which extends the
- * {@link io.helidon.pico.builder.Builder} concept in support of integration to Helidon's configuration sub-system. It provides
- * everything that {@link io.helidon.pico.builder.Builder} provides. However, unlike the base
- * {@link io.helidon.pico.builder.Builder} generated classes which can handle any object type, the types used within your target
+ * A {@code ConfigBean} is another {@link io.helidon.builder.BuilderTrigger} which extends the
+ * {@link io.helidon.builder.Builder} concept in support of integration to Helidon's configuration sub-system. It provides
+ * everything that {@link io.helidon.builder.Builder} provides. However, unlike the base
+ * {@link io.helidon.builder.Builder} generated classes which can handle any object type, the types used within your target
  * {@code ConfigBean}-annotated interface must have all of its attribute getter method types resolvable by Helidon's configuration
  * sub-system.
  * <p>

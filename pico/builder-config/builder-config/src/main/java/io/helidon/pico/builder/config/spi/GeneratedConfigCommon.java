@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.spi.ConfigProvider;
-import io.helidon.pico.builder.AttributeVisitor;
+import io.helidon.builder.AttributeVisitor;
 
 /**
  * These methods are in common between generated config bean and config bean builder types.
@@ -51,7 +51,7 @@ public interface GeneratedConfigCommon extends ConfigProvider {
     Class<?> __configBeanType();
 
     /**
-     * Visits all attributes with the provided {@link io.helidon.pico.builder.AttributeVisitor}.
+     * Visits all attributes with the provided {@link io.helidon.builder.AttributeVisitor}.
      *
      * @param visitor           the visitor
      * @param userDefinedCtx    any user-defined context

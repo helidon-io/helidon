@@ -17,7 +17,7 @@
 package io.helidon.pico;
 
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Request to {@link io.helidon.pico.DeActivator#deactivate(DeActivationRequest)}.

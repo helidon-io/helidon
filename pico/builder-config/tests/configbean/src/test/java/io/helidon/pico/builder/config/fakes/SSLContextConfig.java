@@ -18,7 +18,7 @@ package io.helidon.pico.builder.config.fakes;
 
 import java.util.Random;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * aka SSLContextBuilder.
