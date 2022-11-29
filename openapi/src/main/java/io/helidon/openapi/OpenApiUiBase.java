@@ -125,16 +125,14 @@ public abstract class OpenApiUiBase implements OpenApiUi {
     }
 
     /**
-     * Indicates which media types the concrete implementation handles as static text--that is,
-     * by replying with a simple document as formatted by
-     * {@link io.helidon.openapi.OpenAPISupport#prepareDocument(io.helidon.common.http.MediaType)} (as opposed
-     * to an interactive U/I).
+     * Sends a static text response of the given media type.
      *
-     * @return array of {@link MediaType} to process as normal text
+     * @param request the request to respond to
+     * @param response the response
+     * @param mediaType the {@code MediaType} with which to respond, if possible
+     * @return whether the implementation responded with a static text response
      */
-    protected abstract MediaType[] staticTextMediaTypes();
-
-    protected boolean sendText(ServerRequest request, ServerResponse response, MediaType mediaType) {
+    protected boolean sendStaticText(ServerRequest request, ServerResponse response, MediaType mediaType) {
         try {
             response
                     .addHeader(Http.Header.CONTENT_TYPE, mediaType.toString())
@@ -147,18 +145,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
         return true;
     }
 
-    protected void sendText(ServerRequest request, ServerResponse response) {
-        if (!isEnabled()) {
-            request.next();
-        } else {
-            request.headers()
-                    .bestAccepted(staticTextMediaTypes())
-                    .ifPresentOrElse(mt -> sendText(request, response, mt),
-                                     request::next);
-        }
-    }
-
-    private static OpenApiUiFactory loadUiFactory() {
+    private static OpenApiUiFactory<?, ?> loadUiFactory() {
         return HelidonServiceLoader.builder(ServiceLoader.load(OpenApiUiFactory.class))
                 .addService(OpenApiUiMinimalFactory.create(), Integer.MAX_VALUE)
                 .build()
@@ -175,7 +162,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
                 .first(OpenAPISupport.OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER)
                 .map(OpenAPISupport.QueryParameterRequestedFormat::chooseFormat)
                 .map(OpenAPISupport.QueryParameterRequestedFormat::mediaType)
-                .orElse(OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE);
+                .orElse(mediaType);
 
         result = prepareDocument(resultMediaType);
         if (mediaType.test(MediaType.TEXT_HTML)) {

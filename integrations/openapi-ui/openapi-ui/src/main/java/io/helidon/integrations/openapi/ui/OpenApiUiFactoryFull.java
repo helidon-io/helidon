@@ -15,14 +15,13 @@
  */
 package io.helidon.integrations.openapi.ui;
 
-import io.helidon.openapi.OpenApiUiBase;
 import io.helidon.openapi.OpenApiUiFactory;
 
 /**
  * Implementation of the {@link io.helidon.openapi.OpenApiUiFactory} contract for a full implementation of
  * {@link io.helidon.openapi.OpenApiUi}.
  */
-public class OpenApiUiFactoryFull implements OpenApiUiFactory {
+public class OpenApiUiFactoryFull implements OpenApiUiFactory<OpenApiUiFull.Builder, OpenApiUiFull> {
 
     /**
      * Creates a new instance of the factory for a full U/I implementation.
@@ -31,7 +30,7 @@ public class OpenApiUiFactoryFull implements OpenApiUiFactory {
     }
 
     @Override
-    public OpenApiUiBase.Builder<?, ?> builder() {
+    public OpenApiUiFull.Builder builder() {
         return OpenApiUiFull.builder();
     }
 }

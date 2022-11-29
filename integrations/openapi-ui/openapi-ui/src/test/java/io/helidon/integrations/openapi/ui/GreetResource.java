@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.quickstart.mp;
+package io.helidon.integrations.openapi.ui;
 
 import java.util.Collections;
 
@@ -75,7 +75,7 @@ public class GreetResource {
     /**
      * Return a worldly greeting message.
      *
-     * @return {@link JsonObject}
+     * @return {@link jakarta.json.JsonObject}
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -87,7 +87,7 @@ public class GreetResource {
      * Return a greeting message using the name that was provided.
      *
      * @param name the name to greet
-     * @return {@link JsonObject}
+     * @return {@link jakarta.json.JsonObject}
      */
     @Path("/{name}")
     @GET
@@ -100,7 +100,7 @@ public class GreetResource {
      * Set the greeting to use in future messages.
      *
      * @param jsonObject JSON containing the new greeting
-     * @return {@link Response}
+     * @return {@link jakarta.ws.rs.core.Response}
      */
     @Path("/greeting")
     @PUT

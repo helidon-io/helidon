@@ -128,15 +128,6 @@ public class TestUi {
     }
 
     @Test
-    void checkPlainTextResponse() throws ExecutionException, InterruptedException {
-        verifyPlainTextResponse(sharedWebClient.get()
-                                        .path(GREETING_OPENAPI_PATH)
-                                        .accept(MediaType.TEXT_PLAIN)
-                                        .submit()
-                                        .await(Duration.ofSeconds(15)));
-    }
-
-    @Test
     void checkAlternateUiWebContext() throws ExecutionException, InterruptedException {
         WebServer ws = TestUtil.startServer(ALTERNATE_UI_WEB_CONTEXT_OPENAPI_SUPPORT_BUILDER_SUPPLIER.get());
         try {

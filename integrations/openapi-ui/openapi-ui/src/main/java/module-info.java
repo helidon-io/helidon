@@ -30,4 +30,5 @@ module io.helidon.integrations.openapi.ui {
     requires smallrye.open.api.ui;
 
     exports io.helidon.integrations.openapi.ui;
+    provides io.helidon.openapi.OpenApiUiFactory with io.helidon.integrations.openapi.ui.OpenApiUiFactoryFull;
 }

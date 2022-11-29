@@ -38,35 +38,45 @@ class OpenApiUiMinimal extends OpenApiUiBase {
         return new Builder();
     }
 
-    private static final MediaType[] SUPPORTED_TEXT_MEDIA_TYPES = new MediaType[] {
+    private static final MediaType[] SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT = new MediaType[] {
             MediaType.TEXT_HTML,
             MediaType.TEXT_PLAIN
     };
+
+    private static final MediaType[] SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT = new MediaType[0];
 
     private OpenApiUiMinimal(Builder builder) {
         super(builder, builder.documentPreparer(), builder.openApiSupportWebContext());
     }
 
     @Override
-    public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
-        // The minimal implementation does not honor HTML at the main endpoint to keep the same browser behavior users saw
-        // before the U/I enhancement.
-        return isEnabled()
-                && request.headers()
-                        .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES)
-                        .filter(mt -> !mt.test(MediaType.TEXT_HTML))
-                        .map(mt -> sendText(request, response, mt))
-                        .orElse(false);
-    }
-
-    @Override
     public void update(Routing.Rules rules) {
-        rules.get(webContext() + "[/]", this::sendText);
+        if (isEnabled()) {
+            rules.get(webContext() + "[/]", this::prepareTextResponseFromUiEndpoint);
+        }
     }
 
     @Override
-    protected MediaType[] staticTextMediaTypes() {
-        return SUPPORTED_TEXT_MEDIA_TYPES;
+    public MediaType[] supportedMediaTypes() {
+        return SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT;
+    }
+
+    @Override
+    public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
+//        // The minimal implementation does not honor any text, particularly HTML, at the main endpoint to keep the same browser
+//        // behavior users saw before the U/I enhancement.
+//        return isEnabled()
+//                && request.headers()
+//                        .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT)
+//                        .map(mt -> sendStaticText(request, response, mt))
+//                        .orElse(false);
+        return false;
+    }
+
+    private void prepareTextResponseFromUiEndpoint(ServerRequest request, ServerResponse response) {
+        request.headers().bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT)
+                .ifPresentOrElse(mt -> sendStaticText(request, response, mt),
+                                 request::next);
     }
 
     static class Builder extends OpenApiUiBase.Builder<Builder, OpenApiUiMinimal> {

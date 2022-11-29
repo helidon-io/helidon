@@ -16,18 +16,23 @@
 package io.helidon.integrations.openapi.ui;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.testing.OptionalMatcher;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.openapi.OpenAPISupport;
 import io.helidon.openapi.OpenApiUi;
@@ -40,17 +45,43 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class MainTest {
 
     private static final String RUN_BROWSER_TEST_PROPERTY = "io.helidon.openapi.ui.test.runForBrowser";
 
+    private static final MediaType[] SIMULATED_BROWSER_ACCEPT = new MediaType[] {
+            MediaType.TEXT_HTML,
+            MediaType.APPLICATION_XHTML_XML,
+            MediaType.builder()
+                    .type(MediaType.APPLICATION_XML.type())
+                    .subtype(MediaType.APPLICATION_XML.subtype())
+                    .parameters(Map.of("q", "0.9"))
+                    .build(),
+            MediaType.builder()
+                    .type("image")
+                    .subtype("webp")
+                    .build(),
+            MediaType.builder()
+                    .type("image")
+                    .subtype("apng")
+                    .build(),
+            MediaType.builder()
+                    .type(MediaType.WILDCARD_VALUE)
+                    .subtype(MediaType.WILDCARD_VALUE)
+                    .parameters(Map.of("q", "0.8"))
+                    .build()
+    };
     /**
      * Runs the server for as many minutes as specified by the property {@value RUN_BROWSER_TEST_PROPERTY}
      * so you could use a browser to test the U/I. If the property is present but not set to a value, the default is 5 minutes.
@@ -68,6 +99,41 @@ class MainTest {
     @EnabledIfSystemProperty(named = RUN_BROWSER_TEST_PROPERTY, matches=".*")
     void browserDefaults() throws InterruptedException {
         browser(null, null, null, null);
+    }
+
+    @Test
+    void checkSimulatedBrowserAccessToMainEndpoint() {
+        String path = OpenAPISupport.DEFAULT_WEB_CONTEXT;
+        run(null,
+            null,
+            null,
+            null,
+            path,
+            webClient ->
+                webClient.get()
+                        .followRedirects(true)
+                        .accept(SIMULATED_BROWSER_ACCEPT),
+                200,
+                webClientResponse -> {
+                            String text = null;
+                            try {
+                                text = webClientResponse.content()
+                                        .as(String.class)
+                                        .get(5, TimeUnit.SECONDS);
+                            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                                fail("Error retrieving " + Arrays.toString(SIMULATED_BROWSER_ACCEPT)
+                                             + " from " + path, e);
+                            }
+                            // Do a cursory check of the returned plain text which is yaml.
+                            assertThat("Response media type from path " + path, webClientResponse.headers().contentType(),
+                                       OptionalMatcher.value(is(MediaType.TEXT_HTML)));
+                            assertThat("Response code from path " + path, webClientResponse.status().code(), is(200));
+                            assertThat("Response from path " + path + " as " + MediaType.TEXT_HTML,
+                                       text,
+                                       allOf(containsString("<html"),
+                                             containsString("https://helidon.io")));
+                        });
+
     }
 
     @Test
@@ -106,6 +172,10 @@ class MainTest {
                              "/openapi-x" + OpenApiUi.UI_WEB_SUBCONTEXT);
     }
 
+    /**
+     * Makes sure redirection occurs correctly for HTML at /openapi and /openapi/.
+     * @param testPath the path to check
+     */
     @ParameterizedTest
     @ValueSource(strings = {"/openapi", "/openapi/"})
     void testRedirect(String testPath) {
@@ -119,6 +189,54 @@ class MainTest {
                                      OpenApiUi.Builder<?, ?> uiSupportBuilder,
                                      String uiPathToCheck) {
         loadAndCheckMainPage(config, openAPISupportBuilder, openAPISupport, uiSupportBuilder, uiPathToCheck, true, 200);
+    }
+
+    /**
+     * Makes sure we get plain and yaml text from /openapi and /openapi/ui.
+     * @param mediaType the media type to ask for
+     * @param path the path to probe
+     */
+    @ParameterizedTest
+    @MethodSource
+    void testWithMediaType(MediaType mediaType, String path) {
+        testWithMediaTypeAndPath(mediaType, path);
+    }
+
+    static Stream<Arguments> testWithMediaType() {
+        return Stream.of(
+                arguments(MediaType.TEXT_PLAIN, OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT),
+                arguments(MediaType.TEXT_YAML, OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT),
+                arguments(MediaType.TEXT_PLAIN, OpenAPISupport.DEFAULT_WEB_CONTEXT),
+                arguments(MediaType.TEXT_YAML, OpenAPISupport.DEFAULT_WEB_CONTEXT));
+    }
+
+    private void testWithMediaTypeAndPath(MediaType mediaType, String path) {
+        run(null,
+            null,
+            null, null,
+            path,
+            webClient -> webClient.get()
+                    .followRedirects(true)
+                    .accept(mediaType),
+            200,
+            webClientResponse -> {
+                String text = null;
+                try {
+                    text = webClientResponse.content()
+                            .as(String.class)
+                            .get(5, TimeUnit.SECONDS);
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    fail("Error retrieving " + mediaType + " from " + path, e);
+                }
+                // Do a cursory check of the returned plain text which is yaml.
+                assertThat("Response media type from path " + path, webClientResponse.headers().contentType(),
+                           OptionalMatcher.value(is(mediaType)));
+                assertThat("Response code from path " + path, webClientResponse.status().code(), is(200));
+                assertThat("Response from path " + path + " as " + mediaType,
+                           text,
+                           allOf(containsString("openapi: 3"),
+                                 containsString("title:")));
+            });
     }
 
     static void loadAndCheckMainPage(Config config,
@@ -173,12 +291,15 @@ class MainTest {
 
             WebClient webClient = webClientBuilder.build();
             System.out.printf("Checking %s%s%n", baseUri, uiPathToTest);
-            WebClientResponse webClientResponse = operation.apply(webClient)
+            WebClientRequestBuilder reqBuilder = operation.apply(webClient);
+            List<MediaType> acceptedMediaTypes = reqBuilder.headers().acceptedTypes();
+            WebClientResponse webClientResponse = reqBuilder
                     .path(uiPathToTest)
                     .request()
                     .await(5, TimeUnit.SECONDS);
 
-            assertThat("Status code in response getting main page",
+            assertThat("Status code in response getting main page from path " + uiPathToTest
+                    + " accepting media types " + acceptedMediaTypes,
                        webClientResponse.status().code(), is(expectedStatus));
 
             try {

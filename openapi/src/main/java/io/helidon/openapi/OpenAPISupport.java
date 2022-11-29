@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +51,7 @@ import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
+import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -155,7 +155,9 @@ public abstract class OpenAPISupport implements Service {
 
     private static final Lock HELPER_ACCESS = new ReentrantLock(true);
 
-    private static final Predicate<MediaType> TEXT_MEDIA_TYPE = (mt -> mt.type().equals("text"));
+    private static final MediaType MEDIA_TYPE_TEXT = MediaType.builder()
+            .type("text")
+            .build();
 
     private final String webContext;
 
@@ -177,6 +179,9 @@ public abstract class OpenAPISupport implements Service {
 
     private final OpenApiUi ui;
 
+    private final MediaType[] preferredOrdering;
+    private final MediaType[] uiSupportedMediaTypes;
+
     /**
      * Creates a new instance of {@code OpenAPISupport}.
      *
@@ -191,6 +196,19 @@ public abstract class OpenAPISupport implements Service {
         openApiStaticFile = builder.staticFile();
         indexViewsSupplier = builder.indexViewsSupplier();
         ui = prepareUi(builder);
+        uiSupportedMediaTypes = ui.supportedMediaTypes();
+        preferredOrdering = preparePreferredOrdering(uiSupportedMediaTypes);
+    }
+
+    private static MediaType[] preparePreferredOrdering(MediaType[] uiTypesSupported) {
+        int nonTextLength = OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING.length;
+
+        MediaType[] result = Arrays.copyOf(OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING,
+                                           nonTextLength + uiTypesSupported.length);
+        for (int i = 0; i < uiTypesSupported.length; i++) {
+            result[nonTextLength + i] = uiTypesSupported[i];
+        }
+        return result;
     }
 
     @Override
@@ -422,21 +440,24 @@ public abstract class OpenAPISupport implements Service {
     private void prepareResponse(ServerRequest req, ServerResponse resp) {
 
         try {
-            MediaType resultMediaType = chooseResponseMediaType(req, OpenAPIMediaType.PREFERRED_ORDERING);
-            if (resultMediaType == null) {
-                req.next();
-                return;
-            } else if (TEXT_MEDIA_TYPE.test(resultMediaType)) {
-                // The U/I handles some text.
+            Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
+
+            // Give the U/I a chance to respond first.
+            if (requestedMediaType.isPresent()
+                && uiSupportsMediaType(requestedMediaType.get())) {
                 if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
                     return;
                 }
             }
-            // Recompute the result MediaType, not included human-readable text this time, to preserve the browser-based
-            // user experience from earlier releases: the server would send JSON or YAML output.
-            resultMediaType = Objects.requireNonNullElse(
-                    chooseResponseMediaType(req, OpenAPIMediaType.PREFERRED_ORDERING_WITHOUT_HUMAN_TEXT),
-                    DEFAULT_RESPONSE_MEDIA_TYPE);
+            if (requestedMediaType.isEmpty()) {
+                LOGGER.log(Level.FINER,
+                           () -> String.format("Did not recognize requested media type %s; passing the request on",
+                                               req.headers().acceptedTypes()));
+                req.next();
+                return;
+           }
+
+            MediaType resultMediaType = requestedMediaType.get();
             final String openAPIDocument = prepareDocument(resultMediaType);
             resp.status(Http.Status.OK_200);
             resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.toString());
@@ -446,6 +467,15 @@ public abstract class OpenAPISupport implements Service {
             resp.send("Error serializing OpenAPI document; " + ex.getMessage());
             LOGGER.log(Level.SEVERE, "Error serializing OpenAPI document", ex);
         }
+    }
+
+    private boolean uiSupportsMediaType(MediaType mediaType) {
+        for (MediaType uiSupportedMediaType : uiSupportedMediaTypes) {
+            if (uiSupportedMediaType.test(mediaType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -491,7 +521,7 @@ public abstract class OpenAPISupport implements Service {
 
     }
 
-    private MediaType chooseResponseMediaType(ServerRequest req, MediaType[] preferredTypes) {
+    private Optional<MediaType> chooseResponseMediaType(ServerRequest req) {
         /*
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
@@ -501,7 +531,7 @@ public abstract class OpenAPISupport implements Service {
         if (queryParameterFormat.isPresent()) {
             String queryParameterFormatValue = queryParameterFormat.get();
             try {
-                return QueryParameterRequestedFormat.chooseFormat(queryParameterFormatValue).mediaType();
+                return Optional.of(QueryParameterRequestedFormat.chooseFormat(queryParameterFormatValue).mediaType());
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException(
                         "Query parameter 'format' had value '"
@@ -510,18 +540,12 @@ public abstract class OpenAPISupport implements Service {
             }
         }
 
-        final Optional<MediaType> requestedMediaType = req.headers()
-                .bestAccepted(preferredTypes);
-
-        final MediaType resultMediaType = requestedMediaType
-                .orElseGet(() -> {
-                    LOGGER.log(Level.FINER,
-                            () -> String.format("Did not recognize requested media type %s; responding with default %s",
-                                    req.headers().acceptedTypes(),
-                                    DEFAULT_RESPONSE_MEDIA_TYPE.toString()));
-                    return DEFAULT_RESPONSE_MEDIA_TYPE;
-                });
-        return resultMediaType;
+        RequestHeaders headers = req.headers();
+        if (headers.acceptedTypes().isEmpty()) {
+            headers.add(Http.Header.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+        }
+        return headers
+                .bestAccepted(preferredOrdering);
     }
 
     /**
@@ -691,7 +715,7 @@ public abstract class OpenAPISupport implements Service {
             return null;
         }
 
-        private static final MediaType[] PREFERRED_ORDERING_WITHOUT_HUMAN_TEXT =
+        private static final MediaType[] NON_TEXT_PREFERRED_ORDERING =
                 new MediaType[] {
                         MediaType.APPLICATION_OPENAPI_YAML,
                         MediaType.APPLICATION_X_YAML,
@@ -702,14 +726,6 @@ public abstract class OpenAPISupport implements Service {
                         MediaType.TEXT_YAML
 
                 };
-
-        private static final MediaType[] PREFERRED_ORDERING =
-                new ArrayList<>(Arrays.asList(PREFERRED_ORDERING_WITHOUT_HUMAN_TEXT)) {
-                    {
-                        add(MediaType.TEXT_PLAIN);
-                        add(MediaType.TEXT_HTML);
-                    }
-                }.toArray(new MediaType[0]);
     }
 
     /**

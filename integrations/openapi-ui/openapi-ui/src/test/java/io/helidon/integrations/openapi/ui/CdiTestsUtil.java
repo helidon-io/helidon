@@ -13,5 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.openapi.ui;public class CdiTestsUtil {
+package io.helidon.integrations.openapi.ui;
+
+import io.helidon.common.http.Http;
+
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+
+class CdiTestsUtil {
+
+    static void checkForPath(WebTarget webTarget, String path) {
+        Response response = webTarget.path(path)
+                .request(MediaType.TEXT_HTML)
+                .get();
+        assertThat("HTTP status accessing default U/I endpoint",
+                   response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat("Content accessing default U/I endpoint",
+                   response.readEntity(String.class),
+                   allOf(containsString("<html"),
+                         containsString("swagger-ui")));
+    }
 }

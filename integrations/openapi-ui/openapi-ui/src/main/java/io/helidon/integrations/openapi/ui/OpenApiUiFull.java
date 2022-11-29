@@ -22,9 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,7 +60,13 @@ class OpenApiUiFull extends OpenApiUiBase {
 
     private static final Logger LOGGER = Logger.getLogger(OpenApiUiFull.class.getName());
 
-    private static final MediaType[] SUPPORTED_TEXT_MEDIA_TYPES = new MediaType[] {
+    private static final MediaType[] SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT = new MediaType[] {
+            MediaType.TEXT_HTML,
+            MediaType.TEXT_PLAIN,
+            MediaType.TEXT_YAML
+    };
+
+    private static final MediaType[] SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT = new MediaType[] {
             MediaType.TEXT_HTML,
             MediaType.TEXT_PLAIN
     };
@@ -72,8 +76,8 @@ class OpenApiUiFull extends OpenApiUiBase {
 
     private final Map<Option, String> options;
 
-    private OpenApiUiFull(Builder builder, Function<MediaType, String> documentPreparer, String openAPISupportWebContext) {
-        super(builder, documentPreparer, openAPISupportWebContext);
+    private OpenApiUiFull(Builder builder) {
+        super(builder, builder.documentPreparer(), builder.openApiSupportWebContext());
         options = new HashMap<>(builder.options);
 
         // Apply some Helidon-specific defaults.
@@ -91,47 +95,33 @@ class OpenApiUiFull extends OpenApiUiBase {
     }
 
     @Override
-    public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
-        if (!isEnabled()) {
-            return false;
-        }
-        Optional<MediaType> bestAcceptedOpt = request.headers()
-                .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES);
-        if (bestAcceptedOpt.isEmpty()) {
-            return false;
-        }
-
-        if (MediaType.TEXT_HTML.test(bestAcceptedOpt.get())) {
-            // Don't redirect /openapi permanently; only if this request accepts HTML do we redirect now, and
-            // later requests might ask for different media types.
-            redirectToIndexTempIfHtmlBestAccepted(request, response);
-        } else if (MediaType.TEXT_PLAIN.test(bestAcceptedOpt.get())) {
-            sendText(request, response);
-        } else {
-            return false;
-        }
-        return true;
+    public MediaType[] supportedMediaTypes() {
+        return SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT;
     }
 
+    @Override
+    public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
+        // The full impl adds HTML support at the main /openapi endpoint.
+        return isEnabled()
+                && prepareTextResponse(request, response, SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT);
+    }
 
     @Override
     public void update(Routing.Rules rules) {
+        if (!isEnabled()) {
+            return;
+        }
         // Serve static content from the external U/I component...
-        StaticContentSupport uiStaticSupport = StaticContentSupport.builder("META-INF/resources/openapi-ui")
+        StaticContentSupport smallryeUiStaticSupport = StaticContentSupport.builder("META-INF/resources/openapi-ui")
                 .build();
         // ...and from here.
-        StaticContentSupport hereStaticSupport = StaticContentSupport.builder("helidon-openapi-ui")
+        StaticContentSupport helidonOpenApiUiStaticSupport = StaticContentSupport.builder("helidon-openapi-ui")
                 .build();
         rules
-                .get(webContext() + "[/]", this::redirectToIndexPermIfHtmlBestAccepted)
+                .get(webContext() + "[/]", this::prepareTextResponseFromUiEndpoint)
                 .get(webContext() + "/index.html", this::displayIndex)
-                .register(webContext(), hereStaticSupport)
-                .register(webContext(), uiStaticSupport);
-    }
-
-    @Override
-    protected MediaType[] staticTextMediaTypes() {
-        return new MediaType[0];
+                .register(webContext(), helidonOpenApiUiStaticSupport)
+                .register(webContext(), smallryeUiStaticSupport);
     }
 
     /**
@@ -147,7 +137,7 @@ class OpenApiUiFull extends OpenApiUiBase {
         }
 
         @Override
-        public OpenApiUiFull build(Function<MediaType, String> documentPreparer, String openAPIWebContext) {
+        public OpenApiUiFull build() {
             if (options.containsKey(Option.url)) {
                 LOGGER.log(Level.WARNING,
                            """
@@ -156,11 +146,11 @@ class OpenApiUiFull extends OpenApiUiBase {
                                    the actual endpoint of the Helidon OpenAPI service ({0})
                                    """,
                            new Object[] {
-                                   openAPIWebContext + OpenApiUi.UI_WEB_SUBCONTEXT,
+                                   openApiSupportWebContext() + OpenApiUi.UI_WEB_SUBCONTEXT,
                                    options.get(Option.url)}
                            );
             }
-            return new OpenApiUiFull(this, documentPreparer, openAPIWebContext);
+            return new OpenApiUiFull(this);
         }
 
         /**
@@ -230,9 +220,11 @@ class OpenApiUiFull extends OpenApiUiBase {
     private void displayIndex(ServerRequest request, ServerResponse response) {
         if (!acceptsHtml(request)) {
             request.next();
+            return;
         }
         try {
-            response.send(indexHtml(request));
+            response.addHeader(Http.Header.CONTENT_TYPE, MediaType.TEXT_HTML.toString())
+                    .send(indexHtml(request));
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Error generating index.html", e);
             response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
@@ -240,19 +232,30 @@ class OpenApiUiFull extends OpenApiUiBase {
         }
     }
 
-    private void redirectToIndexPermIfHtmlBestAccepted(ServerRequest request, ServerResponse response) {
-        redirectToIndexIfHtmlBestAccepted(request, response, true);
-    }
-
-    private void redirectToIndexTempIfHtmlBestAccepted(ServerRequest request, ServerResponse response) {
-        redirectToIndexIfHtmlBestAccepted(request, response, false);
-    }
-
-    private void redirectToIndexIfHtmlBestAccepted(ServerRequest request, ServerResponse response, boolean permanent) {
-        if (!acceptsHtml(request)) {
+    private void prepareTextResponseFromUiEndpoint(ServerRequest request, ServerResponse response) {
+        if (!prepareTextResponse(request, response, SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT)) {
             request.next();
         }
-        response.status(permanent ? Http.Status.MOVED_PERMANENTLY_301 : Http.Status.TEMPORARY_REDIRECT_307);
+    }
+
+    private boolean prepareTextResponse(ServerRequest request, ServerResponse response, MediaType[] mediaTypes) {
+        return request.headers()
+                .bestAccepted(mediaTypes)
+                .map(mediaType -> {
+                                     if (MediaType.TEXT_HTML.test(mediaType)) {
+                                         // Redirect to the index.html temporarily because other requests to the U/I endpoint
+                                         // might specify other media types.
+                                         redirectToIndexTemp(request, response);
+                                     } else {
+                                         sendStaticText(request, response, mediaType);
+                                     }
+                                     return true;
+                                 })
+                .orElse(false);
+    }
+
+    private void redirectToIndexTemp(ServerRequest request, ServerResponse response) {
+        response.status(Http.Status.TEMPORARY_REDIRECT_307);
         response.addHeader(Http.Header.LOCATION, webContext() + "/index.html");
         response.send();
     }
@@ -283,7 +286,7 @@ class OpenApiUiFull extends OpenApiUiBase {
 
     private boolean acceptsHtml(ServerRequest request) {
         return request.headers()
-                .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES)
+                .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT)
                 .map(candidate -> candidate.test(MediaType.TEXT_HTML))
                 .orElse(false);
     }

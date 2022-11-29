@@ -15,42 +15,37 @@
  */
 package io.helidon.integrations.openapi.ui;
 
-import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.openapi.OpenAPISupport;
 import io.helidon.openapi.OpenApiUi;
 
-import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
+@HelidonTest
+@AddBean(GreetResource.class)
+@AddBean(GreetingProvider.class)
 class CdiDefaultsTest {
 
-    @BeforeAll
-    public static void init() {
-        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        initializer.addBeanClasses()
-    }
+    private static final String NON_DEFAULT_OPENAPI_WEB_CONTEXT = "/my-openapi";
+
+    @Inject
+    private WebTarget webTarget;
 
     @Test
     void testDefaultPathWithSuffix() {
-        Response response = webTarget.path(OpenApiUiSupport.DEFAULT_UI_PREFIX + OpenApiUi.UI_WEB_SUBCONTEXT)
-                .request(MediaType.TEXT_HTML)
-                .get();
-        assertThat("HTTP status accessing default U/I endpoint",
-                   response.getStatus(), is(Http.Status.OK_200.code()));
-        assertThat("Content accessing default U/I endpoint",
-                   response.readEntity(String.class),
-                   allOf(containsString("<html"),
-                         containsString("openapi: 3")));
+        CdiTestsUtil.checkForPath(webTarget, OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT);
     }
+
+    @Test
+    void testDefaultPathWithoutSuffix() {
+        CdiTestsUtil.checkForPath(webTarget, OpenAPISupport.DEFAULT_WEB_CONTEXT);
+    }
+
 }
