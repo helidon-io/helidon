@@ -23,13 +23,14 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 @HelidonTest
 public class TestJBatchEndpoint {
 
+    public static final String RESULT_STRING = "{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}";
     @Inject
     private WebTarget webTarget;
 
@@ -43,8 +44,8 @@ public class TestJBatchEndpoint {
                 .get(JsonObject.class);
 
         Integer responseJobId = jsonObject.getInt("Started a job with Execution ID: ");
-        assertNotNull(responseJobId, "Response Job Id");
-        boolean result = false;
+        assertThat(responseJobId, is(notNullValue()));
+        String result = null;
         for (int i = 1; i < 10; i++) {
             //Wait a bit for it to complete
             Thread.sleep(i*1000);
@@ -55,12 +56,13 @@ public class TestJBatchEndpoint {
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get(JsonObject.class);
 
-            String responseString = jsonObject.toString();
-            result = responseString.equals("{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}");
+            result = jsonObject.toString();
+            if (result.equals(RESULT_STRING)){
+                break;
+            }
 
-            if (result) break;
         }
 
-        assertTrue(result, "Job Result string");
+        assertThat(result, equalTo(RESULT_STRING));
     }
 }
