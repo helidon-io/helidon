@@ -35,10 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 public class TestUi {
 
@@ -102,13 +99,18 @@ public class TestUi {
     }
 
     @Test
-    void checkMinimalUi() throws Exception {
+    void checkNoOpUi() {
 
-        verifyHtmlTextResponse(sharedWebClient.get()
-                .path(GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT)
+        String path = GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT;
+        WebClientResponse response = sharedWebClient.get()
+                .path(path)
                 .accept(MediaType.TEXT_HTML)
                 .submit()
-                .await(15, TimeUnit.SECONDS));
+                .await(15, TimeUnit.SECONDS);
+
+        assertThat("Request to " + path + " response status",
+                   response.status().code(),
+                   is(Http.Status.NOT_FOUND_404.code()));
     }
 
     @Test
@@ -135,54 +137,17 @@ public class TestUi {
                     .baseUri("http://localhost:" + ws.port())
                     .build();
 
-            verifyPlainTextResponse(wc.get()
+            WebClientResponse response = wc.get()
                                             .path(ALTERNATE_UI_WEB_CONTEXT)
                                             .accept(MediaType.TEXT_PLAIN)
                                             .submit()
-                                            .await(Duration.ofSeconds(15)));
+                                            .await(Duration.ofSeconds(15));
+            assertThat("Request to " + ALTERNATE_UI_WEB_CONTEXT + " status",
+                       response.status().code(),
+                       is(Http.Status.NOT_FOUND_404.code()));
 
         } finally {
             ws.shutdown();
         }
-    }
-
-    @Test
-    void checkPlainTextAtSubresource() throws ExecutionException, InterruptedException {
-        verifyPlainTextResponse(sharedWebClient.get()
-                                        .path(GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT)
-                                        .accept(MediaType.TEXT_PLAIN)
-                                        .submit()
-                                        .await(Duration.ofSeconds(15)));
-    }
-
-    @Test
-    void checkHtmlAtSubresource() throws ExecutionException, InterruptedException {
-        verifyHtmlTextResponse(sharedWebClient.get()
-                .path(GREETING_OPENAPI_PATH + OpenApiUi.UI_WEB_SUBCONTEXT)
-                .accept(MediaType.TEXT_HTML)
-                .submit()
-                .await(Duration.ofSeconds(15)));
-    }
-
-    private void verifyPlainTextResponse(WebClientResponse response) throws ExecutionException, InterruptedException {
-        assertThat("Status accessing U/I for PLAIN", response.status().code(), is(200));
-        assertThat("Returned media type accessing U/I",
-                   response.headers().contentType(),
-                   OptionalMatcher.value(MediaTypeMatcher.test(MediaType.TEXT_PLAIN)));
-        assertThat("U/I PLAIN response content",
-                   response.content().as(String.class).get(),
-                   allOf(not(containsString("<html")),
-                         containsString("openapi: 3")));
-    }
-
-    private void verifyHtmlTextResponse(WebClientResponse response) throws ExecutionException, InterruptedException {
-        assertThat("Status accessing U/I for HTML", response.status().code(), is(200));
-        assertThat("Returned media type accessing U/I",
-                   response.headers().contentType(),
-                   OptionalMatcher.value(MediaTypeMatcher.test(MediaType.TEXT_HTML)));
-        assertThat("U/I HTML response content",
-                   response.content().as(String.class).get(),
-                   allOf(containsString("<html"),
-                         containsString("openapi: 3")));
     }
 }

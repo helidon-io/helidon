@@ -98,16 +98,13 @@ class MainTest {
     @Test
     @EnabledIfSystemProperty(named = RUN_BROWSER_TEST_PROPERTY, matches=".*")
     void browserDefaults() throws InterruptedException {
-        browser(null, null, null, null);
+        browser();
     }
 
     @Test
     void checkSimulatedBrowserAccessToMainEndpoint() {
         String path = OpenAPISupport.DEFAULT_WEB_CONTEXT;
         run(null,
-            null,
-            null,
-            null,
             path,
             webClient ->
                 webClient.get()
@@ -140,9 +137,6 @@ class MainTest {
     void testMainUiPageWithDefaultSettings() {
         // Use defaults for the OpenAPI endpoint and the U/I endpoint.
         loadAndCheckMainPage(null, // load config from normal sources
-                             null,
-                             null, // create OpenAPISupport from config
-                             null, // create OpenApiUiFull from config
                              OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT
         );
     }
@@ -153,9 +147,6 @@ class MainTest {
         Map<String, String> settings = Map.of("openapi.ui.web-context", "/openapi-ui-x");
         Config config = Config.create(ConfigSources.create(settings));
         loadAndCheckMainPage(config,
-                             null,
-                             null,
-                             null,
                              "/openapi-ui-x");
     }
 
@@ -166,10 +157,18 @@ class MainTest {
         Map<String, String> settings = Map.of("openapi.web-context", "/openapi-x");
         Config config = Config.create(ConfigSources.create(settings));
         loadAndCheckMainPage(config,
-                             null,
-                             null,
-                             null,
                              "/openapi-x" + OpenApiUi.UI_WEB_SUBCONTEXT);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OpenAPISupport.DEFAULT_WEB_CONTEXT, OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT})
+    void testDisable(String path) {
+        Map<String, String> settings = Map.of("openapi.ui.enabled", "false");
+        Config config = Config.create(ConfigSources.create(settings));
+        loadAndCheckMainPage(config,
+                             path,
+                             true,
+                             404);
     }
 
     /**
@@ -179,16 +178,12 @@ class MainTest {
     @ParameterizedTest
     @ValueSource(strings = {"/openapi", "/openapi/"})
     void testRedirect(String testPath) {
-        loadAndCheckMainPage(null, null, null, null,
-                             testPath, false, 307);
+        loadAndCheckMainPage(null, testPath, false, 307);
     }
 
     static void loadAndCheckMainPage(Config config,
-                                     OpenAPISupport.Builder<?> openAPISupportBuilder,
-                                     OpenAPISupport openAPISupport,
-                                     OpenApiUi.Builder<?, ?> uiSupportBuilder,
                                      String uiPathToCheck) {
-        loadAndCheckMainPage(config, openAPISupportBuilder, openAPISupport, uiSupportBuilder, uiPathToCheck, true, 200);
+        loadAndCheckMainPage(config, uiPathToCheck, true, 200);
     }
 
     /**
@@ -212,8 +207,6 @@ class MainTest {
 
     private void testWithMediaTypeAndPath(MediaType mediaType, String path) {
         run(null,
-            null,
-            null, null,
             path,
             webClient -> webClient.get()
                     .followRedirects(true)
@@ -240,16 +233,10 @@ class MainTest {
     }
 
     static void loadAndCheckMainPage(Config config,
-                                     OpenAPISupport.Builder<?> openAPISupportBuilder,
-                                     OpenAPISupport openAPISupport,
-                                     OpenApiUi.Builder<?, ?> uiSupportBuilder,
                                      String uiPathToCheck,
                                      boolean followRedirects,
                                      int expectedStatus) {
         run (config,
-             openAPISupportBuilder,
-             openAPISupport,
-             uiSupportBuilder,
              uiPathToCheck,
              webClient ->
                      webClient.get()
@@ -274,9 +261,6 @@ class MainTest {
     }
 
     static void run(Config config,
-                    OpenAPISupport.Builder<?> openApiSupportBuilder,
-                    OpenAPISupport openApiSupport,
-                    OpenApiUi.Builder<?, ?> uiSupportBuilder,
                     String uiPathToTest,
                     Function<WebClient, WebClientRequestBuilder> operation,
                     int expectedStatus,
@@ -284,7 +268,7 @@ class MainTest {
         WebServer server = null;
 
         try {
-            server = startServer(config, openApiSupportBuilder, openApiSupport, uiSupportBuilder).get();
+            server = startServer(config).get();
             String baseUri = "http://localhost:" + server.port();
             WebClient.Builder webClientBuilder = WebClient.builder()
                     .baseUri(baseUri);
@@ -318,10 +302,7 @@ class MainTest {
         }
     }
 
-    static void browser(Config config,
-                        OpenAPISupport.Builder<?> openApiSupportBuilder,
-                        OpenAPISupport openApiSupport,
-                        OpenApiUi.Builder<?, ?> uiSupportBuilder) {
+    static void browser() {
         String minutesToStayUpText = System.getProperty(RUN_BROWSER_TEST_PROPERTY);
         if (minutesToStayUpText == null) {
             return;
@@ -332,9 +313,7 @@ class MainTest {
         }
         long minutesToStayUp = (minutesToStayUpText.length() > 0 ? Long.parseUnsignedLong(minutesToStayUpText) : 5);
 
-        if (config == null) {
-            config = Config.create();
-        }
+        Config config = Config.create();
         Map<String, String> portConfig = Map.of("server.port", "8080");
         Config configWithPort = Config.create(ConfigSources.create(portConfig), ConfigSources.create(config));
         WebServer webServer = null;
@@ -343,7 +322,7 @@ class MainTest {
             try {
                 // For the browser test set the server.port to 8080 so the human knows where to find the pages.
 
-                webServer = startServer(configWithPort, openApiSupportBuilder, openApiSupport, uiSupportBuilder).get(5, TimeUnit.SECONDS);
+                webServer = startServer(configWithPort).get(5, TimeUnit.SECONDS);
             } catch (Exception e) {
                 fail("Error starting webserver for browser test", e);
             }
@@ -359,10 +338,7 @@ class MainTest {
         }
     }
 
-    static Single<WebServer> startServer(Config config,
-                                         OpenAPISupport.Builder<?> openApiSupportBuilder,
-                                         OpenAPISupport openApiSupport,
-                                         OpenApiUi.Builder<?, ?> uiSupportBuilder) throws IOException {
+    static Single<WebServer> startServer(Config config) throws IOException {
 
         // load logging configuration
         LogConfig.configureRuntime();
@@ -373,7 +349,7 @@ class MainTest {
         }
 
         // Get webserver config from the "server" section of application.yaml and register JSON support
-        Single<WebServer> server = WebServer.builder(createRouting(config, openApiSupportBuilder, openApiSupport, uiSupportBuilder))
+        Single<WebServer> server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
                 .addMediaSupport(JsonpSupport.create())
                 .build()
@@ -397,30 +373,14 @@ class MainTest {
      * Creates new {@link io.helidon.webserver.Routing}.
      *
      * @param config configuration of this server
-     * @param openApiSupport {@code OpenAPISupport} instance to register with routing; null -> create one using config
-     * @param uiSupportBuilder {@code OpenApiUiFull.Builder} instance to use in registering with routing;
-     *                                                            null -> create one using config
      * @return routing configured with a health check, and a service
      */
-    private static Routing createRouting(Config config,
-                                         OpenAPISupport.Builder<?> openApiSupportBuilder,
-                                         OpenAPISupport openApiSupport,
-                                         OpenApiUi.Builder<?, ?> uiSupportBuilder) throws IOException {
+    private static Routing createRouting(Config config) throws IOException {
 
-        if (uiSupportBuilder == null) {
-            uiSupportBuilder = OpenApiUiFull.builder()
-                    .config(config.get(OpenAPISupport.Builder.CONFIG_KEY)
-                                    .get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY));
-        }
-        if (openApiSupportBuilder == null) {
-            openApiSupportBuilder = OpenAPISupport.builder()
-                    .config(config.get(OpenAPISupport.Builder.CONFIG_KEY));
-        }
-
-        if (openApiSupport == null) {
-            openApiSupportBuilder.ui(uiSupportBuilder);
-            openApiSupport = openApiSupportBuilder.build();
-        }
+        // OpenAPISupport builds an OpenApiUi internally if none is provided.
+        OpenAPISupport openApiSupport = OpenAPISupport.builder()
+                .config(config.get(OpenAPISupport.Builder.CONFIG_KEY))
+                .build();
 
         GreetService greetService = new GreetService(config);
         Routing.Builder routingBuilder = Routing.builder()

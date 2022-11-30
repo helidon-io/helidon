@@ -17,12 +17,10 @@
 package io.helidon.integrations.openapi.ui;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,27 +69,30 @@ class OpenApiUiFull extends OpenApiUiBase {
             MediaType.TEXT_PLAIN
     };
 
-    private byte[] indexHtml;
-    private final ReentrantLock indexHtmlAccess = new ReentrantLock();
-
-    private final Map<Option, String> options;
+    private final byte[] indexHtml;
 
     private OpenApiUiFull(Builder builder) {
         super(builder, builder.documentPreparer(), builder.openApiSupportWebContext());
-        options = new HashMap<>(builder.options);
+        Map<Option, String> options = new HashMap<>(builder.options);
 
         // Apply some Helidon-specific defaults.
         Map.of(Option.title, "Helidon OpenAPI U/I",
                Option.logoHref, LOGO_RESOURCE,
                Option.oauth2RedirectUrl, "-", // workaround for a bug in IndexHtmlCreator
                Option.backHref, HELIDON_IO_LINK, // link applied to the rendered logo image
-               Option.selfHref, HELIDON_IO_LINK) // link applied to the title if there is no logo (but there is; set this anyway)
+               Option.selfHref, HELIDON_IO_LINK, // link applied to the title if there is no logo (but there is; set this anyway)
+               Option.url, builder.openApiSupportWebContext()) // location of the OpenAPI document
 
                 .forEach((key, value) -> {
                     if (!options.containsKey(key)) { // Do not override values the developer provided.
                         options.put(key, value);
                     }
                 });
+        try {
+            indexHtml = IndexHtmlCreator.createIndexHtml(options);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to initialize the index.html content for the OpenAPI U/I", e);
+        }
     }
 
     @Override
@@ -101,9 +102,12 @@ class OpenApiUiFull extends OpenApiUiBase {
 
     @Override
     public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
-        // The full impl adds HTML support at the main /openapi endpoint.
-        return isEnabled()
-                && prepareTextResponse(request, response, SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT);
+        // This full impl adds HTML support at the main /openapi endpoint.
+        if (!isEnabled()) {
+            request.next();
+            return true;
+        }
+        return prepareTextResponse(request, response, SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT);
     }
 
     @Override
@@ -222,14 +226,8 @@ class OpenApiUiFull extends OpenApiUiBase {
             request.next();
             return;
         }
-        try {
-            response.addHeader(Http.Header.CONTENT_TYPE, MediaType.TEXT_HTML.toString())
-                    .send(indexHtml(request));
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Error generating index.html", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
-                    .send("Error generating index.html");
-        }
+        response.addHeader(Http.Header.CONTENT_TYPE, MediaType.TEXT_HTML.toString())
+                .send(indexHtml);
     }
 
     private void prepareTextResponseFromUiEndpoint(ServerRequest request, ServerResponse response) {
@@ -258,30 +256,6 @@ class OpenApiUiFull extends OpenApiUiBase {
         response.status(Http.Status.TEMPORARY_REDIRECT_307);
         response.addHeader(Http.Header.LOCATION, webContext() + "/index.html");
         response.send();
-    }
-
-    private byte[] indexHtml(ServerRequest request) throws IOException {
-        indexHtmlAccess.lock();
-        try {
-            if (indexHtml == null) {
-                options.put(Option.url, chooseOpenApiUrl(request));
-                LOGGER.log(Level.FINE,
-                           "Generated index.html to fetch OpenAPI document from {0}",
-                           options.get(Option.url));
-                indexHtml = IndexHtmlCreator.createIndexHtml(options);
-            }
-            return indexHtml;
-        } finally {
-            indexHtmlAccess.unlock();
-        }
-    }
-
-    private String chooseOpenApiUrl(ServerRequest request) {
-        URI uri = request.absoluteUri();
-        return String.format("%s://%s%s",
-                             uri.getScheme(),
-                             request.headers().first(Http.Header.HOST).orElse("missing-host"),
-                             webContext());
     }
 
     private boolean acceptsHtml(ServerRequest request) {

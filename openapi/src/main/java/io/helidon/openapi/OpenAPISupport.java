@@ -155,10 +155,6 @@ public abstract class OpenAPISupport implements Service {
 
     private static final Lock HELPER_ACCESS = new ReentrantLock(true);
 
-    private static final MediaType MEDIA_TYPE_TEXT = MediaType.builder()
-            .type("text")
-            .build();
-
     private final String webContext;
 
     private OpenAPI model = null;
@@ -179,8 +175,8 @@ public abstract class OpenAPISupport implements Service {
 
     private final OpenApiUi ui;
 
-    private final MediaType[] preferredOrdering;
-    private final MediaType[] uiSupportedMediaTypes;
+    private final MediaType[] preferredMediaTypeOrdering;
+    private final MediaType[] mediaTypesSupportedByUi;
 
     /**
      * Creates a new instance of {@code OpenAPISupport}.
@@ -196,19 +192,8 @@ public abstract class OpenAPISupport implements Service {
         openApiStaticFile = builder.staticFile();
         indexViewsSupplier = builder.indexViewsSupplier();
         ui = prepareUi(builder);
-        uiSupportedMediaTypes = ui.supportedMediaTypes();
-        preferredOrdering = preparePreferredOrdering(uiSupportedMediaTypes);
-    }
-
-    private static MediaType[] preparePreferredOrdering(MediaType[] uiTypesSupported) {
-        int nonTextLength = OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING.length;
-
-        MediaType[] result = Arrays.copyOf(OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING,
-                                           nonTextLength + uiTypesSupported.length);
-        for (int i = 0; i < uiTypesSupported.length; i++) {
-            result[nonTextLength + i] = uiTypesSupported[i];
-        }
-        return result;
+        mediaTypesSupportedByUi = ui.supportedMediaTypes();
+        preferredMediaTypeOrdering = preparePreferredMediaTypeOrdering(mediaTypesSupportedByUi);
     }
 
     @Override
@@ -246,7 +231,16 @@ public abstract class OpenAPISupport implements Service {
     }
 
     private OpenApiUi prepareUi(Builder<?> builder) {
-        return builder.ui().build(this::prepareDocument, webContext);
+        return builder.uiBuilder.build(this::prepareDocument, webContext);
+    }
+
+    private static MediaType[] preparePreferredMediaTypeOrdering(MediaType[] uiTypesSupported) {
+        int nonTextLength = OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING.length;
+
+        MediaType[] result = Arrays.copyOf(OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING,
+                                           nonTextLength + uiTypesSupported.length);
+        System.arraycopy(uiTypesSupported, 0, result, nonTextLength, uiTypesSupported.length);
+        return result;
     }
 
     private OpenAPI model() {
@@ -442,7 +436,7 @@ public abstract class OpenAPISupport implements Service {
         try {
             Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
 
-            // Give the U/I a chance to respond first.
+            // Give the U/I a chance to respond first if it claims to support the chosen media type.
             if (requestedMediaType.isPresent()
                 && uiSupportsMediaType(requestedMediaType.get())) {
                 if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
@@ -470,7 +464,8 @@ public abstract class OpenAPISupport implements Service {
     }
 
     private boolean uiSupportsMediaType(MediaType mediaType) {
-        for (MediaType uiSupportedMediaType : uiSupportedMediaTypes) {
+        // The U/I supports a very short list of media types, hence the sequential search.
+        for (MediaType uiSupportedMediaType : mediaTypesSupportedByUi) {
             if (uiSupportedMediaType.test(mediaType)) {
                 return true;
             }
@@ -545,7 +540,7 @@ public abstract class OpenAPISupport implements Service {
             headers.add(Http.Header.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
         }
         return headers
-                .bestAccepted(preferredOrdering);
+                .bestAccepted(preferredMediaTypeOrdering);
     }
 
     /**
@@ -790,7 +785,7 @@ public abstract class OpenAPISupport implements Service {
         private Optional<String> staticFilePath = Optional.empty();
         private CrossOriginConfig crossOriginConfig = null;
 
-        private OpenApiUi.Builder uiBuilder = null;
+        private OpenApiUi.Builder<?, ?> uiBuilder = OpenApiUi.builder();
 
         /**
          * Set various builder attributes from the specified {@code Config} object.
@@ -813,7 +808,7 @@ public abstract class OpenAPISupport implements Service {
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
             config.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY)
-                    .ifExists(c -> ui().config(c));
+                    .ifExists(uiBuilder::config);
             return identity();
         }
 
@@ -917,13 +912,6 @@ public abstract class OpenAPISupport implements Service {
             Objects.requireNonNull(uiBuilder, "U/I must be non-null");
             this.uiBuilder = uiBuilder;
             return identity();
-        }
-
-        OpenApiUi.Builder<?, ?> ui() {
-            if (uiBuilder == null) {
-                uiBuilder = OpenApiUi.builder();
-            }
-            return uiBuilder;
         }
 
         /**

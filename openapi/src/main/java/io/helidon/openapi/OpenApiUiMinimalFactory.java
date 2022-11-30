@@ -16,9 +16,9 @@
 package io.helidon.openapi;
 
 /**
- * Factory providing builders for {@link io.helidon.openapi.OpenApiUiMinimal} implementations.
+ * Factory providing builders for {@link OpenApiUiNoOp} implementations.
  */
-public class OpenApiUiMinimalFactory implements OpenApiUiFactory<OpenApiUiMinimal.Builder, OpenApiUiMinimal> {
+public class OpenApiUiMinimalFactory implements OpenApiUiFactory<OpenApiUiNoOp.Builder, OpenApiUiNoOp> {
 
     /**
      *
@@ -29,7 +29,7 @@ public class OpenApiUiMinimalFactory implements OpenApiUiFactory<OpenApiUiMinima
     }
 
     @Override
-    public OpenApiUiMinimal.Builder builder() {
-        return OpenApiUiMinimal.builder();
+    public OpenApiUiNoOp.Builder builder() {
+        return OpenApiUiNoOp.builder();
     }
 }
