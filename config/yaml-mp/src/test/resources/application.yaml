@@ -26,3 +26,4 @@ yaml:
 # Will be used for config profile testing
 profile:
   type: "Production"
+  value: "Production"

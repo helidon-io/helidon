@@ -196,7 +196,7 @@ public class YamlMpConfigSource implements ConfigSource {
      * @return list of config sources discovered (may be zero length)
      */
     public static List<ConfigSource> classPath(String resource, String profile) {
-        return classPath(resource, profile, Thread.currentThread().getContextClassLoader());
+        return classPathConfigSources(resource, profile, Thread.currentThread().getContextClassLoader());
     }
 
     /**
@@ -210,6 +210,11 @@ public class YamlMpConfigSource implements ConfigSource {
     public static List<ConfigSource> classPath(String resource, String profile, ClassLoader classLoader) {
         Objects.requireNonNull(profile, "Profile must be defined");
         Objects.requireNonNull(classLoader, "ClassLoader must be defined");
+
+        return classPathConfigSources(resource, profile, classLoader);
+    }
+
+    private static List<ConfigSource> classPathConfigSources(String resource, String profile, ClassLoader classLoader) {
 
         List<ConfigSource> sources = new LinkedList<>();
 

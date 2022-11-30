@@ -38,18 +38,18 @@ public class YamlConfigSourceProvider implements MpConfigSourceProvider {
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
-        return getConfigSources(classLoader, Optional.empty());
+        return configSources(classLoader, null);
     }
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader, String profile) {
         Objects.requireNonNull(profile, "Profile must not be null");
-        return getConfigSources(classLoader, Optional.of(profile));
+        return configSources(classLoader, profile);
     }
 
-    private Iterable<ConfigSource> getConfigSources(ClassLoader classLoader, Optional<String> profile) {
+    private Iterable<ConfigSource> configSources(ClassLoader classLoader, String profile) {
         List<ConfigSource> result = new LinkedList<>();
-        if (profile.isEmpty()) {
+        if (profile == null) {
             Enumeration<URL> resources;
             try {
                 resources = classLoader.getResources(RESOURCE_NAME);
@@ -61,7 +61,7 @@ public class YamlConfigSourceProvider implements MpConfigSourceProvider {
                 result.add(YamlMpConfigSource.create(url));
             }
         } else {
-            result.addAll(YamlMpConfigSource.classPath(RESOURCE_NAME, profile.get(), classLoader));
+            result.addAll(YamlMpConfigSource.classPath(RESOURCE_NAME, profile, classLoader));
         }
 
         return result;

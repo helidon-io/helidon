@@ -37,13 +37,14 @@ class YamlMpConfigSourceProviderTest {
     private static ConfigProviderResolver configResolver;
     private Config config;
     private static final String MP_CONFIG_PROFILE = "mp.config.profile";
-    public static final String PROFILE_CONFIG_KEY = "profile.type";
+    public static final String PROFILE_TYPE_CONFIG_KEY = "profile.type";
+    public static final String PROFILE_VALUE_CONFIG_KEY = "profile.value";
     public static final String DEFAULT_PROFILE = "default";
     public static final String DEV_PROFILE = "dev";
     public static final String TEST_PROFILE = "test";
-
+    public static final String DEFAULT_PROFILE_VALUE = "Production";
     public static final Map<String, String> profileConfigValues = Map.of(
-            DEFAULT_PROFILE, "Production",
+            DEFAULT_PROFILE, DEFAULT_PROFILE_VALUE,
             DEV_PROFILE, "Development",
             TEST_PROFILE, "Test"
     );
@@ -70,46 +71,78 @@ class YamlMpConfigSourceProviderTest {
     }
 
     @Test
-    void testNoProfile() {
+    void testNoProfileFromSystemPropertyWithOverride() {
         // if using DEFAULT_PROFILE, mp.config.profile system property will not be set
-        validateUsingSystemProperty(DEFAULT_PROFILE);
+        validateUsingSystemProperty(DEFAULT_PROFILE, PROFILE_TYPE_CONFIG_KEY, profileConfigValues.get(DEFAULT_PROFILE));
     }
 
     @Test
-    void testWithDevelopmentProfileFromSystemProperty() {
-        validateUsingSystemProperty(DEV_PROFILE);
+    void testDevProfileFromSystemPropertyWithOverride() {
+        validateUsingSystemProperty(DEV_PROFILE, PROFILE_TYPE_CONFIG_KEY, profileConfigValues.get(DEV_PROFILE));
     }
 
     @Test
-    void testWithTestProfileFromSystemProperty() {
-        validateUsingSystemProperty(TEST_PROFILE);
+    void testTestProfileFromSystemPropertyWithOverride() {
+        validateUsingSystemProperty(TEST_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
     }
 
     @Test
-    void testNoProfileFromConfigSource() {
+    void testNoProfileFromSystemPropertyWithNoOverride() {
         // if using DEFAULT_PROFILE, mp.config.profile will not be added in the config source
-        validateUsingConfigSource(DEFAULT_PROFILE);
+        validateUsingSystemProperty(DEFAULT_PROFILE, PROFILE_TYPE_CONFIG_KEY, profileConfigValues.get(DEFAULT_PROFILE));
     }
 
     @Test
-    void testWithDevelopmentProfileFromConfigSource() {
-        validateUsingConfigSource(DEV_PROFILE);
+    void testDevProfileFromSystemPropertyWithNoOverride() {
+        validateUsingSystemProperty(TEST_PROFILE, PROFILE_TYPE_CONFIG_KEY, profileConfigValues.get(TEST_PROFILE));
     }
 
     @Test
-    void testWithTestProfileFromConfigSource() {
-        validateUsingConfigSource(TEST_PROFILE);
+    void testTestProfileFromSystemPropertyWithNoOverride() {
+        validateUsingSystemProperty(DEV_PROFILE, PROFILE_TYPE_CONFIG_KEY, profileConfigValues.get(DEV_PROFILE));
     }
 
-    private void validateUsingSystemProperty(String profile) {
+    @Test
+    void testNoProfileFromFromConfigSourceWithOverride() {
+        // if using DEFAULT_PROFILE, mp.config.profile will not be added in the config source
+        validateUsingConfigSource(DEFAULT_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
+    }
+
+    @Test
+    void testDevProfileFromFromConfigSourceWithOverride() {
+        validateUsingConfigSource(DEV_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
+    }
+
+    @Test
+    void testTestProfileFromFromConfigSourceWithOverride() {
+        validateUsingConfigSource(TEST_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
+    }
+
+    @Test
+    void testNoProfileFromFromConfigSourceWithNoOverride() {
+        // if using DEFAULT_PROFILE, mp.config.profile will not be added in the config source
+        validateUsingConfigSource(DEFAULT_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
+    }
+
+    @Test
+    void testDevProfileFromFromConfigSourceWithNoOverride() {
+        validateUsingConfigSource(DEV_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
+    }
+
+    @Test
+    void testTestProfileFromFromConfigSourceWithNoOverride() {
+        validateUsingConfigSource(TEST_PROFILE, PROFILE_VALUE_CONFIG_KEY, DEFAULT_PROFILE_VALUE);
+    }
+
+    private void validateUsingSystemProperty(String profile, String profileConfigKey, String profileConfigValue) {
         // Don't set mp.config.profile system property if using DEFAULT_PROFILE
-        if (profile != DEFAULT_PROFILE) {
+        if (!profile.equals(DEFAULT_PROFILE)) {
             System.setProperty(MP_CONFIG_PROFILE, profile);
         }
-        validateConfigValues(profile, profileConfigValues.get(profile));
+        validateConfigValues(profile, profileConfigKey, profileConfigValue);
     }
 
-    private void validateUsingConfigSource(String profile) {
+    private void validateUsingConfigSource(String profile, String profileConfigKey, String profileConfigValue){
         // Don't set mp.config.profile in config source if using DEFAULT_PROFILE
         Map<String, String> configMap = profile == DEFAULT_PROFILE ? Map.of() : Map.of(MP_CONFIG_PROFILE, profile);
         Config mpConfigProfile = configResolver.getBuilder()
@@ -117,10 +150,10 @@ class YamlMpConfigSourceProviderTest {
                 .withSources(MpConfigSources.create(configMap))
                 .build();
         configResolver.registerConfig(mpConfigProfile, Thread.currentThread().getContextClassLoader());
-        validateConfigValues(profile, profileConfigValues.get(profile));
+        validateConfigValues(profile, profileConfigKey, profileConfigValue);
     }
 
-    private void validateConfigValues(String profile, String profileConfigValue) {
+    private void validateConfigValues(String profile, String profileConfigKey, String profileConfigValue) {
         config = ConfigProvider.getConfig();
         // If using DEFAULT_PROFILE, mp.config.profile should not exist in the Config
         if (profile == DEFAULT_PROFILE) {
@@ -130,6 +163,6 @@ class YamlMpConfigSourceProviderTest {
         } else {
             assertThat(config.getValue(MP_CONFIG_PROFILE, String.class), is(profile));
         }
-        assertThat(config.getValue(PROFILE_CONFIG_KEY, String.class), is(profileConfigValue));
+        assertThat(config.getValue(profileConfigKey, String.class), is(profileConfigValue));
     }
 }
