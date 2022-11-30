@@ -81,8 +81,10 @@ class WebSocketTest {
         TestListener listener = new TestListener();
 
         java.net.http.WebSocket ws = client.newWebSocketBuilder()
+                .subprotocols("chat", "mute")
                 .buildAsync(URI.create("ws://localhost:" + port + "/echo"), listener)
                 .get(5, TimeUnit.SECONDS);
+        assertThat(ws.getSubprotocol(), is("chat"));    // negotiated
         ws.request(10);
 
         ws.sendText("Hello", true).get(5, TimeUnit.SECONDS);

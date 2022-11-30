@@ -16,10 +16,17 @@
 
 package io.helidon.nima.tests.integration.websocket.webserver;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
+import io.helidon.nima.websocket.WsUpgradeException;
+import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
 
 class EchoService implements WsListener {
     private final AtomicReference<CloseInfo> closed = new AtomicReference<>();
@@ -34,6 +41,20 @@ class EchoService implements WsListener {
         closed.set(new CloseInfo(status, reason));
     }
 
+    @Override
+    public Optional<Headers> onHttpUpgrade(HttpPrologue prologue, Headers headers) throws WsUpgradeException {
+        if (headers.contains(WsUpgradeProvider.PROTOCOL)) {
+            List<String> subProtocols = headers.get(WsUpgradeProvider.PROTOCOL).allValues(true);
+            if (subProtocols.contains("chat")) {
+                Headers upgradeHeaders = WritableHeaders.create().set(WsUpgradeProvider.PROTOCOL, "chat");
+                return Optional.of(upgradeHeaders);     // negotiated
+            } else {
+                throw new WsUpgradeException("Unable to negotiate WS sub-protocol");
+            }
+        }
+        return Optional.empty();
+    }
+
     void resetClosed() {
         closed.set(null);
     }
@@ -43,4 +64,5 @@ class EchoService implements WsListener {
     }
 
     record CloseInfo(int status, String reason) { }
+
 }

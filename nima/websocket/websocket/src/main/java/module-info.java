@@ -19,6 +19,7 @@
  */
 module io.helidon.nima.websocket {
     requires transitive io.helidon.common.buffers;
+    requires transitive io.helidon.common.http;
 
     exports io.helidon.nima.websocket;
 }

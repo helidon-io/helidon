@@ -16,7 +16,11 @@
 
 package io.helidon.nima.websocket;
 
+import java.util.Optional;
+
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.HttpPrologue;
 
 /**
  * WebSocket listener.
@@ -49,7 +53,6 @@ public interface WsListener {
      * @param buffer  buffer with data
      */
     default void onPing(WsSession session, BufferData buffer) {
-
     }
 
     /**
@@ -59,7 +62,6 @@ public interface WsListener {
      * @param buffer  buffer with data
      */
     default void onPong(WsSession session, BufferData buffer) {
-
     }
 
     /**
@@ -70,7 +72,6 @@ public interface WsListener {
      * @param reason  reason of close
      */
     default void onClose(WsSession session, int status, String reason) {
-
     }
 
     /**
@@ -80,7 +81,6 @@ public interface WsListener {
      * @param t       throwable caught
      */
     default void onError(WsSession session, Throwable t) {
-
     }
 
     /**
@@ -89,6 +89,18 @@ public interface WsListener {
      * @param session WebSocket session
      */
     default void onOpen(WsSession session) {
+    }
 
+    /**
+     * Invoked during handshake process. Can be used to negotiate sub-protocols and/or
+     * reject an upgrade by throwing {@link WsUpgradeException}.
+     *
+     * @param prologue the http handshake request
+     * @param headers headers in request
+     * @return headers to be included in handshake response
+     * @throws WsUpgradeException if handshake is rejected
+     */
+    default Optional<Headers> onHttpUpgrade(HttpPrologue prologue, Headers headers) throws WsUpgradeException {
+        return Optional.empty();
     }
 }
