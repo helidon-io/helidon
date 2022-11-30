@@ -70,11 +70,13 @@ class TestServerTest {
     @Test
     void testSocketClientMixedInjectedParameter(@Socket("socket") SocketHttpClient socketClient1,
                                                 SocketHttpClient socketClient2,
-                                                @Socket("@default") SocketHttpClient socketClient3) {
+                                                @Socket("@default") SocketHttpClient socketClient3,
+                                                @Socket("socket") SocketHttpClient socketClient4) {
         assertThat(socketClient1, notNullValue());
         assertThat(socketClient2, notNullValue());
         assertThat(socketClient1, not(sameInstance(socketClient2)));
         assertThat(socketClient2, sameInstance(socketClient3));
+        assertThat(socketClient1, sameInstance(socketClient4));
     }
 
     @Test
@@ -95,11 +97,13 @@ class TestServerTest {
     @Test
     void testHttpClientMixedInjectedParameter(@Socket("socket") Http1Client httpClient1,
                                               Http1Client httpClient2,
-                                              @Socket("@default") Http1Client httpClient3) {
+                                              @Socket("@default") Http1Client httpClient3,
+                                              @Socket("socket") Http1Client httpClient4) {
         assertThat(httpClient1, notNullValue());
         assertThat(httpClient2, notNullValue());
         assertThat(httpClient1, not(sameInstance(httpClient2)));
         assertThat(httpClient2, sameInstance(httpClient3));
+        assertThat(httpClient1, sameInstance(httpClient4));
     }
 
     @Test

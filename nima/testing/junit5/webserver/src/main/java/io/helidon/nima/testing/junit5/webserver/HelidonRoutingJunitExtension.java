@@ -42,10 +42,10 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  * JUnit5 extension to support Helidon Níma WebServer in tests.
  */
 class HelidonRoutingJunitExtension implements BeforeAllCallback,
-        AfterAllCallback,
-        InvocationInterceptor,
-        BeforeEachCallback,
-        ParameterResolver {
+                                              AfterAllCallback,
+                                              InvocationInterceptor,
+                                              BeforeEachCallback,
+                                              ParameterResolver {
 
     private final Map<String, DirectClient> clients = new HashMap<>();
 
@@ -59,7 +59,7 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
         RoutingTest testAnnot = testClass.getAnnotation(RoutingTest.class);
         if (testAnnot == null) {
             throw new IllegalStateException("Invalid test class for this extension: " + testClass + ", missing "
-                    + RoutingTest.class.getName() + " annotation");
+                                                    + RoutingTest.class.getName() + " annotation");
         }
 
         initRoutings();
@@ -67,18 +67,17 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
 
     @Override
     public void afterAll(ExtensionContext context) {
-        clients.values().stream().forEach(client -> client.close());
+        clients.values().forEach(DirectClient::close);
     }
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) {
-        clients.values().stream().forEach(client ->
-                client.clientTlsPrincipal(null)
-                        .clientTlsCertificates(null)
-                        .clientHost("helidon-unit")
-                        .clientPort(65000)
-                        .serverHost("helidon-unit-server")
-                        .serverPort(8080)
+        clients.values().forEach(client -> client.clientTlsPrincipal(null)
+                .clientTlsCertificates(null)
+                .clientHost("helidon-unit")
+                .clientPort(65000)
+                .serverHost("helidon-unit-server")
+                .serverPort(8080)
         );
     }
 
@@ -102,12 +101,25 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
 
         Class<?> paramType = parameterContext.getParameter().getType();
         if (paramType.equals(DirectClient.class)) {
-            String socketId = WebServer.DEFAULT_SOCKET_NAME;
-
             Socket socketAnnot = parameterContext.getParameter().getAnnotation(Socket.class);
             String socketName = socketAnnot != null ? socketAnnot.value() : WebServer.DEFAULT_SOCKET_NAME;
 
-            return clients.get(socketName);
+            DirectClient directClient = clients.get(socketName);
+
+            if (directClient == null) {
+                if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+                    throw new IllegalStateException("There is no default routing specified. Please add static method "
+                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
+                                                            + " or HttpRules");
+                } else {
+                    throw new IllegalStateException("There is no default routing specified for socket \"" + socketName + "\"."
+                                                            + " Please add static method "
+                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
+                                                            + " or HttpRules, and add @Socket(\"" + socketName + "\") "
+                                                            + "annotation to the parameter");
+                }
+            }
+            return directClient;
         }
 
         // todo shall we use context?
@@ -132,12 +144,21 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                         HttpRouting.Builder router = HttpRouting.builder();
                         String routingSocketName = routingMethod(method, router);
                         HttpRouting resultingRouting = router.build();
-                        clients.put(routingSocketName, new DirectClient(resultingRouting));
+                        if (clients.putIfAbsent(routingSocketName, new DirectClient(resultingRouting)) != null) {
+                            throw new IllegalStateException("Method "
+                                                                    + method
+                                                                    + " defines routing for socket \""
+                                                                    + routingSocketName
+                                                                    + "\""
+                                                                    + " that is already defined for class \""
+                                                                    + aClass.getName()
+                                                                    + "\".");
+                        }
                     } else {
                         throw new IllegalStateException("Method " + method + " is annotated with "
-                                + SetUpRoute.class.getSimpleName()
-                                + " yet it is not static in class "
-                                + aClass.getName());
+                                                                + SetUpRoute.class.getSimpleName()
+                                                                + " yet it is not static in class "
+                                                                + aClass.getName());
                     }
                 }
             }
@@ -149,16 +170,14 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
         int parameterCount = parameterTypes.length;
         if (parameterCount != 1) {
             throw new IllegalArgumentException("Method " + method + " must have one parameter of "
-                    + HttpRules.class.getName());
+                                                       + HttpRules.class.getName());
         }
         Class<?> parameterType = parameterTypes[0];
         Annotation[] annotations = method.getParameterAnnotations()[0];
         String result = WebServer.DEFAULT_SOCKET_NAME;
-        if (annotations.length != 0) {
-            for (Annotation annotation: annotations) {
-                if (annotation.annotationType().equals(Socket.class)) {
-                    result = ((Socket) annotation).value();
-                }
+        for (Annotation annotation : annotations) {
+            if (annotation.annotationType().equals(Socket.class)) {
+                result = ((Socket) annotation).value();
             }
         }
         if (HttpRules.class.isAssignableFrom(parameterType)) {
@@ -170,7 +189,7 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
             }
         } else {
             throw new IllegalArgumentException("Method " + method + " must have parameter of "
-                    + HttpRules.class.getName());
+                                                       + HttpRules.class.getName());
         }
         return result;
     }
