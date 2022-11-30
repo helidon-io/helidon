@@ -260,7 +260,6 @@ public class HealthFeature extends HelidonFeatureSupport {
 
             return Config.create(ConfigSources.create(configs.stream()
                                                               .map(Config::asMap)
-                                                              .filter(ConfigValue::isPresent)
                                                               .map(ConfigValue::get)
                                                               .flatMap(map -> map.entrySet().stream())
                                                               .collect(Collectors.toMap(Map.Entry::getKey,
