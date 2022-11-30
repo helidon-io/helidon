@@ -16,7 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 import io.helidon.reactive.dbclient.spi.DbClientProvider;
 import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
 import io.helidon.reactive.dbclient.spi.DbMapperProvider;
@@ -26,7 +26,7 @@ import io.helidon.reactive.dbclient.spi.DbMapperProvider;
  *
  * @see io.helidon.reactive.dbclient.DbClient
  */
-@Incubating
+@Preview
 @Feature(value = "Db Client",
         description = "Reactive database client",
         in = HelidonFlavor.SE,

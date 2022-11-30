@@ -17,12 +17,12 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * MicroProfile Reactive Messaging Oracle AQ connector.
  */
-@Incubating
+@Preview
 @Feature(value = "Oracle AQ Connector",
         description = "Reactive messaging connector for Oracle AQ",
         in = {HelidonFlavor.SE, HelidonFlavor.MP},

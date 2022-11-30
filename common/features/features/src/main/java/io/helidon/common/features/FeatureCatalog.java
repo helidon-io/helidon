@@ -64,8 +64,8 @@ final class FeatureCatalog {
                         .notFlavor(toFlavor(module, props.getProperty("not"), false))
                         .since(props.getProperty("s", "1.0.0"));
 
-                if ("true".equals(props.getProperty("e"))) {
-                    builder.experimental(true);
+                if ("true".equals(props.getProperty("pr"))) {
+                    builder.preview(true);
                 }
                 if ("false".equals(props.getProperty("aot"))) {
                     builder.nativeSupported(false);

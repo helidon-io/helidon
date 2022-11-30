@@ -22,8 +22,8 @@ class ModuleDescriptor {
     private boolean aotSupported = true;
     private String aotDescription;
 
+    private boolean preview = false;
     private boolean incubating = false;
-    private boolean experimental = false;
     private boolean deprecated = false;
     private String deprecatedSince;
 
@@ -62,13 +62,13 @@ class ModuleDescriptor {
         return this;
     }
 
-    ModuleDescriptor incubating(boolean incubating) {
-        this.incubating = incubating;
+    ModuleDescriptor preview(boolean preview) {
+        this.preview = preview;
         return this;
     }
 
-    ModuleDescriptor experimental(boolean experimental) {
-        this.experimental = experimental;
+    ModuleDescriptor incubating(boolean incubating) {
+        this.incubating = incubating;
         return this;
     }
 
@@ -129,11 +129,11 @@ class ModuleDescriptor {
             write(metaWriter, "aot", false);
         }
 
-        if (experimental) {
-            write(metaWriter, "e", true);
-        }
         if (incubating) {
             write(metaWriter, "i", true);
+        }
+        if (preview) {
+            write(metaWriter, "pr", true);
         }
         if (deprecated) {
             write(metaWriter, "dep", true);

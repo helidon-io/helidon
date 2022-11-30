@@ -15,14 +15,14 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Experimental;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Provides support for Microstream core features integration.
  */
-@Experimental
+@Preview
 @Feature(value = "Microstream",
         description = "Microstream Integration",
         in = HelidonFlavor.SE,

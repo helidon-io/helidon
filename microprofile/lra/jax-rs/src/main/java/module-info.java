@@ -16,14 +16,14 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Helidon implementation of MicroProfile Long Running Actions.
  *
  * @see org.eclipse.microprofile.lra
  */
-@Incubating
+@Preview
 @Feature(value = "Long Running Actions",
         description = "MicroProfile Long Running Actions",
         in = HelidonFlavor.MP,

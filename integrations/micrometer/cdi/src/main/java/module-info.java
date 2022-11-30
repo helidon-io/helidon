@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Experimental;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Support for Micrometer in Helidon MP.
  */
-@Experimental
+@Preview
 @Feature(value = "Micrometer",
         description = "Micrometer integration",
         in = HelidonFlavor.MP,

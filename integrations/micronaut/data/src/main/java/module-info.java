@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Experimental;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Integration with Micronaut Data.
  */
-@Experimental
+@Preview
 @Feature(value = "Micronaut Data",
         description = "Micronaut Data integration",
         in = HelidonFlavor.MP,

@@ -16,12 +16,12 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Support for Micrometer in Helidon SE.
  */
-@Incubating
+@Preview
 @Feature(value = "Micrometer",
         description = "Micrometer integration",
         in = HelidonFlavor.SE,

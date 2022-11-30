@@ -22,13 +22,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for experimental modules.
- * Experimental module may be changed including backward incompatible changes in between major versions of Helidon.
- * Experimental features are NOT production ready features, and may be removed at discretion of Helidon team.
+ * Annotation for preview feature modules.
+ * Preview feature may be changed including backward incompatible changes in between major versions of Helidon.
+ * Preview features are considered production ready features.
  *
- * @see io.helidon.common.features.api.Incubating - mutualy exclusive with Incubating
+ * @see Incubating - mutualy exclusive with Incubating
  */
 @Target(ElementType.MODULE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Experimental {
+public @interface Preview {
 }

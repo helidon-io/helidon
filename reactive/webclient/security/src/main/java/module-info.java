@@ -16,14 +16,12 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
 import io.helidon.reactive.webclient.security.WebClientSecurityProvider;
 import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 
 /**
  * Helidon WebClient Security.
  */
-@Incubating
 @Feature(value = "Security",
         description = "Reactive web client support for security",
         in = HelidonFlavor.SE,

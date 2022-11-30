@@ -26,8 +26,8 @@ import java.lang.annotation.Target;
  * <p>
  * This feature descriptor can be augmented with additioonal annotations:
  * <ul>
- *     <li>{@link io.helidon.common.features.api.Incubating}</li>
- *     <li>{@link io.helidon.common.features.api.Experimental}</li>
+ *     <li>{@link Preview}</li>
+ *     <li>{@link Incubating}</li>
  *     <li>{@link java.lang.Deprecated}</li>
  * </ul>
  */

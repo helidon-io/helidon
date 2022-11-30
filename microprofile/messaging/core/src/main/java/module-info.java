@@ -16,14 +16,14 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * MicroProfile Reactive Messaging implementation.
  *
  * @see org.eclipse.microprofile.reactive.messaging
  */
-@Incubating
+@Preview
 @Feature(value = "Messaging",
         description = "MicroProfile Reactive Messaging spec implementation",
         in = HelidonFlavor.MP,

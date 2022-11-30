@@ -16,14 +16,12 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
 import io.helidon.reactive.webclient.metrics.WebClientMetricsProvider;
 import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 
 /**
  * Helidon WebClient Metrics.
  */
-@Incubating
 @Feature(value = "Metrics",
         description = "Reactive web client support for metrics",
         in = HelidonFlavor.SE,

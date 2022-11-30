@@ -16,14 +16,14 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * MicroProfile Reactive Streams Operators implementation.
  *
  * @see org.eclipse.microprofile.reactive.streams.operators
  */
-@Incubating
+@Preview
 @Feature(value = "Reactive",
         description = "MicroProfile Reactive Stream operators",
         in = HelidonFlavor.MP,

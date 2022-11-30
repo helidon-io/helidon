@@ -16,12 +16,12 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Neo4j metrics support module.
  */
-@Incubating
+@Preview
 @Feature(value = "Neo4j Metrics",
         description = "Metrics for Neo4j integration",
         in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},

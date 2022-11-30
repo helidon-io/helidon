@@ -16,12 +16,12 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Microprofile messaging Kafka connector.
  */
-@Incubating
+@Preview
 @Feature(value = "Kafka Connector",
         description = "Reactive messaging connector for Kafka",
         in = {HelidonFlavor.SE, HelidonFlavor.MP},

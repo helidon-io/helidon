@@ -61,8 +61,8 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 public final class HelidonFeatures {
     private static final System.Logger LOGGER = System.getLogger(HelidonFeatures.class.getName());
-    private static final System.Logger EXPERIMENTAL = System.getLogger(HelidonFeatures.class.getName() + ".experimental");
     private static final System.Logger INCUBATING = System.getLogger(HelidonFeatures.class.getName() + ".incubating");
+    private static final System.Logger PREVIEW = System.getLogger(HelidonFeatures.class.getName() + ".preview");
     private static final System.Logger DEPRECATED = System.getLogger(HelidonFeatures.class.getName() + ".deprecated");
     private static final System.Logger INVALID = System.getLogger(HelidonFeatures.class.getName() + ".invalid");
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
@@ -208,28 +208,28 @@ public final class HelidonFeatures {
                                                      ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
                                                      0));
         } else {
-            List<FeatureDescriptor> allExperimental = new ArrayList<>();
-            List<FeatureDescriptor> allDeprecated = new ArrayList<>();
             List<FeatureDescriptor> allIncubating = new ArrayList<>();
+            List<FeatureDescriptor> allDeprecated = new ArrayList<>();
+            List<FeatureDescriptor> allPreview = new ArrayList<>();
 
             if (ROOT_FEATURE_NODES.containsKey(currentFlavor)) {
                 FEATURES.get(currentFlavor)
                         .forEach(feature -> {
-                            gatherExperimental(allExperimental,
-                                               ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
-                            gatherDeprecated(allDeprecated,
-                                             ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
                             gatherIncubating(allIncubating,
                                              ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                            gatherDeprecated(allDeprecated,
+                                             ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                            gatherPreview(allPreview,
+                                          ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
                         });
             }
 
-            if (!allExperimental.isEmpty()) {
-                EXPERIMENTAL.log(Level.WARNING,
-                               "You are using experimental features. These APIs are not production ready!");
-                allExperimental
-                        .forEach(it -> EXPERIMENTAL.log(Level.INFO,
-                                                      "\tExperimental feature: "
+            if (!allIncubating.isEmpty()) {
+                INCUBATING.log(Level.WARNING,
+                               "You are using incubating features. These APIs are not production ready!");
+                allIncubating
+                        .forEach(it -> INCUBATING.log(Level.INFO,
+                                                      "\tIncubating feature: "
                                                                 + it.name()
                                                                 + " since " + it.since()
                                                                 + " ("
@@ -249,12 +249,12 @@ public final class HelidonFeatures {
                                                               + ")"));
             }
             if (!allDeprecated.isEmpty()) {
-                INCUBATING.log(Level.INFO,
-                               "You are using incubating features. These APIs are production ready, yet may change more "
+                PREVIEW.log(Level.INFO,
+                            "You are using preview features. These APIs are production ready, yet may change more "
                                        + "frequently. Please follow Helidon release changelog!");
-                allIncubating
-                        .forEach(it -> INCUBATING.log(Level.INFO,
-                                                      "\tIncubating feature: "
+                allPreview
+                        .forEach(it -> PREVIEW.log(Level.INFO,
+                                                   "\tPreview feature: "
                                                               + it.name()
                                                               + " since " + it.since()
                                                               + " ("
@@ -272,18 +272,18 @@ public final class HelidonFeatures {
                 + ", it should only be used in Helidon " + Arrays.toString(feature.flavors()));
     }
 
-    private static void gatherExperimental(List<FeatureDescriptor> allExperimental, Node node) {
-        if (node.descriptor != null && node.descriptor.experimental()) {
-            allExperimental.add(node.descriptor);
-        }
-        node.children().values().forEach(it -> gatherExperimental(allExperimental, it));
-    }
-
     private static void gatherIncubating(List<FeatureDescriptor> allIncubating, Node node) {
         if (node.descriptor != null && node.descriptor.incubating()) {
             allIncubating.add(node.descriptor);
         }
         node.children().values().forEach(it -> gatherIncubating(allIncubating, it));
+    }
+
+    private static void gatherPreview(List<FeatureDescriptor> allPreview, Node node) {
+        if (node.descriptor != null && node.descriptor.preview()) {
+            allPreview.add(node.descriptor);
+        }
+        node.children().values().forEach(it -> gatherPreview(allPreview, it));
     }
 
     private static void gatherDeprecated(List<FeatureDescriptor> allDeprecated, Node node) {
@@ -349,8 +349,8 @@ public final class HelidonFeatures {
             } else {
                 suffix = "\t";
             }
+            String preview = feat.preview() ? "Preview - " : "";
             String incubating = feat.incubating() ? "Incubating - " : "";
-            String experimental = feat.experimental() ? "Experimental - " : "";
             String deprecated = feat.deprecated() ? "Deprecated since " + feat.deprecatedSince() + " - " : "";
             String nativeDesc = "";
             if (!feat.nativeSupported()) {
@@ -360,7 +360,7 @@ public final class HelidonFeatures {
                     nativeDesc = " (Native image: " + feat.nativeDescription() + ")";
                 }
             }
-            System.out.println(prefix + name + suffix + deprecated + experimental + incubating + feat.description() + nativeDesc);
+            System.out.println(prefix + name + suffix + deprecated + incubating + preview + feat.description() + nativeDesc);
         }
 
         node.children.forEach((childName, childNode) -> {

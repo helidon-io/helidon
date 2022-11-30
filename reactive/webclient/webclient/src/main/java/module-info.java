@@ -16,12 +16,10 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
 
 /**
  * Helidon WebClient.
  */
-@Incubating
 @Feature(value = "Web Client",
         description = "Reactive web client",
         in = HelidonFlavor.SE,

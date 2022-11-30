@@ -16,14 +16,12 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
 import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 import io.helidon.reactive.webclient.tracing.WebClientTracingProvider;
 
 /**
  * Helidon WebClient Tracing.
  */
-@Incubating
 @Feature(value = "Tracing",
         description = "Reactive web client support for tracing",
         in = HelidonFlavor.SE,

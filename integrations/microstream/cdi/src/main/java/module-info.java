@@ -17,14 +17,14 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * Provides CDI support for Microstream integration.
  *
  * @provides jakarta.enterprise.inject.spi.Extension
  */
-@Incubating
+@Preview
 @Feature(value = "Microstream",
         description = "Microstream Integration",
         in = HelidonFlavor.MP,

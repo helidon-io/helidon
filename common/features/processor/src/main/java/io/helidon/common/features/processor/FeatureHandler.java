@@ -99,8 +99,8 @@ class FeatureHandler {
                             }
                         });
                 break;
-            case FeatureProcessor.EXPERIMENTAL_CLASS:
-                descriptor.experimental(true);
+            case FeatureProcessor.PREVIEW_CLASS:
+                descriptor.preview(true);
                 break;
             case FeatureProcessor.INCUBATING_CLASS:
                 descriptor.incubating(true);

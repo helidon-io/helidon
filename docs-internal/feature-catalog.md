@@ -4,8 +4,8 @@ Current `FeatureCatalog` explicitly mentions all Helidon features and adds them.
 This requires us to keep track of features separately from the feature sources, which is hard to refactor (and keep in sync).
 To remedy this situation, the following approach is now to be used:
 - Each feature `module-info.java` is to be annotated with `@Feature` annotation
-- For incubating features (production ready, but being worked on), use `@Incubating`
-- For experimental features (not production ready, for preview only), use `@Experimental`
+- For preview features (production ready, but being worked on), use `@Preview`
+- For incubating features (not production ready, for preview only), use `@Incubating`
 - For information related to Native image, use `@Aot`
 
 An annotation processor is available to process this annotation and generate a runtime property file with module information.
@@ -24,12 +24,12 @@ Module info example:
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * GraphQL server integration with Helidon Reactive WebServer.
  */
-@Incubating
+@Preview
 @Feature(value = "GraphQL", in = HelidonFlavor.SE, invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA})
 @Aot(description = "Incubating support, tested on limited use cases")
 module io.helidon.reactive.graphql.server {

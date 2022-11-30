@@ -17,12 +17,12 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Preview;
 
 /**
  * GraphQL server integration with Helidon Reactive WebServer.
  */
-@Incubating
+@Preview
 @Feature(value = "GraphQL",
          description = "GraphQL Support",
          since = "2.2.0",

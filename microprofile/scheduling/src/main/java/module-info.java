@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Experimental;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
 import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
 
 /**
  * CDI Scheduling implementation.
  */
-@Experimental
+@Preview
 @Feature(value = "Scheduling",
         description = "Task scheduling",
         in = HelidonFlavor.MP,

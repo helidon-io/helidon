@@ -34,8 +34,8 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
     private final String description;
     private final boolean nativeSupported;
     private final String nativeDescription;
+    private final boolean preview;
     private final boolean incubating;
-    private final boolean experimental;
     private final String module;
     private final boolean deprecated;
     private final String deprecatedSince;
@@ -51,8 +51,8 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         this.description = builder.description;
         this.nativeSupported = builder.nativeSupported;
         this.nativeDescription = builder.nativeDescription;
+        this.preview = builder.preview;
         this.incubating = builder.incubating;
-        this.experimental = builder.experimental;
         this.deprecated = builder.deprecated;
         this.deprecatedSince = builder.deprecatedSince;
     }
@@ -145,16 +145,16 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         return String.join("/", path());
     }
 
-    boolean incubating() {
-        return incubating;
+    boolean preview() {
+        return preview;
     }
 
     String since() {
         return since;
     }
 
-    boolean experimental() {
-        return experimental;
+    boolean incubating() {
+        return incubating;
     }
 
     boolean deprecated() {
@@ -184,8 +184,8 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
         private String description = null;
         private boolean nativeSupported = true;
         private String nativeDescription = null;
-        private boolean experimental;
         private boolean incubating;
+        private boolean preview;
         private boolean deprecated;
         private String deprecatedSince;
 
@@ -208,8 +208,8 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
             return this;
         }
 
-        Builder incubating(boolean incubating) {
-            this.incubating = incubating;
+        Builder preview(boolean preview) {
+            this.preview = preview;
             return this;
         }
 
@@ -278,8 +278,8 @@ final class FeatureDescriptor implements Comparable<FeatureDescriptor> {
             return this;
         }
 
-        Builder experimental(boolean experimental) {
-            this.experimental = experimental;
+        Builder incubating(boolean incubating) {
+            this.incubating = incubating;
             return this;
         }
     }
