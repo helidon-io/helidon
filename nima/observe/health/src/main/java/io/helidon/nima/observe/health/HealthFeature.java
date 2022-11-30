@@ -18,13 +18,18 @@ package io.helidon.nima.observe.health;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValue;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckType;
@@ -255,10 +260,14 @@ public class HealthFeature extends HelidonFeatureSupport {
         }
 
         private Config effectiveConfig() {
-            return Config.create(configs.stream()
-                                         .filter(Config::exists)
-                                         .map(ConfigSources::create)
-                                         .toArray(ConfigSource[]::new));
+
+            return Config.create(ConfigSources.create(configs.stream()
+                                                              .map(Config::asMap)
+                                                              .filter(ConfigValue::isPresent)
+                                                              .map(ConfigValue::get)
+                                                              .flatMap(map -> map.entrySet().stream())
+                                                              .collect(Collectors.toMap(Map.Entry::getKey,
+                                                                                        Map.Entry::getValue))));
         }
     }
 }
