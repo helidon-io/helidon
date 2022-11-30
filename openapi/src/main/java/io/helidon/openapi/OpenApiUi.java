@@ -47,17 +47,13 @@ public interface OpenApiUi extends Service {
     }
 
     /**
-     * Indicates the media types the U/I implementation itself supports.
-     *
-     * @return the media types the
-     * {@link #prepareTextResponseFromMainEndpoint(io.helidon.webserver.ServerRequest, io.helidon.webserver.ServerResponse)}
-     * method responds to
-     */
-    MediaType[] supportedMediaTypes();
-
-    /**
      * Gives the U/I an opportunity to respond to a request arriving at the {@code OpenAPISupport} endpoint for which the
      * best-accepted {@link MediaType} was {@code text/html}.
+     * <p>
+     *     An implementation should return {@code true} if it is responsible for a particular media type
+     *     whether it handled the request itself or delegated the request to the next handler.
+     *     For example, even if the implementation is disabled it should still return {@code true} for the HTML media type.
+     * </p>
      *
      * @param request the request for HTML content
      * @param response the response which could be prepared and sent

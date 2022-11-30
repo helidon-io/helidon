@@ -96,18 +96,18 @@ class OpenApiUiFull extends OpenApiUiBase {
     }
 
     @Override
-    public MediaType[] supportedMediaTypes() {
-        return SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT;
-    }
-
-    @Override
     public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
-        // This full impl adds HTML support at the main /openapi endpoint.
-        if (!isEnabled()) {
-            request.next();
-            return true;
-        }
-        return prepareTextResponse(request, response, SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT);
+        return request.headers()
+                .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT)
+                .map(mediaType -> {
+                    if (!isEnabled()) {
+                        request.next();
+                        return true;
+                    } else {
+                        return prepareTextResponse(request, response, mediaType);
+                    }
+                })
+                .orElse(false);
     }
 
     @Override
@@ -134,7 +134,6 @@ class OpenApiUiFull extends OpenApiUiBase {
     public static class Builder extends OpenApiUiBase.Builder<Builder, OpenApiUiFull> {
 
         private Map<Option, String> options = new HashMap<>();
-
 
         private Builder() {
             super();
@@ -231,28 +230,24 @@ class OpenApiUiFull extends OpenApiUiBase {
     }
 
     private void prepareTextResponseFromUiEndpoint(ServerRequest request, ServerResponse response) {
-        if (!prepareTextResponse(request, response, SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT)) {
-            request.next();
+        request.headers()
+                .bestAccepted(SUPPORTED_TEXT_MEDIA_TYPES_AT_UI_ENDPOINT)
+                .ifPresentOrElse(mediaType -> prepareTextResponse(request, response, mediaType),
+                                 request::next);
+    }
+
+    private boolean prepareTextResponse(ServerRequest request, ServerResponse response, MediaType mediaType) {
+        if (MediaType.TEXT_HTML.test(mediaType)) {
+            redirectToIndex(request, response);
+        } else {
+            sendStaticText(request, response, mediaType);
         }
+        return true;
     }
 
-    private boolean prepareTextResponse(ServerRequest request, ServerResponse response, MediaType[] mediaTypes) {
-        return request.headers()
-                .bestAccepted(mediaTypes)
-                .map(mediaType -> {
-                                     if (MediaType.TEXT_HTML.test(mediaType)) {
-                                         // Redirect to the index.html temporarily because other requests to the U/I endpoint
-                                         // might specify other media types.
-                                         redirectToIndexTemp(request, response);
-                                     } else {
-                                         sendStaticText(request, response, mediaType);
-                                     }
-                                     return true;
-                                 })
-                .orElse(false);
-    }
-
-    private void redirectToIndexTemp(ServerRequest request, ServerResponse response) {
+    private void redirectToIndex(ServerRequest request, ServerResponse response) {
+        // Redirect to the index.html temporarily because other requests to the U/I endpoint
+        // might specify other media types.
         response.status(Http.Status.TEMPORARY_REDIRECT_307);
         response.addHeader(Http.Header.LOCATION, webContext() + "/index.html");
         response.send();

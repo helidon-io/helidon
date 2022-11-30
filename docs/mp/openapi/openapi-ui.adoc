@@ -52,12 +52,6 @@ Adding the dependency as described earlier is sufficient, and you can control th
 
 include::{ui-inc}[tag=config-intro]
 
-For example, the following configuration changes the path where you access the U/I.
-
-[source,properties]
-.Example `META-INF/microprofile-config.properties` configuration changing the U/I URL
-----
-openapi.ui.web-context=/my-openapi-ui
-----
-
 include::{ui-inc}[tag=config-details]
+
+include::{ui-inc}[tag=additional-info]

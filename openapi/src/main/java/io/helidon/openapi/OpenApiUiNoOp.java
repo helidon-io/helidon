@@ -42,14 +42,8 @@ class OpenApiUiNoOp implements OpenApiUi {
     }
 
     @Override
-    public MediaType[] supportedMediaTypes() {
-        return SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT;
-    }
-
-    @Override
     public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
-        request.next();
-        return true;
+        return false;
     }
 
     static class Builder extends OpenApiUiBase.Builder<Builder, OpenApiUiNoOp> {
