@@ -22,7 +22,6 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.mp.spi.MpConfigSourceProvider;
