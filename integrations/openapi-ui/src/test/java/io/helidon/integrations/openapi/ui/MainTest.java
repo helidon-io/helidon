@@ -53,6 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -195,6 +196,31 @@ class MainTest {
     @MethodSource
     void testWithMediaType(MediaType mediaType, String path) {
         testWithMediaTypeAndPath(mediaType, path);
+    }
+
+    @Test
+    void simulateUiRetrievalOfOpenAPIDocument() {
+        run(null,
+            OpenAPISupport.DEFAULT_WEB_CONTEXT,
+            webClient -> webClient.get()
+                    .followRedirects(true)
+                    .accept(MediaType.APPLICATION_JSON, MediaType.WILDCARD),
+            200,
+            webClientResponse -> {
+                String text = null;
+                try {
+                    text = webClientResponse.content()
+                            .as(String.class)
+                            .get(5, TimeUnit.SECONDS);
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    fail("Error retrieving OpenAPI document", e);
+                }
+                assertThat("Retrieved OpenAPI document",
+                           text,
+                           allOf(containsString("openapi: 3"),
+                                 containsString("title:"),
+                                 not(containsString("<html"))));
+            });
     }
 
     static Stream<Arguments> testWithMediaType() {

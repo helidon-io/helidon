@@ -42,6 +42,11 @@ class OpenApiUiNoOp implements OpenApiUi {
     }
 
     @Override
+    public MediaType[] supportedMediaTypes() {
+        return SUPPORTED_TEXT_MEDIA_TYPES_AT_OPENAPI_ENDPOINT;
+    }
+
+    @Override
     public boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response) {
         return false;
     }

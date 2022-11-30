@@ -175,6 +175,9 @@ public abstract class OpenAPISupport implements Service {
 
     private final OpenApiUi ui;
 
+    private final MediaType[] preferredMediaTypeOrdering;
+    private final MediaType[] mediaTypesSupportedByUi;
+
     /**
      * Creates a new instance of {@code OpenAPISupport}.
      *
@@ -189,6 +192,8 @@ public abstract class OpenAPISupport implements Service {
         openApiStaticFile = builder.staticFile();
         indexViewsSupplier = builder.indexViewsSupplier();
         ui = prepareUi(builder);
+        mediaTypesSupportedByUi = ui.supportedMediaTypes();
+        preferredMediaTypeOrdering = preparePreferredMediaTypeOrdering(mediaTypesSupportedByUi);
     }
 
     @Override
@@ -429,12 +434,15 @@ public abstract class OpenAPISupport implements Service {
     private void prepareResponse(ServerRequest req, ServerResponse resp) {
 
         try {
-            // Give the U/I a chance to respond first.
-            if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
-                return;
-            }
-
             Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
+
+            // Give the U/I a chance to respond first if it claims to support the chosen media type.
+            if (requestedMediaType.isPresent()
+                && uiSupportsMediaType(requestedMediaType.get())) {
+                if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
+                    return;
+                }
+            }
 
             if (requestedMediaType.isEmpty()) {
                 LOGGER.log(Level.FINER,
@@ -454,6 +462,16 @@ public abstract class OpenAPISupport implements Service {
             resp.send("Error serializing OpenAPI document; " + ex.getMessage());
             LOGGER.log(Level.SEVERE, "Error serializing OpenAPI document", ex);
         }
+    }
+
+    private boolean uiSupportsMediaType(MediaType mediaType) {
+        // The U/I supports a very short list of media types, hence the sequential search.
+        for (MediaType uiSupportedMediaType : mediaTypesSupportedByUi) {
+            if (uiSupportedMediaType.test(mediaType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -523,7 +541,7 @@ public abstract class OpenAPISupport implements Service {
             headers.add(Http.Header.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
         }
         return headers
-                .bestAccepted(OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING);
+                .bestAccepted(preferredMediaTypeOrdering);
     }
 
     /**
