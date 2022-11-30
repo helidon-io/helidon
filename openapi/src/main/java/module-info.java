@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.openapi.OpenApiUiNoOpFactory;
+
 /**
  * Helidon SE OpenAPI Support.
  */
@@ -44,5 +46,5 @@ module io.helidon.openapi {
 
     uses io.helidon.openapi.OpenApiUiFactory;
 
-    provides io.helidon.openapi.OpenApiUiFactory with io.helidon.openapi.OpenApiUiMinimalFactory;
+    provides io.helidon.openapi.OpenApiUiFactory with OpenApiUiNoOpFactory;
 }

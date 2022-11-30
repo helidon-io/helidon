@@ -18,14 +18,14 @@ package io.helidon.openapi;
 /**
  * Factory providing builders for {@link OpenApiUiNoOp} implementations.
  */
-public class OpenApiUiMinimalFactory implements OpenApiUiFactory<OpenApiUiNoOp.Builder, OpenApiUiNoOp> {
+public class OpenApiUiNoOpFactory implements OpenApiUiFactory<OpenApiUiNoOp.Builder, OpenApiUiNoOp> {
 
     /**
      *
      * @return new instance of the factory for a minimal implementation of the U/I
      */
-    static OpenApiUiMinimalFactory create() {
-        return new OpenApiUiMinimalFactory();
+    static OpenApiUiNoOpFactory create() {
+        return new OpenApiUiNoOpFactory();
     }
 
     @Override

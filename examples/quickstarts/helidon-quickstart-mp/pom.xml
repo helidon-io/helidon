@@ -36,10 +36,6 @@
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.integrations.openapi-ui</groupId>-->
-<!--            <artifactId>helidon-integrations-openapi-ui</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>

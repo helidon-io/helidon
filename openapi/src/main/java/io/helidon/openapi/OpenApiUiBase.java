@@ -147,7 +147,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     private static OpenApiUiFactory<?, ?> loadUiFactory() {
         return HelidonServiceLoader.builder(ServiceLoader.load(OpenApiUiFactory.class))
-                .addService(OpenApiUiMinimalFactory.create(), Integer.MAX_VALUE)
+                .addService(OpenApiUiNoOpFactory.create(), Integer.MAX_VALUE)
                 .build()
                 .iterator()
                 .next();
