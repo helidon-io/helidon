@@ -16,6 +16,8 @@
 package io.helidon.examples.jbatch;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import org.junit.jupiter.api.Test;
 
 import jakarta.inject.Inject;
@@ -23,19 +25,26 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 
+import java.util.Collections;
+
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 
 @HelidonTest
 public class TestJBatchEndpoint {
 
-    public static final String RESULT_STRING = "{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}";
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
     @Inject
     private WebTarget webTarget;
 
     @Test
     public void runJob() throws InterruptedException {
+
+        JsonObject expectedJson = JSON.createObjectBuilder()
+                .add("Steps executed", "[step1, step2]")
+                .add("Status", "COMPLETED")
+                .build();
 
         //Start the job
         JsonObject jsonObject = webTarget
@@ -45,24 +54,23 @@ public class TestJBatchEndpoint {
 
         Integer responseJobId = jsonObject.getInt("Started a job with Execution ID: ");
         assertThat(responseJobId, is(notNullValue()));
-        String result = null;
+        JsonObject result = null;
         for (int i = 1; i < 10; i++) {
             //Wait a bit for it to complete
             Thread.sleep(i*1000);
 
             //Examine the results
-            jsonObject = webTarget
+            result = webTarget
                     .path("batch/status/" + responseJobId)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get(JsonObject.class);
 
-            result = jsonObject.toString();
-            if (result.equals(RESULT_STRING)){
+            if (result.equals(expectedJson)){
                 break;
             }
 
         }
 
-        assertThat(result, equalTo(RESULT_STRING));
+        assertThat(result, equalTo(expectedJson));
     }
 }
