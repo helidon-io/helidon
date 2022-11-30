@@ -70,6 +70,11 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             + "Sec-WebSocket-Accept: ";
 
     /**
+     * Switching response suffix.
+     */
+    protected static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
+
+    /**
      * Header line separator.
      */
     protected static final BufferData HEADER_LINE_SEPARATOR = BufferData.create("\r\n".getBytes(US_ASCII));
