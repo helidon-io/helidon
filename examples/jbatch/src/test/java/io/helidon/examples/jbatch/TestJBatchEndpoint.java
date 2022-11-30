@@ -20,49 +20,60 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 @HelidonTest
 public class TestJBatchEndpoint {
 
-    @Inject
-    private WebTarget webTarget;
+        private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    @Test
-    public void runJob() throws InterruptedException {
+        @Inject
+        private WebTarget webTarget;
 
-        //Start the job
-        JsonObject jsonObject = webTarget
-                .path("/batch")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class);
+        @Test
+        public void runJob() throws InterruptedException {
 
-        Integer responseJobId = jsonObject.getInt("Started a job with Execution ID: ");
-        assertNotNull(responseJobId, "Response Job Id");
+            JsonObject expectedJson = JSON.createObjectBuilder()
+                    .add("Steps executed", "[step1, step2]")
+                    .add("Status", "COMPLETED")
+                    .build();
 
-        boolean result = false;
-        for (int i = 1; i < 10; i++) {
-            //Wait a bit for it to complete
-            Thread.sleep(i*1000);
-
-            //Examine the results
-            jsonObject = webTarget
-                    .path("batch/status/" + responseJobId)
+            //Start the job
+            JsonObject jsonObject = webTarget
+                    .path("/batch")
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get(JsonObject.class);
 
-            String responseString = jsonObject.toString();
-            result = responseString.equals("{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}");
+            Integer responseJobId = jsonObject.getInt("Started a job with Execution ID: ");
+            assertThat(responseJobId, is(notNullValue()));
+            JsonObject result = null;
+            for (int i = 1; i < 10; i++) {
+                //Wait a bit for it to complete
+                Thread.sleep(i*1000);
 
-            if (result) break;
+                //Examine the results
+                result = webTarget
+                        .path("batch/status/" + responseJobId)
+                        .request(MediaType.APPLICATION_JSON_TYPE)
+                        .get(JsonObject.class);
+
+                if (result.equals(expectedJson)){
+                    break;
+                }
+
+            }
+
+            assertThat(result, equalTo(expectedJson));
         }
-
-        assertTrue(result, "Job Result string");
-    }
 }
