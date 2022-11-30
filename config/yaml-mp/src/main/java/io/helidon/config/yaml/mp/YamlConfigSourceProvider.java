@@ -21,9 +21,11 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.config.ConfigException;
-import io.helidon.config.mp.spi.MpConfigSourceProviderWithProfile;
+import io.helidon.config.mp.spi.MpConfigSourceProvider;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -31,18 +33,23 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * YAML config source provider for MicroProfile config that supports file {@code application.yaml}.
  * This class should not be used directly - it is loaded automatically by Java service loader.
  */
-public class YamlConfigSourceProvider implements MpConfigSourceProviderWithProfile {
+public class YamlConfigSourceProvider implements MpConfigSourceProvider {
     private static final String RESOURCE_NAME = "application.yaml";
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
-        return getConfigSources(classLoader, null);
+        return getConfigSources(classLoader, Optional.empty());
     }
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader, String profile) {
+        Objects.requireNonNull(profile, "Profile must not be null");
+        return getConfigSources(classLoader, Optional.of(profile));
+    }
+
+    private Iterable<ConfigSource> getConfigSources(ClassLoader classLoader, Optional<String> profile) {
         List<ConfigSource> result = new LinkedList<>();
-        if (profile == null) {
+        if (profile.isEmpty()) {
             Enumeration<URL> resources;
             try {
                 resources = classLoader.getResources(RESOURCE_NAME);
@@ -54,7 +61,7 @@ public class YamlConfigSourceProvider implements MpConfigSourceProviderWithProfi
                 result.add(YamlMpConfigSource.create(url));
             }
         } else {
-            result.addAll(YamlMpConfigSource.classPath(RESOURCE_NAME, profile, classLoader));
+            result.addAll(YamlMpConfigSource.classPath(RESOURCE_NAME, profile.get(), classLoader));
         }
 
         return result;

@@ -22,13 +22,12 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 /**
  * Java Service loader interface for MP ConfigSource Providers that adds configuration profile support.
  */
-public interface MpConfigSourceProviderWithProfile extends ConfigSourceProvider {
+public interface MpConfigSourceProvider extends ConfigSourceProvider {
     /**
      * Returns a list of configuration sources.
      *
-     * @param classLoader classloader where resource will be retrieved from (will use the
-     *                    current thread's classloader if value is {@code null})
-     * @param profile configuration profile to use
+     * @param classLoader classloader where resource will be retrieved from
+     * @param profile configuration profile to use, must not be null
      *
      * @return list of config sources
      */
