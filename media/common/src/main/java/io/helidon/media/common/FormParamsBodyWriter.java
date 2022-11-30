@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,8 @@ class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
         //User didn't have to set explicit content type. In that case set default and class filters out unsupported types.
         return context.contentType()
                 .or(() -> Optional.of(DEFAULT_FORM_MEDIA_TYPE))
-                .filter(mediaType -> mediaType == MediaType.APPLICATION_FORM_URLENCODED
-                        || mediaType == MediaType.TEXT_PLAIN)
+                .filter(mediaType -> MediaType.APPLICATION_FORM_URLENCODED.test(mediaType)
+                        || MediaType.TEXT_PLAIN.test(mediaType))
                 .map(it -> PredicateResult.supports(FormParams.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
