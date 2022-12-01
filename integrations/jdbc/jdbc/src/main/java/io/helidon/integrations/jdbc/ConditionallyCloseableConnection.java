@@ -865,17 +865,4 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
 
     }
 
-
-    /*
-     * Inner and nested classes.
-     */
-
-
-    @FunctionalInterface
-    private interface SQLBooleanSupplier {
-
-        boolean getAsBoolean() throws SQLException;
-
-    }
-
 }

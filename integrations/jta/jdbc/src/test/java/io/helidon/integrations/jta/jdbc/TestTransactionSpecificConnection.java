@@ -87,7 +87,6 @@ final class TestTransactionSpecificConnection {
         }
     }
 
-    @Deprecated
     @Test
     void testCloseableAndClosedBehavior() throws SQLException {
         @SuppressWarnings("removal")

@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
@@ -48,6 +49,8 @@ import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionSynchronizationRegistry;
+
+import static javax.transaction.xa.XAResource.TMSUCCESS;
 
 /**
  * A JDBC 4.3-compliant {@link ConditionallyCloseableConnection} that can participate in a {@link Transaction}.
@@ -539,26 +542,42 @@ final class JtaConnection extends ConditionallyCloseableConnection {
     }
 
     @Override // ConditionallyCloseableConnection
-    public boolean isCloseable() throws SQLException {
-        // this.checkOpen(); // Deliberately omitted
-        // this.enlist(); // Deliberately omitted
-        return super.isCloseable() && !this.enlisted();
-    }
-
-    @Override // ConditionallyCloseableConnection
-    public void setCloseable(boolean closeable) {
-        // this.checkOpen(); // Deliberately omitted
-        // this.enlist(); // Deliberately omitted
-        if (closeable) {
+    public void close() throws SQLException {
+        // The JTA Specification, section 4.2, has a non-normative diagram illustrating that close() is expected,
+        // but not required, to call Transaction#delistResource(XAResource).  This is, mind you, before the
+        // prepare/commit cycle has started.
+        if (this.activeOrMarkedRollbackTransaction()) {
             try {
-                if (this.enlisted()) {
-                    throw new IllegalArgumentException("closeable: " + closeable);
+                XAResource xar = (XAResource) this.tsr.getResource(this);
+                if (xar != null) {
+                    // TMSUCCESS because it's an ordinary close() call, not a delisting due to an exception
+                    this.transaction().delistResource(xar, TMSUCCESS);
                 }
-            } catch (SQLException e) {
-                throw new IllegalStateException(e.getMessage(), e);
+            } catch (IllegalStateException e) {
+                // Transaction went from active or marked for rollback to some other state; we're not enlisted
+            } catch (SystemException | RuntimeException e) {
+                // Why do we catch RuntimeException as well here? See
+                // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
+                // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
+                // getResource() and putResource() are not documented to throw RuntimeException, only
+                // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is
+                // encountered.
+                throw new SQLTransientException(e.getMessage(),
+                                                "25000", // invalid transaction state
+                                                e);
             }
         }
-        super.setCloseable(closeable);
+        super.close();
+    }
+
+    @Override // Object
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override // Object
+    public boolean equals(Object other) {
+        return this == other;
     }
 
     /**
@@ -658,8 +677,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      *
      * @exception SQLException if invoked on a closed connection or the enlisted status could not be acquired
      */
-    private boolean enlisted() throws SQLException {
-        this.failWhenClosed();
+    boolean enlisted() throws SQLException {
+        return this.enlisted(true);
+    }
+
+    private boolean enlisted(boolean failWhenClosed) throws SQLException {
+        if (failWhenClosed) {
+            this.failWhenClosed();
+        }
         if (this.activeOrMarkedRollbackTransaction()) {
             // Do what we can to avoid the potential getResource(Object)-implied map lookup and IllegalStateException
             // construction by checking to see if the status constitutes an "active" status (but in the sense used only
@@ -670,9 +695,8 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             // TransactionSynchronizationRegistry#getReource(Object). See
             // https://www.eclipse.org/lists/jta-dev/msg00264.html.
             try {
-                return this.tsr.getResource(JtaConnection.class.getName()) == this;
+                return this.tsr.getResource(this) != null;
             } catch (IllegalStateException e) {
-                return false;
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException as well here? See
                 // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
@@ -776,10 +800,10 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         }
 
         try {
-          if (this.tsr.getResource(JtaConnection.class.getName()) == this) {
-              // Operations on the current thread on this connection are already enlisted. Very common. Return.
-              return;
-          }
+            if (this.enlisted(false)) {
+                // Operations on the current thread on this connection are already enlisted. Very common. Return.
+                return;
+            }
         } catch (RuntimeException e) {
             throw new SQLTransientException(e.getMessage(), "25000", e);
         }
@@ -835,43 +859,75 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         // ensured we aren't already enlisted and our autoCommit status is true. The Transaction's status can still
         // change at any point (as a result of asynchronous rollback, for example) so we have to watch for exceptions.
         try {
-            t.enlistResource(new LocalXAResource(this::connectionFunction, this.exceptionConverter));
+            LocalXAResource xar = new LocalXAResource(this::connectionFunction, this.exceptionConverter);
+            // Calls xar.start(Xid, int) on same thread; calls this.connectionFunction(Xid) on same thread
+            t.enlistResource(xar);
+            // Critical: we put a non-null object (the XAResource) into the TransactionSynchronizationRegistry to serve
+            // as a marker that this particular connection is enlisted.
+            this.tsr.putResource(this, xar);
         } catch (RollbackException e) {
             // The enlistResource(XAResource) operation failed because the transaction was rolled back. We use SQL state
             // 40000 ("transaction rollback, no subclass") even though it's unclear whether this indicates the SQL/local
             // transaction or the XA branch transaction or both.
             throw new SQLNonTransientException(e.getMessage(), "40000", e);
         } catch (RuntimeException | SystemException e) {
+            if (e.getCause() instanceof RollbackException) {
+                // The enlistResource(XAResource) operation failed because the transaction was rolled back. We use SQL
+                // state 40000 ("transaction rollback, no subclass") even though it's unclear whether this indicates the
+                // SQL/local transaction or the XA branch transaction or both.
+                throw new SQLNonTransientException(e.getMessage(), "40000", e);
+            }
             // The enlistResource(XAResource) operation failed, or the putResource(Object, Object) operation failed.
             throw new SQLTransientException(e.getMessage(), "25000", e);
         }
     }
 
+    // (Used only by reference by LocalXAResource#start(Xid, int) as a result of calling
+    // Transaction#enlistResource(XAResource) in enlist() above.)
     private Connection connectionFunction(Xid xid) {
-        this.tsr.putResource(JtaConnection.class.getName(), JtaConnection.this);
         this.tsr.putResource("xid", xid);
-        try {
-            if (super.isCloseable()) {
-                if (this.interposedSynchronizations) {
-                    this.tsr.registerInterposedSynchronization((Sync) this::superSetCloseableTrue);
-                } else {
-                    try {
-                        this.tm.getTransaction().registerSynchronization((Sync) this::superSetCloseableTrue);
-                    } catch (RollbackException | SystemException e) {
-                        throw new IllegalStateException(e.getMessage(), e);
-                    }
-                }
-                super.setCloseable(false);
+        if (this.interposedSynchronizations) {
+            this.tsr.registerInterposedSynchronization((Sync) this::transactionCompleted);
+        } else {
+            try {
+                this.tm.getTransaction().registerSynchronization((Sync) this::transactionCompleted);
+            } catch (RollbackException | SystemException e) {
+                throw new IllegalStateException(e.getMessage(), e);
             }
-        } catch (SQLException e) {
-            throw new UncheckedSQLException(e);
         }
+        this.setCloseable(false);
         return this.delegate();
     }
 
-    // (Used only by reference in enlist() above.)
-    private void superSetCloseableTrue(int ignoredStatusCommittedOrRolledBack) {
-        super.setCloseable(true);
+    // (Used only by reference in connectionFunction(Xid) above.)
+    private void transactionCompleted(int commitedOrRolledBack) {
+        try {
+            if (!this.isClosed()) {
+                // Did someone call close() while we were enlisted?  That's permitted by section 4.2 of the JTA
+                // specification, but it shouldn't actually close the connection because the prepare/commit cycle
+                // wouldn't have started.
+                boolean closePending = this.isClosePending();
+
+                // If they did, then we must be non-closeable.  If they didn't, we could be either closeable or not
+                // closeable.
+                assert closePending ? !this.isCloseable() : true;
+
+                // Now the global transaction is over, so set our closeable status to true. (It may already be true.)
+                this.setCloseable(true);
+                assert this.isCloseable();
+
+                // Setting closeable to true will clear the closePending status, per spec.
+                assert !this.isClosePending();
+
+                // If there WAS a close() attempt, now it CAN work, so let it work.
+                if (closePending) {
+                    this.close();
+                }
+            }
+        } catch (SQLException e) {
+            // (Synchronization implementations can throw only RuntimeExceptions.)
+            throw new UncheckedSQLException(e);
+        }
     }
 
 
