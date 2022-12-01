@@ -66,7 +66,7 @@ public interface ConfigBeanBuilderValidator<CBB> {
      * Represents a single round of validation. A single round of validation will iterate over each attributes of the
      * config bean, calling {@link #validate(String, Supplier, Class, java.util.Map)} for each attribute.
      */
-    interface ValidationRound extends AttributeVisitor {
+    interface ValidationRound extends AttributeVisitor<Object> {
 
         /**
          * All the issues found.

@@ -30,6 +30,6 @@ module io.helidon.builder.processor {
     provides javax.annotation.processing.Processor
             with io.helidon.builder.processor.BuilderProcessor;
 
-    uses io.helidon.builder.processor.spi.BuilderCreator;
-    uses io.helidon.builder.processor.spi.TypeInfoCreator;
+    uses io.helidon.builder.processor.spi.BuilderCreatorProvider;
+    uses io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 }

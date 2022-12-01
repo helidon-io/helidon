@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.tools.BodyContext;
-import io.helidon.builder.processor.tools.DefaultBuilderCreator;
+import io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
@@ -53,14 +53,14 @@ import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 /**
- * A specialization of {@link DefaultBuilderCreator} that supports the additional add-ons to the builder generated classes that
+ * A specialization of {@link io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider} that supports the additional add-ons to the builder generated classes that
  * binds to the config sub-system.
  *
  * @see io.helidon.pico.builder.config.spi.ConfigBean
  * @see io.helidon.pico.builder.config.spi.ConfigBeanBuilder
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
-public class ConfigBeanBuilderCreator extends DefaultBuilderCreator {
+public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
     /**
      * Default constructor.

@@ -31,9 +31,10 @@ final class GenerateVisitorSupport {
                 && !ctx.requireLibraryDependencies()) {
             builder.append("\n\n\t/**\n"
                                    + "\t * A functional interface that can be used to visit all attributes of this type.\n"
+                                   + "\t * @param <T> type of user defined context"
                                    + "\t */\n");
             builder.append("\t@FunctionalInterface\n"
-                                   + "\tpublic static interface AttributeVisitor {\n"
+                                   + "\tpublic static interface AttributeVisitor<T> {\n"
                                    + "\t\t/**\n"
                                    + "\t\t * Visits the attribute named 'attrName'.\n"
                                    + "\t\t *\n"
@@ -47,7 +48,7 @@ final class GenerateVisitorSupport {
                                    + "type)\n"
                                    + "\t\t */\n"
                                    + "\t\tvoid visit(String attrName, Supplier<Object> valueSupplier, "
-                                   + "Map<String, Object> meta, Object userDefinedCtx, Class<?> "
+                                   + "Map<String, Object> meta, T userDefinedCtx, Class<?> "
                                    + "type, Class<?>... typeArgument);\n"
                                    + "\t}");
 
@@ -57,7 +58,7 @@ final class GenerateVisitorSupport {
                                    + "\t * must be annotated with {@code ConfiguredOption(required=true)} for this to be "
                                    + "enforced.\n"
                                    + "\t */\n");
-            builder.append("\tprotected static class RequiredAttributeVisitor implements AttributeVisitor {\n"
+            builder.append("\tprotected static class RequiredAttributeVisitor implements AttributeVisitor<Object> {\n"
                                    + "\t\tprivate final List<String> errors = new java.util.ArrayList();\n"
                                    + "\n"
                                    + "\t\t/**\n"

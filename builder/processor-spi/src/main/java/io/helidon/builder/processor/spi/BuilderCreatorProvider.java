@@ -23,12 +23,14 @@ import java.util.Set;
 import io.helidon.pico.types.AnnotationAndValue;
 
 /**
+ * Java {@link java.util.ServiceLoader} provider interface used to discover builder creators.
+ * <p>
  * Implementors of this contract will be called to process {@link io.helidon.builder.BuilderTrigger}-annotated
  * annotation types that they know how to handle. This is based upon the {@link #supportedAnnotationTypes()} as well as the
  * {@link io.helidon.common.Weight}
  * assigned to the implementation class implementing this interface.
  */
-public interface BuilderCreator {
+public interface BuilderCreatorProvider {
 
     /**
      * The set of {@link io.helidon.builder.Builder}-like annotations that this creator knows how to handle. Note that

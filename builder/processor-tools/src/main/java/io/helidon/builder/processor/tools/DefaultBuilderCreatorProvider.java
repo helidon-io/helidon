@@ -34,11 +34,11 @@ import io.helidon.builder.Annotated;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.builder.processor.spi.BuilderCreator;
+import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 import io.helidon.builder.processor.spi.DefaultTypeAndBody;
 import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.spi.RequiredAttributeVisitor;
+import io.helidon.builder.RequiredAttributeVisitor;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -52,10 +52,10 @@ import static io.helidon.builder.processor.tools.BodyContext.TAG_META_PROPS;
 import static io.helidon.builder.processor.tools.BodyContext.toBeanAttributeName;
 
 /**
- * Default implementation for {@link BuilderCreator}.
+ * Default implementation for {@link io.helidon.builder.processor.spi.BuilderCreatorProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
-public class DefaultBuilderCreator implements BuilderCreator {
+public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     static final boolean DEFAULT_INCLUDE_META_ATTRIBUTES = true;
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;
     static final String DEFAULT_IMPL_PREFIX = Builder.DEFAULT_IMPL_PREFIX;
@@ -73,7 +73,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
      */
     // note: this needs to remain public since it will be resolved via service loader ...
     @Deprecated
-    public DefaultBuilderCreator() {
+    public DefaultBuilderCreatorProvider() {
     }
 
     @Override
@@ -525,7 +525,7 @@ public class DefaultBuilderCreator implements BuilderCreator {
         } else {
             GenerateJavadoc.visitAttributes(builder, ctx, extraTabs);
         }
-        builder.append(extraTabs).append("\tpublic void visitAttributes(AttributeVisitor visitor, Object userDefinedCtx) {\n");
+        builder.append(extraTabs).append("\tpublic <T> void visitAttributes(AttributeVisitor<T> visitor, T userDefinedCtx) {\n");
         if (ctx.hasParent()) {
             builder.append(extraTabs).append("\t\tsuper.visitAttributes(visitor, userDefinedCtx);\n");
         }

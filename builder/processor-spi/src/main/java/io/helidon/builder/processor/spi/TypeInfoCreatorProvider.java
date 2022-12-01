@@ -25,9 +25,11 @@ import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.TypeName;
 
 /**
+ * Java {@link java.util.ServiceLoader} provider interface used to discover type info creators.
+ * <p>
  * Used to create a {@link TypeInfo} from the provided arguments.
  */
-public interface TypeInfoCreator {
+public interface TypeInfoCreatorProvider {
 
     /**
      * Creates a {@link TypeInfo}.

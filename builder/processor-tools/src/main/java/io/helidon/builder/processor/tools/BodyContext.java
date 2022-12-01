@@ -31,14 +31,14 @@ import io.helidon.pico.types.DefaultAnnotationAndValue;
 import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.BUILDER_ANNO_TYPE_NAME;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.DEFAULT_INCLUDE_META_ATTRIBUTES;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.DEFAULT_LIST_TYPE;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.DEFAULT_MAP_TYPE;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.DEFAULT_SET_TYPE;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.SUPPORT_STREAMS_ON_BUILDER;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreator.SUPPORT_STREAMS_ON_IMPL;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_LIST_TYPE;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_MAP_TYPE;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_SET_TYPE;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.SUPPORT_STREAMS_ON_BUILDER;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.SUPPORT_STREAMS_ON_IMPL;
 
 /**
  * Represents the context of the body being code generated.

@@ -15,9 +15,8 @@
  */
 
 /**
- * The Builder API / SPI module.
+ * The Builder API module.
  */
 module io.helidon.builder {
     exports io.helidon.builder;
-    exports io.helidon.builder.spi;
 }

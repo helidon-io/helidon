@@ -17,10 +17,10 @@
 /**
  * The Pico Builder Processor SPI module provides these definitions:
  * <ol>
- *     <li>{@link io.helidon.builder.processor.spi.BuilderCreator} - responsible for code generating the implementation w/
- *     a fluent builder.</li>
- *     <li>{@link io.helidon.builder.processor.spi.TypeInfoCreator} - responsible for code generating the model object for
- *     the target interface.</li>
+ *     <li>{@link io.helidon.builder.processor.spi.BuilderCreatorProvider} - responsible for code generating the
+ *     implementation w/ a fluent builder.</li>
+ *     <li>{@link io.helidon.builder.processor.spi.TypeInfoCreatorProvider} - responsible for code generating the model
+ *     object for the target interface.</li>
  *     <li>{@link io.helidon.builder.processor.spi.TypeAndBody} - the dom-like description of the target type of the
  *     builder.</li>
  * </ol>

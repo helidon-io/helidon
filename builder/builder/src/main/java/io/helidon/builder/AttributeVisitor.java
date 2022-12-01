@@ -23,9 +23,11 @@ import java.util.function.Supplier;
  * A functional interface that can be used to visit all attributes of this type.
  * <p>
  * This type is used when {@link Builder#requireLibraryDependencies()} is used.
+ *
+ * @param <T> type of the user defined context this attribute visitor supports
  */
 @FunctionalInterface
-public interface AttributeVisitor {
+public interface AttributeVisitor<T> {
 
     /**
      * Visits the attribute named 'attrName'.
@@ -40,7 +42,7 @@ public interface AttributeVisitor {
     void visit(String attrName,
                Supplier<Object> valueSupplier,
                Map<String, Object> meta,
-               Object userDefinedCtx,
+               T userDefinedCtx,
                Class<?> type,
                Class<?>... typeArgument);
 

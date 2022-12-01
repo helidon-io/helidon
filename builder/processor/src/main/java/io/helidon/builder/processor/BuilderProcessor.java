@@ -39,10 +39,10 @@ import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-import io.helidon.builder.processor.spi.BuilderCreator;
+import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.processor.spi.TypeInfoCreator;
+import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
@@ -55,13 +55,13 @@ import io.helidon.pico.types.TypeName;
  */
 public class BuilderProcessor extends AbstractProcessor {
     private static final System.Logger LOGGER = System.getLogger(BuilderProcessor.class.getName());
-    private static final Map<TypeName, Set<BuilderCreator>> PRODUCERS_BY_ANNOTATION = new LinkedHashMap<>();
+    private static final Map<TypeName, Set<BuilderCreatorProvider>> PRODUCERS_BY_ANNOTATION = new LinkedHashMap<>();
     private static final Set<Class<? extends Annotation>> ALL_ANNO_TYPES_HANDLED = new LinkedHashSet<>();
-    private static final List<BuilderCreator> PRODUCERS = initialize();
+    private static final List<BuilderCreatorProvider> PRODUCERS = initialize();
 
     private final LinkedHashSet<Element> elementsProcessed = new LinkedHashSet<>();
 
-    private TypeInfoCreator tools;
+    private TypeInfoCreatorProvider tools;
     private Elements elementUtils;
 
     /**
@@ -87,25 +87,25 @@ public class BuilderProcessor extends AbstractProcessor {
 
         this.elementUtils = processingEnv.getElementUtils();
         this.tools = HelidonServiceLoader.create(
-                        ServiceLoader.load(TypeInfoCreator.class, TypeInfoCreator.class.getClassLoader()))
+                        ServiceLoader.load(TypeInfoCreatorProvider.class, TypeInfoCreatorProvider.class.getClassLoader()))
                 .asList()
                 .stream()
                 .findFirst()
                 .orElse(null);
 
         if (tools == null) {
-            String msg = "no available " + TypeInfoCreator.class.getSimpleName() + " instances found";
+            String msg = "no available " + TypeInfoCreatorProvider.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
-        LOGGER.log(System.Logger.Level.DEBUG, TypeInfoCreator.class.getSimpleName() + ": " + tools);
+        LOGGER.log(System.Logger.Level.DEBUG, TypeInfoCreatorProvider.class.getSimpleName() + ": " + tools);
 
         if (PRODUCERS.isEmpty()) {
-            String msg = "no available " + BuilderCreator.class.getSimpleName() + " instances found";
+            String msg = "no available " + BuilderCreatorProvider.class.getSimpleName() + " instances found";
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
-        LOGGER.log(System.Logger.Level.DEBUG, BuilderCreator.class.getSimpleName() + "s: " + PRODUCERS);
+        LOGGER.log(System.Logger.Level.DEBUG, BuilderCreatorProvider.class.getSimpleName() + "s: " + PRODUCERS);
     }
 
     @Override
@@ -163,7 +163,7 @@ public class BuilderProcessor extends AbstractProcessor {
             return;
         }
 
-        Set<BuilderCreator> creators = getProducersForType(DefaultTypeName.create(annoType));
+        Set<BuilderCreatorProvider> creators = getProducersForType(DefaultTypeName.create(annoType));
         Optional<List<TypeAndBody>> result = creators.stream()
                 .map(it -> it.create(typeInfo.get(), builderAnnotation))
                 .filter(it -> !it.isEmpty())
@@ -192,11 +192,11 @@ public class BuilderProcessor extends AbstractProcessor {
         }
     }
 
-    private static List<BuilderCreator> initialize() {
+    private static List<BuilderCreatorProvider> initialize() {
         try {
             // note: it is important to use this class' CL since maven will not give us the "right" one.
-            List<BuilderCreator> producers = HelidonServiceLoader
-                    .create(ServiceLoader.load(BuilderCreator.class, BuilderCreator.class.getClassLoader()))
+            List<BuilderCreatorProvider> producers = HelidonServiceLoader
+                    .create(ServiceLoader.load(BuilderCreatorProvider.class, BuilderCreatorProvider.class.getClassLoader()))
                     .asList();
             producers.forEach(producer -> {
                 producer.supportedAnnotationTypes().forEach(annoType -> {
@@ -214,8 +214,8 @@ public class BuilderProcessor extends AbstractProcessor {
         }
     }
 
-    private Set<BuilderCreator> getProducersForType(TypeName annoTypeName) {
-        Set<BuilderCreator> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
+    private Set<BuilderCreatorProvider> getProducersForType(TypeName annoTypeName) {
+        Set<BuilderCreatorProvider> set = PRODUCERS_BY_ANNOTATION.get(annoTypeName);
         return set == null ? Set.of() : Set.copyOf(set);
     }
 

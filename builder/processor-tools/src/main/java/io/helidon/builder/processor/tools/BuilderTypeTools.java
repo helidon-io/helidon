@@ -46,7 +46,7 @@ import javax.tools.Diagnostic;
 
 import io.helidon.builder.processor.spi.DefaultTypeInfo;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.builder.processor.spi.TypeInfoCreator;
+import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.pico.types.AnnotationAndValue;
@@ -57,11 +57,11 @@ import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 /**
- * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreator}. This also contains an abundance of
+ * The default implementation for {@link io.helidon.builder.processor.spi.TypeInfoCreatorProvider}. This also contains an abundance of
  * other useful methods used for annotation processing.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
-public class BuilderTypeTools implements TypeInfoCreator {
+public class BuilderTypeTools implements TypeInfoCreatorProvider {
 
     /**
      * Default constructor.

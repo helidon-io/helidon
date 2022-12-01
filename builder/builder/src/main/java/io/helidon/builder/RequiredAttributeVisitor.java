@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.spi;
+package io.helidon.builder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +38,7 @@ import io.helidon.builder.AttributeVisitor;
  *         code generated sources that Helidon generates.
  */
 @Deprecated
-public class RequiredAttributeVisitor implements AttributeVisitor {
+public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
     private final List<String> errors = new ArrayList<>();
 
     /**

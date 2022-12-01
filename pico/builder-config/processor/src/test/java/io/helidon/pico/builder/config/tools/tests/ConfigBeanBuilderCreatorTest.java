@@ -18,7 +18,7 @@ package io.helidon.pico.builder.config.tools.tests;
 
 import io.helidon.pico.builder.config.ConfigBean;
 import io.helidon.pico.builder.config.processor.tools.ConfigBeanBuilderCreator;
-import io.helidon.builder.processor.spi.BuilderCreator;
+import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +29,7 @@ class ConfigBeanBuilderCreatorTest {
 
     @Test
     void supportedAnnotationTypes() {
-        BuilderCreator creator = new ConfigBeanBuilderCreator();
+        BuilderCreatorProvider creator = new ConfigBeanBuilderCreator();
         assertEquals(1, creator.supportedAnnotationTypes().size());
         assertSame(ConfigBean.class, creator.supportedAnnotationTypes().iterator().next());
     }

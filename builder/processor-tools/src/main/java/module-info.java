@@ -27,8 +27,8 @@ module io.helidon.builder.processor.tools {
 
     exports io.helidon.builder.processor.tools;
 
-    provides io.helidon.builder.processor.spi.BuilderCreator
-            with io.helidon.builder.processor.tools.DefaultBuilderCreator;
-    provides io.helidon.builder.processor.spi.TypeInfoCreator
+    provides io.helidon.builder.processor.spi.BuilderCreatorProvider
+            with io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider;
+    provides io.helidon.builder.processor.spi.TypeInfoCreatorProvider
             with io.helidon.builder.processor.tools.BuilderTypeTools;
 }

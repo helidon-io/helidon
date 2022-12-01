@@ -53,10 +53,10 @@ public interface ConfigBeanCommon extends ConfigProvider {
     /**
      * Visits all attributes with the provided {@link io.helidon.builder.AttributeVisitor}.
      *
-     * @param visitor           the visitor
-     * @param userDefinedCtx    any user-defined context
+     * @param visitor        the visitor
+     * @param userDefinedCtx any user-defined context
      */
-    void visitAttributes(AttributeVisitor visitor,
-                         Object userDefinedCtx);
+    <T> void visitAttributes(AttributeVisitor<T> visitor,
+                             T userDefinedCtx);
 
 }
