@@ -82,6 +82,7 @@ class WebSocketTest {
 
         java.net.http.WebSocket ws = client.newWebSocketBuilder()
                 .subprotocols("chat", "mute")
+                // .header(EXTENSIONS.defaultCase(), "nima") rejected by client
                 .buildAsync(URI.create("ws://localhost:" + port + "/echo"), listener)
                 .get(5, TimeUnit.SECONDS);
         assertThat(ws.getSubprotocol(), is("chat"));    // negotiated

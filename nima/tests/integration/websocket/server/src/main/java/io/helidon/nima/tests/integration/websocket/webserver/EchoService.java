@@ -43,16 +43,24 @@ class EchoService implements WsListener {
 
     @Override
     public Optional<Headers> onHttpUpgrade(HttpPrologue prologue, Headers headers) throws WsUpgradeException {
+        WritableHeaders<?> upgradeHeaders = WritableHeaders.create();
         if (headers.contains(WsUpgradeProvider.PROTOCOL)) {
             List<String> subProtocols = headers.get(WsUpgradeProvider.PROTOCOL).allValues(true);
             if (subProtocols.contains("chat")) {
-                Headers upgradeHeaders = WritableHeaders.create().set(WsUpgradeProvider.PROTOCOL, "chat");
-                return Optional.of(upgradeHeaders);     // negotiated
+                upgradeHeaders.set(WsUpgradeProvider.PROTOCOL, "chat");
             } else {
                 throw new WsUpgradeException("Unable to negotiate WS sub-protocol");
             }
         }
-        return Optional.empty();
+        if (headers.contains(WsUpgradeProvider.EXTENSIONS)) {
+            List<String> extensions = headers.get(WsUpgradeProvider.EXTENSIONS).allValues(true);
+            if (extensions.contains("nima")) {
+                upgradeHeaders.set(WsUpgradeProvider.EXTENSIONS, "nima");
+            } else {
+                throw new WsUpgradeException("Unable to negotiate WS extensions");
+            }
+        }
+        return upgradeHeaders.size() > 0 ? Optional.of(upgradeHeaders) : Optional.empty();
     }
 
     void resetClosed() {

@@ -62,6 +62,11 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     public static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
 
     /**
+     * Websocket protocol header name.
+     */
+    public static final HeaderName EXTENSIONS = Header.create("Sec-WebSocket-Extensions");
+
+    /**
      * Switching response prefix.
      */
     protected static final String SWITCHING_PROTOCOL_PREFIX = "HTTP/1.1 101 Switching Protocols\r\n"
