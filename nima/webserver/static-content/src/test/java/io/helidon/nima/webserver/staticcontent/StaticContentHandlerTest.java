@@ -226,7 +226,8 @@ class StaticContentHandlerTest {
 
     private ServerRequest mockRequestWithPath(Http.Method method, String path) {
         UriPath uriPath = UriPath.create(path);
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     method,
                                                     uriPath,

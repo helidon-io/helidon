@@ -87,7 +87,12 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http", "1.1", Http.Method.GET, "/favicon.ico", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Http.Method.GET,
+                                                            "/favicon.ico",
+                                                            false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
@@ -106,7 +111,7 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http", "1.1", Http.Method.GET, "/resource.txt", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/resource.txt", false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
@@ -138,7 +143,7 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http", "1.1", Http.Method.GET, "/nested", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/nested", false));
         when(req.query()).thenReturn(UriQuery.empty());
 
         ServerResponse res = mock(ServerResponse.class);
@@ -177,7 +182,12 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http", "1.1", Http.Method.GET, "nested/resource.txt", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Http.Method.GET,
+                                                            "nested/resource.txt",
+                                                            false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
@@ -196,7 +206,7 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http", "1.1", Http.Method.GET, "/resource.txt", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/resource.txt", false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
@@ -228,7 +238,7 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http", "1.1", Http.Method.GET, "/nested", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/nested", false));
         when(req.query()).thenReturn(UriQuery.empty());
 
         ServerResponse res = mock(ServerResponse.class);
