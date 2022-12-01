@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.openapi;
 
 /**
- * Quickstart MicroProfile example.
+ * Factory providing builders for {@link OpenApiUiNoOp} implementations.
  */
-@OpenAPIDefinition(info = @Info(title = "Helidon MP QuickStart Example",
-                                version = "1.0.0",
-                                description = "A very simple application to reply with friendly greetings")
-)
-package io.helidon.examples.quickstart.mp;
-import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
-import org.eclipse.microprofile.openapi.annotations.info.Info;
+public class OpenApiUiNoOpFactory implements OpenApiUiFactory<OpenApiUiNoOp.Builder, OpenApiUiNoOp> {
+
+    /**
+     *
+     * @return new instance of the factory for a minimal implementation of the U/I
+     */
+    static OpenApiUiNoOpFactory create() {
+        return new OpenApiUiNoOpFactory();
+    }
+
+    @Override
+    public OpenApiUiNoOp.Builder builder() {
+        return OpenApiUiNoOp.builder();
+    }
+}

@@ -17,4 +17,11 @@
 /**
  * Quickstart MicroProfile example.
  */
+@OpenAPIDefinition(info = @Info(title = "Helidon MP QuickStart Example",
+                                version = "1.0.0",
+                                description = "A very simple application to reply with friendly greetings")
+)
 package io.helidon.examples.quickstart.mp;
+import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
+import org.eclipse.microprofile.openapi.annotations.info.Info;
+
