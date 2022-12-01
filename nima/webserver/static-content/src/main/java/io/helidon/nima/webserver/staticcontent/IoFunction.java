@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Níma WebServer static content support.
- */
-module io.helidon.nima.webserver.staticcontent {
-    requires java.logging;
+package io.helidon.nima.webserver.staticcontent;
 
-    requires transitive io.helidon.nima.webserver;
-    requires transitive io.helidon.common.configurable;
+import java.io.IOException;
 
-    exports io.helidon.nima.webserver.staticcontent;
+@FunctionalInterface
+interface IoFunction<P, R> {
+    R apply(P param) throws IOException;
 }

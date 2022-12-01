@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Níma WebServer static content support.
- */
-module io.helidon.nima.webserver.staticcontent {
-    requires java.logging;
+package io.helidon.nima.webserver.staticcontent;
 
-    requires transitive io.helidon.nima.webserver;
-    requires transitive io.helidon.common.configurable;
+import java.io.IOException;
 
-    exports io.helidon.nima.webserver.staticcontent;
+import io.helidon.common.configurable.LruCache;
+import io.helidon.common.http.Http;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
+interface CachedHandler {
+    boolean handle(LruCache<String, CachedHandler> cache,
+                   Http.Method method,
+                   ServerRequest request,
+                   ServerResponse response,
+                   String requestedResource) throws IOException;
 }
