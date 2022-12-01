@@ -53,12 +53,12 @@ public abstract class ConfigBeanBuilderBase extends ConfigBeanBase implements Co
      * @param validator         the config bean builder validator
      * @return the resolution context
      */
-    protected ResolutionCtx createResolutionContext(Class<?> configBeanType,
-                                                    Config cfg,
-                                                    ConfigResolver resolver,
-                                                    ConfigBeanBuilderValidator<?> validator) {
+    protected ResolutionContext createResolutionContext(Class<?> configBeanType,
+                                                        Config cfg,
+                                                        ConfigResolver resolver,
+                                                        ConfigBeanBuilderValidator<?> validator) {
         // note to self: that in the future we should probably accept a code-generated 'version id' here --jtrent
-        return ResolutionCtx.create(configBeanType, cfg, resolver, validator);
+        return ResolutionContext.create(configBeanType, cfg, resolver, validator);
     }
 
     /**
@@ -66,7 +66,7 @@ public abstract class ConfigBeanBuilderBase extends ConfigBeanBase implements Co
      *
      * @param ctx the resolution context
      */
-    protected void finishedResolution(ResolutionCtx ctx) {
+    protected void finishedResolution(ResolutionContext ctx) {
         // note to self: need to add validation here --jtrent
     }
 

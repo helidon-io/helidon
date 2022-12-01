@@ -17,7 +17,7 @@
 package io.helidon.pico.builder.config.tools.tests;
 
 import io.helidon.pico.builder.config.ConfigBean;
-import io.helidon.pico.builder.config.processor.tools.ConfigBeanBuilderCreator;
+import io.helidon.pico.builder.config.processor.ConfigBeanBuilderCreator;
 import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 
 import org.junit.jupiter.api.Test;

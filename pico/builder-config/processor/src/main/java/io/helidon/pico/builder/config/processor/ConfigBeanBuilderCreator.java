@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.config.processor.tools;
+package io.helidon.pico.builder.config.processor;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
@@ -45,7 +45,7 @@ import io.helidon.pico.builder.config.spi.ConfigBeanInfo;
 import io.helidon.pico.builder.config.spi.ConfigResolver;
 import io.helidon.pico.builder.config.spi.DefaultConfigResolverRequest;
 import io.helidon.pico.builder.config.spi.MetaConfigBeanInfo;
-import io.helidon.pico.builder.config.spi.ResolutionCtx;
+import io.helidon.pico.builder.config.spi.ResolutionContext;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
 import io.helidon.pico.types.DefaultTypeName;
@@ -205,7 +205,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             builder.append("\t\t@Override\n");
             builder.append("\t\tpublic void acceptConfig"
                                    + "(Config cfg, ConfigResolver resolver, ConfigBeanBuilderValidator<?> validator) {\n");
-            builder.append("\t\t\t").append(ResolutionCtx.class.getName())
+            builder.append("\t\t\t").append(ResolutionContext.class.getName())
                     .append(" ctx = createResolutionContext(__configBeanType(), cfg, resolver, validator);\n");
             builder.append("\t\t\t__config(ctx.config());\n");
             builder.append("\t\t\t__acceptAndResolve(ctx);\n");
@@ -219,7 +219,9 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             } else {
                 javaDocAcceptResolveConfigCtx(builder, ctx, "ctx");
             }
-            builder.append("\t\tprotected void __acceptAndResolve(").append(ResolutionCtx.class.getName()).append(" ctx) {\n");
+            builder.append("\t\tprotected void __acceptAndResolve(")
+                    .append(ResolutionContext.class.getName())
+                    .append(" ctx) {\n");
             if (ctx.hasParent()) {
                 builder.append("\t\t\tsuper.__acceptAndResolve(ctx);\n");
             }

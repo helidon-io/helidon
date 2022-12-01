@@ -44,22 +44,16 @@ public class ConfigBeanMapperHolder {
      * @param configBeanType the config bean type to map
      * @return the config bean mapper
      */
-    @SuppressWarnings({"rawTypes", "unchecked"})
     public static Optional<ConfigBeanMapper> configBeanMapperFor(Class<?> configBeanType) {
         return INSTANCE.get();
     }
 
     private static Optional<ConfigBeanMapper> load() {
-        Optional<ConfigBeanMapperProvider> provider = HelidonServiceLoader
+        return HelidonServiceLoader
                 .create(ServiceLoader.load(ConfigBeanMapperProvider.class, ConfigBeanMapperProvider.class.getClassLoader()))
                 .asList()
                 .stream()
-                .findFirst();
-        if (provider.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(provider.get().configBeanMapper());
+                .findFirst()
+                .map(ConfigBeanMapperProvider::configBeanMapper);
     }
-
 }

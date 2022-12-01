@@ -43,16 +43,12 @@ public class StringValueParserHolder {
     }
 
     private static Optional<StringValueParser> load() {
-        Optional<StringValueParserProvider> provider = HelidonServiceLoader
+        return HelidonServiceLoader
                 .create(ServiceLoader.load(StringValueParserProvider.class, StringValueParserProvider.class.getClassLoader()))
                 .asList()
                 .stream()
-                .findFirst();
-        if (provider.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(provider.get().stringValueParser());
+                .findFirst()
+                .map(StringValueParserProvider::stringValueParser);
     }
 
 }

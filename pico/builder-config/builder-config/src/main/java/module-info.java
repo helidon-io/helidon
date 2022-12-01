@@ -24,7 +24,6 @@ module io.helidon.pico.builder.config {
     requires io.helidon.common.config;
 
     uses io.helidon.pico.builder.config.spi.ConfigBeanMapperProvider;
-    uses io.helidon.pico.builder.config.spi.ConfigProvider;
     uses io.helidon.pico.builder.config.spi.ConfigBeanBuilderValidatorProvider;
     uses io.helidon.pico.builder.config.spi.ConfigResolverProvider;
     uses io.helidon.pico.builder.config.spi.StringValueParserProvider;

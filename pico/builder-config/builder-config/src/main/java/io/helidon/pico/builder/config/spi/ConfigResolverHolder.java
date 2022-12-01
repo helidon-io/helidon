@@ -43,16 +43,12 @@ public class ConfigResolverHolder {
     }
 
     private static Optional<ConfigResolver> load() {
-        Optional<ConfigResolverProvider> provider = HelidonServiceLoader
+        return HelidonServiceLoader
                 .create(ServiceLoader.load(ConfigResolverProvider.class, ConfigResolverProvider.class.getClassLoader()))
                 .asList()
                 .stream()
-                .findFirst();
-        if (provider.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(provider.get().configResolver());
+                .findFirst()
+                .map(ConfigResolverProvider::configResolver);
     }
 
 }

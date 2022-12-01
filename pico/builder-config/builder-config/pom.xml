@@ -32,12 +32,6 @@
 
     <name>Helidon Pico Config Builder API / SPI</name>
 
-    <properties>
-        <checkstyle.skip>true</checkstyle.skip>
-<!--        <spotbugs.skip>true</spotbugs.skip>-->
-<!--        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>-->
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.builder</groupId>

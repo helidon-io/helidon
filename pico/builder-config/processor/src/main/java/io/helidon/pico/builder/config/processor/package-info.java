@@ -17,4 +17,4 @@
 /**
  * Pico ConfigBean Processor extensions.
  */
-package io.helidon.pico.builder.config.processor.tools;
+package io.helidon.pico.builder.config.processor;

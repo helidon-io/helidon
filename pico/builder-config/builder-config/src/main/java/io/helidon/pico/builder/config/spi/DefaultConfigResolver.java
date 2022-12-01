@@ -52,7 +52,7 @@ public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProv
     }
 
     @Override
-    public <T> Optional<T> of(ResolutionCtx ctx,
+    public <T> Optional<T> of(ResolutionContext ctx,
                               Map<String, Map<String, Object>> meta,
                               ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
@@ -62,9 +62,9 @@ public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProv
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Optional<Collection<T>> ofCollection(ResolutionCtx ctx,
-                                                       Map<String, Map<String, Object>> meta,
-                                                       ConfigResolverRequest<T> request) {
+    public <T> Optional<Collection<T>> ofCollection(ResolutionContext ctx,
+                                                    Map<String, Map<String, Object>> meta,
+                                                    ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? (Optional<Collection<T>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
@@ -72,7 +72,7 @@ public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProv
 
     @Override
     @SuppressWarnings("unchecked")
-    public <K, V> Optional<Map<K, V>> ofMap(ResolutionCtx ctx,
+    public <K, V> Optional<Map<K, V>> ofMap(ResolutionContext ctx,
                                             Map<String, Map<String, Object>> meta,
                                             ConfigResolverMapRequest<K, V> request) {
         Config attrCfg = ctx.config().get(request.configKey());

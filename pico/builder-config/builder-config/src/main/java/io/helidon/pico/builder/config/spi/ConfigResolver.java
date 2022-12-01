@@ -35,7 +35,7 @@ public interface ConfigResolver {
      * @param <T> the attribute value type being resolved in the request
      * @return the resolved value or empty if unable to resolve the request
      */
-    <T> Optional<T> of(ResolutionCtx ctx,
+    <T> Optional<T> of(ResolutionContext ctx,
                        Map<String, Map<String, Object>> meta,
                        ConfigResolverRequest<T> request);
 
@@ -49,7 +49,7 @@ public interface ConfigResolver {
      * @param <T> the attribute value type being resolved in the request
      * @return the resolved value or empty if unable to resolve the request
      */
-    <T> Optional<Collection<T>> ofCollection(ResolutionCtx ctx,
+    <T> Optional<Collection<T>> ofCollection(ResolutionContext ctx,
                                              Map<String, Map<String, Object>> meta,
                                              ConfigResolverRequest<T> request);
 
@@ -64,7 +64,7 @@ public interface ConfigResolver {
      * @param <V> the map attribute value type being resolved in the request
      * @return the resolved value or empty if unable to resolve the request
      */
-    <K, V> Optional<Map<K, V>> ofMap(ResolutionCtx ctx,
+    <K, V> Optional<Map<K, V>> ofMap(ResolutionContext ctx,
                                      Map<String, Map<String, Object>> meta,
                                      ConfigResolverMapRequest<K, V> request);
 

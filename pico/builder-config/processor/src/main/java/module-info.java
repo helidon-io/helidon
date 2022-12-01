@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.builder.processor.spi.BuilderCreatorProvider;
-
 /**
  * Helidon Pico ConfigBean Builder Processor (Tools) module.
  */
@@ -31,10 +29,8 @@ module io.helidon.pico.builder.config.processor {
     requires io.helidon.pico.types;
     requires io.helidon.pico;
 
-    exports io.helidon.pico.builder.config.processor.tools;
+    exports io.helidon.pico.builder.config.processor;
 
-    uses BuilderCreatorProvider;
-
-    provides BuilderCreatorProvider
-            with io.helidon.pico.builder.config.processor.tools.ConfigBeanBuilderCreator;
+    provides io.helidon.builder.processor.spi.BuilderCreatorProvider
+            with io.helidon.pico.builder.config.processor.ConfigBeanBuilderCreator;
 }

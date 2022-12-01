@@ -55,6 +55,7 @@ public interface ConfigBeanCommon extends ConfigProvider {
      *
      * @param visitor        the visitor
      * @param userDefinedCtx any user-defined context
+     * @param <T> type of the user defined context
      */
     <T> void visitAttributes(AttributeVisitor<T> visitor,
                              T userDefinedCtx);

@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.builder.AttributeVisitor;
-
 /**
  * An implementation of {@link AttributeVisitor} that will validate each attribute to enforce not-null in accordance with
  * {@link io.helidon.config.metadata.ConfiguredOption#required()}.

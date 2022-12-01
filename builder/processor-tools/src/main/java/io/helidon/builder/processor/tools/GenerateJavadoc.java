@@ -169,6 +169,7 @@ final class GenerateJavadoc {
         builder.append(extraTabs).append("\t *\n");
         builder.append(extraTabs).append("\t * @param visitor\t\t\tthe visitor called for each attribute\n");
         builder.append(extraTabs).append("\t * @param userDefinedCtx\tany object you wish to pass to each visit call\n");
+        builder.append(extraTabs).append("\t * @param <T> type of the user defined context\n");
         builder.append(extraTabs).append("\t */\n");
     }
 }

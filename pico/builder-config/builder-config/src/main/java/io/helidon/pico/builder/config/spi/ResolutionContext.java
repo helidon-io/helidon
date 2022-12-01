@@ -24,7 +24,7 @@ import io.helidon.common.config.Config;
 /**
  * Config resolution process context.
  */
-public class ResolutionCtx {
+public class ResolutionContext {
     private final Class<?> configBeanType;
     private final Config cfg;
     private final ConfigResolver resolver;
@@ -35,7 +35,7 @@ public class ResolutionCtx {
      *
      * @param b the builder
      */
-    protected ResolutionCtx(Builder b) {
+    protected ResolutionContext(Builder b) {
         this.configBeanType = Objects.requireNonNull(b.configBeanType);
         this.cfg = Objects.requireNonNull(b.cfg);
         this.resolver = Objects.requireNonNull(b.resolver);
@@ -102,11 +102,11 @@ public class ResolutionCtx {
      * @param validator         the bean builder validator
      * @return the resolution context
      */
-    public static ResolutionCtx create(Class<?> configBeanType,
-                                       Config cfg,
-                                       ConfigResolver resolver,
-                                       ConfigBeanBuilderValidator<?> validator) {
-        return ResolutionCtx.builder()
+    public static ResolutionContext create(Class<?> configBeanType,
+                                           Config cfg,
+                                           ConfigResolver resolver,
+                                           ConfigBeanBuilderValidator<?> validator) {
+        return ResolutionContext.builder()
                 .configBeanType(configBeanType)
                 .config(cfg)
                 .resolver(resolver)
@@ -115,9 +115,9 @@ public class ResolutionCtx {
     }
 
     /**
-     * Fluent builder for {@link io.helidon.pico.builder.config.spi.ResolutionCtx}.
+     * Fluent builder for {@link ResolutionContext}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, ResolutionCtx> {
+    public static class Builder implements io.helidon.common.Builder<Builder, ResolutionContext> {
         private Class<?> configBeanType;
         private Config cfg;
         private ConfigResolver resolver;
@@ -135,8 +135,8 @@ public class ResolutionCtx {
          * @return the built instance
          */
         @Override
-        public ResolutionCtx build() {
-            return new ResolutionCtx(this);
+        public ResolutionContext build() {
+            return new ResolutionContext(this);
         }
 
         /**
