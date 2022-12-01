@@ -46,17 +46,16 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml,subs="attributes+"]
 ----
-<dependencies>
+include::{incdir}/openapi.adoc[tag=mp-depc]
+----
+If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
+[source,xml]
+----
     <dependency>
         <groupId>org.eclipse.microprofile.openapi</groupId>
         <artifactId>microprofile-openapi-api</artifactId>
     </dependency>
-include::{incdir}/openapi.adoc[tag=mp-depc]
-</dependencies>
 ----
-
-These dependencies define the MicroProfile OpenAPI annotations so you can use them in your code
-and add the Helidon MP OpenAPI runtime support, respectively.
 
 == Usage
 
