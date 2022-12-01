@@ -102,6 +102,14 @@ class JtaEntityManager extends DelegatingEntityManager {
                             // TO DO: oh Lord the threading concerns.  This method can get invoked asynchronously (by a
                             // timeout for example).  The TSR is in an undefined state at this point.  The application
                             // thread could still be using the EntityManager (em0 above).
+                            //
+                            // Solving this problem is not at all easy. The simplest thing to do is to simply close em0
+                            // here, which will quite possibly be on another thread, and therefore illegal.
+                            //
+                            // Another approach would be to ensure that em0 is actually a wrapped EntityManager, all of
+                            // whose "reachable" operations check to see if an asynchronous close has been requested,
+                            // and, if so, close the EntityManager before carrying out their (now futile) work.
+                            em0.close();
                         }
                     });
             } catch (RuntimeException | Error e) {
