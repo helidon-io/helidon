@@ -48,6 +48,8 @@ import java.util.concurrent.Executor;
  *
  * @see #isClosed()
  *
+ * @see #isClosed()
+ *
  * @see #isCloseable()
  *
  * @see #setCloseable(boolean)
@@ -98,6 +100,12 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * <p>This field is set based on the value of the {@code strictClosedChecking} argument supplied to the {@link
      * #ConditionallyCloseableConnection(Connection, boolean, boolean)} constructor. It may end up deliberately doing
+     * nothing.</p>
+     *
+     * <p>This field is set based on the value of the {@code
+     * strictClosedChecking} argument supplied to the {@link
+     * #ConditionallyCloseableConnection(Connection, boolean,
+     * boolean)} constructor. It may end up deliberately doing
      * nothing.</p>
      *
      * @see #isCloseable()
@@ -186,6 +194,8 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      * backwards compatibility reasons only)
      *
      * @exception NullPointerException if {@code delegate} is {@code null}
+     *
+     * @see #isCloseable()
      *
      * @see #isCloseable()
      *
@@ -321,6 +331,8 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * @see #isClosed()
      *
+     * @see #isClosed()
+     *
      * @see #setCloseable(boolean)
      *
      * @see #close()
@@ -338,19 +350,6 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      *
      * <p>Subclasses that override this method must not directly or indirectly call {@link #failWhenClosed()} or
      * undefined behavior may result.</p>
-     *
-     * <p>Note that calling this method with a value of {@code true} does not necessarily mean that the {@link
-     * #isCloseable()} method will subsequently return {@code true}, since the {@link #isClosed()} method may return
-     * {@code true}.</p>
-     *
-     * <h4>Design Note</h4>
-     *
-     * <p>This method does not throw {@link SQLException} only because of an oversight in the design of the original
-     * version of this class. Callers should consider catching {@link UncheckedSQLException} where appropriate
-     * instead. The default implementation of this method does not throw any exceptions of any kind.</p>
-     *
-     * @param closeable whether or not a call to {@link #close()} will actually close this {@link
-     * ConditionallyCloseableConnection}
      *
      * @see #isClosed()
      *
@@ -863,6 +862,19 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      */
     // (Invoked by method reference only.)
     private static void doNothing() {
+
+    }
+
+
+    /*
+     * Inner and nested classes.
+     */
+
+
+    @FunctionalInterface
+    private interface SQLBooleanSupplier {
+
+        boolean getAsBoolean() throws SQLException;
 
     }
 

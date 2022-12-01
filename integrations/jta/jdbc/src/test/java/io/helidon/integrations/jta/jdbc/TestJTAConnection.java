@@ -23,7 +23,12 @@ import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+
 import javax.transaction.xa.Xid;
+
+import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
+import io.helidon.integrations.jta.jdbc.LocalXAResource.Association;
+import io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState;
 
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
@@ -40,17 +45,20 @@ import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.arjuna.coordinator.listener.ReaperMonitor;
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
-import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState.ACTIVE;
+import static io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState.IDLE;
+import static io.helidon.integrations.jta.jdbc.LocalXAResource.ASSOCIATIONS;
 import static jakarta.transaction.Status.STATUS_NO_TRANSACTION;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -103,10 +111,11 @@ final class TestJtaConnection {
             break;
         }
         this.tm.setTransactionTimeout(0);
-        assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
+        assertThat(ASSOCIATIONS.size(), is(0));
     }
 
     @DisplayName("Spike")
+    @SuppressWarnings("try")
     @Test
     final void testSpike()
         throws HeuristicMixedException,
@@ -131,48 +140,82 @@ final class TestJtaConnection {
                                                                                         null,
                                                                                         physicalConnection)) {
 
+            // Make sure everything is hooked up properly.
+            assertThat(logicalConnection.delegate(), sameInstance(physicalConnection));
+
             // Trigger an Object method; make sure nothing blows up (in case we're using proxies).
             logicalConnection.toString();
 
-            // Up until this point, the connection should not be enlisted.
+            // Up until this point, the connection should not be enlisted. (delegate() and toString() must not cause
+            // enlistment.)
             assertThat(logicalConnection.xid(), nullValue());
+            assertThat(logicalConnection.enlisted(), is(false));
 
-            // That means it should be closeable.
+            // (Calling xid()or enlisted() itself must not cause enlistment.)
+            assertThat(logicalConnection.xid(), nullValue());
+            assertThat(logicalConnection.enlisted(), is(false));
+
+            // Since it's not enlisted, it should be closeable (but it has not yet been closed).
             assertThat(logicalConnection.isCloseable(), is(true));
             assertThat(logicalConnection.isClosed(), is(false));
 
-            // Trigger harmless Connection method; make sure nothing blows up.
+            // Trigger a harmless Connection-related method; make sure nothing blows up.
             logicalConnection.getHoldability();
 
-            // Almost all Connection methods will cause enlistment to happen.  getHoldability(), just invoked, is one of
-            // them.
+            // Almost all Connection methods, including that one, will cause enlistment to happen.
             Xid xid = logicalConnection.xid();
-            assertThat(xid, not(nullValue()));
+            assertThat(xid, notNullValue());
+            assertThat(logicalConnection.enlisted(), is(true));
+
+            // Make sure the XAResource recorded the association.
+            assertThat(ASSOCIATIONS.get(xid).branchState(), is(ACTIVE));
+
+            // The tsr should be active and we should be able to get the LocalXAResource out of it.
+            assertThat(this.tsr.getResource(logicalConnection), instanceOf(LocalXAResource.class));
 
             // That means the Connection is no longer closeable.
             assertThat(logicalConnection.isCloseable(), is(false));
 
-            // Should be a no-op.
-            logicalConnection.close();
-            assertThat(logicalConnection.isClosed(), is(false));
-
             // Should get the same Xid back whenever we call xid() once we're enlisted.
             assertThat(logicalConnection.xid(), sameInstance(xid));
 
-            // Make sure the XAResource recorded the association.
-            assertThat(LocalXAResource.ASSOCIATIONS.size(), not(0));
-
             // Ensure JDBC constructs' backlinks work correctly.
             try (Statement s = logicalConnection.createStatement()) {
-                assertThat(s, not(nullValue()));
+                assertThat(s, notNullValue());
                 assertThat(s.getConnection(), sameInstance(logicalConnection));
                 try (ResultSet rs = s.executeQuery("SHOW TABLES")) {
                     assertThat(rs.getStatement(), sameInstance(s));
                 }
             }
 
-            // Commit AND DISASSOCIATE the transaction, which can only happen with a call to
-            // TransactionManager.commit(), not just Transaction.commit().
+            // close() should "close" the logical connection, but not close the physical connection.
+            logicalConnection.close();
+            assertThat(logicalConnection.isClosed(), is(true));
+            assertThat(physicalConnection.isClosed(), is(false));
+
+            // Make sure a close() attempt was recorded.
+            assertThat(logicalConnection.isClosePending(), is(true));
+
+            // But "closing" should have disassociated the XAResource.
+            assertThat(ASSOCIATIONS.get(xid).branchState(), is(IDLE));
+
+            // What happens when we do re-enlisting behavior? First, we'd better appear closed since we called close()
+            // above:
+            assertThrows(SQLException.class, () -> logicalConnection.getHoldability());
+
+            // Let's reenable closeability for this test, which is something users won't do:
+            logicalConnection.setCloseable(true);
+            assertThat(logicalConnection.isCloseable(), is(true));
+            assertThat(logicalConnection.isClosePending(), is(false));
+            assertThat(logicalConnection.isClosed(), is(false));
+
+            // Assert after all of this we're still IDLE, because we don't remove the XAResource from the
+            // TransactionSynchronizationRegistry, so the enlisted() method thinks we're already enlisted, so
+            // getHoldability() skips enlistment, so everything stays as it was.
+            assertThat(ASSOCIATIONS.get(xid).branchState(), is(IDLE));
+            
+            // Commit (we didn't actually do any work) AND DISASSOCIATE the transaction, which can only happen with a
+            // call to TransactionManager.commit(), not just Transaction.commit().
             tm.commit();
 
             // Transaction is over; the Xid should be null.
@@ -181,8 +224,8 @@ final class TestJtaConnection {
             // Transaction is over; the connection should be closeable again.
             assertThat(logicalConnection.isCloseable(), is(true));
 
-            // Make sure the XAResource removed the association.
-            assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
+            // Transaction is over; make sure the XAResource removed the association.
+            assertThat(ASSOCIATIONS.size(), is(0));
 
             // We should be able to actually close it early.  The auto-close should not fail, either.
             logicalConnection.close();
@@ -230,7 +273,7 @@ final class TestJtaConnection {
         // Verify there *was* a transaction but now it is rolled back, so is essentially useless other than as a
         // tombstone.
         Transaction t = tm.getTransaction();
-        assertThat(t, not(nullValue()));
+        assertThat(t, notNullValue());
         assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
 
         // Verify that all the other status accessors return the same thing.
@@ -244,12 +287,13 @@ final class TestJtaConnection {
         // disassociate it from the current thread.
         tm.rollback();
         assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+        assertThat(tsr.getTransactionStatus(), is(Status.STATUS_NO_TRANSACTION));
 
         // The Transaction itself remains in status Status.STATUS_ROLLEDBACK. Notably it never enters
         // Status.STATUS_NO_TRANSACTION.
         assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
 
-        assertThat(LocalXAResource.ASSOCIATIONS.size(), is(0));
+        assertThat(ASSOCIATIONS.size(), is(0));
 
         LOGGER.info("Ending testTimeout()");
     }
