@@ -191,10 +191,12 @@ class JaxRsService implements HttpService {
         URI baseUri = baseUri(req);
         URI requestUri;
 
+        String rawPath = req.path().rawPath();
+        rawPath = rawPath.startsWith("/") ? rawPath.substring(1) : rawPath;
         if (req.query().isEmpty()) {
-            requestUri = baseUri.resolve(req.path().rawPath());
+            requestUri = baseUri.resolve(rawPath);
         } else {
-            requestUri = baseUri.resolve(req.path().rawPath() + "?" + req.query().rawValue());
+            requestUri = baseUri.resolve(rawPath + "?" + req.query().rawValue());
         }
 
         ContainerRequest requestContext = new ContainerRequest(baseUri,
