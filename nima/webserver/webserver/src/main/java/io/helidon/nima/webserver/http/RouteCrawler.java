@@ -60,7 +60,8 @@ class RouteCrawler {
         this.parent = parent;
 
         HttpPrologue prologue = request.prologue();
-        this.prologue = HttpPrologue.create(prologue.protocol(),
+        this.prologue = HttpPrologue.create(prologue.rawProtocol(),
+                                            prologue.protocol(),
                                             prologue.protocolVersion(),
                                             prologue.method(),
                                             child,

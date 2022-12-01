@@ -63,7 +63,8 @@ class AccessLogFilterTest {
         PeerInfo pi = mock(PeerInfo.class);
         when(pi.host()).thenReturn(REMOTE_IP);
         when(request.remotePeer()).thenReturn(pi);
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     Http.Method.PUT,
                                                     UriPath.create(PATH),
@@ -103,7 +104,8 @@ class AccessLogFilterTest {
         PeerInfo pi = mock(PeerInfo.class);
         when(pi.host()).thenReturn(REMOTE_IP);
         when(request.remotePeer()).thenReturn(pi);
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     Http.Method.PUT,
                                                     UriPath.create(PATH),
@@ -142,7 +144,8 @@ class AccessLogFilterTest {
 
         RoutingRequest request = mock(RoutingRequest.class);
         PeerInfo pi = mock(PeerInfo.class);
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     Http.Method.PUT,
                                                     UriPath.create(PATH),
