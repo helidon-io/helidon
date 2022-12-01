@@ -16,6 +16,8 @@
 
 package io.helidon.pico;
 
+import java.util.Optional;
+
 import io.helidon.builder.Builder;
 
 /**
@@ -39,7 +41,7 @@ public interface ContextualServiceQuery {
      *
      * @return the injection point context info
      */
-    InjectionPointInfo ipInfo();
+    Optional<InjectionPointInfo> ipInfo();
 
     /**
      * Set to true if there is an expectation that there is at least one match result from the search.

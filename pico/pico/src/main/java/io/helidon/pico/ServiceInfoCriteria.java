@@ -27,6 +27,7 @@ import io.helidon.builder.Singular;
  */
 @Builder
 public interface ServiceInfoCriteria {
+
     /**
      * The managed service implementation {@link Class}.
      *
@@ -97,4 +98,5 @@ public interface ServiceInfoCriteria {
      * @return the module name
      */
     Optional<String> moduleName();
+
 }
