@@ -16,11 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= OpenAPI U/I
+= OpenAPI UI
 :toc:
 :toc-placement: preamble
-:description: Helidon SE OpenAPI U/I Support
-:keywords: helidon, se, openapi u/i
+:description: Helidon SE OpenAPI UI Support
+:keywords: helidon, se, openapi ui
 :rootdir: {docdir}/../..
 :incdir: {rootdir}/includes/openapi
 :ui-inc: {incdir}/openapi-ui.adoc
@@ -45,11 +45,11 @@ This dependency allows your application to create, configure, and register the `
 include::{ui-inc}[tag=usage]
 
 == API
-=== Creating `OpenAPISupport` with Automatic U/I Behavior
-With the Helidon OpenAPI U/I dependency in your `pom.xml` file, any `OpenAPISupport` object your application builds prepares the default OpenAPI U/I behavior, possibly modified by any U/I settings you have in your configuration.
+=== Creating `OpenAPISupport` with Automatic UI Behavior
+With the Helidon OpenAPI UI dependency in your `pom.xml` file, any `OpenAPISupport` object your application builds prepares the default OpenAPI UI behavior, possibly modified by any UI settings you have in your configuration.
 
 [source,java]
-.Create `OpenAPISupport` with automatic U/I
+.Create `OpenAPISupport` with automatic UI
 ----
 Config config = Config.create(); // <1>
 Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY)); // <2>
@@ -63,12 +63,12 @@ OpenAPISupport openApiSupport =
 <2> Extract the `OpenAPISupport` configuration.
 <3> Build the `OpenAPISupport` instance using the configuration.
 
-If your code invokes the `OpenAPISupport.Builder` `config` method, Helidon automatically applies the `ui` section of the `openapi` configuration to the U/I.
+If your code invokes the `OpenAPISupport.Builder` `config` method, Helidon automatically applies the `ui` section of the `openapi` configuration to the UI.
 
-=== Customizing the U/I Behavior
-You can control some of the behavior of the U/I programmatically in two steps:
+=== Customizing the UI Behavior
+You can control some of the behavior of the UI programmatically in two steps:
 
-. Create an link:{javadoc-path}/OpenApiUi.Builder.html[`OpenApiUi.Builder`] and invoke methods on it to set the U/I behavior.
+. Create an link:{javadoc-path}/OpenApiUi.Builder.html[`OpenApiUi.Builder`] and invoke methods on it to set the UI behavior.
 . Invoke the `ui` method on link:{openapi-javadoc-base-url}/io.helidon.openapi.OpenAPISupport.Builder.html[`OpenAPISupport.Builder`], passing the `OpenApiUi.Builder` you prepared above.
 
 The following example illustrates these steps, combining configuration with explicit programmatic settings.
@@ -94,25 +94,25 @@ OpenAPISupport openApiSupport =
 <1> Load the configuration.
 <2> Extract the `OpenAPISupport` configuration.
 <3> Create the `OpenApiUi.Builder` instance.
-<4> Explicitly set the web context where the U/I should respond.
+<4> Explicitly set the web context where the UI should respond.
 <5> Create the `OpenAPISupport` instance using the `OpenApiUi.Builder` just created.
 You can refine the behavior of the `OpenAPISupport` object by invoking additional methods on its builder before invoking its `build` method.
-<6> Apply the `openapi` configuration to the `OpenAPISupport` builder. This also automatically applies any `openapi.ui` configuration to the U/I.
+<6> Apply the `openapi` configuration to the `OpenAPISupport` builder. This also automatically applies any `openapi.ui` configuration to the UI.
 
 The order in which your code invokes the methods on `OpenApiUi.Builder` and `OpenAPISupport.Builder` determines the outcome.
-For instance, the example above sets the U/I on the `OpenAPISupport.Builder` _before_ applying configuration.
-If the configuration contains a setting for the U/I's `web-context` value then the U/I uses the configured value, not the programmatic value, because your code applied the configuration later.
+For instance, the example above sets the UI on the `OpenAPISupport.Builder` _before_ applying configuration.
+If the configuration contains a setting for the UI's `web-context` value then the UI uses the configured value, not the programmatic value, because your code applied the configuration later.
 Your code should typically apply configuration _after_ setting any values programmatically.
 Doing so allows users or deployers of your service to set the behavior using configuration according to their particular needs which your code might not be able to anticipate.
 
 [NOTE]
 ====
-The `webContext(String)` method on `OpenApiUi.Builder`  sets the web context where the U/I should respond instead of the default `/openapi/ui`.
-Helidon uses the provided string to set the _entire_ web context for the U/I, not as a suffix appended to the web context for the `OpenAPISupport` service.
+The `webContext(String)` method on `OpenApiUi.Builder`  sets the web context where the UI should respond instead of the default `/openapi/ui`.
+Helidon uses the provided string to set the _entire_ web context for the UI, not as a suffix appended to the web context for the `OpenAPISupport` service.
 ====
 
 === Registering `OpenAPISupport`
-Whether or not your code tailors the U/I or `OpenAPISupport` behavior, it must register the resulting `OpenAPISupport` instance so that the OpenAPI and U/I endpoints can respond correctly.
+Whether or not your code tailors the UI or `OpenAPISupport` behavior, it must register the resulting `OpenAPISupport` instance so that the OpenAPI and UI endpoints can respond correctly.
 
 [source,java]
 .Register services for routing
@@ -123,8 +123,8 @@ Routing.builder()
         .build();
 ----
 
-The U/I is implemented as part of the `OpenAPISupport` service which registers the U/I automatically.
-Your code does not register the U/I explicitly.
+The UI is implemented as part of the `OpenAPISupport` service which registers the UI automatically.
+Your code does not register the UI explicitly.
 
 include::{ui-inc}[tag=config-intro]
 

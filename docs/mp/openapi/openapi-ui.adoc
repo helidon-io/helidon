@@ -16,11 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= OpenAPI U/I
+= OpenAPI UI
 :toc:
 :toc-placement: preamble
-:description: Helidon MP OpenAPI U/I Support
-:keywords: helidon, mp, openapi u/i
+:description: Helidon MP OpenAPI UI Support
+:keywords: helidon, mp, openapi ui
 :rootdir: {docdir}/../..
 :incdir: {rootdir}/includes/openapi
 :openapi-inc: {incdir}/openapi.adoc
@@ -47,8 +47,8 @@ include::{ui-inc}[tag=usage]
 
 == API
 
-Your Helidon MP application does not use any API to enable or control Helidon OpenAPI U/I support.
-Adding the dependency as described earlier is sufficient, and you can control the U/I behavior using <<Configuration,configuration>>.
+Your Helidon MP application does not use any API to enable or control Helidon OpenAPI UI support.
+Adding the dependency as described earlier is sufficient, and you can control the UI behavior using <<Configuration,configuration>>.
 
 include::{ui-inc}[tag=config-intro]
 
