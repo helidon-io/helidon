@@ -28,6 +28,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.spi.ConfigSource;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckType;
 import io.helidon.health.spi.HealthCheckProvider;
@@ -258,12 +259,9 @@ public class HealthFeature extends HelidonFeatureSupport {
 
         private Config effectiveConfig() {
 
-            return Config.create(ConfigSources.create(configs.stream()
-                                                              .map(Config::asMap)
-                                                              .map(ConfigValue::get)
-                                                              .flatMap(map -> map.entrySet().stream())
-                                                              .collect(Collectors.toMap(Map.Entry::getKey,
-                                                                                        Map.Entry::getValue))));
+            return Config.create(configs.stream()
+                                         .map(ConfigSources::create)
+                                         .toArray(ConfigSource[]::new));
         }
     }
 }
