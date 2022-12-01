@@ -167,10 +167,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                                        BodyContext ctx,
                                        String builderTag) {
         if (!ctx.hasParent()) {
-            builder.append("\t\t__instanceId(String.valueOf(__INSTANCE_ID.getAndIncrement()));\n");
-            builder.append("\t\tif (b.__config().isPresent()) {\n"
-                                   + "\t\t\t__config(").append(builderTag).append(".__config().get());\n"
-                                   + "\t\t}\n");
+            builder.append("\t\tsuper(b, String.valueOf(__INSTANCE_ID.getAndIncrement()));\n");
         }
 
         super.appendExtraCtorCode(builder, ctx, builderTag);
@@ -229,7 +226,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             int i = 0;
             for (String attrName : ctx.allAttributeNames()) {
                 TypedElementName method = ctx.allTypeInfos().get(i);
-                String configKey = toConfigKey(attrName, method, ctx.builderAnnotation());
+                String configKey = toConfigKey(attrName, method, ctx.builderTriggerAnnotation());
 
                 // resolver.of(config, "port", int.class).ifPresent(this::port);
                 String ofClause = "of";

@@ -14,48 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.config.testsubjects;
-
-import java.util.List;
+package io.helidon.builder.test.testsubjects;
 
 import io.helidon.builder.Builder;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.config.ConfigBean;
 
 /**
- * For testing purpose.
+ * Overrides builder default to allow for null attributes.
  */
-@ConfigBean
 @Builder(allowNulls = true)
-public interface CommonConfig {
+@FunctionalInterface
+public interface TestNullable {
 
     /**
-     * For testing purpose.
+     * A possibly null value.
      *
-     * @return for testing purposes
+     * @return a possible null value
      */
-    String name();
-
-    /**
-     * For testing purpose.
-     *
-     * @return for testing purposes
-     */
-    @ConfiguredOption(required = true)
-    int port();
-
-    /**
-     * For testing purpose.
-     *
-     * @return for testing purposes
-     */
-    List<String> cipherSuites();
-
-    /**
-     * For testing purpose.
-     *
-     * @return for testing purposes
-     */
-    char[] pwd();
+    String val();
 
 }

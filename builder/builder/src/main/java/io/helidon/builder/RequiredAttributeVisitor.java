@@ -38,23 +38,42 @@ import java.util.function.Supplier;
 @Deprecated
 public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
     private final List<String> errors = new ArrayList<>();
+    private final boolean allowNullsByDefault;
 
     /**
      * Default constructor.
      */
-    // note: this needs to remain public since it will be new'ed from code-generated builder processing ...
+    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
     public RequiredAttributeVisitor() {
+        this(Builder.DEFAULT_ALLOW_NULLS);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param allowNullsByDefault true if nulls should be allowed
+     */
+    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
+    public RequiredAttributeVisitor(boolean allowNullsByDefault) {
+        this.allowNullsByDefault = allowNullsByDefault;
     }
 
     @Override
+    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
     public void visit(String attrName,
                       Supplier<Object> valueSupplier,
                       Map<String, Object> meta,
                       Object userDefinedCtx,
                       Class<?> type,
                       Class<?>... typeArgument) {
-        boolean required = Boolean.parseBoolean((String) meta.get("required"));
-        if (!required) {
+        String requiredStr = (String) meta.get("required");
+        boolean requiredPresent = Objects.nonNull(requiredStr);
+        boolean required = Boolean.parseBoolean(requiredStr);
+        if (!required && requiredPresent) {
+            return;
+        }
+
+        if (allowNullsByDefault && !requiredPresent) {
             return;
         }
 
@@ -71,6 +90,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
      *
      * @throws java.lang.IllegalStateException when any attributes are in violation with the validation policy
      */
+    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
     public void validate() {
         if (!errors.isEmpty()) {
             throw new IllegalStateException(String.join(", ", errors));

@@ -63,6 +63,11 @@ public @interface Builder {
     String DEFAULT_SUFFIX = "";
 
     /**
+     * The default value for {@link #allowNulls()}.
+     */
+    boolean DEFAULT_ALLOW_NULLS = false;
+
+    /**
      * The default list type used for the generated class implementation for any references to {@link java.util.List} is found
      * on the methods of the {@link Builder}-annotation interface.
      */
@@ -166,6 +171,14 @@ public @interface Builder {
      * @return true to enforce bean style
      */
     boolean requireBeanStyle() default false;
+
+    /**
+     * Should the bean and the builder allow for the possibility of nullable non-{@link java.util.Optional} values to be present.
+     * Default is {@code false}.
+     *
+     * @return true to allow for the possibility of nullable non-Optional values to be present
+     */
+    boolean allowNulls() default DEFAULT_ALLOW_NULLS;
 
     /**
      * The list implementation type to apply, defaulting to {@link #DEFAULT_LIST_TYPE}.

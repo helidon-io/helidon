@@ -16,10 +16,13 @@
 
 package io.helidon.pico.builder.config.test;
 
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.pico.builder.config.testsubjects.ClientConfig;
+import io.helidon.pico.builder.config.testsubjects.DefaultClientConfig;
 import io.helidon.pico.builder.config.testsubjects.DefaultServerConfig;
 import io.helidon.pico.builder.config.testsubjects.ServerConfig;
 
@@ -66,6 +69,36 @@ class BasicConfigBeanTest {
         assertThat(serverConfig.description(), optionalEmpty());
         assertThat(serverConfig.name(), equalTo("default"));
         assertThat(serverConfig.port(), equalTo(0));
+    }
+
+    /**
+     * Callers can conceptually use config beans as just plain old vanilla builders, void of any config usage.
+     */
+    @Test
+    void noConfig() {
+        ServerConfig serverConfig = DefaultServerConfig.builder().build();
+        assertThat(serverConfig.description(), optionalEmpty());
+        assertThat(serverConfig.name(), equalTo("default"));
+        assertThat(serverConfig.port(), equalTo(0));
+        assertThat(serverConfig.cipherSuites(), equalTo(List.of()));
+
+        serverConfig = DefaultServerConfig.toBuilder(serverConfig).port(123).build();
+        assertThat(serverConfig.description(), optionalEmpty());
+        assertThat(serverConfig.name(), equalTo("default"));
+        assertThat(serverConfig.port(), equalTo(123));
+        assertThat(serverConfig.cipherSuites(), equalTo(List.of()));
+
+        ClientConfig clientConfig = DefaultClientConfig.builder().build();
+        assertThat(clientConfig.name(), equalTo("default"));
+        assertThat(clientConfig.port(), equalTo(0));
+        assertThat(clientConfig.headers(), equalTo(Map.of()));
+        assertThat(clientConfig.cipherSuites(), equalTo(List.of()));
+
+        clientConfig = DefaultClientConfig.toBuilder(clientConfig).port(123).build();
+        assertThat(clientConfig.name(), equalTo("default"));
+        assertThat(clientConfig.port(), equalTo(123));
+        assertThat(clientConfig.headers(), equalTo(Map.of()));
+        assertThat(clientConfig.cipherSuites(), equalTo(List.of()));
     }
 
 }

@@ -32,6 +32,7 @@ import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
+import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_ALLOW_NULLS;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_LIST_TYPE;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_MAP_TYPE;
@@ -49,7 +50,7 @@ public class BodyContext {
     private final boolean doingConcreteType;
     private final TypeName implTypeName;
     private final TypeInfo typeInfo;
-    private final AnnotationAndValue builderAnnotation;
+    private final AnnotationAndValue builderTriggerAnnotation;
     private final Map<String, TypedElementName> map = new LinkedHashMap<>();
     private final List<TypedElementName> allTypeInfos = new ArrayList<>();
     private final List<String> allAttributeNames = new ArrayList<>();
@@ -59,7 +60,8 @@ public class BodyContext {
     private final boolean hasStreamSupportOnBuilder;
     private final boolean includeMetaAttributes;
     private final boolean requireLibraryDependencies;
-    private final boolean isBeanStyleRequired;
+    private final boolean beanStyleRequired;
+    private final boolean allowNulls;
     private final String listType;
     private final String mapType;
     private final String setType;
@@ -75,32 +77,32 @@ public class BodyContext {
      * @param doingConcreteType true if the concrete type is being generated, otherwise the abstract class
      * @param implTypeName      the impl type name
      * @param typeInfo          the type info
-     * @param builderAnnotation the builder annotation
+     * @param builderTriggerAnnotation the builder annotation
      */
     BodyContext(boolean doingConcreteType,
                           TypeName implTypeName,
                           TypeInfo typeInfo,
-                          AnnotationAndValue builderAnnotation) {
+                          AnnotationAndValue builderTriggerAnnotation) {
         this.doingConcreteType = doingConcreteType;
         this.implTypeName = implTypeName;
         this.typeInfo = typeInfo;
-        this.builderAnnotation = builderAnnotation;
-        this.hasStreamSupportOnImpl = hasStreamSupportOnImpl(doingConcreteType, builderAnnotation);
-        this.hasStreamSupportOnBuilder = hasStreamSupportOnBuilder(doingConcreteType, builderAnnotation);
-        this.includeMetaAttributes = toIncludeMetaAttributes(builderAnnotation, typeInfo);
-        this.requireLibraryDependencies = toRequireLibraryDependencies(builderAnnotation, typeInfo);
-        this.isBeanStyleRequired = toRequireBeanStyle(builderAnnotation, typeInfo);
-        this.listType = toListImplType(builderAnnotation, typeInfo);
-        this.mapType = toMapImplType(builderAnnotation, typeInfo);
-        this.setType = toSetImplType(builderAnnotation, typeInfo);
+        this.builderTriggerAnnotation = builderTriggerAnnotation;
+        this.hasStreamSupportOnImpl = hasStreamSupportOnImpl(doingConcreteType, builderTriggerAnnotation);
+        this.hasStreamSupportOnBuilder = hasStreamSupportOnBuilder(doingConcreteType, builderTriggerAnnotation);
+        this.includeMetaAttributes = toIncludeMetaAttributes(builderTriggerAnnotation, typeInfo);
+        this.requireLibraryDependencies = toRequireLibraryDependencies(builderTriggerAnnotation, typeInfo);
+        this.beanStyleRequired = toRequireBeanStyle(builderTriggerAnnotation, typeInfo);
+        this.allowNulls = toAllowNulls(builderTriggerAnnotation, typeInfo);
+        this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
+        this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
+        this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
         gatherAllAttributeNames(this, typeInfo);
         assert (allTypeInfos.size() == allAttributeNames.size());
         this.hasParent = Objects.nonNull(parentTypeName.get());
         this.ctorBuilderAcceptTypeName = (hasParent)
                 ? typeInfo.typeName()
-                : (
-                        Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
-                                ? typeInfo.superTypeInfo().get().typeName() : typeInfo.typeName());
+                : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
+                                ? typeInfo.superTypeInfo().orElseThrow().typeName() : typeInfo.typeName());
         this.genericBuilderClassDecl = "Builder";
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
@@ -134,12 +136,13 @@ public class BodyContext {
     }
 
     /**
-     * Returns the builder annotation that triggers things.
+     * Returns the builder annotation that triggered things.
      *
      * @return the builder annotation
+     * @see io.helidon.builder.Builder
      */
-    public AnnotationAndValue builderAnnotation() {
-        return builderAnnotation;
+    public AnnotationAndValue builderTriggerAnnotation() {
+        return builderTriggerAnnotation;
     }
 
     /**
@@ -207,6 +210,7 @@ public class BodyContext {
 
     /**
      * Returns true if meta attributes should be generated.
+     * See {@link io.helidon.builder.Builder#includeMetaAttributes()}.
      *
      * @return true if meta attributes should be generated
      */
@@ -216,6 +220,7 @@ public class BodyContext {
 
     /**
      * Returns true if Helidon library dependencies should be expected.
+     * See {@link io.helidon.builder.Builder#requireLibraryDependencies()}.
      *
      * @return true if Helidon library dependencies are expected
      */
@@ -225,15 +230,27 @@ public class BodyContext {
 
     /**
      * Returns true if bean "getter" and "is" style is required.
+     * See {@link io.helidon.builder.Builder#requireBeanStyle()} .
      *
      * @return true if bean style is required
      */
-    protected boolean isBeanStyleRequired() {
-        return isBeanStyleRequired;
+    protected boolean beanStyleRequired() {
+        return beanStyleRequired;
+    }
+
+    /**
+     * Returns true if nulls are allowed.
+     * See {@link io.helidon.builder.Builder#allowNulls()}.
+     *
+     * @return true if allow nulls
+     */
+    protected boolean allowNulls() {
+        return allowNulls;
     }
 
     /**
      * Returns the list type generated.
+     * See {@link io.helidon.builder.Builder#listImplType()}.
      *
      * @return the list type
      */
@@ -243,6 +260,7 @@ public class BodyContext {
 
     /**
      * Returns the map type generated.
+     * See {@link io.helidon.builder.Builder#mapImplType()}.
      *
      * @return the map type
      */
@@ -252,6 +270,7 @@ public class BodyContext {
 
     /**
      * Returns the set type generated.
+     * See {@link io.helidon.builder.Builder#setImplType()}.
      *
      * @return the set type
      */
@@ -335,71 +354,84 @@ public class BodyContext {
     /**
      * In support of {@link io.helidon.builder.Builder#includeMetaAttributes()}.
      */
-    private static boolean toIncludeMetaAttributes(AnnotationAndValue builderAnnotation,
+    private static boolean toIncludeMetaAttributes(AnnotationAndValue builderTriggerAnnotation,
                                                    TypeInfo typeInfo) {
-        String val = searchForBuilderAnnotation("includeMetaAttributes", builderAnnotation, typeInfo);
+        String val = searchForBuilderAnnotation("includeMetaAttributes", builderTriggerAnnotation, typeInfo);
         return val == null ? DEFAULT_INCLUDE_META_ATTRIBUTES : Boolean.parseBoolean(val);
     }
 
     /**
      * In support of {@link io.helidon.builder.Builder#requireLibraryDependencies()}.
      */
-    private static boolean toRequireLibraryDependencies(AnnotationAndValue builderAnnotation,
+    private static boolean toRequireLibraryDependencies(AnnotationAndValue builderTriggerAnnotation,
                                                         TypeInfo typeInfo) {
-        String val = searchForBuilderAnnotation("requireLibraryDependencies", builderAnnotation, typeInfo);
+        String val = searchForBuilderAnnotation("requireLibraryDependencies", builderTriggerAnnotation, typeInfo);
         return val == null ? DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES : Boolean.parseBoolean(val);
     }
 
     /**
      * In support of {@link io.helidon.builder.Builder#requireBeanStyle()}.
      */
-    private static boolean toRequireBeanStyle(AnnotationAndValue builderAnnotation,
+    private static boolean toRequireBeanStyle(AnnotationAndValue builderTriggerAnnotation,
                                               TypeInfo typeInfo) {
-        String val = searchForBuilderAnnotation("requireBeanStyle", builderAnnotation, typeInfo);
+        String val = searchForBuilderAnnotation("requireBeanStyle", builderTriggerAnnotation, typeInfo);
         return Boolean.parseBoolean(val);
+    }
+
+    /**
+     * In support of {@link io.helidon.builder.Builder#allowNulls()} ()}.
+     */
+    private static boolean toAllowNulls(AnnotationAndValue builderTriggerAnnotation,
+                                        TypeInfo typeInfo) {
+        String val = searchForBuilderAnnotation("allowNulls", builderTriggerAnnotation, typeInfo);
+        return val == null ? DEFAULT_ALLOW_NULLS : Boolean.parseBoolean(val);
     }
 
     /**
      * In support of {@link io.helidon.builder.Builder#listImplType()}.
      */
-    private static String toListImplType(AnnotationAndValue builderAnnotation,
+    private static String toListImplType(AnnotationAndValue builderTriggerAnnotation,
                                          TypeInfo typeInfo) {
-        String type = searchForBuilderAnnotation("listImplType", builderAnnotation, typeInfo);
+        String type = searchForBuilderAnnotation("listImplType", builderTriggerAnnotation, typeInfo);
         return (!BuilderTypeTools.hasNonBlankValue(type)) ? DEFAULT_LIST_TYPE : type;
     }
 
     /**
      * In support of {@link io.helidon.builder.Builder#mapImplType()} ()}.
      */
-    private static String toMapImplType(AnnotationAndValue builderAnnotation,
+    private static String toMapImplType(AnnotationAndValue builderTriggerAnnotation,
                                         TypeInfo typeInfo) {
-        String type = searchForBuilderAnnotation("mapImplType", builderAnnotation, typeInfo);
+        String type = searchForBuilderAnnotation("mapImplType", builderTriggerAnnotation, typeInfo);
         return (!BuilderTypeTools.hasNonBlankValue(type)) ? DEFAULT_MAP_TYPE : type;
     }
 
     /**
      * In support of {@link io.helidon.builder.Builder#setImplType()}.
      */
-    private static String toSetImplType(AnnotationAndValue builderAnnotation,
+    private static String toSetImplType(AnnotationAndValue builderTriggerAnnotation,
                                         TypeInfo typeInfo) {
-        String type = searchForBuilderAnnotation("setImplType", builderAnnotation, typeInfo);
+        String type = searchForBuilderAnnotation("setImplType", builderTriggerAnnotation, typeInfo);
         return (!BuilderTypeTools.hasNonBlankValue(type)) ? DEFAULT_SET_TYPE : type;
     }
 
     private static String searchForBuilderAnnotation(String key,
-                                                     AnnotationAndValue builderAnnotation,
+                                                     AnnotationAndValue builderTriggerAnnotation,
                                                      TypeInfo typeInfo) {
-        String val = builderAnnotation.value(key).orElse(null);
+        String val = builderTriggerAnnotation.value(key).orElse(null);
         if (val != null) {
             return val;
         }
 
-        if (!builderAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
-            builderAnnotation = DefaultAnnotationAndValue
+        if (!builderTriggerAnnotation.typeName().equals(BUILDER_ANNO_TYPE_NAME)) {
+            AnnotationAndValue builderAnnotation = DefaultAnnotationAndValue
                     .findFirst(BUILDER_ANNO_TYPE_NAME.name(), typeInfo.annotations()).orElse(null);
             if (Objects.nonNull(builderAnnotation)) {
                 val = builderAnnotation.value(key).orElse(null);
             }
+        }
+
+        if (val == null && typeInfo.superTypeInfo().isPresent()) {
+            val = searchForBuilderAnnotation(key, builderTriggerAnnotation, typeInfo.superTypeInfo().get());
         }
 
         return val;
@@ -410,11 +442,11 @@ public class BodyContext {
         TypeInfo superTypeInfo = typeInfo.superTypeInfo().orElse(null);
         if (Objects.nonNull(superTypeInfo)) {
             Optional<? extends AnnotationAndValue> superBuilderAnnotation = DefaultAnnotationAndValue
-                    .findFirst(ctx.builderAnnotation.typeName().name(), superTypeInfo.annotations());
+                    .findFirst(ctx.builderTriggerAnnotation.typeName().name(), superTypeInfo.annotations());
             if (superBuilderAnnotation.isEmpty()) {
                 gatherAllAttributeNames(ctx, superTypeInfo);
             } else {
-                populateMap(ctx.map, superTypeInfo, ctx.isBeanStyleRequired);
+                populateMap(ctx.map, superTypeInfo, ctx.beanStyleRequired);
             }
 
             if (Objects.isNull(ctx.parentTypeName.get())
@@ -427,7 +459,7 @@ public class BodyContext {
         }
 
         for (TypedElementName method : typeInfo.elementInfo()) {
-            String beanAttributeName = toBeanAttributeName(method, ctx.isBeanStyleRequired);
+            String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired);
             TypedElementName existing = ctx.map.get(beanAttributeName);
             if (Objects.nonNull(existing)
                     && BeanUtils.isBooleanType(method.typeName().name())

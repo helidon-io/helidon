@@ -16,6 +16,9 @@
 
 package io.helidon.builder.processor.tools;
 
+/**
+ * See {@link io.helidon.builder.RequiredAttributeVisitor} for the prototypical output for this generated class.
+ */
 final class GenerateVisitorSupport {
     private GenerateVisitorSupport() {
     }
@@ -60,11 +63,21 @@ final class GenerateVisitorSupport {
                                    + "\t */\n");
             builder.append("\tprotected static class RequiredAttributeVisitor implements AttributeVisitor<Object> {\n"
                                    + "\t\tprivate final List<String> errors = new java.util.ArrayList();\n"
+                                   + "\t\tprivate final boolean allowNullsByDefault;\n"
                                    + "\n"
                                    + "\t\t/**\n"
                                    + "\t\t * Default Constructor.\n"
                                    + "\t\t */\n"
                                    + "\t\tprotected RequiredAttributeVisitor() {\n"
+                                   + "\t\t\tthis(" + ctx.allowNulls() + ");\n"
+                                   + "\t\t}\n\n");
+            builder.append("\t\t/**\n"
+                                   + "\t\t * Constructor.\n"
+                                   + "\t\t *\n"
+                                   + "\t\t * @param allowNullsByDefault true if nulls should be allowed\n"
+                                   + "\t\t */\n"
+                                   + "\t\tpublic RequiredAttributeVisitor(boolean allowNullsByDefault) {\n"
+                                   + "\t\t\tthis.allowNullsByDefault = allowNullsByDefault;\n"
                                    + "\t\t}\n\n");
             builder.append("\t\t@Override\n"
                                    + "\t\tpublic void visit(String attrName,\n"
@@ -73,8 +86,14 @@ final class GenerateVisitorSupport {
                                    + "\t\t\t\t\t\t  Object userDefinedCtx,\n"
                                    + "\t\t\t\t\t\t  Class<?> type,\n"
                                    + "\t\t\t\t\t\t  Class<?>... typeArgument) {\n"
-                                   + "\t\t\tboolean required = Boolean.valueOf((String) meta.get(\"required\"));\n"
-                                   + "\t\t\tif (!required) {\n"
+                                   + "\t\t\tString requiredStr = (String) meta.get(\"required\");\n"
+                                   + "\t\t\tboolean requiredPresent = Objects.nonNull(requiredStr);\n"
+                                   + "\t\t\tboolean required = Boolean.parseBoolean(requiredStr);\n"
+                                   + "\t\t\tif (!required && requiredPresent) {\n"
+                                   + "\t\t\t\treturn;\n"
+                                   + "\t\t\t}\n"
+                                   + "\n"
+                                   + "\t\t\tif (allowNullsByDefault && !requiredPresent) {\n"
                                    + "\t\t\t\treturn;\n"
                                    + "\t\t\t}\n"
                                    + "\t\t\t\n"

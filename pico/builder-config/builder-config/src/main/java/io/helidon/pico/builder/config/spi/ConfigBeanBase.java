@@ -16,7 +16,6 @@
 
 package io.helidon.pico.builder.config.spi;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.config.Config;
@@ -27,27 +26,23 @@ import io.helidon.common.config.Config;
  * @deprecated this is for internal use only
  */
 public abstract class ConfigBeanBase implements ConfigBeanCommon {
-    private Config cfg;
+    private final Config cfg;
     private String instanceId;
 
     /**
      * Protected constructor for initializing the generated config bean instance variables.
+     * @param b             the builder
+     * @param instanceId    the instance id
      */
-    protected ConfigBeanBase() {
+    protected ConfigBeanBase(ConfigBeanBuilder b,
+                             String instanceId) {
+        this.cfg = b.__config().orElse(null);
+        this.instanceId = instanceId;
     }
 
     @Override
     public Optional<Config> __config() {
         return Optional.ofNullable(cfg);
-    }
-
-    /**
-     * Sets the config instance.
-     *
-     * @param cfg the config instance
-     */
-    public void __config(Config cfg) {
-        this.cfg = Objects.requireNonNull(cfg);
     }
 
     /**
@@ -65,7 +60,7 @@ public abstract class ConfigBeanBase implements ConfigBeanCommon {
      * @param val the new instance id for this bean
      */
     public void __instanceId(String val) {
-        instanceId = val;
+        this.instanceId = val;
     }
 
 }

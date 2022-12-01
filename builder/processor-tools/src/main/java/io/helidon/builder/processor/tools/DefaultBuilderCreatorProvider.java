@@ -58,6 +58,7 @@ import static io.helidon.builder.processor.tools.BodyContext.toBeanAttributeName
 public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     static final boolean DEFAULT_INCLUDE_META_ATTRIBUTES = true;
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;
+    static final boolean DEFAULT_ALLOW_NULLS = false;
     static final String DEFAULT_IMPL_PREFIX = Builder.DEFAULT_IMPL_PREFIX;
     static final String DEFAULT_ABSTRACT_IMPL_PREFIX = Builder.DEFAULT_ABSTRACT_IMPL_PREFIX;
     static final String DEFAULT_SUFFIX = Builder.DEFAULT_SUFFIX;
@@ -227,7 +228,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     protected void appendRequiredValidator(StringBuilder builder,
                                            BodyContext ctx) {
         if (ctx.includeMetaAttributes()) {
-            builder.append("\t\t\tRequiredAttributeVisitor visitor = new RequiredAttributeVisitor();\n"
+            builder.append("\t\t\tRequiredAttributeVisitor visitor = new RequiredAttributeVisitor(")
+                    .append(ctx.allowNulls()).append(");\n"
                                    + "\t\t\tvisitAttributes(visitor, null);\n"
                                    + "\t\t\tvisitor.validate();\n");
         }
@@ -343,10 +345,10 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
 
         if (ctx.doingConcreteType()) {
-            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderAnnotation()).get());
+            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()).get());
         } else {
             if (ctx.hasParent()) {
-                builder.append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderAnnotation()).get());
+                builder.append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()).get());
             } else {
                 Optional<TypeName> baseExtendsTypeName = baseExtendsTypeName(ctx);
                 if (baseExtendsTypeName.isPresent()) {
@@ -601,7 +603,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                      BodyContext ctx) {
         if (!ctx.doingConcreteType() && ctx.includeMetaAttributes()) {
             GenerateJavadoc.internalMetaPropsField(builder);
-            builder.append("\tprotected static final Map<String, Map<String, Object>> ")
+            builder.append("\tprivate static final Map<String, Map<String, Object>> ")
                     .append(TAG_META_PROPS).append(" = Collections.unmodifiableMap(__calcMeta());\n");
         }
     }
@@ -762,21 +764,25 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append(".clear();\n");
             builder.append("\t\t\tthis.")
                     .append(beanAttributeName)
-                    .append(".addAll(Objects.requireNonNull(val));\n");
+                    .append(".addAll(").append(maybeRequireNonNull(ctx, "val")).append(");\n");
         } else if (isMap) {
             builder.append(".clear();\n");
             builder.append("\t\t\tthis.")
                     .append(beanAttributeName)
-                    .append(".putAll(Objects.requireNonNull(val));\n");
+                    .append(".putAll(").append(maybeRequireNonNull(ctx, "val")).append(");\n");
         } else if (isSet) {
             builder.append(".clear();\n");
             builder.append("\t\t\tthis.")
                     .append(beanAttributeName)
-                    .append(".addAll(Objects.requireNonNull(val));\n");
+                    .append(".addAll(").append(maybeRequireNonNull(ctx, "val")).append(");\n");
         } else if (typeName.array()) {
-            builder.append(" = val.clone();\n");
+            if (ctx.allowNulls()) {
+                builder.append(" = (val == null) ? null : val.clone();\n");
+            } else {
+                builder.append(" = val.clone();\n");
+            }
         } else {
-            builder.append(" = Objects.requireNonNull(val);\n");
+            builder.append(" = ").append(maybeRequireNonNull(ctx, "val")).append(";\n");
         }
         builder.append("\t\t\treturn identity();\n");
         builder.append("\t\t}\n\n");
@@ -1099,7 +1105,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append("\t\tpublic ")
                     .append(ctx.genericBuilderAliasDecl())
                     .append(" accept(").append(ctx.genericBuilderAcceptAliasDecl()).append(" val) {\n");
-            builder.append("\t\t\tObjects.requireNonNull(val);\n");
+            if (!ctx.allowNulls()) {
+                builder.append("\t\t\tObjects.requireNonNull(val);\n");
+            }
             if (ctx.hasParent()) {
                 builder.append("\t\t\tsuper.accept(val);\n");
             }
@@ -1108,7 +1116,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append("\t\t}\n\n");
 
             builder.append("\t\tprivate void __acceptThis(").append(ctx.genericBuilderAcceptAliasDecl()).append(" val) {\n");
-
+            if (!ctx.allowNulls()) {
+                builder.append("\t\t\tObjects.requireNonNull(val);\n");
+            }
             i = 0;
             for (String beanAttributeName : ctx.allAttributeNames()) {
                 TypedElementName method = ctx.allTypeInfos().get(i++);
@@ -1123,7 +1133,15 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 } else if (isMap) {
                     builder.append("(java.util.Map) ");
                 }
-                builder.append("val.").append(getterName).append("());\n");
+                boolean isPrimitive = method.typeName().primitive();
+                if (!isPrimitive && ctx.allowNulls()) {
+                    builder.append("((val == null) ? null : ");
+                }
+                builder.append("val.").append(getterName).append("()");
+                if (!isPrimitive && ctx.allowNulls()) {
+                    builder.append(")");
+                }
+                builder.append(");\n");
             }
             builder.append("\t\t}\n\n");
         }
@@ -1234,7 +1252,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         if (ctx.doingConcreteType()) {
             builder.append(" extends ");
-            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderAnnotation()).get());
+            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()).get());
             builder.append(".").append(ctx.genericBuilderClassDecl());
             builder.append("<").append(ctx.genericBuilderClassDecl()).append(", ").append(ctx.ctorBuilderAcceptTypeName())
                     .append("> {\n");
@@ -1246,7 +1264,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append(ctx.ctorBuilderAcceptTypeName()).append("> ");
             if (ctx.hasParent()) {
                 builder.append("extends ")
-                        .append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderAnnotation()).get())
+                        .append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()).get())
                         .append(".").append(ctx.genericBuilderClassDecl());
                 builder.append("<").append(ctx.genericBuilderAliasDecl())
                         .append(", ").append(ctx.genericBuilderAcceptAliasDecl());
@@ -1511,11 +1529,11 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                                 BodyContext ctx) {
         boolean first = true;
         for (TypedElementName method : ctx.typeInfo().elementInfo()) {
-            String beanAttributeName = toBeanAttributeName(method, ctx.isBeanStyleRequired());
+            String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired());
             if (!ctx.allAttributeNames().contains(beanAttributeName)) {
                 // candidate for override...
                 String thisDefault = toConfiguredOptionValue(method, true, true).orElse(null);
-                String superDefault = superValue(ctx.typeInfo().superTypeInfo(), beanAttributeName, ctx.isBeanStyleRequired());
+                String superDefault = superValue(ctx.typeInfo().superTypeInfo(), beanAttributeName, ctx.beanStyleRequired());
                 if (BuilderTypeTools.hasNonBlankValue(thisDefault) && !Objects.equals(thisDefault, superDefault)) {
                     appendDefaultOverride(builder, beanAttributeName, method, thisDefault);
                 }
@@ -1637,6 +1655,10 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
 
         return "\"" + val + "\"";
+    }
+
+    private String maybeRequireNonNull(BodyContext ctx, String tag) {
+        return ctx.allowNulls() ? tag : "Objects.requireNonNull(" + tag + ")";
     }
 
 }
