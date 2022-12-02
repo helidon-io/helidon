@@ -24,7 +24,7 @@ import io.helidon.openapi.OpenApiUiFactory;
 public class OpenApiUiFactoryFull implements OpenApiUiFactory<OpenApiUiFull.Builder, OpenApiUiFull> {
 
     /**
-     * Creates a new instance of the factory for a full U/I implementation.
+     * Creates a new instance of the factory for a full UI implementation.
      */
     public OpenApiUiFactoryFull() {
     }

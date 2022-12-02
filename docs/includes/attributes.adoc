@@ -273,7 +273,7 @@ endif::[]
 :openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
 :openapi-generator-tool-site-url: https://openapi-generator.tech
 
-// OpenAPI U/I
+// OpenAPI UI
 :smallrye-openapi-ui-base-url: https://github.com/smallrye/smallrye-open-api/tree/{version-lib-smallrye-open-api}/ui/open-api-ui
 
 endif::attributes-included[]

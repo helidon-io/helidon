@@ -32,9 +32,9 @@ class CdiTestsUtil {
         Response response = webTarget.path(path)
                 .request(MediaType.TEXT_HTML)
                 .get();
-        assertThat("HTTP status accessing default U/I endpoint",
+        assertThat("HTTP status accessing default UI endpoint",
                    response.getStatus(), is(Http.Status.OK_200.code()));
-        assertThat("Content accessing default U/I endpoint",
+        assertThat("Content accessing default UI endpoint",
                    response.readEntity(String.class),
                    allOf(containsString("<html"),
                          containsString("swagger-ui")));
