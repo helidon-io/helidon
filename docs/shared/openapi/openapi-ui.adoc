@@ -34,6 +34,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :h1Prefix: {flavor-uc}
 :javadoc-path: {openapi-ui-javadoc-base-url}/io/helidon/integrations/openapi/ui
 :openapi-javadoc-path: {openapi-javadoc-base-url}/io/helidon/openapi
+Easily enhance your Helidon {flavor-uc} application by adding an interactive user interface web page based on your service's OpenAPI document.
 // end::preamble[]
 
 // tag::overview[]
