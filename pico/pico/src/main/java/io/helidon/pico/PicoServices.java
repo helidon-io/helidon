@@ -24,6 +24,7 @@ import java.util.Optional;
  * An implementation of this interface must minimally supply a "services registry" - see {@link #services()}.
  */
 public interface PicoServices {
+
     /**
      * Empty criteria will match anything and everything.
      */

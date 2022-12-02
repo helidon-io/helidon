@@ -77,5 +77,16 @@
     <suppress files="microprofile/lra/jax-rs/src/main/java/io/helidon/microprofile/lra/NonJaxRsResource.java"
             checks="ParameterNumber"/>
 
-</suppressions>
+    <!-- interfaces implemented by generated code, ensuring methods don't interfere with the interlaced methods from the user -->
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigProvider.java"
+            checks="MethodName"/>
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBean.java"
+            checks="MethodName"/>
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBeanBase.java"
+            checks="MethodName"/>
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBeanBuilderBase.java"
+            checks="MethodName"/>
+    <suppress files="pico/builder-config/builder-config/src/main/java/io/helidon/pico/builder/config/spi/ConfigBeanCommon.java"
+            checks="MethodName"/>
 
+</suppressions>

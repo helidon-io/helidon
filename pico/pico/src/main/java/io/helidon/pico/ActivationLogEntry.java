@@ -19,7 +19,7 @@ package io.helidon.pico;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Log entry for lifecycle related events (i.e., activation startup and deactivation shutdown).

@@ -1391,7 +1391,29 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Pico -->
+            <!-- Builder -->
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-processor-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-processor-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Pico Core -->
             <dependency>
                 <groupId>io.helidon.pico</groupId>
                 <artifactId>helidon-pico</artifactId>
@@ -1403,27 +1425,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Pico Builder -->
+            <!-- Pico Config Builder -->
             <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder</artifactId>
+                <groupId>io.helidon.pico.builder.config</groupId>
+                <artifactId>helidon-pico-builder-config</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-processor-spi</artifactId>
+                <groupId>io.helidon.pico.builder.config</groupId>
+                <artifactId>helidon-pico-builder-config-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-processor-tools</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
+
 
         </dependencies>
     </dependencyManagement>

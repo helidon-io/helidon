@@ -126,7 +126,6 @@ public class DefaultTypeName implements TypeName {
             return createFromTypeName(typeName.substring(10).trim())
                     .toBuilder()
                     .wildcard(true)
-                    .generic(true)
                     .build();
         }
 
@@ -156,6 +155,18 @@ public class DefaultTypeName implements TypeName {
 
         String packageName = String.join(".", packageElements);
         return create(packageName, className);
+    }
+
+    /**
+     * Given a typeName X, will return an typeName of "? extends X".
+     *
+     * @param typeName  the typeName
+     * @return the wildcard extension of the given typeName
+     */
+    public static TypeName createExtendsTypeName(TypeName typeName) {
+        return toBuilder(typeName)
+                .wildcard(true)
+                .build();
     }
 
     /**
@@ -325,13 +336,7 @@ public class DefaultTypeName implements TypeName {
          * @param val   the typeName
          */
         protected Builder(TypeName val) {
-            this.packageName = val.packageName();
-            this.className = val.className();
-            this.primitive = val.primitive();
-            this.array = val.array();
-            this.wildcard = val.wildcard();
-            this.generic = val.generic();
-            this.typeArguments.addAll(val.typeArguments());
+            copyFrom(val);
         }
 
         /**
@@ -344,6 +349,23 @@ public class DefaultTypeName implements TypeName {
             packageName = packageName == null ? "" : packageName;
 
             return new DefaultTypeName(this);
+        }
+
+        /**
+         * Copy from an existing typeName.
+         *
+         * @param val   the typeName to copy
+         * @return the fluent builder
+         */
+        protected Builder copyFrom(TypeName val) {
+            this.packageName = val.packageName();
+            this.className = val.className();
+            this.primitive = val.primitive();
+            this.array = val.array();
+            this.wildcard = val.wildcard();
+            this.generic = val.generic();
+            this.typeArguments.addAll(val.typeArguments());
+            return this;
         }
 
         /**
