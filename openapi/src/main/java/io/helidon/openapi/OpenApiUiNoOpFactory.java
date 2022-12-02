@@ -22,7 +22,7 @@ public class OpenApiUiNoOpFactory implements OpenApiUiFactory<OpenApiUiNoOp.Buil
 
     /**
      *
-     * @return new instance of the factory for a minimal implementation of the U/I
+     * @return new instance of the factory for a minimal implementation of the UI
      */
     static OpenApiUiNoOpFactory create() {
         return new OpenApiUiNoOpFactory();

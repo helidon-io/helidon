@@ -436,7 +436,7 @@ public abstract class OpenAPISupport implements Service {
         try {
             Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
 
-            // Give the U/I a chance to respond first if it claims to support the chosen media type.
+            // Give the UI a chance to respond first if it claims to support the chosen media type.
             if (requestedMediaType.isPresent()
                 && uiSupportsMediaType(requestedMediaType.get())) {
                 if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
@@ -465,7 +465,7 @@ public abstract class OpenAPISupport implements Service {
     }
 
     private boolean uiSupportsMediaType(MediaType mediaType) {
-        // The U/I supports a very short list of media types, hence the sequential search.
+        // The UI supports a very short list of media types, hence the sequential search.
         for (MediaType uiSupportedMediaType : mediaTypesSupportedByUi) {
             if (uiSupportedMediaType.test(mediaType)) {
                 return true;
@@ -903,14 +903,14 @@ public abstract class OpenAPISupport implements Service {
         }
 
         /**
-         * Assigns the OpenAPI U/I builder the {@code OpenAPISupport} service should use in preparing the U/I.
+         * Assigns the OpenAPI UI builder the {@code OpenAPISupport} service should use in preparing the UI.
          *
          * @param uiBuilder the {@link OpenApiUi.Builder}
          * @return updated builder instance
          */
         @ConfiguredOption(type = OpenApiUi.class)
         public B ui(OpenApiUi.Builder<?, ?> uiBuilder) {
-            Objects.requireNonNull(uiBuilder, "U/I must be non-null");
+            Objects.requireNonNull(uiBuilder, "UI must be non-null");
             this.uiBuilder = uiBuilder;
             return identity();
         }

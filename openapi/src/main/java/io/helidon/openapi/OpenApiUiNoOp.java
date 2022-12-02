@@ -21,7 +21,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
 /**
- * Implementation of {@link OpenApiUi} which provides no U/I support but simply honors the interface.
+ * Implementation of {@link OpenApiUi} which provides no UI support but simply honors the interface.
  */
 class OpenApiUiNoOp implements OpenApiUi {
 

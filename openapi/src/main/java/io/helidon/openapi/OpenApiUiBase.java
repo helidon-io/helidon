@@ -73,7 +73,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
     private final Map<String, String> options = new HashMap<>();
 
     /**
-     * Creates a new U/I implementation from the specified builder and document preparer.
+     * Creates a new UI implementation from the specified builder and document preparer.
      *
      * @param builder the builder containing relevant settings
      * @param documentPreparer function returning an OpenAPI document represented as a specified {@link MediaType}
@@ -92,7 +92,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     /**
      *
-     * @return whether the U/I is enabled
+     * @return whether the UI is enabled
      */
     protected boolean isEnabled() {
         return isEnabled;
@@ -110,7 +110,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     /**
      *
-     * @return web context this U/I implementation responds at
+     * @return web context this UI implementation responds at
      */
     protected String webContext() {
         return webContext;
@@ -118,7 +118,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     /**
      *
-     * @return options set for this U/I implementation (unmodifiable)
+     * @return options set for this UI implementation (unmodifiable)
      */
     protected Map<String, String> options() {
         return Collections.unmodifiableMap(options);
