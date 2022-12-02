@@ -85,7 +85,7 @@ class MainTest {
     };
     /**
      * Runs the server for as many minutes as specified by the property {@value RUN_BROWSER_TEST_PROPERTY}
-     * so you could use a browser to test the U/I. If the property is present but not set to a value, the default is 5 minutes.
+     * so you could use a browser to test the UI. If the property is present but not set to a value, the default is 5 minutes.
      * If the property is not set, the test is skipped. For example, add
      *
      * {@code -Dsurefire.argLine="-Dio.helidon.openapi.ui.test.runForBrowser"}
@@ -136,7 +136,7 @@ class MainTest {
 
     @Test
     void testMainUiPageWithDefaultSettings() {
-        // Use defaults for the OpenAPI endpoint and the U/I endpoint.
+        // Use defaults for the OpenAPI endpoint and the UI endpoint.
         loadAndCheckMainPage(null, // load config from normal sources
                              OpenAPISupport.DEFAULT_WEB_CONTEXT + OpenApiUi.UI_WEB_SUBCONTEXT
         );
@@ -144,7 +144,7 @@ class MainTest {
 
     @Test
     void testAlternateUiPath() {
-        // Alternate web-context for the U/I, default for the OpenAPI document endpoint.
+        // Alternate web-context for the UI, default for the OpenAPI document endpoint.
         Map<String, String> settings = Map.of("openapi.ui.web-context", "/openapi-ui-x");
         Config config = Config.create(ConfigSources.create(settings));
         loadAndCheckMainPage(config,
@@ -153,8 +153,8 @@ class MainTest {
 
     @Test
     void testAlternateOpenApiPath() {
-        // Alternate web-context for OpenAPI, default for the U/I.
-        // The U/I should automatically take into account the non-default path for the OpenAPI document.
+        // Alternate web-context for OpenAPI, default for the UI.
+        // The UI should automatically take into account the non-default path for the OpenAPI document.
         Map<String, String> settings = Map.of("openapi.web-context", "/openapi-x");
         Config config = Config.create(ConfigSources.create(settings));
         loadAndCheckMainPage(config,
@@ -276,12 +276,12 @@ class MainTest {
                              .as(String.class)
                              .get(5, TimeUnit.SECONDS);
                  } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                     fail("Error retrieving initial U/I page", e);
+                     fail("Error retrieving initial UI page", e);
                  }
 
-                 // Don't inspect the HTML much; we don't want this test to depend too heavily on the U/I impl.
+                 // Don't inspect the HTML much; we don't want this test to depend too heavily on the UI impl.
                  if (expectedStatus == 200) {
-                     assertThat("Returned HTML from U/I", html, containsString("https://helidon.io"));
+                     assertThat("Returned HTML from UI", html, containsString("https://helidon.io"));
                  }
              });
     }

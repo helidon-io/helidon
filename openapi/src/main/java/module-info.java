@@ -38,5 +38,7 @@ module io.helidon.openapi {
 
     requires microprofile.openapi.api;
 
+    uses io.helidon.openapi.OpenApiUiFactory;
+
     exports io.helidon.openapi;
 }

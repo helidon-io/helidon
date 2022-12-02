@@ -25,7 +25,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * Behavior for OpenAPI U/I implementations.
+ * Behavior for OpenAPI UI implementations.
  */
 public interface OpenApiUi extends Service {
 
@@ -45,7 +45,7 @@ public interface OpenApiUi extends Service {
     }
 
     /**
-     * Indicates the media types the U/I implementation itself supports.
+     * Indicates the media types the UI implementation itself supports.
      *
      * @return the media types the
      * {@link #prepareTextResponseFromMainEndpoint(io.helidon.webserver.ServerRequest, io.helidon.webserver.ServerResponse)}
@@ -54,7 +54,7 @@ public interface OpenApiUi extends Service {
     MediaType[] supportedMediaTypes();
 
     /**
-     * Gives the U/I an opportunity to respond to a request arriving at the {@code OpenAPISupport} endpoint for which the
+     * Gives the UI an opportunity to respond to a request arriving at the {@code OpenAPISupport} endpoint for which the
      * best-accepted {@link MediaType} was {@code text/html}.
      * <p>
      *     An implementation should return {@code true} if it is responsible for a particular media type
@@ -64,7 +64,7 @@ public interface OpenApiUi extends Service {
      *
      * @param request the request for HTML content
      * @param response the response which could be prepared and sent
-     * @return whether the U/I did respond to the request
+     * @return whether the UI did respond to the request
      */
     boolean prepareTextResponseFromMainEndpoint(ServerRequest request, ServerResponse response);
 
@@ -77,7 +77,7 @@ public interface OpenApiUi extends Service {
     interface Builder<B extends Builder<B, T>, T extends OpenApiUi> extends io.helidon.common.Builder<T> {
 
         /**
-         * Config prefix within the {@value OpenAPISupport.Builder#CONFIG_KEY} section containing U/I settings.
+         * Config prefix within the {@value OpenAPISupport.Builder#CONFIG_KEY} section containing UI settings.
          */
         String OPENAPI_UI_CONFIG_KEY = "ui";
 
@@ -92,20 +92,20 @@ public interface OpenApiUi extends Service {
         String OPTIONS_CONFIG_KEY = "options";
 
         /**
-         * Config key for specifying the entire web context where the U/I responds.
+         * Config key for specifying the entire web context where the UI responds.
          */
         String WEB_CONTEXT_CONFIG_KEY = "web-context";
 
         /**
-         * Sets implementation-specific U/I options.
+         * Sets implementation-specific UI options.
          *
-         * @param options the options to set for the U/I
+         * @param options the options to set for the UI
          * @return updated builder
          */
         B options(Map<String, String> options);
 
         /**
-         * Sets whether the U/I should be enabled.
+         * Sets whether the UI should be enabled.
          *
          * @param isEnabled true/false
          * @return updated builder
@@ -113,9 +113,9 @@ public interface OpenApiUi extends Service {
         B isEnabled(boolean isEnabled);
 
         /**
-         * Sets the entire web context (not just the suffix) where the U/I response.
+         * Sets the entire web context (not just the suffix) where the UI response.
          *
-         * @param webContext entire web context (path) where the U/I responds
+         * @param webContext entire web context (path) where the UI responds
          * @return updated builder
          */
         B webContext(String webContext);
@@ -124,7 +124,7 @@ public interface OpenApiUi extends Service {
          * Updates the builder using the specified config node at {@value OPENAPI_UI_CONFIG_KEY} within the
          * {@value OpenAPISupport.Builder#CONFIG_KEY} config section.
          *
-         * @param uiConfig config node containing the U/I settings
+         * @param uiConfig config node containing the UI settings
          * @return updated builder
          */
         default B config(Config uiConfig) {
@@ -144,7 +144,7 @@ public interface OpenApiUi extends Service {
         }
 
         /**
-         * Assigns how the OpenAPI U/I can obtain a formatted document for a given media type.
+         * Assigns how the OpenAPI UI can obtain a formatted document for a given media type.
          * <p>
          *     Developers typically do not invoke this method. Helidon invokes it internally.
          * </p>

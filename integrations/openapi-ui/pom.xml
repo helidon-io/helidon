@@ -28,10 +28,10 @@
     <groupId>io.helidon.integrations.openapi-ui</groupId>
     <artifactId>helidon-integrations-openapi-ui</artifactId>
 
-    <name>Helidon OpenAPI U/I Integration</name>
+    <name>Helidon OpenAPI UI Integration</name>
 
     <description>
-        Integration in Helidon of the OpenAPI U/I
+        Integration in Helidon of the OpenAPI UI
     </description>
 
     

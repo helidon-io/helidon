@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for the OpenAPI U/I in Helidon SE.
+ * Support for the OpenAPI UI in Helidon SE.
  */
 package io.helidon.integrations.openapi.ui;

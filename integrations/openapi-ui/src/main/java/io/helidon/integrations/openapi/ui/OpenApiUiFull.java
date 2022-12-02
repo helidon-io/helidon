@@ -38,9 +38,9 @@ import io.smallrye.openapi.ui.IndexHtmlCreator;
 import io.smallrye.openapi.ui.Option;
 
 /**
- * Support for the OpenAPI U/I component from SmallRye.
+ * Support for the OpenAPI UI component from SmallRye.
  * <p>
- *     This service supports Helidon configuration of the U/I and furnishes Helidon-specific defaults for some settings.
+ *     This service supports Helidon configuration of the UI and furnishes Helidon-specific defaults for some settings.
  * </p>
  */
 class OpenApiUiFull extends OpenApiUiBase {
@@ -76,7 +76,7 @@ class OpenApiUiFull extends OpenApiUiBase {
         Map<Option, String> options = new HashMap<>(builder.options);
 
         // Apply some Helidon-specific defaults.
-        Map.of(Option.title, "Helidon OpenAPI U/I",
+        Map.of(Option.title, "Helidon OpenAPI UI",
                Option.logoHref, LOGO_RESOURCE,
                Option.oauth2RedirectUrl, "-", // workaround for a bug in IndexHtmlCreator
                Option.selfHref, HELIDON_IO_LINK, // link applied to the title if there is no logo (but there is; set this anyway)
@@ -90,7 +90,7 @@ class OpenApiUiFull extends OpenApiUiBase {
         try {
             indexHtml = IndexHtmlCreator.createIndexHtml(options);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize the index.html content for the OpenAPI U/I", e);
+            throw new RuntimeException("Unable to initialize the index.html content for the OpenAPI UI", e);
         }
     }
 
@@ -119,7 +119,7 @@ class OpenApiUiFull extends OpenApiUiBase {
         if (!isEnabled()) {
             return;
         }
-        // Serve static content from the external U/I component...
+        // Serve static content from the external UI component...
         StaticContentSupport smallryeUiStaticSupport = StaticContentSupport.builder("META-INF/resources/openapi-ui")
                 .build();
         // ...and from here.
@@ -159,10 +159,10 @@ class OpenApiUiFull extends OpenApiUiBase {
         }
 
         /**
-         * Sets the options map the U/I should use. Other settings previously assigned will be respected unless the provided map
+         * Sets the options map the UI should use. Other settings previously assigned will be respected unless the provided map
          * sets the corresponding value.
          *
-         * @param options U/I options map
+         * @param options UI options map
          * @return updated builder
          */
         @Override
@@ -172,9 +172,9 @@ class OpenApiUiFull extends OpenApiUiBase {
         }
 
         /**
-         * Assigns the settings using the provided OpenAPI U/I {@code Config} node.
+         * Assigns the settings using the provided OpenAPI UI {@code Config} node.
          *
-         * @param uiConfig OpenAPI U/I config node
+         * @param uiConfig OpenAPI UI config node
          * @return updated builder
          */
         @Override
@@ -205,7 +205,7 @@ class OpenApiUiFull extends OpenApiUiBase {
             }
             if (!unrecognizedKeys.isEmpty()) {
                 LOGGER.log(Level.WARNING,
-                           "Helidon OpenAPI U/I builder found (and will ignore) unrecognized option names: \"{0}\"",
+                           "Helidon OpenAPI UI builder found (and will ignore) unrecognized option names: \"{0}\"",
                            unrecognizedKeys);
             }
             return result;
@@ -248,7 +248,7 @@ class OpenApiUiFull extends OpenApiUiBase {
     }
 
     private void redirectToIndex(ServerRequest request, ServerResponse response) {
-        // Redirect to the index.html temporarily because other requests to the U/I endpoint
+        // Redirect to the index.html temporarily because other requests to the UI endpoint
         // might specify other media types.
         response.status(Http.Status.TEMPORARY_REDIRECT_307);
         response.addHeader(Http.Header.LOCATION, webContext() + "/index.html");
