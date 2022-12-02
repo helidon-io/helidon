@@ -131,7 +131,7 @@ public final class HttpRouting implements Routing {
         private final ServiceRules rootRules = new ServiceRules();
         private final List<HttpFeature> features = new ArrayList<>();
         private final Map<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers = new IdentityHashMap<>();
-        private int maxReRouteCount;
+        private int maxReRouteCount = 10;
 
         private Builder() {
         }
@@ -323,7 +323,7 @@ public final class HttpRouting implements Routing {
         }
 
         /**
-         * Set max reroute count.
+         * Maximal number of allowed re-routes within routing.
          *
          * @param maxReRouteCount
          * @return updated builder
@@ -367,7 +367,7 @@ public final class HttpRouting implements Routing {
             }
 
             // rerouting, do the more heavyweight while loop
-            int counter = 0;
+            int counter = 1;
             while (result == RoutingResult.ROUTE) {
                 counter++;
                 if (counter == maxReRouteCount) {
