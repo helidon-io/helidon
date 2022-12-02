@@ -141,6 +141,9 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             WebClientResponse clientResponse = responseBuilder.build();
             channel.attr(RESPONSE).set(clientResponse);
 
+            requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
+                                                     clientResponse.headers().toMap());
+
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     boolean continueAfter = !interceptor.continueAfterInterception();
@@ -153,9 +156,6 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     }
                 }
             }
-
-            requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
-                                                     clientResponse.headers().toMap());
 
             WebClientServiceResponse clientServiceResponse =
                     new WebClientServiceResponseImpl(requestConfiguration.context().get(),
