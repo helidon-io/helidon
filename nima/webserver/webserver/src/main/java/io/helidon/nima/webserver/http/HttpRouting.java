@@ -325,11 +325,11 @@ public final class HttpRouting implements Routing {
         /**
          * Maximal number of allowed re-routes within routing.
          *
-         * @see io.helidon.nima.webserver.http.ServerResponse#reroute(String)
-         * @see io.helidon.nima.webserver.http.ServerResponse#reroute(String, io.helidon.common.uri.UriQuery)
-         *
          * @param maxReRouteCount
          * @return updated builder
+         *
+         * @see io.helidon.nima.webserver.http.ServerResponse#reroute(String)
+         * @see io.helidon.nima.webserver.http.ServerResponse#reroute(String, io.helidon.common.uri.UriQuery)
          */
         public Builder maxReRouteCount(int maxReRouteCount){
             this.maxReRouteCount = maxReRouteCount;
