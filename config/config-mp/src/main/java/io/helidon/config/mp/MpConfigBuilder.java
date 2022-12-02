@@ -67,6 +67,7 @@ import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.mp.spi.MpConfigFilter;
+import io.helidon.config.mp.spi.MpConfigSourceProvider;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
 import org.eclipse.microprofile.config.Config;
@@ -379,6 +380,10 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
         ServiceLoader.load(ConfigSourceProvider.class)
                 .forEach(it -> it.getConfigSources(classLoader)
+                        .forEach(source -> targetConfigSources.add(new OrdinalSource(source))));
+
+        ServiceLoader.load(MpConfigSourceProvider.class)
+                .forEach(it -> (profile == null ? it.getConfigSources(classLoader) : it.getConfigSources(classLoader, profile))
                         .forEach(source -> targetConfigSources.add(new OrdinalSource(source))));
     }
 

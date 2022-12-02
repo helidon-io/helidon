@@ -33,6 +33,7 @@ module io.helidon.config.mp {
     uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
     uses org.eclipse.microprofile.config.spi.Converter;
     uses io.helidon.config.mp.spi.MpConfigFilter;
+    uses io.helidon.config.mp.spi.MpConfigSourceProvider;
     uses io.helidon.config.mp.spi.MpMetaConfigProvider;
     uses io.helidon.config.spi.ConfigParser;
 
