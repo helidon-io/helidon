@@ -24,6 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.http.Filter;
 import io.helidon.nima.webserver.http.FilterChain;
+import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.RoutingRequest;
 import io.helidon.nima.webserver.http.RoutingResponse;
@@ -35,18 +36,18 @@ import io.helidon.tracing.Tag;
 import io.helidon.tracing.Tracer;
 
 /**
- * Open Telemetry tracing support.
+ * Tracing support for Níma WebServer.
  */
-public class TracingSupport {
+public class TracingFeature implements HttpFeature {
     private final boolean enabled;
     private final Filter filter;
 
-    private TracingSupport(Filter filter) {
+    private TracingFeature(Filter filter) {
         this.enabled = true;
         this.filter = filter;
     }
 
-    private TracingSupport() {
+    private TracingFeature() {
         this.enabled = false;
         this.filter = null;
     }
@@ -57,22 +58,18 @@ public class TracingSupport {
      * @param tracer tracer
      * @return new tracing support
      */
-    public static TracingSupport create(Tracer tracer) {
+    public static TracingFeature create(Tracer tracer) {
         if (tracer.enabled()) {
-            return new TracingSupport(new TracingFilter(tracer));
+            return new TracingFeature(new TracingFilter(tracer));
         } else {
-            return new TracingSupport();
+            return new TracingFeature();
         }
     }
 
-    /**
-     * Register tracing support filter with the HTTP routing.
-     *
-     * @param builder routing builder
-     */
-    public void register(HttpRouting.Builder builder) {
+    @Override
+    public void setup(HttpRouting.Builder routing) {
         if (enabled) {
-            builder.addFilter(filter);
+            routing.addFilter(filter);
         }
     }
 
