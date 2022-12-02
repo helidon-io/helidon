@@ -47,13 +47,14 @@ public final class HttpRouting implements Routing {
     private final ServiceRoute rootRoute;
     private final ErrorHandlers errorHandlers;
     private final List<HttpFeature> features;
+    private final int maxReRouteCount;
 
     private HttpRouting(Builder builder) {
         this.errorHandlers = ErrorHandlers.create(builder.errorHandlers);
         this.filters = Filters.create(errorHandlers, List.copyOf(builder.filters));
         this.rootRoute = builder.rootRules.build();
         this.features = List.copyOf(builder.features);
-
+        this.maxReRouteCount = builder.maxReRouteCount;
     }
 
     /**
@@ -96,7 +97,7 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response);
+        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response, maxReRouteCount);
         // we cannot throw an exception to the filters, as then the filter would not have information about actual status
         // code, so error handling is done in routing executor and for each filter
         filters.filter(ctx, request, response, routingExecutor);
@@ -130,6 +131,7 @@ public final class HttpRouting implements Routing {
         private final ServiceRules rootRules = new ServiceRules();
         private final List<HttpFeature> features = new ArrayList<>();
         private final Map<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers = new IdentityHashMap<>();
+        private int maxReRouteCount;
 
         private Builder() {
         }
@@ -319,6 +321,18 @@ public final class HttpRouting implements Routing {
                                  .path(pattern)
                                  .handler(handler));
         }
+
+        /**
+         * Set max reroute count.
+         *
+         * @param maxReRouteCount
+         * @return updated builder
+         */
+        public Builder maxReRouteCount(int maxReRouteCount){
+            this.maxReRouteCount = maxReRouteCount;
+            return this;
+        }
+
     }
 
     private static final class RoutingExecutor implements Callable<Void> {
@@ -326,15 +340,18 @@ public final class HttpRouting implements Routing {
         private final RoutingRequest request;
         private final RoutingResponse response;
         private final ServiceRoute rootRoute;
+        private final int maxReRouteCount;
 
         private RoutingExecutor(ConnectionContext ctx,
                                 ServiceRoute rootRoute,
                                 RoutingRequest request,
-                                RoutingResponse response) {
+                                RoutingResponse response,
+                                int maxReRouteCount) {
             this.ctx = ctx;
             this.rootRoute = rootRoute;
             this.request = request;
             this.response = response;
+            this.maxReRouteCount = maxReRouteCount;
         }
 
         @Override
@@ -353,8 +370,9 @@ public final class HttpRouting implements Routing {
             int counter = 0;
             while (result == RoutingResult.ROUTE) {
                 counter++;
-                if (counter == 9) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
+                if (counter == maxReRouteCount) {
+                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
+                            + " times. Will not attempt further routing");
 
                     throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
                 }
