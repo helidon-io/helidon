@@ -34,6 +34,7 @@ final class GenerateVisitorSupport {
                 && !ctx.requireLibraryDependencies()) {
             builder.append("\n\n\t/**\n"
                                    + "\t * A functional interface that can be used to visit all attributes of this type.\n"
+                                   + "\t *\n"
                                    + "\t * @param <T> type of user defined context"
                                    + "\t */\n");
             builder.append("\t@FunctionalInterface\n"

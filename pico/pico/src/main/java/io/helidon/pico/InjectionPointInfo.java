@@ -34,7 +34,7 @@ public interface InjectionPointInfo extends ElementInfo {
      *
      * @return the unique identity
      */
-    String identity();
+    String ipIdentity();
 
     /**
      * The base identifying name for this injection point. If the element represents a function, then the function arguments

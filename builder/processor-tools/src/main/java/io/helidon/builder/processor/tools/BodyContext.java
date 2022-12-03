@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
+import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
@@ -70,6 +71,8 @@ public class BodyContext {
     private final String genericBuilderClassDecl;
     private final String genericBuilderAliasDecl;
     private final String genericBuilderAcceptAliasDecl;
+    private final TypeName interceptorTypeName;
+    private final String interceptorCreateMethod;
 
     /**
      * Constructor.
@@ -106,6 +109,11 @@ public class BodyContext {
         this.genericBuilderClassDecl = "Builder";
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
+        String interceptorType = searchForBuilderAnnotation("interceptor", builderTriggerAnnotation, typeInfo);
+        this.interceptorTypeName = (Void.class.getName().equals(interceptorType) || Objects.isNull(interceptorType))
+                ? null : DefaultTypeName.createFromTypeName(interceptorType);
+        this.interceptorCreateMethod = Objects.requireNonNull(
+                searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo));
     }
 
     /**
@@ -321,6 +329,26 @@ public class BodyContext {
      */
     protected String genericBuilderAcceptAliasDecl() {
         return genericBuilderAcceptAliasDecl;
+    }
+
+    /**
+     * Returns the interceptor implementation type name.
+     * See {@link io.helidon.builder.Builder#interceptor()}.
+     *
+     * @return the interceptor type name
+     */
+    public Optional<TypeName> interceptorTypeName() {
+        return Optional.ofNullable(interceptorTypeName);
+    }
+
+    /**
+     * Returns the interceptor create method name.
+     * See {@link io.helidon.builder.Builder#interceptorCreateMethod()}.
+     *
+     * @return the interceptor create method
+     */
+    public String interceptorCreateMethod() {
+        return interceptorCreateMethod;
     }
 
     /**

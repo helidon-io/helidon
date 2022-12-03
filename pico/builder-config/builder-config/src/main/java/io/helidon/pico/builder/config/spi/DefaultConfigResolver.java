@@ -31,7 +31,7 @@ import jakarta.inject.Singleton;
  * The default implementation of {@link ConfigResolver} simply resolves against {@link io.helidon.common.config.Config} directly.
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 1)
+@Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
 public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProvider {
 
     /**

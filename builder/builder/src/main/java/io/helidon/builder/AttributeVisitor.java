@@ -22,11 +22,13 @@ import java.util.function.Supplier;
 /**
  * A functional interface that can be used to visit all attributes of this type.
  * <p>
- * This type is used when {@link Builder#requireLibraryDependencies()} is used.
+ * This type is used when {@link Builder#requireLibraryDependencies()} is used. When it is turned off, however, an equivalent
+ * type will be code-generated into each generated bean.
  *
  * @param <T> type of the user defined context this attribute visitor supports
  */
 @FunctionalInterface
+// important note: this class is also code generated - please keep this in synch with generated code
 public interface AttributeVisitor<T> {
 
     /**

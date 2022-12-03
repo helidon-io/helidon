@@ -181,6 +181,22 @@ public @interface Builder {
     boolean allowNulls() default DEFAULT_ALLOW_NULLS;
 
     /**
+     * The interceptor implementation type. See {@link Interceptor} for further details. Any interceptor applied will be called
+     * prior to validation.
+     *
+     * @return the interceptor implementation class
+     */
+    Class<?> interceptor() default Void.class;
+
+    /**
+     * The (static) interceptor method to call on the {@link #interceptor()} implementation type. If left undefined then the new
+     * operator will be called on the type. This attribute is ignored if the {@link #interceptor()} class type is left undefined.
+     *
+     * @return the interceptor create method
+     */
+    String interceptorCreateMethod() default "";
+
+    /**
      * The list implementation type to apply, defaulting to {@link #DEFAULT_LIST_TYPE}.
      *
      * @return the list type to apply
