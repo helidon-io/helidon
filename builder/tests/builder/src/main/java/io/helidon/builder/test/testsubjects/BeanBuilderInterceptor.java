@@ -22,13 +22,13 @@ import io.helidon.builder.Interceptor;
  * See {@link InterceptedBean}.
  */
 class BeanBuilderInterceptor implements Interceptor<DefaultInterceptedBean.Builder> {
-
-    private BeanBuilderInterceptor() {
-    }
+    int callCount;
 
     @Override
     public DefaultInterceptedBean.Builder intercept(DefaultInterceptedBean.Builder target) {
+        if (callCount++ > 0) {
+            throw new AssertionError();
+        }
         return target.helloMessage("Hello " + target.name());
     }
-
 }

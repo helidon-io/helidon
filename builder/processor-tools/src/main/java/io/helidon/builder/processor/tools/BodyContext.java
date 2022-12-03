@@ -67,6 +67,7 @@ public class BodyContext {
     private final String mapType;
     private final String setType;
     private final boolean hasParent;
+    private final boolean hasAnyBuilderClashingMethodNames;
     private final TypeName ctorBuilderAcceptTypeName;
     private final String genericBuilderClassDecl;
     private final String genericBuilderAliasDecl;
@@ -102,6 +103,7 @@ public class BodyContext {
         gatherAllAttributeNames(this, typeInfo);
         assert (allTypeInfos.size() == allAttributeNames.size());
         this.hasParent = Objects.nonNull(parentTypeName.get());
+        this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
         this.ctorBuilderAcceptTypeName = (hasParent)
                 ? typeInfo.typeName()
                 : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
@@ -295,6 +297,15 @@ public class BodyContext {
      */
     public boolean hasParent() {
         return hasParent;
+    }
+
+    /**
+     * Returns true if any getter methods from the target clash with any builder method name.
+     *
+     * @return true if there is a clash
+     */
+    public boolean hasAnyBuilderClashingMethodNames() {
+        return hasAnyBuilderClashingMethodNames;
     }
 
     /**
@@ -555,6 +566,15 @@ public class BodyContext {
                 assert (Objects.isNull(prev));
             }
         }
+    }
+
+    private boolean determineIfHasAnyClashingMethodNames() {
+        return allAttributeNames().stream().anyMatch(this::isBuilderClashingMethodName);
+    }
+
+    private boolean isBuilderClashingMethodName(String beanAttributeName) {
+        return beanAttributeName.equals("identity")
+                || beanAttributeName.equals("get");
     }
 
 }

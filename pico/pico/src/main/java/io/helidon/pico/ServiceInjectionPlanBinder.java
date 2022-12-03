@@ -38,7 +38,7 @@ public interface ServiceInjectionPlanBinder {
     interface Binder {
 
         /**
-         * Binds a single service provider to the injection point identified by {@link InjectionPointInfo#ipIdentity()}.
+         * Binds a single service provider to the injection point identified by {@link InjectionPointInfo#identity()}.
          * It is assumed that the caller of this is aware of the proper cardinality for each injection point.
          *
          * @param ipIdentity        the injection point identity
@@ -49,7 +49,7 @@ public interface ServiceInjectionPlanBinder {
         <T> Binder bind(String ipIdentity, ServiceProvider<T> serviceProvider);
 
         /**
-        * Binds a list of service providers to the injection point identified by {@link InjectionPointInfo#ipIdentity()}.
+        * Binds a list of service providers to the injection point identified by {@link InjectionPointInfo#identity()}.
         * It is assumed that the caller of this is aware of the proper cardinality for each injection point.
         *
         * @param ipIdentity        the injection point identity

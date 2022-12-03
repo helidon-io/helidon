@@ -194,7 +194,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         appendFields(builder, ctx);
         appendCtor(builder, ctx);
         appendExtraPostCtorCode(builder, ctx);
-        appendInterfaceBasedGetters(builder, ctx, "", true);
+        appendInterfaceBasedGetters(builder, ctx, "", false);
         appendBasicGetters(builder, ctx);
         appendMetaAttributes(builder, ctx);
         appendToStringMethod(builder, ctx);
@@ -1051,7 +1051,12 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         appendExtraBuilderFields(builder, ctx);
         appendBuilderBody(builder, ctx);
 
-        appendInterfaceBasedGetters(builder, ctx, "\t", true);
+        if (ctx.hasAnyBuilderClashingMethodNames()) {
+            builder.append("\t\t// *** IMPORTANT NOTE: There are getter methods that clash with the base Builder methods ***\n");
+            appendInterfaceBasedGetters(builder, ctx, "\t//", true);
+        } else {
+            appendInterfaceBasedGetters(builder, ctx, "\t", true);
+        }
 
         if (ctx.doingConcreteType()) {
             if (ctx.hasParent()) {
@@ -1199,7 +1204,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 if (typeName.isList() || typeName.isMap() || typeName.isSet()) {
                     continue;
                 }
-                addBuilderField(builder, method, typeName, beanAttributeName);
+                addBuilderField(builder, ctx, method, typeName, beanAttributeName);
             }
             builder.append("\n");
         }
@@ -1219,11 +1224,13 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     private void addBuilderField(StringBuilder builder,
+                                 BodyContext ctx,
                                  TypedElementName method,
                                  TypeName type,
                                  String beanAttributeName) {
         GenerateJavadoc.builderField(builder, method);
-        builder.append("\t\tprivate ").append(type.array() ? type.fqName() : type.name()).append(" ")
+        builder.append("\t\tprivate ");
+        builder.append(type.array() ? type.fqName() : type.name()).append(" ")
                 .append(beanAttributeName);
         Optional<String> defaultVal = toConfiguredOptionValue(method, true, true);
         if (defaultVal.isPresent()) {
@@ -1303,27 +1310,30 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 }
             }
 
+            LinkedList<String> impls = new LinkedList<>();
             if (ctx.hasStreamSupportOnBuilder() || !ctx.hasParent()) {
-                builder.append("implements ").append(ctx.typeInfo().typeName().name());
+                if (!ctx.hasAnyBuilderClashingMethodNames()) {
+                    impls.add(ctx.typeInfo().typeName().name());
+                }
             }
 
-            if (ctx.hasStreamSupportOnBuilder()) {
-                builder.append(", Supplier<").append(ctx.genericBuilderAcceptAliasDecl()).append(">");
+            if (ctx.hasStreamSupportOnBuilder() && !ctx.requireLibraryDependencies()) {
+                impls.add("Supplier<" + ctx.genericBuilderAcceptAliasDecl() + ">");
             }
 
             if (!ctx.hasParent()) {
                 if (ctx.requireLibraryDependencies()) {
-                    builder.append(", io.helidon.common.Builder<").append(ctx.genericBuilderAliasDecl())
-                            .append(", ").append(ctx.genericBuilderAcceptAliasDecl()).append(">");
-                } else {
-                    builder.append("/*, io.helidon.common.Builder<").append(ctx.genericBuilderAliasDecl())
-                            .append(", ").append(ctx.genericBuilderAcceptAliasDecl()).append("> */");
+                    impls.add(io.helidon.common.Builder.class.getName()
+                                      + "<" + ctx.genericBuilderAliasDecl() + ", " + ctx.genericBuilderAcceptAliasDecl() + ">");
                 }
             }
 
             List<TypeName> extraImplementBuilderContracts = extraImplementedBuilderContracts(ctx);
-            extraImplementBuilderContracts.forEach(t -> builder.append(",\n\t\t\t\t\t\t\t\t\t\t\t").append(t.fqName()));
+            extraImplementBuilderContracts.forEach(t -> impls.add(t.fqName()));
 
+            if (!impls.isEmpty()) {
+                builder.append(" implements ").append(String.join(", ", impls));
+            }
             builder.append(" {\n");
         }
     }
@@ -1341,7 +1351,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     private void appendInterfaceBasedGetters(StringBuilder builder,
                                              BodyContext ctx,
                                              String prefix,
-                                             boolean isOverrride) {
+                                             boolean isBuilder) {
         if (ctx.doingConcreteType()) {
             return;
         }
@@ -1349,18 +1359,17 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames()) {
             TypedElementName method = ctx.allTypeInfos().get(i);
-            appendAnnotations(builder, method.annotations(), "\t");
-            if (isOverrride) {
-                builder.append(prefix)
-                        .append("\t@Override\n");
-            }
-            builder.append(prefix)
-                    .append("\tpublic ").append(toGenerics(method, false)).append(" ").append(method.elementName())
+            String extraPrefix = prefix + "\t";
+            appendAnnotations(builder, method.annotations(), extraPrefix);
+            builder.append(extraPrefix)
+                    .append("@Override\n");
+            builder.append(extraPrefix)
+                    .append("public ").append(toGenerics(method, false)).append(" ").append(method.elementName())
                     .append("() {\n");
-            builder.append(prefix)
-                    .append("\t\treturn ").append(beanAttributeName).append(";\n");
-            builder.append(prefix)
-                    .append("\t}\n\n");
+            builder.append(extraPrefix)
+                    .append("\treturn ").append(beanAttributeName).append(";\n");
+            builder.append(extraPrefix)
+                    .append("}\n\n");
             i++;
         }
 

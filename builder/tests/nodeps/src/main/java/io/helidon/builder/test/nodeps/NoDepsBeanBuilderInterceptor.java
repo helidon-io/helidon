@@ -22,6 +22,7 @@ package io.helidon.builder.test.nodeps;
  * need to implement {@link io.helidon.builder.Interceptor}.
  */
 class NoDepsBeanBuilderInterceptor /* implements Interceptor<DefaultInterceptedBean.Builder> */ {
+    int callCount;
 
     private NoDepsBeanBuilderInterceptor() {
     }
@@ -32,7 +33,9 @@ class NoDepsBeanBuilderInterceptor /* implements Interceptor<DefaultInterceptedB
 
 //    @Override
     DefaultNoDepsInterceptedBean.Builder intercept(DefaultNoDepsInterceptedBean.Builder target) {
+        if (callCount++ > 0) {
+            throw new AssertionError();
+        }
         return target.helloMessage("Hello " + target.name());
     }
-
 }
