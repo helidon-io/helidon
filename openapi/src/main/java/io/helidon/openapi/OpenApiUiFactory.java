@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.openapi;
 
 /**
- * Quickstart MicroProfile example.
+ * Behavior for factories able to provide new builders of {@link OpenApiUi} instances.
+ *
+ * @param <T> type of the {@link OpenApiUi} to be built
+ * @param <B> type of the builder for T
  */
-@OpenAPIDefinition(info = @Info(title = "Helidon MP QuickStart Example",
-                                version = "1.0.0",
-                                description = "A very simple application to reply with friendly greetings")
-)
-package io.helidon.examples.quickstart.mp;
+public interface OpenApiUiFactory<B extends OpenApiUi.Builder<B, T>, T extends OpenApiUi> {
 
-import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
-import org.eclipse.microprofile.openapi.annotations.info.Info;
+    /**
+     *
+     * @return a builder for the selected type of concrete {@link OpenApiUi}.
+     */
+    B builder();
+}

@@ -17,20 +17,24 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.openapi.OpenAPISupport
-:keywords: helidon, config, io.helidon.openapi.OpenAPISupport
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.openapi.OpenAPISupport
+:description: Configuration of io.helidon.openapi.OpenApiUi
+:keywords: helidon, config, io.helidon.openapi.OpenApiUi
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.openapi.OpenApiUi
 include::{rootdir}/includes/attributes.adoc[]
 
-= OpenAPISupport (openapi) Configuration
+= OpenApiUi (openapi) Configuration
 
 // tag::config[]
 
-OpenAPI support configuration
+
+Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenApiUi.html[io.helidon.openapi.OpenApiUi]
 
 
-Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenAPISupport.html[io.helidon.openapi.OpenAPISupport]
-
+[source,text]
+.Config key
+----
+ui
+----
 
 
 
@@ -44,10 +48,9 @@ Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenAPISuppo
 |===
 |key |type |default value |description
 
-|`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
-|`static-file` |string |`META-INF/openapi.*` |Sets the file system path of the static OpenAPI document file. Default types are `json`, `yaml`, and `yml`.
-|`ui` |xref:{rootdir}/config/io_helidon_openapi_OpenApiUi.adoc[OpenApiUi] |{nbsp} |Assigns the OpenAPI UI builder the `OpenAPISupport` service should use in preparing the U/I.
-|`web-context` |string |`/openapi` |Sets the web context path for the OpenAPI endpoint.
+|`enabled` |boolean |`true` |Sets whether the UI should be enabled.
+|`options` |Map&lt;string, string&gt; |{nbsp} |Sets implementation-specific UI options.
+|`web-context` |string |{nbsp} |web context (path) where the UI will respond
 
 |===
 

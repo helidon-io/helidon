@@ -58,6 +58,7 @@ openapi
 |`servers.operation.*` |string[&#93; |{nbsp} |Sets alternative servers to service the indicated operation (represented here by '*'). Repeat for multiple operations.
 |`servers.path.*` |string[&#93; |{nbsp} |Sets alternative servers to service all operations at the indicated path (represented here by '*'). Repeat for multiple paths.
 |`static-file` |string |`META-INF/openapi.*` |Sets the file system path of the static OpenAPI document file. Default types are `json`, `yaml`, and `yml`.
+|`ui` |xref:{rootdir}/config/io_helidon_openapi_OpenApiUi.adoc[OpenApiUi] |{nbsp} |Assigns the OpenAPI U/I builder the `OpenAPISupport` service should use in preparing the U/I.
 |`web-context` |string |`/openapi` |Sets the web context path for the OpenAPI endpoint.
 
 |===
