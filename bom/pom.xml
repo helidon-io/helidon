@@ -1432,11 +1432,6 @@
                 <artifactId>helidon-builder-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.builder.tests</groupId>
-                <artifactId>helidon-builder-test-builder</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- Pico Core -->
             <dependency>

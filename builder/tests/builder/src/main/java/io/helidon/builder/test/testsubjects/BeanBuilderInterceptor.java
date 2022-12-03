@@ -16,24 +16,18 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import io.helidon.builder.Interceptor;
+
 /**
- * See {@link InterceptedBean}. Notice how the Builder annotation on {@link InterceptedBean} sets the
- * {@link io.helidon.builder.Builder#requireLibraryDependencies()} attribute to {@code false}, which is why this class does not
- * need to implement {@link io.helidon.builder.Interceptor}.
- *
- * @see InterceptedBean
+ * See {@link InterceptedBean}.
  */
-class BeanBuilderInterceptor /* implements Interceptor<DefaultInterceptedBean.Builder> */ {
+class BeanBuilderInterceptor implements Interceptor<DefaultInterceptedBean.Builder> {
 
     private BeanBuilderInterceptor() {
     }
 
-    static BeanBuilderInterceptor create() {
-        return new BeanBuilderInterceptor();
-    }
-
-//    @Override
-    DefaultInterceptedBean.Builder intercept(DefaultInterceptedBean.Builder target) {
+    @Override
+    public DefaultInterceptedBean.Builder intercept(DefaultInterceptedBean.Builder target) {
         return target.helloMessage("Hello " + target.name());
     }
 

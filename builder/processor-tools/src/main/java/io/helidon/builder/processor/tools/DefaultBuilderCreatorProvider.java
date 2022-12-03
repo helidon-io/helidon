@@ -234,10 +234,11 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         if (ctx.interceptorTypeName().isPresent()) {
             String impl = ctx.interceptorTypeName().get().name();
             builder.append("\t\t\t").append(impl).append(" interceptor = ");
-            if (ctx.interceptorCreateMethod().isBlank()) {
+            if (ctx.interceptorCreateMethod().isEmpty()) {
                 builder.append("new ").append(impl).append("();\n");
             } else {
-                builder.append(ctx.interceptorTypeName().get()).append(".").append(ctx.interceptorCreateMethod()).append("();\n");
+                builder.append(ctx.interceptorTypeName().get())
+                        .append(".").append(ctx.interceptorCreateMethod().get()).append("();\n");
             }
             builder.append("\t\t\t").append(builderTag).append(" = interceptor.intercept(").append(builderTag).append(");\n");
         }
@@ -507,8 +508,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
-     * Adds extra inner classes to write on the builder. This default implementation will write the {@code AttributeVisitor},
-     * {@code RequiredAttributeVisitor} and {@code Interceptor} inner classes on the base abstract parent (ie, hasParent is false).
+     * Adds extra inner classes to write on the builder. This default implementation will write the {@code AttributeVisitor} and
+     * {@code RequiredAttributeVisitor} inner classes on the base abstract parent (ie, hasParent is false).
      *
      * @param builder the builder
      * @param ctx     the context
@@ -516,7 +517,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     protected void appendExtraInnerClasses(StringBuilder builder,
                                            BodyContext ctx) {
         GenerateVisitorSupport.appendExtraInnerClasses(builder, ctx);
-        GenerateInterceptorSupport.appendExtraInnerClasses(builder, ctx);
     }
 
     /**

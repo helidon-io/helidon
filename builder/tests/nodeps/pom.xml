@@ -34,11 +34,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.builder.tests</groupId>
-            <artifactId>helidon-builder-test-builder</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder</artifactId>
             <version>${helidon.version}</version>
-            <scope>test</scope>
-            <!-- the entire point of this test suite is to break from Helidon dependencies -->
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>io.helidon.builder</groupId>
@@ -51,22 +50,9 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.helidon.builder.tests</groupId>
-            <artifactId>helidon-builder-test-builder</artifactId>
-            <version>${helidon.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-            <!-- the entire point of this test suite is to break from Helidon dependencies -->
-            <exclusions>
-                <exclusion>
-                    <groupId>io.helidon.builder</groupId>
-                    <artifactId>helidon-builder</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.helidon.common</groupId>
-                    <artifactId>helidon-common</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor to build processor 1st -->
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

@@ -112,8 +112,10 @@ public class BodyContext {
         String interceptorType = searchForBuilderAnnotation("interceptor", builderTriggerAnnotation, typeInfo);
         this.interceptorTypeName = (Void.class.getName().equals(interceptorType) || Objects.isNull(interceptorType))
                 ? null : DefaultTypeName.createFromTypeName(interceptorType);
-        this.interceptorCreateMethod = Objects.requireNonNull(
-                searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo));
+        String interceptorCreateMethod =
+                searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
+        this.interceptorCreateMethod = ("".equals(interceptorCreateMethod) || Objects.isNull(interceptorCreateMethod))
+                ? null : interceptorCreateMethod;
     }
 
     /**
@@ -345,10 +347,10 @@ public class BodyContext {
      * Returns the interceptor create method name.
      * See {@link io.helidon.builder.Builder#interceptorCreateMethod()}.
      *
-     * @return the interceptor create method
+     * @return the interceptor create method name
      */
-    public String interceptorCreateMethod() {
-        return interceptorCreateMethod;
+    public Optional<String> interceptorCreateMethod() {
+        return Optional.ofNullable(interceptorCreateMethod);
     }
 
     /**

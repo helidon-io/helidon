@@ -14,13 +14,30 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.nodeps.test;
+package io.helidon.builder.test.nodeps;
 
-import io.helidon.builder.test.InterceptedBeanTest;
+import io.helidon.builder.Builder;
 
 /**
- * Will re-execute tests from the base... but here without Helidon library dependencies...
+ * Demonstrates interception of builders.
  */
-public class NoDepsInterceptorBeanTest extends InterceptedBeanTest {
+@Builder(requireLibraryDependencies = false,
+         interceptor = NoDepsBeanBuilderInterceptor.class,
+         interceptorCreateMethod = "create")
+public interface NoDepsInterceptedBean {
+
+    /**
+     * The name to say hello to.
+     *
+     * @return the name
+     */
+    String name();
+
+    /**
+     * The hello message will be explicitly overridden to say "hello {@link #name()}".
+     *
+     * @return the hello message
+     */
+    String helloMessage();
 
 }

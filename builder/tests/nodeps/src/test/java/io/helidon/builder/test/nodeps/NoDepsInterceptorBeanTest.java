@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.test;
-
-import io.helidon.builder.test.testsubjects.DefaultInterceptedBean;
-import io.helidon.builder.test.testsubjects.InterceptedBean;
+package io.helidon.builder.test.nodeps;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-class InterceptedBeanTest {
+class NoDepsInterceptorBeanTest {
 
     @Test
     void testMutation() {
-        InterceptedBean val = DefaultInterceptedBean.builder()
+        NoDepsInterceptedBean val = DefaultNoDepsInterceptedBean.builder()
                 .name("Larry")
                 .build();
         assertThat(val.name(), equalTo("Larry"));
         assertThat(val.helloMessage(), equalTo("Hello Larry"));
 
-        InterceptedBean val2 = DefaultInterceptedBean.builder()
+        NoDepsInterceptedBean val2 = DefaultNoDepsInterceptedBean.builder()
                 .name("Larry")
                 .build();
         assertThat(val, equalTo(val2));

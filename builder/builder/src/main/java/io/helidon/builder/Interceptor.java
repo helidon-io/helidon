@@ -28,6 +28,7 @@ package io.helidon.builder;
  *     <li>The implementation class type must provide a no-arg accessible constructor available to the generated class, unless
  *          the {@link io.helidon.builder.Builder#interceptorCreateMethod()} is used.
  *     <li>The implementation class type must provide a method-compatible (lambda) signature to the {@link #intercept} method.
+ *     <li>Any exceptions that might be thrown from the {@link #intercept} method must be an unchecked exception type.
  * </ul>
  *
  * @param <T> the type of the bean builder to intercept
@@ -35,7 +36,6 @@ package io.helidon.builder;
  * @see io.helidon.builder.Builder#interceptor()
  */
 @FunctionalInterface
-// important note: this class is also code generated - please keep this in synch with generated code
 public interface Interceptor<T> {
 
     /**
