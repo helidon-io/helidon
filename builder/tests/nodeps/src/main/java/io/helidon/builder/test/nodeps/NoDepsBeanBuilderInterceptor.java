@@ -22,7 +22,7 @@ package io.helidon.builder.test.nodeps;
  * need to implement {@link io.helidon.builder.Interceptor}.
  */
 class NoDepsBeanBuilderInterceptor /* implements Interceptor<DefaultInterceptedBean.Builder> */ {
-    int callCount;
+    private int callCount;
 
     private NoDepsBeanBuilderInterceptor() {
     }

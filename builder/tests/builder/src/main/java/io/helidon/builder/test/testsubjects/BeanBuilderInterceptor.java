@@ -22,7 +22,7 @@ import io.helidon.builder.Interceptor;
  * See {@link InterceptedBean}.
  */
 class BeanBuilderInterceptor implements Interceptor<DefaultInterceptedBean.Builder> {
-    int callCount;
+    private int callCount;
 
     @Override
     public DefaultInterceptedBean.Builder intercept(DefaultInterceptedBean.Builder target) {
