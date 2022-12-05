@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
@@ -43,6 +44,10 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
+import jdk.crac.CheckpointException;
+import jdk.crac.Context;
+import jdk.crac.Resource;
+import jdk.crac.RestoreException;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
@@ -50,13 +55,20 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 /**
  * Extension to register bean {@link SecurityProducer}.
  */
-public class SecurityCdiExtension implements Extension {
+public class SecurityCdiExtension implements Extension, Resource{
     private static final Logger LOGGER = Logger.getLogger(SecurityCdiExtension.class.getName());
 
     private final AtomicReference<Security> security = new AtomicReference<>();
 
     private Security.Builder securityBuilder = Security.builder();
     private Config config;
+
+    private final CompletableFuture<jdk.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
+
+
+    public SecurityCdiExtension() {
+        jdk.crac.Core.getGlobalContext().register(this);
+    }
 
     private void registerBean(@Observes BeforeBeanDiscovery abd) {
         abd.addAnnotatedType(SecurityProducer.class, "helidon-security-producer")
@@ -91,6 +103,15 @@ public class SecurityCdiExtension implements Extension {
                             + "ABAC provider is configured for authorization.");
             securityBuilder.addAuthorizationProvider(AbacProvider.create());
         }
+
+        try {
+            jdk.crac.Core.checkpointRestore();
+        } catch (RestoreException | CheckpointException e) {
+            LOGGER.log(Level.INFO, "CRaC snapshot load wasn't successful!", e);
+        }
+//        if (Boolean.parseBoolean(System.getProperty("crac", "false")))
+            restored.join();
+        LOGGER.log(Level.INFO, "CRaC snapshot restored!");
 
         Security tmpSecurity = securityBuilder.build();
         // free it and make sure we fail if somebody wants to update security afterwards
@@ -160,5 +181,15 @@ public class SecurityCdiExtension implements Extension {
      */
     public Optional<Security> security() {
         return Optional.ofNullable(security.get());
+    }
+
+    @Override
+    public void beforeCheckpoint(Context<? extends Resource> context) throws Exception {
+
+    }
+
+    @Override
+    public void afterRestore(Context<? extends Resource> context) throws Exception {
+        restored.complete(context);
     }
 }
