@@ -1082,6 +1082,11 @@
                 <artifactId>helidon-messaging-aq</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.wls-jms</groupId>
+                <artifactId>helidon-messaging-wls-jms</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>
