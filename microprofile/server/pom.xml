@@ -52,6 +52,10 @@
             <artifactId>helidon-webserver-observe</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.github.crac</groupId>
+            <artifactId>org-crac</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>

@@ -37,6 +37,7 @@ module io.helidon.microprofile.server {
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+    requires org.crac;
 
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.context;
