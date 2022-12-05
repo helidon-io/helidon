@@ -52,8 +52,12 @@ class WsAction {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof WsAction wsAction)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof WsAction wsAction)) {
+            return false;
+        }
         return op == wsAction.op && opType == wsAction.opType && message.equals(wsAction.message);
     }
 
