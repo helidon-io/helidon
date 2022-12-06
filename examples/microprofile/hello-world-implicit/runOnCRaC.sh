@@ -1,5 +1,7 @@
+#!/bin/bash -e
+
 #
-# Copyright (c) 2020 Oracle and/or its affiliates.
+# Copyright (c) 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#
 
-app.name=Hello World Application
-app.someInt=147
-app.uri=https://www.example.com
-app.someInt=147
-app.ints=12,12,32,12,44
+if [ -d "./cr" ];
+then
+    echo "=== Starting directly from CRaC checkpoint ==="
+else
+	  echo "=== Creating CRaC checkpoint ==="
+	  echo "Checking CRIU compatibility(don't forget --privileged):"
+	  $JAVA_HOME/lib/criu check
+	  set +e
+    $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=cr -jar ./*.jar
+    set -e
+fi
+exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=cr
 
-server.host=0.0.0.0
-server.port=7001
-
-# Enable the optional MicroProfile Metrics REST.request metrics
-metrics.rest-request.enabled=true

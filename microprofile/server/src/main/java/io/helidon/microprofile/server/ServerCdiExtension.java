@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +70,9 @@ import jakarta.enterprise.inject.spi.ProcessProducerField;
 import jakarta.enterprise.inject.spi.ProcessProducerMethod;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.ParamConverterProvider;
+import jdk.crac.CheckpointException;
+import jdk.crac.Resource;
+import jdk.crac.RestoreException;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
@@ -81,7 +85,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 /**
  * Extension to handle web server configuration and lifecycle.
  */
-public class ServerCdiExtension implements Extension {
+public class ServerCdiExtension implements Extension, Resource {
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
@@ -111,6 +115,12 @@ public class ServerCdiExtension implements Extension {
             = Collections.synchronizedMap(new IdentityHashMap<>());
 
     private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
+    private long crac_restore_time = -1;
+    private final CompletableFuture<jdk.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
+
+    public ServerCdiExtension() {
+        jdk.crac.Core.getGlobalContext().register(this);
+    }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
@@ -198,7 +208,18 @@ public class ServerCdiExtension implements Extension {
         webserver = serverBuilder.build();
 
         try {
-            webserver.start().toCompletableFuture().get();
+            jdk.crac.Core.checkpointRestore();
+        } catch (RestoreException e) {
+            LOGGER.log(Level.INFO, "CRaC restore wasn't successful!", e);
+            restored.complete(null);
+        } catch (CheckpointException e) {
+            LOGGER.log(Level.INFO, "CRaC checkpoint creation wasn't successful!", e);
+            restored.complete(null);
+        }
+        restored.join();
+
+        try {
+            webserver.start().await();
             started = true;
         } catch (Exception e) {
             throw new DeploymentException("Failed to start webserver", e);
@@ -212,9 +233,14 @@ public class ServerCdiExtension implements Extension {
         String host = "0.0.0.0".equals(listenHost) ? "localhost" : listenHost;
         String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
 
+
+        String startupTimeReport = crac_restore_time == -1
+                ? " in " + initializationElapsedTime + " milliseconds (since JVM startup). "
+                : " in " + (System.currentTimeMillis() - crac_restore_time) + " milliseconds (since CRaC restore).";
+
         LOGGER.info(() -> "Server started on "
                 + protocol + "://" + host + ":" + port
-                + note + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
+                + note + startupTimeReport);
 
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
@@ -591,4 +617,17 @@ public class ServerCdiExtension implements Extension {
     void listenHost(String listenHost) {
         this.listenHost = listenHost;
     }
+
+    @Override
+    public void beforeCheckpoint(jdk.crac.Context<? extends Resource> context) throws Exception {
+
+    }
+
+    @Override
+    public void afterRestore(jdk.crac.Context<? extends Resource> context) throws Exception {
+        crac_restore_time = System.currentTimeMillis();
+        LOGGER.log(Level.INFO, "CRaC snapshot restored!");
+        restored.complete(context);
+    }
 }
+
