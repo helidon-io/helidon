@@ -166,15 +166,10 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public Context context() {
         if (context == null) {
-            context = Contexts.context().orElseGet(() -> {
-                Context.Builder resultContext = Context.builder()
-                        .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId);
-                if (ctx.webServer().context() != null) {
-                    resultContext
-                            .parent(ctx.webServer().context());
-                }
-                return resultContext.build();
-            });
+            context = Contexts.context().orElseGet(() -> Context.builder()
+                    .parent(ctx.webServer().context())
+                    .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
+                    .build());
         }
         return context;
     }
