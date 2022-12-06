@@ -258,7 +258,7 @@ class ServerListener {
                                                     listenerConfig.writeQueueLength(),
                                                     listenerConfig.maxPayloadSize(),
                                                     simpleHandlers,
-                                                    server);
+                                                    server.context());
 
                     readerExecutor.submit(handler);
                 } catch (RejectedExecutionException e) {

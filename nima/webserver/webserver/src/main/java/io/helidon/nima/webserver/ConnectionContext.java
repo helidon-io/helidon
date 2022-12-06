@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -44,7 +45,7 @@ public interface ConnectionContext extends SocketContext {
      * @param simpleHandlers         error handling configuration
      * @param socket                 socket to obtain information about peers
      * @param maxPayloadSize         maximal size of a payload entity
-     * @param webServer              web server owning the connection
+     * @param context                parent context from web server
      * @return a new context
      */
     static ConnectionContext create(MediaContext mediaContext,
@@ -58,7 +59,7 @@ public interface ConnectionContext extends SocketContext {
                                     DirectHandlers simpleHandlers,
                                     HelidonSocket socket,
                                     long maxPayloadSize,
-                                    WebServer webServer) {
+                                    Context context) {
         return new ConnectionContextImpl(mediaContext,
                                          contentEncodingContext,
                                          sharedExecutor,
@@ -70,7 +71,7 @@ public interface ConnectionContext extends SocketContext {
                                          simpleHandlers,
                                          socket,
                                          maxPayloadSize,
-                                         webServer);
+                context);
     }
 
     /**
@@ -130,9 +131,9 @@ public interface ConnectionContext extends SocketContext {
     DirectHandlers directHandlers();
 
     /**
-     * Access to the WebServer object.
+     * Parent context from {@Code WebServer}.
      *
-     * @return WebServer
+     * @return parent context.
      */
-    WebServer webServer();
+    Context context();
 }
