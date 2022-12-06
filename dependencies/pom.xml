@@ -60,6 +60,7 @@
         <version.lib.guava>31.1-jre</version.lib.guava>
         <version.lib.h2>2.1.212</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
+        <version.lib.handlebars>4.3.1</version.lib.handlebars>
         <version.lib.hibernate>6.1.4.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
@@ -378,6 +379,11 @@
                 <groupId>org.eclipse</groupId>
                 <artifactId>yasson</artifactId>
                 <version>${version.lib.yasson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${version.lib.handlebars}</version>
             </dependency>
 
             <!-- Config related -->

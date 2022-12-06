@@ -28,15 +28,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico</artifactId>
-    <name>Helidon Pico API / SPI</name>
-
-    <properties>
-        <!-- Pico uses a lower level of Java language -->
-        <version.java>11</version.java>
-    </properties>
+    <artifactId>helidon-pico-tools</artifactId>
+    <name>Helidon Pico Tools</name>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-types</artifactId>
@@ -46,19 +45,17 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>compile</scope> <!-- because we have Provider<> dependencies -->
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
+            <groupId>com.github.jknack</groupId>
+            <artifactId>handlebars</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
@@ -71,13 +68,8 @@
             <scope>provided</scope> <!-- to force reactor ordering -->
         </dependency>
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-junit5</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -105,13 +97,6 @@
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <useModulePath>true</useModulePath>
                 </configuration>
             </plugin>
         </plugins>

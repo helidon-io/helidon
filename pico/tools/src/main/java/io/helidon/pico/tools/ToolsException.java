@@ -14,32 +14,30 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.test.testsubjects;
+package io.helidon.pico.tools;
 
-import java.util.Objects;
+/**
+ * An unchecked exception thrown for any tooling related problem.
+ */
+public class ToolsException extends RuntimeException {
 
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.Services;
-
-import jakarta.inject.Singleton;
-
-@Singleton
-public class PicoServices3 implements PicoServices {
-    private final Bootstrap bootstrap;
-
-    public PicoServices3(Bootstrap bootstrap) {
-        this.bootstrap = Objects.requireNonNull(bootstrap);
+    /**
+     * Constructor.
+     *
+     * @param msg the message
+     */
+    public ToolsException(String msg) {
+        super(msg);
     }
 
-    @Override
-    public Services services() {
-        return null;
-    }
-
-    @Override
-    public Bootstrap bootstrap() {
-        return bootstrap;
+    /**
+     * Constructor.
+     *
+     * @param msg   the message
+     * @param cause the cause
+     */
+    public ToolsException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 
 }

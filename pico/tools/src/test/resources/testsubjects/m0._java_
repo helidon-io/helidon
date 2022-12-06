@@ -1,0 +1,14 @@
+module io.helidon.pico {
+
+    requires transitive io.helidon.pico.api;
+    requires static com.fasterxml.jackson.annotation;
+    requires static lombok;
+    requires io.helidon.common;
+
+    exports io.helidon.pico.spi.impl;
+
+    provides io.helidon.pico.PicoServices with io.helidon.pico.spi.impl.DefaultPicoServices;
+
+    uses io.helidon.pico.Module;
+    uses io.helidon.pico.Application;
+}
