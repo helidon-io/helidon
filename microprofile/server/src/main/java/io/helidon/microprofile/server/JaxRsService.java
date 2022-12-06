@@ -136,10 +136,6 @@ class JaxRsService implements HttpService {
         rules.any(this::handle);
     }
 
-    private void handle(ServerRequest req, ServerResponse res) {
-        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
-    }
-
     @Override
     public void beforeStart() {
         appHandler.onStartup(container);
@@ -185,6 +181,10 @@ class JaxRsService implements HttpService {
                 + basePath(req.path());
 
         return URI.create(uri);
+    }
+
+    private void handle(ServerRequest req, ServerResponse res) {
+        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
     }
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
@@ -349,14 +349,16 @@ class JaxRsService implements HttpService {
 
         @Override
         public void commit() {
-            if (outputStream != null) {
-                try {
+            try {
+                if (outputStream == null) {
+                    res.outputStream().close();
+                } else {
                     outputStream.close();
-                    cdl.countDown();
-                } catch (IOException e) {
-                    cdl.countDown();
-                    throw new UncheckedIOException(e);
                 }
+                cdl.countDown();
+            } catch (IOException e) {
+                cdl.countDown();
+                throw new UncheckedIOException(e);
             }
         }
 

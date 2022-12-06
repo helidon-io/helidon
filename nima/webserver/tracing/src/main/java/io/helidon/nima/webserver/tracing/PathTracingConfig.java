@@ -15,9 +15,14 @@
  */
 package io.helidon.nima.webserver.tracing;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.http.Http;
+import io.helidon.common.http.PathMatcher;
+import io.helidon.common.http.PathMatchers;
+import io.helidon.common.uri.UriPath;
 import io.helidon.config.Config;
 import io.helidon.tracing.config.TracingConfig;
 
@@ -27,6 +32,7 @@ import io.helidon.tracing.config.TracingConfig;
 public interface PathTracingConfig {
     /**
      * Create a new traced path configuration from {@link io.helidon.config.Config}.
+     *
      * @param config config of a path
      * @return traced path configuration
      */
@@ -44,19 +50,13 @@ public interface PathTracingConfig {
     }
 
     /**
-     * Path this configuration should configure.
-     * @return path on the web server
-     * @see io.helidon.nima.webserver.http.HttpRouting.Builder#any(String, io.helidon.nima.webserver.http.Handler)
-     */
-    String path();
-
-    /**
-     * Method(s) this configuration should be valid for. This can be used to restrict the configuration
-     * only to specific HTTP methods (such as {@code GET} or {@code POST}).
+     * Method used by Helidon to check if this tracing is valid for the specified method and path.
      *
-     * @return list of methods, if empty, this configuration is valid for any method
+     * @param method HTTP method
+     * @param path invoked path
+     * @return {@code true} if matched
      */
-    List<String> methods();
+    boolean matches(Http.Method method, UriPath path);
 
     /**
      * Associated configuration of tracing valid for the configured path and (possibly) methods.
@@ -79,19 +79,18 @@ public interface PathTracingConfig {
         @Override
         public PathTracingConfig build() {
             // immutable
-            final String finalPath = path;
-            final List<String> finalMethods = new LinkedList<>(methods);
+            final Collection<Http.Method> finalMethods = methods.stream()
+                    .map(Http.Method::create)
+                    .toList();
             final TracingConfig finalTracingConfig = tracedConfig;
+
+            PathMatcher pathMatcher = PathMatchers.create(path);
+            Http.MethodPredicate methodPredicate = Http.Method.predicate(finalMethods);
 
             return new PathTracingConfig() {
                 @Override
-                public String path() {
-                    return finalPath;
-                }
-
-                @Override
-                public List<String> methods() {
-                    return finalMethods;
+                public boolean matches(Http.Method method, UriPath path) {
+                    return methodPredicate.test(method) && pathMatcher.match(path).accepted();
                 }
 
                 @Override
@@ -136,6 +135,7 @@ public interface PathTracingConfig {
 
         /**
          * HTTP methods to restrict registration of this configuration on web server.
+         *
          * @param methods list of methods to use, empty means all methods
          * @return updated builder instance
          */

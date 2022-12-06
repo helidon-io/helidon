@@ -65,7 +65,7 @@ public class MpTracingContextFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         ServerRequest serverRequest = this.request.get();
 
-        Tracer tracer = Tracer.global();
+        Tracer tracer = serverRequest.context().get(Tracer.class).orElseGet(Tracer::global);
         Optional<SpanContext> parentSpan = Span.current().map(Span::context);
 
         boolean clientEnabled = config.getOptionalValue("tracing.client.enabled", Boolean.class).orElse(true);

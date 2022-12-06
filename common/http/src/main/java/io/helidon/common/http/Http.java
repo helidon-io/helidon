@@ -1615,6 +1615,11 @@ public final class Http {
          */
         public static final HeaderValue CACHE_NORMAL = Header.createCached(Header.CACHE_CONTROL, "no-transform");
 
+        /**
+         * TE header set to {@code trailers}, used to enable trailer headers.
+         */
+        public static final HeaderValue TE_TRAILERS = Header.createCached(Header.TE, "trailers");
+
         private HeaderValues() {
         }
     }
