@@ -36,6 +36,7 @@ public class DefaultTypeInfo implements TypeInfo {
     private final String typeKind;
     private final List<AnnotationAndValue> annotations;
     private final List<TypedElementName> elementInfo;
+    private final List<TypedElementName> otherElementInfo;
     private final TypeInfo superTypeInfo;
 
     /**
@@ -49,6 +50,7 @@ public class DefaultTypeInfo implements TypeInfo {
         this.typeKind = b.typeKind;
         this.annotations = Collections.unmodifiableList(new LinkedList<>(b.annotations));
         this.elementInfo = Collections.unmodifiableList(new LinkedList<>(b.elementInfo));
+        this.otherElementInfo = Collections.unmodifiableList(new LinkedList<>(b.otherElementInfo));
         this.superTypeInfo = b.superTypeInfo;
     }
 
@@ -82,6 +84,11 @@ public class DefaultTypeInfo implements TypeInfo {
     }
 
     @Override
+    public List<TypedElementName> otherElementInfo() {
+        return otherElementInfo;
+    }
+
+    @Override
     public Optional<TypeInfo> superTypeInfo() {
         return Optional.ofNullable(superTypeInfo);
     }
@@ -99,6 +106,7 @@ public class DefaultTypeInfo implements TypeInfo {
     protected String toStringInner() {
         return "typeName=" + typeName()
                 + ", elementInfo=" + elementInfo()
+                + ", annotations=" + annotations()
                 + ", superTypeInfo=" + superTypeInfo();
     }
 
@@ -108,7 +116,7 @@ public class DefaultTypeInfo implements TypeInfo {
     public static class Builder implements io.helidon.common.Builder<Builder, DefaultTypeInfo> {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<TypedElementName> elementInfo = new ArrayList<>();
-
+        private final List<TypedElementName> otherElementInfo = new ArrayList<>();
         private TypeName typeName;
         private String typeKind;
 
@@ -199,6 +207,31 @@ public class DefaultTypeInfo implements TypeInfo {
         public Builder addElementInfo(TypedElementName val) {
             Objects.requireNonNull(val);
             elementInfo.add(Objects.requireNonNull(val));
+            return this;
+        }
+
+        /**
+         * Sets the otherElementInfo to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder otherElementInfo(Collection<TypedElementName> val) {
+            Objects.requireNonNull(val);
+            this.otherElementInfo.clear();
+            this.otherElementInfo.addAll(val);
+            return this;
+        }
+
+        /**
+         * Adds a single otherElementInfo val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addOtherElementInfo(TypedElementName val) {
+            Objects.requireNonNull(val);
+            otherElementInfo.add(Objects.requireNonNull(val));
             return this;
         }
 

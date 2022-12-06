@@ -63,6 +63,8 @@ import io.helidon.pico.types.TypedElementName;
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
 public class BuilderTypeTools implements TypeInfoCreatorProvider {
 
+    private static final boolean ACCEPT_ABSTRACT_CLASS_TARGETS = true;
+
     /**
      * Default constructor.
      */
@@ -84,8 +86,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             return Optional.empty();
         }
 
-        if (element.getKind() != ElementKind.INTERFACE && element.getKind() != ElementKind.ANNOTATION_TYPE) {
-            String msg = annotation.typeName() + " is intended to be used on interfaces only: " + element;
+        if (!isAcceptableBuilderTarget(element)) {
+            String msg = annotation.typeName() + " is not intended to be targeted to this type: " + element;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
@@ -97,12 +99,13 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                 .filter(it -> !it.getParameters().isEmpty())
                 .collect(Collectors.toList());
         if (!problems.isEmpty()) {
-            String msg = "only simple getters with 0 args are supported: " + element + ": " + problems;
+            String msg = "only simple getters with no arguments are supported: " + element + ": " + problems;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
 
-        Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv);
+        Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv, true);
+        Collection<TypedElementName> otherElementInfo = toElementInfo(element, processingEnv, false);
         return Optional.of(DefaultTypeInfo.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))
@@ -110,35 +113,63 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                                                         .createAnnotationAndValueListFromElement(element,
                                                                                          processingEnv.getElementUtils()))
                                    .elementInfo(elementInfo)
+                                   .otherElementInfo(otherElementInfo)
                                    .update(it -> toTypeInfo(annotation, element, processingEnv).ifPresent(it::superTypeInfo))
                                    .build());
     }
 
     /**
+     * Determines if the target element with the {@link io.helidon.builder.Builder} annotation is an acceptable element type.
+     * If it is not acceptable then the caller is expected to throw an exception or log an error, etc.
+     *
+     * @param element   the element
+     * @return true if the element is acceptable
+     */
+    protected boolean isAcceptableBuilderTarget(Element element) {
+        final ElementKind kind = element.getKind();
+        final Set<Modifier> modifiers = element.getModifiers();
+        boolean isAcceptable = (kind == ElementKind.INTERFACE
+                                        || kind == ElementKind.ANNOTATION_TYPE
+                                        || (ACCEPT_ABSTRACT_CLASS_TARGETS
+                                                    && (kind == ElementKind.CLASS && modifiers.contains(Modifier.ABSTRACT))));
+        return isAcceptable;
+    }
+
+    /**
      * Translation the arguments to a collection of {@link io.helidon.pico.types.TypedElementName}'s.
      *
-     * @param element       the typed element (i.e., class)
-     * @param processingEnv the processing env
+     * @param element               the typed element (i.e., class)
+     * @param processingEnv         the processing env
+     * @param wantWhatWeCanAccept   pass true to get the elements we can accept to process, false for the other ones
      * @return the collection of typed elements
      */
-    protected Collection<TypedElementName> toElementInfo(TypeElement element, ProcessingEnvironment processingEnv) {
+    protected Collection<TypedElementName> toElementInfo(TypeElement element,
+                                                         ProcessingEnvironment processingEnv,
+                                                         boolean wantWhatWeCanAccept) {
         return element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
-                .filter(this::canAccept)
+                .filter(it -> (wantWhatWeCanAccept == canAccept(it)))
                 .map(it -> createTypedElementNameFromElement(it, processingEnv.getElementUtils()))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Returns true if the executable element passed is acceptable for processing (i.e., not a static and not a default method).
+     * Returns true if the executable element passed is acceptable for processing (i.e., not a static and not a default method
+     * on interfaces, and abstract methods on abstract classes).
      *
-     * @param ee the executable element
-     * @return true if not default and not static
+     * @param ee                the executable element
+     * @return true if not able to accept
      */
     protected boolean canAccept(ExecutableElement ee) {
         Set<Modifier> mods = ee.getModifiers();
-        return !mods.contains(Modifier.DEFAULT) && !mods.contains(Modifier.STATIC);
+        if (mods.contains(Modifier.ABSTRACT)) {
+            return true;
+        }
+//        if (mods.contains(Modifier.DEFAULT) || mods.contains(Modifier.STATIC)) {
+//            return false;
+//        }
+        return false;
     }
 
     private Optional<TypeInfo> toTypeInfo(AnnotationAndValue annotation,
@@ -147,7 +178,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         List<? extends TypeMirror> ifaces = element.getInterfaces();
         if (ifaces.size() > 1) {
             processingEnv.getMessager()
-                    .printMessage(Diagnostic.Kind.ERROR, "currently only supports one parent interface: " + element);
+                    .printMessage(Diagnostic.Kind.ERROR, "only supports one parent interface: " + element);
         } else if (ifaces.isEmpty()) {
             return Optional.empty();
         }

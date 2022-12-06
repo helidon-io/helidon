@@ -24,7 +24,8 @@ import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 /**
- * Represents the model object for an interface type (e.g., one that was annotated with {@link io.helidon.builder.Builder}).
+ * Represents the model object for an interface or an abstract type (i.e., one that was annotated with
+ * {@link io.helidon.builder.Builder}).
  */
 public interface TypeInfo {
 
@@ -50,11 +51,18 @@ public interface TypeInfo {
     List<AnnotationAndValue> annotations();
 
     /**
-     * The elements that make up the type.
+     * The elements that make up the type that are "relevant" for processing.
      *
-     * @return the elements that make up the type
+     * @return the elements that make up the type that are relevant for processing
      */
     List<TypedElementName> elementInfo();
+
+    /**
+     * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to processing.
+     *
+     * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
+     */
+    List<TypedElementName> otherElementInfo();
 
     /**
      * The parent/super class for this type info.

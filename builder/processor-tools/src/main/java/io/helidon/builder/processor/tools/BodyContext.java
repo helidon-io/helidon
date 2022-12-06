@@ -68,6 +68,7 @@ public class BodyContext {
     private final String setType;
     private final boolean hasParent;
     private final boolean hasAnyBuilderClashingMethodNames;
+    private final boolean isExtendingAnAbstractClass;
     private final TypeName ctorBuilderAcceptTypeName;
     private final String genericBuilderClassDecl;
     private final String genericBuilderAliasDecl;
@@ -100,10 +101,15 @@ public class BodyContext {
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
-        gatherAllAttributeNames(this, typeInfo);
+        try {
+            gatherAllAttributeNames(this, typeInfo);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed while processing: " + typeInfo.typeName(), e);
+        }
         assert (allTypeInfos.size() == allAttributeNames.size());
         this.hasParent = Objects.nonNull(parentTypeName.get());
         this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
+        this.isExtendingAnAbstractClass = typeInfo.typeKind().equals("CLASS");
         this.ctorBuilderAcceptTypeName = (hasParent)
                 ? typeInfo.typeName()
                 : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
@@ -309,6 +315,15 @@ public class BodyContext {
     }
 
     /**
+     * Returns true if this builder is extending an abstract class as a target.
+     *
+     * @return true if the target is an abstract class
+     */
+    public boolean isExtendingAnAbstractClass() {
+        return isExtendingAnAbstractClass;
+    }
+
+    /**
      * Returns the streamable accept type of the builder and constructor.
      *
      * @return the builder accept type
@@ -362,6 +377,28 @@ public class BodyContext {
      */
     public Optional<String> interceptorCreateMethod() {
         return Optional.ofNullable(interceptorCreateMethod);
+    }
+
+    /**
+     * Checks whether there is an "other" method that matches the signature.
+     *
+     * @param name      the method name
+     * @param typeInfo  the type info to check, which will look through the parent chain
+     * @return true if there is any matches
+     */
+    public boolean hasOtherMethod(String name,
+                                  TypeInfo typeInfo) {
+        for (TypedElementName elem : typeInfo.otherElementInfo()) {
+            if (elem.elementName().equals(name)) {
+                return true;
+            }
+        }
+
+        if (typeInfo.superTypeInfo().isPresent()) {
+            return hasOtherMethod(name, typeInfo.superTypeInfo().get());
+        }
+
+        return false;
     }
 
     /**
@@ -574,7 +611,8 @@ public class BodyContext {
 
     private boolean isBuilderClashingMethodName(String beanAttributeName) {
         return beanAttributeName.equals("identity")
-                || beanAttributeName.equals("get");
+                || beanAttributeName.equals("get")
+                || beanAttributeName.equals("toStringInner");
     }
 
 }
