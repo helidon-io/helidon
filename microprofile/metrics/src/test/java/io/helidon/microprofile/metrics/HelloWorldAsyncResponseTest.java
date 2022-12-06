@@ -73,7 +73,7 @@ public class HelloWorldAsyncResponseTest {
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
 
-    @RepeatedTest(1000)
+    @Test
     public void test() throws Exception {
         MetricID metricID = MetricsCdiExtension
                 .restEndpointSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
