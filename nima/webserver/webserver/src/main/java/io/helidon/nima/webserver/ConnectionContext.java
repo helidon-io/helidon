@@ -131,7 +131,7 @@ public interface ConnectionContext extends SocketContext {
     DirectHandlers directHandlers();
 
     /**
-     * Parent context from {@Code WebServer}.
+     * Parent context from WebServer.
      *
      * @return parent context.
      */
