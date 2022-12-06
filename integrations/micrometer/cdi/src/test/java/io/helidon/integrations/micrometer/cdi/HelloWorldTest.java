@@ -31,8 +31,11 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
@@ -83,7 +86,7 @@ public class HelloWorldTest {
     }
 
     @Test
-    public void testSlowTimer() {
+    public void testSlowTimer() throws InterruptedException {
         int exp = 3;
         AtomicReference<String> result = new AtomicReference<>();
         IntStream.range(0, exp).forEach(
@@ -95,11 +98,11 @@ public class HelloWorldTest {
         assertThat("Returned from HTTP request", result.get(), is(HelloWorldResource.SLOW_RESPONSE));
         Timer slowTimer = registry.timer(HelloWorldResource.SLOW_MESSAGE_TIMER);
         assertThat("Slow message timer", slowTimer, is(notNullValue()));
-        assertThat("Slow message timer count", slowTimer.count(), is((long) exp));
+        assertThatWithRetry("Slow message timer count", slowTimer::count, is((long) exp));
     }
 
     @Test
-    public void testFastFailCounter() {
+    public void testFastFailCounter() throws InterruptedException {
         int exp = 8;
         IntStream.range(0, exp).forEach(
                 i -> {
@@ -116,7 +119,7 @@ public class HelloWorldTest {
 
         Counter counter = registry.counter(HelloWorldResource.FAST_MESSAGE_COUNTER);
         assertThat("Failed message counter", counter, is(notNullValue()));
-        assertThat("Failed message counter count", counter.count(), is((double) exp / 2));
+        assertThatWithRetry("Failed message counter count", counter::count, is((double) exp / 2));
     }
 
     @Test
@@ -134,7 +137,7 @@ public class HelloWorldTest {
     }
 
     @Test
-    public void testSlowFailCounter() {
+    public void testSlowFailCounter() throws InterruptedException {
         int exp = 6;
         IntStream.range(0, exp).forEach(
                 i -> {
@@ -151,7 +154,7 @@ public class HelloWorldTest {
 
         Counter counter = registry.counter(HelloWorldResource.SLOW_MESSAGE_FAIL_COUNTER);
         assertThat("Failed message counter", counter, is(notNullValue()));
-        assertThat("Failed message counter count", counter.count(), is((double) 3));
+        assertThatWithRetry("Failed message counter count", counter::count, is((double) 3));
     }
 
     void checkMicrometerURL(int iterations) {

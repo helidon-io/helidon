@@ -35,6 +35,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
@@ -72,7 +73,7 @@ public class HelloWorldAsyncResponseTest {
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
 
-    @Test
+    @RepeatedTest(1000)
     public void test() throws Exception {
         MetricID metricID = MetricsCdiExtension
                 .restEndpointSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
