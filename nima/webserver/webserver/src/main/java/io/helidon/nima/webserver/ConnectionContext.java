@@ -30,7 +30,6 @@ import io.helidon.nima.webserver.http.DirectHandlers;
  * Server connection context.
  */
 public interface ConnectionContext extends SocketContext {
-    // TODO: Clean up the object.
     /**
      * Create a new context.
      *
@@ -45,6 +44,7 @@ public interface ConnectionContext extends SocketContext {
      * @param simpleHandlers         error handling configuration
      * @param socket                 socket to obtain information about peers
      * @param maxPayloadSize         maximal size of a payload entity
+     * @param webServer              web server owning the connection
      * @return a new context
      */
     static ConnectionContext create(MediaContext mediaContext,

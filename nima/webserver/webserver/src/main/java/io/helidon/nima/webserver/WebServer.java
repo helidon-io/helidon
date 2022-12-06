@@ -123,7 +123,7 @@ public interface WebServer {
     boolean hasTls(String socketName);
 
     /**
-     * Gets a {@link WebServer} context.
+     * Context associated with the {@code WebServer}, used as a parent for request contexts.
      *
      * @return a server context
      */

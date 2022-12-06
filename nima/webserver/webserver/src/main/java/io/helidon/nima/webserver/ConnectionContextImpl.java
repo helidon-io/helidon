@@ -39,7 +39,6 @@ final class ConnectionContextImpl implements ConnectionContext {
     private final DirectHandlers simpleHandlers;
     private final HelidonSocket socket;
     private final long maxPayloadSize;
-
     private final WebServer webServer;
 
     ConnectionContextImpl(MediaContext mediaContext,
@@ -175,19 +174,19 @@ final class ConnectionContextImpl implements ConnectionContext {
 
     @Override
     public String toString() {
-        return "ConnectionContextImpl{" +
-                "mediaContext=" + mediaContext +
-                ", contentEncodingContext=" + contentEncodingContext +
-                ", sharedExecutor=" + sharedExecutor +
-                ", dataWriter=" + dataWriter +
-                ", dataReader=" + dataReader +
-                ", router=" + router +
-                ", socketId='" + socketId + '\'' +
-                ", childSocketId='" + childSocketId + '\'' +
-                ", simpleHandlers=" + simpleHandlers +
-                ", socket=" + socket +
-                ", maxPayloadSize=" + maxPayloadSize +
-                ", webServer=" + webServer +
-                '}';
+        return "ConnectionContextImpl{"
+                + "mediaContext=" + mediaContext
+                + ", contentEncodingContext=" + contentEncodingContext
+                + ", sharedExecutor=" + sharedExecutor
+                + ", dataWriter=" + dataWriter
+                + ", dataReader=" + dataReader
+                + ", router=" + router
+                + ", socketId='" + socketId + '\''
+                + ", childSocketId='" + childSocketId + '\''
+                + ", simpleHandlers=" + simpleHandlers
+                + ", socket=" + socket
+                + ", maxPayloadSize=" + maxPayloadSize
+                + ", webServer=" + webServer
+                + '}';
     }
 }
