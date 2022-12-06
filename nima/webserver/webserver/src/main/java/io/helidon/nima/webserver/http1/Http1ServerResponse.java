@@ -312,14 +312,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (isChunked || forcedChunked) {
-                // not optimized, we need to write trailers
-                trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
-                trailers.set(STREAM_RESULT_NAME, streamResult.get());
-                BufferData buffer = BufferData.growing(128);
-                writeHeaders(trailers, buffer);
-                buffer.write('\r');        // "\r\n" - empty line after headers
-                buffer.write('\n');
-                dataWriter.write(buffer);
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                    // not optimized, trailers enabled: we need to write trailers
+                    trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
+                    trailers.set(STREAM_RESULT_NAME, streamResult.get());
+                    BufferData buffer = BufferData.growing(128);
+                    writeHeaders(trailers, buffer);
+                    buffer.write('\r');        // "\r\n" - empty line after headers
+                    buffer.write('\n');
+                    dataWriter.write(buffer);
+                }
             }
 
             responseCloseRunnable.run();
@@ -365,8 +367,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                // proper stream with multiple buffers, write status amd headers
-                headers.add(STREAM_TRAILERS);
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                    // proper stream with multiple buffers, write status amd headers
+                    headers.add(STREAM_TRAILERS);
+                }
                 sendHeadersAndPrepare();
                 firstByte = false;
                 BufferData combined = BufferData.create(firstBuffer, buffer);

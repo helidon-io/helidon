@@ -190,7 +190,7 @@ class RouteCrawler {
 
             @Override
             public RoutedPath absolute() {
-                return new CrawlerRoutedPath(path, templateParams);
+                return new CrawlerRoutedPath(path.absolute(), templateParams);
             }
         }
     }

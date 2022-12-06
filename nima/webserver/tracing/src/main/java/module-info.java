@@ -21,6 +21,7 @@ module io.helidon.nima.webserver.tracing {
     requires io.helidon.common.http;
     requires io.helidon.nima.webserver;
     requires io.helidon.tracing;
+    requires io.helidon.tracing.config;
 
     exports io.helidon.nima.webserver.tracing;
 }

@@ -45,12 +45,11 @@ public final class HttpRouting implements Routing {
 
     private final Filters filters;
     private final ServiceRoute rootRoute;
-    private final ErrorHandlers errorHandlers;
     private final List<HttpFeature> features;
     private final int maxReRouteCount;
 
     private HttpRouting(Builder builder) {
-        this.errorHandlers = ErrorHandlers.create(builder.errorHandlers);
+        ErrorHandlers errorHandlers = ErrorHandlers.create(builder.errorHandlers);
         this.filters = Filters.create(errorHandlers, List.copyOf(builder.filters));
         this.rootRoute = builder.rootRules.build();
         this.features = List.copyOf(builder.features);
