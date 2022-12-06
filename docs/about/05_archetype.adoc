@@ -22,23 +22,23 @@
 
 == Introduction
 
-<<./05_cli.adoc, Helidon CLI>> provides a convenient way to bootstrap Helidon applications. It allows you to choose from a set of archetypes i.e. application with pre-defined feature sets and lets you customize it by providing host of options.
+<<./05_cli.adoc, Helidon CLI>> provides a convenient way to bootstrap Helidon applications. It allows you to choose from a set of archetypes i.e. application with pre-defined feature sets and lets you customize it by providing a host of options.
 
 == Archetypes
 
-Helidon provides following set of archetypes to bootstrap your application development journey.
+Helidon provides the following set of archetypes to bootstrap your application development journey.
 
 === Bare
-It creates a minimal Helidon project, suitable to start from scratch. It includes only required dependencies e.g. in case of Helidon MP, it uses `helidon-microprofile-core` bundle instead of `helidon-microprofile` bundle and adds required dependencies to it. It also doesn't have out-of-box observability setup.
+This option creates a minimal Helidon project, suitable to start from scratch. It includes only required dependencies e.g. in case of Helidon MP, it uses `helidon-microprofile-core` bundle instead of `helidon-microprofile` bundle and adds required dependencies to it. It also doesn't have out-of-box observability setup.
 
 === QuickStart
-It builds on `Bare` to include multiple REST operations along with default observability setup and a set of additional dependencies to enable ease of development e.g. in case of Helidon MP, it uses `helidon-microprofile` bundle instead of `helidon-microprofile-core` bundle.
+This option builds on `Bare` to include multiple REST operations along with default observability setup and a set of additional dependencies to enable ease of development e.g. in case of Helidon MP, it uses `helidon-microprofile` bundle instead of `helidon-microprofile-core` bundle.
 
 === Database
-It builds on `QuickStart` to demonstrates how to integrate with database (in-memory H2, by default). In case of, Helidon SE that uses the DbClient API while for Helidon MP that uses JPA.
+This option builds on `QuickStart` to demonstrate how to integrate with database (in-memory H2, by default). In case of, Helidon SE that uses the DbClient API while for Helidon MP that uses JPA.
 
 === OCI
-It builds on `QuickStart` to demonstrates integration with Oracle Cloud Infrastructure (OCI) services using the OCI SDK. Generated project showcases OpenApi-driven development approach where the practice of designing and building APIs is done first,
+This option builds on `QuickStart` to demonstrate integration with Oracle Cloud Infrastructure (OCI) services using the OCI SDK. Generated project showcases OpenApi-driven development approach where the practice of designing and building APIs is done first,
 then creating the rest of an application around them is implemented next. This is available for Helidon MP only.
 
 == Generated Application Structure
@@ -60,5 +60,5 @@ The easiest way to get started is follow instructions in README file and familia
 
 Also look at the pom.xml. You will find the suitable Helidon parent pom, allowing you to omit the version of the different Helidon dependencies. The parent pom also brings in helidon-maven-plugin responsible for packaging of the application and providing the development mode.
 
-Helidon MP recommends to utilize Jandex at build time. One immediately recognizable application of this, is CDI bean discovery i.e. to discover various classes or annotations. It is also required by `smallrye` that we use for OpenAPI integration. This index can be created by `jandex-maven-plugin` plugin which is provided with Helidon parent pom.
+Helidon recommends to utilize Jandex at build time esp. for MP. One immediately recognizable application of this is CDI bean discovery i.e. to discover various classes or annotations. It is also required by `smallrye` that we use for OpenAPI integration. This index can be created by `jandex-maven-plugin` plugin which is provided with Helidon parent pom.
 
