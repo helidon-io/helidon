@@ -27,10 +27,16 @@ import static org.hamcrest.Matchers.equalTo;
 
 class AbstractWithCustomMethodsTest {
 
+    /**
+     * Testing more corner cases..
+     */
     @Test
     void testIt() {
         AbstractWithCustomMethods val = DefaultAbstractWithCustomMethods.builder()
                 .name("test")
+                .isStatic(true)
+                .isClass(false)
+                .getAbstract("x")
                 .build();
         assertThat(val.toString(),
                    equalTo("test"));

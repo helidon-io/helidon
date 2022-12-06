@@ -550,7 +550,8 @@ public class BodyContext {
                 Optional<String> alternateName = alternateNames.get().orElse(Collections.emptyList()).stream()
                         .filter(it -> !it.equals(currentAttrName))
                         .findFirst();
-                if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())) {
+                if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())
+                        && !BeanUtils.isReservedWord(alternateName.get())) {
                     beanAttributeName = alternateName.get();
                     existing = ctx.map.get(beanAttributeName);
                 }

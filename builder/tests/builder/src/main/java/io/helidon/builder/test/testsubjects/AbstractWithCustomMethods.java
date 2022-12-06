@@ -16,6 +16,8 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import java.util.Optional;
+
 import io.helidon.builder.Builder;
 
 /**
@@ -30,6 +32,69 @@ public abstract class AbstractWithCustomMethods {
      * @return ignored, here for testing purposes only
      */
     public abstract String name();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isStatic();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isClass();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isInterface();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isAbstract();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isFinal();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isPublic();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isProtected();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract Optional<String> getAbstract();
+
+    /**
+     * Used for testing.
+     *
+     * @return ignored, here for testing purposes only
+     */
+    public abstract boolean isPrivate();
 
     @Override
     public String toString() {

@@ -166,9 +166,6 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         if (mods.contains(Modifier.ABSTRACT)) {
             return true;
         }
-//        if (mods.contains(Modifier.DEFAULT) || mods.contains(Modifier.STATIC)) {
-//            return false;
-//        }
         return false;
     }
 

@@ -1084,7 +1084,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                         String basicAttributeName = ""
                                 + Character.toLowerCase(beanAttributeName.charAt(2))
                                 + beanAttributeName.substring(3);
-                        if (!ctx.allAttributeNames().contains(basicAttributeName)) {
+                        if (!BeanUtils.isReservedWord(basicAttributeName)
+                                && !ctx.allAttributeNames().contains(basicAttributeName)) {
                             appendSetter(builder, ctx, beanAttributeName, basicAttributeName, method);
                         }
                     }
@@ -1311,7 +1312,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             }
 
             LinkedList<String> impls = new LinkedList<>();
-            if (!ctx.isExtendingAnAbstractClass()) {
+            if (!ctx.isExtendingAnAbstractClass() && !ctx.hasAnyBuilderClashingMethodNames()) {
                 impls.add(ctx.typeInfo().typeName().name());
             }
             if (!ctx.hasParent()) {
@@ -1587,7 +1588,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     private void appendOverridesOfDefaultValues(StringBuilder builder,
                                                 BodyContext ctx) {
-        boolean first = true;
         for (TypedElementName method : ctx.typeInfo().elementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired());
             if (!ctx.allAttributeNames().contains(beanAttributeName)) {
