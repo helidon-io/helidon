@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
@@ -39,6 +40,7 @@ final class ConnectionContextImpl implements ConnectionContext {
     private final DirectHandlers simpleHandlers;
     private final HelidonSocket socket;
     private final long maxPayloadSize;
+    private final Context context;
 
     ConnectionContextImpl(MediaContext mediaContext,
                           ContentEncodingContext contentEncodingContext,
@@ -50,7 +52,8 @@ final class ConnectionContextImpl implements ConnectionContext {
                           String childSocketId,
                           DirectHandlers simpleHandlers,
                           HelidonSocket socket,
-                          long maxPayloadSize) {
+                          long maxPayloadSize,
+                          Context context) {
         this.mediaContext = mediaContext;
         this.contentEncodingContext = contentEncodingContext;
         this.sharedExecutor = sharedExecutor;
@@ -62,6 +65,7 @@ final class ConnectionContextImpl implements ConnectionContext {
         this.simpleHandlers = simpleHandlers;
         this.socket = socket;
         this.maxPayloadSize = maxPayloadSize;
+        this.context = context;
     }
 
     @Override
@@ -130,12 +134,17 @@ final class ConnectionContextImpl implements ConnectionContext {
     }
 
     @Override
+    public Context context() {
+        return context;
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(sharedExecutor,
-                            dataWriter,
-                            router,
-                            socketId,
-                            childSocketId);
+                dataWriter,
+                router,
+                socketId,
+                childSocketId);
     }
 
     @Override
@@ -163,5 +172,4 @@ final class ConnectionContextImpl implements ConnectionContext {
                 + "socketId=" + socketId + ", "
                 + "childSocketId=" + childSocketId + ']';
     }
-
 }
