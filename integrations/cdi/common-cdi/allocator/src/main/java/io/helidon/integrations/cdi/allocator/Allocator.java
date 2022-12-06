@@ -69,14 +69,17 @@ public class Allocator {
      *
      * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
      *
-     * @param type the type of the object
+     * @param type the type of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations
+     * @param qualifiers qualifier annotations; must not be {@code null}
      *
-     * @return the allocated object
+     * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
+     * {@link Supplier#get()} method implementation
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
      */
     public final <T> T allocate(Supplier<? extends T> s, Class<T> type, Annotation... qualifiers) {
-        return this.allocate(s, Set.of(type), qualifiers);
+        return this.allocate(s, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
     }
 
     /**
@@ -86,34 +89,62 @@ public class Allocator {
      *
      * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
      *
-     * @param type the type of the object
+     * @param type the type of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations
+     * @param qualifiers qualifier annotations; must not be {@code null}
      *
-     * @return the allocated object
+     * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
+     * {@link Supplier#get()} method implementation
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
      */
     public final <T> T allocate(Supplier<? extends T> s, TypeLiteral<T> type, Annotation... qualifiers) {
-        return this.allocate(s, Set.of(type.getType()), qualifiers);
+        return this.allocate(s, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
     }
 
     /**
-     * Retrieves the current thread's value for the supplied {@link TypeLiteral} and qualifier annotations.
+     * Retrieves the current thread's value for the supplied {@link Set} of {@link Type}s and qualifier annotations.
      *
      * @param <T> the type of the object
      *
-     * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
+     * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored; must not be
+     * {@code null}
      *
-     * @param types the types of the object
+     * @param types the types of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations
+     * @param qualifiers qualifier annotations; must not be {@code null}
      *
-     * @return the allocated object
+     * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
+     * {@link Supplier#get()} method implementation
+     *
+     * @exception NullPointerException if {@code types} or {@code qualifiers} is {@code null}
      */
-    public <T> T allocate(Supplier<? extends T> s, Set<Type> types, Annotation... qualifiers) {
+    public final <T> T allocate(Supplier<? extends T> s, Set<Type> types, Annotation... qualifiers) {
+        return this.allocate(s, types, Set.copyOf(Arrays.asList(qualifiers)));
+    }
+
+    /**
+     * Retrieves the current thread's value for the supplied {@link Set} of {@link Type}s and qualifier annotations.
+     *
+     * @param <T> the type of the object
+     *
+     * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored; must not be
+     * {@code null}
+     *
+     * @param types the types of the object; must not be {@code null}
+     *
+     * @param qualifiers qualifier annotations; must not be {@code null}
+     *
+     * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
+     * {@link Supplier#get()} method implementation
+     *
+     * @exception NullPointerException if {@code types} or {@code qualifiers} is {@code null}
+     */
+    public <T> T allocate(Supplier<? extends T> s, Set<Type> types, Set<Annotation> qualifiers) {
         Map<AllocationId, Allocation<?>> map2 = tl.get().computeIfAbsent(this, k -> new HashMap<>());
         @SuppressWarnings("unchecked")
         Allocation<T> allocation =
-            (Allocation<T>) map2.computeIfAbsent(new AllocationId(Set.copyOf(types), Set.copyOf(Arrays.asList(qualifiers))),
+            (Allocation<T>) map2.computeIfAbsent(new AllocationId(Set.copyOf(types), Set.copyOf(qualifiers)),
                                                  k -> new Allocation<>(s.get()));
         ++allocation.rc;
         return allocation.object;
@@ -128,13 +159,15 @@ public class Allocator {
      * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
      * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
      *
-     * @param type the type of the object
+     * @param type the type of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations
+     * @param qualifiers qualifier annotations; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
      */
     @SuppressWarnings("unchecked")
     public final <T> void release(Consumer<? super T> c, Class<T> type, Annotation... qualifiers) {
-        this.release(c, Set.of(type), qualifiers);
+        this.release(c, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
     }
 
     /**
@@ -146,12 +179,14 @@ public class Allocator {
      * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
      * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
      *
-     * @param type the type of the object
+     * @param type the type of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations
+     * @param qualifiers qualifier annotations; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
      */
     public final <T> void release(Consumer<? super T> c, TypeLiteral<T> type, Annotation... qualifiers) {
-        this.release(c, Set.of(type.getType()), qualifiers);
+        this.release(c, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
     }
 
     /**
@@ -163,15 +198,36 @@ public class Allocator {
      * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
      * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
      *
-     * @param types the types of the object
+     * @param types the types of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations
+     * @param qualifiers qualifier annotations; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code types} or {@code qualifiers} is {@code null}
+     */
+    public final <T> void release(Consumer<? super T> c, Set<Type> types, Annotation... qualifiers) {
+        this.release(c, types, Set.copyOf(Arrays.asList(qualifiers)));
+    }
+
+    /**
+     * Releases the current thread's value for the supplied {@link Set} of {@link Type}s and qualifier annotations if
+     * the number of {@linkplain #allocate(Supplier, Set, Set) allocations} is zero.
+     *
+     * @param <T> the type of the object
+     *
+     * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
+     * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
+     *
+     * @param types the types of the object; must not be {@code null}
+     *
+     * @param qualifiers qualifier annotations; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code types} or {@code qualifiers} is {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> void release(Consumer<? super T> c, Set<Type> types, Annotation... qualifiers) {
+    public <T> void release(Consumer<? super T> c, Set<Type> types, Set<Annotation> qualifiers) {
         Map<AllocationId, Allocation<?>> map2 = tl.get().get(this);
         if (map2 != null) {
-            AllocationId id = new AllocationId(Set.copyOf(types), Set.copyOf(Arrays.asList(qualifiers)));
+            AllocationId id = new AllocationId(Set.copyOf(types), Set.copyOf(qualifiers));
             Allocation<?> allocation = map2.get(id);
             if (allocation != null && --allocation.rc == 0) {
                 map2.remove(id);
