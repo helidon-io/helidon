@@ -40,6 +40,8 @@ final class ConnectionContextImpl implements ConnectionContext {
     private final HelidonSocket socket;
     private final long maxPayloadSize;
 
+    private final WebServer webServer;
+
     ConnectionContextImpl(MediaContext mediaContext,
                           ContentEncodingContext contentEncodingContext,
                           ExecutorService sharedExecutor,
@@ -50,7 +52,8 @@ final class ConnectionContextImpl implements ConnectionContext {
                           String childSocketId,
                           DirectHandlers simpleHandlers,
                           HelidonSocket socket,
-                          long maxPayloadSize) {
+                          long maxPayloadSize,
+                          WebServer webServer) {
         this.mediaContext = mediaContext;
         this.contentEncodingContext = contentEncodingContext;
         this.sharedExecutor = sharedExecutor;
@@ -62,6 +65,7 @@ final class ConnectionContextImpl implements ConnectionContext {
         this.simpleHandlers = simpleHandlers;
         this.socket = socket;
         this.maxPayloadSize = maxPayloadSize;
+        this.webServer = webServer;
     }
 
     @Override
@@ -130,38 +134,60 @@ final class ConnectionContextImpl implements ConnectionContext {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(sharedExecutor,
-                            dataWriter,
-                            router,
-                            socketId,
-                            childSocketId);
+    public WebServer webServer() {
+        return webServer;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (obj == null || obj.getClass() != this.getClass()) {
-            return false;
-        }
-        var that = (ConnectionContextImpl) obj;
-        return Objects.equals(this.sharedExecutor, that.sharedExecutor)
-                && Objects.equals(this.dataWriter, that.dataWriter)
-                && Objects.equals(this.router, that.router)
-                && Objects.equals(this.socketId, that.socketId)
-                && Objects.equals(this.childSocketId, that.childSocketId);
+    public int hashCode() {
+        return Objects.hash(mediaContext,
+                contentEncodingContext,
+                sharedExecutor,
+                dataWriter,
+                dataReader,
+                router,
+                socketId,
+                childSocketId,
+                simpleHandlers,
+                socket,
+                maxPayloadSize,
+                webServer);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ConnectionContextImpl that = (ConnectionContextImpl) o;
+        return maxPayloadSize == that.maxPayloadSize
+                && Objects.equals(mediaContext, that.mediaContext)
+                && Objects.equals(contentEncodingContext, that.contentEncodingContext)
+                && Objects.equals(sharedExecutor, that.sharedExecutor)
+                && Objects.equals(dataWriter, that.dataWriter)
+                && Objects.equals(dataReader, that.dataReader)
+                && Objects.equals(router, that.router)
+                && Objects.equals(socketId, that.socketId)
+                && Objects.equals(childSocketId, that.childSocketId)
+                && Objects.equals(simpleHandlers, that.simpleHandlers)
+                && Objects.equals(socket, that.socket)
+                && Objects.equals(webServer, that.webServer);
     }
 
     @Override
     public String toString() {
-        return "ConnectionContextImpl["
-                + "sharedExecutor=" + sharedExecutor + ", "
-                + "dataWriter=" + dataWriter + ", "
-                + "router=" + router + ", "
-                + "socketId=" + socketId + ", "
-                + "childSocketId=" + childSocketId + ']';
+        return "ConnectionContextImpl{" +
+                "mediaContext=" + mediaContext +
+                ", contentEncodingContext=" + contentEncodingContext +
+                ", sharedExecutor=" + sharedExecutor +
+                ", dataWriter=" + dataWriter +
+                ", dataReader=" + dataReader +
+                ", router=" + router +
+                ", socketId='" + socketId + '\'' +
+                ", childSocketId='" + childSocketId + '\'' +
+                ", simpleHandlers=" + simpleHandlers +
+                ", socket=" + socket +
+                ", maxPayloadSize=" + maxPayloadSize +
+                ", webServer=" + webServer +
+                '}';
     }
-
 }

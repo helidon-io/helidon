@@ -164,7 +164,7 @@ public interface WebServer {
         @Override
         public WebServer build() {
 
-            if (null == context) {
+            if (context == null) {
                 // In case somebody spins a huge number up, the counter will cycle to negative numbers once
                 // Integer.MAX_VALUE is reached.
                 context = Context.builder()

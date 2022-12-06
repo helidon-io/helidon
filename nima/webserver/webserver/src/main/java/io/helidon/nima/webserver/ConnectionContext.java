@@ -30,6 +30,7 @@ import io.helidon.nima.webserver.http.DirectHandlers;
  * Server connection context.
  */
 public interface ConnectionContext extends SocketContext {
+    // TODO: Clean up the object.
     /**
      * Create a new context.
      *
@@ -56,7 +57,8 @@ public interface ConnectionContext extends SocketContext {
                                     String channelId,
                                     DirectHandlers simpleHandlers,
                                     HelidonSocket socket,
-                                    long maxPayloadSize) {
+                                    long maxPayloadSize,
+                                    WebServer webServer) {
         return new ConnectionContextImpl(mediaContext,
                                          contentEncodingContext,
                                          sharedExecutor,
@@ -67,7 +69,8 @@ public interface ConnectionContext extends SocketContext {
                                          channelId,
                                          simpleHandlers,
                                          socket,
-                                         maxPayloadSize);
+                                         maxPayloadSize,
+                                         webServer);
     }
 
     /**
@@ -125,4 +128,11 @@ public interface ConnectionContext extends SocketContext {
      * @return simple handlers
      */
     DirectHandlers directHandlers();
+
+    /**
+     * Access to the WebServer object.
+     *
+     * @return WebServer
+     */
+    WebServer webServer();
 }

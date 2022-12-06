@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.common.Version;
+import io.helidon.common.context.Context;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
@@ -50,6 +51,8 @@ class LoomServer implements WebServer {
 
     private volatile List<ListenerFuture> startFutures;
     private boolean alreadyStarted = false;
+
+    private final Context context;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
         List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
@@ -99,6 +102,7 @@ class LoomServer implements WebServer {
                                                                           .allowSetThreadLocals(true)
                                                                           .inheritInheritableThreadLocals(false)
                                                                           .factory());
+        this.context = builder.context();
     }
 
     @Override
@@ -159,6 +163,11 @@ class LoomServer implements WebServer {
     @Override
     public boolean hasTls(String socketName) {
         return false;
+    }
+
+    @Override
+    public Context context() {
+        return context;
     }
 
     private void stopIt() {

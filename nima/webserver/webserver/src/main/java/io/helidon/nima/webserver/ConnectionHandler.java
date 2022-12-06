@@ -65,7 +65,8 @@ class ConnectionHandler implements Runnable {
                       Router router,
                       int writeQueueLength,
                       long maxPayloadSize,
-                      DirectHandlers simpleHandlers) {
+                      DirectHandlers simpleHandlers,
+                      WebServer webServer) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;
@@ -83,7 +84,8 @@ class ConnectionHandler implements Runnable {
                                             channelId,
                                             simpleHandlers,
                                             socket,
-                                            maxPayloadSize);
+                                            maxPayloadSize,
+                                            webServer);
     }
 
     @Override

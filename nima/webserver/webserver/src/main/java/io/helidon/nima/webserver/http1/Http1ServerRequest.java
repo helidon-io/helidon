@@ -178,6 +178,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Context context() {
         if (context == null) {
             context = Contexts.context().orElseGet(() -> Context.builder()
+                    .parent(ctx.webServer().context())
                     .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
         }
