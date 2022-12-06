@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Vetoed;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
-import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.StoredProcedureQuery;
 import jakarta.persistence.TransactionRequiredException;
@@ -93,38 +92,21 @@ class NonTransactionalEntityManager extends DelegatingEntityManager {
      */
 
 
-    /**
-     * Throws a {@link PersistenceException} when invoked, because
-     * this method will never be invoked in the normal course of
-     * events.
-     *
-     * @return a non-{@code null} {@link EntityManager}, but this will
-     * never happen
-     *
-     * @exception PersistenceException when invoked
-     *
-     * @see #delegate()
-     */
-    @Override
-    protected EntityManager acquireDelegate() {
-        throw new PersistenceException();
-    }
-
     @Override
     public <T> TypedQuery<T> createNamedQuery(final String name,
                                               final Class<T> resultClass) {
-        return new ClearingTypedQuery<>(this, super.createNamedQuery(name, resultClass));
+        return new ClearingTypedQuery<>(this::clear, super.createNamedQuery(name, resultClass));
     }
 
     @Override
     public <T> TypedQuery<T> createQuery(final CriteriaQuery<T> criteriaQuery) {
-        return new ClearingTypedQuery<>(this, super.createQuery(criteriaQuery));
+        return new ClearingTypedQuery<>(this::clear, super.createQuery(criteriaQuery));
     }
 
     @Override
     public <T> TypedQuery<T> createQuery(final String jpql,
                                          final Class<T> resultClass) {
-        return new ClearingTypedQuery<>(this, super.createQuery(jpql, resultClass));
+        return new ClearingTypedQuery<>(this::clear, super.createQuery(jpql, resultClass));
     }
 
     @Override
@@ -146,30 +128,30 @@ class NonTransactionalEntityManager extends DelegatingEntityManager {
 
     @Override
     public Query createNamedQuery(final String name) {
-        return new ClearingQuery(this, super.createNamedQuery(name));
+        return new ClearingQuery(this::clear, super.createNamedQuery(name));
     }
 
     @Override
     @SuppressWarnings("rawtypes")
     public Query createNativeQuery(final String sql,
                                    final Class resultClass) {
-        return new ClearingQuery(this, super.createNativeQuery(sql, resultClass));
+        return new ClearingQuery(this::clear, super.createNativeQuery(sql, resultClass));
     }
 
     @Override
     public Query createNativeQuery(final String sql,
                                    final String resultSetMapping) {
-        return new ClearingQuery(this, super.createNativeQuery(sql, resultSetMapping));
+        return new ClearingQuery(this::clear, super.createNativeQuery(sql, resultSetMapping));
     }
 
     @Override
     public Query createNativeQuery(final String sql) {
-        return new ClearingQuery(this, super.createNativeQuery(sql));
+        return new ClearingQuery(this::clear, super.createNativeQuery(sql));
     }
 
     @Override
     public Query createQuery(final String jpql) {
-        return new ClearingQuery(this, super.createQuery(jpql));
+        return new ClearingQuery(this::clear, super.createQuery(jpql));
     }
 
     @Override
@@ -182,25 +164,25 @@ class NonTransactionalEntityManager extends DelegatingEntityManager {
 
     @Override
     public StoredProcedureQuery createNamedStoredProcedureQuery(final String name) {
-        return new ClearingStoredProcedureQuery(this, super.createNamedStoredProcedureQuery(name));
+        return new ClearingStoredProcedureQuery(this::clear, super.createNamedStoredProcedureQuery(name));
     }
 
     @Override
     public StoredProcedureQuery createStoredProcedureQuery(final String procedureName) {
-        return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName));
+        return new ClearingStoredProcedureQuery(this::clear, super.createStoredProcedureQuery(procedureName));
     }
 
     @Override
     @SuppressWarnings("rawtypes")
     public StoredProcedureQuery createStoredProcedureQuery(final String procedureName,
                                                            final Class... resultClasses) {
-        return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultClasses));
+        return new ClearingStoredProcedureQuery(this::clear, super.createStoredProcedureQuery(procedureName, resultClasses));
     }
 
     @Override
     public StoredProcedureQuery createStoredProcedureQuery(final String procedureName,
                                                            final String... resultSetMappings) {
-        return new ClearingStoredProcedureQuery(this, super.createStoredProcedureQuery(procedureName, resultSetMappings));
+        return new ClearingStoredProcedureQuery(this::clear, super.createStoredProcedureQuery(procedureName, resultSetMappings));
     }
 
     /**

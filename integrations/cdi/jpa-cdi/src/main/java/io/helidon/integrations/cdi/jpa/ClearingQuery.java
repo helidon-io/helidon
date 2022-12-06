@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,15 @@ package io.helidon.integrations.cdi.jpa;
 import java.util.List;
 import java.util.Objects;
 
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
 final class ClearingQuery extends DelegatingQuery {
 
-    private final EntityManager entityManager;
+    private final Runnable clearer;
 
-    ClearingQuery(final EntityManager entityManager, final Query delegate) {
+    ClearingQuery(Runnable persistenceContextClearer, Query delegate) {
         super(delegate);
-        this.entityManager = Objects.requireNonNull(entityManager);
+        this.clearer = Objects.requireNonNull(persistenceContextClearer, "persistenceContextClearer");
     }
 
     @Override
@@ -36,7 +35,7 @@ final class ClearingQuery extends DelegatingQuery {
         try {
             return super.getResultList();
         } finally {
-            this.entityManager.clear();
+            this.clearer.run();
         }
     }
 
@@ -45,7 +44,7 @@ final class ClearingQuery extends DelegatingQuery {
         try {
             return super.getSingleResult();
         } finally {
-            this.entityManager.clear();
+            this.clearer.run();
         }
     }
 

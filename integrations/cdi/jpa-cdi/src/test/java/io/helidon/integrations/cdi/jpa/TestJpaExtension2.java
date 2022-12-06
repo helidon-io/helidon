@@ -20,6 +20,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -37,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class TestJpaExtension2 {
 
-    private SeContainer c;
+    private SeContainer sec;
 
     private TestJpaExtension2() {
         super();
@@ -61,25 +62,36 @@ class TestJpaExtension2 {
             .addExtensions(JpaExtension2.class,
                            com.arjuna.ats.jta.cdi.TransactionExtension.class,
                            io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension.class)
-            .addBeanClasses(Frobnicator.class,
+            .addBeanClasses(Caturgiator.class,
+                            Frobnicator.class,
                             JtaAdaptingDataSourceProvider.class);
         if (cdiSeJtaPlatformClass != null) {
             i = i.addBeanClasses(cdiSeJtaPlatformClass);
         }
-        this.c = i.initialize();
+        this.sec = i.initialize();
     }
 
     @AfterEach
     final void closeCdiContainer() {
-        if (this.c != null) {
-            this.c.close();
+        if (this.sec != null) {
+            this.sec.close();
         }
     }
 
     @Test
     final void testSpike() {
-        Frobnicator f = c.select(Frobnicator.class).get();
+        Instance<Frobnicator> fi = sec.select(Frobnicator.class);
+        Frobnicator f = fi.get();
         assertThat(f.em.isOpen(), is(true));
+        assertThat(f.em, instanceOf(JtaEntityManager.class));
+
+        Instance<Caturgiator> ci = sec.select(Caturgiator.class);
+        Caturgiator c = ci.get();
+        assertThat(c.em, is(f.em));
+            
+        fi.destroy(f);
+        assertThat(c.em.isOpen(), is(true));
+        ci.destroy(c);
     }
 
     @DataSourceDefinition(
@@ -102,6 +114,19 @@ class TestJpaExtension2 {
             super();
         }
 
+    }
+
+    @Dependent
+    private static class Caturgiator {
+
+        @PersistenceContext(unitName = "test")
+        private EntityManager em;
+
+        @Inject
+        Caturgiator() {
+            super();
+        }
+        
     }
 
 }

@@ -16,19 +16,40 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Query;
+import jakarta.persistence.StoredProcedureQuery;
 import jakarta.persistence.SynchronizationType;
+import jakarta.persistence.TransactionRequiredException;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.metamodel.Metamodel;
 import jakarta.transaction.Status;
 import jakarta.transaction.Synchronization;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
+import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
+import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
+
 class JtaEntityManager extends DelegatingEntityManager {
+
+    private static final ThreadLocal<Map<Object, AbsentTransactionEntityManager>> AT_EMS =
+        ThreadLocal.withInitial(() -> new HashMap<>(5));
 
     private final EntityManagerFactory emf;
 
@@ -38,23 +59,18 @@ class JtaEntityManager extends DelegatingEntityManager {
 
     private final TransactionSynchronizationRegistry tsr;
 
-    private final Object puid;
-
-    JtaEntityManager(EntityManagerFactory emf,
+    JtaEntityManager(TransactionSynchronizationRegistry tsr,
+                     EntityManagerFactory emf,
                      SynchronizationType syncType,
-                     Map<?, ?> properties,
-                     TransactionSynchronizationRegistry tsr,
-                     Object puid) {
+                     Map<?, ?> properties) {
         super();
+        System.out.println("*** creating");
+        this.tsr = Objects.requireNonNull(tsr, "tsr");
         this.emf = Objects.requireNonNull(emf, "emf");
         // JPA permits null SynchronizationType and properties.
         this.syncType = syncType;
         if (syncType == null) {
-            if (properties == null) {
-                this.properties = null;
-            } else {
-                this.properties = Map.copyOf(properties);
-            }
+            this.properties = properties == null ? null : Map.copyOf(properties);
         } else if (properties == null || properties.isEmpty()) {
             this.properties = Map.of("jakarta.persistence.SynchronizationType", syncType);
         } else {
@@ -62,35 +78,50 @@ class JtaEntityManager extends DelegatingEntityManager {
             m.put("jakarta.persistence.SynchronizationType", syncType);
             this.properties = Collections.unmodifiableMap(m);
         }
-        this.tsr = Objects.requireNonNull(tsr, "tsr");
-        this.puid = Objects.requireNonNull(puid, "puid");
     }
 
-    @Override
-    protected EntityManager acquireDelegate() {
-        int ts = this.tsr.getTransactionStatus();
-        switch (ts) {
-        case Status.STATUS_ACTIVE:
-            return this.computeIfAbsentForActiveTransaction();
-        case Status.STATUS_COMMITTED:
-        case Status.STATUS_COMMITTING:
-        case Status.STATUS_MARKED_ROLLBACK:
-        case Status.STATUS_NO_TRANSACTION:
-        case Status.STATUS_PREPARED:
-        case Status.STATUS_PREPARING:
-        case Status.STATUS_ROLLEDBACK:
-        case Status.STATUS_ROLLING_BACK:
-        case Status.STATUS_UNKNOWN:
-            return this.computeIfAbsentForNoTransaction();
-        default:
-            throw new PersistenceException("Unknown transaction status: " + ts);
+    void dispose() {
+        System.out.println("*** disposing");
+        AbsentTransactionEntityManager em = AT_EMS.get().remove(this.emf);
+        if (em != null) {
+            em.close();
         }
     }
 
-    private EntityManager computeIfAbsentForActiveTransaction() {
-        EntityManager em = (EntityManager) this.tsr.getResource(this.puid);
+    @Override
+    EntityManager acquireDelegate() {
+        try {
+            int ts = this.tsr.getTransactionStatus();
+            switch (ts) {
+            case Status.STATUS_ACTIVE:
+                return this.computeIfAbsentForActiveTransaction();
+            case Status.STATUS_COMMITTED:
+            case Status.STATUS_COMMITTING:
+            case Status.STATUS_MARKED_ROLLBACK:
+            case Status.STATUS_NO_TRANSACTION:
+            case Status.STATUS_PREPARED:
+            case Status.STATUS_PREPARING:
+            case Status.STATUS_ROLLEDBACK:
+            case Status.STATUS_ROLLING_BACK:
+            case Status.STATUS_UNKNOWN:
+                return this.computeIfAbsentForNoTransaction();
+            default:
+                throw new PersistenceException("Unknown transaction status: " + ts);
+            }
+        } catch (PersistenceException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new PersistenceException(e.getMessage(), e);
+        }
+    }
+
+    private ActiveTransactionEntityManager computeIfAbsentForActiveTransaction() {
+        ActiveTransactionEntityManager em = (ActiveTransactionEntityManager) this.tsr.getResource(this.emf);
         if (em == null) {
-            EntityManager em0 = this.emf.createEntityManager(this.syncType, this.properties);
+            ActiveTransactionEntityManager newEm =
+                new ActiveTransactionEntityManager(this.emf.createEntityManager(this.syncType, this.properties));
+            em = newEm;
+            Object thread = Thread.currentThread();
             try {
                 tsr.registerInterposedSynchronization(new Synchronization() {
                         @Override
@@ -99,50 +130,24 @@ class JtaEntityManager extends DelegatingEntityManager {
                         }
                         @Override
                         public void afterCompletion(int completionStatus) {
-                            // TO DO: oh Lord the threading concerns.  This method can get invoked asynchronously (by a
-                            // timeout for example).  The TSR is in an undefined state at this point.  The application
-                            // thread could still be using the EntityManager (em0 above).
-                            //
-                            // Solving this problem is not at all easy. The simplest thing to do is to simply close em0
-                            // here, which will quite possibly be on another thread, and therefore illegal.
-                            //
-                            // Another approach would be to ensure that em0 is actually a wrapped EntityManager, all of
-                            // whose "reachable" operations check to see if an asynchronous close has been requested,
-                            // and, if so, close the EntityManager before carrying out their (now futile) work.
-                            em0.close();
+                            // Remember, this can be invoked asynchronously.
+                            if (Thread.currentThread() == thread) {
+                                newEm.closeDelegate();
+                            } else {
+                                newEm.closePending = true; // volatile write
+                            }
                         }
                     });
+                this.tsr.putResource(this.emf, em);
             } catch (RuntimeException | Error e) {
                 try {
-                    em0.close();
+                    em.closeDelegate();
                 } catch (RuntimeException | Error e2) {
                     e.addSuppressed(e2);
                 }
                 throw e;
             }
-            em = new DelegatingEntityManager(em0) {
-                    @Override
-                    protected EntityManager acquireDelegate() {
-                        // (Won't be called because we supplied the delegate at construction time.)
-                        return em0;
-                    }
-                    @Override
-                    public void close() {
-                        throw new IllegalStateException("close() cannot be called on a container-managed EntityManager");
-                    }
-                };
-            try {
-                this.tsr.putResource(this.puid, em);
-            } catch (RuntimeException | Error e) {
-                try {
-                    em.close();
-                } catch (PersistenceException e2) {
-                    e.addSuppressed(e2);
-                }
-                throw e;
-            }
-        } else if (this.syncType == SynchronizationType.SYNCHRONIZED
-                   && synchronizationType(em) == SynchronizationType.UNSYNCHRONIZED) {
+        } else if ((this.syncType == null || this.syncType == SYNCHRONIZED) && synchronizationType(em) == UNSYNCHRONIZED) {
             // Check for mixed synchronization types per section 7.6.4.1
             // (https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html#a11820):
             //
@@ -154,14 +159,661 @@ class JtaEntityManager extends DelegatingEntityManager {
         return em;
     }
 
-    private EntityManager computeIfAbsentForNoTransaction() {
-        // TO DO: it would be nice to have a thread-local place to store these
-        return this.emf.createEntityManager(this.syncType, this.properties);
+    private AbsentTransactionEntityManager computeIfAbsentForNoTransaction() {
+        Map<Object, AbsentTransactionEntityManager> ems = AT_EMS.get();
+        AbsentTransactionEntityManager em = ems.get(this.emf);
+        if (em == null) {
+            // This AbsentTransactionEntityManager is closed by the dispose() method above.
+            em = new AbsentTransactionEntityManager(this.emf.createEntityManager(syncType, properties));
+            ems.put(this.emf, em);
+        }
+        return em;
     }
 
-    static SynchronizationType synchronizationType(EntityManager em) {
+
+    /*
+     * Static methods.
+     */
+
+
+    private static SynchronizationType synchronizationType(EntityManager em) {
         Map<?, ?> properties = em.getProperties();
         return properties == null ? null : (SynchronizationType) properties.get("jakarta.persistence.SynchronizationType");
+    }
+
+
+    /*
+     * Inner and nested classes.
+     */
+
+
+    private static final class ActiveTransactionEntityManager extends DelegatingEntityManager {
+
+        private volatile boolean closePending;
+
+        private ActiveTransactionEntityManager(EntityManager delegate) {
+            super(Objects.requireNonNull(delegate, "delegate"));
+        }
+
+        private void closeIfPending() {
+            if (this.closePending) {
+                super.close();
+            }
+        }
+
+        @Override
+        public void persist(Object entity) {
+            this.closeIfPending();
+            super.persist(entity);
+        }
+
+        @Override
+        public <T> T merge(T entity) {
+            this.closeIfPending();
+            return super.merge(entity);
+        }
+
+        @Override
+        public void remove(Object entity) {
+            this.closeIfPending();
+            super.remove(entity);
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey) {
+            this.closeIfPending();
+            return super.find(entityClass, primaryKey);
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) {
+            this.closeIfPending();
+            return super.find(entityClass, primaryKey, properties);
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode) {
+            this.closeIfPending();
+            return super.find(entityClass, primaryKey, lockMode);
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties) {
+            this.closeIfPending();
+            return super.find(entityClass, primaryKey, lockMode, properties);
+        }
+
+        @Override
+        public <T> T getReference(Class<T> entityClass, Object primaryKey) {
+            this.closeIfPending();
+            return super.getReference(entityClass, primaryKey);
+        }
+
+        @Override
+        public void flush() {
+            this.closeIfPending();
+            super.flush();
+        }
+
+        @Override
+        public void setFlushMode(FlushModeType flushMode) {
+            this.closeIfPending();
+            super.setFlushMode(flushMode);
+        }
+
+        @Override
+        public FlushModeType getFlushMode() {
+            this.closeIfPending();
+            return super.getFlushMode();
+        }
+
+        @Override
+        public void lock(Object entity, LockModeType lockMode) {
+            this.closeIfPending();
+            super.lock(entity, lockMode);
+        }
+
+        @Override
+        public void lock(Object entity, LockModeType lockMode, Map<String, Object> properties) {
+            this.closeIfPending();
+            super.lock(entity, lockMode, properties);
+        }
+
+        @Override
+        public void refresh(Object entity) {
+            this.closeIfPending();
+            super.refresh(entity);
+        }
+
+        @Override
+        public void refresh(Object entity, Map<String, Object> properties) {
+            this.closeIfPending();
+            super.refresh(entity, properties);
+        }
+
+        @Override
+        public void refresh(Object entity, LockModeType lockMode) {
+            this.closeIfPending();
+            super.refresh(entity, lockMode);
+        }
+
+        @Override
+        public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) {
+            this.closeIfPending();
+            super.refresh(entity, lockMode, properties);
+        }
+
+        @Override
+        public void clear() {
+            this.closeIfPending();
+            super.clear();
+        }
+
+        @Override
+        public void detach(Object entity) {
+            this.closeIfPending();
+            super.detach(entity);
+        }
+
+        @Override
+        public boolean contains(Object entity) {
+            this.closeIfPending();
+            return super.contains(entity);
+        }
+
+        @Override
+        public LockModeType getLockMode(Object entity) {
+            this.closeIfPending();
+            return super.getLockMode(entity);
+        }
+
+        @Override
+        public void setProperty(String propertyName, Object propertyValue) {
+            this.closeIfPending();
+            super.setProperty(propertyName, propertyValue);
+        }
+
+        @Override
+        public Map<String, Object> getProperties() {
+            this.closeIfPending();
+            return super.getProperties();
+        }
+
+        @Override
+        public Query createQuery(String qlString) {
+            this.closeIfPending();
+            return super.createQuery(qlString);
+        }
+
+        @Override
+        public <T> TypedQuery<T> createQuery(CriteriaQuery<T> criteriaQuery) {
+            this.closeIfPending();
+            return super.createQuery(criteriaQuery);
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public Query createQuery(CriteriaUpdate criteriaUpdate) {
+            this.closeIfPending();
+            return super.createQuery(criteriaUpdate);
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public Query createQuery(CriteriaDelete criteriaDelete) {
+            this.closeIfPending();
+            return super.createQuery(criteriaDelete);
+        }
+
+        @Override
+        public <T> TypedQuery<T> createQuery(String qlString, Class<T> resultClass) {
+            this.closeIfPending();
+            return super.createQuery(qlString, resultClass);
+        }
+
+        @Override
+        public Query createNamedQuery(String sqlString) {
+            this.closeIfPending();
+            return super.createNamedQuery(sqlString);
+        }
+
+        @Override
+        public <T> TypedQuery<T> createNamedQuery(String sqlString, Class<T> resultClass) {
+            this.closeIfPending();
+            return super.createNamedQuery(sqlString, resultClass);
+        }
+
+        @Override
+        public Query createNativeQuery(String sqlString) {
+            this.closeIfPending();
+            return super.createNativeQuery(sqlString);
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public Query createNativeQuery(String sqlString, Class resultClass) {
+            this.closeIfPending();
+            return super.createNativeQuery(sqlString, resultClass);
+        }
+
+        @Override
+        public Query createNativeQuery(String sqlString, String resultSetMapping) {
+            this.closeIfPending();
+            return super.createNativeQuery(sqlString, resultSetMapping);
+        }
+
+        @Override
+        public StoredProcedureQuery createNamedStoredProcedureQuery(String procedureName) {
+            this.closeIfPending();
+            return super.createNamedStoredProcedureQuery(procedureName);
+        }
+
+        @Override
+        public StoredProcedureQuery createStoredProcedureQuery(String procedureName) {
+            this.closeIfPending();
+            return super.createStoredProcedureQuery(procedureName);
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public StoredProcedureQuery createStoredProcedureQuery(String procedureName, Class... resultClasses) {
+            this.closeIfPending();
+            return super.createStoredProcedureQuery(procedureName, resultClasses);
+        }
+
+        @Override
+        public StoredProcedureQuery createStoredProcedureQuery(String procedureName, String... resultSetMappings) {
+            this.closeIfPending();
+            return super.createStoredProcedureQuery(procedureName, resultSetMappings);
+        }
+
+        @Override
+        public void joinTransaction() {
+            this.closeIfPending();
+            super.joinTransaction();
+        }
+
+        @Override
+        public boolean isJoinedToTransaction() {
+            this.closeIfPending();
+            return super.isJoinedToTransaction();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> c) {
+            this.closeIfPending();
+            if (c != null && c.isInstance(this)) {
+                return c.cast(this);
+            }
+            return super.unwrap(c);
+        }
+
+        @Override
+        public Object getDelegate() {
+            this.closeIfPending();
+            return super.getDelegate();
+        }
+
+        private void closeDelegate() {
+            super.close();
+            this.closePending = false;
+        }
+
+        @Override
+        public void close() {
+            if (this.isOpen()) {
+                throw new IllegalStateException("close() cannot be called on a container-managed EntityManager");
+            }
+            super.close();
+        }
+
+        @Override
+        public boolean isOpen() {
+            this.closeIfPending();
+            return super.isOpen();
+        }
+
+        @Override
+        public EntityTransaction getTransaction() {
+            this.closeIfPending();
+            return super.getTransaction();
+        }
+
+        @Override
+        public EntityManagerFactory getEntityManagerFactory() {
+            this.closeIfPending();
+            return super.getEntityManagerFactory();
+        }
+
+        @Override
+        public CriteriaBuilder getCriteriaBuilder() {
+            this.closeIfPending();
+            return super.getCriteriaBuilder();
+        }
+
+        @Override
+        public Metamodel getMetamodel() {
+            this.closeIfPending();
+            return super.getMetamodel();
+        }
+
+        @Override
+        public <T> EntityGraph<T> createEntityGraph(Class<T> rootType) {
+            this.closeIfPending();
+            return super.createEntityGraph(rootType);
+        }
+
+        @Override
+        public EntityGraph<?> createEntityGraph(String graphName) {
+            this.closeIfPending();
+            return super.createEntityGraph(graphName);
+        }
+
+        @Override
+        public EntityGraph<?> getEntityGraph(String graphName) {
+            this.closeIfPending();
+            return super.getEntityGraph(graphName);
+        }
+
+        @Override
+        public <T> List<EntityGraph<? super T>> getEntityGraphs(Class<T> entityClass) {
+            this.closeIfPending();
+            return super.getEntityGraphs(entityClass);
+        }
+
+    }
+
+    private static final class AbsentTransactionEntityManager extends DelegatingEntityManager {
+
+        AbsentTransactionEntityManager(EntityManager delegate) {
+            super(Objects.requireNonNull(delegate, "delegate"));
+        }
+
+        @Override
+        public <T> TypedQuery<T> createNamedQuery(String name, Class<T> resultClass) {
+            return new ClearingTypedQuery<>(this::clear, super.createNamedQuery(name, resultClass));
+        }
+
+        @Override
+        public <T> TypedQuery<T> createQuery(CriteriaQuery<T> criteriaQuery) {
+            return new ClearingTypedQuery<>(this::clear, super.createQuery(criteriaQuery));
+        }
+
+        @Override
+        public <T> TypedQuery<T> createQuery(String jpql, Class<T> resultClass) {
+            return new ClearingTypedQuery<>(this::clear, super.createQuery(jpql, resultClass));
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties) {
+            try {
+                return super.find(entityClass, primaryKey, properties);
+            } finally {
+                this.clear();
+            }
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey) {
+            try {
+                return super.find(entityClass, primaryKey);
+            } finally {
+                this.clear();
+            }
+        }
+
+        @Override
+        public Query createNamedQuery(String name) {
+            return new ClearingQuery(this::clear, super.createNamedQuery(name));
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public Query createNativeQuery(String sql, Class resultClass) {
+            return new ClearingQuery(this::clear, super.createNativeQuery(sql, resultClass));
+        }
+
+        @Override
+        public Query createNativeQuery(String sql, String resultSetMapping) {
+            return new ClearingQuery(this::clear, super.createNativeQuery(sql, resultSetMapping));
+        }
+
+        @Override
+        public Query createNativeQuery(String sql) {
+            return new ClearingQuery(this::clear, super.createNativeQuery(sql));
+        }
+
+        @Override
+        public Query createQuery(String jpql) {
+            return new ClearingQuery(this::clear, super.createQuery(jpql));
+        }
+
+        @Override
+        public <T> T getReference(Class<T> entityClass, Object primaryKey) {
+            try {
+                return super.getReference(entityClass, primaryKey);
+            } finally {
+                this.clear();
+            }
+        }
+
+        @Override
+        public StoredProcedureQuery createNamedStoredProcedureQuery(String name) {
+            return new ClearingStoredProcedureQuery(this::clear, super.createNamedStoredProcedureQuery(name));
+        }
+
+        @Override
+        public StoredProcedureQuery createStoredProcedureQuery(String procedureName) {
+            return new ClearingStoredProcedureQuery(this::clear, super.createStoredProcedureQuery(procedureName));
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public StoredProcedureQuery createStoredProcedureQuery(String procedureName, Class... resultClasses) {
+            return new ClearingStoredProcedureQuery(this::clear, super.createStoredProcedureQuery(procedureName, resultClasses));
+        }
+
+        @Override
+        public StoredProcedureQuery createStoredProcedureQuery(String procedureName, String... resultSetMappings) {
+            return
+                new ClearingStoredProcedureQuery(this::clear, super.createStoredProcedureQuery(procedureName, resultSetMappings));
+        }
+
+        /**
+         * Returns {@code false} when invoked.
+         *
+         * @return {@code false} in all cases
+         */
+        @Override
+        public boolean isJoinedToTransaction() {
+            return false;
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void joinTransaction() {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void persist(Object entity) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public <T> T merge(T entity) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void remove(Object entity) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void refresh(Object entity) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @param properties ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void refresh(Object entity, Map<String, Object> properties) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @param lockMode ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void refresh(Object entity, LockModeType lockMode) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @param lockMode ignored
+         *
+         * @param properties ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void refresh(Object entity, LockModeType lockMode, Map<String, Object> properties) {
+            throw new TransactionRequiredException();
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode) {
+            if (lockMode != null && lockMode != LockModeType.NONE) {
+                throw new TransactionRequiredException();
+            }
+            try {
+                return super.find(entityClass, primaryKey, lockMode);
+            } finally {
+                this.clear();
+            }
+        }
+
+        @Override
+        public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties) {
+            if (lockMode != null && !lockMode.equals(LockModeType.NONE)) {
+                throw new TransactionRequiredException();
+            }
+            try {
+                return super.find(entityClass, primaryKey, lockMode, properties);
+            } finally {
+                this.clear();
+            }
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @param lockMode ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void lock(Object entity, LockModeType lockMode) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @param lockMode ignored
+         *
+         * @param properties ignored
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void lock(Object entity, LockModeType lockMode, Map<String, Object> properties) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @param entity ignored
+         *
+         * @return nothing
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public LockModeType getLockMode(Object entity) {
+            throw new TransactionRequiredException();
+        }
+
+        /**
+         * Throws a {@link TransactionRequiredException} when invoked.
+         *
+         * @exception TransactionRequiredException when invoked
+         */
+        @Override
+        public void flush() {
+            // See
+            // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L429-L430
+            // but also note that Wildfly does *not* do this:
+            // https://github.com/wildfly/wildfly/blob/cb3f5429e4bb5423236564c1f3afd8b4a2430ec0/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/AbstractEntityManager.java#L454-L466.
+            // We follow the reference application (Glassfish).
+            throw new TransactionRequiredException();
+        }
+
     }
 
 }

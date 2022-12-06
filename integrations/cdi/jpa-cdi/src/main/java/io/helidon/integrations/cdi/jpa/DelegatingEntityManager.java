@@ -17,6 +17,8 @@ package io.helidon.integrations.cdi.jpa;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
@@ -24,6 +26,7 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.StoredProcedureQuery;
 import jakarta.persistence.TypedQuery;
@@ -42,7 +45,7 @@ import jakarta.persistence.metamodel.Metamodel;
  * <p>As with all {@link EntityManager} implementations, instances of
  * this class are not safe for concurrent use by multiple threads.</p>
  */
-abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
+class DelegatingEntityManager implements EntityManager, AutoCloseable {
 
 
     /*
@@ -50,19 +53,7 @@ abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
      */
 
 
-    /**
-     * The {@link EntityManager} to which all operations will be
-     * forwarded if it is non-{@code null}.
-     *
-     * <p>This field may be {@code null}.</p>
-     *
-     * @see #DelegatingEntityManager(EntityManager)
-     *
-     * @see #delegate()
-     *
-     * @see #acquireDelegate()
-     */
-    private final EntityManager delegate;
+    private final Supplier<? extends EntityManager> supplier;
 
 
     /*
@@ -80,7 +71,7 @@ abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
      * @see #acquireDelegate()
      */
     DelegatingEntityManager() {
-        this(null);
+        this((EntityManager) null);
     }
 
     /**
@@ -98,7 +89,12 @@ abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
      */
     DelegatingEntityManager(EntityManager delegate) {
         super();
-        this.delegate = delegate;
+        this.supplier = delegate == null ? this::acquireDelegate : () -> delegate;
+    }
+
+    DelegatingEntityManager(Supplier<? extends EntityManager> supplier) {
+        super();
+        this.supplier = Objects.requireNonNull(supplier, "supplier");
     }
 
 
@@ -111,51 +107,47 @@ abstract class DelegatingEntityManager implements EntityManager, AutoCloseable {
      * Returns the {@link EntityManager} to which a method invocation
      * should be forwarded.
      *
-     * <p>This method never returns {@code null}.</p>
-     *
      * <p>This method will call the {@link #acquireDelegate()} method
      * if a {@code null} delegate {@link EntityManager} was
      * {@linkplain #DelegatingEntityManager(EntityManager) supplied at
      * construction time}.</p>
      *
-     * @return an {@link EntityManager}; never {@code null}
+     * @return an {@link EntityManager}
      *
-     * @exception jakarta.persistence.PersistenceException if an error
+     * @exception PersistenceException if an error
      * occurs
      *
      * @see #acquireDelegate()
      *
      * @see #DelegatingEntityManager(EntityManager)
      */
-    protected EntityManager delegate() {
-        return this.delegate == null ? this.acquireDelegate() : this.delegate;
+    EntityManager delegate() {
+        return this.supplier.get();
     }
 
     /**
-     * Returns an {@link EntityManager} to which all operations will
-     * be forwarded.
+     * Returns an {@link EntityManager} to which all operations will be forwarded.
      *
-     * <p>Implementations of this method must not return {@code
-     * null}.</p>
+     * <p>Overrides of this method must not return {@code null}.</p>
      *
-     * <p>This method is called by the {@link #delegate()} method and
-     * potentially on every method invocation of instances of this
-     * class so implementations of it should be as fast as
-     * possible.</p>
+     * <p>This method is called by the {@link #delegate()} method and potentially on every method invocation of
+     * instances of this class so implementations of it should be as fast as possible.</p>
      *
-     * <p>Implementations of this method must not call the {@link
-     * #delegate()} method.</p>
+     * <p>Overrides of this method must not call the {@link #delegate()} method.</p>
+     *
+     * <p>The default implementation of this method throws a {@link PersistenceException} when invoked.</p>
      *
      * @return a non-{@code null} {@link EntityManager}
      *
-     * @exception jakarta.persistence.PersistenceException if an error
-     * occurs
+     * @exception jakarta.persistence.PersistenceException if an error occurs
      *
      * @see #delegate()
      *
      * @see #DelegatingEntityManager(EntityManager)
      */
-    protected abstract EntityManager acquireDelegate();
+    EntityManager acquireDelegate() {
+        throw new PersistenceException();
+    }
 
     @Override
     public void persist(Object entity) {
