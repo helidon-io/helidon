@@ -14,11 +14,13 @@
 # limitations under the License.
 #
 
-server.port: 8080
-server.host: 0.0.0.0
-
-server.static.classpath.location: /WEB
-server.static.classpath.welcome: index.html
+server:
+  port: 8080
+  host: 0.0.0.0
+  static:
+    classpath:
+      location: /WEB
+      welcome: index.html
 
 mp:
   messaging:
