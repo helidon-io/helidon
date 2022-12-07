@@ -646,8 +646,8 @@ public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Transform item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} results
-     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
-     * {@link java.util.Optional}.
+     * to downstream. As reactive streams forbids null values, error signal with {@link java.lang.NullPointerException }
+     * is sent to downstream when CompletionStage result is null.
      *
      * @param mapper {@link Function} receiving item as parameter and returning {@link java.util.concurrent.CompletionStage}
      * @param <U>    output item type
