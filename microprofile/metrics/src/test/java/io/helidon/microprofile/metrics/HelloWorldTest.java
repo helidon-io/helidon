@@ -100,6 +100,11 @@ class HelloWorldTest {
     @Test
     public void testMetrics() throws InterruptedException {
         final int iterations = 1;
+        Counter classLevelCounterForConstructor =
+                registry.getCounters().get(new MetricID(
+                        HelloWorldResource.class.getName() + "." + HelloWorldResource.class.getSimpleName()));
+        long classLevelCounterStart = classLevelCounterForConstructor.getCount();
+
         IntStream.range(0, iterations).forEach(
                 i -> webTarget
                         .path("helloworld")
@@ -107,11 +112,6 @@ class HelloWorldTest {
                         .accept(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
         pause();
-        Counter classLevelCounterForConstructor =
-                registry.getCounters().get(new MetricID(
-                        HelloWorldResource.class.getName() + "." + HelloWorldResource.class.getSimpleName()));
-        long classLevelCounterStart = classLevelCounterForConstructor.getCount();
-
         assertThat("Value of explicitly-updated counter", registry.counter("helloCounter").getCount(),
                 is((long) iterations));
 
