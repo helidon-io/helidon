@@ -85,7 +85,7 @@ public class HelloWorldTest {
     }
 
     @Test
-    public void testSlowTimer() throws InterruptedException {
+    public void testSlowTimer() {
         int exp = 3;
         AtomicReference<String> result = new AtomicReference<>();
         IntStream.range(0, exp).forEach(
@@ -101,7 +101,7 @@ public class HelloWorldTest {
     }
 
     @Test
-    public void testFastFailCounter() throws InterruptedException {
+    public void testFastFailCounter() {
         int exp = 8;
         IntStream.range(0, exp).forEach(
                 i -> {
@@ -136,7 +136,7 @@ public class HelloWorldTest {
     }
 
     @Test
-    public void testSlowFailCounter() throws InterruptedException {
+    public void testSlowFailCounter() {
         int exp = 6;
         IntStream.range(0, exp).forEach(
                 i -> {
