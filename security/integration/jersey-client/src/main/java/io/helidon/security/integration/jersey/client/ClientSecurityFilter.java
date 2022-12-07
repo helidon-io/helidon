@@ -16,6 +16,8 @@
 
 package io.helidon.security.integration.jersey.client;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +27,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.HashParameters;
+import io.helidon.common.http.Parameters;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -114,12 +118,14 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         try {
             SecurityEnvironment.Builder outboundEnv = securityContext.env()
                     .derive()
-                    .clearHeaders();
+                    .clearHeaders()
+                    .clearQueryParams();
 
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
-                    .headers(requestContext.getStringHeaders());
+                    .headers(requestContext.getStringHeaders())
+                    .queryParams(queryParameters(requestContext.getUri().getRawQuery()));
 
             EndpointConfig.Builder outboundEp = securityContext.endpointConfig().derive();
 
@@ -190,5 +196,26 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                 .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
                         .filter(clazz::isInstance))
                 .map(clazz::cast);
+    }
+
+    private Parameters queryParameters(String query) {
+        HashParameters queryParams = HashParameters.create();
+        if (query == null) {
+            return queryParams;
+        }
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            String[] keyValues = pair.split("=");
+            if (keyValues.length == 1) {
+                queryParams.add(decode(keyValues[0]), "");
+            } else {
+                queryParams.add(decode(keyValues[0]), decode(keyValues[1]));
+            }
+        }
+        return queryParams;
+    }
+
+    private String decode(String value) {
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 }

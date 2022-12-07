@@ -103,6 +103,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      */
     protected IdcsRoleMapperRxProviderBase(Builder<?> builder) {
         this.oidcConfig = builder.oidcConfig;
+        this.oidcConfig.tokenEndpointUri(); //Remove once IDCS is rewritten to be lazily loaded
         this.defaultIdcsSubjectType = builder.defaultIdcsSubjectType;
         if (builder.supportedTypes.isEmpty()) {
             this.supportedTypes.add(SubjectType.USER);

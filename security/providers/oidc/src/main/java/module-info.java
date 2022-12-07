@@ -24,6 +24,7 @@ module io.helidon.security.providers.oidc {
     requires io.helidon.security;
     requires java.logging;
 
+    requires io.helidon.common.serviceloader;
     requires io.helidon.security.providers.oidc.common;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
@@ -38,4 +39,7 @@ module io.helidon.security.providers.oidc {
     exports io.helidon.security.providers.oidc;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.oidc.OidcProviderService;
+
+    uses io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
+    uses io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
 }
