@@ -59,6 +59,7 @@ public class QuickstartMain {
         ObserveSupport observe = ObserveSupport.builder()
                 .useSystemServices(false)
                 .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                                                                  .useSystemServices(false)
                                                                   .addCheck(HeapMemoryHealthCheck.create())
                                                                   .addCheck(DiskSpaceHealthCheck.create())
                                                                   .addCheck(DeadlockHealthCheck.create())
