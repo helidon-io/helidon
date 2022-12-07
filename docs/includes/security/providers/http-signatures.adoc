@@ -49,6 +49,8 @@ See the link:{helidon-github-tree-url}/master/examples/security/webserver-signat
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
     - http-signatures:
         inbound:

@@ -135,6 +135,11 @@ This type provides the following service implementations:
  same one as configured on OIDC server.
 
  Defaults to `DEFAULT_REDIRECT_URI`
+|`relative-uris` |boolean |`false` |Can be set to `true` to force the use of relative URIs in all requests,
+ regardless of the presence or absence of proxies or no-proxy lists. By default,
+ requests that use the Proxy will have absolute URIs. Set this flag to `true`
+ if the host is unable to accept absolute URIs.
+ Defaults to `DEFAULT_RELATIVE_URIS`.
 |`scope-audience` |string |{nbsp} |Audience of the scope required by this application. This is prefixed to
  the scope name when requesting scopes from the identity server.
  Defaults to empty string.

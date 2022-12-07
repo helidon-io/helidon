@@ -54,6 +54,10 @@ class MethodIntrospector {
 
     private final Bulkhead bulkhead;
 
+    private final RetryExponentialBackoff retryExponentialBackoff;
+
+    private final RetryFibonacciBackoff retryFibonacciBackoff;
+
     private Tag methodNameTag;
 
     /**
@@ -78,6 +82,10 @@ class MethodIntrospector {
         this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(annotatedMethod) : null;
         this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(annotatedMethod) : null;
         this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(annotatedMethod) : null;
+
+        // Check for retry strategies
+        this.retryFibonacciBackoff = method.getAnnotation(RetryFibonacciBackoff.class);
+        this.retryExponentialBackoff = method.getAnnotation(RetryExponentialBackoff.class);
     }
 
     /**
@@ -147,6 +155,32 @@ class MethodIntrospector {
 
     Bulkhead getBulkhead() {
         return bulkhead;
+    }
+
+    /**
+     * Checks if {@code @RetryExponentialBackoff} is present.
+     *
+     * @return Outcome of test.
+     */
+    boolean hasRetryExponentialBackoff() {
+        return retryExponentialBackoff != null;
+    }
+
+    RetryExponentialBackoff getRetryExponentialBackoff() {
+        return retryExponentialBackoff;
+    }
+
+    /**
+     * Checks if {@code @RetryFibonacciBackoff} is present.
+     *
+     * @return Outcome of test.
+     */
+    boolean hasRetryFibonacciBackoff() {
+        return retryFibonacciBackoff != null;
+    }
+
+    RetryFibonacciBackoff getRetryFibonacciBackoff() {
+        return retryFibonacciBackoff;
     }
 
     /**

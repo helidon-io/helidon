@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ApplicationScoped
 class TestManualEntityManagerAcquisition {
@@ -42,7 +43,7 @@ class TestManualEntityManagerAcquisition {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass())
             .addExtensions(new HikariCPBackedDataSourceExtension());
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
   
@@ -56,7 +57,7 @@ class TestManualEntityManagerAcquisition {
     @Test
     void testIt() {
         final EntityManagerFactory emf = Persistence.createEntityManagerFactory("test");
-        assertNotNull(emf);
+        assertThat(emf, notNullValue());
     }
   
 }

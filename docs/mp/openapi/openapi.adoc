@@ -1,0 +1,269 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= OpenAPI in Helidon
+:toc:
+:toc-placement: preamble
+:description: Helidon MP OpenAPI Support
+:keywords: helidon, mp, microprofile, openapi
+:feature-name: MicroProfile OpenAPI
+:microprofile-bundle: true
+:rootdir: {docdir}/../..
+:incdir: {rootdir}/includes/openapi
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+include::{incdir}/openapi.adoc[tag=overview]
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml,subs="attributes+"]
+----
+include::{incdir}/openapi.adoc[tag=mp-depc]
+----
+If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
+[source,xml]
+----
+    <dependency>
+        <groupId>org.eclipse.microprofile.openapi</groupId>
+        <artifactId>microprofile-openapi-api</artifactId>
+    </dependency>
+----
+
+== Usage
+
+=== OpenAPI support in Helidon MP
+
+You can very simply add support for OpenAPI to your Helidon MP application. This
+document shows what changes you need to make to your application and how to access
+the OpenAPI document for your application at runtime.
+
+=== Changing your application
+
+To use OpenAPI from your Helidon MP app, in addition to adding dependencies as described above:
+
+1. Furnish OpenAPI information about your application's endpoints.
+2. Update your application's configuration (optional).
+
+include::{incdir}/openapi.adoc[tag=furnish-openapi-info]
+
+=== Update your application configuration
+Beyond the two config properties that denote the model reader and filter, Helidon
+MP OpenAPI supports a number of other mandated settings. These are described in the
+link:{microprofile-open-api-spec-url}#configuration[configuration section] of the MicroProfile
+OpenAPI spec.
+
+include::{incdir}/openapi.adoc[tag=usage-access-endpoint]
+
+== API
+
+include::{incdir}/openapi.adoc[tag=api]
+
+== Configuration
+
+Helidon OpenAPI configuration supports the following settings:
+
+include::{rootdir}/config/io_helidon_microprofile_openapi_MPOpenAPISupport.adoc[leveloffset=+1,tag=config]
+
+== Examples
+
+Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[complete OpenAPI example]
+based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
+
+=== Helidon MP Basic OpenAPI Example
+
+This example shows a simple greeting application, similar to the one from the
+Helidon MP QuickStart, enhanced with OpenAPI support.
+
+[source,java]
+----
+@Path("/greeting")
+@PUT
+@Operation(summary = "Set the greeting prefix",
+           description = "Permits the client to set the prefix part of the greeting (\"Hello\")") //<1>
+@RequestBody( //<2>
+    name = "greeting",
+    description = "Conveys the new greeting prefix to use in building greetings",
+    content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = GreetingMessage.class),
+                examples = @ExampleObject(
+                    name = "greeting",
+                    summary = "Example greeting message to update",
+                    value = "New greeting message")))
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public Response updateGreeting(JsonObject jsonObject) {
+    ...
+}
+----
+<1> With `@Operation` annotation we document the current method.
+<2> With `@RequestBody` annotation we document the content produced. Internal annotations `@Content`, `@Schema` and
+ `@ExampleObjects` are used to give more details about the returned data.
+
+If we want to hide a specific path an `OASFilter` is used.
+
+The OASFilter interface allows application developers to receive callbacks for various key OpenAPI elements. The
+ interface has a default implementation for every method, which allows application developers to only override the
+ methods they care about. To use it, simply create an implementation of this interface and register it using the
+ `mp.openapi.filter configuration` key, where the value is the fully qualified name of the filter class.
+
+The following example filter prevents information about a given path from appearing in the OpenAPI document.
+
+[source, java]
+----
+import org.eclipse.microprofile.openapi.models.Operation;
+import org.eclipse.microprofile.openapi.models.PathItem;
+
+public class SimpleAPIFilter implements OASFilter {
+
+    @Override
+    public PathItem filterPathItem(PathItem pathItem) {
+        for (Map.Entry<PathItem.HttpMethod, Operation> methodOp
+                : pathItem.getOperations().entrySet()) {
+            if (SimpleAPIModelReader.DOOMED_OPERATION_ID
+                    .equals(methodOp.getValue().getOperationId())) {
+                return null;
+            }
+        }
+        return OASFilter.super.filterPathItem(pathItem);
+    }
+}
+----
+
+You can implement a model reader to provide all or part of the in-memory `OpenAPI` model programmatically. Helidon
+ `OpenAPI` merges the model from the model reader with models from the other sources (a static file and annotations).
+
+The example model reader below creates an `OpenAPI` object describing two paths. It turns out that the filter described
+earlier will suppress one of the paths, but the model reader does not know or care.
+
+[source,java]
+----
+import org.eclipse.microprofile.openapi.OASFactory;
+import org.eclipse.microprofile.openapi.OASModelReader;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.Paths;
+
+/**
+ * Defines two paths using the OpenAPI model reader mechanism, one that should
+ * be suppressed by the filter class and one that should appear in the published
+ * OpenAPI document.
+ */
+public class SimpleAPIModelReader implements OASModelReader {
+
+    /**
+     * Path for the example endpoint added by this model reader that should be visible.
+     */
+    public static final String MODEL_READER_PATH = "/test/newpath";
+
+    /**
+     * Path for an endpoint that the filter should hide.
+     */
+    public static final String DOOMED_PATH = "/test/doomed";
+
+    /**
+     * ID for an endpoint that the filter should hide.
+     */
+    public static final String DOOMED_OPERATION_ID = "doomedPath";
+
+    /**
+     * Summary text for the endpoint.
+     */
+    public static final String SUMMARY = "A sample test endpoint from ModelReader";
+
+    @Override
+    public OpenAPI buildModel() {
+        /*
+         * Add two path items, one of which we expect to be removed by
+         * the filter and a very simple one that will appear in the
+         * published OpenAPI document.
+         */
+        PathItem newPathItem = OASFactory.createPathItem()
+                .GET(OASFactory.createOperation()
+                    .operationId("newPath")
+                    .summary(SUMMARY));
+        PathItem doomedPathItem = OASFactory.createPathItem()
+                .GET(OASFactory.createOperation()
+                    .operationId(DOOMED_OPERATION_ID)
+                    .summary("This should become invisible"));
+        OpenAPI openAPI = OASFactory.createOpenAPI();
+        Paths paths = OASFactory.createPaths()
+                .addPathItem(MODEL_READER_PATH, newPathItem)
+                .addPathItem(DOOMED_PATH, doomedPathItem);
+        openAPI.paths(paths);
+
+        return openAPI;
+    }
+}
+----
+
+Having written the filter and model reader classes, identify them by adding configuration to
+ `META-INF/microprofile-config.properties` as the following example shows.
+
+[source,properties]
+----
+mp.openapi.filter=io.helidon.microprofile.examples.openapi.basic.internal.SimpleAPIFilter
+mp.openapi.model.reader=io.helidon.microprofile.examples.openapi.basic.internal.SimpleAPIModelReader
+----
+
+
+Now just build and run:
+
+[source,bash]
+----
+mvn package
+java -jar target/helidon-examples-microprofile-openapi-basic.jar
+----
+
+Try the endpoints:
+
+[source,bash]
+----
+curl -X GET http://localhost:8080/greet
+{"message":"Hello World!"}
+
+curl -X GET http://localhost:8080/openapi
+[lengthy OpenAPI document]
+----
+
+The output describes not only then endpoints from `GreetResource` but
+also one contributed by the `SimpleAPIModelReader`.
+
+Full example is available link:{helidon-github-tree-url}}/examples/microprofile/openapi-basic[in our official repository]
+
+
+== Additional Information
+include::{incdir}/openapi.adoc[tag=additional-building-jandex]
+
+== Reference
+
+* link:https://github.com/eclipse/microprofile-open-api[MicroProfile OpenAPI GitHub Repository]
+* link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI Specification]

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <output>
+        <model if="${tracing}">
+            <list key="dependencies">
+                <map order="800">
+                    <value key="groupId">io.helidon.microprofile.tracing</value>
+                    <value key="artifactId">helidon-microprofile-tracing</value>
+                </map>
+            </list>
+            <list key="microprofile-config-entries">
+                <value>tracing.service=helidon-service</value>
+                <value>tracing.components.web-server.spans.0.name="HTTP Request"</value>
+            </list>
+            <list if="${tracing.provider} == 'jaeger'" key="microprofile-config-entries">
+                <value>tracing.protocol=http</value>
+                <value>tracing.host=localhost</value>
+                <value>tracing.port=14250</value>
+                <value>tracing.path=/api/traces/mine</value>
+                <value>tracing.token=token</value>
+                <value>tracing.propagation=jaeger</value>
+            </list>
+            <list if="${tracing.provider} == 'zipkin'" key="microprofile-config-entries">
+                <value>tracing.protocol=https</value>
+                <value>tracing.host=192.168.1.1</value>
+                <value>tracing.port=9987</value>
+                <value>tracing.path=/api/v2/spans</value>
+                <value>tracing.api-version=1</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

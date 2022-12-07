@@ -53,7 +53,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.SocketConfiguration/io/helido
 
  Default is `false`
 |`host` |string |{nbsp} |A helper method that just calls #bindAddress(String).
-|`max-header-size` |int |`8192` |Maximal number of bytes of all header values combined. When a bigger value is received, a
+|`max-header-size` |int |`16384` |Maximal number of bytes of all header values combined. When a bigger value is received, a
  io.helidon.common.http.Http.Status#BAD_REQUEST_400
  is returned.
 

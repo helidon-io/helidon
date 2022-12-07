@@ -124,7 +124,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                 kafkaConsumer.subscribe(topics, partitionsAssignedLatch);
             }
 
-            NackHandler<K, V> nack = NackHandler.create(emitter, config);
+            KafkaNackHandler<K, V> nack = KafkaNackHandler.create(emitter, config);
 
             // This thread reads from Kafka topics and push in kafkaBufferedEvents
             scheduler.scheduleAtFixedRate(() -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,12 @@ import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.HashHeaders;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -51,7 +53,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private final Parameters headers;
+    private final Headers headers;
     private final List<MediaType> acceptedTypes;
     private final MessageBodyOperators<MessageBodyWriter<?>> writers;
     private final MessageBodyOperators<MessageBodyStreamWriter<?>> swriters;
@@ -63,7 +65,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     /**
      * Private to enforce the use of the static factory methods.
      */
-    private MessageBodyWriterContext(MessageBodyWriterContext parent, EventListener eventListener, Parameters headers,
+    private MessageBodyWriterContext(MessageBodyWriterContext parent, EventListener eventListener, Headers headers,
                                      List<MediaType> acceptedTypes) {
 
         super(parent, eventListener);
@@ -87,7 +89,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * Create a new standalone (non parented) context.
      * @param headers backing headers, may not be {@code null}
      */
-    private MessageBodyWriterContext(Parameters headers) {
+    private MessageBodyWriterContext(Headers headers) {
         super(null, null);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
@@ -101,7 +103,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     private MessageBodyWriterContext() {
         super(null, null);
-        this.headers = ReadOnlyParameters.empty();
+        this.headers = ReadOnlyHeaders.empty();
         this.writers = new MessageBodyOperators<>();
         this.swriters = new MessageBodyOperators<>();
         this.acceptedTypes = List.of();
@@ -111,7 +113,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.charsetCached = true;
     }
 
-    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, Parameters headers) {
+    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, Headers headers) {
         super(writerContext);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
@@ -134,8 +136,27 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param headers backing headers, must not be {@code null}
      * @param acceptedTypes accepted types, may be {@code null}
      * @return MessageBodyWriterContext
+     * @deprecated Use {@link #create(MediaContext, io.helidon.media.common.MessageBodyContext.EventListener,
+     * io.helidon.common.http.Headers, java.util.List)} instead, passing {@code Headers} instead of {@code Parameters}.
      */
+    @Deprecated(since = "3.0.3", forRemoval = true)
     public static MessageBodyWriterContext create(MediaContext mediaContext, EventListener eventListener, Parameters headers,
+                                                  List<MediaType> acceptedTypes) {
+        return create(mediaContext, eventListener, HashHeaders.create(headers), acceptedTypes);
+    }
+
+    /**
+     * Create a new writer context.
+     *
+     * @param mediaContext media support used to derive the parent context, may
+     * be {@code null}
+     * @param eventListener message body subscription event listener, may be
+     * {@code null}
+     * @param headers backing headers, must not be {@code null}
+     * @param acceptedTypes accepted types, may be {@code null}
+     * @return MessageBodyWriterContext
+     */
+    public static MessageBodyWriterContext create(MediaContext mediaContext, EventListener eventListener, Headers headers,
                                                   List<MediaType> acceptedTypes) {
 
         if (mediaContext == null) {
@@ -153,9 +174,28 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param headers backing headers, must not be {@code null}
      * @param acceptedTypes accepted types, may be {@code null}
      * @return MessageBodyWriterContext
+     * @deprecated Use {@link #create(MessageBodyWriterContext, io.helidon.media.common.MessageBodyContext.EventListener,
+     * io.helidon.common.http.Headers, java.util.List)} instead, passing {@code Headers} instead of {@code Parameters}.
      */
+    @Deprecated(since = "3.0.3", forRemoval = true)
     public static MessageBodyWriterContext create(MessageBodyWriterContext parent, EventListener eventListener,
             Parameters headers, List<MediaType> acceptedTypes) {
+
+        return create(parent, eventListener, HashHeaders.create(headers), acceptedTypes);
+    }
+
+    /**
+     * Create a new writer context.
+     *
+     * @param parent parent context, {@code may be null}
+     * @param eventListener message body subscription event listener, may be
+     * {@code null}
+     * @param headers backing headers, must not be {@code null}
+     * @param acceptedTypes accepted types, may be {@code null}
+     * @return MessageBodyWriterContext
+     */
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, EventListener eventListener,
+                                                  Headers headers, List<MediaType> acceptedTypes) {
 
         return new MessageBodyWriterContext(parent, eventListener, headers, acceptedTypes);
     }
@@ -164,8 +204,20 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * Create a new empty writer context backed by the specified headers.
      * @param headers headers
      * @return MessageBodyWriterContext
+     * @deprecated Use {@link #create(io.helidon.common.http.Headers)} instead, passing {@code Headers} instead of
+     * {@code Parameters}.
      */
+    @Deprecated(since = "3.0.3", forRemoval = true)
     public static MessageBodyWriterContext create(Parameters headers) {
+        return create(HashHeaders.create(headers));
+    }
+
+    /**
+     * Create a new empty writer context backed by the specified headers.
+     * @param headers headers
+     * @return MessageBodyWriterContext
+     */
+    public static MessageBodyWriterContext create(Headers headers) {
         return new MessageBodyWriterContext(headers);
     }
 
@@ -185,8 +237,24 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param parent parent writer context
      * @param headers headers
      * @return MessageBodyWriterContext
+     * @deprecated Use (@link {@link #create(MessageBodyWriterContext, io.helidon.common.http.Headers)} instead passing
+     * {@code Headers} instead of {@code Parameters}.
      */
+    @Deprecated(since = "3.0.3", forRemoval = true)
     public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Parameters headers) {
+        return create(parent, HashHeaders.create(headers));
+    }
+
+
+
+    /**
+     * Create a new parented writer context backed by the specified headers.
+     *
+     * @param parent parent writer context
+     * @param headers headers
+     * @return MessageBodyWriterContext
+     */
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Headers headers) {
         return new MessageBodyWriterContext(parent, headers);
     }
 
@@ -197,7 +265,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create() {
-        return new MessageBodyWriterContext(ReadOnlyParameters.empty());
+        return new MessageBodyWriterContext(ReadOnlyHeaders.empty());
     }
 
     @Override
@@ -388,9 +456,9 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     /**
      * Get the underlying headers.
      *
-     * @return Parameters, never {@code null}
+     * @return headers, never {@code null}
      */
-    public Parameters headers() {
+    public Headers headers() {
         return headers;
     }
 

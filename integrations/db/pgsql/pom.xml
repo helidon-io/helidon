@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations.db</groupId>
         <artifactId>helidon-integrations-db-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-integrations-db-pgsql</artifactId>
@@ -41,8 +41,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.nativeimage</groupId>
-            <artifactId>svm</artifactId>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

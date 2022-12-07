@@ -18,10 +18,13 @@
 ifdef::se-flavor[]
 :health-page: {rootdir}/se/health.adoc
 :metrics-page: {rootdir}/se/metrics/metrics.adoc
-:openapi-page: {rootdir}/se/openapi.adoc
+:openapi-page: {rootdir}/se/openapi/openapi.adoc
 endif::[]
 ifdef::mp-flavor[]
 :health-page: {rootdir}/mp/health.adoc
 :metrics-page: {rootdir}/mp/metrics/metrics.adoc
-:openapi-page: {rootdir}/mp/openapi.adoc
+:openapi-page: {rootdir}/mp/openapi/openapi.adoc
 endif::[]
+:webclient-page: {rootdir}/se/webclient.adoc
+:restclient-page: {rootdir}/mp/restclient.adoc
+:cli-page: {rootdir}/about/cli.adoc

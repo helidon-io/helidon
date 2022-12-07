@@ -41,7 +41,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.core.UriInfo;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The JerseyExampleResource.
@@ -149,7 +150,7 @@ public class JerseyExampleResource {
         String content = new String(inputStream.readAllBytes());
 
         try {
-            assertEquals(JerseySupportTest.longData(length).toString(), content);
+            assertThat(content, is(JerseySupportTest.longData(length).toString()));
         } catch (Throwable e) {
             streamException = e;
             throw new IllegalStateException("NOT EQUALS");

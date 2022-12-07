@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -51,6 +51,7 @@
         <module>mp-gh-4123</module>
         <module>mp-gh-4654</module>
         <module>kafka</module>
+        <module>jpa</module>
         <module>jms</module>
         <module>config</module>
         <module>jep290</module>
@@ -65,7 +66,6 @@
                 <native-image>true</native-image>
             </properties>
             <modules>
-                <module>jpa</module>
                 <module>native-image</module>
             </modules>
         </profile>

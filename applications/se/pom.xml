@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-applications-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-se</artifactId>
     <packaging>pom</packaging>
@@ -36,14 +36,22 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>helidon-maven-plugin</artifactId>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>native-image</id>
+                                <id>resource-config</id>
                                 <goals>
-                                    <goal>native-image</goal>
+                                    <goal>generateResourceConfig</goal>
                                 </goals>
+                                <phase>package</phase>
+                            </execution>
+                            <execution>
+                                <id>build-native-image</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>

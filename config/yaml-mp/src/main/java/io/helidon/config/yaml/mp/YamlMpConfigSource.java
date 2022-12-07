@@ -192,14 +192,31 @@ public class YamlMpConfigSource implements ConfigSource {
      * Create from YAML file(s) on classpath with profile support.
      *
      * @param resource resource name to locate on classpath (looks for all instances)
-     * @param profile name of the profile to use
+     * @param profile configuration profile to use, must not be null
      * @return list of config sources discovered (may be zero length)
      */
     public static List<ConfigSource> classPath(String resource, String profile) {
+        return classPathConfigSources(resource, profile, Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * Create from YAML file(s) on classpath from specified classloader with profile support.
+     *
+     * @param resource resource name to locate on classpath (looks for all instances)
+     * @param profile configuration profile to use, must not be null
+     * @param classLoader classloader where resource will be retrieved from
+     * @return list of config sources discovered (may be zero length)
+     */
+    public static List<ConfigSource> classPath(String resource, String profile, ClassLoader classLoader) {
         Objects.requireNonNull(profile, "Profile must be defined");
+        Objects.requireNonNull(classLoader, "ClassLoader must be defined");
+
+        return classPathConfigSources(resource, profile, classLoader);
+    }
+
+    private static List<ConfigSource> classPathConfigSources(String resource, String profile, ClassLoader classLoader) {
 
         List<ConfigSource> sources = new LinkedList<>();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         try {
             Enumeration<URL> baseResources = classLoader.getResources(resource);

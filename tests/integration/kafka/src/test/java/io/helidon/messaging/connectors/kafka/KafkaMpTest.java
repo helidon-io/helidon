@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -54,17 +55,19 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class KafkaMpTest extends AbstractKafkaTest{
@@ -209,6 +212,13 @@ class KafkaMpTest extends AbstractKafkaTest{
                 "mp.messaging.incoming.test-channel-13.group.id", "sameGroup",
                 "mp.messaging.incoming.test-channel-13.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-13.value.deserializer", StringDeserializer.class.getName()));
+        p.putAll(Map.of(
+                "mp.messaging.outgoing.test-channel-14.connector", KafkaConnector.CONNECTOR_NAME,
+                "mp.messaging.outgoing.test-channel-14.max.block.ms", "100",
+                "mp.messaging.outgoing.test-channel-14.bootstrap.servers", KAFKA_SERVER,
+                "mp.messaging.outgoing.test-channel-14.topic", UNEXISTING_TOPIC,
+                "mp.messaging.outgoing.test-channel-14.key.serializer", LongSerializer.class.getName(),
+                "mp.messaging.outgoing.test-channel-14.value.serializer", StringSerializer.class.getName()));
         return p;
     }
 
@@ -235,9 +245,9 @@ class KafkaMpTest extends AbstractKafkaTest{
     static void cdiContainerDown() {
         KafkaConnector factory = getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).get();
         Collection<KafkaPublisher<?, ?>> resources = factory.resources();
-        assertFalse(resources.isEmpty());
+        assertThat(resources, not(empty()));
         cdiContainer.close();
-        assertTrue(resources.isEmpty());
+        assertThat(resources, empty());
         LOGGER.info("Container destroyed");
 
         kafkaResource.stopKafka();
@@ -253,11 +263,12 @@ class KafkaMpTest extends AbstractKafkaTest{
         classes.add(AbstractSampleBean.Channel9.class);
         classes.add(AbstractSampleBean.Channel11.class);
         classes.add(AbstractSampleBean.Channel12.class);
+        classes.add(AbstractSampleBean.Channel14.class);
         classes.add(MessagingCdiExtension.class);
 
         Map<String, String> p = new HashMap<>(cdiConfig());
         cdiContainer = startCdiContainer(p, classes);
-        assertTrue(cdiContainer.isRunning());
+        assertThat(cdiContainer.isRunning(), is(true));
         List<String> topicsInKafka = new ArrayList<>(kafkaResource.getKafkaTestUtils().getTopicNames());
         topicsInKafka.remove(DLQ_TOPIC);
         //Wait till consumers are ready
@@ -271,7 +282,7 @@ class KafkaMpTest extends AbstractKafkaTest{
             }
             topicsInKafka.removeAll(c.topics());
         });
-        assertEquals(Collections.emptyList(), topicsInKafka);
+        assertThat(topicsInKafka, empty());
         LOGGER.info("Container setup");
     }
 
@@ -282,8 +293,7 @@ class KafkaMpTest extends AbstractKafkaTest{
         Config config = Config.builder().sources(ConfigSources.create(p)).build();
         KafkaConfig kafkaConfig = KafkaConfig.create(config);
         List<String> topics = kafkaConfig.topics();
-        assertEquals(2, topics.size());
-        assertTrue(topics.containsAll(Arrays.asList("topic1", "topic2")));
+        assertThat(topics, contains("topic1", "topic2"));
     }
 
     @Test
@@ -292,10 +302,10 @@ class KafkaMpTest extends AbstractKafkaTest{
         Map<String, String> p = Map.of("topic.pattern", "topic[1-2]");
         Config config = Config.builder().sources(ConfigSources.create(p)).build();
         KafkaConfig kafkaConfig = KafkaConfig.create(config);
-        assertTrue(kafkaConfig.topicPattern().isPresent());
-        assertTrue(kafkaConfig.topicPattern().get().matcher("topic1").matches());
-        assertTrue(kafkaConfig.topicPattern().get().matcher("topic2").matches());
-        assertFalse(kafkaConfig.topicPattern().get().matcher("topic3").matches());
+        assertThat(kafkaConfig.topicPattern().isPresent(), is(true));
+        assertThat(kafkaConfig.topicPattern().get().matcher("topic1").matches(), is(true));
+        assertThat(kafkaConfig.topicPattern().get().matcher("topic2").matches(), is(true));
+        assertThat(kafkaConfig.topicPattern().get().matcher("topic3").matches(), is(false));
     }
 
     @Test
@@ -394,8 +404,17 @@ class KafkaMpTest extends AbstractKafkaTest{
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_10, Collections.emptyList(), 0);
         // As the channel is cancelled, we cannot wait till something happens. We need to explicitly wait some time.
         Thread.sleep(1000);
-        assertEquals(Collections.emptyList(), kafkaConsumingBean.consumed());
+        assertThat(kafkaConsumingBean.consumed(), empty());
         kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_10);
+    }
+
+    @Test
+    void kafkaProduceWithNack() throws InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.fine(() -> "==========> test kafkaProduceWithNack()");
+        AbstractSampleBean.Channel14 kafkaProdBean = cdiContainer.select(AbstractSampleBean.Channel14.class).get();
+        Throwable t = kafkaProdBean.getNacked().get(5, TimeUnit.SECONDS);
+        assertNotNull(t);
+        assertThat(t.getCause(), Matchers.instanceOf(org.apache.kafka.common.errors.TimeoutException.class));
     }
 
     @Test
@@ -410,7 +429,7 @@ class KafkaMpTest extends AbstractKafkaTest{
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_13, Collections.emptyList(), 0);
         // As the channel is cancelled, we cannot wait till something happens. We need to explicitly wait some time.
         Thread.sleep(1000);
-        assertEquals(Collections.emptyList(), kafkaConsumingBean.consumed());
+        assertThat(kafkaConsumingBean.consumed(), empty());
         kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_13);
     }
 
@@ -429,7 +448,7 @@ class KafkaMpTest extends AbstractKafkaTest{
                 .registerConfig(config,
                         Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
     }

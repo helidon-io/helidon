@@ -18,119 +18,119 @@
 -->
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21248</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21271</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21277</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21282</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21283</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21291</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21293</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21294</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21296</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21299</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21305</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21340</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21341</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21349</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21360</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21365</cve>
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: graal-sdk-21.3.0.jar
+   file name: graal-sdk-22.3.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
    <cve>CVE-2022-21366</cve>
@@ -335,6 +335,80 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.graphql/microprofile\-graphql\-api@.*$</packageUrl>
    <cve>CVE-2022-37734</cve>
+</suppress>
+
+<!-- False Positive. This CVE is against graphql-java, not graphql-java-extended-scalars
+     See https://github.com/jeremylong/DependencyCheck/issues/4851
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: graphql-java-extended-scalars-17.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/graphql\-java\-extended\-scalars@.*$</packageUrl>
+   <cve>CVE-2022-37734</cve>
+</suppress>
+
+
+<!-- False Positive. This CVE is against graphql-java, not java-dataloader
+     See https://github.com/jeremylong/DependencyCheck/issues/4851
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: java-dataloader-3.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
+   <cve>CVE-2022-37734</cve>
+</suppress>
+
+<!-- False Postive. This CVE is against the kafka server. This is the kafka client
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: kafka-clients-2.8.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
+   <cve>CVE-2022-34917</cve>
+</suppress>
+
+<!-- False Postive. This CVE is against accesslog_project:accesslog not helidon-webserver-access-log -->
+<suppress>
+   <notes><![CDATA[
+   file name: helidon-webserver-access-log-3.0.2.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.webserver/helidon\-webserver\-access\-log@.*$</packageUrl>
+   <cve>CVE-2022-25760</cve>
+</suppress>
+
+<!-- False Postives. CVE CVE-2022-45129 is against Payara not jakarta.resource-api nor microprofile -->
+<suppress>
+   <notes><![CDATA[
+   file name: jakarta.resource-api-2.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/jakarta\.resource/jakarta\.resource\-api@.*$</packageUrl>
+   <cve>CVE-2022-45129</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-config-api-3.0.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
+   <cve>CVE-2022-45129</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: microprofile-jwt-auth-api-2.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.jwt/microprofile\-jwt\-auth\-api@.*$</packageUrl>
+   <cve>CVE-2022-45129</cve>
+</suppress>
+
+<!-- False Positive. This is a WLS CVE that somehow is getting associated with Tyrus 2.0.4 via oracle javase 2.0.4 -->
+<suppress>
+   <notes><![CDATA[
+   file name: tyrus-container-jdk-client-2.0.4.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.glassfish\.tyrus/tyrus\-container\-jdk\-client@.*$</packageUrl>
+   <cve>CVE-2020-2801</cve>
 </suppress>
 
 

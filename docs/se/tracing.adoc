@@ -286,12 +286,12 @@ Tracing propagation is automatic as long as the current span context is availabl
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-tracing</artifactId>
+    <groupId>io.helidon.reactive.webclient</groupId>
+    <artifactId>helidon-reactive-webclient-tracing</artifactId>
 </dependency>
 
 ----

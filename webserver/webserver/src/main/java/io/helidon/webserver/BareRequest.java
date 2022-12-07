@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,13 @@ public interface BareRequest {
      * @return Actual {@code WebServer} instance.
      */
     WebServer webServer();
+
+    /**
+     * Configuration of the socket that received this request.
+     *
+     * @return socket configuration
+     */
+    SocketConfiguration socketConfiguration();
 
     /**
      * Gets an HTTP request method.

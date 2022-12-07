@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
@@ -38,6 +37,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.MatcherWithRetry.assertThatWithRetry;
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY;
 import static io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder.KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY;
 import static io.helidon.microprofile.metrics.HelloWorldResource.SLOW_MESSAGE_SIMPLE_TIMER;
@@ -89,8 +89,7 @@ public class HelloWorldAsyncResponseTest {
         simpleTimers = syntheticSimpleTimerRegistry.getSimpleTimers();
         SimpleTimer simpleTimer = simpleTimers.get(metricID);
         assertThat("Synthetic SimpleTimer for the endpoint", simpleTimer, is(notNullValue()));
-        long syntheticSimpleTimerCountBefore = simpleTimer.getCount();
-        Duration syntheticaSimpleTimerDurationBefore = simpleTimer.getElapsedTime();
+        Duration syntheticSimpleTimerDurationBefore = simpleTimer.getElapsedTime();
 
         Map<MetricID, Timer> timers = registry.getTimers();
         Timer timer = timers.get(new MetricID(SLOW_MESSAGE_TIMER));
@@ -117,14 +116,17 @@ public class HelloWorldAsyncResponseTest {
 
         Duration minDuration = Duration.ofMillis(HelloWorldResource.SLOW_DELAY_MS);
 
-        assertThat("Change in count for explicit SimpleTimer",
-                explicitSimpleTimer.getCount() - explicitSimpleTimerCountBefore, is(1L));
+        assertThatWithRetry("Change in count for explicit SimpleTimer",
+                            () -> explicitSimpleTimer.getCount() - explicitSimpleTimerCountBefore,
+                            is(1L));
         long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
         assertThat("Change in elapsed time for explicit SimpleTimer", explicitDiffNanos, is(greaterThan(minDuration.toNanos())));
 
-        long syntheticDiffNanos = simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos();
-        assertThat("Change in synthetic SimpleTimer elapsed time", syntheticDiffNanos,
-                is(greaterThan(minDuration.toNanos())));
+        // Helidon updates the synthetic simple timer after the response has been sent. It's possible that the server has not
+        // done that update yet due to thread scheduling. So retry.
+        assertThatWithRetry("Change in synthetic SimpleTimer elapsed time",
+                            () -> simpleTimer.getElapsedTime().toNanos() - syntheticSimpleTimerDurationBefore.toNanos(),
+                            is(greaterThan(minDuration.toNanos())));
 
         assertThat("Change in timer count", timer.getCount() - slowMessageTimerCountBefore, is(1L));
         assertThat("Timer mean rate", timer.getMeanRate(), is(greaterThan(0.0)));
@@ -138,10 +140,9 @@ public class HelloWorldAsyncResponseTest {
                         .request(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
 
-        // Make sure server has a chance to update the metrics, which happens just after it sends the response.
-        TimeUnit.MILLISECONDS.sleep(500L);
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
-        assertThat("Synthetic SimpleTimer count", syntheticSimpleTimer.getCount(), is(3L));
+        // Give the server a chance to update the metrics, which happens just after it sends each response.
+        assertThatWithRetry("Synthetic SimpleTimer count", syntheticSimpleTimer::getCount, is(3L));
     }
 
     SimpleTimer getSyntheticSimpleTimer() {
@@ -156,6 +157,7 @@ public class HelloWorldAsyncResponseTest {
 
         SortedMap<MetricID, SimpleTimer> simpleTimers = syntheticSimpleTimerRegistry.getSimpleTimers();
         SimpleTimer syntheticSimpleTimer = simpleTimers.get(metricID);
+        // We should not need to retry here. Annotation processing creates the synthetic simple timers long before tests run.
         assertThat("Synthetic simple timer "
                         + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME,
                 syntheticSimpleTimer, is(notNullValue()));
@@ -191,16 +193,13 @@ public class HelloWorldAsyncResponseTest {
             // The response might arrive here before the server-side code which updates the inflight metric has run. So wait.
             HelloWorldResource.awaitResponseSent();
 
-            // Make sure server has a chance to update the metrics, which happens just after it sends the response.
-            TimeUnit.MILLISECONDS.sleep(500L);
-
-            long afterRequest = inflightRequestsCount();
-
             assertThat("Slow response", response, containsString(SLOW_RESPONSE));
             assertThat("Change in inflight from before (" + beforeRequest + ") to during (" + duringRequest
                             + ") the slow request", duringRequest - beforeRequest, is(1L));
-            assertThat("Change in inflight from before (" + beforeRequest + ") to after (" + afterRequest
-                            + ") the slow request", afterRequest - beforeRequest, is(0L));
+            // The update to the in-flight count occurs after the response completes, so retry a bit until the value returns to 0.
+            assertThatWithRetry("Change in inflight from before (" + beforeRequest + ") to after the slow request",
+                                () -> inflightRequestsCount() - beforeRequest,
+                                is(0L));
         }
     }
 

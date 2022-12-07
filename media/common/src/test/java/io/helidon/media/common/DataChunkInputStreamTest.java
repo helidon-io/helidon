@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import io.helidon.common.reactive.Single;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -121,7 +121,7 @@ public class DataChunkInputStreamTest {
 
         submitFuture.get(500, TimeUnit.MILLISECONDS);
         receiveFuture.get(500, TimeUnit.MILLISECONDS);
-        assertEquals(test_data, result);
+        assertThat(result, contains("test0", "test1", "test2", "test3"));
     }
 
     @Test

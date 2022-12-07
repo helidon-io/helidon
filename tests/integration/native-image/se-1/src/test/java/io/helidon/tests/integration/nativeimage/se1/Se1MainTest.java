@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,12 @@ import jakarta.json.JsonReaderFactory;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for {@link Se1Main}.
@@ -51,7 +54,7 @@ class Se1MainTest {
         while (!webServer.isRunning()) {
             Thread.sleep(100);
             if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
+                fail("Failed to start webserver");
             }
         }
     }
@@ -70,18 +73,18 @@ class Se1MainTest {
         HttpURLConnection conn;
 
         conn = getURLConnection("GET","/greet");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
+        assertThat("HTTP response1", conn.getResponseCode(), is(200));
         JsonReader jsonReader = JSON.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                                "default message");
+        assertThat("default message", jsonObject.getString("message"),
+                is("Hello World!"));
 
         conn = getURLConnection("GET", "/greet/Joe");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2 - not authenticated");
+        assertThat("HTTP response2 - not authenticated", conn.getResponseCode(), is(200));
         jsonReader = JSON.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
-                                "hello Joe message");
+        assertThat("hello Joe message", jsonObject.getString("message"),
+                is("Hello Joe!"));
 
         conn = getURLConnection("PUT", "/greet/greeting");
         conn.setRequestProperty("Content-Type", "application/json");
@@ -89,20 +92,20 @@ class Se1MainTest {
         OutputStream os = conn.getOutputStream();
         os.write("{\"greeting\" : \"Hola\"}".getBytes());
         os.close();
-        Assertions.assertEquals(204, conn.getResponseCode(), "HTTP response3");
+        assertThat("HTTP response3", conn.getResponseCode(), is(204));
 
         conn = getURLConnection("GET", "/greet/Jose");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
+        assertThat("HTTP response4", conn.getResponseCode(), is(200));
         jsonReader = JSON.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
-        Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
-                                "hola Jose message");
+        assertThat("hola Jose message", jsonObject.getString("message"),
+                is("Hola Jose!"));
 
         conn = getURLConnection("GET", "/health");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        assertThat("HTTP response2", conn.getResponseCode(), is(200));
 
         conn = getURLConnection("GET", "/metrics");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        assertThat("HTTP response2", conn.getResponseCode(), is(200));
     }
 
     private HttpURLConnection getURLConnection(String method, String path) throws Exception {

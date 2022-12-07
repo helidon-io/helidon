@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,12 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonPointer;
 import jakarta.json.JsonString;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Disabled("3.0.0-JAKARTA") // OpenAPI: org.yaml.snakeyaml.constructor.ConstructorException:
 // Cannot create property=paths for JavaBean=io.smallrye.openapi.api.models.OpenAPIImpl@5dcd8c7a
@@ -75,30 +77,30 @@ public class MainTest {
         webClient.get()
                 .path("/greet")
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("greeting")))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("greeting"), is("Hello World!")))
                 .await();
 
         webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hello Joe!", jsonObject.getString("greeting")))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("greeting"), is("Hello Joe!")))
                 .await();
 
         webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
-                .thenAccept(response -> Assertions.assertEquals(204, response.status().code()))
+                .thenAccept(response -> assertThat(response.status().code(), is(204)))
                 .thenCompose(nothing -> webClient.get()
                         .path("/greet/Joe")
                         .request(JsonObject.class))
-                .thenAccept(jsonObject -> Assertions.assertEquals("Hola Joe!", jsonObject.getString("greeting")))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("greeting"), is("Hola Joe!")))
                 .await();
 
         webClient.get()
                 .path("/health")
                 .request()
                 .thenAccept(response -> {
-                    Assertions.assertEquals(200, response.status().code());
+                    assertThat(response.status().code(), is(200));
                     response.close();
                 })
                 .await();
@@ -107,7 +109,7 @@ public class MainTest {
                 .path("/metrics")
                 .request()
                 .thenAccept(response -> {
-                    Assertions.assertEquals(200, response.status().code());
+                    assertThat(response.status().code(), is(200));
                     response.close();
                 })
                 .await();
@@ -128,16 +130,16 @@ public class MainTest {
 
         JsonPointer jp = Json.createPointer("/" + escape("/greet/greeting") + "/put/summary");
         JsonString js = (JsonString) jp.getValue(paths);
-        Assertions.assertEquals("Set the greeting prefix", js.getString(), "/greet/greeting.put.summary not as expected");
+        assertThat("/greet/greeting.put.summary not as expected", js.getString(), is("Set the greeting prefix"));
 
         jp = Json.createPointer("/" + escape(SimpleAPIModelReader.MODEL_READER_PATH)
                                         + "/get/summary");
         js = (JsonString) jp.getValue(paths);
-        Assertions.assertEquals(SimpleAPIModelReader.SUMMARY, js.getString(),
-                                "summary added by model reader does not match");
+        assertThat("summary added by model reader does not match", js.getString(),
+                is(SimpleAPIModelReader.SUMMARY));
 
         jp = Json.createPointer("/" + escape(SimpleAPIModelReader.DOOMED_PATH));
-        Assertions.assertFalse(jp.containsValue(paths), "/test/doomed should not appear but does");
+        assertThat("/test/doomed should not appear but does", jp.containsValue(paths), is(false));
     }
 
     private static String escape(String path) {

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tracing</groupId>
         <artifactId>helidon-tracing-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-zipkin</artifactId>
@@ -87,6 +87,11 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-testing</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

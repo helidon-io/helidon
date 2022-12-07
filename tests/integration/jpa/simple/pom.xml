@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.jpa</groupId>
         <artifactId>helidon-tests-integration-jpa-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -102,7 +102,6 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -113,7 +112,6 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
@@ -162,16 +160,14 @@
                     <threadCount>10</threadCount>
                 </configuration>
                 <executions>
-                    <!-- Run tests -->
                     <execution>
-                        <id>test</id>
+                        <id>test-run</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>integration-test</goal>
                         </goals>
                         <configuration>
                             <includes>
-                                <include>io.helidon.tests.integration.jpa.simple.init.*IT</include>
                                 <include>io.helidon.tests.integration.jpa.simple.test.*IT</include>
                             </includes>
                         </configuration>

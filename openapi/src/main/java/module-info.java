@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.openapi.OpenApiUiNoOpFactory;
+
 /**
  * Helidon SE OpenAPI Support.
  */
@@ -21,6 +23,7 @@ module io.helidon.openapi {
     requires java.logging;
 
     requires io.helidon.common;
+    requires io.helidon.common.serviceloader;
     requires io.helidon.config;
     requires io.helidon.media.common;
     requires io.helidon.media.jsonp;
@@ -40,4 +43,8 @@ module io.helidon.openapi {
 
     exports io.helidon.openapi;
     exports io.helidon.openapi.internal to io.helidon.microprofile.openapi;
+
+    uses io.helidon.openapi.OpenApiUiFactory;
+
+    provides io.helidon.openapi.OpenApiUiFactory with OpenApiUiNoOpFactory;
 }

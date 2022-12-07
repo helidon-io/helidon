@@ -64,10 +64,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KafkaSeTest extends AbstractKafkaTest {
     private static final Logger LOGGER = Logger.getLogger(KafkaSeTest.class.getName());
@@ -85,7 +85,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
     private static final String TEST_SE_TOPIC_9 = "special-se-topic-9";
     private static final String TEST_SE_TOPIC_PATTERN_34 = "special-se-topic-[3-4]";
 
-    static Logger nackHandlerLogLogger = Logger.getLogger(NackHandler.Log.class.getName());
+    static Logger nackHandlerLogLogger = Logger.getLogger(KafkaNackHandler.Log.class.getName());
 
     private static final List<String> logNackHandlerWarnings = new ArrayList<>(1);
 
@@ -501,7 +501,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         List<String> events = readTopic(TOPIC, uncommit.size(), GROUP);
         Collections.sort(events);
         Collections.sort(uncommit);
-        assertEquals(uncommit, events);
+        assertThat(events, contains(uncommit.toArray()));
     }
 
     @Test
@@ -544,10 +544,10 @@ public class KafkaSeTest extends AbstractKafkaTest {
         }
         int uncommited = kafkaConsumingBean.uncommitted();
         // At least one message was not committed
-        assertTrue(uncommited > 0);
+        assertThat(uncommited, greaterThan(0));
         LOGGER.fine(() -> "Uncommitted messages : " + uncommited);
         List<String> messages = readTopic(TOPIC, uncommited, GROUP);
-        assertEquals(uncommited, messages.size(), "Received messages are " + messages);
+        assertThat("Received messages are " + messages, messages, hasSize(uncommited));
     }
 
     @Test

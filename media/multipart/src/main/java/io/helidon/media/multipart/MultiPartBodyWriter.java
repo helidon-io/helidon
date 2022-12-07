@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
                 .or(() -> Optional.of(MediaType.MULTIPART_FORM_DATA))
-                .filter(mediaType -> mediaType == MediaType.MULTIPART_FORM_DATA)
+                .filter(MediaType.MULTIPART_FORM_DATA::test)
                 .map(it -> PredicateResult.supports(WriteableMultiPart.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>
@@ -174,17 +174,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <!--
-                         3.0.0-JAKARTA
-                         used by hibernate plugin
-                         -->
-                        <groupId>net.bytebuddy</groupId>
-                        <artifactId>byte-buddy</artifactId>
-                        <version>${version.lib.byte-buddy}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

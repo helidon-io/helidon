@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,12 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
         // 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
@@ -55,29 +57,29 @@ class MainTest {
                 .target(getConnectionString("/greet"))
                 .request()
                 .get(JsonObject.class);
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                "default message");
+        assertThat("default message", jsonObject.getString("message"),
+                is("Hello World!"));
 
         jsonObject = client
                 .target(getConnectionString("/greet/Joe"))
                 .request()
                 .get(JsonObject.class);
-        Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
-                "hello Joe message");
+        assertThat("hello Joe message", jsonObject.getString("message"),
+                is("Hello Joe!"));
 
         try (Response r = client
                 .target(getConnectionString("/greet/greeting"))
                 .request()
                 .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
-            Assertions.assertEquals(204, r.getStatus(), "PUT status code");
+            assertThat("PUT status code", r.getStatus(), is(204));
         }
 
         jsonObject = client
                 .target(getConnectionString("/greet/Jose"))
                 .request()
                 .get(JsonObject.class);
-        Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
-                "hola Jose message");
+        assertThat("hola Jose message", jsonObject.getString("message"),
+                is("Hola Jose!"));
 
         client.close();
     }
@@ -95,14 +97,14 @@ class MainTest {
 
         JsonPointer jp = Json.createPointer("/" + escape(SimpleAPIModelReader.MODEL_READER_PATH) + "/get/summary");
         JsonString js = JsonString.class.cast(jp.getValue(paths));
-        Assertions.assertEquals(SimpleAPIModelReader.SUMMARY, js.getString(), "/test/newpath GET summary did not match");
+        assertThat("/test/newpath GET summary did not match", js.getString(), is(SimpleAPIModelReader.SUMMARY));
 
         jp = Json.createPointer("/" + escape(SimpleAPIModelReader.DOOMED_PATH));
-        Assertions.assertFalse(jp.containsValue(paths), "/test/doomed should not appear but does");
+        assertThat("/test/doomed should not appear but does", jp.containsValue(paths), is(false));
 
         jp = Json.createPointer("/" + escape("/greet") + "/get/summary");
         js = JsonString.class.cast(jp.getValue(paths));
-        Assertions.assertEquals("Returns a generic greeting", js.getString(), "/greet GET summary did not match");
+        assertThat("/greet GET summary did not match", js.getString(), is("Returns a generic greeting"));
 
         client.close();
     }

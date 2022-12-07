@@ -51,11 +51,16 @@ import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Configurable;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.internal.inject.InjectionManager;
@@ -137,6 +142,9 @@ public class JerseySupport implements Service {
         // Prevents reads/writes after Netty event loops are shutdown
         serviceShutdownHook = new Thread(service::shutdownNow);
         Runtime.getRuntime().addShutdownHook(serviceShutdownHook);
+
+        // Register an error mapper to log internal exceptions in Jersey
+        builder.resourceConfig.register(InternalErrorMapper.class);
 
         // make sure we have a wrapped async executor as well
         if (builder.asyncExecutorService == null) {
@@ -289,6 +297,7 @@ public class JerseySupport implements Service {
 
             requestContext.setProperty("io.helidon.jaxrs.remote-host", remoteHost);
             requestContext.setProperty("io.helidon.jaxrs.remote-port", remotePort);
+            requestContext.setProperty("io.helidon.jaxrs.requested-uri", req.requestedUri());
 
             requestContext.setWriter(responseWriter);
 
@@ -505,6 +514,15 @@ public class JerseySupport implements Service {
         }
 
         /**
+         * This method is used for testing only.
+         *
+         * @return underlying resource config.
+         */
+        ResourceConfig resourceConfig() {
+            return resourceConfig;
+        }
+
+        /**
          * Jersey Module builder class for convenient creating {@link JerseySupport}.
          *
          * @return built module
@@ -661,6 +679,21 @@ public class JerseySupport implements Service {
         public void reload(ResourceConfig configuration) {
             // no op
             throw new UnsupportedOperationException("Reloading is not supported in Helidon");
+        }
+    }
+
+    /**
+     * A low priority mapper to catch internal exceptions in Jersey and log them.
+     * Otherwise, these errors can get lost and never reported by Helidon. One example
+     * is a {@code ClassNotFoundException} exception in Jersey's code.
+     */
+    @Priority(Priorities.USER + 1000)
+    static class InternalErrorMapper implements ExceptionMapper<InternalServerErrorException> {
+
+        @Override
+        public Response toResponse(InternalServerErrorException e) {
+            LOGGER.log(Level.FINE, "Internal error thrown by Jersey", e);
+            return Response.status(500).build();
         }
     }
 }

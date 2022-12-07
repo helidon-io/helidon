@@ -32,6 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -80,8 +81,8 @@ public final class HealthSupport extends HelidonRestServiceSupport {
     private final Set<String> includedHealthChecks;
     private final Set<String> excludedHealthChecks;
     private final MessageBodyWriter<JsonStructure> jsonpWriter = JsonpSupport.writer();
-    private final Timeout timeout;
-    private final Async async;
+    private final LazyValue<? extends Timeout> timeout;
+    private final LazyValue<? extends Async> async;
 
     private HealthSupport(Builder builder) {
         super(LOGGER, builder, SERVICE_NAME);
@@ -103,9 +104,9 @@ public final class HealthSupport extends HelidonRestServiceSupport {
             this.excludedHealthChecks = Collections.emptySet();
         }
 
-
-        this.timeout = Timeout.create(Duration.ofMillis(builder.timeoutMillis));
-        this.async = Async.create();
+        // Lazy values to prevent early init of maybe-not-yet-configured FT thread pools
+        this.timeout = LazyValue.create(() -> Timeout.create(Duration.ofMillis(builder.timeoutMillis)));
+        this.async = LazyValue.create(Async::create);
     }
 
     @Override
@@ -176,7 +177,8 @@ public final class HealthSupport extends HelidonRestServiceSupport {
 
     void invoke(ServerResponse res, List<HealthCheck> healthChecks, boolean sendDetails) {
         // timeout on the asynchronous execution
-        Single<HealthResponse> result = timeout.invoke(() -> async.invoke(() -> callHealthChecks(healthChecks)));
+        Single<HealthResponse> result = timeout.get().invoke(
+                () -> async.get().invoke(() -> callHealthChecks(healthChecks)));
 
         // handle timeouts and failures in execution
         result = result.onErrorResume(throwable -> {

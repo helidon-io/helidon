@@ -37,9 +37,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ApplicationScoped
 @DataSourceDefinition(
@@ -89,7 +89,7 @@ class TestExtendedUnsynchronizedEntityManager {
     void startCdiContainer() {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
 
@@ -156,21 +156,21 @@ class TestExtendedUnsynchronizedEntityManager {
         // is important to use "self" in this test instead of "this".
         final TestExtendedUnsynchronizedEntityManager self =
             this.cdiContainer.select(TestExtendedUnsynchronizedEntityManager.class).get();
-        assertNotNull(self);
+        assertThat(self, notNullValue());
 
         // Get the EntityManager that is not synchronized with and
         // whose persistence context extends past a single JTA
         // transaction.
         final EntityManager em = self.getExtendedUnsynchronizedEntityManager();
-        assertNotNull(em);
-        assertTrue(em.isOpen());
+        assertThat(em, notNullValue());
+        assertThat(em.isOpen(), is(true));
 
         // We haven't started any kind of transaction yet and we
         // aren't testing anything using
         // the @jakarta.transaction.Transactional annotation so there is
         // no transaction in effect so the EntityManager cannot be
         // joined to one.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // Create a JPA entity and try to insert it.  Should be just
         // fine.
@@ -183,41 +183,41 @@ class TestExtendedUnsynchronizedEntityManager {
         // Get the TransactionManager that normally is behind the
         // scenes and use it to start a Transaction.
         final TransactionManager tm = self.getTransactionManager();
-        assertNotNull(tm);
+        assertThat(tm, notNullValue());
         tm.begin();
 
         // Because we're UNSYNCHRONIZED, no automatic joining takes place.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // We can join manually.
         em.joinTransaction();
 
         // Now we should be joined to it.
-        assertTrue(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(true));
 
         // Roll the transaction back and note that our EntityManager
         // is no longer joined to it.
         tm.rollback();
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // Start another transaction and persist our Author.  But note
         // that joining the transaction must be manual.
         tm.begin();
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
         em.persist(author);
-        assertFalse(em.isJoinedToTransaction());
-        assertTrue(em.contains(author));
+        assertThat(em.isJoinedToTransaction(), is(false));
+        assertThat(em.contains(author), is(true));
 
         // (Remember, we weren't ever joined to this transaction.)
         tm.commit();
 
         // The transaction is over, and our EntityManager is STILL not joined
         // to one.
-        assertFalse(em.isJoinedToTransaction());
+        assertThat(em.isJoinedToTransaction(), is(false));
 
         // Our PersistenceContextType is EXTENDED, not TRANSACTION, so
         // the underlying persistence context spans transactions.
-        assertTrue(em.contains(author));
+        assertThat(em.contains(author), is(true));
     }
 
 }

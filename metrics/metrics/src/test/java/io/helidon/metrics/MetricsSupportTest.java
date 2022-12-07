@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,12 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasKey;
 
 /**
  * Unit test for {@link MetricsSupport}.
@@ -59,8 +61,8 @@ class MetricsSupportTest {
     private static final MetricID METRIC_USED_HEAP = new MetricID("memory.usedHeap");
 
     private static final String CONCURRENT_GAUGE_NAME = "appConcurrentGauge";
-    private static final int RED_CONCURRENT_GAUGE_COUNT = 1;
-    private static final int BLUE_CONCURRENT_GAUGE_COUNT = 2;
+    private static final long RED_CONCURRENT_GAUGE_COUNT = 1;
+    private static final long BLUE_CONCURRENT_GAUGE_COUNT = 2;
 
     private static String globalTagsJsonSuffix;
 
@@ -76,12 +78,12 @@ class MetricsSupportTest {
         counter.inc();
 
         ConcurrentGauge concurrentGauge = app.concurrentGauge(CONCURRENT_GAUGE_NAME, new Tag("color", "blue"));
-        for (int i = 0; i < BLUE_CONCURRENT_GAUGE_COUNT; i++) {
+        for (long i = 0; i < BLUE_CONCURRENT_GAUGE_COUNT; i++) {
             concurrentGauge.inc();
         }
 
         concurrentGauge = app.concurrentGauge(CONCURRENT_GAUGE_NAME, new Tag("color", "red"));
-        for (int i = 0; i < RED_CONCURRENT_GAUGE_COUNT; i++) {
+        for (long i = 0; i < RED_CONCURRENT_GAUGE_COUNT; i++) {
             concurrentGauge.inc();
         }
 
@@ -133,7 +135,7 @@ class MetricsSupportTest {
     void testJsonDataWithTags() {
         JsonObject jsonObject = MetricsSupport.toJsonData(app);
         // Check for presence of tags and correct ordering.
-        assertTrue(jsonObject.containsKey("appCounter;brightness=dim;color=blue"));
+        assertThat(jsonObject.containsKey("appCounter;brightness=dim;color=blue"), is(true));
     }
 
     @Test
@@ -155,16 +157,16 @@ class MetricsSupportTest {
         JsonObject jo = builder.build();
 
         JsonObject commonObj = jo.getJsonObject("commonObj");
-        assertEquals(4, commonObj.getInt("intA"));
-        assertEquals(8d, commonObj.getJsonNumber("doubleA").doubleValue());
+        assertThat(commonObj.getInt("intA"), is(4));
+        assertThat(commonObj.getJsonNumber("doubleA").doubleValue(), is(8d));
 
-        assertEquals("this really is other stuff", jo.getString("otherStuff"));
+        assertThat(jo.getString("otherStuff"), is("this really is other stuff"));
 
         JsonArray commonArray = jo.getJsonArray("commonArray");
-        assertEquals("integration", commonArray.getJsonArray(0).getString(0));
-        assertEquals(6, commonArray.getJsonArray(0).getInt(1));
-        assertEquals("demo", commonArray.getJsonArray(1).getString(0));
-        assertEquals(7, commonArray.getJsonArray(1).getInt(1));
+        assertThat(commonArray.getJsonArray(0).getString(0), is("integration"));
+        assertThat(commonArray.getJsonArray(0).getInt(1), is(6));
+        assertThat(commonArray.getJsonArray(1).getString(0), is("demo"));
+        assertThat(commonArray.getJsonArray(1).getInt(1), is(7));
     }
 
     @Test
@@ -175,8 +177,9 @@ class MetricsSupportTest {
                 .build();
         RegistryFactory myRF = (RegistryFactory) io.helidon.metrics.api.RegistryFactory.create(config);
         Registry myBase = myRF.getARegistry(MetricRegistry.Type.BASE);
-        assertFalse(myBase.getGauges().containsKey(METRIC_USED_HEAP), "Base registry incorrectly contains "
-                + METRIC_USED_HEAP + " when base was configured as disabled");
+        assertThat("Base registry incorrectly contains "
+                + METRIC_USED_HEAP + " when base was configured as disabled",
+                myBase.getGauges(),  not(hasKey(METRIC_USED_HEAP)));
     }
 
     @Test
@@ -189,7 +192,7 @@ class MetricsSupportTest {
                 String[] tokens = line.split(" ");
                 if (tokens.length > 3 && tokens[1].equals("TYPE")) {
                     String metric = tokens[2];
-                    assertFalse(found.contains(metric));
+                    assertThat(found, not(hasItem(metric)));
                     found.add(metric);
                 }
             }
@@ -200,14 +203,14 @@ class MetricsSupportTest {
     void testJsonDataMultipleMetricsSameName() {
         // Make sure the JSON format for all metrics matching a name lists the name once with tagged instances as children.
         JsonObject multiple = MetricsSupport.jsonDataByName(app, CONCURRENT_GAUGE_NAME);
-        assertNotNull(multiple);
+        assertThat(multiple, notNullValue());
         JsonObject top = multiple.getJsonObject(CONCURRENT_GAUGE_NAME);
-        assertNotNull(top);
+        assertThat(top, notNullValue());
         JsonNumber blueNumber = top.getJsonNumber("current;color=blue" + globalTagsJsonSuffix);
-        assertNotNull(blueNumber);
-        assertEquals(BLUE_CONCURRENT_GAUGE_COUNT, blueNumber.longValue());
+        assertThat(blueNumber, notNullValue());
+        assertThat(blueNumber.longValue(), is(BLUE_CONCURRENT_GAUGE_COUNT));
         JsonNumber redNumber = top.getJsonNumber("current;color=red" + globalTagsJsonSuffix);
-        assertNotNull(redNumber);
-        assertEquals(RED_CONCURRENT_GAUGE_COUNT, redNumber.longValue());
+        assertThat(redNumber, notNullValue());
+        assertThat(redNumber.longValue(), is(RED_CONCURRENT_GAUGE_COUNT));
     }
 }

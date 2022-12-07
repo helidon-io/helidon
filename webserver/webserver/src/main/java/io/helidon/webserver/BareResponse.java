@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,13 @@ public interface BareResponse extends Flow.Subscriber<DataChunk> {
      * @return a completion stage of the response.
      */
     Single<BareResponse> whenCompleted();
+
+    /**
+     * Set the backpressure strategy used for requesting response data.
+     *
+     * @param backpressureStrategy strategy used for requesting response data
+     */
+    void backpressureStrategy(BackpressureStrategy backpressureStrategy);
 
     /**
      * Each response is subscribed up to a single publisher and AFTER {@link #writeStatusAndHeaders(Http.ResponseStatus, Map)}

@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.integrations.graal</groupId>
         <artifactId>helidon-integrations-graal-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -56,11 +56,6 @@
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.nativeimage</groupId>
-            <artifactId>svm</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

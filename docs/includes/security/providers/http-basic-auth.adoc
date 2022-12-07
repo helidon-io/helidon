@@ -48,6 +48,8 @@ See the link:{helidon-github-tree-url}/master/examples/security/outbound-overrid
 .Configuration example
 ----
 security:
+  config.require-encryption: false
+security:
   providers:
   - http-basic-auth:
       realm: "helidon"

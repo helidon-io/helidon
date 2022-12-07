@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,8 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
         return context.contentType()
-                .filter(mediaType -> mediaType == MediaType.APPLICATION_FORM_URLENCODED
-                        || mediaType == MediaType.TEXT_PLAIN)
+                .filter(mediaType -> MediaType.APPLICATION_FORM_URLENCODED.test(mediaType)
+                        || MediaType.TEXT_PLAIN.test(mediaType))
                 .map(it -> PredicateResult.supports(FormParams.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -76,7 +76,7 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
 
     private FormParams create(String paramAssignments, MediaType mediaType, Function<String, String> decoder) {
         FormParams.Builder builder = FormParams.builder();
-        Matcher m = PATTERNS.get(mediaType).matcher(paramAssignments);
+        Matcher m = PATTERNS.get(mediaType.withoutParameters()).matcher(paramAssignments);
         while (m.find()) {
             final String key = m.group(1);
             final String value = m.group(2);

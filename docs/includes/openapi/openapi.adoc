@@ -1,0 +1,218 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+
+// tag::overview[]
+The link:{openapi-spec-url}[OpenAPI specification] defines a standard way to express the interface exposed by a REST service.
+
+The link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
+
+ifdef::mp-flavor[Helidon {flavor-uc} implements the MicroProfile OpenAPI specification.]
+ifdef::se-flavor[OpenAPI support in Helidon {flavor-uc} draws its inspiration from MicroProfile OpenAPI but does not implement the spec because Helidon {flavor-uc} does not support annotations.]
+
+The OpenAPI support in Helidon {flavor-uc} performs two main tasks:
+
+* Build an in-memory model of the REST API your service implements.
+* Expose the model in text format (typically YAML) via the `/openapi` endpoint.
+
+To construct the model, Helidon gathers information about the service API from whichever of these sources are present in the application:
+
+* a _model reader_
++
+The SPI defines an interface you can implement in your application for  programmatically providing part or all of the model;
+* a static OpenAPI document file packaged as part of your service;
+ifdef::mp-flavor[]
+* OpenAPI annotations;
+endif::[]
+* a _filter_ class
++
+The SPI defines an interface you can implement in your application which can mask parts of the model.
+
+
+// end::overview[]
+
+// tag::mp-depc[]
+    <dependency>
+        <groupId>io.helidon.microprofile.openapi</groupId>
+        <artifactId>helidon-microprofile-openapi</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+// end::mp-depc[]
+
+// tag::furnish-openapi-info[]
+
+==== Furnish OpenAPI information about your endpoints
+// It's a bit odd to intermix the SE and MP content in this common file this way.
+// But I tried having a level 3 section in the SE file include a sequence of
+// level 4 sections from here, and that led to errors with headers being out of sequence.
+// With the entire level 3 section here and conditional text for SE and MP, AsciiDoctor is happy.
+ifdef::se-flavor[]
+OpenAPI support in Helidon SE largely follows the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec].
+But because Helidon SE does not process annotations, your application supplies data for the OpenAPI model in the other ways listed earlier.
+endif::[]
+
+ifdef::mp-flavor[]
+Helidon MP OpenAPI combines information from all of the following sources as it
+builds its in-memory model of your application's API. It constructs the OpenAPI
+document from this internal model. Your application can use one or more of these
+techniques.
+
+===== Annotate the endpoints in your app
+You can add MicroProfile OpenAPI annotations to the endpoints in your source code.
+These annotations allow the Helidon MP OpenAPI runtime to discover the endpoints
+and information about them via CDI at app start-up.
+
+Here is one of the endpoints, annotated for OpenAPI, from the example mentioned earlier:
+
+[source,java]
+----
+@GET
+@Operation(summary = "Returns a generic greeting", // <1>
+        description = "Greets the user generically")
+@APIResponse(description = "Simple JSON containing the greeting", // <2>
+        content = @Content(mediaType = "application/json",
+                           schema = @Schema(implementation = GreetingMessage.class)))
+@Produces(MediaType.APPLICATION_JSON)
+public JsonObject getDefaultMessage() {...}
+----
+<1> `@Operation` gives information about this endpoint.
+<2> `@APIResponse` describes the HTTP response and declares its media type and contents.
+
+You can also define any request parameters the endpoint expects, although this
+endpoint uses none.
+
+This excerpt shows only a few annotations for illustration. The
+link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[Helidon MP OpenAPI example] illustrates more,
+and the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] describes them all.
+
+===== Provide a static OpenAPI file
+Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`,
+or `META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
+and they then generate an OpenAPI document file which you can include in your application
+so OpenAPI can use it.
+
+===== Write and configure a model reader class
+Write a Java class that implements the OpenAPI
+link:{microprofile-open-api-javadoc-url}/OASModelReader.html[`org.eclipse.microprofile.openapi.OASModelReader`] interface. Your
+model reader code programmatically adds elements to the internal model that OpenAPI
+builds.
+
+endif::[]
+
+===== Provide a static OpenAPI file
+Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`,
+or `META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
+and they then generate an OpenAPI document file which you can include in your application
+so OpenAPI can use it.
+
+===== Write and configure a model reader class
+Write a Java class that implements the OpenAPI
+link:{microprofile-open-api-javadoc-url}/OASModelReader.html[`org.eclipse.microprofile.openapi.OASModelReader`] interface. Your
+model reader code programmatically adds elements to the internal model that OpenAPI
+builds.
+
+Change your application's MP configuration to set `mp.openapi.model.reader` as the
+fully-qualified class name of your class.
+
+===== Write and configure a filter class
+Write a Java class that implements the OpenAPI
+link:{microprofile-open-api-javadoc-url}/OASFilter.html[`org.eclipse.microprofile.openapi.OASFilter`] interface.
+As OpenAPI composes its internal model, it invokes your filter with each
+model element _before_ adding the element to the model. Your filter can
+accept the element as-is, modify it, or suppress it.
+
+Change your application's configuration to set `mp.openapi.filter` as the full-qualified
+class name of your class.
+
+// end::furnish-openapi-info[]
+
+// tag::usage-access-endpoint[]
+=== Accessing the REST Endpoint
+Once you add the {flavor-uc} OpenAPI dependency to your
+ifdef::mp-flavor[project,]
+ifdef::se-flavor[project and add code to create the `OpenAPISupport` object to your routing,]
+your application automatically responds to the built-in endpoint --
+`/openapi` -- and it returns the OpenAPI document describing the endpoints
+in your application.
+
+By default, per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML.
+There is not yet an adopted IANA YAML media type, but a proposed one specifically
+for OpenAPI documents that has some support is `application/vnd.oai.openapi`.
+That is what Helidon returns, by default.
+
+In addition, a client can specify the HTTP header `Accept` as either `application/vnd.oai.openapi+json` or
+`application/json` to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON`
+or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.
+// end::usage-access-endpoint[]
+
+// tag::api[]
+ifdef::mp-flavor[]
+The link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification] gives a listing and brief examples of the annotations you can add to your code to convey OpenAPI information.
+endif::[]
+
+The link:{microprofile-open-api-javadoc-base-url}[MicroProfile OpenAPI JavaDocs] give full details of the
+ifdef::mp-flavor[annotations and the other]
+classes and interfaces you can use in your code.
+ifdef::se-flavor[]
+Remember that, although the JavaDocs describe annotations, Helidon {flavor-uc} does not support them.
+endif::[]
+
+// end::api[]
+
+
+// tag::additional-building-jandex[]
+
+=== Building the Jandex index
+
+A Jandex index stores information about the classes and methods in your app and
+what annotations they have. It allows CDI to process annotations faster during your
+application's start-up.
+
+Add the link:https://github.com/wildfly/jandex-maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
+section of your `pom.xml`:
+
+[source,xml,subs="attributes+"]
+----
+<plugin>
+    <groupId>org.jboss.jandex</groupId>
+    <artifactId>jandex-maven-plugin</artifactId>
+    <version>{jandex-plugin-version}</version>
+    <executions>
+      <execution>
+        <id>make-index</id>
+        <goals>
+          <goal>jandex</goal>
+        </goals>
+      </execution>
+    </executions>
+</plugin>
+----
+When you build your app `maven` should include the index `META-INF/jandex.idx` in
+the JAR.
+
+[NOTE]
+====
+If you _do not_ modify your build to create
+the index then the Helidon MP OpenAPI runtime automatically creates one in memory during
+app start-up. This slows down your app start-up and, depending on how CDI is
+configured, might inadvertently miss information.
+
+We _strongly recommend_ using the Jandex plug-in to build the index into your app.
+====
+// end::additional-building-jandex[]

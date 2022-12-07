@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>../dependencies/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.applications</groupId>
@@ -50,6 +50,7 @@
         <version.plugin.helidon>3.0.0</version.plugin.helidon>
         <version.plugin.helidon-cli>3.0.0</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
+        <version.plugin.nativeimage>0.9.16</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
@@ -161,14 +162,6 @@
                             <version>${helidon.version}</version>
                         </dependency>
                     </dependencies>
-                    <executions>
-                        <execution>
-                            <id>third-party-license-report</id>
-                            <goals>
-                                <goal>report</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
@@ -184,6 +177,39 @@
                         <pluginId>grpc-java</pluginId>
                         <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}</pluginArtifact>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.graalvm.buildtools</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
+                    <version>${version.plugin.nativeimage}</version>
+                    <executions>
+                        <execution>
+                            <id>resource-config</id>
+                            <configuration>
+                                <!-- generate records for all module's resources -->
+                                <isDetectionEnabled>true</isDetectionEnabled>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>build-native-image</id>
+                            <configuration>
+                                <!-- generate an argument file for native image - great for troubleshooting -->
+                                <useArgFile>true</useArgFile>
+                                <!-- this needs to be defined to have a single set of jars on classpath,
+                                default approach would add classpath of module (from maven) and from jar (manifest) -->
+                                <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                                <imageName>${project.build.finalName}</imageName>
+                                <fallback>false</fallback>
+                                <metadataRepository>
+                                    <enabled>false</enabled>
+                                </metadataRepository>
+                                <buildArgs>
+                                    <!-- Some native image features use the svm dependencies which require additional exports -->
+                                    <arg>--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.configure=ALL-UNNAMED</arg>
+                                </buildArgs>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

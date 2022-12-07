@@ -130,6 +130,7 @@
                                 <argument>${project.build.outputDirectory}</argument>
                                 <argument>${project.build.outputDirectory}</argument>
                             </arguments>
+                            <skip>${eclipselink.weave.skip}</skip>
                         </configuration>
                     </execution>
                 </executions>
@@ -381,12 +382,10 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                         <includes>
                             <include>src/main/java/**</include>
                             <include>src/*/resources/*/persistence.xml.mustache</include>
+                            <include if="${server} == 'oracledb'">src/*/resources/**/serial-config.properties</include>
                         </includes>
                     </templates>
                     <model>
-                        <list key="native-sections" if="${docker}">
-                            <value file="../database/files/README.native.md" if="${docker.native-image}" template="mustache"/>
-                        </list>
                         <value key="database">true</value>
                         <value key="pu-name">${pu-name}</value>
                         <value key="ds-name">${ds-name}</value>

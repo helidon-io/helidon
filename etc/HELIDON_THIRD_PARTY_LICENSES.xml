@@ -13,7 +13,7 @@
             <attribution>Zipkin OpenTracing Brave (io.opentracing.brave:brave-opentracing)
   Copyright 2016-2020 The OpenZipkin Authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -50,7 +50,7 @@ LongAdder), which was released with the following comments:
     Written by Doug Lea with assistance from members of JCP JSR-166
     Expert Group and released to the public domain, as explained at
     http://creativecommons.org/publicdomain/zero/1.0/
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 ---------------------------------
 Fourth Party Runtime Dependencies
 ---------------------------------
@@ -133,7 +133,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jsonp
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -190,7 +190,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/tyrus
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -298,7 +298,7 @@ laws, regulations and policies concerning the import, possession,
 or use, and re-export of encryption software, to see if this is permitted.
 
 --------------------------------------------
-License Identifier: EPL-2.0
+See full text at the bottom of this document for license: EPL-2.0
 --------------------------------------------
 
 Eclipse Distribution License - v 1.0
@@ -353,7 +353,7 @@ Fourth Party Dependencies
   Copyright (c) 2011,2019 Oracle and/or its affiliates. All rights reserved.
   Multi License: Eclipse Public License - v 2.0, GPL Version 2 + CPE
 --------------------------------------------
-License Identifier: GPLv2-CPE
+See full text at the bottom of this document for license: GPLv2-CPE
 </attribution>
         </dependency>
         <dependency>
@@ -398,7 +398,7 @@ which is available at https://www.eclipse.org/org/documents/edl-v10.php.
 
 SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 --------------------------------------------
-License Identifier: EPL-2.0
+See full text at the bottom of this document for license: EPL-2.0
 --------------------------------------------
 Eclipse Distribution License - v 1.0
 Copyright (c) 2007, Eclipse Foundation, Inc. and its licensors.
@@ -480,14 +480,14 @@ Fourth Party Dependencies
   Copyright (c) 2019,2020 Eclipse Foundation.
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 "jakarta.transaction API" 2.0.0 (jakarta.transaction:jakarta.transaction-api)
   Copyright (c) 1997,2020 Oracle and/or its affiliates. All rights reserved.
   Eclipse Public License - 2.0
   GPL2 w/ CPE 
 --------------------------------------------
-License Identifier: GPLv2-CPE
+See full text at the bottom of this document for license: GPLv2-CPE
 </attribution>
         </dependency>
         <dependency>
@@ -539,7 +539,7 @@ SOFTWARE.
   Copyright (C) 2014,2015 Square, Inc.
   Apache License Version 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 "reactive-streams" (org.reactivestreams:reactive-streams)
 
@@ -743,7 +743,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Copyright 2015, Google Inc. All rights reserved.
   Copyright 2020 Google LLC
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -882,7 +882,7 @@ commons-codec:commons-codec
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 ++++++++++++++++++++++++
 4th party dependencies
 ++++++++++++++++++++++++++++
@@ -1038,7 +1038,7 @@ failureaccess, v1.0.1, Apache 2.0
   See the License for the specific language governing permissions and
   limitations under the License.
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -1232,7 +1232,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   Copyright 2009- 2016, Daniel Lemire, Cliff Moon, David McIntosh, Robert Becho, Google Inc.,
                         Veronika Zenz, Owen Kaser, Gregory Ssi-Yan-Kai, Rory Graves
   Copyright 2012, Google Inc.
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 </attribution>
         </dependency>
@@ -1402,7 +1402,7 @@ permitted.
 #################################
 
 #
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ---
 
 ##</attribution>
@@ -1475,7 +1475,7 @@ None
 None
 
 ################################
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -1537,7 +1537,7 @@ please check the country's laws, regulations and policies concerning the import,
 possession, or use, and re-export of encryption software, to see if this is
 permitted.
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------
 Fourth Party  Dependencies
 --------------------------------------------
@@ -1610,7 +1610,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/el-ri
 -------------------------------------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ---------------------------------------------------------------------------------------------------------------------</attribution>
         </dependency>
         <dependency>
@@ -1681,7 +1681,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/interceptor-api
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -1761,7 +1761,7 @@ The project maintains the following source code repositories:
 * https://github.com/eclipse-ee4j/jsonb-api
 
 ---
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -1843,7 +1843,7 @@ possession, or use, and re-export of encryption software, to see if this is
 permitted.
 
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -1967,7 +1967,7 @@ The project maintains the following source code repositories:
 * https://github.com/eclipse-ee4j/messaging
 * https://github.com/eclipse-ee4j/messaging-propsals
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------</attribution>
         </dependency>
         <dependency>
@@ -2023,7 +2023,7 @@ please check the country's laws, regulations and policies concerning the import,
 possession, or use, and re-export of encryption software, to see if this is
 permitted.
 --------------------------------------------
-License Identifier: EPL-2.0
+See full text at the bottom of this document for license: EPL-2.0
 ----------------------------------------------------------------------
 Eclipse Distribution License - v 1.0
 Copyright (c) 2007, Eclipse Foundation, Inc. and its licensors.
@@ -2145,7 +2145,7 @@ possession, or use, and re-export of encryption software, to see if this is
 permitted.
 
 ----------------------------------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -2156,7 +2156,7 @@ Jakarta Contexts and Dependency Injection API (CDI API) (jakarta.enterprise:jaka
   Copyright 2010,2013 2015, Red Hat, Inc., and individual contributors
   Apache License Version 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Jakarta Interceptors (jakarta.interceptor:jakarta.interceptor-api)
   Copyright (c) 1997,2020 Oracle and/or its affiliates. All rights reserved.
@@ -2276,7 +2276,7 @@ possession, or use, and re-export of encryption software, to see if this is
 permitted.
 
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 --------------------------------------------</attribution>
         </dependency>
         <dependency>
@@ -2421,7 +2421,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ###################################################
 commons-pool2-2.9.0 (Apache 2.0)
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 APACHE COMMONS POOL DERIVATIVE WORKS:
    
    The LinkedBlockingDeque implementation is based on an implementation written by
@@ -2494,7 +2494,7 @@ Ondrej Mihalyi ondrej.mihalyi@gmail.com,
 Gunnar Morling gunnar@hibernate.org
 &lt;/text&gt;
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -2531,7 +2531,7 @@ Gaurav Gupta gaurav.gupta.jc@gmail.com
 Ondrej Mihalyi ondrej.mihalyi@gmail.com
 &lt;/text&gt;
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -2550,7 +2550,7 @@ License Identifier: Apache-2.0
             <attribution>MicroProfile GraphQL :: API (org.eclipse.microprofile.graphql:microprofile-graphql-api)
   Copyright (c) 2020 Contributors to the Eclipse Foundation
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------</attribution>
         </dependency>
         <dependency>
@@ -2585,7 +2585,7 @@ PackageCopyrightText: &lt;text&gt;
 Heiko Braun hbraun@redhat.com
 &lt;/text&gt;
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -2612,7 +2612,7 @@ PackageName: MicroProfile
 PackageHomePage: http://www.eclipse.org/microprofile
 PackageLicenseDeclared: Apache-2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -2666,7 +2666,7 @@ Werner Keil werner@catmedia.us,
 Jan Martiska jmartisk@redhat.com
 &lt;/text&gt;
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -2687,7 +2687,7 @@ License Identifier: Apache-2.0
             <attribution>MicroProfile OpenTracing API (org.eclipse.microprofile.opentracing:microprofile-opentracing-api)
   Copyright (c) 2017-2021 Contributors to the Eclipse Foundation
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 =========================================================================
 ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
 ==  Version 2.0, in this case for Microprofile OpenTracing                  ==
@@ -2729,7 +2729,7 @@ PackageName: Eclipse Microprofile
 PackageHomePage: http://www.eclipse.org/microprofile
 PackageLicenseDeclared: Apache-2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -2756,7 +2756,7 @@ effort (reactive streams) and all copyright was relinquished under the Licensed
 under Public Domain (CC0).
     http://www.reactive-streams.org/
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -2993,7 +2993,7 @@ You should have received a copy of the GNU Lesser General Public License,
 v.2.1 along with this distribution; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 --------------------------------------------
-License Identifier: LGPL-2.1-only
+See full text at the bottom of this document for license: LGPL-2.1-only
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -3045,7 +3045,7 @@ opentracing-api: 0.33.0, Apache 2.0
 opentracing-noop: 0.33.0, Apache 2.0
 Copyright 2016-2019 The OpenTracing Authors
 ---------------------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -3070,7 +3070,7 @@ SoundCloud Ltd. (http://soundcloud.com/).
 
 This product includes software developed as part of the
 Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -3194,7 +3194,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Apache Log4j
 COPYRIGHT: Copyright 2010 The Apache Software Foundation
 LICENSE:
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 Apache log4j
 Copyright 2010 The Apache Software Foundation
 
@@ -3227,7 +3227,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 LICENSE: Apache 2.0
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -3246,7 +3246,7 @@ License Identifier: Apache-2.0
 config (com.typesafe:config)
   Copyright (C) 2011-2015 Typesafe Inc. &lt;http://typesafe.com&gt;
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -3264,7 +3264,7 @@ License Identifier: Apache-2.0
   Copyright 2008,2018 Red Hat, Inc., and individual contributors
   Copyright 2016, Red Hat, Inc. and/or its affiliates, and individual
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Depenencies
 --------------------------------------------
@@ -3334,7 +3334,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -3394,9 +3394,7 @@ Fourth Party Dependencies
   Copyright (c) 2019, 2020 Eclipse Foundation. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
-License Identifier: EPL-2.0
---------------------------------------------
-License Identifier: GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 </attribution>
         </dependency>
         <dependency>
@@ -3413,7 +3411,7 @@ Zipkin Sender: URLConnection (io.zipkin.reporter2:zipkin-sender-urlconnection)
 Zipkin Reporter: Core (io.zipkin.reporter2:zipkin-reporter)
   Copyright 2016-2019 The OpenZipkin Authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -3514,7 +3512,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   Copyright 2014,2017 jmrozanec
   Copyright 2019 fahmpeermoh
  --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------------------------------------------
 4th party dependency:
 org.slf4j:slf4j-api:jar:1.7.30(MIT License)
@@ -3563,7 +3561,7 @@ Apache License Version 2
             <attribution>etcd4j (org.mousio:etcd4j)
   Copyright (c) 2015, Jurriaan Mous and contributors as indicated by the @author tags.
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -3687,9 +3685,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </attribution>
         </dependency>
         <dependency>
-            <id>124427</id>
+            <id>132870</id>
             <name>gRPC-Java</name>
-            <version>1.45.1</version>
+            <version>1.49.2</version>
             <licensor>The gRPC Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
@@ -3768,7 +3766,7 @@ an open source universal data plane API, which can be obtained at:
     * xds/third_party/udpa
 
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -3983,7 +3981,7 @@ SOFTWARE.
 
 *****************************************
 java-dataloader Version 2.2.0
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 APPENDIX: How to apply the Apache License to your work.
 
       To apply the Apache License to your work, attach the following
@@ -4819,7 +4817,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 --------------------------------------------
-License Identifier: EPL-2.0
+See full text at the bottom of this document for license: EPL-2.0
 --------------------------------------------
 "Jakarta Activation" (com.sun.activation:jakarta.activation)
   Copyright (c) 1997,2021 Oracle and/or its affiliates. All rights reserved.
@@ -4854,7 +4852,7 @@ License Identifier: EPL-2.0
   Copyright (c) 1997,2020 Oracle and/or its affiliates. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 --------------------------------------------
-License Identifier: GPLv2-CPE
+See full text at the bottom of this document for license: GPLv2-CPE
 --------------------------------------------
 "JBoss Logging 3" (org.jboss.logging:jboss-logging)
   Copyright 2010,2011 Red Hat, Inc., and individual contributors
@@ -4894,7 +4892,7 @@ License Identifier: GPLv2-CPE
   Copyright &amp;#169; 2018,2020 Eclipse Foundation.&lt;br&gt;
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -4910,7 +4908,7 @@ License Identifier: Apache-2.0
   Copyright 2007-2021 Red Hat, Inc. All Rights Reserved
   Copyright 2009 IIZUKA Software Technologies Ltd
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -4961,16 +4959,16 @@ source code repository logs.
 </attribution>
         </dependency>
         <dependency>
-            <id>122529</id>
+            <id>132432</id>
             <name>jackson-databind</name>
-            <version>2.13.2.2</version>
+            <version>2.13.4.2</version>
             <licensor>FasterXML, LLC</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-media-jackson</consumer>
             </consumers>
             <attribution>------------------------------- Top-level license --------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 ------------------------------- Copyright notices --------------------------
 # Jackson JSON processor
 
@@ -5056,7 +5054,7 @@ limitations under the License.
             <attribution>Java Annotation Indexer (org.jboss:jandex)
   Copyright 2013,2021 Red Hat, Inc., and individual contributors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -5123,7 +5121,7 @@ JBoss Transaction SPI (org.jboss:jboss-transaction-spi)
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 --------------------------------------------
-License Identifier: LGPL-2.1-only
+See full text at the bottom of this document for license: LGPL-2.1-only
 </attribution>
         </dependency>
         <dependency>
@@ -5173,7 +5171,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5202,7 +5200,7 @@ Fourth Party Dependencies
   Copyright (c) 2018,2020 Eclipse Foundation.
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -5252,7 +5250,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5306,7 +5304,7 @@ Fourth Party Dependencies
   Copyright (C) 1999-2020 by Shigeru Chiba, All rights reserved.
   Copyright (C) 2004 Bill Burke. All Rights Reserved.
   Apache License 2.0
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -5352,7 +5350,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5433,7 +5431,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Copyright (c) 2018,2020 Eclipse Foundation.
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -5480,7 +5478,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5522,7 +5520,7 @@ Fourth Party Dependencies
   Copyright (c) 2018,2020 Eclipse Foundation.
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -5569,7 +5567,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5686,7 +5684,7 @@ Gunnar Morling gunnar@hibernate.org
   Copyright (c) 2018,2020 Eclipse Foundation.
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 "Jakarta Bean Validation API" (jakarta.validation:jakarta.validation-api)
   Copyright &amp;#169; 2019 Eclipse Foundation.&lt;br&gt;
@@ -5803,7 +5801,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5845,7 +5843,7 @@ Fourth Party Dependencies
   of the Apache License, Version 2.0 which is available at
   https://www.apache.org/licenses/LICENSE-2.0.
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 </attribution>
         </dependency>
@@ -5893,7 +5891,7 @@ The project maintains the following source code repositories:
 
 * https://github.com/eclipse-ee4j/jersey
 --------------------------------------------
-License Identifier: EPL-2.0-plus-GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 ----------------------------------------------------------------------------------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -5964,7 +5962,7 @@ Fourth Party Dependencies
   This program and the accompanying materials are made available under the terms
   of the Apache License, Version 2.0 which is available at
   https://www.apache.org/licenses/LICENSE-2.0.
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 </attribution>
         </dependency>
@@ -6004,7 +6002,7 @@ Public Licenses
 ==============================
 Apache Kafka
 Copyright 2018 The Apache Software Foundation.
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 ------------------------------------------------------------------------------------------
 4th party dependencies
 ------------------------------------------------------------------------------------------
@@ -6140,7 +6138,7 @@ package in the Spring Framework library, distributed by VMware, Inc:
   * License: Apache License v2.0
   * Homepage: https://spring.io/projects/spring-framework
 -------------------------------------------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 -------------------------------------------------------------------------------
 Fourth Party Runtime Dependencies
 -------------------------------------------------------------------------------
@@ -6282,7 +6280,7 @@ package in the Spring Framework library, distributed by VMware, Inc:
   * License: Apache License v2.0
   * Homepage: https://spring.io/projects/spring-framework
 -------------------------------------------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 -------------------------------------------------------------------------------
 Fourth Party Runtime Dependencies
 -------------------------------------------------------------------------------
@@ -6408,7 +6406,7 @@ Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
             <attribution>Micronaut AOP (io.micronaut:micronaut-aop)
   Copyright 2017-2021 original authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -6460,10 +6458,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   Copyright (c) 2019, 2020 Eclipse Foundation. All rights reserved.
   Copyright (c) 2005,2020 Oracle and/or its affiliates. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
---------------------------------------------
-License Identifier: EPL-2.0
---------------------------------------------
-License Identifier: GPLv2-CPE
+  See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 </attribution>
         </dependency>
         <dependency>
@@ -6480,7 +6475,7 @@ License Identifier: GPLv2-CPE
   Copyright 2010,2012 Google Inc. All Rights Reserved.
   Copyright 2017-2022 original authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -6525,7 +6520,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             <attribution>Micronaut Inject Java (io.micronaut:micronaut-inject-java)
   Copyright 2017-2022 original authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -6577,16 +6572,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   Copyright 2017-2021 original authors
   Apache License 2.0
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 "Jakarta Annotations API" (jakarta.annotation:jakarta.annotation-api)
   Copyright (c) 2019, 2020 Eclipse Foundation. All rights reserved.
   Copyright (c) 2005,2020 Oracle and/or its affiliates. All rights reserved.
   EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
---------------------------------------------
-License Identifier: EPL-2.0
---------------------------------------------
-License Identifier: GPLv2-CPE
+See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
 </attribution>
         </dependency>
         <dependency>
@@ -6616,7 +6608,7 @@ PackageCopyrightText: &lt;text&gt;
 Arthur De Magalhaes arthurdm@ca.ibm.com
 &lt;/text&gt;
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -6644,7 +6636,7 @@ ________________________________________________
 MicroStream Cache (one.microstream:microstream-cache)
   Copyright (C) 2019-2021 MicroStream Software
 --------------------------------------------
-License Identifier: EPL-2.0
+See full text at the bottom of this document for license: EPL-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -6687,7 +6679,7 @@ Fourth Party Runtime Dependencies
 "JSR107 API and SPI" (javax.cache:cache-api)
   Copyright 2011-2016 Terracotta, Inc.
   Copyright 2011-2016 Oracle America Incorporated
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -6708,7 +6700,7 @@ License Identifier: Apache-2.0
   Copyright (c) 2015-2022 VMware Inc. or its affiliates, All Rights Reserved.
   Copyright 2002-2017 the original author or authors.
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -6887,7 +6879,7 @@ under the License.
   Copyright (c) 2008-2009 Bjoern Hoehrmann &lt;bjoern@hoehrmann.de&gt;
   Copyright (c) 2004-2011 QOS.ch
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 
                             The Netty Project
@@ -7544,7 +7536,7 @@ decompression for Java., which can be obtained at:
   Copyright 2000-2021 JetBrains s.r.o.
   Copyright 2013-2020 The OpenZipkin Authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------
@@ -7571,7 +7563,7 @@ Apache License 2.0
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-exporter-jaeger)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -7678,7 +7670,7 @@ Fourth Party Dependencies
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-extension-trace-propagators)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -7711,7 +7703,7 @@ Fourth Party Dependencies
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-sdk)
   Copyright The OpenTelemetry Authors
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
@@ -7769,7 +7761,7 @@ Copyright 2017-2019 The OpenTracing Authors
 OpenTracing API for Java: 0.33.0, Apache 2.0 (opentracing-api is used in opentracing-tracerresolver)
 Copyright 2016-2019 The OpenTracing Authors
 ---------------------------------------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
@@ -7786,7 +7778,7 @@ License Identifier: Apache-2.0
   Copyright 2020 Red Hat, Inc.
   Copyright 2017,2019 Red Hat, Inc, and individual contributors.
 --------------------------------------------
-License Identifier: Apache-2.0
+See full text at the bottom of this document for license: Apache-2.0
 --------------------------------------------
 Fourth Party Runtime Dependencies
 --------------------------------------------

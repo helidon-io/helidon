@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -387,7 +387,6 @@
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
-                            <additionalJOption>--add-exports=java.base/sun.security.util=io.helidon.common.pki</additionalJOption>
                         </additionalJOptions>
                         <additionalOptions>
                             <!--<additionalOption> - -add-stylesheet ${top.parent.basedir}/etc/helidon-javadoc.css</additionalOption>-->
@@ -621,14 +620,6 @@
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate-enhance}</version>
-                    <dependencies>
-                        <dependency>
-                            <!-- used by hibernate plugin - requires update for Java 17 -->
-                            <groupId>net.bytebuddy</groupId>
-                            <artifactId>byte-buddy</artifactId>
-                            <version>${version.lib.byte-buddy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>

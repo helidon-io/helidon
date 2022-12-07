@@ -116,6 +116,13 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>Port of the proxy server to use</td>
  * </tr>
  * <tr>
+ *     <td>relative-uris</td>
+ *     <td>false</td>
+ *     <td>Flag to force the use of relative URIs in all requests. By default,
+ *          requests that use the Proxy will have absolute URIs. Set this flag to
+ *          true if the host is unable to accept absolute URIs.</td>
+ * </tr>
+ * <tr>
  *     <td>redirect-uri</td>
  *     <td>/oidc/redirect</td>
  *     <td>URI to register web server component on, used by the OIDC server to
@@ -331,6 +338,7 @@ public final class OidcConfig {
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = true;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
+    static final boolean DEFAULT_RELATIVE_URIS = false;
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final boolean DEFAULT_REDIRECT = false;
@@ -384,6 +392,7 @@ public final class OidcConfig {
     private final CrossOriginConfig crossOriginConfig;
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
+    private final boolean relativeUris;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -417,6 +426,7 @@ public final class OidcConfig {
         this.tokenEndpointAuthentication = builder.tokenEndpointAuthentication;
         this.clientTimeout = builder.clientTimeout;
         this.forceHttpsRedirects = builder.forceHttpsRedirects;
+        this.relativeUris = builder.relativeUris;
 
         if (tokenEndpointAuthentication == ClientAuthentication.CLIENT_SECRET_POST) {
             // we should only store this if required
@@ -986,6 +996,16 @@ public final class OidcConfig {
     }
 
     /**
+     * Determines whether to force the use of relative URIs in all requests,
+     * regardless of the presence or absence of proxies or no-proxy lists.
+     *
+     * @return {@code true} if we should use relative URIs
+     */
+    public boolean relativeUris() {
+        return relativeUris;
+    }
+
+    /**
      * Client Authentication methods that are used by Clients to authenticate to the Authorization
      * Server when using the Token Endpoint.
      */
@@ -1087,6 +1107,7 @@ public final class OidcConfig {
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
         private String proxyHost;
         private int proxyPort = DEFAULT_PROXY_PORT;
+        private boolean relativeUris = DEFAULT_RELATIVE_URIS;
         private String scopeAudience;
         private OidcMetadata.Builder oidcMetadata = OidcMetadata.builder();
         private String frontendUri;
@@ -1139,6 +1160,7 @@ public final class OidcConfig {
 
             WebClient.Builder webClientBuilder = OidcUtil.webClientBaseBuilder(proxyHost,
                                                                                proxyPort,
+                                                                               relativeUris,
                                                                                clientTimeout);
             ClientBuilder clientBuilder = OidcUtil.clientBaseBuilder(proxyProtocol, proxyHost, proxyPort);
 
@@ -1274,6 +1296,7 @@ public final class OidcConfig {
                     .ifPresent(this::proxyProtocol);
             config.get("proxy-host").asString().ifPresent(this::proxyHost);
             config.get("proxy-port").asInt().ifPresent(this::proxyPort);
+            config.get("relative-uris").asBoolean().ifPresent(this::relativeUris);
 
             // our application
             config.get("redirect-uri").asString().ifPresent(this::redirectUri);
@@ -1945,6 +1968,22 @@ public final class OidcConfig {
         @ConfiguredOption("80")
         public Builder proxyPort(int proxyPort) {
             this.proxyPort = proxyPort;
+            return this;
+        }
+
+        /**
+         * Can be set to {@code true} to force the use of relative URIs in all requests,
+         * regardless of the presence or absence of proxies or no-proxy lists. By default,
+         * requests that use the Proxy will have absolute URIs. Set this flag to {@code true}
+         * if the host is unable to accept absolute URIs.
+         * Defaults to {@value #DEFAULT_RELATIVE_URIS}.
+         *
+         * @param relativeUris relative URIs flag
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder relativeUris(boolean relativeUris) {
+            this.relativeUris = relativeUris;
             return this;
         }
 

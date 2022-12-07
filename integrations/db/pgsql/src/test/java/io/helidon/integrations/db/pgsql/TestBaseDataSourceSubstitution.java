@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.postgresql.PGProperty;
 import org.postgresql.ds.common.BaseDataSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test methods substituted in BaseDataSource.
@@ -79,16 +80,16 @@ public class TestBaseDataSourceSubstitution {
         dataSrc.setProperty(PGProperty.APPLICATION_NAME, appNameProperty);
         BaseDataSourceSubstitution dataCopy = new BaseDataSourceSubstitution();
         dataCopy.initializeFrom(dataSrc);
-        assertEquals(databaseName, getPrivateField(dataCopy, "databaseName"));
-        assertEquals(user, getPrivateField(dataCopy, "user"));
-        assertEquals(password, getPrivateField(dataCopy, "password"));
+        assertThat(getPrivateField(dataCopy, "databaseName"), is(databaseName));
+        assertThat(getPrivateField(dataCopy, "user"), is(user));
+        assertThat(getPrivateField(dataCopy, "password"), is(password));
         int[] dataPortNumbers = (int[]) getPrivateField(dataCopy, "portNumbers");
         Properties dataProperties = (Properties) getPrivateField(dataCopy, "properties");
-        assertEquals(portNumbers.length, dataPortNumbers.length);
+        assertThat(dataPortNumbers.length, is(portNumbers.length));
         for (int i = 0; i < portNumbers.length; i++) {
-             assertEquals(portNumbers[i], dataPortNumbers[i]);
+             assertThat(dataPortNumbers[i], is(portNumbers[i]));
         }
-        assertEquals(appNameProperty, dataProperties.getProperty(PGProperty.APPLICATION_NAME.getName()));
+        assertThat(dataProperties.getProperty(PGProperty.APPLICATION_NAME.getName()), is(appNameProperty));
     }
 
 }

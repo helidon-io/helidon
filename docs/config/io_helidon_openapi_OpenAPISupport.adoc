@@ -46,6 +46,7 @@ Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenAPISuppo
 
 |`cors` |xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |Assigns the CORS settings for the OpenAPI endpoint.
 |`static-file` |string |`META-INF/openapi.*` |Sets the file system path of the static OpenAPI document file. Default types are `json`, `yaml`, and `yml`.
+|`ui` |xref:{rootdir}/config/io_helidon_openapi_OpenApiUi.adoc[OpenApiUi] |{nbsp} |Assigns the OpenAPI UI builder the `OpenAPISupport` service should use in preparing the U/I.
 |`web-context` |string |`/openapi` |Sets the web context path for the OpenAPI endpoint.
 
 |===

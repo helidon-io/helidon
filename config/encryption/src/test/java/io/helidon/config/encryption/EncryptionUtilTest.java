@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -76,8 +74,8 @@ public class EncryptionUtilTest {
         } catch (ConfigEncryptionException e) {
             Throwable cause = e.getCause();
             //our message
-            assertEquals("Failed to encrypt using RSA key", e.getMessage());
-            assertSame(CryptoException.class, cause.getClass());
+            assertThat(e.getMessage(), is("Failed to encrypt using RSA key"));
+            assertThat(cause.getClass(), sameInstance(CryptoException.class));
         }
     }
 
@@ -92,17 +90,17 @@ public class EncryptionUtilTest {
         String encryptedBase64 = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
         String decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedBase64);
 
-        assertEquals(TEST_SECRET, decrypted);
+        assertThat(decrypted, is(TEST_SECRET));
 
         String encryptedAgain = EncryptionUtil.encryptRsa(encryptionKey, TEST_SECRET);
 
         if (mustBeSeeded) {
-            assertNotEquals(encryptedBase64, encryptedAgain);
+            assertThat(encryptedAgain, is(not((encryptedBase64))));
         }
 
         decrypted = EncryptionUtil.decryptRsa(decryptionKey, encryptedAgain);
 
-        assertEquals(TEST_SECRET, decrypted);
+        assertThat(decrypted, is(TEST_SECRET));
     }
 
     @Test
@@ -110,13 +108,13 @@ public class EncryptionUtilTest {
         String encryptedBase64 = EncryptionUtil.encryptAes(MASTER_PASSWORD, TEST_SECRET);
         String decrypted = EncryptionUtil.decryptAes(MASTER_PASSWORD, encryptedBase64);
 
-        assertEquals(TEST_SECRET, decrypted);
+        assertThat(decrypted, is(TEST_SECRET));
 
         String encryptedAgain = EncryptionUtil.encryptAes(MASTER_PASSWORD, TEST_SECRET);
-        assertNotEquals(encryptedBase64, encryptedAgain);
+        assertThat(encryptedAgain, is(not(encryptedBase64)));
         decrypted = EncryptionUtil.decryptAes(MASTER_PASSWORD, encryptedAgain);
 
-        assertEquals(TEST_SECRET, decrypted);
+        assertThat(decrypted, is(TEST_SECRET));
     }
 
     @Test
@@ -125,7 +123,7 @@ public class EncryptionUtilTest {
 
         String encryptedString = new String(Base64.getDecoder().decode(encryptedBase64), StandardCharsets.UTF_8);
         //must not be just base64 encoded
-        assertNotEquals(TEST_SECRET, encryptedString);
+        assertThat(encryptedString, is(not(TEST_SECRET)));
 
         try {
             String decrypted = EncryptionUtil.decryptAes("anotherPassword".toCharArray(), encryptedBase64);

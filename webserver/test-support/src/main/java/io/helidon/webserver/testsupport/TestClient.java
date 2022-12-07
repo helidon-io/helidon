@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,11 @@ import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.webserver.BackpressureStrategy;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.SocketConfiguration;
 
 /**
  * Client API designed to create request directly on {@link Routing} without a network layer.
@@ -252,6 +254,11 @@ public class TestClient {
         public Single<Void> closeConnection() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public SocketConfiguration socketConfiguration() {
+            return SocketConfiguration.create("@default");
+        }
     }
 
     static class TestBareResponse implements BareResponse {
@@ -292,6 +299,11 @@ public class TestClient {
         @Override
         public Single<BareResponse> whenCompleted() {
             return Single.create(completionStage);
+        }
+
+        @Override
+        public void backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            //noop
         }
 
         @Override

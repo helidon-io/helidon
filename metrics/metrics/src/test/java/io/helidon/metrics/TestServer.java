@@ -53,7 +53,6 @@ import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.not;
 
 public class TestServer {
@@ -187,11 +186,14 @@ public class TestServer {
     }
 
     @Test
-    void checkMetricsForExecutorService() {
+    void checkMetricsForExecutorService() throws Exception {
 
         String jsonKeyForCompleteTaskCountInThreadPool =
                 "executor-service.completed-task-count;poolIndex=0;supplierCategory=my-thread-thread-pool-1;supplierIndex=0";
 
+        // Because ThreadPoolExecutor methods are documented as reporting approximations of task counts, etc., we should
+        // not depend on the values changing in a reasonable time period...or at all. So this test simply makes sure that
+        // an expected metric is present.
         WebClientRequestBuilder metricsRequestBuilder = webClientBuilder
                 .build()
                 .get()
@@ -209,36 +211,6 @@ public class TestServer {
         assertThat("JSON metrics results before accessing slow endpoint",
                    metrics,
                    hasKey(jsonKeyForCompleteTaskCountInThreadPool));
-
-        int completedTaskCount = metrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
-        assertThat("Completed task count before accessing slow endpoint", completedTaskCount, is(0));
-
-        WebClientResponse slowGreetResponse = webClientBuilder
-                .build()
-                .get()
-                .accept(MediaType.TEXT_PLAIN)
-                .path("greet/slow")
-                .submit()
-                .await(CLIENT_TIMEOUT);
-
-        assertThat("Slow greet access response status", slowGreetResponse.status().code(), is(200));
-
-        WebClientResponse secondMetricsResponse = metricsRequestBuilder
-                .submit()
-                .await(CLIENT_TIMEOUT);
-
-        assertThat("Second access to metrics", secondMetricsResponse.status().code(), is(200));
-
-        JsonObject secondMetrics = secondMetricsResponse.content().as(JsonObject.class).await(CLIENT_TIMEOUT);
-
-        assertThat("JSON metrics results after accessing slow endpoint",
-                   secondMetrics,
-                   hasKey(jsonKeyForCompleteTaskCountInThreadPool));
-
-
-        int secondCompletedTaskCount = secondMetrics.getInt(jsonKeyForCompleteTaskCountInThreadPool);
-
-        assertThat("Completed task count after accessing slow endpoint", secondCompletedTaskCount, is(1));
     }
 
     @ParameterizedTest

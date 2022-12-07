@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.TreeMap;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -196,7 +197,8 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         Contexts.context().ifPresent(ctx -> ctx.register(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, currentSpan.context()));
 
         // propagate tracing headers, so remote service can use currentSpan as its parent
-        Map<String, List<String>> outboundHeaders = new HashMap<>();
+        // For efficiency within HeaderConsumer, pass a case-insensitive initial headers map.
+        Map<String, List<String>> outboundHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         HeaderProvider provider = HeaderProvider.create(inboundHeaders);
         HeaderConsumer consumer = HeaderConsumer.create(outboundHeaders);
         tracingHeaders(tracer, currentSpan, provider, consumer);

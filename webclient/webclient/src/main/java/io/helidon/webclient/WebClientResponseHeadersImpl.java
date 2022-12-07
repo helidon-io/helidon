@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,27 +24,16 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
-import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.http.ReadOnlyHeaders;
 import io.helidon.common.http.SetCookie;
 
 /**
  * Implementation of {@link WebClientResponseHeaders}.
  */
-class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClientResponseHeaders {
+class WebClientResponseHeadersImpl extends ReadOnlyHeaders implements WebClientResponseHeaders {
 
     private WebClientResponseHeadersImpl(Map<String, List<String>> headers) {
         super(headers);
-    }
-
-    /**
-     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Parameters} instance.
-     *
-     * @param parameters headers in parameters instance
-     * @return response headers instance
-     */
-    static WebClientResponseHeaders create(Parameters parameters) {
-        return create(parameters.toMap());
     }
 
     /**
@@ -53,7 +42,7 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
      * @param headers response headers in map
      * @return response headers instance
      */
-    static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
+    protected static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
         return new WebClientResponseHeadersImpl(headers);
     }
 

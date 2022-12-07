@@ -1,6 +1,6 @@
 
 # 1st stage, build the app
-FROM ghcr.io/graalvm/graalvm-ce:java17-21.3.0 as build
+FROM ghcr.io/graalvm/graalvm-ce:ol9-java17-22.3.0 as build
 
 # Install native-image
 RUN gu install native-image

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
 
@@ -107,7 +107,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
-            <artifactId>jboss-transaction-spi</artifactId>
+            <artifactId>jboss-transaction-spi-jakarta</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -126,13 +126,6 @@
     <build>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/resources</directory>
-                <excludes>
-                    <exclude>META-INF/microprofile-config.properties</exclude>
-                    <exclude>META-INF/persistence.xml</exclude>
-                </excludes>
-            </resource>
-            <resource>
                 <directory>${basedir}/src/main/resources/META-INF</directory>
                 <targetPath>META-INF</targetPath>
                 <includes>
@@ -140,6 +133,13 @@
                     <include>persistence.xml</include>
                 </includes>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>META-INF/microprofile-config.properties</exclude>
+                    <exclude>META-INF/persistence.xml</exclude>
+                </excludes>
             </resource>
         </resources>
         <pluginManagement>
@@ -232,6 +232,9 @@
                     <threadCount>10</threadCount>
                     <systemPropertyVariables>
                         <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                        <db.user>${db.user}</db.user>
+                        <db.password>${db.password}</db.password>
+                        <db.url>${db.url}</db.url>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
@@ -324,10 +327,11 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
+                        <!-- Docker container need to start before Helidon application (pre-integration-test phase). -->
                         <executions>
                             <execution>
                                 <id>start</id>
-                                <phase>pre-integration-test</phase>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>start</goal>
                                 </goals>
@@ -344,21 +348,22 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Test with in memory H2 database. Default test profile. Active until db property is set. -->
         <profile>
             <id>h2</id>
             <activation>
                 <property>
-                    <name>h2</name>
+                    <name>!db</name>
                 </property>
             </activation>
             <properties>
                 <db.port>9092</db.port>
                 <db.host>localhost</db.host>
-                <db.database>pokemon</db.database>
+                <db.database>test</db.database>
                 <db.user>sa</db.user>
                 <db.password></db.password>
-                <db.roootpw>root</db.roootpw>
-                <db.url>jdbc:h2:tcp://${db.host}:${db.port}/test</db.url>
+                <db.url>jdbc:h2:mem:test;INIT=SET TRACE_LEVEL_FILE=4</db.url>
                 <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                 <db.datasource>org.h2.jdbcx.JdbcDataSource</db.datasource>
             </properties>
@@ -367,77 +372,19 @@
                     <groupId>io.helidon.integrations.db</groupId>
                     <artifactId>h2</artifactId>
                 </dependency>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
             </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>start-db</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>java</executable>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
-                                        <argument>${mainClassH2}</argument>
-                                        <argument>-tcp</argument>
-                                        <argument>-tcpPassword</argument>
-                                        <argument>${h2.db.password}</argument>
-                                        <argument>-tcpPort</argument>
-                                        <argument>${h2.db.port}</argument>
-                                        <argument>-baseDir</argument>
-                                        <argument>${project.build.directory}/h2</argument>
-                                        <argument>-ifNotExists</argument>
-                                    </arguments>
-                                    <async>true</async>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>stop-db</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>java</executable>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <argument>${project.build.directory}/libs/h2-${version.lib.h2}.jar</argument>
-                                        <argument>${mainClassH2}</argument>
-                                        <argument>-tcpShutdown</argument>
-                                        <argument>tcp://localhost:${h2.db.port}</argument>
-                                        <argument>-tcpPassword</argument>
-                                        <argument>${h2.db.password}</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
         <profile>
             <id>mysql</id>
             <activation>
                 <property>
-                    <name>mysql</name>
+                    <name>db</name>
+                    <value>mysql</value>
                 </property>
             </activation>
             <properties>
@@ -449,7 +396,7 @@
                 <db.password>password</db.password>
                 <db.roootpw>root</db.roootpw>
                 <db.url>jdbc:mysql://${db.host}:${db.port}/${db.database}?${db.args}</db.url>
-                <hibernate.dialect>org.hibernate.dialect.MySQL5Dialect</hibernate.dialect>
+                <hibernate.dialect>org.hibernate.dialect.MySQL8Dialect</hibernate.dialect>
                 <db.datasource>com.mysql.cj.jdbc.MysqlDataSource</db.datasource>
                 <db.driver>com.mysql.cj.jdbc.Driver</db.driver>
             </properties>
@@ -467,17 +414,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
@@ -498,13 +434,14 @@
                                             <port>${db.host}:${db.port}:3306</port>
                                         </ports>
                                         <wait>
-                                            <tcp>
+                                            <!--tcp>
                                                 <host>127.0.0.1</host>
                                                 <ports>
                                                     <port>${db.port}</port>
                                                 </ports>
-                                            </tcp>
+                                            </tcp-->
                                             <time>120000</time>
+                                            <log>MySQL init process done. Ready for start up.</log>
                                         </wait>
                                     </run>
                                 </image>
@@ -520,7 +457,8 @@
             <id>pgsql</id>
             <activation>
                 <property>
-                    <name>pgsql</name>
+                    <name>db</name>
+                    <value>pgsql</value>
                 </property>
             </activation>
             <properties>
@@ -530,8 +468,8 @@
                 <db.user>user</db.user>
                 <db.password>password</db.password>
                 <db.url>jdbc:postgresql://${db.host}:${db.port}/${db.database}</db.url>
-                <hibernate.dialect>org.hibernate.dialect.PostgreSQL10Dialect</hibernate.dialect>
-                <db.datasource>org.postgresql.jdbc3.Jdbc3PoolingDataSource</db.datasource>
+                <hibernate.dialect>org.hibernate.dialect.PostgreSQLDialect</hibernate.dialect>
+                <db.datasource>org.postgresql.ds.PGSimpleDataSource</db.datasource>
                 <db.driver>org.postgresql.Driver</db.driver>
             </properties>
             <dependencies>
@@ -548,17 +486,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.user>${db.user}</db.user>
-                                <db.password>${db.password}</db.password>
-                                <db.url>${db.url}</db.url>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
                    <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>

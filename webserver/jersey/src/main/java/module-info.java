@@ -38,5 +38,5 @@ module io.helidon.webserver.jersey {
     provides InjectionManagerFactory with io.helidon.webserver.jersey.HelidonHK2InjectionManagerFactory;
 
     // reflection access from jersey injection
-    opens io.helidon.webserver.jersey to org.glassfish.hk2.utilities, org.glassfish.hk2.locator;
+    opens io.helidon.webserver.jersey to org.glassfish.hk2.utilities, org.glassfish.hk2.locator,weld.core.impl;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @ApplicationScoped
 class TestConfiguration {
@@ -57,14 +58,14 @@ class TestConfiguration {
     void startServer() {
         this.stopServer();
         final Server.Builder builder = Server.builder();
-        assertNotNull(builder);
+        assertThat(builder, notNullValue());
         // The Helidon MicroProfile server implementation uses
         // ConfigProviderResolver#getConfig(ClassLoader) directly
         // instead of ConfigProvider#getConfig() so we follow suit
         // here for fidelity.
         builder.config(ConfigProviderResolver.instance().getConfig(Thread.currentThread().getContextClassLoader()));
         this.server = builder.build();
-        assertNotNull(this.server);
+        assertThat(this.server, notNullValue());
         this.server.start();
     }
 
@@ -77,11 +78,11 @@ class TestConfiguration {
     }
 
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) throws SQLException {
-        assertNotNull(this.test);
-        assertNotNull(this.hikariTest);
-        assertNotNull(this.test.toString());
-        assertNotNull(this.hikariTest.toString());
-        assertTrue(this.hikariTest.getMetricsTrackerFactory() instanceof MicroProfileMetricsTrackerFactory);
+        assertThat(this.test, notNullValue());
+        assertThat(this.hikariTest, notNullValue());
+        assertThat(this.test.toString(), notNullValue());
+        assertThat(this.hikariTest.toString(), notNullValue());
+        assertThat(this.hikariTest.getMetricsTrackerFactory(), instanceOf(MicroProfileMetricsTrackerFactory.class));
         Connection connection = null;
         try {
             connection = this.test.getConnection();

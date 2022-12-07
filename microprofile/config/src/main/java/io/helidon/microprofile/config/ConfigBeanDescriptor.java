@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 
 import io.helidon.config.ConfigException;
 
-import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.config.Config;
@@ -52,10 +51,7 @@ final class ConfigBeanDescriptor {
         this.fieldSetters = fieldSetters;
     }
 
-    static ConfigBeanDescriptor create(AnnotatedType<?> annotatedType,
-                                       ConfigProperties configProperties) {
-
-        Class<?> type = annotatedType.getJavaClass();
+    static ConfigBeanDescriptor create(Class<?> type, ConfigProperties configProperties) {
 
         if (type.isInterface()) {
             throw new DeploymentException("Only concrete classes can be annotated with ConfigProperties, got " + type

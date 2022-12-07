@@ -16,6 +16,8 @@
 package io.helidon.examples.jbatch;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import org.junit.jupiter.api.Test;
 
 import jakarta.inject.Inject;
@@ -23,18 +25,26 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.Collections;
 
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 public class TestJBatchEndpoint {
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     @Inject
     private WebTarget webTarget;
 
     @Test
     public void runJob() throws InterruptedException {
+
+        JsonObject expectedJson = JSON.createObjectBuilder()
+                .add("Steps executed", "[step1, step2]")
+                .add("Status", "COMPLETED")
+                .build();
 
         //Start the job
         JsonObject jsonObject = webTarget
@@ -43,20 +53,24 @@ public class TestJBatchEndpoint {
                 .get(JsonObject.class);
 
         Integer responseJobId = jsonObject.getInt("Started a job with Execution ID: ");
-        assertNotNull(responseJobId, "Response Job Id");
+        assertThat(responseJobId, is(notNullValue()));
+        JsonObject result = null;
+        for (int i = 1; i < 10; i++) {
+            //Wait a bit for it to complete
+            Thread.sleep(i*1000);
 
-        //Wait a bit for it to complete
-        Thread.sleep(1000);
+            //Examine the results
+            result = webTarget
+                    .path("batch/status/" + responseJobId)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get(JsonObject.class);
 
-        //Examine the results
-        jsonObject = webTarget
-                .path("batch/status/" + responseJobId)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class);
+            if (result.equals(expectedJson)){
+                break;
+            }
 
-        String responseString = jsonObject.toString();
+        }
 
-        assertEquals("{\"Steps executed\":\"[step1, step2]\",\"Status\":\"COMPLETED\"}",
-                responseString, "Job Result string");
+        assertThat(result, equalTo(expectedJson));
     }
 }

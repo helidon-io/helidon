@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
@@ -32,7 +32,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>3.0.2-SNAPSHOT</helidon.version>
+        <helidon.version>3.0.3-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -1045,6 +1045,11 @@
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.openapi-ui</groupId>
+                <artifactId>helidon-integrations-openapi-ui</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- CORS support -->
             <dependency>
                 <groupId>io.helidon.webserver.cors</groupId>
@@ -1075,6 +1080,11 @@
             <dependency>
                 <groupId>io.helidon.messaging.aq</groupId>
                 <artifactId>helidon-messaging-aq</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.wls-jms</groupId>
+                <artifactId>helidon-messaging-wls-jms</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Testing -->

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.messaging</groupId>
         <artifactId>helidon-messaging-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-messaging-connectors-project</artifactId>
     <name>Helidon Messaging Connectors Project</name>
@@ -32,9 +32,10 @@
 
     <modules>
         <module>kafka</module>
+        <module>jms-shim</module>
         <module>jms</module>
         <module>aq</module>
-        <module>jms-shim</module>
+        <module>wls-jms</module>
         <module>mock</module>
     </modules>
 </project>

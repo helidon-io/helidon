@@ -24,6 +24,7 @@
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
+general_doc_issues_4673
 
 == Contents
 

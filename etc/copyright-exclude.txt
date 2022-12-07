@@ -46,6 +46,14 @@ node_modules
 archetype-resources/pom.xml
 # excluded as it contains both Oracle and original copyright notice
 src/main/java/org/jboss/weld/bean/proxy/ProxyFactory.java
+src/main/java/io/helidon/examples/integrations/neo4j/mp/domain/Actor.java
+src/main/java/io/helidon/examples/integrations/neo4j/mp/domain/Movie.java
+src/main/java/io/helidon/examples/integrations/neo4j/mp/domain/Person.java
+src/main/java/io/helidon/examples/integrations/neo4j/mp/domain/MovieRepository.java
+src/main/java/io/helidon/examples/integrations/neo4j/se/domain/Actor.java
+src/main/java/io/helidon/examples/integrations/neo4j/se/domain/Movie.java
+src/main/java/io/helidon/examples/integrations/neo4j/se/domain/Person.java
+src/main/java/io/helidon/examples/integrations/neo4j/se/domain/MovieRepository.java
 etc/THIRD_PARTY_LICENSES.xml
 etc/HELIDON_THIRD_PARTY_LICENSES.xml
 etc/dependency-check-suppression.xml

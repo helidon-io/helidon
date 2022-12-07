@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 
 public class TestServerWithConfig {
 
@@ -62,6 +63,6 @@ public class TestServerWithConfig {
     @Test
     public void testAlternatePath() throws Exception {
         String goSummary = TestUtil.fromYaml(yaml, "paths./testapp/go.get.summary", String.class);
-        assertEquals(TestApp.GO_SUMMARY, goSummary);
+        assertThat(goSummary, is(TestApp.GO_SUMMARY));
     }
 }

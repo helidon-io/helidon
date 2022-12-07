@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 
 @ApplicationScoped
 public class TestAutomaticUserTransactionInjection {
@@ -50,7 +51,7 @@ public class TestAutomaticUserTransactionInjection {
             .disableDiscovery()
             .addBeanClasses(TestAutomaticUserTransactionInjection.class)
             .addExtensions(NarayanaExtension.class);
-        assertNotNull(initializer);
+        assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
 
@@ -62,21 +63,21 @@ public class TestAutomaticUserTransactionInjection {
     }
 
     private void onJtaEnvironmentBeanLoad(@Observes final JTAEnvironmentBean instance) {
-        assertNotNull(instance);
+        assertThat(instance, notNullValue());
     }
     
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
                            final UserTransaction userTransaction)
         throws NotSupportedException, SystemException {
-        assertNotNull(userTransaction);
-        assertEquals("Transaction: unknown", userTransaction.toString());
-        assertEquals(Status.STATUS_NO_TRANSACTION, userTransaction.getStatus());
+        assertThat(userTransaction, notNullValue());
+        assertThat(userTransaction.toString(), is("Transaction: unknown"));
+        assertThat(userTransaction.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         try {
             userTransaction.begin();
-            assertEquals(Status.STATUS_ACTIVE, userTransaction.getStatus());
+            assertThat(userTransaction.getStatus(), is(Status.STATUS_ACTIVE));
         } finally {
             userTransaction.rollback();
-            assertEquals(Status.STATUS_NO_TRANSACTION, userTransaction.getStatus());
+            assertThat(userTransaction.getStatus(), is(Status.STATUS_NO_TRANSACTION));
         }
     }
 

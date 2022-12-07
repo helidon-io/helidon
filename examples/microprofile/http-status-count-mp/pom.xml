@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples</groupId>
@@ -106,15 +106,6 @@
                 <executions>
                     <execution>
                         <id>copy-libs</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>third-party-license-report</id>
                     </execution>
                 </executions>
             </plugin>

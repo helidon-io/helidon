@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
 
 import jakarta.inject.Inject;
 
@@ -69,7 +69,7 @@ class EmitterTest {
         emitter.send("Test2");
         emitter.send(Message.of("Test3"));
         emitter.complete();
-        assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
+        assertThat(countDownLatch.await(10, TimeUnit.SECONDS), is(true));
         assertThat(payloads, contains("Test1", "Test2", "Test3"));
     }
 }

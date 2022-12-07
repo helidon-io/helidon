@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,11 @@ import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmittingPublisherTest {
 
@@ -57,14 +58,14 @@ public class EmittingPublisherTest {
 
         TEST_DATA.forEach(emitter::emit);
 
-        assertEquals(TEST_DATA, result);
+        assertThat(result, contains(TEST_DATA.toArray()));
     }
 
     @Test
     void notReady() {
         EmittingPublisher<String> emitter = EmittingPublisher.create();
         emitter.onRequest((n, d) -> LOGGER.fine(() -> Long.toString(n)));
-        assertFalse(emitter.emit(""));
+        assertThat(emitter.emit(""), is(false));
     }
 
     @Test
@@ -98,9 +99,9 @@ public class EmittingPublisherTest {
             }
         });
 
-        assertTrue(emitter.isCancelled());
-        assertFalse(emitter.emit("should false"));
-        assertEquals(List.of(), forbiddenSigns);
+        assertThat(emitter.isCancelled(), is(true));
+        assertThat(emitter.emit("should false"), is(false));
+        assertThat(forbiddenSigns, empty());
     }
 
     @Test
@@ -131,9 +132,9 @@ public class EmittingPublisherTest {
             }
         });
         emitter.complete();
-        assertTrue(onCompleteCalled.get());
-        assertTrue(emitter.isCompleted());
+        assertThat(onCompleteCalled.get(), is(true));
+        assertThat(emitter.isCompleted(), is(true));
         assertThrows(IllegalStateException.class, () -> emitter.emit("should false"));
-        assertEquals(List.of(), forbiddenSigs);
+        assertThat(forbiddenSigs, empty());
     }
 }

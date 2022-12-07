@@ -58,7 +58,7 @@ This is a standalone configuration type, prefix from configuration root: `server
  Default is `false`
 |`features.print-details` |boolean |`false` |Set to `true` to print detailed feature information on startup.
 |`host` |string |{nbsp} |A helper method that just calls #bindAddress(String).
-|`max-header-size` |int |`8192` |Maximal number of bytes of all header values combined. When a bigger value is received, a
+|`max-header-size` |int |`16384` |Maximal number of bytes of all header values combined. When a bigger value is received, a
  io.helidon.common.http.Http.Status#BAD_REQUEST_400
  is returned.
 
@@ -71,6 +71,22 @@ This is a standalone configuration type, prefix from configuration root: `server
 |`max-upgrade-content-length` |int |`65536` |Set a maximum length of the content of an upgrade request.
 
  Default is `64*1024`
+|`backpressure-buffer-size` |long |`5242880` |Set a maximum length of the unflushed response data sending buffer can keep without applying backpressure.
+Depends on `backpressure-policy` what happens if max buffer size is reached.
+
+ Default is `5*1024*1024` - 5Mb
+|`backpressure-policy` | String | `LINEAR` |Sets the strategy for applying backpressure to the reactive stream
+of response data.
+
+* LINEAR - Data chunks are requested one-by-one after previous data chunk has been written to Netty's buffer, when
+`backpressure-buffer-size` watermark is reached, new chunks are not requested until buffer size decrease under
+the watermark value.
+* PREFETCH - After first data chunk arrives, expected number of chunks needed to fill the buffer up
+to watermark is calculated and requested.
+* AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested and extra flush is initiated.
+* UNBOUNDED - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
+
+ Default is `LINEAR`
 |`port` |int |`0` |Configures a server port to listen on with the server socket. If port is
  `0` then any available ephemeral port will be used.
 |`receive-buffer-size` |int |{nbsp} |Configures proposed value of the TCP receive window that is advertised to the remote peer on the

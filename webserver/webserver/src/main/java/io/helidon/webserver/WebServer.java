@@ -590,8 +590,32 @@ public interface WebServer {
         }
 
         @Override
+        public Builder backpressureBufferSize(long backpressureBufferSize) {
+            configurationBuilder.backpressureBufferSize(backpressureBufferSize);
+            return this;
+        }
+
+        @Override
+        public Builder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+            configurationBuilder.backpressureStrategy(backpressureStrategy);
+            return this;
+        }
+
+        @Override
         public Builder maxUpgradeContentLength(int size) {
             configurationBuilder.maxUpgradeContentLength(size);
+            return this;
+        }
+
+        @Override
+        public Builder addRequestedUriDiscoveryType(SocketConfiguration.RequestedUriDiscoveryType type) {
+            defaultSocket(it -> it.addRequestedUriDiscoveryType(type));
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryEnabled(boolean enabled) {
+            defaultSocket(it -> it.requestedUriDiscoveryEnabled(enabled));
             return this;
         }
 

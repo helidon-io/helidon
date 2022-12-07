@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.media</groupId>
         <artifactId>helidon-media-project</artifactId>
-        <version>3.0.2-SNAPSHOT</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-media-multipart</artifactId>
     <name>Helidon Media MultiPart</name>
@@ -72,6 +72,11 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-testing</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

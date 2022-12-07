@@ -31,7 +31,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class MainTest {
 
@@ -73,37 +74,37 @@ class MainTest {
                 .path("/greet")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello World!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello Joe!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
 
         response = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
                 .await();
-        assertEquals(204, response.status().code());
+        assertThat(response.status().code(), is(204));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hola Joe!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hola Joe!"));
 
         response = webClient.get()
                 .path("/health")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertThat(response.status().code(), is(200));
 
         response = webClient.get()
                 .path("/metrics")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertThat(response.status().code(), is(200));
     }
 
 }
