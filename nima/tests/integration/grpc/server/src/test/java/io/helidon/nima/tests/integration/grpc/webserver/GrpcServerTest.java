@@ -142,7 +142,7 @@ class GrpcServerTest {
 
         @Override
         public void onError(Throwable throwable) {
-            // wrap in our exception, so we can see who called this (onError) metehod
+            // wrap in our exception, so we can see who called this (onError) method
             future.completeExceptionally(new RuntimeException(throwable));
         }
 
