@@ -74,7 +74,7 @@ class AccessLogTest {
     // no need for try with resources when we get as an actual type
     @SuppressWarnings("resource")
     @Test
-    void testRequestsAndValidateAccessLog() throws InterruptedException {
+    void testRequestsAndValidateAccessLog() {
         Http1ClientResponse response = client.get("/access").request();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity().as(String.class), is("Hello World!"));
