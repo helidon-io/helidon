@@ -1,5 +1,5 @@
 /*
-     * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,13 @@ import static io.helidon.messaging.connectors.jms.shim.ShimUtil.call;
 
 /**
  * Exposes Jakarta API, delegates to javax API.
+ *
+ * @param <T> Type of the javax delegate
  */
-public class JakartaSession implements Session {
-    private final javax.jms.Session delegate;
+public class JakartaSession<T extends javax.jms.Session> implements Session, JakartaWrapper<T> {
+    private final T delegate;
 
-    JakartaSession(javax.jms.Session delegate) {
+    JakartaSession(T delegate) {
         this.delegate = delegate;
     }
 
@@ -251,11 +253,18 @@ public class JakartaSession implements Session {
      * Unwrap the underlying instance of javax session.
      *
      * @param type class to unwrap to
-     * @param <T> type to unwrap to
+     * @param <S> type to unwrap to
      * @return unwrapped session
+     * @deprecated since 3.0.3, use {@link io.helidon.messaging.connectors.jms.shim.JakartaSession#unwrap()} instead.
      * @throws java.lang.ClassCastException in case the underlying instance is not compatible with the requested type
      */
-    public <T extends javax.jms.Session> T unwrap(Class<T> type) {
+    @Deprecated(forRemoval = true, since = "3.0.3")
+    public <S extends javax.jms.Session> S unwrap(Class<S> type) {
         return type.cast(delegate);
+    }
+
+    @Override
+    public T unwrap() {
+        return delegate;
     }
 }

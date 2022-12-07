@@ -39,5 +39,6 @@
         <module>jms-websocket-mp</module>
         <module>jms-websocket-se</module>
         <module>oracle-aq-websocket-mp</module>
+        <module>weblogic-jms-mp</module>
     </modules>
 </project>
