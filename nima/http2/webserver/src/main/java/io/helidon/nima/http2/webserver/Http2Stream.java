@@ -217,14 +217,11 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), flowControl);
             return;
         }
-        expectedLength -= header.length();
+        if (expectedLength != -1) {
+            expectedLength -= header.length();
+        }
         try {
             inboundData.put(new DataFrame(header, data));
-            // TODO this is a race condition
-            //            if (Http2FrameTypes.DATA.flags(header.flags())
-            //                    .endOfStream()) {
-            //                state = Http2StreamState.HALF_CLOSED_REMOTE;
-            //            }
         } catch (InterruptedException e) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
         }
