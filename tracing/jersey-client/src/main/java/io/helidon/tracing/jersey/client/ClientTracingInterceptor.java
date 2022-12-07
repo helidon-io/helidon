@@ -52,7 +52,7 @@ public class ClientTracingInterceptor implements PostInvocationInterceptor {
 
         if (spanProperty instanceof Span span) {
             span.status(Span.Status.ERROR);
-            span.end(exceptionContext.getThrowables().pop());
+            span.end(exceptionContext.getThrowables().peek());
             requestContext.removeProperty(SPAN_PROPERTY_NAME);
         }
         if (scopeProperty instanceof Scope scope) {
