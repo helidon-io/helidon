@@ -98,7 +98,7 @@ class HelloWorldTest {
     }
 
     @Test
-    public void testMetrics() throws InterruptedException {
+    public void testMetrics() {
         final int iterations = 1;
         Counter classLevelCounterForConstructor =
                 registry.getCounters().get(new MetricID(
@@ -183,7 +183,7 @@ class HelloWorldTest {
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(1L));
     }
 
-    void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) throws InterruptedException {
+    void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
         SimpleTimer explicitSimpleTimer = registry.getSimpleTimer(new MetricID(MESSAGE_SIMPLE_TIMER));
         assertThat("SimpleTimer from explicit @SimplyTimed", explicitSimpleTimer, is(notNullValue()));
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer("messageWithArg", String.class);
@@ -222,7 +222,7 @@ class HelloWorldTest {
         return simpleTimers.get(metricID);
     }
 
-    void checkMetricsUrl(int iterations) throws InterruptedException {
+    void checkMetricsUrl(int iterations) {
         assertThatWithRetry("helloCounter count", () -> {
             JsonObject app = webTarget
                     .path("metrics")

@@ -40,7 +40,7 @@ public class MeteredBeanTest {
     MeterRegistry registry;
 
     @Test
-    public void testSimpleCounted() throws InterruptedException {
+    public void testSimpleCounted() {
         int exp = 3;
         IntStream.range(0, exp).forEach(i -> meteredBean.count());
         assertThatWithRetry("Value from simple counted meter", () -> registry.counter(MeteredBean.COUNTED).count(),
@@ -48,7 +48,7 @@ public class MeteredBeanTest {
     }
 
     @Test
-    public void testSinglyTimed() throws InterruptedException {
+    public void testSinglyTimed() {
         int exp = 4;
         IntStream.range(0, exp).forEach(i -> meteredBean.timed());
         assertThatWithRetry("Count from singly-timed meter", () -> registry.timer(MeteredBean.TIMED_1).count(),
@@ -56,7 +56,7 @@ public class MeteredBeanTest {
     }
 
     @Test
-    public void testDoublyTimed() throws InterruptedException {
+    public void testDoublyTimed() {
         int exp = 5;
         IntStream.range(0, exp).forEach(i -> meteredBean.timedA());
         assertThatWithRetry("Count from doubly-timed meter (A)", () -> registry.timer(MeteredBean.TIMED_A).count(),
@@ -66,7 +66,7 @@ public class MeteredBeanTest {
     }
 
     @Test
-    public void testFailable() throws InterruptedException {
+    public void testFailable() {
         int OKCalls = 2;
         int expFailed = 3;
         IntStream.range(0, OKCalls).forEach(i -> meteredBean.failable(false));
