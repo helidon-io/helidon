@@ -233,33 +233,17 @@
    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
 </suppress>
 
-<!-- False Positive. Matching "pki" in "zipkin" to "pki-core" project.
-     See  https://github.com/jeremylong/DependencyCheck/issues/4692
--->
-<suppress>
-   <notes><![CDATA[
-   file name: zipkin-2.12.5.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.zipkin\.zipkin2/zipkin@.*$</packageUrl>
-   <cve>CVE-2022-2393</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: zipkin-reporter-2.12.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.zipkin\.reporter2/zipkin\-reporter@.*$</packageUrl>
-   <cve>CVE-2022-2393</cve>
-</suppress>
-
-<!-- False Positive. This CVE is fixed in snakeyaml-1.32 which we use, but CVE has not been updated.
-     See https://github.com/jeremylong/DependencyCheck/issues/4839
+<!-- 
+     We use SafeConstructor() or an even more limited custom constructor so this CVE does not apply.
+     SnakeYaml maintainer has closed their issue as "will not fix".
+     https://bitbucket.org/snakeyaml/snakeyaml/issues/561/cve-2022-1471-vulnerability-in
 -->
 <suppress>
    <notes><![CDATA[
    file name: snakeyaml-1.32.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-   <vulnerabilityName>CVE-2022-38752</vulnerabilityName>
+   <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
 </suppress>
 
 <!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
@@ -272,29 +256,6 @@
    <cve>CVE-2022-37734</cve>
 </suppress>
 
-<!-- False Positive. This CVE is against graphql-java, not graphql-java-extended-scalars
-     See https://github.com/jeremylong/DependencyCheck/issues/4851
--->
-<suppress>
-   <notes><![CDATA[
-   file name: graphql-java-extended-scalars-17.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/graphql\-java\-extended\-scalars@.*$</packageUrl>
-   <cve>CVE-2022-37734</cve>
-</suppress>
-
-
-<!-- False Positive. This CVE is against graphql-java, not java-dataloader
-     See https://github.com/jeremylong/DependencyCheck/issues/4851
--->
-<suppress>
-   <notes><![CDATA[
-   file name: java-dataloader-3.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
-   <cve>CVE-2022-37734</cve>
-</suppress>
-
 <!-- False Postive. This CVE is against the kafka server. This is the kafka client
 -->
 <suppress>
@@ -304,5 +265,41 @@
    <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
    <cve>CVE-2022-34917</cve>
 </suppress>
+
+
+<!-- False Positive.
+     This CVE is against Apache Commons Net, but is being triggered by any apache commons package. See
+     https://github.com/jeremylong/DependencyCheck/issues/5121
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: commons-pool2-2.9.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-pool2@.*$</packageUrl>
+   <cve>CVE-2021-37533</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: commons-text-1.4.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-text@.*$</packageUrl>
+   <cve>CVE-2021-37533</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: commons-codec-1.15.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/commons\-codec/commons\-codec@.*$</packageUrl>
+   <cve>CVE-2021-37533</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: commons-logging-1.2.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/commons\-logging/commons\-logging@.*$</packageUrl>
+   <cve>CVE-2021-37533</cve>
+</suppress>
+
+
 
 </suppressions>
