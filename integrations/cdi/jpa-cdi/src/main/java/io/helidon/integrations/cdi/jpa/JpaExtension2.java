@@ -60,10 +60,12 @@ import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AfterTypeDiscovery;
 import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedCallable;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanAttributes;
 import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
@@ -256,8 +258,12 @@ public final class JpaExtension2 implements Extension {
      */
 
 
-    private <T> void addAllocator(@Observes AfterTypeDiscovery event) {
+    private <T> void addAllocatorBean(@Observes AfterTypeDiscovery event) {
         event.addAnnotatedType(Allocator.class, Allocator.class.getName());
+    }
+
+    private <T> void makePersistencePropertyARepeatableQualifier(@Observes BeforeBeanDiscovery event) {
+        event.addQualifier(PersistenceProperty.class);
     }
 
     private <T> void rewriteJpaAnnotations(@Observes
@@ -540,12 +546,18 @@ public final class JpaExtension2 implements Extension {
                      PersistenceContext.class,
                      EntityManager.class,
                      PersistenceContext::unitName,
-                     (f, pc) -> f.add(pc.type() == EXTENDED
-                                      ? Extended.Literal.INSTANCE
-                                      : JpaTransactionScoped.Literal.INSTANCE)
-                                 .add(pc.synchronization() == UNSYNCHRONIZED
-                                      ? Unsynchronized.Literal.INSTANCE
-                                      : Synchronized.Literal.INSTANCE));
+                     (f, pc) -> {
+                         f.add(pc.type() == EXTENDED
+                               ? Extended.Literal.INSTANCE
+                               : JpaTransactionScoped.Literal.INSTANCE)
+                          .add(pc.synchronization() == UNSYNCHRONIZED
+                               ? Unsynchronized.Literal.INSTANCE
+                               : Synchronized.Literal.INSTANCE);
+                         for (PersistenceProperty pp : pc.properties()) {
+                             f.add(pp);
+                         }
+                     }
+                     );
     }
 
     /**
@@ -569,12 +581,18 @@ public final class JpaExtension2 implements Extension {
                      PersistenceContext.class,
                      EntityManager.class,
                      PersistenceContext::unitName,
-                     (p, pc) -> p.add(pc.type() == EXTENDED
-                                      ? Extended.Literal.INSTANCE
-                                      : JpaTransactionScoped.Literal.INSTANCE)
-                                 .add(pc.synchronization() == UNSYNCHRONIZED
-                                      ? Unsynchronized.Literal.INSTANCE
-                                      : Synchronized.Literal.INSTANCE));
+                     (p, pc) -> {
+                         p.add(pc.type() == EXTENDED
+                               ? Extended.Literal.INSTANCE
+                               : JpaTransactionScoped.Literal.INSTANCE)
+                          .add(pc.synchronization() == UNSYNCHRONIZED
+                               ? Unsynchronized.Literal.INSTANCE
+                               : Synchronized.Literal.INSTANCE);
+                         for (PersistenceProperty pp : pc.properties()) {
+                             p.add(pp);
+                         }
+                     }
+                     );
     }
 
     private <T> void rewritePersistenceUnitInitializerMethodAnnotations(AnnotatedMethodConfigurator<T> mc) {
@@ -597,6 +615,34 @@ public final class JpaExtension2 implements Extension {
         if (!f.isAnnotationPresent(Inject.class) && f.getBaseType() instanceof Class<?> c2 && c.isAssignableFrom(c2)) {
             A a = fc.getAnnotated().getAnnotation(ac);
             if (a != null) {
+                // Rewrite:
+                //
+                //   @PersistenceContext(properties = { @PersistenceProperty(name = "a", value = "b"),
+                //                                      @PersistenceProperty(name = "c", value = "d") },
+                //                       synchronization = SynchronizationType.SYNCHRONIZED,
+                //                       type = PersistenceContextType.TRANSACTION,
+                //                       unitName = "xyz")
+                //   private EntityManager em;
+                //
+                //   @PersistenceUnit(unitName = "xyz")
+                //   private EntityManagerFactory emf;
+                //
+                // ...to:
+                //
+                //   @Inject
+                //   @ContainerManaged
+                //   @JpaTransactionScoped
+                //   @PersistenceProperty(name = "a", value = "b")
+                //   @PersistenceProperty(name = "c", value = "d")
+                //   @Named("xyz")
+                //   @Synchronized
+                //   private EntityManager em;
+                //
+                //   @Inject
+                //   @ContainerManaged
+                //   @Named("xyz")
+                //   private EntityManagerFactory emf;
+                //
                 fc.add(InjectLiteral.INSTANCE);
                 fc.add(ContainerManaged.Literal.INSTANCE);
                 String unitName = unitNameFunction.apply(a);
@@ -637,6 +683,34 @@ public final class JpaExtension2 implements Extension {
                                 observerMethod = true;
                             }
                         } else if (p.getBaseType() instanceof Class<?> pc && c.isAssignableFrom(pc)) {
+                            // Rewrite:
+                            //
+                            //   @PersistenceContext(properties = { @PersistenceProperty(name = "a", value = "b"),
+                            //                                      @PersistenceProperty(name = "c", value = "d") },
+                            //                       synchronization = SynchronizationType.SYNCHRONIZED,
+                            //                       type = PersistenceContextType.TRANSACTION,
+                            //                       unitName = "xyz")
+                            //   private void frob(EntityManager em) {}
+                            //
+                            //   @PersistenceUnit(unitName = "xyz")
+                            //   private void frob(EntityManagerFactory emf) {}
+                            //
+                            // ...to:
+                            //
+                            //   @Inject
+                            //   private void frob(@ContainerManaged
+                            //                     @JpaTransactionScoped
+                            //                     @Named("xyz")
+                            //                     @PersistenceProperty(name = "a", value = "b")
+                            //                     @PersistenceProperty(name = "c", value = "d")
+                            //                     @Synchronized
+                            //                     EntityManager em) {}
+                            //
+                            //   @Inject
+                            //   private void frob(@ContainerManaged
+                            //                     @Named("xyz")
+                            //                     EntityManagerFactory emf) {}
+                            //
                             apc.add(ContainerManaged.Literal.INSTANCE);
                             String unitName = unitNameFunction.apply(a);
                             if (unitName == null || unitName.isEmpty()) {
@@ -1167,11 +1241,17 @@ public final class JpaExtension2 implements Extension {
         containerManagedSelectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
         Set<Annotation> selectionQualifiers = new HashSet<>();
         SynchronizationType syncType = null;
+        Map<String, String> properties = new HashMap<>();
         for (Annotation beanQualifier : ba.getQualifiers()) {
-            if (beanQualifier == Unsynchronized.Literal.INSTANCE) {
+            if (beanQualifier == Any.Literal.INSTANCE) {
+                continue;
+            } else if (beanQualifier == Unsynchronized.Literal.INSTANCE) {
                 if (syncType == null) {
                     syncType = UNSYNCHRONIZED;
                 }
+            } else if (beanQualifier instanceof PersistenceProperty pp) {
+                containerManagedSelectionQualifiers.add(pp);
+                properties.put(pp.name(), pp.value());
             } else if (beanQualifier != Any.Literal.INSTANCE && !JpaCdiQualifiers.JPA_CDI_QUALIFIERS.contains(beanQualifier)) {
                 containerManagedSelectionQualifiers.add(beanQualifier);
                 selectionQualifiers.add(beanQualifier);
@@ -1182,9 +1262,6 @@ public final class JpaExtension2 implements Extension {
             .get()
             .allocate(() -> {
                     Annotation[] selectionQualifiersArray = selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-                    Instance<Map<? extends String, ?>> mapInstance =
-                        instance.select(MAP_STRING_OBJECT_TYPELITERAL, selectionQualifiersArray);
-                    Map<? extends String, ?> properties = mapInstance.isUnsatisfied() ? null : Map.copyOf(mapInstance.get());
                     return
                         new ExtendedEntityManager2(getOrDefault(instance.select(TransactionSynchronizationRegistry.class),
                                                                 selectionQualifiersArray),
@@ -1225,12 +1302,18 @@ public final class JpaExtension2 implements Extension {
         containerManagedSelectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
         Set<Annotation> selectionQualifiers = new HashSet<>();
         SynchronizationType syncType = null;
+        Map<String, String> properties = new HashMap<>();
         for (Annotation beanQualifier : ba.getQualifiers()) {
-            if (beanQualifier == Unsynchronized.Literal.INSTANCE) {
+            if (beanQualifier == Any.Literal.INSTANCE) {
+                continue;
+            } else if (beanQualifier == Unsynchronized.Literal.INSTANCE) {
                 if (syncType == null) {
                     syncType = UNSYNCHRONIZED;
                 }
-            } else if (beanQualifier != Any.Literal.INSTANCE && !JpaCdiQualifiers.JPA_CDI_QUALIFIERS.contains(beanQualifier)) {
+            } else if (beanQualifier instanceof PersistenceProperty pp) {
+                containerManagedSelectionQualifiers.add(pp);
+                properties.put(pp.name(), pp.value());
+            } else if (!JpaCdiQualifiers.JPA_CDI_QUALIFIERS.contains(beanQualifier)) {
                 containerManagedSelectionQualifiers.add(beanQualifier);
                 selectionQualifiers.add(beanQualifier);
             }
@@ -1240,15 +1323,12 @@ public final class JpaExtension2 implements Extension {
             .get()
             .allocate(() -> {
                     Annotation[] selectionQualifiersArray = selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-                    Instance<Map<? extends String, ?>> mapInstance =
-                        instance.select(MAP_STRING_OBJECT_TYPELITERAL, selectionQualifiersArray);
-                    Map<? extends String, ?> properties = mapInstance.isUnsatisfied() ? null : Map.copyOf(mapInstance.get());
                     return
                         new JtaEntityManager(getOrDefault(instance.select(TransactionSynchronizationRegistry.class),
                                                           selectionQualifiersArray),
                                              instance.select(EntityManagerFactory.class,
                                                              containerManagedSelectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY))
-                                                                 .get(),
+                                             .get()::createEntityManager,
                                              finalSyncType,
                                              properties);
                 },
@@ -1305,8 +1385,22 @@ public final class JpaExtension2 implements Extension {
     }
 
     private static <A extends Annotation> boolean isRewriteEligible(Annotated a, Class<? extends A> ac, Class<?> c) {
+        if (a instanceof AnnotatedCallable<?> am) {
+            return isRewriteEligible(am, ac, c);
+        }
         return
             a.isAnnotationPresent(ac) && !isInjectionPoint(a) && a.getBaseType() instanceof Class<?> bt && c.isAssignableFrom(bt);
+    }
+
+    private static <A extends Annotation> boolean isRewriteEligible(AnnotatedCallable<?> a, Class<? extends A> ac, Class<?> c) {
+        if (a.isAnnotationPresent(ac) && !isInjectionPoint(a)) {
+            for (Annotated ap : a.getParameters()) {
+                if (ap.getBaseType() instanceof Class<?> bt && c.isAssignableFrom(bt)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean isInjectionPoint(Annotated a) {

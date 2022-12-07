@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.IntConsumer;
 
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
@@ -48,10 +50,10 @@ import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
 
 class JtaEntityManager extends DelegatingEntityManager {
 
-    private static final ThreadLocal<Map<EntityManagerFactory, AbsentTransactionEntityManager>> AT_EMS =
+    private static final ThreadLocal<Map<JtaEntityManager, AbsentTransactionEntityManager>> AT_EMS =
         ThreadLocal.withInitial(() -> new HashMap<>(5));
 
-    private final EntityManagerFactory emf;
+    private final BiFunction<? super SynchronizationType, ? super Map<?, ?>, ? extends EntityManager> emf;
 
     private final SynchronizationType syncType;
 
@@ -60,7 +62,7 @@ class JtaEntityManager extends DelegatingEntityManager {
     private final TransactionSynchronizationRegistry tsr;
 
     JtaEntityManager(TransactionSynchronizationRegistry tsr,
-                     EntityManagerFactory emf,
+                     BiFunction<? super SynchronizationType, ? super Map<?, ?>, ? extends EntityManager> emf,
                      SynchronizationType syncType,
                      Map<?, ?> properties) {
         super();
@@ -71,18 +73,18 @@ class JtaEntityManager extends DelegatingEntityManager {
         if (syncType == null) {
             this.properties = properties == null ? null : Map.copyOf(properties);
         } else if (properties == null || properties.isEmpty()) {
-            this.properties = Map.of("jakarta.persistence.SynchronizationType", syncType);
+            this.properties = Map.of(SynchronizationType.class.getName(), syncType);
         } else {
             Map<Object, Object> m = new LinkedHashMap<>(properties);
-            m.put("jakarta.persistence.SynchronizationType", syncType);
+            m.put(SynchronizationType.class.getName(), syncType);
             this.properties = Collections.unmodifiableMap(m);
         }
     }
 
     void dispose() {
-        AbsentTransactionEntityManager em = AT_EMS.get().remove(this.emf);
+        AbsentTransactionEntityManager em = AT_EMS.get().remove(this);
         if (em != null) {
-            em.close();
+            em.closeDelegate();
         }
     }
 
@@ -114,29 +116,22 @@ class JtaEntityManager extends DelegatingEntityManager {
     }
 
     private ActiveTransactionEntityManager computeIfAbsentForActiveTransaction() {
-        ActiveTransactionEntityManager em = (ActiveTransactionEntityManager) this.tsr.getResource(this.emf);
+        ActiveTransactionEntityManager em = (ActiveTransactionEntityManager) this.tsr.getResource(this);
         if (em == null) {
             ActiveTransactionEntityManager newEm =
-                new ActiveTransactionEntityManager(this.emf.createEntityManager(this.syncType, this.properties));
+                new ActiveTransactionEntityManager(this.emf.apply(this.syncType, this.properties));
             em = newEm;
             Object thread = Thread.currentThread();
             try {
-                tsr.registerInterposedSynchronization(new Synchronization() {
-                        @Override
-                        public void beforeCompletion() {
-
-                        }
-                        @Override
-                        public void afterCompletion(int completionStatus) {
+                tsr.registerInterposedSynchronization(new AfterCompletionSynchronization(cts -> {
                             // Remember, this can be invoked asynchronously.
                             if (Thread.currentThread() == thread) {
                                 newEm.closeDelegate();
                             } else {
                                 newEm.closePending = true; // volatile write
                             }
-                        }
-                    });
-                this.tsr.putResource(this.emf, em);
+                }));
+                this.tsr.putResource(this, em);
             } catch (RuntimeException | Error e) {
                 try {
                     em.closeDelegate();
@@ -158,12 +153,12 @@ class JtaEntityManager extends DelegatingEntityManager {
     }
 
     private AbsentTransactionEntityManager computeIfAbsentForNoTransaction() {
-        Map<EntityManagerFactory, AbsentTransactionEntityManager> ems = AT_EMS.get();
-        AbsentTransactionEntityManager em = ems.get(this.emf);
+        Map<JtaEntityManager, AbsentTransactionEntityManager> ems = AT_EMS.get();
+        AbsentTransactionEntityManager em = ems.get(this);
         if (em == null) {
             // This AbsentTransactionEntityManager is closed by the dispose() method above.
-            em = new AbsentTransactionEntityManager(this.emf.createEntityManager(syncType, properties));
-            ems.put(this.emf, em);
+            em = new AbsentTransactionEntityManager(this.emf.apply(syncType, properties));
+            ems.put(this, em);
         }
         return em;
     }
@@ -176,7 +171,7 @@ class JtaEntityManager extends DelegatingEntityManager {
 
     private static SynchronizationType synchronizationType(EntityManager em) {
         Map<?, ?> properties = em.getProperties();
-        return properties == null ? null : (SynchronizationType) properties.get("jakarta.persistence.SynchronizationType");
+        return properties == null ? null : (SynchronizationType) properties.get(SynchronizationType.class.getName());
     }
 
 
@@ -528,6 +523,18 @@ class JtaEntityManager extends DelegatingEntityManager {
         }
 
         @Override
+        public void close() {
+            if (this.isOpen()) {
+                throw new IllegalStateException("close() cannot be called on a container-managed EntityManager");
+            }
+            super.close();
+        }
+
+        private void closeDelegate() {
+            super.close();
+        }
+
+        @Override
         public <T> TypedQuery<T> createNamedQuery(String name, Class<T> resultClass) {
             return new ClearingTypedQuery<>(this::clear, super.createNamedQuery(name, resultClass));
         }
@@ -810,6 +817,27 @@ class JtaEntityManager extends DelegatingEntityManager {
             // https://github.com/wildfly/wildfly/blob/cb3f5429e4bb5423236564c1f3afd8b4a2430ec0/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/AbstractEntityManager.java#L454-L466.
             // We follow the reference application (Glassfish).
             throw new TransactionRequiredException();
+        }
+
+    }
+
+    private static final class AfterCompletionSynchronization implements Synchronization {
+
+        private final IntConsumer afterCompletion;
+
+        private AfterCompletionSynchronization(IntConsumer afterCompletion) {
+            super();
+            this.afterCompletion = Objects.requireNonNull(afterCompletion, "afterCompletion");
+        }
+
+        @Override
+        public void beforeCompletion() {
+
+        }
+
+        @Override
+        public void afterCompletion(int completedTransactionStatus) {
+            this.afterCompletion.accept(completedTransactionStatus);
         }
 
     }
