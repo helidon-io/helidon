@@ -215,15 +215,15 @@
    <cve>CVE-2022-28948</cve>
 </suppress>
 
-<!-- False positive. This CVE was against an older version of H2. See
-     https://github.com/jeremylong/DependencyCheck/issues/4555
+<!-- False positive.
+     This CVE is against the H2 web admin console which we do not use
 -->
 <suppress>
    <notes><![CDATA[
-   file name: h2-2.0.206.jar
+   file name: h2-2.1.212.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
-   <vulnerabilityName>CVE-2018-14335</vulnerabilityName>
+   <cve>CVE-2022-45868</cve>
 </suppress>
 
 <!-- This CVE is against micronaut's Content Type header parsing. We never use micronaut classes
@@ -251,46 +251,6 @@
    <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
 </suppress>
 
-<!-- False Positive. This CVE is for an AWS patch mechanism for log4j, not log4j itself
-     See  https://github.com/jeremylong/DependencyCheck/issues/4637
--->
-<suppress>
-   <notes><![CDATA[
-   file name: log4j-api-2.17.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
-   <cve>CVE-2022-33915</cve>
-</suppress>
-
-<!-- False Positive. Matching "platform" in "junit-platform-" to "fan_platform" project.
-     See https://github.com/jeremylong/DependencyCheck/issues/4670
--->
-<suppress>
-   <notes><![CDATA[
-   file name: junit-platform-commons-1.7.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.junit\.platform/junit\-platform\-commons@.*$</packageUrl>
-   <cve>CVE-2022-31514</cve>
-</suppress>
-
-<!-- False Positive. Matching "pki" in "zipkin" to "pki-core" project.
-     See  https://github.com/jeremylong/DependencyCheck/issues/4692
--->
-<suppress>
-   <notes><![CDATA[
-   file name: zipkin-2.12.5.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.zipkin\.zipkin2/zipkin@.*$</packageUrl>
-   <cve>CVE-2022-2393</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: zipkin-reporter-2.12.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.zipkin\.reporter2/zipkin\-reporter@.*$</packageUrl>
-   <cve>CVE-2022-2393</cve>
-</suppress>
-
 <!-- False Positive. This is a CVE again Payara. This is generating a number of false positives.
      See  https://github.com/jeremylong/DependencyCheck/issues/4781 for one example
 -->
@@ -308,23 +268,18 @@
    <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.jwt/microprofile\-jwt\-auth\-api@.*$</packageUrl>
    <cve>CVE-2022-37422</cve>
 </suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: microprofile-config-api-3.0.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
-   <cve>CVE-2022-37422</cve>
-</suppress>
 
-<!-- False Positive. This CVE is fixed in snakeyaml-1.32 which we use, but CVE has not been updated.
-     See https://github.com/jeremylong/DependencyCheck/issues/4839
+<!-- 
+     We use SafeConstructor() or an even more limited custom constructor so this CVE does not apply.
+     SnakeYaml maintainer has closed their issue as "will not fix".
+     https://bitbucket.org/snakeyaml/snakeyaml/issues/561/cve-2022-1471-vulnerability-in
 -->
 <suppress>
    <notes><![CDATA[
    file name: snakeyaml-1.32.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-   <vulnerabilityName>CVE-2022-38752</vulnerabilityName>
+   <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
 </suppress>
 
 <!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
@@ -334,29 +289,6 @@
    file name: microprofile-graphql-api-2.0.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.graphql/microprofile\-graphql\-api@.*$</packageUrl>
-   <cve>CVE-2022-37734</cve>
-</suppress>
-
-<!-- False Positive. This CVE is against graphql-java, not graphql-java-extended-scalars
-     See https://github.com/jeremylong/DependencyCheck/issues/4851
--->
-<suppress>
-   <notes><![CDATA[
-   file name: graphql-java-extended-scalars-17.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/graphql\-java\-extended\-scalars@.*$</packageUrl>
-   <cve>CVE-2022-37734</cve>
-</suppress>
-
-
-<!-- False Positive. This CVE is against graphql-java, not java-dataloader
-     See https://github.com/jeremylong/DependencyCheck/issues/4851
--->
-<suppress>
-   <notes><![CDATA[
-   file name: java-dataloader-3.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
    <cve>CVE-2022-37734</cve>
 </suppress>
 
@@ -411,5 +343,23 @@
    <cve>CVE-2020-2801</cve>
 </suppress>
 
+<!-- False Positive.
+     This CVE is against Apache Commons Net, but is being triggered by any apache commons package. See
+     https://github.com/jeremylong/DependencyCheck/issues/5121
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: commons-pool2-2.9.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-pool2@.*$</packageUrl>
+   <cve>CVE-2021-37533</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: commons-text-1.4.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-text@.*$</packageUrl>
+   <cve>CVE-2021-37533</cve>
+</suppress>
 
 </suppressions>
