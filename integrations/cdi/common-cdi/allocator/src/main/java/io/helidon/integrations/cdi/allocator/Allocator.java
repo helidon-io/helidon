@@ -69,9 +69,29 @@ public class Allocator {
      *
      * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
      *
-     * @param type the type of the object; must not be {@code null}
+     * @param type the type used to select a contextual reference; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
+     *
+     * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
+     * {@link Supplier#get()} method implementation
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
+     */
+    public final <T> T allocate(Supplier<? extends T> s, Class<T> type, Set<Annotation> qualifiers) {
+        return this.allocate(s, Set.of(type), qualifiers);
+    }
+
+    /**
+     * Retrieves the current thread's value for the supplied {@link Class} and qualifier annotations.
+     *
+     * @param <T> the type of the object
+     *
+     * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
+     *
+     * @param type the type used to select a contextual reference; must not be {@code null}
+     *
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
      * {@link Supplier#get()} method implementation
@@ -89,9 +109,29 @@ public class Allocator {
      *
      * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
      *
-     * @param type the type of the object; must not be {@code null}
+     * @param type the type used to select a contextual reference; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
+     *
+     * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
+     * {@link Supplier#get()} method implementation
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
+     */
+    public final <T> T allocate(Supplier<? extends T> s, TypeLiteral<T> type, Set<Annotation> qualifiers) {
+        return this.allocate(s, Set.of(type.getType()), qualifiers);
+    }
+
+    /**
+     * Retrieves the current thread's value for the supplied {@link TypeLiteral} and qualifier annotations.
+     *
+     * @param <T> the type of the object
+     *
+     * @param s a {@link Supplier} to use to create or otherwise get the object if it is not already stored
+     *
+     * @param type the type used to select a contextual reference; must not be {@code null}
+     *
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
      * {@link Supplier#get()} method implementation
@@ -112,7 +152,7 @@ public class Allocator {
      *
      * @param types the types of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
      * {@link Supplier#get()} method implementation
@@ -133,7 +173,7 @@ public class Allocator {
      *
      * @param types the types of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @return the allocated object, or {@code null} if the supplied {@link Supplier} returns {@code null} from its
      * {@link Supplier#get()} method implementation
@@ -159,9 +199,29 @@ public class Allocator {
      * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
      * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
      *
-     * @param type the type of the object; must not be {@code null}
+     * @param type the type used to select a contextual reference; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    public final <T> void release(Consumer<? super T> c, Class<T> type, Set<Annotation> qualifiers) {
+        this.release(c, Set.of(type), qualifiers);
+    }
+
+    /**
+     * Releases the current thread's value for the supplied {@link Class} and qualifier annotations if the number of
+     * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero.
+     *
+     * @param <T> the type of the object
+     *
+     * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
+     * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
+     *
+     * @param type the type used to select a contextual reference; must not be {@code null}
+     *
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
      */
@@ -179,9 +239,28 @@ public class Allocator {
      * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
      * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
      *
-     * @param type the type of the object; must not be {@code null}
+     * @param type the type used to select a contextual reference; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
+     */
+    public final <T> void release(Consumer<? super T> c, TypeLiteral<T> type, Set<Annotation> qualifiers) {
+        this.release(c, Set.of(type.getType()), qualifiers);
+    }
+
+    /**
+     * Releases the current thread's value for the supplied {@link Class} and qualifier annotations if the number of
+     * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero.
+     *
+     * @param <T> the type of the object
+     *
+     * @param c a {@link Consumer} to use to destroy or otherwise release the current thread's value if the number of
+     * {@linkplain #allocate(Supplier, Class, Annotation...) allocations} is zero
+     *
+     * @param type the type used to select a contextual reference; must not be {@code null}
+     *
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @exception NullPointerException if {@code type} or {@code qualifiers} is {@code null}
      */
@@ -200,7 +279,7 @@ public class Allocator {
      *
      * @param types the types of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @exception NullPointerException if {@code types} or {@code qualifiers} is {@code null}
      */
@@ -219,7 +298,7 @@ public class Allocator {
      *
      * @param types the types of the object; must not be {@code null}
      *
-     * @param qualifiers qualifier annotations; must not be {@code null}
+     * @param qualifiers qualifier annotations used to select a contextual reference; must not be {@code null}
      *
      * @exception NullPointerException if {@code types} or {@code qualifiers} is {@code null}
      */

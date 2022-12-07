@@ -17,7 +17,6 @@ package io.helidon.integrations.cdi.jpa;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import jakarta.persistence.EntityGraph;
@@ -71,7 +70,7 @@ class DelegatingEntityManager implements EntityManager, AutoCloseable {
      * @see #acquireDelegate()
      */
     DelegatingEntityManager() {
-        this((EntityManager) null);
+        this((Supplier<? extends EntityManager>) null);
     }
 
     /**
@@ -88,13 +87,12 @@ class DelegatingEntityManager implements EntityManager, AutoCloseable {
      * @see #acquireDelegate()
      */
     DelegatingEntityManager(EntityManager delegate) {
-        super();
-        this.supplier = delegate == null ? this::acquireDelegate : () -> delegate;
+        this(delegate == null ? (Supplier<? extends EntityManager>) null : () -> delegate);
     }
 
     DelegatingEntityManager(Supplier<? extends EntityManager> supplier) {
         super();
-        this.supplier = Objects.requireNonNull(supplier, "supplier");
+        this.supplier = supplier == null ? this::acquireDelegate : supplier;
     }
 
 

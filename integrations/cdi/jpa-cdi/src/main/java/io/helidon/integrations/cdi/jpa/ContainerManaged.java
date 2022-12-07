@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
 
 /**
- * A {@link Qualifier} indicating that the qualified bean's instances
- * are <em>container-managed</em>, in any number of the various senses
+ * A {@link Qualifier} indicating that the annotated element is
+ * <em>container-managed</em>, in any number of the various senses
  * defined by the JPA specification.
  */
 @Qualifier

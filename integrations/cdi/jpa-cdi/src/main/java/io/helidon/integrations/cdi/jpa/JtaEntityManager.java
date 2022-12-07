@@ -48,7 +48,7 @@ import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
 
 class JtaEntityManager extends DelegatingEntityManager {
 
-    private static final ThreadLocal<Map<Object, AbsentTransactionEntityManager>> AT_EMS =
+    private static final ThreadLocal<Map<EntityManagerFactory, AbsentTransactionEntityManager>> AT_EMS =
         ThreadLocal.withInitial(() -> new HashMap<>(5));
 
     private final EntityManagerFactory emf;
@@ -64,7 +64,6 @@ class JtaEntityManager extends DelegatingEntityManager {
                      SynchronizationType syncType,
                      Map<?, ?> properties) {
         super();
-        System.out.println("*** creating");
         this.tsr = Objects.requireNonNull(tsr, "tsr");
         this.emf = Objects.requireNonNull(emf, "emf");
         // JPA permits null SynchronizationType and properties.
@@ -81,7 +80,6 @@ class JtaEntityManager extends DelegatingEntityManager {
     }
 
     void dispose() {
-        System.out.println("*** disposing");
         AbsentTransactionEntityManager em = AT_EMS.get().remove(this.emf);
         if (em != null) {
             em.close();
@@ -160,7 +158,7 @@ class JtaEntityManager extends DelegatingEntityManager {
     }
 
     private AbsentTransactionEntityManager computeIfAbsentForNoTransaction() {
-        Map<Object, AbsentTransactionEntityManager> ems = AT_EMS.get();
+        Map<EntityManagerFactory, AbsentTransactionEntityManager> ems = AT_EMS.get();
         AbsentTransactionEntityManager em = ems.get(this.emf);
         if (em == null) {
             // This AbsentTransactionEntityManager is closed by the dispose() method above.
