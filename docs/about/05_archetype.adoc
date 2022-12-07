@@ -56,9 +56,5 @@ Once the archetype is selected the other options have defaults and the project i
 
 == Using Generated Application
 
-The easiest way to get started is follow instructions in README file and familiarize with layout and features provided to build upon them.
-
-Also look at the pom.xml. You will find the suitable Helidon parent pom, allowing you to omit the version of the different Helidon dependencies. The parent pom also brings in helidon-maven-plugin responsible for packaging of the application and providing the development mode.
-
-Helidon recommends to utilize Jandex at build time esp. for MP. One immediately recognizable application of this is CDI bean discovery i.e. to discover various classes or annotations. It is also required by `smallrye` that we use for OpenAPI integration. This index can be created by `jandex-maven-plugin` plugin which is provided with Helidon parent pom.
+The easiest way to get started is follow instructions in README file and familiarize with layout and features provided to build upon them esp. look at the pom.xml. You will find the suitable Helidon parent pom, enabling the use of the different dependencies managed/provided by Helidon.
 
