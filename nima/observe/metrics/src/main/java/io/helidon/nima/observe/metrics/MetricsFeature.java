@@ -28,6 +28,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.serviceapi.JsonFormat;
 import io.helidon.metrics.serviceapi.PrometheusFormat;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
@@ -90,6 +91,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         this.registryFactory = builder.registryFactory();
         this.metricsSettings = builder.metricsSettings();
+        SystemTagsManager.create(metricsSettings);
     }
 
     /**
