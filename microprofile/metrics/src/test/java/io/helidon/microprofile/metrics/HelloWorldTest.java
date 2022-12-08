@@ -98,7 +98,7 @@ class HelloWorldTest {
     }
 
     @Test
-    public void testMetrics() throws InterruptedException {
+    public void testMetrics() {
         final int iterations = 1;
         Counter classLevelCounterForConstructor =
                 registry.getCounters().get(new MetricID(
@@ -115,9 +115,9 @@ class HelloWorldTest {
         assertThat("Value of explicitly-updated counter", registry.counter("helloCounter").getCount(),
                 is((long) iterations));
 
-        assertThat("Diff in value of interceptor-updated class-level counter for constructor",
-                   classLevelCounterForConstructor.getCount() - classLevelCounterStart,
-                is((long) iterations));
+        assertThatWithRetry("Diff in value of interceptor-updated class-level counter for constructor",
+                            () -> classLevelCounterForConstructor.getCount() - classLevelCounterStart,
+                            is((long) iterations));
 
         Counter classLevelCounterForMethod =
                 registry.getCounters().get(new MetricID(HelloWorldResource.class.getName() + ".message"));
@@ -127,13 +127,13 @@ class HelloWorldTest {
 
         SimpleTimer simpleTimer = getSyntheticSimpleTimer("message");
         assertThat("Synthetic simple timer", simpleTimer, is(notNullValue()));
-        assertThat("Synthetic simple timer count value", simpleTimer.getCount(), is((long) iterations));
+        assertThatWithRetry("Synthetic simple timer count value", simpleTimer::getCount, is((long) iterations));
 
         checkMetricsUrl(iterations);
     }
 
     @Test
-    public void testSyntheticSimpleTimer() {
+    public void testSyntheticSimpleTimer() throws InterruptedException {
         testSyntheticSimpleTimer(1L);
     }
 
@@ -184,6 +184,10 @@ class HelloWorldTest {
     }
 
     void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
+        SimpleTimer explicitSimpleTimer = registry.getSimpleTimer(new MetricID(MESSAGE_SIMPLE_TIMER));
+        assertThat("SimpleTimer from explicit @SimplyTimed", explicitSimpleTimer, is(notNullValue()));
+        SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer("messageWithArg", String.class);
+        assertThat("SimpleTimer from @SyntheticRestRequest", syntheticSimpleTimer, is(notNullValue()));
         IntStream.range(0, (int) expectedSyntheticSimpleTimerCount).forEach(
                 i -> webTarget
                         .path("helloworld/withArg/Joe")
@@ -191,14 +195,13 @@ class HelloWorldTest {
                         .get(String.class));
 
         pause();
-        SimpleTimer explicitSimpleTimer = registry.simpleTimer(MESSAGE_SIMPLE_TIMER);
-        assertThat("SimpleTimer from explicit @SimplyTimed", explicitSimpleTimer, is(notNullValue()));
-        assertThat("SimpleTimer from explicit @SimpleTimed count", explicitSimpleTimer.getCount(),
-                is(expectedSyntheticSimpleTimerCount));
+        assertThatWithRetry("SimpleTimer from explicit @SimpleTimed count",
+                            explicitSimpleTimer::getCount,
+                            is(expectedSyntheticSimpleTimerCount));
 
-        SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer("messageWithArg", String.class);
-        assertThat("SimpleTimer from @SyntheticRestRequest", syntheticSimpleTimer, is(notNullValue()));
-        assertThat("SimpleTimer from @SyntheticRestRequest count", syntheticSimpleTimer.getCount(), is(expectedSyntheticSimpleTimerCount));
+        assertThatWithRetry("SimpleTimer from @SyntheticRestRequest count",
+                            syntheticSimpleTimer::getCount,
+                            is(expectedSyntheticSimpleTimerCount));
     }
 
     SimpleTimer getSyntheticSimpleTimer(String methodName, Class<?>... paramTypes) {
@@ -220,12 +223,14 @@ class HelloWorldTest {
     }
 
     void checkMetricsUrl(int iterations) {
-        JsonObject app = webTarget
-                .path("metrics")
-                .request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class)
-                .getJsonObject("application");
-        assertThat(app.getJsonNumber("helloCounter").intValue(), is(iterations));
+        assertThatWithRetry("helloCounter count", () -> {
+            JsonObject app = webTarget
+                    .path("metrics")
+                    .request()
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+                    .get(JsonObject.class)
+                    .getJsonObject("application");
+            return app.getJsonNumber("helloCounter").intValue();
+        }, is(iterations));
     }
 }

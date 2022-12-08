@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
@@ -152,7 +153,8 @@ class DirectClientConnection implements ClientConnection {
                 "unit-channel",
                 DirectHandlers.builder().build(),
                 socket,
-                -1);
+                -1,
+                Context.create());
 
         ServerConnection connection = Http1ConnectionProvider.builder()
                 .build()

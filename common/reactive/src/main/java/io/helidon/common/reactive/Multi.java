@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -646,8 +646,8 @@ public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Transform item with supplied function and flatten resulting {@link java.util.concurrent.CompletionStage} results
-     * to downstream. As reactive streams forbids null values, CompletionStage result is mapped to
-     * {@link java.util.Optional}.
+     * to downstream. As reactive streams forbids null values, error signal with {@link java.lang.NullPointerException }
+     * is sent to downstream when CompletionStage result is null.
      *
      * @param mapper {@link Function} receiving item as parameter and returning {@link java.util.concurrent.CompletionStage}
      * @param <U>    output item type
@@ -1111,7 +1111,7 @@ public interface Multi<T> extends Subscribable<T> {
     // --------------------------------------------------------------------------------------------------------
 
     /**
-     * Terminal stage, invokes provided consumer for every item in the stream.
+     * Terminal stage, invokes provided consumer for every item in the stream with no backpressure.
      *
      * @param consumer consumer to be invoked for each item
      * @return Single completed when the stream terminates
@@ -1130,6 +1130,20 @@ public interface Multi<T> extends Subscribable<T> {
 
         this.subscribe(subscriber);
         return single;
+    }
+
+    /**
+     * Terminal stage, invokes provided consumer for every item in the stream with strict backpressure.
+     * Items are requested 1 by 1 with no prefetch always waiting for each completion stage
+     * to complete before requesting another item.
+     *
+     * @param function invoked for each item returning completion stage to signal asynchronous completion
+     * @return Single completed when the stream terminates
+     */
+    default Single<Void> forEachCompletionStage(Function<? super T, CompletionStage<Void>> function) {
+        return map(function::apply)
+                .flatMap(cs -> Single.create(cs, true), 1, false, 1)
+                .ignoreElements();
     }
 
     /**

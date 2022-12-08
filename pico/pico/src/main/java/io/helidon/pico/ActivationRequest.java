@@ -18,8 +18,8 @@ package io.helidon.pico;
 
 import java.util.Optional;
 
+import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.Builder;
 
 /**
  * Request to activate a service.
@@ -28,6 +28,7 @@ import io.helidon.pico.builder.Builder;
  */
 @Builder
 public interface ActivationRequest<T> {
+
     /**
      * Target service provider.
      *
@@ -56,4 +57,5 @@ public interface ActivationRequest<T> {
      */
     @ConfiguredOption("true")
     boolean throwOnFailure();
+
 }

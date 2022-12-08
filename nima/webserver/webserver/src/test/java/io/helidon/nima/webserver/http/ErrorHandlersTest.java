@@ -124,7 +124,8 @@ class ErrorHandlersTest {
         ServerResponse res = mock(ServerResponse.class);
         ConnectionContext ctx = mock(ConnectionContext.class);
 
-        when(req.prologue()).thenReturn(HttpPrologue.create("http",
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
+                                                            "http",
                                                             "1.0",
                                                             Http.Method.GET,
                                                             UriPath.create("/"),

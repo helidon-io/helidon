@@ -18,11 +18,10 @@ package io.helidon.config;
 
 import java.io.File;
 import java.nio.file.Files;
-
-import io.helidon.common.testing.junit5.TemporaryFolderExt;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,13 +32,13 @@ import static org.hamcrest.Matchers.not;
  */
 public class FileSourceHelperTest {
 
-    @RegisterExtension
-    static TemporaryFolderExt folder = TemporaryFolderExt.build();
+    @TempDir
+    Path tempFolder;
 
     @Test
     public void testDigestSameContent() throws Exception {
-        File file1 = folder.newFile("test1");
-        File file2 = folder.newFile("test2");
+        File file1 = Files.createFile(tempFolder.resolve("test1")).toFile();
+        File file2 = Files.createFile(tempFolder.resolve("test2")).toFile();
         Files.write(file1.toPath(), "test file".getBytes());
         Files.write(file2.toPath(), "test file".getBytes());
 
@@ -48,8 +47,8 @@ public class FileSourceHelperTest {
 
     @Test
     public void testDigestDifferentContent() throws Exception {
-        File file1 = folder.newFile("test1");
-        File file2 = folder.newFile("test2");
+        File file1 = Files.createFile(tempFolder.resolve("test1")).toFile();
+        File file2 = Files.createFile(tempFolder.resolve("test2")).toFile();
         Files.write(file1.toPath(), "test file1".getBytes());
         Files.write(file2.toPath(), "test file2".getBytes());
 

@@ -59,6 +59,7 @@ public class StandaloneQuickstartMain {
         ObserveSupport observe = ObserveSupport.builder()
                 .useSystemServices(true)
                 .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                                                                  .useSystemServices(false)
                                                                   .addCheck(HeapMemoryHealthCheck.create())
                                                                   .addCheck(DiskSpaceHealthCheck.create())
                                                                   .addCheck(DeadlockHealthCheck.create())

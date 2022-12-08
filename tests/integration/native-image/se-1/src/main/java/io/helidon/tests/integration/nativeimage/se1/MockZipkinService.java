@@ -21,6 +21,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -79,7 +80,7 @@ public class MockZipkinService implements Service {
     }
 
     private void mockZipkin(final ServerRequest request, final ServerResponse response) {
-        request.queryParams().all("serviceName").forEach(s -> System.out.println(">>>" + s));
+        request.queryParams().all("serviceName", List::of).forEach(s -> System.out.println(">>>" + s));
         request.content()
                 .registerReader(new MessageBodyStreamReader<JsonValue>() {
                     @Override

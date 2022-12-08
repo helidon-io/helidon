@@ -303,13 +303,13 @@ public abstract class WebTracingConfig {
 
             String spanName = spanConfig.newName().orElse(TRACING_SPAN_HTTP_REQUEST);
             if (spanName.indexOf('%') > -1) {
-                spanName = String.format(spanName, req.method().name(), req.path(), req.query());
+                spanName = String.format(spanName, req.method().text(), req.path(), req.query());
             }
             // tracing is enabled, so we replace the parent span with web server parent span
             Span.Builder<?> spanBuilder = tracer.spanBuilder(spanName)
                     .kind(Span.Kind.SERVER)
                     .tag(Tag.COMPONENT.create("helidon-reactive-webserver"))
-                    .tag(Tag.HTTP_METHOD.create(req.method().name()))
+                    .tag(Tag.HTTP_METHOD.create(req.method().text()))
                     .tag(Tag.HTTP_URL.create(req.uri().toString()))
                     .tag(Tag.HTTP_VERSION.create(req.version().value()));
 

@@ -25,12 +25,10 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.testing.junit5.TemporaryFolderExt;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.not;
@@ -48,10 +46,6 @@ public class FileConfigSourceTest {
     private static final MediaType TEST_MEDIA_TYPE = MediaTypes.create("my/media/type");
     private static final String RELATIVE_PATH_TO_RESOURCE = "/src/test/resources/";
 
-    @RegisterExtension
-    static TemporaryFolderExt folder = TemporaryFolderExt.build();
-    
-    
     @Test
     public void testDescriptionMandatory() {
         ConfigSource configSource = ConfigSources.file("application.conf").build();

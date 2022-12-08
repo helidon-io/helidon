@@ -18,11 +18,14 @@ package io.helidon.nima.webserver.staticcontent;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.webserver.http.HttpService;
 
@@ -131,6 +134,9 @@ public interface StaticContentSupport extends HttpService {
     abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, StaticContentSupport> {
         private String welcomeFileName;
         private Function<String, String> resolvePathFunction = Function.identity();
+        private Set<String> cacheInMemory = new HashSet<>();
+        private LruCache<String, CachedHandler> handlerCache;
+
 
         /**
          * Default constructor.
@@ -171,6 +177,43 @@ public interface StaticContentSupport extends HttpService {
         }
 
         /**
+         * Add a path (as requested by the user) that should be cached in memory.
+         * The resource will be loaded into memory (as bytes) on server startup and served from memory, instead of
+         * accessing the resource each time.
+         * For classpath, each file must be explicitly specified (as we do not scan classpath), for file based
+         * this can also include directories.
+         * Helidon does not validate amount of memory used, be careful to have enough heap memory to cache the configured
+         * files.
+         * <p>
+         * <i>Files cached in memory will never be re-loaded, even if changed, until server restart!</i>
+         * <p>
+         * For classpath resource served from {@code web/index.html}, the {@code path} should be configured to
+         * {@code index.html} when the classpath root is set to {@code web}.
+         *
+         * @param path path to cache in memory
+         * @return updated builder
+         */
+        public B addCacheInMemory(String path) {
+            this.cacheInMemory.add(path);
+            return identity();
+        }
+
+        /**
+         * Configure capacity of cache used for resources. This cache will make sure the media type and location is discovered
+         * faster.
+         *
+         * @param capacity maximal number of cached records, only caches media type and Path, not the content
+         * @return updated builder
+         */
+        public B recordCacheCapacity(int capacity) {
+            this.handlerCache = LruCache.<String, CachedHandler>builder()
+                    .capacity(capacity)
+                    .build();
+            return identity();
+        }
+
+
+        /**
          * Build the actual instance.
          *
          * @return static content support
@@ -184,6 +227,15 @@ public interface StaticContentSupport extends HttpService {
         Function<String, String> resolvePathFunction() {
             return resolvePathFunction;
         }
+
+        Set<String> cacheInMemory() {
+            return cacheInMemory;
+        }
+
+
+        LruCache<String, CachedHandler> handlerCache() {
+            return handlerCache == null ? LruCache.create() : handlerCache;
+        }
     }
 
     /**
@@ -194,7 +246,6 @@ public interface StaticContentSupport extends HttpService {
     @SuppressWarnings("unchecked")
     abstract class FileBasedBuilder<T extends FileBasedBuilder<T>> extends Builder<FileBasedBuilder<T>> {
         private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
         /**
          * Default constructor.
          */
