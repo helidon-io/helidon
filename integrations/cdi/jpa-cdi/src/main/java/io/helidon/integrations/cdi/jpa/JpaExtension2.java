@@ -24,13 +24,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -202,8 +200,6 @@ public final class JpaExtension2 implements Extension {
 
     /**
      * Indicates if JTA transactions can be supported.
-     *
-     * @see #disableTransactionSupport(ProcessAnnotatedType)
      */
     private boolean transactionsSupported;
 
@@ -215,9 +211,9 @@ public final class JpaExtension2 implements Extension {
      * <p>This field is never {@code null}.</p>
      *
      * <p>This field is {@linkplain Collection#clear() cleared} at the termination of the {@link
-     * #addSyntheticBeans(AfterBeanDiscovery, BeanManager)} container lifecycle method.</p>
+     * #addSyntheticBeans(AfterBeanDiscovery)} container lifecycle method.</p>
      *
-     * @see #addContainerManagedEntityManagerFactoryBeans(AfterBeanDiscovery, Set, BeanManager)
+     * @see #addContainerManagedEntityManagerFactoryBeans(AfterBeanDiscovery, Set)
      */
     private final Set<Set<Annotation>> containerManagedEntityManagerFactoryQualifiers;
 
@@ -302,7 +298,7 @@ public final class JpaExtension2 implements Extension {
             PersistenceProperty[] pps = pc.properties();
             if (pps.length > 0) {
                 String unitName = pc.unitName();
-                if (unitName.isEmpty()) {
+                if (unitName.isBlank()) {
                     unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
                 }
                 PersistenceUnitInfoBean pui = this.implicitPersistenceUnits.get(unitName);
@@ -310,16 +306,15 @@ public final class JpaExtension2 implements Extension {
                     Properties properties = new Properties();
                     for (PersistenceProperty pp : pps) {
                         String ppName = pp.name();
-                        if (!ppName.isEmpty()) {
+                        if (!ppName.isBlank()) {
                             properties.setProperty(ppName, pp.value());
                         }
                     }
-                    pui =
-                        new PersistenceUnitInfoBean(unitName,
-                                                    locationOf(at),
-                                                    null,
-                                                    () -> bm.createInstance().select(DataSourceProvider.class).get(),
-                                                    properties);
+                    pui = new PersistenceUnitInfoBean(unitName,
+                                                      locationOf(at),
+                                                      null,
+                                                      () -> bm.createInstance().select(DataSourceProvider.class).get(),
+                                                      properties);
                     this.implicitPersistenceUnits.put(unitName, pui);
                 }
             }
@@ -483,10 +478,9 @@ public final class JpaExtension2 implements Extension {
 
         // Add beans to support JPA.  In some cases, JTA must be present (see JPA section 7.5, for example: "A
         // container-managed entity manager must be a JTA entity manager.").
-        this.addContainerManagedJpaBeans(event, bm);
+        this.addContainerManagedJpaBeans(event);
 
         // Clear out no-longer-needed-or-used collections to save memory.
-        // this.cdiTransactionScopedEntityManagerQualifiers.clear();
         this.containerManagedEntityManagerFactoryQualifiers.clear();
         this.implicitPersistenceUnits.clear();
         this.entityManagerQualifiers.clear();
@@ -617,7 +611,7 @@ public final class JpaExtension2 implements Extension {
                 fc.add(InjectLiteral.INSTANCE);
                 fc.add(ContainerManaged.Literal.INSTANCE);
                 String unitName = unitNameFunction.apply(a);
-                if (unitName == null || unitName.isEmpty()) {
+                if (unitName == null || unitName.isBlank()) {
                     unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
                 }
                 fc.add(NamedLiteral.of(unitName));
@@ -644,56 +638,53 @@ public final class JpaExtension2 implements Extension {
             A a = m.getAnnotation(ac);
             if (a != null) {
                 boolean observerMethod = false;
-                List<AnnotatedParameterConfigurator<T>> apcs = mc.params();
-                if (!apcs.isEmpty()) {
-                    for (AnnotatedParameterConfigurator<T> apc : apcs) {
-                        Annotated p = apc.getAnnotated();
-                        if (p.isAnnotationPresent(Observes.class)) {
-                            if (!observerMethod) {
-                                observerMethod = true;
-                            }
-                        } else if (p.getBaseType() instanceof Class<?> pc && c.isAssignableFrom(pc)) {
-                            // Rewrite:
-                            //
-                            //   @PersistenceContext(properties = { @PersistenceProperty(name = "a", value = "b"),
-                            //                                      @PersistenceProperty(name = "c", value = "d") },
-                            //                       synchronization = SynchronizationType.SYNCHRONIZED,
-                            //                       type = PersistenceContextType.TRANSACTION,
-                            //                       unitName = "xyz")
-                            //   private void frob(EntityManager em) {}
-                            //
-                            //   @PersistenceUnit(unitName = "xyz")
-                            //   private void frob(EntityManagerFactory emf) {}
-                            //
-                            // ...to:
-                            //
-                            //   @Inject
-                            //   private void frob(@ContainerManaged
-                            //                     @JtaTransactionScoped
-                            //                     @Named("xyz")
-                            //                     @PersistenceProperty(name = "a", value = "b")
-                            //                     @PersistenceProperty(name = "c", value = "d")
-                            //                     @Synchronized
-                            //                     EntityManager em) {}
-                            //
-                            //   @Inject
-                            //   private void frob(@ContainerManaged
-                            //                     @Named("xyz")
-                            //                     EntityManagerFactory emf) {}
-                            //
-                            apc.add(ContainerManaged.Literal.INSTANCE);
-                            String unitName = unitNameFunction.apply(a);
-                            if (unitName == null || unitName.isEmpty()) {
-                                unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
-                            }
-                            apc.add(NamedLiteral.of(unitName));
-                            adder.accept(apc, a);
+                for (AnnotatedParameterConfigurator<T> apc : mc.params()) {
+                    Annotated p = apc.getAnnotated();
+                    if (p.isAnnotationPresent(Observes.class)) {
+                        if (!observerMethod) {
+                            observerMethod = true;
                         }
+                    } else if (p.getBaseType() instanceof Class<?> pc && c.isAssignableFrom(pc)) {
+                        // Rewrite:
+                        //
+                        //   @PersistenceContext(properties = { @PersistenceProperty(name = "a", value = "b"),
+                        //                                      @PersistenceProperty(name = "c", value = "d") },
+                        //                       synchronization = SynchronizationType.SYNCHRONIZED,
+                        //                       type = PersistenceContextType.TRANSACTION,
+                        //                       unitName = "xyz")
+                        //   private void frob(EntityManager em) {}
+                        //
+                        //   @PersistenceUnit(unitName = "xyz")
+                        //   private void frob(EntityManagerFactory emf) {}
+                        //
+                        // ...to:
+                        //
+                        //   @Inject
+                        //   private void frob(@ContainerManaged
+                        //                     @JtaTransactionScoped
+                        //                     @Named("xyz")
+                        //                     @PersistenceProperty(name = "a", value = "b")
+                        //                     @PersistenceProperty(name = "c", value = "d")
+                        //                     @Synchronized
+                        //                     EntityManager em) {}
+                        //
+                        //   @Inject
+                        //   private void frob(@ContainerManaged
+                        //                     @Named("xyz")
+                        //                     EntityManagerFactory emf) {}
+                        //
+                        apc.add(ContainerManaged.Literal.INSTANCE);
+                        String unitName = unitNameFunction.apply(a);
+                        if (unitName == null || unitName.isBlank()) {
+                            unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                        }
+                        apc.add(NamedLiteral.of(unitName));
+                        adder.accept(apc, a);
                     }
-                    mc.remove(ma -> ma == a);
-                    if (!observerMethod) {
-                        mc.add(InjectLiteral.INSTANCE);
-                    }
+                }
+                mc.remove(ma -> ma == a);
+                if (!observerMethod) {
+                    mc.add(InjectLiteral.INSTANCE);
                 }
             }
         }
@@ -726,7 +717,7 @@ public final class JpaExtension2 implements Extension {
                 processed = true;
             }
             String unitName = pc.unitName();
-            if (unitName.isEmpty()) {
+            if (unitName.isBlank()) {
                 unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
             }
             addUnlistedManagedClass(unitName, c);
@@ -736,7 +727,7 @@ public final class JpaExtension2 implements Extension {
                 processed = true;
             }
             String unitName = pu.unitName();
-            if (unitName.isEmpty()) {
+            if (unitName.isBlank()) {
                 unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
             }
             addUnlistedManagedClass(unitName, c);
@@ -757,7 +748,7 @@ public final class JpaExtension2 implements Extension {
      * @see PersistenceUnitInfo#getManagedClassNames()
      */
     private void addUnlistedManagedClass(String puName, Class<?> mc) {
-        if (puName.isEmpty()) {
+        if (puName.isBlank()) {
             puName = DEFAULT_PERSISTENCE_UNIT_NAME;
         }
         Set<Class<?>> unlistedManagedClasses = this.unlistedManagedClassesByUnitNames.get(puName);
@@ -792,10 +783,10 @@ public final class JpaExtension2 implements Extension {
     }
 
     private void addPersistenceProviderBeansIfAbsent(AfterBeanDiscovery event,
-                                                     BeanManager beanManager,
+                                                     BeanManager bm,
                                                      Set<Bean<?>> preexistingPuiBeans,
                                                      Iterable<? extends PersistenceProvider> providers) {
-        for (Bean<?> bean : preexistingPuiBeans) {
+        for (Object bean : preexistingPuiBeans) {
             @SuppressWarnings("unchecked")
             Bean<PersistenceUnitInfo> preexistingPuiBean = (Bean<PersistenceUnitInfo>) bean;
             // We use Contextual#create() directly to create a PersistenceUnitInfo contextual instance (normally for
@@ -809,16 +800,16 @@ public final class JpaExtension2 implements Extension {
             // they are built), but here we need the instance only for the return values of
             // getPersistenceProviderClassName() and getClassLoader().  We then destroy the instance immediately so that
             // everything behaves as though this contextual instance acquired by shady means never existed.
-            CreationalContext<PersistenceUnitInfo> cc = beanManager.createCreationalContext(null);
-            PersistenceUnitInfo pui = preexistingPuiBean.create(cc);
+            CreationalContext<PersistenceUnitInfo> cc = bm.createCreationalContext(null);
             try {
-                this.addPersistenceProviderBeanIfAbsent(event, pui, providers);
-            } finally {
+                PersistenceUnitInfo pui = preexistingPuiBean.create(cc);
                 try {
-                    preexistingPuiBean.destroy(pui, cc);
+                    this.addPersistenceProviderBeanIfAbsent(event, pui, providers);
                 } finally {
-                    cc.release();
+                    preexistingPuiBean.destroy(pui, cc);
                 }
+            } finally {
+                cc.release();
             }
         }
     }
@@ -859,7 +850,7 @@ public final class JpaExtension2 implements Extension {
 
         // The PersistenceProvider class in question is not one we already loaded.  Add a bean for it too.
         String unitName = pui.getPersistenceUnitName();
-        if (unitName.isEmpty()) {
+        if (unitName.isBlank()) {
             unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
         }
 
@@ -885,7 +876,7 @@ public final class JpaExtension2 implements Extension {
     }
 
     private void processPersistenceXmls(AfterBeanDiscovery event,
-                                        BeanManager beanManager,
+                                        BeanManager bm,
                                         ClassLoader classLoader,
                                         Enumeration<URL> persistenceXmlUrls,
                                         Iterable<? extends PersistenceProvider> providers,
@@ -893,17 +884,14 @@ public final class JpaExtension2 implements Extension {
         if (!persistenceXmlUrls.hasMoreElements()) {
             return;
         }
-
         // We use StAX for XML loading because it is the same XML parsing strategy used by all known CDI
         // implementations.  If the end user wants to customize the StAX implementation then we want that customization
         // to apply here as well.
         XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
-
         // See
         // https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.md#xmlinputfactory-a-stax-parser
         xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
-
         Unmarshaller unmarshaller;
         try {
             unmarshaller = JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
@@ -912,16 +900,11 @@ public final class JpaExtension2 implements Extension {
             return;
         }
         Supplier<? extends DataSourceProvider> dataSourceProviderSupplier =
-            () -> beanManager.createInstance().select(DataSourceProvider.class).get();
+            () -> bm.createInstance().select(DataSourceProvider.class).get();
         PersistenceUnitInfo solePui = null;
-        Supplier<? extends ClassLoader> tempClassLoaderSupplier;
-        if (classLoader instanceof URLClassLoader ucl) {
-            tempClassLoaderSupplier = () -> new URLClassLoader(ucl.getURLs());
-        } else {
-            tempClassLoaderSupplier = () -> classLoader;
-        }
-        int puCount = 0;
-        while (persistenceXmlUrls.hasMoreElements()) {
+        Supplier<? extends ClassLoader> tempClassLoaderSupplier =
+            classLoader instanceof URLClassLoader ucl ? () -> new URLClassLoader(ucl.getURLs()) : () -> classLoader;
+        for (int puCount = 0; persistenceXmlUrls.hasMoreElements();) {
             URL persistenceXmlUrl = persistenceXmlUrls.nextElement();
             Persistence persistence = null;
             try (InputStream inputStream = new BufferedInputStream(persistenceXmlUrl.openStream())) {
@@ -935,50 +918,48 @@ public final class JpaExtension2 implements Extension {
                 event.addDefinitionError(e);
                 continue;
             }
-            Collection<? extends Persistence.PersistenceUnit> pus = persistence.getPersistenceUnit();
-            if (!pus.isEmpty()) {
-                Collection<PersistenceUnitInfo> puis = new ArrayList<>(pus.size());
-                for (Persistence.PersistenceUnit pu : pus) {
-                    try {
-                        puis.add(PersistenceUnitInfoBean.fromPersistenceUnit(pu,
-                                                                             classLoader,
-                                                                             tempClassLoaderSupplier,
-                                                                             new URL(persistenceXmlUrl, ".."), // i.e. META-INF/..
-                                                                             unlistedManagedClassesByUnitNames,
-                                                                             dataSourceProviderSupplier));
-                    } catch (MalformedURLException e) {
-                        event.addDefinitionError(e);
-                        continue;
-                    }
+            for (Persistence.PersistenceUnit pu : persistence.getPersistenceUnit()) {
+                PersistenceUnitInfoBean pui;
+                try {
+                    pui =
+                        PersistenceUnitInfoBean.fromPersistenceUnit(pu,
+                                                                    classLoader,
+                                                                    tempClassLoaderSupplier,
+                                                                    new URL(persistenceXmlUrl, ".."), // i.e. META-INF/..
+                                                                    unlistedManagedClassesByUnitNames,
+                                                                    dataSourceProviderSupplier);
+                } catch (MalformedURLException e) {
+                    event.addDefinitionError(e);
+                    continue;
                 }
-                for (PersistenceUnitInfo pui : puis) {
-                    String unitName = pui.getPersistenceUnitName();
-                    if (unitName == null || unitName.isEmpty()) {
-                        unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
-                    }
-                    // Provide support for, e.g.:
-                    //   @Inject
-                    //   @Named("test")
-                    //   private PersistenceUnitInfo persistenceUnitInfo;
-                    event.addBean()
-                        .beanClass(PersistenceUnitInfoBean.class)
-                        .addTransitiveTypeClosure(PersistenceUnitInfoBean.class)
-                        .scope(Singleton.class)
-                        .qualifiers(NamedLiteral.of(unitName))
-                        .createWith(cc -> pui);
-                    if (puCount == 0) {
-                        solePui = pui;
-                    } else if (solePui != null) {
-                        solePui = null;
-                    }
-                    addPersistenceProviderBeanIfAbsent(event, pui, providers);
-                    puCount++;
+                String unitName = pui.getPersistenceUnitName();
+                if (unitName == null || unitName.isBlank()) {
+                    unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
                 }
+                // Provide support for, e.g.:
+                //   @Inject
+                //   @Named("test")
+                //   private PersistenceUnitInfo persistenceUnitInfo;
+                event.addBean()
+                    .beanClass(PersistenceUnitInfoBean.class)
+                    .addTransitiveTypeClosure(PersistenceUnitInfoBean.class)
+                    .scope(Singleton.class)
+                    .qualifiers(NamedLiteral.of(unitName))
+                    .createWith(cc -> pui);
+                addPersistenceProviderBeanIfAbsent(event, pui, providers);
+                if (puCount == 0) {
+                    solePui = pui;
+                } else if (solePui != null) {
+                    solePui = null;
+                }
+                puCount++;
             }
         }
         if (!userSuppliedPuiBeans && solePui != null) {
-            String unitName = solePui.getPersistenceUnitName();
-            if (unitName != null && !unitName.isEmpty() && !unitName.equals(DEFAULT_PERSISTENCE_UNIT_NAME)) {
+            String soleUnitName = solePui.getPersistenceUnitName();
+            assert soleUnitName != null;
+            assert !soleUnitName.isBlank();
+            if (!soleUnitName.equals(DEFAULT_PERSISTENCE_UNIT_NAME)) {
                 PersistenceUnitInfo pui = solePui;
                 // Provide support for, e.g.:
                 //   @Inject
@@ -995,11 +976,11 @@ public final class JpaExtension2 implements Extension {
     }
 
     private void processImplicitPersistenceUnits(AfterBeanDiscovery event, Iterable<? extends PersistenceProvider> providers) {
-        int puCount = 0;
         PersistenceUnitInfoBean solePui = null;
+        int puCount = 0;
         for (PersistenceUnitInfoBean pui : this.implicitPersistenceUnits.values()) {
             String unitName = pui.getPersistenceUnitName();
-            if (unitName == null || unitName.isEmpty()) {
+            if (unitName == null || unitName.isBlank()) {
                 unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
             }
             if (!pui.excludeUnlistedClasses()) {
@@ -1010,7 +991,6 @@ public final class JpaExtension2 implements Extension {
                     }
                 }
             }
-
             // Provide support for, e.g.:
             //   @Inject
             //   @Named("test")
@@ -1021,18 +1001,20 @@ public final class JpaExtension2 implements Extension {
                 .scope(Singleton.class)
                 .qualifiers(NamedLiteral.of(unitName))
                 .createWith(cc -> pui);
+            addPersistenceProviderBeanIfAbsent(event, pui, providers);
             if (puCount == 0) {
                 solePui = pui;
             } else if (solePui != null) {
                 solePui = null;
             }
-            addPersistenceProviderBeanIfAbsent(event, pui, providers);
             puCount++;
         }
         if (solePui != null) {
             // Add a bean for the DEFAULT_PERSISTENCE_UNIT_NAME qualifier too.
-            String unitName = solePui.getPersistenceUnitName();
-            if (unitName != null && !unitName.isEmpty()) {
+            String soleUnitName = solePui.getPersistenceUnitName();
+            assert soleUnitName != null;
+            assert !soleUnitName.isBlank();
+            if (!soleUnitName.equals(DEFAULT_PERSISTENCE_UNIT_NAME)) {
                 PersistenceUnitInfoBean pui = solePui;
                 // Provide support for, e.g.:
                 //   @Inject
@@ -1049,34 +1031,23 @@ public final class JpaExtension2 implements Extension {
     }
 
     /**
-     * Adds certain beans to support injection of {@link
-     * EntityManagerFactory} and {@link EntityManager} instances
+     * Adds certain beans to support injection of {@link EntityManagerFactory} and {@link EntityManager} instances
      * according to the JPA specification.
      *
-     * @param event an {@link AfterBeanDiscovery} container lifecycle
-     * event; must not be {@code null}
+     * @param event an {@link AfterBeanDiscovery} container lifecycle event; must not be {@code null}
      *
-     * @param beanManager the current {@link BeanManager}; must not be
-     * {@code null}
+     * @exception NullPointerException if {@code event} is {@code null}
      *
-     * @exception NullPointerException if either {@code event} or
-     * {@code beanManager} is {@code null}
+     * @see #addContainerManagedEntityManagerFactoryBeans(AfterBeanDiscovery, Set)
      *
-     * @see
-     * #addContainerManagedEntityManagerFactoryBeans(AfterBeanDiscovery,
-     * Set, BeanManager)
+     * @see #addExtendedEntityManagerBeans(AfterBeanDiscovery, Set)
      *
-     * @see #addExtendedEntityManagerBeans(AfterBeanDiscovery, Set,
-     * BeanManager)
-     *
-     * @see
-     * #addJtaTransactionScopedEntityManagerBeans(AfterBeanDiscovery,
-     * Set)
+     * @see #addJtaTransactionScopedEntityManagerBeans(AfterBeanDiscovery, Set)
      */
-    private void addContainerManagedJpaBeans(AfterBeanDiscovery event, BeanManager beanManager) {
+    private void addContainerManagedJpaBeans(AfterBeanDiscovery event) {
         for (Set<Annotation> qualifiers : this.entityManagerFactoryQualifiers) {
             if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
-                addContainerManagedEntityManagerFactoryBeans(event, qualifiers, beanManager);
+                addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
             }
         }
         if (this.transactionsSupported) {
@@ -1085,9 +1056,9 @@ public final class JpaExtension2 implements Extension {
                     // Note that each add* method invoked below is responsible for ensuring that it adds beans only once
                     // if at all, i.e. for validating and de-duplicating the qualifiers that it is supplied with if
                     // necessary.
-                    addContainerManagedEntityManagerFactoryBeans(event, qualifiers, beanManager);
+                    addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
                     if (qualifiers.contains(Extended.Literal.INSTANCE)) {
-                        addExtendedEntityManagerBeans(event, qualifiers, beanManager);
+                        addExtendedEntityManagerBeans(event, qualifiers);
                     } else {
                         assert qualifiers.contains(JtaTransactionScoped.Literal.INSTANCE);
                         addJtaTransactionScopedEntityManagerBeans(event, qualifiers);
@@ -1099,15 +1070,14 @@ public final class JpaExtension2 implements Extension {
                 if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
                     // Note that each add* method invoked below is responsible for ensuring that it adds beans only once
                     // if at all, i.e. for validating the qualifiers that it is supplied with.
-                    addContainerManagedEntityManagerFactoryBeans(event, qualifiers, beanManager);
+                    addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
                 }
             }
         }
     }
 
     private void addContainerManagedEntityManagerFactoryBeans(AfterBeanDiscovery event,
-                                                              Set<? extends Annotation> suppliedQualifiers,
-                                                              BeanManager beanManager) {
+                                                              Set<? extends Annotation> suppliedQualifiers) {
         // Provide support for, e.g.:
         //   @Inject
         //   @ContainerManaged
@@ -1126,7 +1096,7 @@ public final class JpaExtension2 implements Extension {
         }
     }
 
-    private void addExtendedEntityManagerBeans(AfterBeanDiscovery event, Set<Annotation> suppliedQualifiers, BeanManager bm) {
+    private void addExtendedEntityManagerBeans(AfterBeanDiscovery event, Set<Annotation> suppliedQualifiers) {
         if (!this.transactionsSupported) {
             event.addDefinitionError(new IllegalStateException("Transactions are not supported"));
             return;
