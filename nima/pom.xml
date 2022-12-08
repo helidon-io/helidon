@@ -51,6 +51,7 @@
         <module>service-common</module>
         <module>openapi</module>
         <module>graphql</module>
+        <module>udp</module>
     </modules>
 
     <profiles>

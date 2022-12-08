@@ -38,9 +38,11 @@ class UdpEndpointTest {
     private static final System.Logger LOGGER = System.getLogger(UdpEndpointTest.class.getName());
 
     private final WebServer webServer;
+    private final InetSocketAddress address;
 
     public UdpEndpointTest(WebServer webServer) {
         this.webServer = webServer;
+        this.address = new InetSocketAddress("localhost", webServer.port());
     }
 
     @SetUpServer
@@ -53,6 +55,19 @@ class UdpEndpointTest {
         echoMessage("hello");
         echoMessage("how are you?");
         echoMessage("good bye");
+    }
+
+    @Test
+    void testEndpointConnected() throws Exception {
+        try (DatagramChannel channel = DatagramChannel.open()) {
+            channel.connect(address);
+            assertThat(channel.isConnected(), is(true));
+            echoMessageOnChannel("hello", channel);
+            echoMessageOnChannel("how are you?", channel);
+            echoMessageOnChannel("good bye", channel);
+            channel.disconnect();
+            assertThat(channel.isConnected(), is(false));
+        }
     }
 
     static class EchoService implements UdpEndpoint {
@@ -71,18 +86,21 @@ class UdpEndpointTest {
     }
 
     private void echoMessage(String msg) throws IOException {
-        InetSocketAddress address = new InetSocketAddress("localhost", webServer.port());
-        try (DatagramChannel ch = DatagramChannel.open()) {
-            ch.send(ByteBuffer.wrap(msg.getBytes(UTF_8)), address);
-            LOGGER.log(INFO, "Client SND: " + msg);
-            byte[] bytes = new byte[msg.length()];
-            ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            InetSocketAddress remote = (InetSocketAddress) ch.receive(buffer);
-            String rcv = new String(bytes, UTF_8);
-            LOGGER.log(INFO, "Client RCV: " + rcv);
-            assertThat(rcv, is(msg));
-            assertThat(remote.getHostName(), is("localhost"));
-            assertThat(remote.getPort(), is(webServer.port()));
+        try (DatagramChannel channel = DatagramChannel.open()) {
+            echoMessageOnChannel(msg, channel);
         }
+    }
+
+    private void echoMessageOnChannel(String msg, DatagramChannel channel) throws IOException {
+        channel.send(ByteBuffer.wrap(msg.getBytes(UTF_8)), address);
+        LOGGER.log(INFO, "Client SND: " + msg);
+        byte[] bytes = new byte[msg.length()];
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        InetSocketAddress remote = (InetSocketAddress) channel.receive(buffer);
+        String rcv = new String(bytes, UTF_8);
+        LOGGER.log(INFO, "Client RCV: " + rcv);
+        assertThat(rcv, is(msg));
+        assertThat(remote.getHostName(), is("localhost"));
+        assertThat(remote.getPort(), is(webServer.port()));
     }
 }

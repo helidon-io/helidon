@@ -17,18 +17,53 @@
 package io.helidon.nima.udp;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 
+/**
+ * A UDP message whose content can be requested in a few different formats.
+ */
 public interface UdpMessage {
 
+    /**
+     * Client from which we received this message.
+     *
+     * @return the client
+     */
     UdpClient udpClient();
 
+    /**
+     * Request conversion of message content to a class instance.
+     *
+     * @param clazz the class
+     * @return the converted value
+     * @param <T> the value's type
+     */
     <T> T as(Class<T> clazz);
 
+    /**
+     * Request conversion to {@link InputStream}.
+     *
+     * @return the input stream
+     */
     default InputStream asInputStream() {
         return as(InputStream.class);
     }
 
+    /**
+     * Request conversion to a byte array.
+     *
+     * @return the byte array
+     */
     default byte[] asByteArray() {
         return as(byte[].class);
+    }
+
+    /**
+     * Request conversion to {@link ByteBuffer}.
+     *
+     * @return the byte buffer
+     */
+    default ByteBuffer asByteBuffer() {
+        return as(ByteBuffer.class);
     }
 }

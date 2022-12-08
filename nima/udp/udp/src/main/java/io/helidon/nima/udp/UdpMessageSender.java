@@ -18,12 +18,42 @@ package io.helidon.nima.udp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 
+/**
+ * Methods for UDP senders.
+ */
 public interface UdpMessageSender {
 
+    /**
+     * Send an arbitrary instance after conversion to a buffer.
+     *
+     * @param msg the instance
+     * @throws IOException if an I/O error occurs
+     */
     void sendMessage(Object msg) throws IOException;
 
-    void sendMessage(byte[] msg) throws IOException;
+    /**
+     * Send a byte array.
+     *
+     * @param bytes the byte array
+     * @throws IOException if an I/O error occurs
+     */
+    void sendMessage(byte[] bytes) throws IOException;
 
-    void sendMessage(InputStream msg) throws IOException;
+    /**
+     * Send a message by reading an {@link InputStream}.
+     *
+     * @param is the input stream
+     * @throws IOException if an I/O error occurs
+     */
+    void sendMessage(InputStream is) throws IOException;
+
+    /**
+     * Send a {@link ByteBuffer} with remaining bytes to read.
+     *
+     * @param buffer the byte buffer
+     * @throws IOException if an I/O error occurs
+     */
+    void sendMessage(ByteBuffer buffer) throws IOException;
 }

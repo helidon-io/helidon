@@ -16,10 +16,23 @@
 
 package io.helidon.nima.udp;
 
+/**
+ * A UDP endpoint that can receive messages.
+ */
 public interface UdpEndpoint {
 
+    /**
+     * Called when a new message is received.
+     *
+     * @param message the message
+     */
     void onMessage(UdpMessage message);
 
+    /**
+     * Called when an error is encountered.
+     *
+     * @param throwable the error
+     */
     default void onError(Throwable throwable) {
         throw new RuntimeException(throwable);
     }

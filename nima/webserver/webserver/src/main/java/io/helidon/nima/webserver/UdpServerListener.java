@@ -226,11 +226,28 @@ class UdpServerListener implements ConnectionListener {
         }
 
         @Override
+        public boolean isConnected() {
+            return channel.isConnected();
+        }
+
+        @Override
+        public void connect() throws IOException {
+            channel.connect(remote);
+        }
+
+        @Override
+        public void disconnect() throws IOException {
+            channel.disconnect();
+        }
+
+        @Override
         public void sendMessage(Object msg) throws IOException {
-            if (msg instanceof String str) {
-                sendMessage(str.getBytes(StandardCharsets.UTF_8));
+            if (msg instanceof ByteBuffer buffer) {
+                sendMessage(buffer);
             } else if (msg instanceof byte[] bytes) {
                 sendMessage(bytes);
+            } else if (msg instanceof String str) {
+                sendMessage(str.getBytes(StandardCharsets.UTF_8));
             } else if (msg instanceof InputStream is) {
                 sendMessage(is);
             }
@@ -238,13 +255,18 @@ class UdpServerListener implements ConnectionListener {
         }
 
         @Override
-        public void sendMessage(byte[] msg) throws IOException {
-            channel.send(ByteBuffer.wrap(msg), remote);
+        public void sendMessage(byte[] bytes) throws IOException {
+            channel.send(ByteBuffer.wrap(bytes), remote);
         }
 
         @Override
-        public void sendMessage(InputStream msg) throws IOException {
-            channel.send(ByteBuffer.wrap(msg.readAllBytes()), remote);
+        public void sendMessage(InputStream is) throws IOException {
+            channel.send(ByteBuffer.wrap(is.readAllBytes()), remote);
+        }
+
+        @Override
+        public void sendMessage(ByteBuffer buffer) throws IOException {
+            channel.send(buffer, remote);
         }
     }
 
