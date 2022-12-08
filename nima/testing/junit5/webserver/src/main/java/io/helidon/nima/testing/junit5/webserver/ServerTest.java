@@ -37,4 +37,5 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(HelidonServerJunitExtension.class)
 @Inherited
 public @interface ServerTest {
+    boolean udp() default false;
 }

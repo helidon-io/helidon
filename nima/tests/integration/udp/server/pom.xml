@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>io.helidon.nima.tests.integration.udp</groupId>
+        <artifactId>helidon-nima-tests-integration-udp-project</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>helidon-nima-tests-integration-udp-server</artifactId>
+    <name>Helidon Níma Tests Integraiton UDP Server</name>
+
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.nima.udp</groupId>
+            <artifactId>helidon-nima-udp</artifactId>
+            <version>${helidon.version}</version>       <!-- TODO -->
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+

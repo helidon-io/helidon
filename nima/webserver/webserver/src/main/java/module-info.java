@@ -48,6 +48,7 @@ module io.helidon.nima.webserver {
 
     requires jakarta.annotation;
     requires io.helidon.common.uri;
+    requires io.helidon.nima.udp;
 
     requires static io.helidon.config.metadata;
     requires static io.helidon.pico.configdriven.runtime;

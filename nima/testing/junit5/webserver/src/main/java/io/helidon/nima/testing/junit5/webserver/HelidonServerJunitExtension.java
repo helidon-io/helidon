@@ -82,6 +82,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
                 .port(0)
                 .shutdownHook(false)
                 .host("localhost");
+                .udp(testAnnot.udp());
 
         extensions.forEach(it -> it.beforeAll(context));
         extensions.forEach(it -> it.updateServerBuilder(builder));

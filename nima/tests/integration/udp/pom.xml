@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,30 +15,21 @@
     limitations under the License.
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.nima.tests</groupId>
-        <artifactId>helidon-nima-tests-project</artifactId>
+        <groupId>io.helidon.nima.tests.integration</groupId>
+        <artifactId>helidon-nima-tests-integration-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.nima.tests.integration</groupId>
-    <artifactId>helidon-nima-tests-integration-project</artifactId>
-    <name>Helidon Níma Tests Integration Project</name>
+    <groupId>io.helidon.nima.tests.integration.udp</groupId>
+    <artifactId>helidon-nima-tests-integration-udp-project</artifactId>
+    <name>Helidon Níma Tests Integration UDP Project</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>webserver</module>
-        <module>webclient</module>
-        <module>grpc</module>
-        <module>websocket</module>
-        <module>http2</module>
-        <module>encoding</module>
-        <module>media</module>
-        <module>observe</module>
-        <module>logging</module>
-        <module>udp</module>
+        <module>server</module>
     </modules>
 </project>

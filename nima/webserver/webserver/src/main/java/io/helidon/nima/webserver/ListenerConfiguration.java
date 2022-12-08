@@ -36,6 +36,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
+import io.helidon.nima.udp.UdpEndpoint;
 
 /**
  * Configuration of a server listener (server socket).
@@ -55,6 +56,8 @@ public final class ListenerConfiguration {
     private final DirectHandlers directHandlers;
     private final Context context;
     private final RequestedUriDiscoveryContext discoveryContext;
+    private final boolean udp;
+    private final UdpEndpoint udpEndpoint;
 
     private ListenerConfiguration(Builder builder) {
         this.socketOptions = new HashMap<>(builder.socketOptions);
@@ -71,6 +74,8 @@ public final class ListenerConfiguration {
         this.directHandlers = builder.directHandlers.build();
         this.context = builder.context;
         this.discoveryContext = builder.discoveryContext;
+        this.udp = builder.udp;
+        this.udpEndpoint = builder.udpEndpoint;
     }
 
     /**
@@ -218,6 +223,14 @@ public final class ListenerConfiguration {
         return tls;
     }
 
+    boolean udp() {
+        return udp;
+    }
+
+    UdpEndpoint udpEndpoint() {
+        return udpEndpoint;
+    }
+
     /**
      * Fluent API builder for {@link io.helidon.nima.webserver.ListenerConfiguration}.
      */
@@ -240,6 +253,8 @@ public final class ListenerConfiguration {
         private MediaContext mediaContext;
         private Context context;
         private RequestedUriDiscoveryContext discoveryContext;
+        private boolean udp = false;
+        private UdpEndpoint udpEndpoint;
 
         private Builder(String socketName) {
             this.socketName = socketName;
@@ -344,6 +359,31 @@ public final class ListenerConfiguration {
         public Builder tls(Tls tls) {
             Objects.requireNonNull(tls);
             this.tls = tls;
+            return this;
+        }
+
+        /**
+         * Set listener for UDP.
+         *
+         * @param udp udp flag
+         * @return updated builder
+         */
+        public Builder udp(boolean udp) {
+            this.udp = udp;
+            return this;
+        }
+
+        /**
+         * Configure UDP endpoint for this listener.
+         *
+         * @param udpEndpoint the endpoint
+         * @return updated builder
+         */
+        public Builder udpEndpoint(UdpEndpoint udpEndpoint) {
+            if (!udp) {
+                throw new IllegalArgumentException("Socket listener not of UDP type");
+            }
+            this.udpEndpoint = udpEndpoint;
             return this;
         }
 
