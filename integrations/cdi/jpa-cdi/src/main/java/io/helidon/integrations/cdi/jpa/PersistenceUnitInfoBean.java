@@ -1011,7 +1011,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         assert managedClasses != null;
         String name = persistenceUnit.getName();
         if (name == null || name.isEmpty()) {
-            name = JpaExtension2.DEFAULT_PERSISTENCE_UNIT_NAME;
+            name = PersistenceExtension.DEFAULT_PERSISTENCE_UNIT_NAME;
         }
 
         final Boolean excludeUnlistedClasses = persistenceUnit.isExcludeUnlistedClasses();
@@ -1027,7 +1027,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                 }
             }
             // Also add "default" ones
-            myUnlistedClasses = unlistedClasses.get(JpaExtension2.DEFAULT_PERSISTENCE_UNIT_NAME);
+            myUnlistedClasses = unlistedClasses.get(PersistenceExtension.DEFAULT_PERSISTENCE_UNIT_NAME);
             if (myUnlistedClasses != null && !myUnlistedClasses.isEmpty()) {
                 for (final Class<?> unlistedClass : myUnlistedClasses) {
                     if (unlistedClass != null) {

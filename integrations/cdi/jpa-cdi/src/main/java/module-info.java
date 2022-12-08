@@ -20,17 +20,16 @@
  * href="https://jakarta.ee/specifications/persistence/3.0/"
  * target="_parent">JPA</a> into CDI.
  *
- * @see io.helidon.integrations.cdi.jpa.JpaExtension
+ * @see io.helidon.integrations.cdi.jpa.PersistenceExtension
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.jpa {
 
-    // Static metamodel generation requires access to java.compiler at
-    // compile time only.
+    // Static metamodel generation requires access to java.compiler at compile time only.
     requires static java.compiler;
-  
+
     requires jakarta.xml.bind;
 
     requires jakarta.inject; // automatic module
@@ -45,14 +44,12 @@ module io.helidon.integrations.cdi.jpa {
     requires transitive jakarta.persistence; // automatic module
     requires transitive java.sql;
 
-    // JTA is optional at runtime, as well as the modules that support
-    // it.
+    // JTA is optional at runtime, as well as the modules that support it.
     requires static jakarta.transaction; // automatic module
     requires static io.helidon.integrations.jta.jdbc;
 
     exports io.helidon.integrations.cdi.jpa;
     exports io.helidon.integrations.cdi.jpa.jaxb;
 
-    // provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.JpaExtension;
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.JpaExtension2;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.PersistenceExtension;
 }

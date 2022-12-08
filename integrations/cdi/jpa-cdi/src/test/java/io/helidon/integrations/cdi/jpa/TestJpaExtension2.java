@@ -59,7 +59,7 @@ class TestJpaExtension2 {
         }
         SeContainerInitializer i = SeContainerInitializer.newInstance()
             .disableDiscovery()
-            .addExtensions(JpaExtension2.class,
+            .addExtensions(PersistenceExtension.class,
                            com.arjuna.ats.jta.cdi.TransactionExtension.class,
                            io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension.class)
             .addBeanClasses(Caturgiator.class,

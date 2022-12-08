@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -90,7 +91,6 @@ import jakarta.persistence.spi.PersistenceProvider;
 import jakarta.persistence.spi.PersistenceProviderResolver;
 import jakarta.persistence.spi.PersistenceProviderResolverHolder;
 import jakarta.persistence.spi.PersistenceUnitInfo;
-import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
@@ -105,7 +105,7 @@ import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
  *
  * <p>This class is subject to removal without prior notice at any time.</p>
  */
-public final class JpaExtension2 implements Extension {
+public final class PersistenceExtension implements Extension {
 
 
     /*
@@ -158,6 +158,9 @@ public final class JpaExtension2 implements Extension {
      * <p>The contents of this field are used only when no explicit {@link PersistenceUnitInfo} beans are otherwise
      * available in the container.</p>
      *
+     * <p>After this portable extension finishes processing, this {@link Map} will be {@linkplain Map#isEmpty()
+     * empty}.</p>
+     *
      * @see #gatherImplicitPersistenceUnits(ProcessAnnotatedType, BeanManager)
      */
     private final Map<String, PersistenceUnitInfoBean> implicitPersistenceUnits;
@@ -166,6 +169,9 @@ public final class JpaExtension2 implements Extension {
      * A {@link Map} of {@link Set}s of {@link Class}es whose keys are persistence unit names and whose values are
      * {@link Set}s of {@link Class}es discovered by CDI (and hence consist of unlisted classes in the sense that they
      * might not be found in any {@link PersistenceUnitInfo}).
+     *
+     * <p>After this portable extension finishes processing, this {@link Map} will be {@linkplain Map#isEmpty()
+     * empty}.</p>
      *
      * <p>Such {@link Class}es, of course, might not have been weaved appropriately by the relevant {@link
      * PersistenceProvider}.</p>
@@ -180,21 +186,24 @@ public final class JpaExtension2 implements Extension {
      * <p>This field is never {@code null}.</p>
      *
      * <p>These qualifiers are built up as this portable extension {@linkplain ProcessInjectionPoint discovers {@link
-     * EntityManager}-typed <code>InjectionPoint</code>s}.</p>
+     * EntityManager}-typed <code>InjectionPoint</code>s}.  After this portable extension finishes processing, this
+     * {@link Set} will be {@linkplain Set#isEmpty() empty}.</p>
      *
-     * @see #saveEntityManagerQualifiers(ProcessInjectionPoint)
+     * @see #saveContainerManagedEntityManagerQualifiers(ProcessInjectionPoint)
      */
-    private final Set<Set<Annotation>> entityManagerQualifiers;
+    private final Set<Set<Annotation>> containerManagedEntityManagerQualifiers;
 
     /**
-     * A {@link Set} of {@link Set}s of CDI qualifiers for which {@link EntityManagerFactory} beans may be created.
+     * A {@link Set} of {@link Set}s of CDI qualifiers for which container-managed {@link EntityManagerFactory} beans
+     * may be created.
      *
      * <p>This field is never {@code null}.</p>
      *
      * <p>These qualifiers are built up as this portable extension {@linkplain ProcessInjectionPoint discovers {@link
-     * EntityManagerFactory}-typed <code>InjectionPoint</code>s}.</p>
+     * EntityManagerFactory}-typed <code>InjectionPoint</code>s}.  After this portable extension finishes processing,
+     * this {@link Set} will be {@linkplain Set#isEmpty() empty}.</p>
      *
-     * @see #saveEntityManagerFactoryQualifiers(ProcessInjectionPoint)
+     * @see #saveContainerManagedEntityManagerFactoryQualifiers(ProcessInjectionPoint)
      */
     private final Set<Set<Annotation>> entityManagerFactoryQualifiers;
 
@@ -224,19 +233,19 @@ public final class JpaExtension2 implements Extension {
 
 
     /**
-     * Creates a new {@link JpaExtension2}.
+     * Creates a new {@link PersistenceExtension}.
      *
      * @deprecated For invocation by CDI only.
      */
     @Deprecated // For invocation by CDI only.
-    public JpaExtension2() {
+    public PersistenceExtension() {
         super();
-        this.implicitPersistenceUnits = new HashMap<>();
-        this.unlistedManagedClassesByUnitNames = new HashMap<>();
-        this.entityManagerQualifiers = new HashSet<>();
-        this.entityManagerFactoryQualifiers = new HashSet<>();
-        this.transactionsSupported = true;
+        this.containerManagedEntityManagerQualifiers = new HashSet<>();
         this.containerManagedEntityManagerFactoryQualifiers = new HashSet<>();
+        this.entityManagerFactoryQualifiers = new HashSet<>();
+        this.implicitPersistenceUnits = new HashMap<>();
+        this.transactionsSupported = false;
+        this.unlistedManagedClassesByUnitNames = new HashMap<>();
     }
 
 
@@ -245,8 +254,22 @@ public final class JpaExtension2 implements Extension {
      */
 
 
-    private <T> void addAllocatorBean(@Observes AfterTypeDiscovery event) {
+    private <T> void addAllocatorBeanAndInstallTransactionSupport(@Observes AfterTypeDiscovery event) {
         event.addAnnotatedType(Allocator.class, Allocator.class.getName());
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        try {
+            Class.forName("jakarta.transaction.TransactionSynchronizationRegistry",
+                          false,
+                          cl);
+            event.addAnnotatedType(Class.forName("io.helidon.integrations.cdi.jpa.JtaTransactionSupport2",
+                                                 false,
+                                                 cl),
+                                   "io.helidon.integrations.cdi.jpa.JtaTransactionSupport2");
+            this.transactionsSupported = true;
+        } catch (ClassNotFoundException e) {
+            event.addAnnotatedType(NoTransactionSupport2.class, NoTransactionSupport2.class.getName());
+            this.transactionsSupported = false;
+        }
     }
 
     private <T> void makePersistencePropertyARepeatableQualifier(@Observes BeforeBeanDiscovery event) {
@@ -257,13 +280,13 @@ public final class JpaExtension2 implements Extension {
                                            @WithAnnotations({PersistenceContext.class, PersistenceUnit.class})
                                            ProcessAnnotatedType<T> event) {
         AnnotatedTypeConfigurator<T> atc = event.configureAnnotatedType();
-        atc.filterFields(JpaExtension2::isEligiblePersistenceContextAnnotated)
+        atc.filterFields(PersistenceExtension::isEligiblePersistenceContextAnnotated)
             .forEach(this::rewritePersistenceContextFieldAnnotations);
-        atc.filterFields(JpaExtension2::isEligiblePersistenceUnitAnnotated)
+        atc.filterFields(PersistenceExtension::isEligiblePersistenceUnitAnnotated)
             .forEach(this::rewritePersistenceUnitFieldAnnotations);
-        atc.filterMethods(JpaExtension2::isEligiblePersistenceContextAnnotated)
+        atc.filterMethods(PersistenceExtension::isEligiblePersistenceContextAnnotated)
             .forEach(this::rewritePersistenceContextInitializerMethodAnnotations);
-        atc.filterMethods(JpaExtension2::isEligiblePersistenceUnitAnnotated)
+        atc.filterMethods(PersistenceExtension::isEligiblePersistenceUnitAnnotated)
             .forEach(this::rewritePersistenceUnitInitializerMethodAnnotations);
     }
 
@@ -293,8 +316,7 @@ public final class JpaExtension2 implements Extension {
         if (at.isAnnotationPresent(Vetoed.class)) {
             return;
         }
-        Set<? extends PersistenceContext> pcs = at.getAnnotations(PersistenceContext.class);
-        for (PersistenceContext pc : pcs) {
+        for (PersistenceContext pc : at.getAnnotations(PersistenceContext.class)) {
             PersistenceProperty[] pps = pc.properties();
             if (pps.length > 0) {
                 String unitName = pc.unitName();
@@ -371,7 +393,8 @@ public final class JpaExtension2 implements Extension {
      *
      * @exception NullPointerException if {@code e} is {@code null}
      */
-    private <T extends EntityManagerFactory> void saveEntityManagerFactoryQualifiers(@Observes ProcessInjectionPoint<?, T> e) {
+    @SuppressWarnings("checkstyle:LineLength")
+    private <T extends EntityManagerFactory> void saveContainerManagedEntityManagerFactoryQualifiers(@Observes ProcessInjectionPoint<?, T> e) {
         boolean add = false;
         Set<Annotation> qualifiers = e.getInjectionPoint().getQualifiers();
         for (Annotation qualifier : qualifiers) {
@@ -384,7 +407,6 @@ public final class JpaExtension2 implements Extension {
                     add = false;
                 }
                 e.addDefinitionError(new InjectionException("Invalid injection point; reserved qualifier used: " + qualifier));
-                break;
             }
         }
         if (add) {
@@ -401,7 +423,7 @@ public final class JpaExtension2 implements Extension {
      *
      * @exception NullPointerException if {@code e} is {@code null}
      */
-    private <T extends EntityManager> void saveEntityManagerQualifiers(@Observes ProcessInjectionPoint<?, T> e) {
+    private <T extends EntityManager> void saveContainerManagedEntityManagerQualifiers(@Observes ProcessInjectionPoint<?, T> e) {
         Set<Annotation> qualifiers = e.getInjectionPoint().getQualifiers();
         if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
             if (qualifiers.contains(JtaTransactionScoped.Literal.INSTANCE) && qualifiers.contains(Extended.Literal.INSTANCE)
@@ -409,7 +431,7 @@ public final class JpaExtension2 implements Extension {
                 e.addDefinitionError(new InjectionException("Invalid injection point; some qualifiers are mutually exclusive: "
                                                             + qualifiers));
             } else {
-                this.entityManagerQualifiers.add(qualifiers);
+                this.containerManagedEntityManagerQualifiers.add(qualifiers);
             }
         }
     }
@@ -482,9 +504,8 @@ public final class JpaExtension2 implements Extension {
 
         // Clear out no-longer-needed-or-used collections to save memory.
         this.containerManagedEntityManagerFactoryQualifiers.clear();
+        this.containerManagedEntityManagerQualifiers.clear();
         this.implicitPersistenceUnits.clear();
-        this.entityManagerQualifiers.clear();
-        this.entityManagerFactoryQualifiers.clear();
         this.unlistedManagedClassesByUnitNames.clear();
     }
 
@@ -519,10 +540,12 @@ public final class JpaExtension2 implements Extension {
                                ? Unsynchronized.Literal.INSTANCE
                                : Synchronized.Literal.INSTANCE);
                          for (PersistenceProperty pp : pc.properties()) {
-                             f.add(pp);
+                             String ppName = pp.name();
+                             if (!ppName.isBlank()) {
+                                 f.add(pp);
+                             }
                          }
-                     }
-                     );
+                     });
     }
 
     /**
@@ -556,8 +579,7 @@ public final class JpaExtension2 implements Extension {
                          for (PersistenceProperty pp : pc.properties()) {
                              p.add(pp);
                          }
-                     }
-                     );
+                     });
     }
 
     private <T> void rewritePersistenceUnitInitializerMethodAnnotations(AnnotatedMethodConfigurator<T> mc) {
@@ -568,7 +590,7 @@ public final class JpaExtension2 implements Extension {
                                                    Class<A> ac,
                                                    Class<?> c,
                                                    Function<? super A, ? extends String> unitNameFunction) {
-        this.rewrite(fc, ac, c, unitNameFunction, JpaExtension2::sink);
+        this.rewrite(fc, ac, c, unitNameFunction, PersistenceExtension::sink);
     }
 
     private <T, A extends Annotation> void rewrite(AnnotatedFieldConfigurator<T> fc,
@@ -625,7 +647,7 @@ public final class JpaExtension2 implements Extension {
                                                    Class<A> ac,
                                                    Class<?> c,
                                                    Function<? super A, ? extends String> unitNameFunction) {
-        this.rewrite(mc, ac, c, unitNameFunction, JpaExtension2::sink);
+        this.rewrite(mc, ac, c, unitNameFunction, PersistenceExtension::sink);
     }
 
     private <T, A extends Annotation> void rewrite(AnnotatedMethodConfigurator<T> mc,
@@ -1045,19 +1067,23 @@ public final class JpaExtension2 implements Extension {
      * @see #addJtaTransactionScopedEntityManagerBeans(AfterBeanDiscovery, Set)
      */
     private void addContainerManagedJpaBeans(AfterBeanDiscovery event) {
-        for (Set<Annotation> qualifiers : this.entityManagerFactoryQualifiers) {
+        for (Iterator<Set<Annotation>> i = this.entityManagerFactoryQualifiers.iterator(); i.hasNext();) {
+            Set<Annotation> qualifiers = i.next();
+            i.remove();
             if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
                 addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
             }
         }
+        assert this.entityManagerFactoryQualifiers.isEmpty();
         if (this.transactionsSupported) {
-            for (Set<Annotation> qualifiers : this.entityManagerQualifiers) {
+            for (Set<Annotation> qualifiers : this.containerManagedEntityManagerQualifiers) {
                 if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
                     // Note that each add* method invoked below is responsible for ensuring that it adds beans only once
                     // if at all, i.e. for validating and de-duplicating the qualifiers that it is supplied with if
                     // necessary.
                     addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
                     if (qualifiers.contains(Extended.Literal.INSTANCE)) {
+                        assert !qualifiers.contains(JtaTransactionScoped.Literal.INSTANCE);
                         addExtendedEntityManagerBeans(event, qualifiers);
                     } else {
                         assert qualifiers.contains(JtaTransactionScoped.Literal.INSTANCE);
@@ -1066,7 +1092,7 @@ public final class JpaExtension2 implements Extension {
                 }
             }
         } else {
-            for (Set<Annotation> qualifiers : this.entityManagerQualifiers) {
+            for (Set<Annotation> qualifiers : this.containerManagedEntityManagerQualifiers) {
                 if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
                     // Note that each add* method invoked below is responsible for ensuring that it adds beans only once
                     // if at all, i.e. for validating the qualifiers that it is supplied with.
@@ -1085,14 +1111,13 @@ public final class JpaExtension2 implements Extension {
         //   private final EntityManagerFactory emf;
         Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
         qualifiers.removeIf(e -> e != ContainerManaged.Literal.INSTANCE && SyntheticJpaQualifiers.INSTANCE.contains(e));
-        qualifiers.add(ContainerManaged.Literal.INSTANCE); // should already be there
         if (this.containerManagedEntityManagerFactoryQualifiers.add(qualifiers)) {
             event.addBean()
                 .addTransitiveTypeClosure(EntityManagerFactory.class)
                 .scope(Singleton.class)
                 .qualifiers(qualifiers)
-                .produceWith(JpaExtension2::produceEntityManagerFactory)
-                .disposeWith(JpaExtension2::disposeEntityManagerFactory);
+                .produceWith(PersistenceExtension::produceEntityManagerFactory)
+                .disposeWith(PersistenceExtension::disposeEntityManagerFactory);
         }
     }
 
@@ -1118,8 +1143,8 @@ public final class JpaExtension2 implements Extension {
             .addTransitiveTypeClosure(JtaExtendedEntityManager.class)
             .scope(Dependent.class) // critical: must be Dependent scope
             .qualifiers(qualifiers)
-            .produceWith(JpaExtension2::produceJtaExtendedEntityManager)
-            .disposeWith(JpaExtension2::disposeJtaExtendedEntityManager);
+            .produceWith(PersistenceExtension::produceJtaExtendedEntityManager)
+            .disposeWith(PersistenceExtension::disposeJtaExtendedEntityManager);
     }
 
     private void addJtaTransactionScopedEntityManagerBeans(AfterBeanDiscovery event, Set<Annotation> suppliedQualifiers) {
@@ -1144,8 +1169,8 @@ public final class JpaExtension2 implements Extension {
             .addTransitiveTypeClosure(JtaEntityManager.class)
             .scope(Dependent.class) // critical: must be Dependent scope
             .qualifiers(qualifiers)
-            .produceWith(JpaExtension2::produceJtaEntityManager)
-            .disposeWith(JpaExtension2::disposeJtaEntityManager);
+            .produceWith(PersistenceExtension::produceJtaEntityManager)
+            .disposeWith(PersistenceExtension::disposeJtaEntityManager);
     }
 
 
@@ -1183,16 +1208,19 @@ public final class JpaExtension2 implements Extension {
         return instance.select(Allocator.class)
             .get()
             .allocate(() -> {
-                    Annotation[] selectionQualifiersArray = selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
+                    TransactionSupport2 ts =
+                        getOrDefault(instance.select(TransactionSupport2.class),
+                                     selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY));
                     return
-                        new JtaExtendedEntityManager(getOrDefault(instance.select(TransactionSynchronizationRegistry.class),
-                                                                  selectionQualifiersArray),
+                        new JtaExtendedEntityManager(ts::active,
+                                                     ts::get,
+                                                     ts::put,
                                                      instance.select(EntityManagerFactory.class,
                                                                      containerManagedSelectionQualifiers
                                                                      .toArray(EMPTY_ANNOTATION_ARRAY))
                                                      .get()
                                                      .createEntityManager(finalSyncType, properties),
-                                                     finalSyncType);
+                                                     finalSyncType == SYNCHRONIZED);
                 },
                 JtaExtendedEntityManager.class,
                 containerManagedSelectionQualifiers);
@@ -1228,19 +1256,19 @@ public final class JpaExtension2 implements Extension {
                 selectionQualifiers.add(beanQualifier);
             }
         }
-        Annotation[] namedSelectionQualifiersArray = namedSelectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-        Annotation[] selectionQualifiersArray = selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-        PersistenceUnitInfo pui = getOrDefault(instance.select(PersistenceUnitInfo.class), namedSelectionQualifiersArray);
-        PersistenceProvider pp = getOrDefault(instance.select(PersistenceProvider.class), selectionQualifiersArray);
+        PersistenceUnitInfo pui =
+            getOrDefault(instance.select(PersistenceUnitInfo.class), namedSelectionQualifiers);
+        PersistenceProvider pp =
+            getOrDefault(instance.select(PersistenceProvider.class), selectionQualifiers);
         Map<String, Object> properties = new HashMap<>(5);
         properties.put("jakarta.persistence.bean.manager", instance.select(BeanManager.class).get());
         try {
-            Instance<?> vfi =
+            Instance<?> vf =
                 instance.select(Class.forName("jakarta.validation.ValidatorFactory",
                                               false,
                                               Thread.currentThread().getContextClassLoader()));
-            if (!vfi.isUnsatisfied()) {
-                properties.put("jakarta.persistence.validation.factory", vfi.get());
+            if (!vf.isUnsatisfied()) {
+                properties.put("jakarta.persistence.validation.factory", vf.get());
             }
         } catch (final ClassNotFoundException classNotFoundException) {
 
@@ -1253,13 +1281,12 @@ public final class JpaExtension2 implements Extension {
     }
 
     private static JtaEntityManager produceJtaEntityManager(Instance<Object> instance) {
-        BeanAttributes<JtaEntityManager> ba = instance.select(BEAN_JTAENTITYMANAGER_TYPELITERAL).get();
         Set<Annotation> containerManagedSelectionQualifiers = new HashSet<>();
         containerManagedSelectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
         Set<Annotation> selectionQualifiers = new HashSet<>();
         SynchronizationType syncType = null;
         Map<String, String> properties = new HashMap<>();
-        for (Annotation beanQualifier : ba.getQualifiers()) {
+        for (Annotation beanQualifier : instance.select(BEAN_JTAENTITYMANAGER_TYPELITERAL).get().getQualifiers()) {
             if (beanQualifier == Any.Literal.INSTANCE) {
                 continue;
             } else if (beanQualifier == Unsynchronized.Literal.INSTANCE) {
@@ -1267,8 +1294,11 @@ public final class JpaExtension2 implements Extension {
                     syncType = UNSYNCHRONIZED;
                 }
             } else if (beanQualifier instanceof PersistenceProperty pp) {
-                containerManagedSelectionQualifiers.add(pp);
-                properties.put(pp.name(), pp.value());
+                String ppName = pp.name();
+                if (!ppName.isBlank()) {
+                    containerManagedSelectionQualifiers.add(pp);
+                    properties.put(ppName, pp.value());
+                }
             } else if (!SyntheticJpaQualifiers.INSTANCE.contains(beanQualifier)) {
                 containerManagedSelectionQualifiers.add(beanQualifier);
                 selectionQualifiers.add(beanQualifier);
@@ -1278,10 +1308,12 @@ public final class JpaExtension2 implements Extension {
         return instance.select(Allocator.class)
             .get()
             .allocate(() -> {
-                    Annotation[] selectionQualifiersArray = selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
+                    TransactionSupport2 ts = getOrDefault(instance.select(TransactionSupport2.class), selectionQualifiers);
                     return
-                        new JtaEntityManager(getOrDefault(instance.select(TransactionSynchronizationRegistry.class),
-                                                          selectionQualifiersArray),
+                        new JtaEntityManager(ts::active,
+                                             ts::addCompletionListener,
+                                             ts::get,
+                                             ts::put,
                                              instance.select(EntityManagerFactory.class,
                                                              containerManagedSelectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY))
                                              .get()::createEntityManager,

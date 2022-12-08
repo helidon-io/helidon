@@ -21,8 +21,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.IntConsumer;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import io.helidon.integrations.cdi.jpa.TransactionSupport2.CompletionStatus;
 
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
@@ -41,9 +46,6 @@ import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.metamodel.Metamodel;
-import jakarta.transaction.Status;
-import jakarta.transaction.Synchronization;
-import jakarta.transaction.TransactionSynchronizationRegistry;
 
 import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
 import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
@@ -59,14 +61,26 @@ class JtaEntityManager extends DelegatingEntityManager {
 
     private final Map<?, ?> properties;
 
-    private final TransactionSynchronizationRegistry tsr;
+    private final BooleanSupplier activeTransaction;
 
-    JtaEntityManager(TransactionSynchronizationRegistry tsr,
+    private final Consumer<? super Consumer<? super CompletionStatus>> completionListeners;
+
+    private final Function<? super Object, ?> transactionalResourceGetter;
+
+    private final BiConsumer<? super Object, ? super Object> transactionalResourceSetter;
+
+    JtaEntityManager(BooleanSupplier activeTransaction,
+                     Consumer<? super Consumer<? super CompletionStatus>> completionListeners,
+                     Function<? super Object, ?> transactionalResourceGetter,
+                     BiConsumer<? super Object, ? super Object> transactionalResourceSetter,
                      BiFunction<? super SynchronizationType, ? super Map<?, ?>, ? extends EntityManager> emf,
                      SynchronizationType syncType,
                      Map<?, ?> properties) {
         super();
-        this.tsr = Objects.requireNonNull(tsr, "tsr");
+        this.activeTransaction = Objects.requireNonNull(activeTransaction, "activeTransaction");
+        this.completionListeners = Objects.requireNonNull(completionListeners, "completionListeners");
+        this.transactionalResourceGetter = Objects.requireNonNull(transactionalResourceGetter, "transactionalResourceGetter");
+        this.transactionalResourceSetter = Objects.requireNonNull(transactionalResourceSetter, "transactionalResourceSetter");
         this.emf = Objects.requireNonNull(emf, "emf");
         // JPA permits null SynchronizationType and properties.
         this.syncType = syncType;
@@ -91,23 +105,10 @@ class JtaEntityManager extends DelegatingEntityManager {
     @Override
     EntityManager acquireDelegate() {
         try {
-            int ts = this.tsr.getTransactionStatus();
-            switch (ts) {
-            case Status.STATUS_ACTIVE:
-                return this.computeIfAbsentForActiveTransaction();
-            case Status.STATUS_COMMITTED:
-            case Status.STATUS_COMMITTING:
-            case Status.STATUS_MARKED_ROLLBACK:
-            case Status.STATUS_NO_TRANSACTION:
-            case Status.STATUS_PREPARED:
-            case Status.STATUS_PREPARING:
-            case Status.STATUS_ROLLEDBACK:
-            case Status.STATUS_ROLLING_BACK:
-            case Status.STATUS_UNKNOWN:
-                return this.computeIfAbsentForNoTransaction();
-            default:
-                throw new PersistenceException("Unknown transaction status: " + ts);
-            }
+            return
+                this.activeTransaction.getAsBoolean()
+                ? this.computeIfAbsentForActiveTransaction()
+                : this.computeIfAbsentForNoTransaction();
         } catch (PersistenceException e) {
             throw e;
         } catch (RuntimeException e) {
@@ -116,22 +117,22 @@ class JtaEntityManager extends DelegatingEntityManager {
     }
 
     private ActiveTransactionEntityManager computeIfAbsentForActiveTransaction() {
-        ActiveTransactionEntityManager em = (ActiveTransactionEntityManager) this.tsr.getResource(this);
+        ActiveTransactionEntityManager em = (ActiveTransactionEntityManager) this.transactionalResourceGetter.apply(this);
         if (em == null) {
             ActiveTransactionEntityManager newEm =
                 new ActiveTransactionEntityManager(this.emf.apply(this.syncType, this.properties));
             em = newEm;
             Object thread = Thread.currentThread();
             try {
-                tsr.registerInterposedSynchronization(new AfterCompletionSynchronization(cts -> {
-                            // Remember, this can be invoked asynchronously.
-                            if (Thread.currentThread() == thread) {
-                                newEm.closeDelegate();
-                            } else {
-                                newEm.closePending = true; // volatile write
-                            }
-                }));
-                this.tsr.putResource(this, em);
+                this.completionListeners.accept((Consumer<? super CompletionStatus>) cts -> {
+                        // Remember, this can be invoked asynchronously.
+                        if (Thread.currentThread() == thread) {
+                            newEm.closeDelegate();
+                        } else {
+                            newEm.closePending = true; // volatile write
+                        }
+                    });
+                this.transactionalResourceSetter.accept(this, em);
             } catch (RuntimeException | Error e) {
                 try {
                     em.closeDelegate();
@@ -906,27 +907,6 @@ class JtaEntityManager extends DelegatingEntityManager {
             // https://github.com/wildfly/wildfly/blob/cb3f5429e4bb5423236564c1f3afd8b4a2430ec0/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/AbstractEntityManager.java#L454-L466.
             // We follow the reference application (Glassfish).
             throw new TransactionRequiredException();
-        }
-
-    }
-
-    private static final class AfterCompletionSynchronization implements Synchronization {
-
-        private final IntConsumer afterCompletion;
-
-        private AfterCompletionSynchronization(IntConsumer afterCompletion) {
-            super();
-            this.afterCompletion = Objects.requireNonNull(afterCompletion, "afterCompletion");
-        }
-
-        @Override
-        public void beforeCompletion() {
-
-        }
-
-        @Override
-        public void afterCompletion(int completedTransactionStatus) {
-            this.afterCompletion.accept(completedTransactionStatus);
         }
 
     }

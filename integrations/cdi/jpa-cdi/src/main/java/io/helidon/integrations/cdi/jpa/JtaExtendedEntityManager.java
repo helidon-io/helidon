@@ -16,14 +16,12 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
-import jakarta.persistence.SynchronizationType;
-import jakarta.transaction.Status;
-import jakarta.transaction.TransactionSynchronizationRegistry;
-
-import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
 
 /**
  * A {@link DelegatingEntityManager} created to support extended
@@ -33,48 +31,41 @@ final class JtaExtendedEntityManager extends DelegatingEntityManager {
 
     private final EntityManager delegate;
 
-    private final SynchronizationType syncType;
+    private final boolean isSynchronized;
 
-    private final TransactionSynchronizationRegistry tsr;
+    private final BooleanSupplier activeTransaction;
 
-    JtaExtendedEntityManager(TransactionSynchronizationRegistry tsr,
+    private final Function<? super Object, ?> transactionalResourceGetter;
+
+    private final BiConsumer<? super Object, ? super Object> transactionalResourceSetter;
+
+    JtaExtendedEntityManager(BooleanSupplier activeTransaction,
+                             Function<? super Object, ?> transactionalResourceGetter,
+                             BiConsumer<? super Object, ? super Object> transactionalResourceSetter,
                              EntityManager delegate,
-                             SynchronizationType syncType) {
+                             boolean isSynchronized) {
         super();
         this.delegate = Objects.requireNonNull(delegate, "delegate");
-        this.tsr = Objects.requireNonNull(tsr, "tsr");
-        this.syncType = syncType == null ? SynchronizationType.SYNCHRONIZED : syncType;
+        this.activeTransaction = Objects.requireNonNull(activeTransaction, "activeTransaction");
+        this.transactionalResourceGetter = Objects.requireNonNull(transactionalResourceGetter, "transactionalResourceGetter");
+        this.transactionalResourceSetter = Objects.requireNonNull(transactionalResourceSetter, "transactionalResourceSetter");
+        this.isSynchronized = isSynchronized;
     }
 
     @Override
     protected EntityManager acquireDelegate() {
         try {
-            int ts = this.tsr.getTransactionStatus();
-            switch (ts) {
-            case Status.STATUS_ACTIVE:
+            if (this.activeTransaction.getAsBoolean()) {
                 Object emf = this.delegate.getEntityManagerFactory();
-                Object extantEm = this.tsr.getResource(emf);
+                Object extantEm = this.transactionalResourceGetter.apply(emf);
                 if (extantEm == null) {
-                    if (this.syncType == SYNCHRONIZED) {
+                    this.transactionalResourceSetter.accept(emf, this);
+                    if (this.isSynchronized) {
                         this.delegate.joinTransaction();
                     }
-                    this.tsr.putResource(emf, this);
                 } else if (extantEm != this) {
                     throw new PersistenceException();
                 }
-                break;
-            case Status.STATUS_COMMITTED:
-            case Status.STATUS_COMMITTING:
-            case Status.STATUS_MARKED_ROLLBACK:
-            case Status.STATUS_NO_TRANSACTION:
-            case Status.STATUS_PREPARED:
-            case Status.STATUS_PREPARING:
-            case Status.STATUS_ROLLEDBACK:
-            case Status.STATUS_ROLLING_BACK:
-            case Status.STATUS_UNKNOWN:
-                break;
-            default:
-                throw new PersistenceException("Unknown transaction status: " + ts);
             }
         } catch (PersistenceException e) {
             throw e;
