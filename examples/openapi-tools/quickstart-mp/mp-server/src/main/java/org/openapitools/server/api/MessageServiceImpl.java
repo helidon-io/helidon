@@ -58,8 +58,8 @@ public class MessageServiceImpl implements MessageService {
     @Path("/{name}")
     @Produces({"application/json"})
     public Message getMessage(@PathParam("name") String name) {
-        defaultMessage.get().setMessage(name);
-        return defaultMessage.get();
+        Message result = new Message();
+        return result.message(defaultMessage.get().getMessage()).greeting(name);
     }
 
     @PUT

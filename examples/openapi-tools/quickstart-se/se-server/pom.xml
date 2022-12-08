@@ -37,6 +37,7 @@
     <properties>
         <mainClass>org.openapitools.server.Main</mainClass>
         <version.jackson.databind.nullable>0.2.3</version.jackson.databind.nullable>
+        <version.openapi.generator.maven.plugin>6.2.1</version.openapi.generator.maven.plugin>
     </properties>
 
     <dependencies>
@@ -119,4 +120,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>openapi</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <version>${version.openapi.generator.maven.plugin}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <inputSpec>${project.basedir}/src/main/resources/META-INF/openapi.yml</inputSpec>
+                                    <generatorName>java-helidon-server</generatorName>
+                                    <library>se</library>
+                                    <output>${project.basedir}</output>
+                                    <configOptions>
+                                        <fullProject>false</fullProject>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -4,7 +4,7 @@ The goal of this example is to show how a user can easily create a Helidon MP se
 
 Here we will show the steps that a user has to do to create Helidon MP server and client using OpenAPI Generator and what has to be done to make the generated server and client fully functional.
 
-For generation of our projects we will use `openapi-generator-cli.jar` that can be downloaded form the maven repository (instructions and other options can be found [here](https://openapi-generator.tech/docs/installation)) and OpenAPI document `quicksrart.yaml` that can be found next to this `README.md`.
+For generation of our projects we will use `openapi-generator-cli.jar` that can be downloaded from the maven repository (instructions and other options can be found [here](https://openapi-generator.tech/docs/installation)) and OpenAPI document `quickstart.yaml` that can be found next to this `README.md`.
 
 ## Build, prepare and run the Helidon MP server
 
@@ -20,7 +20,7 @@ java -jar path-to-generator/openapi-generator-cli.jar \
 When this command finishes its work in the folder `mp-server` we will find the generated project where the most interesting parts are located inside `api` and `model` packages.
 The package `api` contains interfaces that represent endpoints for our server and implementations with stubs for them. 
 These implementations we need to change to implement our business logic.
-The package `model` contains classes that represent transport objects that will be used by our endpoints to receive requests and sent responses.
+The package `model` contains classes that represent transport objects that will be used by our endpoints to receive requests and send responses.
 
 Let's change a little class `MessageServiceImpl` for our example :
 1) Add annotation `@ApplicationScoped` to this class.
@@ -43,8 +43,8 @@ Let's change a little class `MessageServiceImpl` for our example :
 ```
 5) Replace implementation of the method `public Message getMessage(@PathParam("name") String name)` by this:
 ```java
-        defaultMessage.get().setMessage(name);
-        return defaultMessage.get();
+        Message result = new Message();
+        return result.message(defaultMessage.get().getMessage()).greeting(name);
 ```
 6) Replace implementation of the method `public Response updateGreeting(@Valid @NotNull Message message)` by this:
 ```java
@@ -57,7 +57,7 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-mp-server.jar
+java -jar target/openapi-java-server.jar
 ```
 
 To check that server works as expected run the following `curl` commands :
@@ -92,6 +92,14 @@ When this command finishes its work in the folder `mp-client` we will find the g
 As with server project there is the most interesting part are located inside `api` and `model` packages.
 The package `api` contains interfaces that represent endpoints to our server.
 The package `model` contains classes that represent transport objects that will be used to communicate with the server.
+
+You can use the generated MP client artifact in either of two ways:
+
+ - as a library - One or more other client projects can depend on the client artifact and use its generated classes.
+ - as a client program itself - Add some code to the generated project to make it a client program and not just a library.
+
+This example illustrates the second approach. We create a second server (at port 8081) which accepts greeting requests and, acting as a client, forwards them to the first service and returns the responses from the first service as its own.
+
 To make our client application fully functional let's add some classes, dependencies and files to the project.
 
 1) Let's add a class `MessageService` that will use `MessageApi` interface to interact with the server :
@@ -127,7 +135,7 @@ public class MessageService {
 }
 ```
 
-2) Create `META-INF` folder inside the directory `resource`.
+2) Create the directory `src/main/resources/META-INF`.
 3) Add file `beans.xml` inside the folder `META-INF` :
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -167,7 +175,7 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-mp-client.jar
+java -jar target/openapi-java-client.jar
 ```
 
 To check that the client works as expected and process all the requests using our server run the following `curl` commands :
@@ -256,3 +264,17 @@ For the client application :
     </profiles>
 ```
 
+Also add the following to the `<properties>` in the `pom.xml` file:
+```xml
+<version.openapi.generator.maven.plugin>6.2.1</version.openapi.generator.maven.plugin>
+```
+
+The version `6.2.1` was the first version where Helidon generators were added, so if more modern versions of this plugin are exist you can choose one of them.
+
+To run the generator during your build, invoke the profile: `mvn clean package -P openapi`.
+
+It should also be added that the `fullProject` option was used in the plugin configuration. 
+If it set to true, it will generate all files; if set to false, it will only generate API files. 
+If unspecified, the behavior depends on whether a project exists or not: if it does not, same as true; if it does, same as false. 
+So keep in mind that regenerating will overwrite your customized `MessageService` or `Message` files and you will need to add the customization again after regenerating.
+Note that test files are never overwritten.

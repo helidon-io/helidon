@@ -4,7 +4,7 @@ The goal of this example is to show how a user can easily create a Helidon SE se
 
 Here we will show the steps that a user has to do to create Helidon SE server and client using OpenAPI Generator and what has to be done to make the generated server and client fully functional.
 
-For generation of our projects we will use `openapi-generator-cli.jar` that can be downloaded form the maven repository (instructions and other options can be found [here](https://openapi-generator.tech/docs/installation)) and OpenAPI document `quicksrart.yaml` that can be found next to this `README.md`.
+For generation of our projects we will use `openapi-generator-cli.jar` that can be downloaded form the maven repository (instructions and other options can be found [here](https://openapi-generator.tech/docs/installation)) and OpenAPI document `quickstart.yaml` that can be found next to this `README.md`.
 
 ## Build, prepare and run the Helidon SE server
 
@@ -20,7 +20,7 @@ java -jar path-to-generator/openapi-generator-cli.jar \
 When this command finishes its work in the folder `se-server` we will find the generated project where the most interesting parts are located inside `api` and `model` packages.
 The package `api` contains interfaces that represent endpoints for our server and implementations with stubs for them. 
 These implementations we need to change to implement our business logic.
-The package `model` contains classes that represent transport objects that will be used by our endpoints to receive requests and sent responses.
+The package `model` contains classes that represent transport objects that will be used by our endpoints to receive requests and send responses.
 
 Let's change a little class `MessageServiceImpl` for our example :
 1) Add field that will contain default message for our endpoints :
@@ -64,7 +64,7 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-se-server.jar
+java -jar target/openapi-java-server.jar
 ```
 
 To check that server works as expected run the following `curl` commands :
@@ -84,9 +84,9 @@ curl -X GET http://localhost:8080/greet
 
 ## Build, prepare and run the Helidon SE client
 
-The second part of this example is generating Rest Client that will communicate with the server that we have just created.
+The second part of this example is generating Helidon Webclient that will communicate with the server that we have just created.
 
-To generate Helidon SE client at first we create `se-client` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
+To generate Helidon SE Webclient at first we create `se-client` folder and then inside it we run the following command where `path-to-generator` is the directory where you downloaded the generator CLI JAR file and `path-to-openapi-doc` is the folder where `quickstart.yaml` is located:
 ```bash
 java -jar path-to-generator/openapi-generator-cli.jar \
           generate \
@@ -100,6 +100,14 @@ As with the server project the most interesting parts are located inside `api` a
 The package `api` contains interfaces that represent endpoints to our server and implementations for them.
 The package `model` contains classes that represent transport objects that will be used to communicate with the server.
 `ApiClient` class represents configuration and utility class for `WebClient` that is used to connect to our server.
+
+You can use the generated SE client artifact in either of two ways:
+
+ - as a library - One or more other client projects can depend on the client artifact and use its generated classes.
+ - as a client program itself - Add some code to the generated project to make it a client program and not just a library.
+
+This example illustrates the second approach. We create a second server (at port 8081) which accepts greeting requests and, acting as a client, forwards them to the first service and returns the responses from the first service as its own.
+
 To make our client application fully functional let's add some classes, dependencies and files to the project.
 
 1) Add  to the `pom.xml` :
@@ -120,6 +128,15 @@ To make our client application fully functional let's add some classes, dependen
 
 2) Let's add a class `MessageService` that will use `MessageApi` and `ApiClient` to interact with the server :
 ```java
+import io.helidon.common.http.Http;
+import io.helidon.webserver.Handler;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import org.openapitools.client.ApiClient;
+import org.openapitools.client.model.Message;
+
 public class MessageService implements Service {
 
     private final MessageApi api;
@@ -249,7 +266,7 @@ public final class Main {
 }
 ```
 
-4) Create `resource` folder and put a `application.yaml` file inside.
+4) Create the directory `src/main/resources/`. Create `application.yaml` in that directory with the following content:
 ```yaml
 server:
   port: 8081
@@ -261,7 +278,7 @@ To run the application :
 With JDK17+
 ```bash
 mvn package
-java -jar target/openapi-se-client.jar
+java -jar target/openapi-java-client.jar
 ```
 
 To check that client works as expected and process all the request using our server run the following `curl` commands :
@@ -350,3 +367,17 @@ For the client application :
     </profiles>
 ```
 
+Also add the following to the `<properties>` in the `pom.xml` file:
+```xml
+<version.openapi.generator.maven.plugin>6.2.1</version.openapi.generator.maven.plugin>
+```
+
+The version `6.2.1` was the first version where Helidon generators were added, so if more modern versions of this plugin are exist you can choose one of them.
+
+To run the generator during your build, invoke the profile: `mvn clean package -P openapi`.
+
+It should also be added that the `fullProject` option was used in the plugin configuration.
+If it set to true, it will generate all files; if set to false, it will only generate API files.
+If unspecified, the behavior depends on whether a project exists or not: if it does not, same as true; if it does, same as false.
+So keep in mind that regenerating will overwrite your customized `MessageService` or `Message` files and you will need to add the customization again after regenerating.
+Note that test files are never overwritten.

@@ -36,6 +36,10 @@
     <description>OpenAPI Java</description>
     <packaging>jar</packaging>
 
+    <properties>
+        <version.openapi.generator.maven.plugin>6.2.1</version.openapi.generator.maven.plugin>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -99,4 +103,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>openapi</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <version>${version.openapi.generator.maven.plugin}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <inputSpec>${project.basedir}/src/main/resources/META-INF/openapi.yml</inputSpec>
+                                    <generatorName>java-helidon-client</generatorName>
+                                    <library>mp</library>
+                                    <output>${project.basedir}</output>
+                                    <configOptions>
+                                        <fullProject>false</fullProject>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -48,8 +48,10 @@ public class MessageServiceImpl implements MessageService {
 
     public void getMessage(ServerRequest request, ServerResponse response) {
         String name = request.path().param("name");
-        defaultMessage.get().setMessage(name);
-        response.send(defaultMessage.get());
+        Message result = new Message();
+        result.setMessage(name);
+        result.setGreeting(defaultMessage.get().getGreeting());
+        response.send(result);
     }
 
     public void updateGreeting(ServerRequest request, ServerResponse response, Message message) {
