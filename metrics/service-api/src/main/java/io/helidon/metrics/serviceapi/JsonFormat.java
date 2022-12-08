@@ -160,7 +160,7 @@ public final class JsonFormat {
         return toJson(JsonFormat::jsonMeta, registries);
     }
 
-    private static JsonObject jsonMeta(Registry registry) {
+    public static JsonObject jsonMeta(Registry registry) {
         return toJson((builder, entry) -> {
             MetricID metricID = entry.id();
             HelidonMetric metric = entry.metric();
