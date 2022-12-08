@@ -17,9 +17,15 @@
 #
 #
 
+# Workaround for https://github.com/checkpoint-restore/criu/issues/1696
+# see https://github.com/checkpoint-restore/criu/pull/1706
+export GLIBC_TUNABLES=glibc.pthread.rseq=0
+
+
 if [ -d "./cr" ];
 then
     echo "=== Starting directly from CRaC checkpoint ==="
+    #cat ./cr/dump4.log
 else
 	  echo "=== Creating CRaC checkpoint ==="
 	  echo "Checking CRIU compatibility(don't forget --privileged):"

@@ -22,7 +22,8 @@ curl -X GET http://localhost:7001/another
 ## CRaC
 
 ```bash
-docker buildx build -t crac-helloworld . -f Dockerfile.crac
+mvn clean package
+docker build -t crac-helloworld . -f Dockerfile.crac
 # First time ran, checkpoint is created
 docker run -d --privileged -p 7001:7001 --name crac-helloworld crac-helloworld
 docker stop crac-helloworld

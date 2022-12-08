@@ -70,9 +70,10 @@ import jakarta.enterprise.inject.spi.ProcessProducerField;
 import jakarta.enterprise.inject.spi.ProcessProducerMethod;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.ParamConverterProvider;
-import jdk.crac.CheckpointException;
-import jdk.crac.Resource;
-import jdk.crac.RestoreException;
+import org.crac.CheckpointException;
+import org.crac.Core;
+import org.crac.Resource;
+import org.crac.RestoreException;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
@@ -116,10 +117,10 @@ public class ServerCdiExtension implements Extension, Resource {
 
     private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
     private long crac_restore_time = -1;
-    private final CompletableFuture<jdk.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
+    private final CompletableFuture<org.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
 
     public ServerCdiExtension() {
-        jdk.crac.Core.getGlobalContext().register(this);
+        Core.getGlobalContext().register(this);
     }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
@@ -208,15 +209,16 @@ public class ServerCdiExtension implements Extension, Resource {
         webserver = serverBuilder.build();
 
         try {
-            jdk.crac.Core.checkpointRestore();
+            Core.checkpointRestore();
         } catch (RestoreException e) {
             LOGGER.log(Level.INFO, "CRaC restore wasn't successful!", e);
-            restored.complete(null);
+//            restored.complete(null);
         } catch (CheckpointException e) {
             LOGGER.log(Level.INFO, "CRaC checkpoint creation wasn't successful!", e);
-            restored.complete(null);
+//            restored.complete(null);
+              System.exit(0);
         }
-        restored.join();
+//        restored.join();
 
         try {
             webserver.start().await();
@@ -619,15 +621,17 @@ public class ServerCdiExtension implements Extension, Resource {
     }
 
     @Override
-    public void beforeCheckpoint(jdk.crac.Context<? extends Resource> context) throws Exception {
-
+    public void beforeCheckpoint(org.crac.Context<? extends Resource> context) throws Exception {
+        LOGGER.log(Level.INFO, "Creating CRaC snapshot after "
+                + ManagementFactory.getRuntimeMXBean().getUptime()
+                + "ms of runtime.");
     }
 
     @Override
-    public void afterRestore(jdk.crac.Context<? extends Resource> context) throws Exception {
+    public void afterRestore(org.crac.Context<? extends Resource> context) throws Exception {
         crac_restore_time = System.currentTimeMillis();
         LOGGER.log(Level.INFO, "CRaC snapshot restored!");
-        restored.complete(context);
+//        restored.complete(context);
     }
 }
 
