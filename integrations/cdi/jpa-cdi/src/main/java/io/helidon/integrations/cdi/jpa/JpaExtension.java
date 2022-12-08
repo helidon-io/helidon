@@ -228,7 +228,7 @@ public class JpaExtension implements Extension {
      * <p>This field is never {@code null}.</p>
      *
      * <p>These qualifiers are built up as this portable extension
-     * {@linkplain ProcessInjectionPoint discovers {@link
+     * {@linkplain ProcessInjectionPoint discovers {@code
      * EntityManager}-typed <code>InjectionPoint</code>s}.</p>
      *
      * <p>This field is {@linkplain Collection#clear() cleared} at the
@@ -247,7 +247,7 @@ public class JpaExtension implements Extension {
      * <p>This field is never {@code null}.</p>
      *
      * <p>These qualifiers are built up as this portable extension
-     * {@linkplain ProcessInjectionPoint discovers {@link
+     * {@linkplain ProcessInjectionPoint discovers {@code
      * EntityManagerFactory}-typed <code>InjectionPoint</code>s}.</p>
      *
      * <p>This field is {@linkplain Collection#clear() cleared} at the
@@ -320,7 +320,7 @@ public class JpaExtension implements Extension {
      * persistence unit.  This has implications on how beans are
      * installed.
      *
-     * @see #validate(AfterDeploymentValidation)
+     * @see #validate(AfterDeploymentValidation, BeanManager)
      */
     private boolean defaultPersistenceUnitInEffect;
 
@@ -328,7 +328,7 @@ public class JpaExtension implements Extension {
      * Indicates whether a bean for the default persistence unit
      * has been added.
      *
-     * @see #validate(AfterDeploymentValidation)
+     * @see #validate(AfterDeploymentValidation, BeanManager)
      */
     private boolean addedDefaultPersistenceUnit;
 
@@ -384,8 +384,8 @@ public class JpaExtension implements Extension {
      * field to {@code false}.
      *
      * @param event a {@link ProcessAnnotatedType
-     * ProcessAnnotatedType<}{@link NoTransactionSupport
-     * NoTransactionSupport>} whose presence indicates that JTA
+     * ProcessAnnotatedType&lt;}{@link NoTransactionSupport
+     * NoTransactionSupport%gt;} whose presence indicates that JTA
      * support is not available; must not be {@code null}
      *
      * @exception NullPointerException if {@code event} is {@code

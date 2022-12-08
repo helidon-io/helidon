@@ -101,9 +101,10 @@ import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
 import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
 
 /**
- * An experimental {@link Extension} related to JPA.
- *
- * <p>This class is subject to removal without prior notice at any time.</p>
+ * An {@link Extension} that integrates <em>container-mode</em> <a
+ * href="https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html">Jakarta Persistence
+ * 3.0</a> into <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html">CDI SE 3.0</a>-based
+ * applications.
  */
 public final class PersistenceExtension implements Extension {
 
@@ -133,7 +134,7 @@ public final class PersistenceExtension implements Extension {
      *
      * <p>This is necessary because the empty string ({@code ""}) as the value of the {@link Named#value()} element can
      * have <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#default_name">special
-     * semantics</a>, so cannot be used to designate an unnamed persistence unit.</p>
+     * semantics</a>, so cannot be used to designate an unnamed or otherwise default persistence unit.</p>
      *
      * <p>The value of this field is subject to change without prior notice at any point.  In general the mechanics
      * around injection point rewriting are also subject to change without prior notice at any point.</p>
@@ -185,7 +186,7 @@ public final class PersistenceExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      *
-     * <p>These qualifiers are built up as this portable extension {@linkplain ProcessInjectionPoint discovers {@link
+     * <p>These qualifiers are built up as this portable extension {@linkplain ProcessInjectionPoint discovers {@code
      * EntityManager}-typed <code>InjectionPoint</code>s}.  After this portable extension finishes processing, this
      * {@link Set} will be {@linkplain Set#isEmpty() empty}.</p>
      *
@@ -199,7 +200,7 @@ public final class PersistenceExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      *
-     * <p>These qualifiers are built up as this portable extension {@linkplain ProcessInjectionPoint discovers {@link
+     * <p>These qualifiers are built up as this portable extension {@linkplain ProcessInjectionPoint discovers {@code
      * EntityManagerFactory}-typed <code>InjectionPoint</code>s}.  After this portable extension finishes processing,
      * this {@link Set} will be {@linkplain Set#isEmpty() empty}.</p>
      *
@@ -209,6 +210,8 @@ public final class PersistenceExtension implements Extension {
 
     /**
      * Indicates if JTA transactions can be supported.
+     *
+     * @see #addAllocatorBeanAndInstallTransactionSupport(AfterTypeDiscovery)
      */
     private boolean transactionsSupported;
 
@@ -219,8 +222,8 @@ public final class PersistenceExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      *
-     * <p>This field is {@linkplain Collection#clear() cleared} at the termination of the {@link
-     * #addSyntheticBeans(AfterBeanDiscovery)} container lifecycle method.</p>
+     * <p>After this portable extension finishes processing, this {@link Set} will be {@linkplain Set#isEmpty()
+     * empty}.</p>
      *
      * @see #addContainerManagedEntityManagerFactoryBeans(AfterBeanDiscovery, Set)
      */
@@ -437,7 +440,7 @@ public final class PersistenceExtension implements Extension {
     }
 
     /**
-     * Adds various beans that integrate JPA into CDI SE.
+     * Adds various beans that integrate container-mode JPA into CDI SE.
      *
      * <p>This method first converts {@code META-INF/persistence.xml} resources into {@link PersistenceUnitInfo} objects
      * and takes into account any other {@link PersistenceUnitInfo} objects that already exist and ensures that all of
@@ -455,6 +458,14 @@ public final class PersistenceExtension implements Extension {
      * @param bm the {@link BeanManager} currently in effect; must not be {@code null}
      *
      * @see PersistenceUnitInfo
+     *
+     * @see #addPersistenceProviderBeansIfAbsent(AfterBeanDiscoveryEvent, BeanManager, Set, Iterable)
+     *
+     * @see #processPersistenceXmls(AfterBeanDiscoveryEvent, BeanManager, ClassLoader, Enumeration, Iterable, boolean)
+     *
+     * @see #processImplicitPersistenceUnits(AfterBeanDiscoveryEvent, Iterable)
+     *
+     * @see #addContainerManagedJpaBeans(AfterBeanDiscovery)
      */
     private void addSyntheticBeans(@Observes @Priority(LIBRARY_AFTER) AfterBeanDiscovery event, BeanManager bm) {
         Iterable<? extends PersistenceProvider> providers = addPersistenceProviderBeans(event);
@@ -726,6 +737,8 @@ public final class PersistenceExtension implements Extension {
      *
      * @param c the {@link Class} to associate; may be {@code null} in which case no action will be taken
      *
+     * @exception NullPointerException if either {@code pcs}, {@code pus} or {@code c} is {@code null}
+     *
      * @see PersistenceContext
      *
      * @see PersistenceUnit
@@ -761,24 +774,19 @@ public final class PersistenceExtension implements Extension {
 
     /**
      * Given a {@link Class} and a name of a persistence unit, associates the {@link Class} with that persistence unit
-     * as a member of its list of governed classes.
+     * as a member of its list of managed classes.
      *
-     * @param puName the name of the persistence unit in question; may be {@code null}
+     * @param unitName the name of the persistence unit in question; may be {@code null}
      *
      * @param mc the {@link Class} to associate; may be {@code null} in which case no action will be taken
      *
+     * @exception NullPointerException if either {@code unitName} or {@code mc} is {@code null}
+     *
      * @see PersistenceUnitInfo#getManagedClassNames()
      */
-    private void addUnlistedManagedClass(String puName, Class<?> mc) {
-        if (puName.isBlank()) {
-            puName = DEFAULT_PERSISTENCE_UNIT_NAME;
-        }
-        Set<Class<?>> unlistedManagedClasses = this.unlistedManagedClassesByUnitNames.get(puName);
-        if (unlistedManagedClasses == null) {
-            unlistedManagedClasses = new HashSet<>();
-            this.unlistedManagedClassesByUnitNames.put(puName, unlistedManagedClasses);
-        }
-        unlistedManagedClasses.add(mc);
+    private void addUnlistedManagedClass(String unitName, Class<?> mc) {
+        this.unlistedManagedClassesByUnitNames.computeIfAbsent(unitName.isBlank() ? DEFAULT_PERSISTENCE_UNIT_NAME : unitName,
+                                                               k -> new HashSet<>()).add(mc);
     }
 
     private static Iterable<? extends PersistenceProvider> addPersistenceProviderBeans(AfterBeanDiscovery e) {
