@@ -516,6 +516,95 @@ class JtaEntityManager extends DelegatingEntityManager {
 
     }
 
+    private static final class ClearingQuery extends DelegatingQuery {
+
+        private final Runnable clearer;
+
+        private ClearingQuery(Runnable persistenceContextClearer, Query delegate) {
+            super(delegate);
+            this.clearer = Objects.requireNonNull(persistenceContextClearer, "persistenceContextClearer");
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public List getResultList() {
+            try {
+                return super.getResultList();
+            } finally {
+                this.clearer.run();
+            }
+        }
+
+        @Override
+        public Object getSingleResult() {
+            try {
+                return super.getSingleResult();
+            } finally {
+                this.clearer.run();
+            }
+        }
+
+    }
+
+    private static final class ClearingStoredProcedureQuery extends DelegatingStoredProcedureQuery {
+
+        private final Runnable clearer;
+
+        private ClearingStoredProcedureQuery(Runnable persistenceContextClearer, StoredProcedureQuery delegate) {
+            super(delegate);
+            this.clearer = Objects.requireNonNull(persistenceContextClearer, "persistenceContextClearer");
+        }
+
+        @Override
+        @SuppressWarnings("rawtypes")
+        public List getResultList() {
+            try {
+                return super.getResultList();
+            } finally {
+                this.clearer.run();
+            }
+        }
+
+        @Override
+        public Object getSingleResult() {
+            try {
+                return super.getSingleResult();
+            } finally {
+                this.clearer.run();
+            }
+        }
+
+    }
+
+    private static final class ClearingTypedQuery<X> extends DelegatingTypedQuery<X> {
+
+        private final Runnable clearer;
+
+        private ClearingTypedQuery(Runnable persistenceContextClearer, TypedQuery<X> delegate) {
+            super(delegate);
+            this.clearer = Objects.requireNonNull(persistenceContextClearer, "persistenceContextClearer");
+        }
+
+        @Override
+        public List<X> getResultList() {
+            try {
+                return super.getResultList();
+            } finally {
+                this.clearer.run();
+            }
+        }
+
+        @Override
+        public X getSingleResult() {
+            try {
+                return super.getSingleResult();
+            } finally {
+                this.clearer.run();
+            }
+        }
+
+    }
+
     private static final class AbsentTransactionEntityManager extends DelegatingEntityManager {
 
         AbsentTransactionEntityManager(EntityManager delegate) {

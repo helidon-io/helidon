@@ -60,6 +60,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
  *
  * @see JpaExtension
  */
+@Deprecated(forRemoval = true, since = "3.0.3")
 @Vetoed
 class NonTransactionalEntityManager extends DelegatingEntityManager {
 

@@ -161,7 +161,7 @@ class TestAnnotationRewriting {
             .fire(new TestIsRunning("testNonTransactionalEntityManager"));
         final Set<Annotation> qualifiers = new HashSet<>();
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
-        qualifiers.add(JpaTransactionScoped.Literal.INSTANCE);
+        qualifiers.add(JtaTransactionScoped.Literal.INSTANCE);
         final EntityManager entityManager = this.cdiContainer.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()])).get();
         assertThat(entityManager, instanceOf(DelegatingEntityManager.class));
         assertThat(entityManager.isOpen(), is(true));

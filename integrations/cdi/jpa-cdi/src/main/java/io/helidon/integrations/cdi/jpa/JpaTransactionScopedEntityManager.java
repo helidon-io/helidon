@@ -58,6 +58,7 @@ import jakarta.persistence.metamodel.Metamodel;
  * <p>As with all {@link EntityManager} implementations, instances of
  * this class are not safe for concurrent use by multiple threads.</p>
  */
+@Deprecated(forRemoval = true, since = "3.0.3")
 @Vetoed
 final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 

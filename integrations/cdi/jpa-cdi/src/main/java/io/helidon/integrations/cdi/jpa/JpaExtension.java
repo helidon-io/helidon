@@ -118,6 +118,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  *
  * @see PersistenceUnitInfoBean
  */
+@Deprecated(forRemoval = true, since = "3.0.3")
 public class JpaExtension implements Extension {
 
 

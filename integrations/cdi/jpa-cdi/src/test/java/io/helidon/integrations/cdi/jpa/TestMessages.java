@@ -21,6 +21,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Deprecated(forRemoval = true, since = "3.0.3")
 final class TestMessages {
 
     @Test

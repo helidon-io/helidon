@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1011,7 +1011,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         assert managedClasses != null;
         String name = persistenceUnit.getName();
         if (name == null || name.isEmpty()) {
-            name = JpaExtension.DEFAULT_PERSISTENCE_UNIT_NAME;
+            name = JpaExtension2.DEFAULT_PERSISTENCE_UNIT_NAME;
         }
 
         final Boolean excludeUnlistedClasses = persistenceUnit.isExcludeUnlistedClasses();
@@ -1027,7 +1027,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                 }
             }
             // Also add "default" ones
-            myUnlistedClasses = unlistedClasses.get(JpaExtension.DEFAULT_PERSISTENCE_UNIT_NAME);
+            myUnlistedClasses = unlistedClasses.get(JpaExtension2.DEFAULT_PERSISTENCE_UNIT_NAME);
             if (myUnlistedClasses != null && !myUnlistedClasses.isEmpty()) {
                 for (final Class<?> unlistedClass : myUnlistedClasses) {
                     if (unlistedClass != null) {

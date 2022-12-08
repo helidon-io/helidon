@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import jakarta.persistence.StoredProcedureQuery;
 
+@Deprecated(forRemoval = true, since = "3.0.3")
 final class ClearingStoredProcedureQuery extends DelegatingStoredProcedureQuery {
 
     private final Runnable clearer;

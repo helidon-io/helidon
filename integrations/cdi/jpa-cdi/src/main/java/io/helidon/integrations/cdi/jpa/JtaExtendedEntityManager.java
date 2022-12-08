@@ -29,7 +29,7 @@ import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
  * A {@link DelegatingEntityManager} created to support extended
  * persistence contexts.
  */
-final class ExtendedEntityManager2 extends DelegatingEntityManager {
+final class JtaExtendedEntityManager extends DelegatingEntityManager {
 
     private final EntityManager delegate;
 
@@ -37,9 +37,9 @@ final class ExtendedEntityManager2 extends DelegatingEntityManager {
 
     private final TransactionSynchronizationRegistry tsr;
 
-    ExtendedEntityManager2(TransactionSynchronizationRegistry tsr,
-                           EntityManager delegate,
-                           SynchronizationType syncType) {
+    JtaExtendedEntityManager(TransactionSynchronizationRegistry tsr,
+                             EntityManager delegate,
+                             SynchronizationType syncType) {
         super();
         this.delegate = Objects.requireNonNull(delegate, "delegate");
         this.tsr = Objects.requireNonNull(tsr, "tsr");

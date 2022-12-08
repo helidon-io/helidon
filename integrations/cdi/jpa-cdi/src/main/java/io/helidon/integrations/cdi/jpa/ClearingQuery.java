@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import jakarta.persistence.Query;
 
+@Deprecated(forRemoval = true, since = "3.0.3")
 final class ClearingQuery extends DelegatingQuery {
 
     private final Runnable clearer;

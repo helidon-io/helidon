@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import jakarta.inject.Qualifier;
  * <p>This qualifier must not be combined with {@link Extended},
  * {@link JpaTransactionScoped} or {@link NonTransactional}.</p>
  */
+@Deprecated(forRemoval = true, since = "3.0.3")
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
