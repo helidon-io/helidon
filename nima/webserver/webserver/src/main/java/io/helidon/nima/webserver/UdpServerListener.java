@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webserver;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -23,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -158,13 +160,16 @@ class UdpServerListener implements ConnectionListener {
         closeFuture.complete(null);
     }
 
+    /**
+     * Implementation of UdpMessage interface.
+     */
     private class Message implements UdpMessage {
 
-        private final InetSocketAddress remote;
         private final byte[] bytes;
+        private final Client client;
 
         Message(InetSocketAddress remote, ByteBuffer readBuffer) {
-            this.remote = remote;
+            this.client = new Client(remote);
             readBuffer.flip();
             bytes = new byte[readBuffer.remaining()];
             readBuffer.get(bytes);
@@ -172,47 +177,74 @@ class UdpServerListener implements ConnectionListener {
 
         @Override
         public UdpClient udpClient() {
-            return new UdpClient() {
-                @Override
-                public InetAddress inetAddress() {
-                    return remote.getAddress();
-                }
-
-                @Override
-                public int port() {
-                    return remote.getPort();
-                }
-
-                @Override
-                public void sendMessage(Object msg) throws IOException {
-                    throw new UnsupportedOperationException("Not supported");
-                }
-
-                @Override
-                public void sendMessage(byte[] msg) throws IOException {
-                    channel.send(ByteBuffer.wrap(msg), remote);
-                }
-
-                @Override
-                public void sendMessage(InputStream msg) throws IOException {
-                    throw new UnsupportedOperationException("Not supported");
-                }
-            };
+            return client;
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <T> T as(Class<T> clazz) {
-            throw new UnsupportedOperationException("Not supported");
+            if (clazz.equals(String.class)) {
+                return (T) new String(asByteArray(), StandardCharsets.UTF_8);
+            } else if (clazz.equals(byte[].class)) {
+                return (T) asByteArray();
+            } else if (clazz.equals(InputStream.class)) {
+                return (T) asInputStream();
+            }
+            throw new UnsupportedOperationException("Unsupported conversion to " + clazz);
         }
 
         @Override
         public InputStream asInputStream() {
-            throw new UnsupportedOperationException("Not supported");
+            return new ByteArrayInputStream(asByteArray());
         }
 
         @Override
         public byte[] asByteArray() {
             return bytes;
+        }
+    }
+
+    /**
+     * Implementation of UdpClient interface.
+     */
+    private class Client implements UdpClient {
+
+        private final InetSocketAddress remote;
+
+        Client(InetSocketAddress remote) {
+            this.remote = remote;
+        }
+
+        @Override
+        public InetAddress inetAddress() {
+            return remote.getAddress();
+        }
+
+        @Override
+        public int port() {
+            return remote.getPort();
+        }
+
+        @Override
+        public void sendMessage(Object msg) throws IOException {
+            if (msg instanceof String str) {
+                sendMessage(str.getBytes(StandardCharsets.UTF_8));
+            } else if (msg instanceof byte[] bytes) {
+                sendMessage(bytes);
+            } else if (msg instanceof InputStream is) {
+                sendMessage(is);
+            }
+            throw new UnsupportedOperationException("Unsupported conversion from " + msg.getClass());
+        }
+
+        @Override
+        public void sendMessage(byte[] msg) throws IOException {
+            channel.send(ByteBuffer.wrap(msg), remote);
+        }
+
+        @Override
+        public void sendMessage(InputStream msg) throws IOException {
+            channel.send(ByteBuffer.wrap(msg.readAllBytes()), remote);
         }
     }
 

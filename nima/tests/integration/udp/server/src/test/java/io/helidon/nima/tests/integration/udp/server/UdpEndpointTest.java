@@ -28,12 +28,14 @@ import io.helidon.nima.udp.UdpMessage;
 import io.helidon.nima.webserver.WebServer;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.System.Logger.Level.INFO;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest(udp = true)
 class UdpEndpointTest {
+    private static final System.Logger LOGGER = System.getLogger(UdpEndpointTest.class.getName());
 
     private final WebServer webServer;
 
@@ -58,10 +60,10 @@ class UdpEndpointTest {
         @Override
         public void onMessage(UdpMessage message) {
             try {
-                byte[] bytes = message.asByteArray();
-                System.out.println("Server RCV: " + new String(bytes, UTF_8));
-                message.udpClient().sendMessage(bytes);
-                System.out.println("Server SND: " + new String(bytes, UTF_8));
+                String str = message.as(String.class);
+                LOGGER.log(INFO, "Server RCV: " + str);
+                message.udpClient().sendMessage(str);
+                LOGGER.log(INFO, "Server SND: " + str);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -72,12 +74,12 @@ class UdpEndpointTest {
         InetSocketAddress address = new InetSocketAddress("localhost", webServer.port());
         try (DatagramChannel ch = DatagramChannel.open()) {
             ch.send(ByteBuffer.wrap(msg.getBytes(UTF_8)), address);
-            System.out.println("Client SND: " + msg);
+            LOGGER.log(INFO, "Client SND: " + msg);
             byte[] bytes = new byte[msg.length()];
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
             InetSocketAddress remote = (InetSocketAddress) ch.receive(buffer);
             String rcv = new String(bytes, UTF_8);
-            System.out.println("Client RCV: " + rcv);
+            LOGGER.log(INFO, "Client RCV: " + rcv);
             assertThat(rcv, is(msg));
             assertThat(remote.getHostName(), is("localhost"));
             assertThat(remote.getPort(), is(webServer.port()));
