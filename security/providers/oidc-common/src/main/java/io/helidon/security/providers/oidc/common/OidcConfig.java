@@ -49,7 +49,6 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
  * Configuration of OIDC usable from all resources that utilize OIDC specification, such as security provider, web server

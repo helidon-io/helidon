@@ -20,9 +20,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
-import jakarta.json.JsonObject;
-
 import io.helidon.security.jwt.jwk.JwkKeys;
+
+import jakarta.json.JsonObject;
 
 /**
  * Tenant configuration.
