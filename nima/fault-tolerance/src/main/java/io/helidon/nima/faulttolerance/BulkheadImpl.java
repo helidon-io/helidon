@@ -17,29 +17,42 @@
 package io.helidon.nima.faulttolerance;
 
 import java.lang.System.Logger.Level;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+
+import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
 
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 
     private final Semaphore inProgress;
     private final String name;
-    private final int maxQueue;
+    private final BarrierQueue queue;
     private final AtomicLong concurrentExecutions = new AtomicLong(0L);
     private final AtomicLong callsAccepted = new AtomicLong(0L);
     private final AtomicLong callsRejected = new AtomicLong(0L);
-    private final AtomicInteger enqueued = new AtomicInteger();
     private final List<QueueListener> listeners;
+    private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
 
     BulkheadImpl(Builder builder) {
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
-        this.maxQueue = builder.queueLength();
         this.listeners = builder.queueListeners();
+        this.queue = builder.queueLength() > 0
+                ? new BlockingQueue(builder.queueLength())
+                : new ZeroCapacityQueue();
     }
 
     @Override
@@ -57,20 +70,24 @@ class BulkheadImpl implements Bulkhead {
             return execute(supplier);
         }
 
-        int queueLength = enqueued.incrementAndGet();
-        if (queueLength > maxQueue) {
-            enqueued.decrementAndGet();
+        if (queue.isFull()) {
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
         try {
-            // block current thread until permit available
+            // block current thread until barrier is retracted
             listeners.forEach(l -> l.enqueueing(supplier));
-            inProgress.acquire();
+            queue.enqueueAndWaitOn(supplier);
 
             // unblocked so we can proceed with execution
             listeners.forEach(l -> l.dequeued(supplier));
-            enqueued.decrementAndGet();
+
+            // do not run if cancelled while queued
+            if (cancelledSuppliers.remove(supplier)) {
+                return null;
+            }
+
+            // invoke supplier now
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, name + " invoking " + supplier);
             }
@@ -78,6 +95,8 @@ class BulkheadImpl implements Bulkhead {
         } catch (InterruptedException e) {
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead \"" + name + "\" interrupted while acquiring");
+        } catch (ExecutionException e) {
+            throw new BulkheadException(e.getMessage());
         }
     }
 
@@ -101,29 +120,222 @@ class BulkheadImpl implements Bulkhead {
 
             @Override
             public long waitingQueueSize() {
-                return enqueued.get();
+                return queue.size();
             }
         };
     }
 
     // this method must be called while holding a permit
-    private <T> T execute(Supplier<? extends T> task) {
+    private <T> T execute(Supplier<? extends T> supplier) {
         callsAccepted.incrementAndGet();
         concurrentExecutions.incrementAndGet();
         try {
-            T result = task.get();
+            T result = supplier.get();
             if (LOGGER.isLoggable(Level.DEBUG)) {
-                LOGGER.log(Level.DEBUG, name + " finished execution: " + task
+                LOGGER.log(Level.DEBUG, name + " finished execution: " + supplier
                         + " (success)");
             }
             return result;
         } catch (Throwable t) {
-            LOGGER.log(Level.DEBUG, name + " finished execution: " + task
-                    + " (failure)", t);
-            throw t;
+            Throwable throwable = unwrapThrowable(t);
+            LOGGER.log(Level.DEBUG, name + " finished execution: " + supplier
+                    + " (failure)", throwable);
+            throw toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
-            inProgress.release();
+            boolean dequeued = queue.dequeueAndRetract();
+            if (!dequeued) {
+                inProgress.release();       // nothing dequeued, one more permit
+            }
+        }
+    }
+
+    @Override
+    public boolean cancelSupplier(Supplier<?> supplier) {
+        boolean cancelled = queue.remove(supplier);
+        if (cancelled) {
+            cancelledSuppliers.add(supplier);
+        }
+        return cancelled;
+    }
+
+    /**
+     * A queue for suppliers that block on barriers.
+     */
+    private interface BarrierQueue {
+
+        /**
+         * Number of suppliers in queue.
+         *
+         * @return current number of suppliers
+         */
+        int size();
+
+        /**
+         * Check if queue is full.
+         *
+         * @return outcome of test
+         */
+        boolean isFull();
+
+        /**
+         * Enqueue supplier and block thread on barrier.
+         *
+         * @param supplier the supplier
+         * @return {@code true} if supplier was enqueued or {@code false} otherwise
+         * @throws ExecutionException if exception encountered while blocked
+         * @throws InterruptedException if blocking is interrupted
+         */
+        boolean enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException;
+
+        /**
+         * Dequeue supplier and retract its barrier.
+         *
+         * @return {@code true} if a supplier was dequeued or {@code false} otherwise
+         */
+        boolean dequeueAndRetract();
+
+        /**
+         * Remove supplier from queue, if present.
+         *
+         * @param supplier the supplier
+         * @return {@code true} if supplier was removed or {@code false} otherwise
+         */
+        boolean remove(Supplier<?> supplier);
+    }
+
+    /**
+     * A queue with capacity 0.
+     */
+    private static class ZeroCapacityQueue implements BarrierQueue {
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isFull() {
+            return true;
+        }
+
+        @Override
+        public boolean enqueueAndWaitOn(Supplier<?> supplier) {
+            return false;
+        }
+
+        @Override
+        public boolean dequeueAndRetract() {
+            return false;
+        }
+
+        @Override
+        public boolean remove(Supplier<?> supplier) {
+            return false;
+        }
+    }
+
+    /**
+     * A queue that holds all those suppliers that don't have permits to execute at a
+     * certain time. The thread running the supplier will be forced to wait on a barrier
+     * until a new permit becomes available.
+     */
+    private static class BlockingQueue implements BarrierQueue {
+
+        private final int capacity;
+        private final ReentrantLock lock;
+        private final Queue<Supplier<?>> queue;
+        private final Map<Supplier<?>, Barrier> map;
+
+        BlockingQueue(int capacity) {
+            if (capacity <= 0) {
+                throw new IllegalArgumentException("Queue capacity must be greater than 0");
+            }
+            this.capacity = capacity;
+            this.queue = new LinkedBlockingQueue<>(capacity);
+            this.map = new IdentityHashMap<>();     // just use references
+            this.lock = new ReentrantLock();
+        }
+
+        @Override
+        public int size() {
+            return queue.size();
+        }
+
+        @Override
+        public boolean isFull() {
+            lock.lock();
+            try {
+                return queue.size() == capacity;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public boolean enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
+            Barrier barrier;
+            lock.lock();
+            try {
+                barrier = enqueue(supplier);
+            } finally {
+                lock.unlock();
+            }
+            if (barrier != null) {
+                barrier.waitOn();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean dequeueAndRetract() {
+            lock.lock();
+            try {
+                Barrier barrier = dequeue();
+                if (barrier != null) {
+                    barrier.retract();
+                    return true;
+                }
+                return false;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public boolean remove(Supplier<?> supplier) {
+            lock.lock();
+            try {
+                return queue.remove(supplier);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private Barrier dequeue() {
+            Supplier<?> supplier = queue.poll();
+            return supplier == null ? null : map.remove(supplier);
+        }
+
+        private Barrier enqueue(Supplier<?> supplier) {
+            boolean added = queue.offer(supplier);
+            return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
+        }
+    }
+
+    /**
+     * A barrier is used to force a thread to wait (block) until it is retracted.
+     */
+    private static class Barrier {
+        private final CompletableFuture<Void> future = new CompletableFuture<>();
+
+        void waitOn() throws ExecutionException, InterruptedException {
+            future.get();
+        }
+
+        void retract() {
+            future.complete(null);
         }
     }
 }

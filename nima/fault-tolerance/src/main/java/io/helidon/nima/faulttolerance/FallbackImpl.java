@@ -19,6 +19,9 @@ package io.helidon.nima.faulttolerance;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 class FallbackImpl<T> implements Fallback<T> {
     private final Function<Throwable, ? extends T> fallback;
     private final ErrorChecker errorChecker;
@@ -32,15 +35,19 @@ class FallbackImpl<T> implements Fallback<T> {
     public T invoke(Supplier<? extends T> supplier) {
         try {
             return supplier.get();
-        } catch (Throwable e) {
-            if (errorChecker.shouldSkip(e)) {
-                throw e;
+        } catch (Throwable t) {
+            Throwable throwable = unwrapThrowable(t);
+            if (errorChecker.shouldSkip(throwable)) {
+                throw toRuntimeException(throwable);
             }
             try {
-                return fallback.apply(e);
-            } catch (RuntimeException ex) {
-                ex.addSuppressed(e);
-                throw ex;
+                return fallback.apply(throwable);
+            } catch (Throwable t2) {
+                Throwable throwable2 = unwrapThrowable(t2);
+                if (throwable2 != throwable) {      // cannot self suppress
+                    throwable2.addSuppressed(throwable);
+                }
+                throw toRuntimeException(throwable2);
             }
         }
     }

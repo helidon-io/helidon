@@ -340,6 +340,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // New request ID
         long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
+
+        requestEntityAnalyzed = new CompletableFuture<>();
+
         // If a problem with the request URI, return 400 response
         BareRequestImpl bareRequest;
         try {
@@ -394,8 +397,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         if (prevRequestFuture != null && prevRequestFuture.isDone()) {
             prevRequestFuture = null;
         }
-
-        requestEntityAnalyzed = new CompletableFuture<>();
 
         //If the keep alive is not set, we know we will be closing the connection
         if (!HttpUtil.isKeepAlive(requestContext.request())) {

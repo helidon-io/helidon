@@ -1,9 +1,0 @@
-[
-    {
-        "name": "org.glassfish.jersey.client.JerseyClientBuilder",
-        "allDeclaredConstructors": true,
-        "allPublicConstructors": true,
-        "allPublicMethods": true,
-        "allDeclaredMethods": true
-    }
-]

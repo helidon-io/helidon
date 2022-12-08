@@ -72,6 +72,17 @@ class ResultWindowTest {
     }
 
     @Test
+    void testOpenAfterCompleteWindow4() {
+        ResultWindow window = new ResultWindow(4, 75);
+        assertThat("Empty should not open", window.shouldOpen(), is(false));
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.SUCCESS);
+        assertThat("Should open after complete window > 75%", window.shouldOpen(), is(true));
+    }
+
+    @Test
     void testOpenAfterCompleteWindowReset() {
         ResultWindow window = new ResultWindow(5, 20);
         assertThat("Empty should not open", window.shouldOpen(), is(false));

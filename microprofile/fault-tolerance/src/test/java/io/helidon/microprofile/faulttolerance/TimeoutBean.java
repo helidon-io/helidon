@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,39 +36,39 @@ class TimeoutBean {
         duration.set(1600);
     }
 
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=500)
     void forceTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeout()", "failure");
-        Thread.sleep(1500);
+        Thread.sleep(1000);
     }
 
     @Asynchronous
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=500)
     CompletableFuture<String> forceTimeoutAsync() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutAsync()", "failure");
-        Thread.sleep(1500);
+        Thread.sleep(1000);
         return CompletableFuture.completedFuture("failure");
     }
 
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=500)
     String noTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::noTimeout()", "success");
-        Thread.sleep(500);
+        Thread.sleep(250);
         return "success";
     }
 
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=500)
     void forceTimeoutWithCatch() {
         try {
             FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutWithCatch()", "failure");
-            Thread.sleep(1500);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             // falls through
         }
     }
 
     // See class annotation @Retry(maxRetries = 2)
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=1000)
     String timeoutWithRetries() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::timeoutWithRetries()",
                     duration.get() < 1000 ? "success" : "failure");
@@ -78,16 +77,16 @@ class TimeoutBean {
     }
 
     @Fallback(fallbackMethod = "onFailure")
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=500)
     String timeoutWithFallback() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutWithFallback()", "failure");
-        Thread.sleep(1500);
+        Thread.sleep(1000);
         return "failure";
     }
 
     // See class annotation @Retry(maxRetries = 2)
     @Fallback(fallbackMethod = "onFailure")
-    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    @Timeout(value=500)
     String timeoutWithRetriesAndFallback() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::timeoutWithRetriesAndFallback()", "failure");
         Thread.sleep(duration.getAndAdd(-100));     // not enough, need fallback

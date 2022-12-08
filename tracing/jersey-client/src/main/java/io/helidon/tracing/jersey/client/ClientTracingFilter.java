@@ -18,13 +18,10 @@ package io.helidon.tracing.jersey.client;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -36,7 +33,6 @@ import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
-import io.helidon.tracing.spi.TracerProvider;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
@@ -138,22 +134,12 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
 
-    private final Optional<TracerProvider> tracerProvider;
-
     /**
      * Default constructor so this filter can be registered with Jersey
      * as a class.
      * Required by integrated platform.
      */
     public ClientTracingFilter() {
-        Iterator<TracerProvider> iterator = HelidonServiceLoader.create(ServiceLoader.load(TracerProvider.class))
-                .iterator();
-
-        if (iterator.hasNext()) {
-            tracerProvider = Optional.of(iterator.next());
-        } else {
-            tracerProvider = Optional.empty();
-        }
     }
 
     @Override

@@ -33,7 +33,7 @@ module io.helidon.messaging.connectors.kafka {
     requires io.helidon.common.configurable;
     requires io.helidon.messaging;
     requires microprofile.config.api;
-    requires static svm;
+    requires static org.graalvm.sdk;
     requires java.security.sasl;
     requires transitive org.slf4j;
     // To allow KerberosLoginSubstitution

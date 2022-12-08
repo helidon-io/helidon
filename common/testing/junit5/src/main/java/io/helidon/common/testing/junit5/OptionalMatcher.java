@@ -36,7 +36,7 @@ public final class OptionalMatcher {
      * <p>
      * Usage example:
      * <pre>
-     *     assertThat(myOptional, present(is("expected")));
+     *     assertThat(myOptional, optionalValue(is("expected")));
      * </pre>
      * @param matcher matcher to validate the content of the optional
      * @param <T> type of the value
@@ -51,7 +51,7 @@ public final class OptionalMatcher {
      * <p>
      * Usage example:
      * <pre>
-     *     assertThat(myOptional, empty());
+     *     assertThat(myOptional, optionalEmpty());
      * </pre>
      * @param <T> type of the optional
      * @return matcher validating the {@link java.util.Optional} is empty
@@ -66,7 +66,7 @@ public final class OptionalMatcher {
      * <p>
      * Usage example:
      * <pre>
-     *     assertThat(myOptional, present());
+     *     assertThat(myOptional, optionalPresent());
      * </pre>
      * @param <T> type of the value
      * @return matcher validating the {@link java.util.Optional} is present

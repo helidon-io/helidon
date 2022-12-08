@@ -16,9 +16,8 @@
 
 package io.helidon.nima.faulttolerance;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,11 +25,15 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import static io.helidon.nima.faulttolerance.FaultTolerance.toDelayedCallable;
+import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options
      */
-    private final LazyValue<? extends ScheduledExecutorService> executor;
+    private final LazyValue<? extends ExecutorService> executor;
     // how long to transition from open to half-open
     private final long delayMillis;
     // how many successful calls will close a half-open breaker
@@ -45,7 +48,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     // to close from half-open
     private final AtomicInteger successCounter = new AtomicInteger();
     private final AtomicBoolean halfOpenInProgress = new AtomicBoolean();
-    private final AtomicReference<ScheduledFuture<Boolean>> schedule = new AtomicReference<>();
+    private final AtomicReference<Future<Boolean>> schedule = new AtomicReference<>();
     private final ErrorChecker errorChecker;
     private final String name;
 
@@ -86,7 +89,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 return;
             }
 
-            ScheduledFuture<Boolean> future = schedule.getAndSet(null);
+            Future<Boolean> future = schedule.getAndSet(null);
             if (future != null) {
                 future.cancel(false);
             }
@@ -94,7 +97,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
             state.set(State.CLOSED);
         } else if (newState == State.OPEN) {
             state.set(State.OPEN);
-            ScheduledFuture<Boolean> future = schedule.getAndSet(null);
+            Future<Boolean> future = schedule.getAndSet(null);
             if (future != null) {
                 future.cancel(false);
             }
@@ -110,18 +113,20 @@ class CircuitBreakerImpl implements CircuitBreaker {
             U result = supplier.get();
             results.update(ResultWindow.Result.SUCCESS);
             return result;
-        } catch (Throwable e) {
-            if (errorChecker.shouldSkip(e)) {
+        } catch (Throwable t) {
+            Throwable throwable = unwrapThrowable(t);
+            if (errorChecker.shouldSkip(throwable)) {
                 results.update(ResultWindow.Result.SUCCESS);
             } else {
                 results.update(ResultWindow.Result.FAILURE);
             }
+            throw toRuntimeException(throwable);
+        } finally {
             if (results.shouldOpen() && state.compareAndSet(State.CLOSED, State.OPEN)) {
                 results.reset();
                 // if we successfully switch to open, we need to schedule switch to half-open
                 scheduleHalf();
             }
-            throw e;
         }
     }
 
@@ -138,23 +143,24 @@ class CircuitBreakerImpl implements CircuitBreaker {
                     state.compareAndSet(State.HALF_OPEN, State.CLOSED);
                 }
                 return result;
-            } catch (Throwable e) {
-                if (errorChecker.shouldSkip(e)) {
+            } catch (Throwable t) {
+                Throwable throwable = unwrapThrowable(t);
+                if (errorChecker.shouldSkip(throwable)) {
                     // success
                     int successes = successCounter.incrementAndGet();
                     if (successes >= successThreshold) {
                         // transition to closed
                         successCounter.set(0);
                         state.compareAndSet(State.HALF_OPEN, State.CLOSED);
-                    } else {
-                        // failure
-                        successCounter.set(0);
-                        state.set(State.OPEN);
-                        // if we successfully switch to open, we need to schedule switch to half-open
-                        scheduleHalf();
                     }
+                } else {
+                    // failure
+                    successCounter.set(0);
+                    state.set(State.OPEN);
+                    // if we successfully switch to open, we need to schedule switch to half-open
+                    scheduleHalf();
                 }
-                throw e;
+                throw toRuntimeException(throwable);
             } finally {
                 halfOpenInProgress.set(false);
             }
@@ -164,15 +170,15 @@ class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     private void scheduleHalf() {
-        schedule.set(executor.get()
-                             .schedule(() -> {
-                                 state.compareAndSet(State.OPEN, State.HALF_OPEN);
-                                 schedule.set(null);
-                                 return true;
-                             }, delayMillis, TimeUnit.MILLISECONDS));
+        schedule.set(executor.get().submit(
+                toDelayedCallable(() -> {
+                    state.compareAndSet(State.OPEN, State.HALF_OPEN);
+                    schedule.set(null);
+                    return true;
+                }, delayMillis)));
     }
 
-    ScheduledFuture<Boolean> schedule() {
+    Future<Boolean> schedule() {
         return schedule.get();
     }
 

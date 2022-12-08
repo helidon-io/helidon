@@ -20,15 +20,20 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -118,9 +123,19 @@ public interface WebServer {
     boolean hasTls(String socketName);
 
     /**
+     * Context associated with the {@code WebServer}, used as a parent for request contexts.
+     *
+     * @return a server context
+     */
+    Context context();
+
+    /**
      * Fluent API builder for {@link WebServer}.
      */
     class Builder implements io.helidon.common.Builder<Builder, WebServer>, Router.RouterBuilder<Builder> {
+
+        private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
+
         static {
             LogConfig.initClass();
         }
@@ -131,6 +146,11 @@ public interface WebServer {
 
         private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
                 HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
+
+        private MediaContext mediaContext = MediaContext.create();
+        private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+
+        private Context context;
 
         Builder(Config rootConfig) {
             config(rootConfig.get("server"));
@@ -143,6 +163,15 @@ public interface WebServer {
 
         @Override
         public WebServer build() {
+
+            if (context == null) {
+                // In case somebody spins a huge number up, the counter will cycle to negative numbers once
+                // Integer.MAX_VALUE is reached.
+                context = Context.builder()
+                        .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .build();
+            }
+
             return new LoomServer(this, simpleHandlers.build());
         }
 
@@ -350,10 +379,55 @@ public interface WebServer {
             return DEFAULT_SOCKET_NAME.equals(socketName) || socketBuilder.containsKey(socketName);
         }
 
+        /**
+         * Configure the default {@link MediaContext}.
+         * This method discards all previously registered MediaContext.
+         * @param mediaContext media context
+         * @return updated instance of the builder
+         */
+        public Builder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.mediaContext = mediaContext;
+            return this;
+        }
+
+        /**
+         * Configure the default {@link ContentEncodingContext}.
+         * This method discards all previously registered ContentEncodingContext.
+         * @param contentEncodingContext content encoding context
+         * @return updated instance of the builder
+         */
+        public Builder contentEncodingContext(ContentEncodingContext contentEncodingContext) {
+            Objects.requireNonNull(contentEncodingContext);
+            this.contentEncodingContext = contentEncodingContext;
+            return this;
+        }
+
+        /**
+         * Configure the application scoped context to be used as a parent for webserver request contexts.
+         * @param context top level context
+         * @return an updated builder
+         */
+        public Builder context(Context context) {
+            this.context = context;
+            return this;
+        }
+
+        Context context() {
+            return context;
+        }
+
+        MediaContext mediaContext() {
+            return this.mediaContext;
+        }
+
+        ContentEncodingContext contentEncodingContext() {
+            return this.contentEncodingContext;
+        }
+
         Map<String, ListenerConfiguration.Builder> socketBuilders() {
             return socketBuilder;
         }
-
         /**
          * Map of socket name to router.
          *

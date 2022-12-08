@@ -35,7 +35,7 @@ class HeaderValueLazy extends HeaderValueBase {
     public Http.HeaderValueWriteable addValue(String value) {
         if (values == null) {
             values = new ArrayList<>(2);
-            values.add(this.value.toString());
+            values.add(this.value.stripOws());
         }
         values.add(value);
         return this;
@@ -43,14 +43,14 @@ class HeaderValueLazy extends HeaderValueBase {
 
     @Override
     public String value() {
-        return value.toString();
+        return value.stripOws();
     }
 
     @Override
     public List<String> allValues() {
         if (values == null) {
             values = new ArrayList<>(2);
-            values.add(value.toString());
+            values.add(value.stripOws());
         }
         return values;
     }

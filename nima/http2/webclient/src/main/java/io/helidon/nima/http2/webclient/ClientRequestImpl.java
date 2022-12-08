@@ -36,6 +36,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientRequest;
+import io.helidon.nima.webclient.ConnectionKey;
 import io.helidon.nima.webclient.UriHelper;
 
 class ClientRequestImpl implements Http2ClientRequest {
@@ -217,7 +218,12 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     private Http2ClientStream reserveStream() {
         if (explicitConnection == null) {
-            ConnectionKey connectionKey = new ConnectionKey(uri.scheme(), uri.authority(), uri.host(), uri.port(), tls);
+            ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
+                                                            uri.host(),
+                                                            uri.port(),
+                                                            tls,
+                                                            client.dnsResolver(),
+                                                            client.dnsAddressLookup());
 
             // this statement locks all threads - must not do anything complicated (just create a new instance)
             return CHANNEL_CACHE.computeIfAbsent(connectionKey,

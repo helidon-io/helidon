@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
@@ -65,7 +66,8 @@ class ConnectionHandler implements Runnable {
                       Router router,
                       int writeQueueLength,
                       long maxPayloadSize,
-                      DirectHandlers simpleHandlers) {
+                      DirectHandlers simpleHandlers,
+                      Context context) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;
@@ -83,11 +85,13 @@ class ConnectionHandler implements Runnable {
                                             channelId,
                                             simpleHandlers,
                                             socket,
-                                            maxPayloadSize);
+                                            maxPayloadSize,
+                                            context);
     }
 
     @Override
     public final void run() {
+        Thread.currentThread().setName("[" + socket.socketId() + " " + socket.childSocketId() + "] Nima socket");
         if (LOGGER.isLoggable(DEBUG)) {
             ctx.log(LOGGER, DEBUG, "accepted socket from %s", socket.remotePeer().host());
         }

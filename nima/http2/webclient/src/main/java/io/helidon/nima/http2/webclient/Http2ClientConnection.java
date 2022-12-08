@@ -19,6 +19,7 @@ package io.helidon.nima.http2.webclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.cert.Certificate;
@@ -37,6 +38,8 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.http2.Http2ConnectionWriter;
+import io.helidon.nima.webclient.ConnectionKey;
+import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -109,9 +112,14 @@ class Http2ClientConnection {
         socket = sslSocket == null ? new Socket() : sslSocket;
 
         socketOptions.configureSocket(socket);
-        socket.connect(new InetSocketAddress(connectionKey.host(),
-                                             connectionKey.port()),
-                       (int) socketOptions.connectTimeout().toMillis());
+        DnsResolver dnsResolver = connectionKey.dnsResolver();
+        if (dnsResolver.useDefaultJavaResolver()) {
+            socket.connect(new InetSocketAddress(connectionKey.host(), connectionKey.port()),
+                           (int) socketOptions.connectTimeout().toMillis());
+        } else {
+            InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
+            socket.connect(new InetSocketAddress(address, connectionKey.port()), (int) socketOptions.connectTimeout().toMillis());
+        }
         channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
 
         helidonSocket = sslSocket == null

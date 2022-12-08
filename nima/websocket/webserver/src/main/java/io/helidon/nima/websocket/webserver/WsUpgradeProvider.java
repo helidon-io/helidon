@@ -41,21 +41,50 @@ import io.helidon.nima.webserver.spi.ServerConnection;
  * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to WebSocket.
  */
 public class WsUpgradeProvider implements Http1UpgradeProvider {
+
+    /**
+     * Websocket key header name.
+     */
+    protected static final HeaderName WS_KEY = Header.create("Sec-WebSocket-Key");
+
+    /**
+     * Websocket version header name.
+     */
+    protected static final HeaderName WS_VERSION = Header.create("Sec-WebSocket-Version");
+
+    /**
+     * Websocket protocol header name.
+     */
+    protected static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
+
+    /**
+     * Switching response prefix.
+     */
+    protected static final String SWITCHING_PROTOCOL_PREFIX = "HTTP/1.1 101 Switching Protocols\r\n"
+            + "Connection: Upgrade\r\n"
+            + "Upgrade: websocket\r\n"
+            + "Sec-WebSocket-Accept: ";
+
+    /**
+     * Switching response suffix.
+     */
+    protected static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
+
+    /**
+     * Supported version.
+     */
+    protected static final String SUPPORTED_VERSION = "13";
+
+    /**
+     * Supported version header.
+     */
+    protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
+
     private static final System.Logger LOGGER = System.getLogger(WsUpgradeProvider.class.getName());
-    private static final HeaderName WS_KEY = Header.create("Sec-WebSocket-Key");
-    private static final HeaderName WS_VERSION = Header.create("Sec-WebSocket-Version");
-    private static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
-    private static final String SWITCHING_PROTOCOL_PREFIX = "HTTP/1.1 101 Switching Protocols\r\n"
-            + "Connection: Upgrade\r\n"
-            + "Upgrade: websocket\r\n"
-            + "Sec-WebSocket-Accept: ";
-    private static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
-    private static final String SUPPORTED_VERSION = "13";
-    private static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
 
     private final Set<String> origins;
     private final boolean anyOrigin;
@@ -119,10 +148,10 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             return null;
         }
 
-        if (!anyOrigin) {
+        if (!anyOrigin()) {
             if (headers.contains(Header.ORIGIN)) {
                 String origin = headers.get(Header.ORIGIN).value();
-                if (!origins.contains(origin)) {
+                if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")
                             .type(DirectHandler.EventType.FORBIDDEN)
@@ -144,7 +173,15 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
         return new WsConnection(ctx, prologue, headers, wsKey, route);
     }
 
-    private String hash(ConnectionContext ctx, String wsKey) {
+    protected boolean anyOrigin() {
+        return anyOrigin;
+    }
+
+    protected Set<String> origins() {
+        return origins;
+    }
+
+    protected String hash(ConnectionContext ctx, String wsKey) {
         byte[] decodedBytes = B64_DECODER.decode(wsKey);
         if (decodedBytes.length != 16) {
             // this is required by the specification (RFC-6455)

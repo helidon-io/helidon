@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @RoutingTest
 class TestRoutingTest {
     private static final String ENTITY = "some nice entity";
+    private static final String ADMIN_ENTITY = "admin entity";
 
     private final DirectClient client;
 
@@ -81,8 +82,31 @@ class TestRoutingTest {
                 });
     }
 
+    @SetUpRoute
+    static void adminRouting(@Socket("admin") HttpRouting.Builder router) {
+        router.get("/get", (req, res) -> res.send(ADMIN_ENTITY));
+    }
+
     @Test
     void testGet() {
+        String response = client.get("/get")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is(ENTITY));
+    }
+
+    @Test
+    void testInjectGet(@Socket("admin") DirectClient client) {
+        String response = client.get("/get")
+                .request()
+                .as(String.class);
+
+        assertThat(response, is(ADMIN_ENTITY));
+    }
+
+    @Test // Test Explicit @default route
+    void testInjectDefaultGet(@Socket("@default") DirectClient client) {
         String response = client.get("/get")
                 .request()
                 .as(String.class);

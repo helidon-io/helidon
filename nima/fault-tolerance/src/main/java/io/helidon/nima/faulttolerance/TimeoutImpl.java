@@ -17,9 +17,7 @@
 package io.helidon.nima.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,11 +25,15 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import static io.helidon.nima.faulttolerance.FaultTolerance.toDelayedRunnable;
+import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 
     private final long timeoutMillis;
-    private final LazyValue<? extends ScheduledExecutorService> executor;
+    private final LazyValue<? extends ExecutorService> executor;
     private final boolean currentThread;
     private final String name;
 
@@ -54,39 +56,39 @@ class TimeoutImpl implements Timeout {
                 return CompletableFuture.supplyAsync(supplier, executor.get())
                         .orTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                         .get();
-            } catch (InterruptedException e) {
-                throw new TimeoutException("Call interrupted", e);
-            } catch (ExecutionException e) {
-                // Map java.util.concurrent.TimeoutException to Nima's TimeoutException
-                if (e.getCause() instanceof java.util.concurrent.TimeoutException) {
-                   throw new TimeoutException("Timeout reached", e.getCause().getCause());
-                }
-                throw new RuntimeException("Asynchronous execution error", e.getCause());
+            } catch (Throwable t) {
+                throw mapThrowable(t, null);
             }
         } else {
             Thread thisThread = Thread.currentThread();
             ReentrantLock interruptLock = new ReentrantLock();
             AtomicBoolean callReturned = new AtomicBoolean(false);
+            AtomicBoolean interrupted = new AtomicBoolean(false);
 
-            ScheduledFuture<?> timeoutFuture = executor.get().schedule(() -> {
+            executor.get().submit(toDelayedRunnable(() -> {
                 interruptLock.lock();
                 try {
                     if (callReturned.compareAndSet(false, true)) {
                         thisThread.interrupt();
+                        interrupted.set(true);      // needed if InterruptedException caught in supplier
                     }
                 } finally {
                     interruptLock.unlock();
                 }
-
-            }, timeoutMillis, TimeUnit.MILLISECONDS);
+            }, timeoutMillis));
 
             try {
-                return supplier.get();
+                T result = supplier.get();
+                if (interrupted.get()) {
+                    throw new TimeoutException("Supplier execution interrupted", null);
+                }
+                return result;
+            } catch (Throwable t) {
+                throw mapThrowable(t, interrupted);
             } finally {
                 interruptLock.lock();
                 try {
                     callReturned.set(true);
-                    timeoutFuture.cancel(false);
                     // Run invocation in current thread
                     // Clear interrupted flag here -- required for uninterruptible busy loops
                     if (Thread.interrupted()) {
@@ -97,5 +99,18 @@ class TimeoutImpl implements Timeout {
                 }
             }
         }
+    }
+
+    private static RuntimeException mapThrowable(Throwable t, AtomicBoolean interrupted) {
+        Throwable throwable = unwrapThrowable(t);
+        if (throwable instanceof InterruptedException) {
+            return new TimeoutException("Call interrupted", throwable);
+
+        } else if (throwable instanceof java.util.concurrent.TimeoutException) {
+            return new TimeoutException("Timeout reached", throwable.getCause());
+        } else if (interrupted != null && interrupted.get()) {
+            return new TimeoutException("Supplier execution interrupted", t);
+        }
+        return toRuntimeException(throwable);
     }
 }

@@ -68,12 +68,14 @@ final class OidcUtil {
 
     static WebClient.Builder webClientBaseBuilder(String proxyHost,
                                                   int proxyPort,
+                                                  boolean relativeUris,
                                                   Duration clientTimeout) {
         WebClient.Builder webClientBuilder = WebClient.builder()
                 .addService(WebClientTracing.create())
                 .addMediaSupport(JsonpSupport.create())
                 .connectTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
-                .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                .readTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                .relativeUris(relativeUris);
 
         if (proxyHost != null) {
             webClientBuilder.proxy(Proxy.builder()

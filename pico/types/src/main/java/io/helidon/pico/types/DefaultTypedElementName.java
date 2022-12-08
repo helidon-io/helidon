@@ -16,8 +16,7 @@
 
 package io.helidon.pico.types;
 
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,14 +40,11 @@ public class DefaultTypedElementName implements TypedElementName {
      */
     protected DefaultTypedElementName(Builder b) {
         this.typeName = b.typeName;
-        this.componentTypeNames = Objects.isNull(b.componentTypeNames)
-                ? Collections.emptyList() : Collections.unmodifiableList(b.componentTypeNames);
+        this.componentTypeNames = List.copyOf(b.componentTypeNames);
         this.elementName = b.elementName;
         this.defaultValue = b.defaultValue;
-        this.annotations = Objects.isNull(b.annotations)
-                ? Collections.emptyList() : Collections.unmodifiableList(b.annotations);
-        this.elementTypeAnnotations = Objects.isNull(b.elementTypeAnnotations)
-                ? Collections.emptyList() : Collections.unmodifiableList(b.elementTypeAnnotations);
+        this.annotations = List.copyOf(b.annotations);
+        this.elementTypeAnnotations = List.copyOf(b.elementTypeAnnotations);
     }
 
     @Override
@@ -81,7 +77,7 @@ public class DefaultTypedElementName implements TypedElementName {
      *
      * @return the component type names of the element
      */
-    public List<TypeName> getComponentTypeNames() {
+    public List<TypeName> componentTypeNames() {
         return componentTypeNames;
     }
 
@@ -113,7 +109,7 @@ public class DefaultTypedElementName implements TypedElementName {
      * @return provides the {typeName}{space}{elementName}
      */
     public String toDeclaration() {
-            return typeName() + " " + elementName();
+        return typeName() + " " + elementName();
     }
 
 
@@ -131,12 +127,13 @@ public class DefaultTypedElementName implements TypedElementName {
      * The fluent builder.
      */
     public static class Builder {
+        private final List<TypeName> componentTypeNames = new ArrayList<>();
+        private final List<AnnotationAndValue> annotations = new ArrayList<>();
+        private final List<AnnotationAndValue> elementTypeAnnotations = new ArrayList<>();
+
         private TypeName typeName;
-        private List<TypeName> componentTypeNames;
         private String elementName;
         private String defaultValue;
-        private List<AnnotationAndValue> annotations;
-        private List<AnnotationAndValue> elementTypeAnnotations;
 
         /**
          * Default ctor.
@@ -172,7 +169,9 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder componentTypeNames(List<TypeName> val) {
-            this.componentTypeNames = Objects.isNull(val) ? Collections.emptyList() : new LinkedList<>(val);
+            Objects.requireNonNull(val);
+            this.componentTypeNames.clear();
+            this.componentTypeNames.addAll(val);
             return this;
         }
 
@@ -205,7 +204,9 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder annotations(List<AnnotationAndValue> val) {
-            this.annotations = new LinkedList<>(val);
+            Objects.requireNonNull(val);
+            this.annotations.clear();
+            this.annotations.addAll(val);
             return this;
         }
 
@@ -215,11 +216,9 @@ public class DefaultTypedElementName implements TypedElementName {
          * @param annotation the annotation to add
          * @return the fluent builder
          */
-        public Builder annotation(AnnotationAndValue annotation) {
-            if (Objects.isNull(annotations)) {
-                this.annotations = new LinkedList<>();
-            }
-            this.annotations.add(Objects.requireNonNull(annotation));
+        public Builder addAnnotation(AnnotationAndValue annotation) {
+            Objects.requireNonNull(annotation);
+            this.annotations.add(annotation);
             return this;
         }
 
@@ -230,7 +229,9 @@ public class DefaultTypedElementName implements TypedElementName {
          * @return this fluent builder
          */
         public Builder elementTypeAnnotations(List<AnnotationAndValue> val) {
-            this.elementTypeAnnotations = new LinkedList<>(val);
+            Objects.requireNonNull(val);
+            this.elementTypeAnnotations.clear();
+            this.elementTypeAnnotations.addAll(val);
             return this;
         }
 

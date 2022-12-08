@@ -21,6 +21,7 @@ module io.helidon.nima.webserver.staticcontent {
     requires java.logging;
 
     requires transitive io.helidon.nima.webserver;
+    requires transitive io.helidon.common.configurable;
 
     exports io.helidon.nima.webserver.staticcontent;
 }

@@ -18,22 +18,19 @@ package io.helidon.nima.faulttolerance;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
-import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
- * System wide fault tolerance configuration and access to a customized sequence of fault tolerance handlers.
+ * System-wide fault tolerance configuration and access to a customized sequence of fault tolerance handlers.
  * <p>
  * Fault tolerance provides the following features:
  * <ul>
@@ -47,27 +44,19 @@ import io.helidon.config.Config;
  * </ul>
  *
  * @see #config(io.helidon.config.Config)
- * @see #scheduledExecutor(java.util.function.Supplier)
  * @see #executor()
  * @see #builder()
  */
 public final class FaultTolerance {
-    private static final AtomicReference<LazyValue<? extends ScheduledExecutorService>> SCHEDULED_EXECUTOR =
-            new AtomicReference<>();
+    private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
+
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
 
     static {
-        SCHEDULED_EXECUTOR.set(LazyValue.create(ScheduledThreadPoolSupplier.builder()
-                                                        .threadNamePrefix("ft-schedule-")
-                                                        .corePoolSize(2)
-                                                        .config(CONFIG.get().get("scheduled-executor"))
-                                                        .build()));
-
-        EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.builder()
-                                              .threadNamePrefix("ft-")
-                                              .config(CONFIG.get().get("executor"))
-                                              .build()));
+        EXECUTOR.set(LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                                                          .name("helidon-ft-", 0)
+                                                          .factory())));
     }
 
     private FaultTolerance() {
@@ -80,9 +69,6 @@ public final class FaultTolerance {
      */
     public static void config(Config config) {
         CONFIG.set(config);
-
-        SCHEDULED_EXECUTOR.set(LazyValue.create(ScheduledThreadPoolSupplier.create(CONFIG.get().get("scheduled-executor"))));
-        EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.create(CONFIG.get().get("executor"), "ft-se-thread-pool")));
     }
 
     /**
@@ -92,15 +78,6 @@ public final class FaultTolerance {
      */
     public static void executor(Supplier<? extends ExecutorService> executor) {
         EXECUTOR.set(LazyValue.create(executor::get));
-    }
-
-    /**
-     * Configure Helidon wide scheduled executor service for Fault Tolerance.
-     *
-     * @param executor scheduled executor service to use, such as for {@link io.helidon.nima.faulttolerance.Retry} scheduling
-     */
-    public static void scheduledExecutor(Supplier<? extends ScheduledExecutorService> executor) {
-        SCHEDULED_EXECUTOR.set(LazyValue.create(executor));
     }
 
     /**
@@ -122,52 +99,53 @@ public final class FaultTolerance {
         return new TypedBuilder<>();
     }
 
+    /**
+     * Converts a {@code Runnable} into another that sleeps for {@code millis} before
+     * executing. Simulates a scheduled executor when using VTs.
+     *
+     * @param runnable the runnable
+     * @param millis the time to sleep
+     * @return the new runnable
+     */
+    public static Runnable toDelayedRunnable(Runnable runnable, long millis) {
+        return () -> {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+                // should never be interrupted
+                LOGGER.log(ERROR, "Delayed runnable was unexpectedly interrupted");
+            }
+            runnable.run();
+        };
+    }
+
+    /**
+     * Converts a {@code Callable} into another that sleeps for {@code millis} before
+     * executing. Simulates a scheduled executor when using VTs.
+     *
+     * @param callable the callable
+     * @param millis the time to sleep
+     * @return the new callable
+     * @param <T> type of value returned
+     */
+    public static <T> Callable<T> toDelayedCallable(Callable<T> callable, long millis) {
+        return () -> {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+                // should never be interrupted
+                LOGGER.log(ERROR, "Delayed callable was unexpectedly interrupted");
+            }
+            return callable.call();
+        };
+    }
+
     static LazyValue<? extends ExecutorService> executor() {
         return EXECUTOR.get();
     }
 
-    static LazyValue<? extends ScheduledExecutorService> scheduledExecutor() {
-        return SCHEDULED_EXECUTOR.get();
-    }
-
     static Config config() {
         return CONFIG.get();
-    }
-
-    static Throwable cause(Throwable throwable) {
-        if (throwable instanceof CompletionException) {
-            return cause(throwable.getCause());
-        }
-        if (throwable instanceof ExecutionException) {
-            return cause(throwable.getCause());
-        }
-        return throwable;
-    }
-
-    /**
-     * Establish a dependency between a source (stage) and a dependent (future). The
-     * dependent shall complete (normally or exceptionally) based on the source stage.
-     * The source stage shall be cancelled if the dependent is cancelled. The {@code
-     * mayInterruptIfRunning} flag is always set to {@code true} during cancellation.
-     *
-     * @param source    the source stage
-     * @param dependent the dependent future
-     * @param <T>       type of result
-     */
-    static <T> CompletableFuture<T> createDependency(CompletionStage<T> source, CompletableFuture<T> dependent) {
-        source.whenComplete((o, t) -> {
-            if (t != null) {
-                dependent.completeExceptionally(t);
-            } else {
-                dependent.complete(o);
-            }
-        });
-        dependent.whenComplete((o, t) -> {
-            if (dependent.isCancelled()) {
-                source.toCompletableFuture().cancel(true);
-            }
-        });
-        return dependent;
     }
 
     abstract static class BaseBuilder<B extends BaseBuilder<B>> {

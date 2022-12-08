@@ -18,6 +18,7 @@ package io.helidon.nima.webclient.http1;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.cert.Certificate;
@@ -36,8 +37,9 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
-import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.ConnectionKey;
+import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -46,32 +48,26 @@ class Http1ClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientConnection.class.getName());
 
     private final Queue<Http1ClientConnection> connectionQueue;
-    private final String host;
-    private final int port;
-    private final Tls tls;
+    private final ConnectionKey connectionKey;
     private final io.helidon.common.socket.SocketOptions options;
+    private final boolean keepAlive;
     private String channelId;
-    private boolean keepAlive;
     private Socket socket;
     private HelidonSocket helidonSocket;
     private DataReader reader;
     private DataWriter writer;
 
-    Http1ClientConnection(SocketOptions options, String host, int port, Tls tls) {
-        this(options, null, host, port, tls);
+    Http1ClientConnection(SocketOptions options, ConnectionKey connectionKey) {
+        this(options, null, connectionKey);
     }
 
     Http1ClientConnection(SocketOptions options,
                           Queue<Http1ClientConnection> connectionQueue,
-                          String host,
-                          int port,
-                          Tls tls) {
+                          ConnectionKey connectionKey) {
         this.options = options;
         this.connectionQueue = connectionQueue;
-        this.host = host;
-        this.port = port;
         this.keepAlive = (connectionQueue != null);
-        this.tls = tls;
+        this.connectionKey = connectionKey;
     }
 
     @Override
@@ -109,13 +105,19 @@ class Http1ClientConnection implements ClientConnection {
 
     Http1ClientConnection connect() {
         try {
-            SSLSocket sslSocket = tls == null ? null : tls.createSocket("http/1.1");
+            SSLSocket sslSocket = connectionKey.tls() == null ? null : connectionKey.tls().createSocket("http/1.1");
 
             socket = sslSocket == null ? new Socket() : sslSocket;
             socket.setSoTimeout((int) options.readTimeout().toMillis());
             options.configureSocket(socket);
-            socket.connect(new InetSocketAddress(host, port),
-                           (int) options.connectTimeout().toMillis());
+            DnsResolver dnsResolver = connectionKey.dnsResolver();
+            if (dnsResolver.useDefaultJavaResolver()) {
+                socket.connect(new InetSocketAddress(connectionKey.host(), connectionKey.port()),
+                               (int) options.connectTimeout().toMillis());
+            } else {
+                InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
+                socket.connect(new InetSocketAddress(address, connectionKey.port()), (int) options.connectTimeout().toMillis());
+            }
 
             channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
 
@@ -129,7 +131,7 @@ class Http1ClientConnection implements ClientConnection {
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Could not connect to " + host + ":" + port, e);
+            throw new UncheckedIOException("Could not connect to " + connectionKey.host() + ":" + connectionKey.port(), e);
         }
 
         if (LOGGER.isLoggable(DEBUG)) {

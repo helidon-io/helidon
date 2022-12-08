@@ -24,12 +24,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -303,6 +305,25 @@ abstract class AbstractSampleBean {
                 countDown("channel13ToChannel12()");
             });
             return Message.of(msg.getPayload());
+        }
+    }
+
+    @ApplicationScoped
+    public static class Channel14 extends AbstractSampleBean {
+
+        AtomicBoolean acked = new AtomicBoolean();
+        CompletableFuture<Throwable> nacked = new CompletableFuture<>();
+
+        public CompletableFuture<Throwable> getNacked() {
+            return nacked;
+        }
+
+        @Outgoing("test-channel-14")
+        public Multi<Message<String>> channel14() {
+            return Multi.just(Message.of("test",
+                                         () -> CompletableFuture.completedStage(null).thenRun(() -> acked.set(true)),
+                                         t -> CompletableFuture.<Void>completedFuture(null).thenAccept(v -> nacked.complete(t))
+            ));
         }
     }
 }

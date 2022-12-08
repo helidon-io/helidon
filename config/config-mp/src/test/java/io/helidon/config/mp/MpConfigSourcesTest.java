@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.media.type.MediaType;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PropertiesConfigParser;
@@ -37,6 +38,7 @@ import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.ParsableSource;
 
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -98,6 +100,12 @@ public class MpConfigSourcesTest {
         assertThat(mpSource.getName(), is(LazyImpl.DESCRIPTION));
         assertThat("init called exactly once", lazy.inits.get(), is(1));
         assertThat("exists called exactly once", lazy.exists.get(), is(1));
+    }
+
+    @Test
+    void testMpConfigSourcesNullConfig() {
+        NullPointerException npe = assertThrows(NullPointerException.class, () -> MpConfigSources.create((Config) null));
+        assertThat(npe.getMessage(), is("Config cannot be null"));
     }
 
     private static final class NodeImpl implements ConfigSource, NodeConfigSource {

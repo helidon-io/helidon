@@ -167,7 +167,8 @@ class Http2ServerRequest implements RoutingRequest {
     public Context context() {
         if (context == null) {
             context = Contexts.context().orElseGet(() -> Context.builder()
-                    .id("[" + serverSocketId() + " " + socketId() + "] http/2: " + requestId)
+                    .parent(ctx.context())
+                    .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
         }
         return context;

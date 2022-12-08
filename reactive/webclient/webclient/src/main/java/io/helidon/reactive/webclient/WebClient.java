@@ -203,6 +203,18 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Can be set to {@code true} to force the use of relative URIs in all requests,
+         * regardless of the presence or absence of proxies or no-proxy lists.
+         *
+         * @param relativeUris relative URIs flag
+         * @return updated builder instance
+         */
+        public Builder relativeUris(boolean relativeUris) {
+            this.configuration.relativeUris(relativeUris);
+            return this;
+        }
+
         @Override
         public Builder mediaContext(MediaContext mediaContext) {
             configuration.mediaContext(mediaContext);
@@ -352,6 +364,17 @@ public interface WebClient {
          */
         public Builder addHeader(Http.HeaderName header, String... value) {
             configuration.defaultHeader(Http.Header.create(header, value));
+            return this;
+        }
+
+        /**
+         * Add a default header (such as accept).
+         *
+         * @param headerValue header name and value
+         * @return updated builder instance
+         */
+        public Builder addHeader(Http.HeaderValue headerValue) {
+            configuration.defaultHeader(headerValue);
             return this;
         }
 

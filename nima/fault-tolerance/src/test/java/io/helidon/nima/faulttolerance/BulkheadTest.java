@@ -40,9 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class BulkheadTest {
     private static final System.Logger LOGGER = System.getLogger(BulkheadTest.class.getName());
 
-    private static final long WAIT_TIMEOUT_MILLIS = 2000;
-
-    private final CountDownLatch enqueuedSubmitted = new CountDownLatch(1);
+    private static final long WAIT_TIMEOUT_MILLIS = 5000;
 
     @BeforeAll
     static void setupTest() {
@@ -53,6 +51,7 @@ class BulkheadTest {
     void testBulkhead() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
         // Create bulkhead of 1 with queue length 1
         String name = "unit:testBulkhead";
+        CountDownLatch enqueuedSubmitted = new CountDownLatch(1);
         Bulkhead bulkhead = Bulkhead.builder()
                 .limit(1)
                 .queueLength(1)
@@ -80,15 +79,19 @@ class BulkheadTest {
         CompletableFuture<Integer> enqueuedResult = Async.invokeStatic(
                 () -> bulkhead.invoke(enqueued::run));
 
-        // Wait until previous task is "likely" queued
+        // Wait until previous task is queued
         if (!enqueuedSubmitted.await(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
             fail("Task enqueued never submitted");
         }
+        assertEventually(() -> bulkhead.stats().waitingQueueSize() == 1, WAIT_TIMEOUT_MILLIS);
 
         // Submit new task that should be rejected
         Task rejected = new Task(2);
+        CompletableFuture<Async> asyncRejected = new CompletableFuture<>();
         CompletableFuture<Integer> rejectedResult = Async.invokeStatic(
-                () -> bulkhead.invoke(rejected::run));
+                () -> bulkhead.invoke(rejected::run),
+                asyncRejected);
+        asyncRejected.get();        // waits for async to start
 
         assertThat(inProgress.isStarted(), is(true));
         assertThat(inProgress.isBlocked(), is(true));
@@ -96,6 +99,14 @@ class BulkheadTest {
         assertThat(enqueued.isBlocked(), is(true));
         assertThat(rejected.isStarted(), is(false));
         assertThat(rejected.isBlocked(), is(true));
+
+        // Verify rejected task was indeed rejected
+        ExecutionException executionException = assertThrows(ExecutionException.class,
+                () -> rejectedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
+        Throwable cause = executionException.getCause();
+        assertThat(cause, notNullValue());
+        assertThat(cause, instanceOf(BulkheadException.class));
+        assertThat(cause.getMessage(), is("Bulkhead queue \"" + name + "\" is full"));
 
         // Unblock inProgress task and get result to free bulkhead
         inProgress.unblock();
@@ -113,14 +124,6 @@ class BulkheadTest {
         // Unblock enqueued task and get result
         enqueued.unblock();
         enqueuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-
-        // Verify rejected task was indeed rejected
-        ExecutionException executionException = assertThrows(ExecutionException.class,
-                () -> rejectedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
-        Throwable cause = executionException.getCause();
-        assertThat(cause, notNullValue());
-        assertThat(cause, instanceOf(BulkheadException.class));
-        assertThat(cause.getMessage(), is("Bulkhead queue \"" + name + "\" is full"));
     }
 
     @Test
@@ -250,5 +253,16 @@ class BulkheadTest {
         CompletableFuture<?> future() {
             return future;
         }
+    }
+
+    private static void assertEventually(Supplier<Boolean> predicate, long millis) throws InterruptedException {
+        long start = System.currentTimeMillis();
+        do {
+            if (predicate.get()) {
+                return;
+            }
+            Thread.sleep(100);
+        } while (System.currentTimeMillis() - start <= millis);
+        fail("Predicate failed after " + millis + " milliseconds");
     }
 }

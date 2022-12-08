@@ -17,7 +17,7 @@
 package io.helidon.nima.faulttolerance;
 
 import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.LazyValue;
 
@@ -49,7 +49,7 @@ public interface Timeout extends FtHandler {
      */
     class Builder implements io.helidon.common.Builder<Builder, Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
-        private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
+        private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
         private boolean currentThread = false;
         private String name = "Timeout-" + System.identityHashCode(this);
 
@@ -90,7 +90,7 @@ public interface Timeout extends FtHandler {
          * @param executor scheduled executor service to use
          * @return updated builder instance
          */
-        public Builder executor(ScheduledExecutorService executor) {
+        public Builder executor(ExecutorService executor) {
             this.executor = LazyValue.create(executor);
             return this;
         }
@@ -110,7 +110,7 @@ public interface Timeout extends FtHandler {
             return timeout;
         }
 
-        LazyValue<? extends ScheduledExecutorService> executor() {
+        LazyValue<? extends ExecutorService> executor() {
             return executor;
         }
 

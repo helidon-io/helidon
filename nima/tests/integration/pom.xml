@@ -37,5 +37,6 @@
         <module>encoding</module>
         <module>media</module>
         <module>observe</module>
+        <module>logging</module>
     </modules>
 </project>

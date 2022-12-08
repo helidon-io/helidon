@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import jakarta.jms.Message;
 import static io.helidon.messaging.connectors.jms.shim.ShimUtil.call;
 import static io.helidon.messaging.connectors.jms.shim.ShimUtil.run;
 
-class JakartaMessage implements Message {
-    private final javax.jms.Message delegate;
+class JakartaMessage<T extends javax.jms.Message> implements Message, JakartaWrapper<T> {
+    private final T delegate;
 
-    JakartaMessage(javax.jms.Message delegate) {
+    JakartaMessage(T delegate) {
         this.delegate = delegate;
     }
 
@@ -276,7 +276,7 @@ class JakartaMessage implements Message {
         return call(() -> delegate.isBodyAssignableTo(c));
     }
 
-    public javax.jms.Message unwrap() {
+    public T unwrap() {
         return delegate;
     }
 }

@@ -33,6 +33,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.common.Version;
+import io.helidon.common.context.Context;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -49,6 +52,8 @@ class LoomServer implements WebServer {
     private volatile List<ListenerFuture> startFutures;
     private boolean alreadyStarted = false;
 
+    private final Context context;
+
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
         List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
 
@@ -64,6 +69,9 @@ class LoomServer implements WebServer {
         if (defaultRouter == null) {
             defaultRouter = Router.empty();
         }
+
+        MediaContext mediaContext = builder.mediaContext();
+        ContentEncodingContext contentEncodingContext = builder.contentEncodingContext();
 
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
@@ -84,14 +92,17 @@ class LoomServer implements WebServer {
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers));
+                                             simpleHandlers,
+                                             mediaContext,
+                                             contentEncodingContext));
         }
 
         this.listeners = Map.copyOf(listeners);
         this.executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                          .allowSetThreadLocals(false)
+                                                                          .allowSetThreadLocals(true)
                                                                           .inheritInheritableThreadLocals(false)
                                                                           .factory());
+        this.context = builder.context();
     }
 
     @Override
@@ -154,8 +165,13 @@ class LoomServer implements WebServer {
         return false;
     }
 
+    @Override
+    public Context context() {
+        return context;
+    }
+
     private void stopIt() {
-        parallel(ServerListener::stop);
+        parallel("stop", ServerListener::stop);
         running.set(false);
 
         LOGGER.log(System.Logger.Level.INFO, "Níma server stopped all channels.");
@@ -163,10 +179,10 @@ class LoomServer implements WebServer {
 
     private void startIt() {
         long now = System.currentTimeMillis();
-        boolean result = parallel(ServerListener::start);
+        boolean result = parallel("start", ServerListener::start);
         if (!result) {
             LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");
-            parallel(ServerListener::stop);
+            parallel("stop", ServerListener::stop);
             if (startFutures != null) {
                 startFutures.forEach(future -> future.future().cancel(true));
             }
@@ -195,13 +211,16 @@ class LoomServer implements WebServer {
     }
 
     // return false if anything fails
-    private boolean parallel(Consumer<ServerListener> task) {
+    private boolean parallel(String taskName, Consumer<ServerListener> task) {
         boolean result = true;
 
         List<ListenerFuture> futures = new LinkedList<>();
 
         for (ServerListener listener : listeners.values()) {
-            futures.add(new ListenerFuture(listener, executorService.submit(() -> task.accept(listener))));
+            futures.add(new ListenerFuture(listener, executorService.submit(() -> {
+                Thread.currentThread().setName(taskName + " " + listener);
+                task.accept(listener);
+            })));
         }
         for (ListenerFuture listenerFuture : futures) {
             try {

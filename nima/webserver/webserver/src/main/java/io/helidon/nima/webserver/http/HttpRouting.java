@@ -17,7 +17,10 @@
 package io.helidon.nima.webserver.http;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -42,14 +45,15 @@ public final class HttpRouting implements Routing {
 
     private final Filters filters;
     private final ServiceRoute rootRoute;
-    // todo configure on HTTP routing
-    private final ErrorHandlers errorHandlers = new ErrorHandlers();
     private final List<HttpFeature> features;
+    private final int maxReRouteCount;
 
     private HttpRouting(Builder builder) {
+        ErrorHandlers errorHandlers = ErrorHandlers.create(builder.errorHandlers);
         this.filters = Filters.create(errorHandlers, List.copyOf(builder.filters));
         this.rootRoute = builder.rootRules.build();
         this.features = List.copyOf(builder.features);
+        this.maxReRouteCount = builder.maxReRouteCount;
     }
 
     /**
@@ -92,7 +96,7 @@ public final class HttpRouting implements Routing {
      * @param response routing response
      */
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response);
+        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response, maxReRouteCount);
         // we cannot throw an exception to the filters, as then the filter would not have information about actual status
         // code, so error handling is done in routing executor and for each filter
         filters.filter(ctx, request, response, routingExecutor);
@@ -125,6 +129,8 @@ public final class HttpRouting implements Routing {
         private final List<Filter> filters = new ArrayList<>();
         private final ServiceRules rootRules = new ServiceRules();
         private final List<HttpFeature> features = new ArrayList<>();
+        private final Map<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers = new IdentityHashMap<>();
+        private int maxReRouteCount = 10;
 
         private Builder() {
         }
@@ -155,6 +161,19 @@ public final class HttpRouting implements Routing {
             HttpFeature httpFeature = feature.get();
             features.add(httpFeature);
             httpFeature.setup(this);
+            return this;
+        }
+
+        /**
+         * Registers an error handler that handles the given type of exceptions.
+         *
+         * @param exceptionClass the type of exception to handle by this handler
+         * @param handler        the error handler
+         * @param <T>            exception type
+         * @return updated builder
+         */
+        public <T extends Throwable> Builder error(Class<T> exceptionClass, ErrorHandler<? super T> handler) {
+            this.errorHandlers.put(exceptionClass, handler);
             return this;
         }
 
@@ -301,42 +320,61 @@ public final class HttpRouting implements Routing {
                                  .path(pattern)
                                  .handler(handler));
         }
+
+        /**
+         * Maximal number of allowed re-routes within routing.
+         *
+         * @param maxReRouteCount
+         * @return updated builder
+         *
+         * @see io.helidon.nima.webserver.http.ServerResponse#reroute(String)
+         * @see io.helidon.nima.webserver.http.ServerResponse#reroute(String, io.helidon.common.uri.UriQuery)
+         */
+        public Builder maxReRouteCount(int maxReRouteCount){
+            this.maxReRouteCount = maxReRouteCount;
+            return this;
+        }
+
     }
 
-    private static final class RoutingExecutor implements Executable {
+    private static final class RoutingExecutor implements Callable<Void> {
         private final ConnectionContext ctx;
         private final RoutingRequest request;
         private final RoutingResponse response;
         private final ServiceRoute rootRoute;
+        private final int maxReRouteCount;
 
         private RoutingExecutor(ConnectionContext ctx,
                                 ServiceRoute rootRoute,
                                 RoutingRequest request,
-                                RoutingResponse response) {
+                                RoutingResponse response,
+                                int maxReRouteCount) {
             this.ctx = ctx;
             this.rootRoute = rootRoute;
             this.request = request;
             this.response = response;
+            this.maxReRouteCount = maxReRouteCount;
         }
 
         @Override
-        public void execute() throws Exception {
+        public Void call() throws Exception {
             // initial attempt - most common case, handled separately
             RoutingResult result = doRoute(ctx, request, response);
 
             if (result == RoutingResult.FINISH) {
-                return;
+                return null;
             }
             if (result == RoutingResult.NONE) {
                 throw new NotFoundException("Endpoint not found");
             }
 
             // rerouting, do the more heavyweight while loop
-            int counter = 0;
+            int counter = 1;
             while (result == RoutingResult.ROUTE) {
                 counter++;
-                if (counter == 9) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than 10 times. Will not attempt further routing");
+                if (counter == maxReRouteCount) {
+                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
+                            + " times. Will not attempt further routing");
 
                     throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
                 }
@@ -346,7 +384,7 @@ public final class HttpRouting implements Routing {
 
             // finished and done
             if (result == RoutingResult.FINISH) {
-                return;
+                return null;
             }
             throw new NotFoundException("Endpoint not found");
         }

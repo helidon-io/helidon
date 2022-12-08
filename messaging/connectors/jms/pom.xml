@@ -64,6 +64,10 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging-jms-shim</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.jms</groupId>
             <artifactId>jakarta.jms-api</artifactId>
         </dependency>

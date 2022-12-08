@@ -16,46 +16,68 @@
 
 package io.helidon.nima.faulttolerance;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 
+import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
+
 /**
- * Implementation of {@code Async}. If no executor specified in builder, then it will
- * use {@link Executors#newVirtualThreadPerTaskExecutor}. Note that this default executor
- * is not configurable using Helidon's config.
+ * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
  */
 class AsyncImpl implements Async {
     private final LazyValue<? extends ExecutorService> executor;
+    private final CompletableFuture<Async> onStart;
 
     AsyncImpl() {
-        this.executor = LazyValue.create(Executors.newVirtualThreadPerTaskExecutor());
+        this(Async.builder());
     }
 
     AsyncImpl(Builder builder) {
-        this.executor = builder.executor() != null ? builder.executor()
-                : LazyValue.create(Executors.newVirtualThreadPerTaskExecutor());
+        this.executor = builder.executor();
+        this.onStart = builder.onStart();
     }
 
     @Override
     public <T> CompletableFuture<T> invoke(Supplier<T> supplier) {
-        CompletableFuture<T> result = new CompletableFuture<>();
-        executor.get().submit(() -> {
+        AtomicBoolean mayInterrupt = new AtomicBoolean(false);
+        CompletableFuture<T> result = new CompletableFuture<>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                mayInterrupt.set(mayInterruptIfRunning);
+                return super.cancel(mayInterruptIfRunning);
+            }
+        };
+        Future<?> future = executor.get().submit(() -> {
+            Thread thread = Thread.currentThread();
+            thread.setName(thread.getName() + ": async");
+            if (onStart != null) {
+                onStart.complete(this);
+            }
             try {
                 T t = supplier.get();
                 result.complete(t);
-            } catch (Exception e) {
-                result.completeExceptionally(e);
+            } catch (Throwable t) {
+                Throwable throwable = unwrapThrowable(t);
+                result.completeExceptionally(throwable);
             }
+        });
+        result.exceptionally(t -> {
+            if (t instanceof CancellationException) {
+                future.cancel(mayInterrupt.get());
+            }
+            return null;
         });
         return result;
     }
 
     /**
-     * Default {@code Async} instance that uses {@link Executors#newVirtualThreadPerTaskExecutor}.
+     * Default {@code Async} instance.
      */
     static final class DefaultAsyncInstance {
         private static final Async INSTANCE = new AsyncImpl();

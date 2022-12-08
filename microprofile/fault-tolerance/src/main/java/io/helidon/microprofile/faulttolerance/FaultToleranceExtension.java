@@ -25,16 +25,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
-import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.config.mp.MpConfig;
-import io.helidon.reactive.faulttolerance.FaultTolerance;
-
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -72,10 +66,6 @@ public class FaultToleranceExtension implements Extension {
     private static boolean isFaultToleranceMetricsEnabled = true;
 
     private Set<AnnotatedMethod<?>> registeredMethods;
-
-    private ThreadPoolSupplier threadPoolSupplier;
-
-    private ScheduledThreadPoolSupplier scheduledThreadPoolSupplier;
 
     /**
      * Class to mimic a {@link Priority} annotation for the purpose of changing
@@ -245,29 +235,6 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Creates the executors used by FT using config. Must be created during the
-     * {@code AfterDeploymentValidation} event.
-     *
-     * @param event the AfterDeploymentValidation event
-     */
-    void createFaultToleranceExecutors(@Observes AfterDeploymentValidation event) {
-        // Initialize executors for MP FT - default size of 20
-        io.helidon.config.Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
-        scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
-                .threadNamePrefix("ft-mp-schedule-")
-                .corePoolSize(20)
-                .config(config.get("scheduled-executor"))
-                .build();
-        FaultTolerance.scheduledExecutor(scheduledThreadPoolSupplier);
-        threadPoolSupplier = ThreadPoolSupplier.builder()
-                .threadNamePrefix("ft-mp-")
-                .corePoolSize(20)
-                .config(config.get("executor"))
-                .build();
-        FaultTolerance.executor(threadPoolSupplier);
-    }
-
-    /**
      * Lazy initialization of set.
      *
      * @return The set.
@@ -308,24 +275,6 @@ public class FaultToleranceExtension implements Extension {
                 || MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)
                 || MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)
                 || MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm);
-    }
-
-    /**
-     * Access {@code ThreadPoolSupplier} configured by this extension.
-     *
-     * @return a thread pool supplier.
-     */
-    public ThreadPoolSupplier threadPoolSupplier() {
-        return threadPoolSupplier;
-    }
-
-    /**
-     * Access {@code ScheduledThreadPoolSupplier} configured by this extension.
-     *
-     * @return a scheduled thread pool supplier.
-     */
-    public ScheduledThreadPoolSupplier scheduledThreadPoolSupplier() {
-        return scheduledThreadPoolSupplier;
     }
 
     /**

@@ -35,7 +35,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -72,14 +71,16 @@ class GrpcServerTest {
     void afterEach() throws InterruptedException {
         blockingStub = null;
         stub = null;
-        channel.shutdownNow();
+        channel.shutdown();
         if (!channel.awaitTermination(10, TimeUnit.SECONDS)) {
             System.err.println("Failed to terminate channel");
         }
+        if (!channel.isTerminated()) {
+            System.err.println("Channel is not terminated!!!");
+        }
     }
 
-    @RepeatedTest(100)
-    @Disabled("Hangs when run from maven")
+    @RepeatedTest(20)
     void testUnary() {
         String text = "lower case original";
         StringMessage request = StringMessage.newBuilder().setText(text).build();
@@ -88,9 +89,7 @@ class GrpcServerTest {
         assertThat(response.getText(), is(text.toUpperCase(Locale.ROOT)));
     }
 
-    @RepeatedTest(100)
-    // TODO requires analysis + fix
-    @Disabled("Intermittently failing on RST_STREAM")
+    @RepeatedTest(20)
     void testBidi() throws Throwable {
         List<String> valuesToStream = List.of("A", "B", "C", "D");
 
@@ -108,9 +107,7 @@ class GrpcServerTest {
         assertThat(echoes, is(valuesToStream));
     }
 
-    // TODO requires analysis + fix
-    @Disabled("Intermittently failing on RST_STREAM")
-    @RepeatedTest(100)
+    @RepeatedTest(20)
     void testClientStream() throws Throwable {
         List<String> valuesToStream = List.of("A", "B", "C", "D");
         StringsCollector responseObserver = new StringsCollector();
@@ -126,7 +123,7 @@ class GrpcServerTest {
         assertThat(strings, contains("A B C D"));
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(20)
     void testServerStream() throws Throwable {
         StringsCollector responseObserver = new StringsCollector();
         stub.split(StringMessage.newBuilder().setText("A B C D").build(), responseObserver);
@@ -145,7 +142,8 @@ class GrpcServerTest {
 
         @Override
         public void onError(Throwable throwable) {
-            future.completeExceptionally(throwable);
+            // wrap in our exception, so we can see who called this (onError) method
+            future.completeExceptionally(new RuntimeException(throwable));
         }
 
         @Override

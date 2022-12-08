@@ -41,8 +41,7 @@
         <module>multipart</module>
         <module>oidc</module>
         <module>openapi-basic</module>
-        <!-- MP websocket is temporarily disabled, must be refactored to Níma -->
-<!--        <module>websocket</module>-->
+        <module>websocket</module>
         <module>messaging-sse</module>
         <module>cors</module>
         <module>tls</module>

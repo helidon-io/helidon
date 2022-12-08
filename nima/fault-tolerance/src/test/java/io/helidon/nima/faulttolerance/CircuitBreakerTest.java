@@ -18,7 +18,7 @@ package io.helidon.nima.faulttolerance;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -57,7 +57,7 @@ class CircuitBreakerTest {
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
 
         // need to wait until half open
-        ScheduledFuture<Boolean> schedule = ((CircuitBreakerImpl) breaker).schedule();
+        Future<Boolean> schedule = ((CircuitBreakerImpl) breaker).schedule();
         schedule.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.HALF_OPEN));
@@ -79,6 +79,21 @@ class CircuitBreakerTest {
         bad(breaker);       // should open - window complete
 
         breakerOpen(breaker);
+
+        assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
+    }
+
+    @Test
+    void testOpenOnLastSuccess() {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(4)
+                .errorRatio(75)
+                .build();
+
+        bad(breaker);
+        bad(breaker);
+        bad(breaker);
+        good(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
     }

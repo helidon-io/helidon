@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
@@ -43,10 +45,20 @@ class AsyncTest {
     @Test
     void testCustomExecutorBuilder() {
         Async async = Async.builder()
-                .executor(FaultTolerance.executor())        // platform thread executor
+                .executor(FaultTolerance.executor())
                 .build();
         Thread thread = testAsync(async);
-        assertThat(thread.isVirtual(), is(false));
+        assertThat(thread.isVirtual(), is(true));
+    }
+
+    @Test
+    void testThreadName() throws Exception {
+        String threadName = Async.create()
+                .invoke(() -> Thread.currentThread().getName())
+                .get(10, TimeUnit.SECONDS);
+
+        assertThat(threadName, startsWith("helidon-ft-"));
+        assertThat(threadName, endsWith(": async"));
     }
 
     private Thread testAsync(Async async) {

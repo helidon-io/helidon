@@ -48,7 +48,7 @@ class WebClientService implements HttpService {
         client = WebClient.builder()
                 .baseUri(context)
                 // TODO: improvement
-                // .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.toString())
+                // .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON)
                 // .config(config.get("client"))
                 .build();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,11 @@ import io.opentracing.tag.Tag;
  */
 class ZipkinSpan implements Span {
     private final Span span;
+    private final boolean isClient;
 
-    ZipkinSpan(Span span) {
+    ZipkinSpan(Span span, boolean isClient) {
         this.span = span;
+        this.isClient = isClient;
     }
 
     @Override
@@ -43,13 +45,13 @@ class ZipkinSpan implements Span {
 
     @Override
     public void finish() {
-        span.log("ss");
+        finishLog();
         span.finish();
     }
 
     @Override
     public void finish(long finishMicros) {
-        span.log("ss");
+        finishLog();
         span.finish(finishMicros);
     }
 
@@ -120,5 +122,13 @@ class ZipkinSpan implements Span {
 
     Span unwrap() {
         return span;
+    }
+
+    private void finishLog() {
+        if (isClient) {
+            span.log("cr");
+        } else {
+            span.log("ss");
+        }
     }
 }

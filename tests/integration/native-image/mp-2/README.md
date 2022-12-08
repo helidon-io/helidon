@@ -11,7 +11,7 @@ mvn clean package -Pnative-image
 ./target/helidon-tests-native-image-mp-2
 ```  
 
-Requires at least GraalVM 21.3.0
+Requires at least GraalVM 22.3.0
 
 This test validates that JPA integration (using Hibernate) and JTA
 integration work in native image.

@@ -80,6 +80,3 @@ docs/se/config/images
 
 # Baseline results for regression tests
 jmh-baseline.json
-
-# benchmark results
-nima/tests/benchmark/techempower/results
