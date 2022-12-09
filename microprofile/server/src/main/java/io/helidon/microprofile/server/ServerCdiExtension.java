@@ -116,9 +116,12 @@ public class ServerCdiExtension implements Extension, Resource {
             = Collections.synchronizedMap(new IdentityHashMap<>());
 
     private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
-    private long crac_restore_time = -1;
+    private long cracRestoreTime = -1;
     private final CompletableFuture<org.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
 
+    /**
+     * CDI extension to handle web server configuration and lifecycle.
+     */
     public ServerCdiExtension() {
         Core.getGlobalContext().register(this);
     }
@@ -210,15 +213,13 @@ public class ServerCdiExtension implements Extension, Resource {
 
         try {
             Core.checkpointRestore();
+        } catch (UnsupportedOperationException e) {
+            LOGGER.log(Level.FINEST, "CRaC feature is not available", e);
         } catch (RestoreException e) {
-            LOGGER.log(Level.INFO, "CRaC restore wasn't successful!", e);
-//            restored.complete(null);
+            LOGGER.log(Level.SEVERE, "CRaC restore wasn't successful!", e);
         } catch (CheckpointException e) {
-            LOGGER.log(Level.INFO, "CRaC checkpoint creation wasn't successful!", e);
-//            restored.complete(null);
-              System.exit(0);
+            LOGGER.log(Level.SEVERE, "CRaC checkpoint creation wasn't successful!", e);
         }
-//        restored.join();
 
         try {
             webserver.start().await();
@@ -236,9 +237,9 @@ public class ServerCdiExtension implements Extension, Resource {
         String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
 
 
-        String startupTimeReport = crac_restore_time == -1
+        String startupTimeReport = cracRestoreTime == -1
                 ? " in " + initializationElapsedTime + " milliseconds (since JVM startup). "
-                : " in " + (System.currentTimeMillis() - crac_restore_time) + " milliseconds (since CRaC restore).";
+                : " in " + (System.currentTimeMillis() - cracRestoreTime) + " milliseconds (since CRaC restore).";
 
         LOGGER.info(() -> "Server started on "
                 + protocol + "://" + host + ":" + port
@@ -629,9 +630,8 @@ public class ServerCdiExtension implements Extension, Resource {
 
     @Override
     public void afterRestore(org.crac.Context<? extends Resource> context) throws Exception {
-        crac_restore_time = System.currentTimeMillis();
+        cracRestoreTime = System.currentTimeMillis();
         LOGGER.log(Level.INFO, "CRaC snapshot restored!");
-//        restored.complete(context);
     }
 }
 

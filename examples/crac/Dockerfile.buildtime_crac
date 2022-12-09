@@ -1,5 +1,3 @@
-#!/bin/bash -e
-
 #
 # Copyright (c) 2022 Oracle and/or its affiliates.
 #
@@ -15,24 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
-# Workaround for https://github.com/checkpoint-restore/criu/issues/1696
-# see https://github.com/checkpoint-restore/criu/pull/1706
-export GLIBC_TUNABLES=glibc.pthread.rseq=0
 
 
-if [ -d "./cr" ];
-then
-    echo "=== Starting directly from CRaC checkpoint ==="
-    #cat ./cr/dump4.log
-else
-	  echo "=== Creating CRaC checkpoint ==="
-	  echo "Checking CRIU compatibility(don't forget --privileged):"
-	  $JAVA_HOME/lib/criu check
-	  set +e
-    $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=cr -jar ./*.jar
-    set -e
-fi
-exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=cr
-
+# TODO: docker buildx with priviledged access? - https://docs.docker.com/engine/reference/commandline/buildx_build/#allow
