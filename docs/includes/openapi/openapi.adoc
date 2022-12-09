@@ -47,6 +47,14 @@ The SPI defines an interface you can implement in your application which can mas
 
 // end::overview[]
 
+// tag::mp-depc[]
+    <dependency>
+        <groupId>io.helidon.microprofile.openapi</groupId>
+        <artifactId>helidon-microprofile-openapi</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+// end::mp-depc[]
+
 // tag::furnish-openapi-info[]
 
 ==== Furnish OpenAPI information about your endpoints
@@ -139,8 +147,8 @@ class name of your class.
 Once you add the {flavor-uc} OpenAPI dependency to your
 ifdef::mp-flavor[project,]
 ifdef::se-flavor[project and add code to create the `OpenAPISupport` object to your routing,]
-your application will automatically respond to the built-in endpoint --
-`/openapi` -- and it will return the OpenAPI document describing the endpoints
+your application automatically responds to the built-in endpoint --
+`/openapi` -- and it returns the OpenAPI document describing the endpoints
 in your application.
 
 By default, per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML.

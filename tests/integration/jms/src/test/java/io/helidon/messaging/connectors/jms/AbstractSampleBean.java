@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-1")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel1(Message<String> msg) {
+        public CompletionStage<Void> channel1(Message<String> msg) {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
             msg.ack();
@@ -137,12 +137,12 @@ abstract class AbstractSampleBean {
             return Message.of("Processed" + msg.getPayload());
         }
 
-        @Incoming("test-channel-7")
+        @Incoming("test-channel-31")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel7(Message<String> msg) {
+        public CompletionStage<Void> channel31(Message<String> msg) {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
-            msg.ack().whenComplete((a, b) -> countDown("channel7()"));
+            msg.ack().whenComplete((a, b) -> countDown("channel31()"));
             return CompletableFuture.completedFuture(null);
         }
     }
@@ -151,7 +151,7 @@ abstract class AbstractSampleBean {
     public static class ChannelError extends AbstractSampleBean {
         @Incoming("test-channel-error")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> error(Message<String> msg) {
+        public CompletionStage<Void> error(Message<String> msg) {
             try {
                 LOGGER.fine(() -> String.format("Received possible error %s", msg.getPayload()));
                 consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
@@ -168,7 +168,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-selector")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> selector(Message<String> msg) {
+        public CompletionStage<Void> selector(Message<String> msg) {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
             msg.ack();
@@ -218,38 +218,41 @@ abstract class AbstractSampleBean {
     public static class Channel5 extends AbstractSampleBean {
 
         @Incoming("test-channel-5")
-        public SubscriberBuilder<Message<String>, Void> channel5() {
-            LOGGER.fine(() -> "In channel5");
-            return ReactiveStreams.<Message<String>>builder()
-                    .to(new Subscriber<Message<String>>() {
-                        @Override
-                        public void onSubscribe(Subscription subscription) {
-                            LOGGER.fine(() -> "channel5 onSubscribe()");
-                            subscription.request(3);
-                        }
-
-                        @Override
-                        public void onNext(Message<String> msg) {
-                            consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
-                            LOGGER.fine(() -> "Added " + msg.getPayload());
-                            msg.ack();
-                            countDown("onNext()");
-                        }
-
-                        @Override
-                        public void onError(Throwable t) {
-                            LOGGER.fine(() -> "Error " + t.getMessage() + ". Adding error in consumed() list");
-                            consumed().add("error");
-                            countDown("onError()");
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            consumed().add("complete");
-                            countDown("onComplete()");
-                        }
-                    });
+        public void channel5(String msg) {
+            this.consumed().add(String.valueOf(Integer.parseInt(msg)));
+            countDown("channel5(String msg)");
         }
+    }
+
+    @ApplicationScoped
+    public static class Channel6 extends AbstractSampleBean {
+
+        @Incoming("test-channel-6")
+        public void channel6(String msg) {
+            this.consumed().add(String.valueOf(Integer.parseInt(msg)));
+            countDown("channel6(String msg)");
+        }
+    }
+
+    @ApplicationScoped
+    public static class Channel7 extends AbstractSampleBean {
+
+        @Incoming("test-channel-7")
+        @Outgoing("test-channel-71")
+        public Integer channel7(String msg) {
+            return Integer.parseInt(msg);
+        }
+
+        @Incoming("test-channel-71")
+        public SubscriberBuilder<Integer, Void> sink(){
+            return ReactiveStreams.<Integer>builder()
+                    .map(String::valueOf)
+                    .onErrorResume(t -> "error")
+                    .peek(s -> this.consumed().add(s))
+                    .forEach(s -> countDown("channel7(String msg)"));
+        }
+
+
     }
 
     @ApplicationScoped

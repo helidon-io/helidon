@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MainTest {
 
@@ -78,37 +79,37 @@ public class MainTest {
                 .path("/greet")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello World!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello Joe!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
 
         WebClientResponse res = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
                 .await();
-        assertEquals(204, res.status().code());
+        assertThat(res.status().code(), is(204));
 
         JsonObject json = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hola Joe!", json.getString("message"));
+        assertThat(json.getString("message"), is("Hola Joe!"));
 
         response = webClient.get()
                 .path("/health")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertThat(response.status().code(), is(200));
 
         response = webClient.get()
                 .path("/metrics")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertThat(response.status().code(), is(200));
     }
 
 }

@@ -1045,6 +1045,11 @@
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.openapi-ui</groupId>
+                <artifactId>helidon-integrations-openapi-ui</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- CORS support -->
             <dependency>
                 <groupId>io.helidon.webserver.cors</groupId>
@@ -1075,6 +1080,11 @@
             <dependency>
                 <groupId>io.helidon.messaging.aq</groupId>
                 <artifactId>helidon-messaging-aq</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.wls-jms</groupId>
+                <artifactId>helidon-messaging-wls-jms</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Testing -->

@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
----
 yaml:
   string: String
   number: 10
@@ -23,3 +22,8 @@ yaml:
     - "Array 2"
     - "Array 3"
   boolean: true
+
+# Will be used for config profile testing
+profile:
+  type: "Production"
+  value: "Production"

@@ -27,6 +27,6 @@ module io.helidon.config.yaml.mp {
 
     exports io.helidon.config.yaml.mp;
 
-    provides org.eclipse.microprofile.config.spi.ConfigSourceProvider with io.helidon.config.yaml.mp.YamlConfigSourceProvider;
+    provides io.helidon.config.mp.spi.MpConfigSourceProvider with io.helidon.config.yaml.mp.YamlConfigSourceProvider;
     provides io.helidon.config.mp.spi.MpMetaConfigProvider with io.helidon.config.yaml.mp.YamlMetaConfigProvider;
 }
