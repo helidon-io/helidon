@@ -26,11 +26,11 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasKey;
 
 @HelidonTest
 @Disabled("3.0.0-JAKARTA")
@@ -46,13 +46,13 @@ class MainTest {
                 .request()
                 .header("who", "World 1")
                 .get();
-        assertEquals(response.getStatus(), 200);
-        assertTrue(response.getHeaders().containsKey("sharedfilter"));
-        assertTrue(response.getHeaders().containsKey("filter1"));
-        assertFalse(response.getHeaders().containsKey("filter2"));
+        assertThat(response.getStatus(), is(200));
+        assertThat(response.getHeaders(), hasKey("sharedfilter"));
+        assertThat(response.getHeaders(), hasKey("filter1"));
+        assertThat(response.getHeaders(), not(hasKey("filter2")));
         JsonObject jsonObject = response.readEntity(JsonObject.class);
-        assertEquals("Hello World 1!", jsonObject.getString("message"),
-                "default message");
+        assertThat("default message", jsonObject.getString("message"),
+                is("Hello World 1!"));
     }
 
     @Test
@@ -62,14 +62,14 @@ class MainTest {
                 .request()
                 .header("who", "World 2")
                 .get();
-        assertEquals(response.getStatus(), 200);
-        assertTrue(response.getHeaders().containsKey("sharedfilter"));
-        assertTrue(response.getHeaders().containsKey("filter2"));
-        assertTrue(response.getHeaders().containsKey("filter3"));       // MyFeature
-        assertFalse(response.getHeaders().containsKey("filter1"));
+        assertThat(response.getStatus(), is(200));
+        assertThat(response.getHeaders(), hasKey("sharedfilter"));
+        assertThat(response.getHeaders(), hasKey("filter2"));
+        assertThat(response.getHeaders(), hasKey("filter3"));       // MyFeature
+        assertThat(response.getHeaders(), not(hasKey("filter1")));
         JsonObject jsonObject = response.readEntity(JsonObject.class);
-        assertEquals("Hello World 2!", jsonObject.getString("message"),
-                "default message");
+        assertThat("default message", jsonObject.getString("message"),
+                is("Hello World 2!"));
     }
 
     @Test
