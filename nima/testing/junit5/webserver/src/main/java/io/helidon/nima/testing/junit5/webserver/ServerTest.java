@@ -37,5 +37,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(HelidonServerJunitExtension.class)
 @Inherited
 public @interface ServerTest {
+
+    /**
+     * Port is of type UDP.
+     *
+     * @return UDP port
+     */
     boolean udp() default false;
 }
