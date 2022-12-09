@@ -61,7 +61,6 @@ class UdpServerListener implements ConnectionListener {
     private final LoomServer server;
     private final UdpEndpoint endpoint;
     private final ByteBuffer readBuffer;
-    private final ByteBuffer writeBuffer;
 
     private volatile boolean running;
     private volatile int localPort;
@@ -75,7 +74,6 @@ class UdpServerListener implements ConnectionListener {
         this.socketName = socketName;
         this.endpoint = listenerConfig.udpEndpoint();
         this.readBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-        this.writeBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
         this.serverThread = Thread.ofPlatform()
                 .allowSetThreadLocals(true)
@@ -216,6 +214,7 @@ class UdpServerListener implements ConnectionListener {
      */
     private class Client implements UdpClient {
 
+        private ByteBuffer writeBuffer;
         private final InetSocketAddress remote;
 
         Client(InetSocketAddress remote) {
@@ -247,6 +246,14 @@ class UdpServerListener implements ConnectionListener {
             channel.disconnect();
         }
 
+        private ByteBuffer writeBuffer() {
+            if (writeBuffer == null) {
+                writeBuffer = ByteBuffer.allocate(BUFFER_SIZE);      // TODO: pool buffers
+                return writeBuffer;
+            }
+            return writeBuffer.clear();
+        }
+
         @Override
         @SuppressWarnings("unchecked")
         public void sendMessage(Object msg) throws IOException {
@@ -261,15 +268,15 @@ class UdpServerListener implements ConnectionListener {
             } else {
                 GenericType<Object> type = (GenericType<Object>) GenericType.create(msg.getClass());
                 EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS);
-                writeBuffer.clear();
+                ByteBuffer buffer = writeBuffer();
                 writer.write(type, msg, new OutputStream() {
                     @Override
                     public void write(int b){
-                        writeBuffer.put((byte) b);
+                        buffer.put((byte) b);
                     }
                 }, EMPTY_HEADERS);
-                writeBuffer.flip();
-                sendMessage(writeBuffer);
+                buffer.flip();
+                sendMessage(buffer);
             }
         }
 
