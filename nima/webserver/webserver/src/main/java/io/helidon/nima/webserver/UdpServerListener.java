@@ -248,7 +248,7 @@ class UdpServerListener implements ConnectionListener {
 
         private ByteBuffer writeBuffer() {
             if (writeBuffer == null) {
-                writeBuffer = ByteBuffer.allocate(BUFFER_SIZE);      // TODO: pool buffers
+                writeBuffer = ByteBuffer.allocate(BUFFER_SIZE);
                 return writeBuffer;
             }
             return writeBuffer.clear();
