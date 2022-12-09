@@ -19,6 +19,7 @@ package io.helidon.nima.webserver;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -31,7 +32,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.common.GenericType;
+import io.helidon.common.http.WritableHeaders;
+import io.helidon.nima.http.media.EntityReader;
+import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.udp.UdpClient;
 import io.helidon.nima.udp.UdpEndpoint;
@@ -43,8 +47,9 @@ import static java.lang.System.Logger.Level.TRACE;
 class UdpServerListener implements ConnectionListener {
     private static final System.Logger LOGGER = System.getLogger(UdpServerListener.class.getName());
 
-    private static final int READ_BUFFER_SIZE = 16 * 1024;
+    private static final int BUFFER_SIZE = 16 * 1024;
     private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final String socketName;
     private final ExecutorService handlerExecutor;
@@ -53,10 +58,10 @@ class UdpServerListener implements ConnectionListener {
     private final InetSocketAddress configuredAddress;
 
     private final MediaContext mediaContext;
-    private final ContentEncodingContext contentEncodingContext;
     private final LoomServer server;
     private final UdpEndpoint endpoint;
     private final ByteBuffer readBuffer;
+    private final ByteBuffer writeBuffer;
 
     private volatile boolean running;
     private volatile int localPort;
@@ -65,12 +70,12 @@ class UdpServerListener implements ConnectionListener {
     UdpServerListener(LoomServer loomServer,
                    String socketName,
                    ListenerConfiguration listenerConfig,
-                   MediaContext mediaContext,
-                   ContentEncodingContext contentEncodingContext) {
+                   MediaContext mediaContext) {
         this.server = loomServer;
         this.socketName = socketName;
         this.endpoint = listenerConfig.udpEndpoint();
-        this.readBuffer = ByteBuffer.allocate(READ_BUFFER_SIZE);
+        this.readBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+        this.writeBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
         this.serverThread = Thread.ofPlatform()
                 .allowSetThreadLocals(true)
@@ -91,7 +96,6 @@ class UdpServerListener implements ConnectionListener {
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
         this.mediaContext = mediaContext;
-        this.contentEncodingContext = contentEncodingContext;
     }
 
     @Override
@@ -140,7 +144,8 @@ class UdpServerListener implements ConnectionListener {
             while (running) {
                 readBuffer.clear();
                 InetSocketAddress remote = (InetSocketAddress) channel.receive(readBuffer);
-                Message message = new Message(remote, readBuffer);
+                readBuffer.flip();
+                Message message = new Message(remote, clone(readBuffer));
                 handlerExecutor.submit(() -> {
                     try {
                         endpoint.onMessage(message);
@@ -170,7 +175,6 @@ class UdpServerListener implements ConnectionListener {
 
         Message(InetSocketAddress remote, ByteBuffer readBuffer) {
             this.client = new Client(remote);
-            readBuffer.flip();
             bytes = new byte[readBuffer.remaining()];
             readBuffer.get(bytes);
         }
@@ -189,8 +193,11 @@ class UdpServerListener implements ConnectionListener {
                 return (T) asByteArray();
             } else if (clazz.equals(InputStream.class)) {
                 return (T) asInputStream();
+            } else {
+                GenericType<T> type = GenericType.create(clazz);
+                EntityReader<T> reader = mediaContext.reader(type, EMPTY_HEADERS);
+                return reader.read(type, asInputStream(), EMPTY_HEADERS);
             }
-            throw new UnsupportedOperationException("Unsupported conversion to " + clazz);
         }
 
         @Override
@@ -241,6 +248,7 @@ class UdpServerListener implements ConnectionListener {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void sendMessage(Object msg) throws IOException {
             if (msg instanceof ByteBuffer buffer) {
                 sendMessage(buffer);
@@ -250,8 +258,19 @@ class UdpServerListener implements ConnectionListener {
                 sendMessage(str.getBytes(StandardCharsets.UTF_8));
             } else if (msg instanceof InputStream is) {
                 sendMessage(is);
+            } else {
+                GenericType<Object> type = (GenericType<Object>) GenericType.create(msg.getClass());
+                EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS);
+                writeBuffer.clear();
+                writer.write(type, msg, new OutputStream() {
+                    @Override
+                    public void write(int b){
+                        writeBuffer.put((byte) b);
+                    }
+                }, EMPTY_HEADERS);
+                writeBuffer.flip();
+                sendMessage(writeBuffer);
             }
-            throw new UnsupportedOperationException("Unsupported conversion from " + msg.getClass());
         }
 
         @Override
@@ -287,5 +306,18 @@ class UdpServerListener implements ConnectionListener {
         } catch (InterruptedException e) {
             LOGGER.log(INFO, "InterruptedException caught while shutting down channel tasks");
         }
+    }
+
+    /**
+     * Allocates a new byte buffer of exact size.
+     *
+     * @param buffer original buffer to copy
+     * @return new byte buffer
+     */
+    static ByteBuffer clone(ByteBuffer buffer) {
+        ByteBuffer clone = ByteBuffer.allocate(buffer.remaining());
+        clone.put(buffer);
+        clone.flip();
+        return clone;
     }
 }

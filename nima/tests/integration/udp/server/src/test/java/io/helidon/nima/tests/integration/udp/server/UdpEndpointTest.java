@@ -26,6 +26,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.udp.UdpEndpoint;
 import io.helidon.nima.udp.UdpMessage;
 import io.helidon.nima.webserver.WebServer;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.Logger.Level.INFO;
@@ -37,24 +38,34 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class UdpEndpointTest {
     private static final System.Logger LOGGER = System.getLogger(UdpEndpointTest.class.getName());
 
-    private final WebServer webServer;
     private final InetSocketAddress address;
+    private final InetSocketAddress addressJson;
 
     public UdpEndpointTest(WebServer webServer) {
-        this.webServer = webServer;
         this.address = new InetSocketAddress("localhost", webServer.port());
+        this.addressJson = new InetSocketAddress("localhost", webServer.port("json"));
     }
 
     @SetUpServer
     static void setUp(WebServer.Builder builder) {
         builder.udpEndpoint(new EchoService());
+        builder.socket("json",
+                lc -> lc.host("localhost")
+                        .port(0)
+                        .udp(true)
+                        .udpEndpoint(new EchoServiceJson()));
     }
 
     @Test
     void testEndpoint() throws Exception {
-        echoMessage("hello");
-        echoMessage("how are you?");
-        echoMessage("good bye");
+        echoMessage("hello", address);
+        echoMessage("how are you?", address);
+        echoMessage("good bye", address);
+    }
+
+    @Test
+    void testJsonEndpoint() throws Exception {
+        echoMessage("{\"msg\":\"hello\"}", addressJson);
     }
 
     @Test
@@ -62,9 +73,9 @@ class UdpEndpointTest {
         try (DatagramChannel channel = DatagramChannel.open()) {
             channel.connect(address);
             assertThat(channel.isConnected(), is(true));
-            echoMessageOnChannel("hello", channel);
-            echoMessageOnChannel("how are you?", channel);
-            echoMessageOnChannel("good bye", channel);
+            echoMessageOnChannel("hello", channel, address);
+            echoMessageOnChannel("how are you?", channel, address);
+            echoMessageOnChannel("good bye", channel, address);
             channel.disconnect();
             assertThat(channel.isConnected(), is(false));
         }
@@ -85,13 +96,28 @@ class UdpEndpointTest {
         }
     }
 
-    private void echoMessage(String msg) throws IOException {
-        try (DatagramChannel channel = DatagramChannel.open()) {
-            echoMessageOnChannel(msg, channel);
+    static class EchoServiceJson implements UdpEndpoint {
+
+        @Override
+        public void onMessage(UdpMessage message) {
+            try {
+                JsonObject json = message.as(JsonObject.class);
+                LOGGER.log(INFO, "Server RCV: " + json);
+                message.udpClient().sendMessage(json);
+                LOGGER.log(INFO, "Server SND: " + json);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    private void echoMessageOnChannel(String msg, DatagramChannel channel) throws IOException {
+    void echoMessage(String msg, InetSocketAddress address) throws IOException {
+        try (DatagramChannel channel = DatagramChannel.open()) {
+            echoMessageOnChannel(msg, channel, address);
+        }
+    }
+
+    void echoMessageOnChannel(String msg, DatagramChannel channel, InetSocketAddress address) throws IOException {
         channel.send(ByteBuffer.wrap(msg.getBytes(UTF_8)), address);
         LOGGER.log(INFO, "Client SND: " + msg);
         byte[] bytes = new byte[msg.length()];
@@ -101,6 +127,6 @@ class UdpEndpointTest {
         LOGGER.log(INFO, "Client RCV: " + rcv);
         assertThat(rcv, is(msg));
         assertThat(remote.getHostName(), is("localhost"));
-        assertThat(remote.getPort(), is(webServer.port()));
+        assertThat(remote.getPort(), is(address.getPort()));
     }
 }

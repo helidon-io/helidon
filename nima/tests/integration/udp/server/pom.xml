@@ -41,6 +41,16 @@
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
 
