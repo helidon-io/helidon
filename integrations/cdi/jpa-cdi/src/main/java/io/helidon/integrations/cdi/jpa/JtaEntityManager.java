@@ -26,6 +26,8 @@ import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.integrations.cdi.jpa.TransactionSupport2.CompletionStatus;
 
@@ -51,6 +53,8 @@ import static jakarta.persistence.SynchronizationType.SYNCHRONIZED;
 import static jakarta.persistence.SynchronizationType.UNSYNCHRONIZED;
 
 class JtaEntityManager extends DelegatingEntityManager {
+
+    private static final Logger LOGGER = Logger.getLogger(JtaEntityManager.class.getName());
 
     private static final ThreadLocal<Map<JtaEntityManager, AbsentTransactionEntityManager>> AT_EMS =
         ThreadLocal.withInitial(() -> new HashMap<>(5));
@@ -121,6 +125,10 @@ class JtaEntityManager extends DelegatingEntityManager {
         if (em == null) {
             ActiveTransactionEntityManager newEm =
                 new ActiveTransactionEntityManager(this.emf.apply(this.syncType, this.properties));
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, this.getClass().getName(), "computeIfAbsentForActiveTransaction",
+                            "Created ActiveTransactionEntityManager delegate ({0})", newEm);
+            }
             em = newEm;
             Object thread = Thread.currentThread();
             try {
@@ -132,7 +140,15 @@ class JtaEntityManager extends DelegatingEntityManager {
                             newEm.closePending = true; // volatile write
                         }
                     });
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, this.getClass().getName(), "computeIfAbsentForActiveTransaction",
+                                "Registered listener to close delegate ({0}) upon transaction completion", newEm);
+                }
                 this.transactionalResourceSetter.accept(this, em);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, this.getClass().getName(), "computeIfAbsentForActiveTransaction",
+                                "Registered delegate ({0})", em);
+                }
             } catch (RuntimeException | Error e) {
                 try {
                     em.closeDelegate();
@@ -159,6 +175,10 @@ class JtaEntityManager extends DelegatingEntityManager {
         if (em == null) {
             // This AbsentTransactionEntityManager is closed by the dispose() method above.
             em = new AbsentTransactionEntityManager(this.emf.apply(syncType, properties));
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, this.getClass().getName(), "computeIfAbsentForNoTransaction",
+                            "Created AbsentTransactionEntityManager delegate ({0})", em);
+            }
             ems.put(this, em);
         }
         return em;

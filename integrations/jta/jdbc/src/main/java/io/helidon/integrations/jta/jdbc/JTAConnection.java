@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -55,9 +57,12 @@ import static javax.transaction.xa.XAResource.TMSUCCESS;
 /**
  * A JDBC 4.3-compliant {@link ConditionallyCloseableConnection} that can participate in a {@link Transaction}.
  *
- * @see #connection(TransactionSupplier, TransactionSynchronizationRegistry, ExceptionConverter, Connection)
+ * @see #connection(TransactionSupplier, TransactionSynchronizationRegistry, boolean, ExceptionConverter, Connection)
  */
 final class JtaConnection extends ConditionallyCloseableConnection {
+
+
+    private static final Logger LOGGER = Logger.getLogger(JtaConnection.class.getName());
 
 
     /*
@@ -126,6 +131,8 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
      * Transaction#registerSynchronization(Synchronization)}
      *
+     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
+     *
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
      *
@@ -150,6 +157,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      * Instance methods.
      */
 
+    @Override // ConditionallyCloseableConnection
+    public void setCloseable(boolean closeable) {
+        super.setCloseable(closeable);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(this.getClass().getName(), "setCloseable", closeable);
+            LOGGER.exiting(this.getClass().getName(), "setCloseable");
+        }
+    }
 
     @Override // ConditionallyCloseableConnection
     public Statement createStatement() throws SQLException {
@@ -543,6 +558,9 @@ final class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public void close() throws SQLException {
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(this.getClass().getName(), "close");
+        }
         // The JTA Specification, section 4.2, has a non-normative diagram illustrating that close() is expected,
         // but not required, to call Transaction#delistResource(XAResource).  This is, mind you, before the
         // prepare/commit cycle has started.
@@ -551,10 +569,19 @@ final class JtaConnection extends ConditionallyCloseableConnection {
                 XAResource xar = (XAResource) this.tsr.getResource(this);
                 if (xar != null) {
                     // TMSUCCESS because it's an ordinary close() call, not a delisting due to an exception
-                    this.transaction().delistResource(xar, TMSUCCESS);
+                    Transaction t = this.transaction();
+                    t.delistResource(xar, TMSUCCESS);
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.logp(Level.FINE,
+                                    this.getClass().getName(), "close",
+                                    "Delisted {0} from Transaction {1}", new Object[] {xar, t});
+                    }
                 }
             } catch (IllegalStateException e) {
                 // Transaction went from active or marked for rollback to some other state; we're not enlisted
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, this.getClass().getName(), "close", e.getMessage(), e);
+                }
             } catch (SystemException | RuntimeException e) {
                 // Why do we catch RuntimeException as well here? See
                 // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
@@ -568,6 +595,9 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             }
         }
         super.close();
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(this.getClass().getName(), "close");
+        }
     }
 
     @Override // Object
@@ -597,7 +627,8 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      */
     private boolean activeOrMarkedRollbackTransaction() throws SQLException {
         switch (this.transactionStatus()) {
-            // See https://www.eclipse.org/lists/jta-dev/msg00264.html.
+            // See https://www.eclipse.org/lists/jta-dev/msg00264.html and
+            // https://github.com/jakartaee/transactions/issues/211.
         case Status.STATUS_ACTIVE:
         case Status.STATUS_MARKED_ROLLBACK:
             return true;
@@ -646,10 +677,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             // here, really means "known and not yet prepared". Status.STATUS_ACTIVE and
             // Status.STATUS_MARKED_FOR_ROLLBACK are the only transaction states where it is permissible to invoke
             // TransactionSynchronizationRegistry#getReource(Object). See
-            // https://www.eclipse.org/lists/jta-dev/msg00264.html.
+            // https://www.eclipse.org/lists/jta-dev/msg00264.html and
+            // https://github.com/jakartaee/transactions/issues/211.
             try {
                 return (Xid) this.tsr.getResource("xid");
             } catch (IllegalStateException e) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, this.getClass().getName(), "xid", e.getMessage(), e);
+                }
                 return null;
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException as well here? See
@@ -678,7 +713,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      * @exception SQLException if invoked on a closed connection or the enlisted status could not be acquired
      */
     boolean enlisted() throws SQLException {
-        return this.enlisted(true);
+        return this.enlisted(true /* failWhenClosed */);
     }
 
     private boolean enlisted(boolean failWhenClosed) throws SQLException {
@@ -693,10 +728,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
             // here, really means "known and not yet prepared". Status.STATUS_ACTIVE and
             // Status.STATUS_MARKED_FOR_ROLLBACK are the only transaction states where it is permissible to invoke
             // TransactionSynchronizationRegistry#getReource(Object). See
-            // https://www.eclipse.org/lists/jta-dev/msg00264.html.
+            // https://www.eclipse.org/lists/jta-dev/msg00264.html and
+            // https://github.com/jakartaee/transactions/issues/211.
             try {
                 return this.tsr.getResource(this) != null;
             } catch (IllegalStateException e) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, this.getClass().getName(), "enlisted", e.getMessage(), e);
+                }
             } catch (RuntimeException e) {
                 // Why do we catch RuntimeException as well here? See
                 // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
@@ -731,6 +770,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
      *
      * @see #enlisted()
      */
+    @SuppressWarnings("checkstyle:MethodLength")
     private void enlist() throws SQLException {
         this.failWhenClosed();
         // In what follows, there are some general error-handling principles:
@@ -751,7 +791,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         //
         // * Status.STATUS_COMMITTED (the transaction is committed but not disassociated from the current thread)
         // * Status.STATUS_NO_TRANSACTION (there is no transaction of any kind)
-        // * Status.STATUS_ROLLED_BACK (the transaction is rolled back but not disassociated from the current thread)
+        // * Status.STATUS_ROLLEDBACK (the transaction is rolled back but not disassociated from the current thread)
         //
         // Still other statuses are interim. They arise because once a global transaction has ceased to be in the
         // Status.STATUS_ACTIVE state, the two-phase commit process may be started and completed afterwards on any
@@ -859,9 +899,14 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         // ensured we aren't already enlisted and our autoCommit status is true. The Transaction's status can still
         // change at any point (as a result of asynchronous rollback, for example) so we have to watch for exceptions.
         try {
-            LocalXAResource xar = new LocalXAResource(this::connectionFunction, this.exceptionConverter);
+            XAResource xar = new LocalXAResource(this::connectionFunction, this.exceptionConverter);
             // Calls xar.start(Xid, int) on same thread; calls this.connectionFunction(Xid) on same thread
             t.enlistResource(xar);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE,
+                            this.getClass().getName(), "enlist",
+                            "Enlisted {0} in transaction {1}", new Object[] {xar, t});
+            }
             // Critical: we put a non-null object (the XAResource) into the TransactionSynchronizationRegistry to serve
             // as a marker that this particular connection is enlisted.
             this.tsr.putResource(this, xar);
@@ -888,9 +933,17 @@ final class JtaConnection extends ConditionallyCloseableConnection {
         this.tsr.putResource("xid", xid);
         if (this.interposedSynchronizations) {
             this.tsr.registerInterposedSynchronization((Sync) this::transactionCompleted);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, this.getClass().getName(), "connectionFunction",
+                            "Registered interposed synchronization (transactionCompleted(int)) for {0}", xid);
+            }
         } else {
             try {
                 this.tm.getTransaction().registerSynchronization((Sync) this::transactionCompleted);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, this.getClass().getName(), "connectionFunction",
+                                "Registered synchronization (transactionCompleted(int)) for {0}", xid);
+                }
             } catch (RollbackException | SystemException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
@@ -910,7 +963,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
 
                 // If they did, then we must be non-closeable.  If they didn't, we could be either closeable or not
                 // closeable.
-                assert closePending ? !this.isCloseable() : true;
+                assert !closePending || !this.isCloseable();
 
                 // Now the global transaction is over, so set our closeable status to true. (It may already be true.)
                 this.setCloseable(true);
@@ -925,7 +978,7 @@ final class JtaConnection extends ConditionallyCloseableConnection {
                 }
             }
         } catch (SQLException e) {
-            // (Synchronization implementations can throw only RuntimeExceptions.)
+            // (Synchronization implementations can throw only unchecked exceptions.)
             throw new UncheckedSQLException(e);
         }
     }

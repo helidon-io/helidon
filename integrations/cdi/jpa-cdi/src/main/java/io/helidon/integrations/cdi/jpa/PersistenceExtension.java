@@ -786,7 +786,8 @@ public final class PersistenceExtension implements Extension {
      */
     private void addUnlistedManagedClass(String unitName, Class<?> mc) {
         this.unlistedManagedClassesByUnitNames.computeIfAbsent(unitName.isBlank() ? DEFAULT_PERSISTENCE_UNIT_NAME : unitName,
-                                                               k -> new HashSet<>()).add(mc);
+                                                               k -> new HashSet<>())
+            .add(mc);
     }
 
     private static Iterable<? extends PersistenceProvider> addPersistenceProviderBeans(AfterBeanDiscovery e) {
