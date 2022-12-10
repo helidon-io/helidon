@@ -291,7 +291,7 @@
                 <version>${version.lib.jaxb-impl}</version>
             </dependency>
             <!--
-                "JAXB Runtime". (See
+                "JAXB Runtime"/"JAXB (JSR 222) Reference Implementation". (See
                 https://github.com/eclipse-ee4j/jaxb-ri/blob/1120e83b8bac6dfd1636e19269a36a8ccaad94e4/jaxb-ri/runtime/impl/pom.xml#L25-L30.)
             -->
             <dependency>
