@@ -36,11 +36,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class TestJpaExtension2 {
+class TestPersistenceExtension {
 
     private SeContainer sec;
 
-    private TestJpaExtension2() {
+    private TestPersistenceExtension() {
         super();
     }
 
@@ -63,8 +63,7 @@ class TestJpaExtension2 {
                            com.arjuna.ats.jta.cdi.TransactionExtension.class,
                            io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension.class)
             .addBeanClasses(Caturgiator.class,
-                            Frobnicator.class,
-                            JtaAdaptingDataSourceProvider.class);
+                            Frobnicator.class);
         if (cdiSeJtaPlatformClass != null) {
             i = i.addBeanClasses(cdiSeJtaPlatformClass);
         }
@@ -97,7 +96,7 @@ class TestJpaExtension2 {
     @DataSourceDefinition(
         name = "test",
         className = "org.h2.jdbcx.JdbcDataSource",
-        url = "jdbc:h2:mem:TestJpaExtension2",
+        url = "jdbc:h2:mem:TestPersistenceExtension",
         serverName = "",
         properties = {
             "user=sa"

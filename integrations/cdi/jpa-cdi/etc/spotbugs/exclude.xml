@@ -31,10 +31,6 @@
         <Class name="io.helidon.integrations.cdi.jpa.DelegatingTypedQuery"/>
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
     </Match>
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.JpaExtension2"/>
-        <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
-    </Match>
 
     <!-- These are delegating classes. User input validation would need to occur upstream -->
     <Match>

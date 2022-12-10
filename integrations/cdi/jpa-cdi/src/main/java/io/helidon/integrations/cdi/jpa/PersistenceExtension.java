@@ -257,20 +257,18 @@ public final class PersistenceExtension implements Extension {
      */
 
 
-    private <T> void addAllocatorBeanAndInstallTransactionSupport(@Observes AfterTypeDiscovery event) {
+    private <T> void addTypes(@Observes AfterTypeDiscovery event) {
         event.addAnnotatedType(Allocator.class, Allocator.class.getName());
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             Class.forName("jakarta.transaction.TransactionSynchronizationRegistry",
                           false,
-                          cl);
-            event.addAnnotatedType(Class.forName("io.helidon.integrations.cdi.jpa.JtaTransactionSupport2",
-                                                 false,
-                                                 cl),
-                                   "io.helidon.integrations.cdi.jpa.JtaTransactionSupport2");
+                          Thread.currentThread().getContextClassLoader());
+            event.addAnnotatedType(JtaTransactionSupport2.class, JtaTransactionSupport2.class.getName());
+            event.addAnnotatedType(JtaAdaptingDataSourceProvider.class, JtaAdaptingDataSourceProvider.class.getName());
             this.transactionsSupported = true;
         } catch (ClassNotFoundException e) {
             event.addAnnotatedType(NoTransactionSupport2.class, NoTransactionSupport2.class.getName());
+            event.addAnnotatedType(JtaAbsentDataSourceProvider.class, JtaAbsentDataSourceProvider.class.getName());
             this.transactionsSupported = false;
         }
     }

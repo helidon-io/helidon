@@ -25,14 +25,14 @@ import io.helidon.integrations.jta.jdbc.ExceptionConverter;
 import io.helidon.integrations.jta.jdbc.JtaAdaptingDataSource;
 
 import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
-@ApplicationScoped
+@Singleton
 class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
 
 
@@ -42,12 +42,11 @@ class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourc
 
 
     /**
-     * A token to use as a key in the {@link #jtaDataSourcesByName} field
-     * value for a data source name when the real data source name is
-     * {@code null}.
+     * A token to use as a key in the {@link #jtaDataSourcesByName} field value for a data source name when the real
+     * data source name is {@code null}.
      *
-     * <p>Real data source names can be {@code null} and the empty
-     * string ({@code ""}), so a different value is used here.</p>
+     * <p>Real data source names can be {@code null} and the empty string ({@code ""}), so a different value is used
+     * here.</p>
      *
      * <p>This field is never {@code null}.</p>
      */
