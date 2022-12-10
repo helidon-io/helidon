@@ -80,6 +80,7 @@
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.0.0</version.lib.jakarta.websockets-api>
+        <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>2.4.3.Final</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
@@ -87,7 +88,6 @@
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.4.2.Final</version.lib.jboss.logging>
         <version.lib.jboss.transaction-spi>7.6.1.Final</version.lib.jboss.transaction-spi>
-        <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
         <version.lib.jersey>3.0.9</version.lib.jersey>
@@ -263,20 +263,41 @@
                 <artifactId>opentracing-tracerresolver</artifactId>
                 <version>${version.lib.opentracing.tracerresolver}</version>
             </dependency>
+            <!--
+                "Jakarta XML Binding API". (See
+                https://github.com/jakartaee/jaxb-api/blob/d8a68e76a5391cb2462f540c9e4c5c81d0a91942/jaxb-api/pom.xml#L23-L25)
+            -->
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.lib.jakarta.xml.bind-api}</version>
             </dependency>
+            <!--
+                "Old JAXB Core". (See
+                https://github.com/eclipse-ee4j/jaxb-ri/blob/1120e83b8bac6dfd1636e19269a36a8ccaad94e4/jaxb-ri/bundles/core/pom.xml#L25-L30.)
+            -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-core</artifactId>
                 <version>${version.lib.jaxb-core}</version>
             </dependency>
+            <!--
+                "Old JAXB Runtime". (See
+                https://github.com/eclipse-ee4j/jaxb-ri/blob/1120e83b8bac6dfd1636e19269a36a8ccaad94e4/jaxb-ri/bundles/runtime/pom.xml#L25-L30.)
+            -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
                 <version>${version.lib.jaxb-impl}</version>
+            </dependency>
+            <!--
+                "JAXB Runtime". (See
+                https://github.com/eclipse-ee4j/jaxb-ri/blob/1120e83b8bac6dfd1636e19269a36a8ccaad94e4/jaxb-ri/runtime/impl/pom.xml#L25-L30.)
+            -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${version.lib.jaxb-runtime}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>

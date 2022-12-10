@@ -27,29 +27,23 @@
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.jpa {
 
-    // Static metamodel generation requires access to java.compiler at compile time only.
-    requires static java.compiler;
-
-    requires jakarta.xml.bind;
-
-    requires jakarta.inject; // automatic module
-    requires jakarta.interceptor.api; // automatic module
-
-    requires io.helidon.integrations.cdi.allocator;
-    requires io.helidon.integrations.cdi.delegates;
-    requires io.helidon.integrations.cdi.referencecountedcontext;
-
-    requires transitive jakarta.cdi; // automatic module
-    requires transitive jakarta.annotation; // automatic module
-    requires transitive jakarta.persistence; // automatic module
+    requires static     java.compiler; // required by static metamodel generation at compile-time only
     requires transitive java.sql;
 
-    // JTA is optional at runtime, as well as the modules that support it.
-    requires static jakarta.transaction; // automatic module
-    requires static io.helidon.integrations.jta.jdbc;
+    requires transitive jakarta.annotation;
+    requires transitive jakarta.cdi;
+    requires            jakarta.inject;
+    requires            jakarta.interceptor.api;
+    requires transitive jakarta.persistence;
+    requires static     jakarta.transaction;
+    requires            jakarta.xml.bind;
 
-    exports io.helidon.integrations.cdi.jpa;
-    exports io.helidon.integrations.cdi.jpa.jaxb;
+    requires            io.helidon.integrations.cdi.allocator;
+    requires            io.helidon.integrations.cdi.referencecountedcontext; // deprecated for removal
+    requires static     io.helidon.integrations.jta.jdbc;
+
+    exports             io.helidon.integrations.cdi.jpa;
+    exports             io.helidon.integrations.cdi.jpa.jaxb;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.PersistenceExtension;
 }
