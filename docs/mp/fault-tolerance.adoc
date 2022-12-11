@@ -227,4 +227,4 @@ link:{microprofile-fault-tolerance-javadoc-url}[MicroProfile Fault Tolerance Jav
 
 == Reference
 
-* link:{microprofile-fault-tolerance-spec-url}}[MicroProfile Fault Tolerance]
+* link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance]
