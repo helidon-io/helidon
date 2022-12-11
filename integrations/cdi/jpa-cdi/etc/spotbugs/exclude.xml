@@ -15,9 +15,9 @@
     limitations under the License.
   -->
 <FindBugsFilter
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="https://github.com/spotbugs/filter/3.1.0"
-        xsi:schemaLocation="https://github.com/spotbugs/filter/3.1.0
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://github.com/spotbugs/filter/3.1.0"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.1.0
                         https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
         <Class name="io.helidon.integrations.cdi.jpa.DelegatingQuery"/>
@@ -34,31 +34,5 @@
     <Match>
         <Class name="io.helidon.integrations.cdi.jpa.PersistenceExtension$ReferenceCountingProducer"/>
         <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
-    </Match>
-
-    <!-- These are delegating classes. User input validation would need to occur upstream -->
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.DelegatingConnection"/>
-        <Bug pattern="EXTERNAL_CONFIG_CONTROL"/>
-    </Match>
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.DelegatingConnection"/>
-        <Bug pattern="SQL_INJECTION_JDBC"/>
-    </Match>
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.DelegatingEntityManager"/>
-        <Bug pattern="SQL_INJECTION_JDBC"/>
-    </Match>
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.JpaTransactionScopedEntityManager"/>
-        <Bug pattern="SQL_INJECTION_JPA"/>
-    </Match>
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.NonTransactionalEntityManager"/>
-        <Bug pattern="SQL_INJECTION_JPA"/>
-    </Match>
-    <Match>
-        <Class name="io.helidon.integrations.cdi.jpa.DelegatingEntityManager"/>
-        <Bug pattern="SQL_INJECTION_JPA"/>
     </Match>
 </FindBugsFilter>

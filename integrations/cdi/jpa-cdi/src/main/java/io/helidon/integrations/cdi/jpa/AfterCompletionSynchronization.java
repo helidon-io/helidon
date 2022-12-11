@@ -20,7 +20,7 @@ import java.util.function.IntConsumer;
 
 import jakarta.transaction.Synchronization;
 
-final class AfterCompletionSynchronization implements Synchronization {
+final class AfterCompletionSynchronization implements IntConsumer, Synchronization {
 
     private final IntConsumer afterCompletion;
 
@@ -36,6 +36,11 @@ final class AfterCompletionSynchronization implements Synchronization {
 
     @Override
     public void afterCompletion(int completedTransactionStatus) {
+        this.accept(completedTransactionStatus);
+    }
+
+    @Override
+    public void accept(int completedTransactionStatus) {
         this.afterCompletion.accept(completedTransactionStatus);
     }
 

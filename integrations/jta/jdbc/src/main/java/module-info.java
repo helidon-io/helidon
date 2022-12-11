@@ -19,9 +19,13 @@
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.jta.jdbc {
+<<<<<<< HEAD
 
     requires transitive java.rmi; // jakarta.transaction.TransactionRequiredException extends RemoteException (!)
 
+=======
+  
+>>>>>>> 4426df0a4 (Squashable commit; interim work)
     requires transitive jakarta.transaction; // automatic module
 
     requires transitive io.helidon.integrations.jdbc;

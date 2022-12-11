@@ -52,7 +52,9 @@ import jakarta.transaction.Synchronization;
  * Specifically, this class' implementation incorrectly assumes that the {@link #afterCompletion(int)} method will be
  * invoked on the same thread as the governing transaction, which is not necessarily the case, especially in the case of
  * asynchronous rollbacks.  As a result, {@link Connection}s acquired by instances of this class may not be closed
- * properly.
+ * properly.  Please see {@link JtaAdaptingDataSource} instead.
+ *
+ * @see JtaAdaptingDataSource
  */
 @Deprecated(forRemoval = true, since = "3.0.3")
 public final class JtaDataSource extends AbstractDataSource implements Synchronization {
