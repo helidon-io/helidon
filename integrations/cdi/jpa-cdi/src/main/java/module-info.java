@@ -38,7 +38,6 @@ module io.helidon.integrations.cdi.jpa {
     requires static     jakarta.transaction;
     requires            jakarta.xml.bind;
 
-    requires            io.helidon.integrations.cdi.allocator;
     requires            io.helidon.integrations.cdi.referencecountedcontext; // deprecated for removal
     requires static     io.helidon.integrations.jta.jdbc;
 

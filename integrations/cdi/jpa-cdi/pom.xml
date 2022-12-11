@@ -41,11 +41,6 @@
         <!-- Compile-scoped dependencies. -->
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-allocator</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
             <scope>compile</scope>
         </dependency>

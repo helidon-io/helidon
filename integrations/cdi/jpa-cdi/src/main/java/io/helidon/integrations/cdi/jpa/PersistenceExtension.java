@@ -19,11 +19,13 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -31,9 +33,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -41,7 +45,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import io.helidon.integrations.cdi.allocator.Allocator;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 
@@ -258,7 +261,7 @@ public final class PersistenceExtension implements Extension {
 
 
     private <T> void addTypes(@Observes AfterTypeDiscovery event) {
-        event.addAnnotatedType(Allocator.class, Allocator.class.getName());
+        event.addAnnotatedType(ReferenceCountingProducer.class, ReferenceCountingProducer.class.getName());
         try {
             Class.forName("jakarta.transaction.TransactionSynchronizationRegistry",
                           false,
@@ -1212,9 +1215,9 @@ public final class PersistenceExtension implements Extension {
             }
         }
         SynchronizationType finalSyncType = syncType == null ? SYNCHRONIZED : syncType;
-        return instance.select(Allocator.class)
+        return instance.select(ReferenceCountingProducer.class)
             .get()
-            .allocate(() -> {
+            .produce(() -> {
                     TransactionSupport2 ts =
                         getOrDefault(instance.select(TransactionSupport2.class),
                                      selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY));
@@ -1242,9 +1245,9 @@ public final class PersistenceExtension implements Extension {
                 containerManagedSelectionQualifiers.add(beanQualifier);
             }
         }
-        instance.select(Allocator.class)
+        instance.select(ReferenceCountingProducer.class)
             .get()
-            .release(JtaExtendedEntityManager::dispose,
+            .dispose(JtaExtendedEntityManager::dispose,
                      JtaExtendedEntityManager.class,
                      containerManagedSelectionQualifiers);
     }
@@ -1312,9 +1315,9 @@ public final class PersistenceExtension implements Extension {
             }
         }
         SynchronizationType finalSyncType = syncType == null ? SYNCHRONIZED : syncType;
-        return instance.select(Allocator.class)
+        return instance.select(ReferenceCountingProducer.class)
             .get()
-            .allocate(() -> {
+            .produce(() -> {
                     TransactionSupport2 ts = getOrDefault(instance.select(TransactionSupport2.class), selectionQualifiers);
                     return
                         new JtaEntityManager(ts::active,
@@ -1340,9 +1343,9 @@ public final class PersistenceExtension implements Extension {
                 containerManagedSelectionQualifiers.add(beanQualifier);
             }
         }
-        instance.select(Allocator.class)
+        instance.select(ReferenceCountingProducer.class)
             .get()
-            .release(JtaEntityManager::dispose,
+            .dispose(JtaEntityManager::dispose,
                      JtaEntityManager.class,
                      containerManagedSelectionQualifiers);
     }
@@ -1449,6 +1452,101 @@ public final class PersistenceExtension implements Extension {
             q.add(Unsynchronized.Literal.INSTANCE);
             INSTANCE = Set.copyOf(q);
         }
+
+    }
+
+    @Singleton
+    private static final class ReferenceCountingProducer {
+
+        private static ThreadLocal<Map<ReferenceCountingProducer, Map<ProductionId, Production<?>>>> tl =
+            ThreadLocal.withInitial(HashMap::new);
+
+        @Inject
+        private ReferenceCountingProducer() {
+            super();
+        }
+
+        private <T> T produce(Supplier<? extends T> s, Class<T> type, Set<Annotation> qualifiers) {
+            return this.produce(s, Set.of(type), qualifiers);
+        }
+
+        private <T> T produce(Supplier<? extends T> s, Class<T> type, Annotation... qualifiers) {
+            return this.produce(s, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
+        }
+
+        private <T> T produce(Supplier<? extends T> s, TypeLiteral<T> type, Set<Annotation> qualifiers) {
+            return this.produce(s, Set.of(type.getType()), qualifiers);
+        }
+
+        private <T> T produce(Supplier<? extends T> s, TypeLiteral<T> type, Annotation... qualifiers) {
+            return this.produce(s, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
+        }
+
+        private <T> T produce(Supplier<? extends T> s, Set<Type> types, Annotation... qualifiers) {
+            return this.produce(s, types, Set.copyOf(Arrays.asList(qualifiers)));
+        }
+
+        private <T> T produce(Supplier<? extends T> s, Set<Type> types, Set<Annotation> qualifiers) {
+            Objects.requireNonNull(s, "s");
+            Map<ProductionId, Production<?>> map2 = tl.get().computeIfAbsent(this, k -> new HashMap<>());
+            @SuppressWarnings("unchecked")
+                Production<T> production =
+                (Production<T>) map2.computeIfAbsent(new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers)),
+                                                     k -> new Production<>(s.get()));
+            ++production.rc;
+            return production.object;
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> void dispose(Consumer<? super T> c, Class<T> type, Set<Annotation> qualifiers) {
+            this.dispose(c, Set.of(type), qualifiers);
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> void dispose(Consumer<? super T> c, Class<T> type, Annotation... qualifiers) {
+            this.dispose(c, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
+        }
+
+        private <T> void dispose(Consumer<? super T> c, TypeLiteral<T> type, Set<Annotation> qualifiers) {
+            this.dispose(c, Set.of(type.getType()), qualifiers);
+        }
+
+        private <T> void dispose(Consumer<? super T> c, TypeLiteral<T> type, Annotation... qualifiers) {
+            this.dispose(c, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
+        }
+
+        private <T> void dispose(Consumer<? super T> c, Set<Type> types, Annotation... qualifiers) {
+            this.dispose(c, types, Set.copyOf(Arrays.asList(qualifiers)));
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> void dispose(Consumer<? super T> c, Set<Type> types, Set<Annotation> qualifiers) {
+            Objects.requireNonNull(c, "c");
+            Map<ProductionId, Production<?>> map2 = tl.get().get(this);
+            if (map2 != null) {
+                ProductionId id = new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers));
+                Production<?> production = map2.get(id);
+                if (production != null && --production.rc == 0) {
+                    map2.remove(id);
+                    c.accept((T) production.object);
+                }
+            }
+        }
+
+        private static final class Production<T> {
+
+            private final T object;
+
+            private int rc;
+
+            private Production(T object) {
+                super();
+                this.object = object;
+            }
+
+        }
+
+        private static final record ProductionId(Set<Type> types, Set<Annotation> qualifiers) {}
 
     }
 
