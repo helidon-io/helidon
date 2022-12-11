@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.media.common;
+
+import java.util.function.Supplier;
 
 /**
  * Builder of {@link MediaContext} that can be parented.
@@ -30,5 +32,16 @@ public interface ParentingMediaContextBuilder<T> {
      * @return updated instance of the builder
      */
     T mediaContext(MediaContext mediaContext);
+
+    /**
+     * Sets the {@link MediaContext} parent and overrides the existing one.
+     * This method discards all previously registered readers and writers via builder.
+     *
+     * @param mediaContextSupplier supplier for media context
+     * @return updated instance of the builder
+     */
+    default T mediaContext(Supplier<MediaContext> mediaContextSupplier){
+        return mediaContext(mediaContextSupplier.get());
+    }
 
 }
