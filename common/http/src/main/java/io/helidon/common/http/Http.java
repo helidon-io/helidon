@@ -585,7 +585,7 @@ public final class Http {
          * 505 HTTP Version Not Supported, see
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.6">HTTP/1.1 documentation</a>.
          *
-         * @since 2.0
+         * @since 3.0.3
          */
         public static final Status HTTP_VERSION_NOT_SUPPORTED_505 = new Status(505, "HTTP Version Not Supported", true);
 
