@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,14 @@ class JdbcDbClient implements DbClient {
                 dbMapperManager,
                 mapperManager);
 
-        T result = executor.apply(execute);
+        T result;
+
+        try {
+            result = executor.apply(execute);
+        } catch (RuntimeException e) {
+            execute.doRollback();
+            throw e;
+        }
 
         if (result instanceof Multi) {
             Multi<U> multi = (Multi<U>) result;
