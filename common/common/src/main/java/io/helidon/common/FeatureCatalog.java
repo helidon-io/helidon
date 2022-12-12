@@ -181,6 +181,11 @@ final class FeatureCatalog {
                     .experimental(true)
                     .nativeSupported(true)
                     .flavor(HelidonFlavor.SE));
+        add("io.helidon.integrations.openapi.ui",
+            FeatureDescriptor.builder()
+                    .name("OpenAPI U/I")
+                    .description("OpenAPI U/I integration")
+                    .path("OpenAPI U/I"));
         add("io.helidon.integrations.oci.connect",
             FeatureDescriptor.builder()
                     .name("OCI")

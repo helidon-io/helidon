@@ -16,16 +16,25 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:rootdir: {docdir}/../..
+:incdir: {rootdir}/shared/openapi
+
+// tag::defs[]
+:base-url: .
+:openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
+// end::defs[]
+
 // tag::common-config[]
 Helidon {h1Prefix} also supports additional properties specific to Helidon.
 
-.Helidon-specific OpenAPI Config Properties
-|===
-|Property |Use
+include::io_helidon_openapi_OpenAPISupport.adoc[tag=config]
 
-|`openapi.web-context` |Path which serves the OpenAPI document (defaults to `/openapi`)
-|`openapi.static-file` |Full path to the static OpenAPI file (defaults to
-`META-INF/openapi.yml`,
-`META-INF/openapi.yaml`, or
-`META-INF/openapi.json`)
-|===
+// end::common-config[]
+
+// tag::mp-depc[]
+<dependency>
+    <groupId>io.helidon.microprofile.openapi</groupId>
+    <artifactId>helidon-microprofile-openapi</artifactId>
+    <scope>runtime</scope>
+</dependency>
+// end::mp-depc[]

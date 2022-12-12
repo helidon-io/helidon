@@ -32,13 +32,16 @@
 :filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 :feature-name: OpenAPI
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
-:common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
+:incdir: {docdir}/../../shared/openapi
+:common-openapi-doc: {incdir}/openapi-shared.adoc
 
 Easily allow your Helidon SE application to serve an OpenAPI document
 that describes your application's endpoints.
 
+include::{common-openapi-doc}[tag=defs]
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 
+// tag::depc[]
 [source,xml]
 ----
 <dependency>
@@ -46,6 +49,7 @@ include::{common-deps-page-prefix-inc}[tag=maven-dependency]
     <artifactId>helidon-openapi</artifactId>
 </dependency>
 ----
+// end::depc[]
 
 == OpenAPI support in Helidon SE
 
@@ -137,11 +141,11 @@ If you implement either a model reader or a filter, add this dependency to your
 </dependency>
 ----
 
+[[config]]
 === Update application configuration
 Helidon SE support for OpenAPI supports a handful of config properties patterned after 
 those described in the MicroProfile OpenAPI spec, two of which were mentioned above.
 
-[[se_config]]
 .Helidon SE OpenAPI Config Properties
 |===
 |Property |Use
@@ -156,7 +160,7 @@ servers for given operations
 |===
 For more information on what these settings do consult the MicroProfile OpenAPI spec.
 
-include::{common-openapi-doc}[common-config]
+include::{common-openapi-doc}[tag=common-config]
 
 Set these config properties in one of the config sources your app uses so the
 Helidon config system will load them. Often developers use `application.yaml` at the 

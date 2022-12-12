@@ -56,6 +56,7 @@ import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
+import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -130,6 +131,9 @@ public abstract class OpenAPISupport implements Service {
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
     private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
+    private final OpenApiUi ui;
+    private final MediaType[] preferredMediaTypeOrdering;
+    private final MediaType[] mediaTypesSupportedByUi;
 
     /*
      * To handle the MP case, we must defer constructing the OpenAPI in-memory model until after the server has instantiated
@@ -148,6 +152,9 @@ public abstract class OpenAPISupport implements Service {
         openApiConfig = builder.openAPIConfig();
         openApiStaticFile = builder.staticFile();
         indexViewsSupplier = builder.indexViewsSupplier();
+        ui = prepareUi(builder);
+        mediaTypesSupportedByUi = ui.supportedMediaTypes();
+        preferredMediaTypeOrdering = preparePreferredMediaTypeOrdering(mediaTypesSupportedByUi);
     }
 
     @Override
@@ -166,6 +173,15 @@ public abstract class OpenAPISupport implements Service {
         rules.get(this::registerJsonpSupport)
                 .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
+        ui.update(rules);
+    }
+
+    /**
+     *
+     * @return the web context setting for this service
+     */
+    public String webContext() {
+        return webContext;
     }
 
     /**
@@ -173,6 +189,19 @@ public abstract class OpenAPISupport implements Service {
      */
     protected void prepareModel() {
         model();
+    }
+
+    private OpenApiUi prepareUi(Builder<?> builder) {
+        return builder.uiBuilder.build(this::prepareDocument, webContext);
+    }
+
+    private static MediaType[] preparePreferredMediaTypeOrdering(MediaType[] uiTypesSupported) {
+        int nonTextLength = OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING.length;
+
+        MediaType[] result = Arrays.copyOf(OpenAPIMediaType.NON_TEXT_PREFERRED_ORDERING,
+                                           nonTextLength + uiTypesSupported.length);
+        System.arraycopy(uiTypesSupported, 0, result, nonTextLength, uiTypesSupported.length);
+        return result;
     }
 
     private synchronized OpenAPI model() {
@@ -362,7 +391,25 @@ public abstract class OpenAPISupport implements Service {
     private void prepareResponse(ServerRequest req, ServerResponse resp) {
 
         try {
-            final MediaType resultMediaType = chooseResponseMediaType(req);
+            Optional<MediaType> requestedMediaType = chooseResponseMediaType(req);
+
+            // Give the UI a chance to respond first if it claims to support the chosen media type.
+            if (requestedMediaType.isPresent()
+                    && uiSupportsMediaType(requestedMediaType.get())) {
+                if (ui.prepareTextResponseFromMainEndpoint(req, resp)) {
+                    return;
+                }
+            }
+
+            if (requestedMediaType.isEmpty()) {
+                LOGGER.log(Level.FINER,
+                           () -> String.format("Did not recognize requested media type %s; passing the request on",
+                                               req.headers().acceptedTypes()));
+                req.next();
+                return;
+            }
+
+            MediaType resultMediaType = requestedMediaType.get();
             final String openAPIDocument = prepareDocument(resultMediaType);
             resp.status(Http.Status.OK_200);
             resp.headers().add(Http.Header.CONTENT_TYPE, resultMediaType.toString());
@@ -374,6 +421,16 @@ public abstract class OpenAPISupport implements Service {
         }
     }
 
+    private boolean uiSupportsMediaType(MediaType mediaType) {
+        // The UI supports a very short list of media types, hence the sequential search.
+        for (MediaType uiSupportedMediaType : mediaTypesSupportedByUi) {
+            if (uiSupportedMediaType.test(mediaType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns the OpenAPI document in the requested format.
      *
@@ -382,7 +439,7 @@ public abstract class OpenAPISupport implements Service {
      * @throws IOException in case of errors serializing the OpenAPI document
      * from its underlying data
      */
-    String prepareDocument(MediaType resultMediaType) throws IOException {
+    String prepareDocument(MediaType resultMediaType) {
         OpenAPIMediaType matchingOpenAPIMediaType
                 = OpenAPIMediaType.byMediaType(resultMediaType)
                 .orElseGet(() -> {
@@ -418,23 +475,17 @@ public abstract class OpenAPISupport implements Service {
 
     }
 
-    private MediaType chooseResponseMediaType(ServerRequest req) {
+    private Optional<MediaType> chooseResponseMediaType(ServerRequest req) {
         /*
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
          */
-        final Optional<MediaType> requestedMediaType = req.headers()
-                .bestAccepted(OpenAPIMediaType.preferredOrdering());
-
-        final MediaType resultMediaType = requestedMediaType
-                .orElseGet(() -> {
-                    LOGGER.log(Level.FINER,
-                            () -> String.format("Did not recognize requested media type %s; responding with default %s",
-                                    req.headers().acceptedTypes(),
-                                    DEFAULT_RESPONSE_MEDIA_TYPE.toString()));
-                    return DEFAULT_RESPONSE_MEDIA_TYPE;
-                });
-        return resultMediaType;
+        RequestHeaders headers = req.headers();
+        if (headers.acceptedTypes().isEmpty()) {
+            headers.add(Http.Header.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+        }
+        return headers
+                .bestAccepted(preferredMediaTypeOrdering);
     }
 
     /**
@@ -602,24 +653,17 @@ public abstract class OpenAPISupport implements Service {
             return null;
         }
 
-        /**
-         * Media types we recognize as OpenAPI, in order of preference.
-         *
-         * @return MediaTypes in order that we recognize them as OpenAPI
-         * content.
-         */
-        private static MediaType[] preferredOrdering() {
-            return new MediaType[]{
-                    MediaType.APPLICATION_OPENAPI_YAML,
-                    MediaType.APPLICATION_X_YAML,
-                    MediaType.APPLICATION_YAML,
-                    MediaType.APPLICATION_OPENAPI_JSON,
-                    MediaType.APPLICATION_JSON,
-                    MediaType.TEXT_X_YAML,
-                    MediaType.TEXT_YAML,
-                    MediaType.TEXT_PLAIN
-            };
-        }
+        private static final MediaType[] NON_TEXT_PREFERRED_ORDERING =
+                new MediaType[] {
+                        MediaType.APPLICATION_OPENAPI_YAML,
+                        MediaType.APPLICATION_X_YAML,
+                        MediaType.APPLICATION_YAML,
+                        MediaType.APPLICATION_OPENAPI_JSON,
+                        MediaType.APPLICATION_JSON,
+                        MediaType.TEXT_X_YAML,
+                        MediaType.TEXT_YAML
+
+                };
     }
 
     /**
@@ -684,6 +728,7 @@ public abstract class OpenAPISupport implements Service {
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
         private CrossOriginConfig crossOriginConfig = null;
+        private OpenApiUi.Builder<?, ?> uiBuilder = OpenApiUi.builder();
 
         protected Builder(Class<B> builderClass) {
             this.builderClass = builderClass;
@@ -713,6 +758,8 @@ public abstract class OpenAPISupport implements Service {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
+            config.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY)
+                    .ifExists(uiBuilder::config);
             return me();
         }
 
@@ -799,6 +846,18 @@ public abstract class OpenAPISupport implements Service {
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;
+            return me();
+        }
+
+        /**
+         * Assigns the OpenAPI UI builder the {@code OpenAPISupport} service should use in preparing the UI.
+         *
+         * @param uiBuilder the {@link OpenApiUi.Builder}
+         * @return updated builder instance
+         */
+        public B ui(OpenApiUi.Builder<?, ?> uiBuilder) {
+            Objects.requireNonNull(uiBuilder, "UI must be non-null");
+            this.uiBuilder = uiBuilder;
             return me();
         }
 
