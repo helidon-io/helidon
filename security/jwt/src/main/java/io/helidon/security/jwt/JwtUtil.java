@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
@@ -308,8 +309,12 @@ public final class JwtUtil {
     }
 
     static Optional<List<String>> toScopes(JsonObject json) {
-        return getString(json, "scope")
-                .map(it -> Arrays.asList(it.split(" ")));
+        if (json.get("scope") instanceof JsonArray) {
+            return getStrings(json, "scope");
+        } else {
+            return getString(json, "scope")
+                    .map(it -> Arrays.asList(it.split(" ")));
+        }
     }
 
     static Optional<ZoneId> toTimeZone(JsonObject json, String name) {

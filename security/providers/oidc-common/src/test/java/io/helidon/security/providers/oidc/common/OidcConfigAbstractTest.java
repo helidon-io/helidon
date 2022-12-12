@@ -63,7 +63,7 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Use Parameter", config.useParam(), is(OidcConfig.DEFAULT_PARAM_USE)),
                   () -> assertThat("Use Cookie", config.useCookie(), is(OidcConfig.DEFAULT_COOKIE_USE)),
                   () -> assertThat("Use Header", config.useHeader(), is(OidcConfig.DEFAULT_HEADER_USE)),
-                  () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.DEFAULT_BASE_SCOPES)),
+                  () -> assertThat("Base scopes to use", config.baseScopes(), is(BaseBuilder.DEFAULT_BASE_SCOPES)),
                   () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is("JSESSIONID=")),
                   () -> assertThat("Cookie name", config.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
                   // cookie options should be separated by space as defined by the specification

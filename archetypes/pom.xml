@@ -37,6 +37,7 @@
         <module>quickstart-mp</module>
         <module>database-mp</module>
         <module>database-se</module>
+        <module>oci-mp</module>
         <module>catalog</module>
     </modules>
 

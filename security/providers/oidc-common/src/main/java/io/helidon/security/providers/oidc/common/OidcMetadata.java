@@ -18,13 +18,10 @@ package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.common.Errors;
@@ -97,7 +94,6 @@ final class OidcMetadata {
     }
 
     static class Builder implements io.helidon.common.Builder<OidcMetadata> {
-        private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
         private boolean enableRemoteLoad;
         private JsonObject metadata;
         private WebClient webClient;
