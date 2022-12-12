@@ -20,7 +20,7 @@ import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveSupport;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.webserver.WebServer;
@@ -56,7 +56,7 @@ public class StandaloneQuickstartMain {
      * Updates HTTP Routing.
      */
     static void routing(HttpRouting.Builder routing) {
-        ObserveSupport observe = ObserveSupport.builder()
+        ObserveFeature observe = ObserveFeature.builder()
                 .useSystemServices(true)
                 .addProvider(HealthObserveProvider.create(HealthFeature.builder()
                                                                   .useSystemServices(false)

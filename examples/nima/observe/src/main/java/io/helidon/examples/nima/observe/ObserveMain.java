@@ -16,10 +16,15 @@
 
 package io.helidon.examples.nima.observe;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.http.ForbiddenException;
+import io.helidon.common.http.UnauthorizedException;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveSupport;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
+
+import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
 
 /**
  * Register observe support with all available observers and NO security.
@@ -31,6 +36,7 @@ public class ObserveMain {
 
     /**
      * Main method.
+     *
      * @param args ignored
      */
     public static void main(String[] args) {
@@ -38,6 +44,7 @@ public class ObserveMain {
         LogConfig.configureRuntime();
 
         WebServer server = WebServer.builder()
+                .security(Security.create(config))
                 .routing(ObserveMain::routing)
                 .start();
 
@@ -51,7 +58,16 @@ public class ObserveMain {
      * @param router HTTP routing builder
      */
     static void routing(HttpRouting.Builder router) {
-        router.update(ObserveSupport.create())
+        router.addFeature(SecurityFeature.create())
+                .addFeature(TracingFeature.create())
+                .addFeature(ObserveFeature.create())
                 .get("/", (req, res) -> res.send("Níma Works!"));
+                // map both security exceptions to not found
+                //.error(ForbiddenException.class, (req, res, throwable) -> res.status(NOT_FOUND_404).send())
+                //.error(UnauthorizedException.class, (req, res, throwable) -> res.status(NOT_FOUND_404).send());
+    }
+
+    static interface RouteListener {
+        void
     }
 }

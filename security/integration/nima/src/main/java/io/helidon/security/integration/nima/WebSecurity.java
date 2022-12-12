@@ -342,19 +342,20 @@ public final class WebSecurity implements HttpService {
     }
 
     private void registerContext(ServerRequest req, ServerResponse res) {
+        // todo use Headers instead, this is not case insensitive
         Map<String, List<String>> allHeaders = new HashMap<>(req.headers().toMap());
 
-        Context context = Contexts.context()
-                .orElseThrow(() -> new SecurityException("No context available, cannot handle security"));
+        Context context = req.context();
         Optional<Map> newHeaders = context.get(CONTEXT_ADD_HEADERS, Map.class);
         newHeaders.ifPresent(allHeaders::putAll);
 
         //make sure there is no context
-        if (!context.get(SecurityContext.class).isPresent()) {
+        if (context.get(SecurityContext.class).isEmpty()) {
             SecurityEnvironment env = security.environmentBuilder()
                     .targetUri(URI.create(req.prologue().uriPath().rawPath()))
                     .path(req.path().toString())
                     .method(req.prologue().method().text())
+                    .addAttribute("remotePeer", req.remotePeer())
                     .addAttribute("userIp", req.remotePeer().host())
                     .addAttribute("userPort", req.remotePeer().port())
                     .transport(req.isSecure() ? "https" : "http")

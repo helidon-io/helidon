@@ -19,7 +19,6 @@ package io.helidon.nima.observe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.http.Http;
@@ -28,17 +27,18 @@ import io.helidon.config.Config;
 import io.helidon.nima.Nima;
 import io.helidon.nima.observe.spi.ObserveProvider;
 import io.helidon.nima.webserver.cors.CorsSupport;
+import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * Support for all observe providers that are available (or configured).
  */
-public class ObserveSupport implements Consumer<HttpRouting.Builder> {
+public class ObserveFeature implements HttpFeature {
     private final List<ProviderSetup> providers;
     private final boolean enabled;
     private final String endpoint;
 
-    private ObserveSupport(Builder builder, List<ProviderSetup> providerSetups) {
+    private ObserveFeature(Builder builder, List<ProviderSetup> providerSetups) {
         this.enabled = builder.enabled;
         this.endpoint = builder.endpoint;
         this.providers = providerSetups;
@@ -60,7 +60,7 @@ public class ObserveSupport implements Consumer<HttpRouting.Builder> {
      * @param providers providers to use
      * @return a new observe support
      */
-    public static ObserveSupport create(ObserveProvider... providers) {
+    public static ObserveFeature create(ObserveProvider... providers) {
         return builder()
                 .useSystemServices(false)
                 .update(it -> {
@@ -77,28 +77,28 @@ public class ObserveSupport implements Consumer<HttpRouting.Builder> {
      *
      * @return a new observe support
      */
-    public static ObserveSupport create() {
+    public static ObserveFeature create() {
         return builder().build();
     }
 
     @Override
-    public void accept(HttpRouting.Builder builder) {
+    public void setup(HttpRouting.Builder routing) {
         if (enabled) {
             for (ProviderSetup provider : providers) {
-                builder.register(provider.endpoint + "/*", provider.cors());
-                provider.provider().register(provider.config(), provider.endpoint(), builder);
+                routing.register(provider.endpoint + "/*", provider.cors());
+                provider.provider().register(provider.config(), provider.endpoint(), routing);
             }
         } else {
-            builder.get(endpoint, (req, res) -> {
+            routing.get(endpoint, (req, res) -> {
                 throw new HttpException("Observe endpoint is disabled", Http.Status.SERVICE_UNAVAILABLE_503, true);
             });
         }
     }
 
     /**
-     * Fluent API builder for {@link ObserveSupport}.
+     * Fluent API builder for {@link ObserveFeature}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, ObserveSupport> {
+    public static class Builder implements io.helidon.common.Builder<Builder, ObserveFeature> {
         private final HelidonServiceLoader.Builder<ObserveProvider> observeProviders =
                 HelidonServiceLoader.builder(ServiceLoader.load(ObserveProvider.class));
         private CorsSupport corsSupport = CorsSupport.create();
@@ -111,7 +111,7 @@ public class ObserveSupport implements Consumer<HttpRouting.Builder> {
         }
 
         @Override
-        public ObserveSupport build() {
+        public ObserveFeature build() {
             List<ProviderSetup> providerSetups;
             if (enabled) {
                 List<ObserveProvider> observeProviders = this.observeProviders.build()
@@ -132,7 +132,7 @@ public class ObserveSupport implements Consumer<HttpRouting.Builder> {
             } else {
                 providerSetups = List.of();
             }
-            return new ObserveSupport(this, providerSetups);
+            return new ObserveFeature(this, providerSetups);
         }
 
         /**

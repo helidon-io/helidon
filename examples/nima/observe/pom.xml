@@ -51,6 +51,14 @@
             <artifactId>helidon-nima-observe-info</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
             <scope>test</scope>

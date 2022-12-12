@@ -32,6 +32,7 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.nima.common.tls;
     requires transitive io.helidon.config;
     requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
 
     requires java.management;

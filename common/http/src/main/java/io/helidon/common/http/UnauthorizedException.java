@@ -16,27 +16,29 @@
 
 package io.helidon.common.http;
 
+import static io.helidon.common.http.Http.Status.UNAUTHORIZED_401;
+
 /**
- * A runtime exception indicating a {@link io.helidon.common.http.Http.Status#FORBIDDEN_403 forbidden}.
+ * A runtime exception indicating a {@link io.helidon.common.http.Http.Status#UNAUTHORIZED_401 unauthorized}.
  */
-public class ForbiddenException extends HttpException {
+public class UnauthorizedException extends HttpException {
 
     /**
-     * Creates {@link io.helidon.common.http.ForbiddenException}.
+     * Creates {@link io.helidon.common.http.UnauthorizedException}.
      *
      * @param message the message
      */
-    public ForbiddenException(String message) {
-        super(message, Http.Status.FORBIDDEN_403, null, true);
+    public UnauthorizedException(String message) {
+        super(message, UNAUTHORIZED_401, null, true);
     }
 
     /**
-     * Creates {@link io.helidon.common.http.ForbiddenException}.
+     * Creates {@link io.helidon.common.http.UnauthorizedException}.
      *
      * @param message the message
      * @param cause the cause of this exception
      */
-    public ForbiddenException(String message, Throwable cause) {
-        super(message, Http.Status.FORBIDDEN_403, cause, true);
+    public UnauthorizedException(String message, Throwable cause) {
+        super(message, UNAUTHORIZED_401, cause, true);
     }
 }

@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import io.helidon.common.http.Http;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.nima.observe.ObserveSupport;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -53,7 +53,7 @@ class ObserveHealthDetailsTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
         healthCheck = new MyHealthCheck();
-        routing.update(ObserveSupport.create(HealthObserveProvider.create(HealthFeature
+        routing.update(ObserveFeature.create(HealthObserveProvider.create(HealthFeature
                                                                                   .builder()
                                                                                   .addCheck(healthCheck)
                                                                                   .details(true)

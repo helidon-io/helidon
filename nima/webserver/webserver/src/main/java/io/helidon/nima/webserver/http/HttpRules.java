@@ -173,11 +173,14 @@ public interface HttpRules {
      * Add a post route.
      *
      * @param pathPattern path pattern
-     * @param handler     handler
+     * @param handlers    handlers
      * @return updated rules
      */
-    default HttpRules post(String pathPattern, Handler handler) {
-        return route(Http.Method.POST, pathPattern, handler);
+    default HttpRules post(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.POST, pathPattern, handler);
+        }
+        return this;
     }
 
     /**
@@ -218,6 +221,20 @@ public interface HttpRules {
             route(HttpRoute.builder()
                           .methods(Http.Method.DELETE)
                           .handler(handler));
+        }
+        return this;
+    }
+
+    /**
+     * Add a delete route.
+     *
+     * @param pathPattern path pattern to register the handler(s) on
+     * @param handlers handlers
+     * @return updated rules
+     */
+    default HttpRules delete(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.DELETE, pathPattern, handler);
         }
         return this;
     }

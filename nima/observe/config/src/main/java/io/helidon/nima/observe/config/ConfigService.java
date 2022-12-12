@@ -29,8 +29,10 @@ import io.helidon.config.ConfigValue;
 import io.helidon.nima.Nima;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
+import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.SecureHandler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -67,7 +69,10 @@ class ConfigService implements HttpService {
 
     @Override
     public void routing(HttpRules rules) {
-        rules.get("/profile", this::profile)
+        Handler secureHandler = SecureHandler.create(false, true, "nima-observe");
+
+        rules.any(secureHandler)
+                .get("/profile", this::profile)
                 .get("/values", this::values)
                 .get("/values/{name}", this::value);
     }

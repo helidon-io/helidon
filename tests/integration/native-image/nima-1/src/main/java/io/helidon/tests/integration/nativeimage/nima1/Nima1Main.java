@@ -22,7 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveSupport;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.webserver.WebServer;
@@ -106,7 +106,7 @@ public final class Nima1Main {
                                 System.currentTimeMillis())
                         .build())
                 .build();
-        ObserveSupport observe = ObserveSupport.create(HealthObserveProvider.create(health));
+        ObserveFeature observe = ObserveFeature.create(HealthObserveProvider.create(health));
 
         return HttpRouting.builder()
                 .register("/static/path", StaticContentSupport.create(Paths.get("web")))
