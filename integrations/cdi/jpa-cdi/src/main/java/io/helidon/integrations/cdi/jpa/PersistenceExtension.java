@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -40,6 +41,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -48,6 +51,7 @@ import javax.xml.stream.XMLStreamReader;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 
+import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -1232,6 +1236,7 @@ public final class PersistenceExtension implements Extension {
                                                      .createEntityManager(finalSyncType, properties),
                                                      finalSyncType == SYNCHRONIZED);
                 },
+                JtaExtendedEntityManager::dispose,
                 JtaExtendedEntityManager.class,
                 containerManagedSelectionQualifiers);
     }
@@ -1247,8 +1252,7 @@ public final class PersistenceExtension implements Extension {
         }
         instance.select(ReferenceCountingProducer.class)
             .get()
-            .dispose(JtaExtendedEntityManager::dispose,
-                     JtaExtendedEntityManager.class,
+            .dispose(JtaExtendedEntityManager.class,
                      containerManagedSelectionQualifiers);
     }
 
@@ -1330,6 +1334,7 @@ public final class PersistenceExtension implements Extension {
                                              finalSyncType,
                                              properties);
                 },
+                JtaEntityManager::dispose,
                 JtaEntityManager.class,
                 containerManagedSelectionQualifiers);
     }
@@ -1345,8 +1350,7 @@ public final class PersistenceExtension implements Extension {
         }
         instance.select(ReferenceCountingProducer.class)
             .get()
-            .dispose(JtaEntityManager::dispose,
-                     JtaEntityManager.class,
+            .dispose(JtaEntityManager.class,
                      containerManagedSelectionQualifiers);
     }
 
@@ -1458,7 +1462,9 @@ public final class PersistenceExtension implements Extension {
     @Singleton
     private static final class ReferenceCountingProducer {
 
-        private static ThreadLocal<Map<ReferenceCountingProducer, Map<ProductionId, Production<?>>>> tl =
+        private static final Logger LOGGER = Logger.getLogger(ReferenceCountingProducer.class.getName());
+
+        private static final ThreadLocal<Map<ReferenceCountingProducer, Map<ProductionId, Production<?>>>> TL =
             ThreadLocal.withInitial(HashMap::new);
 
         @Inject
@@ -1466,82 +1472,168 @@ public final class PersistenceExtension implements Extension {
             super();
         }
 
-        private <T> T produce(Supplier<? extends T> s, Class<T> type, Set<Annotation> qualifiers) {
-            return this.produce(s, Set.of(type), qualifiers);
+        private <T> T produce(Supplier<? extends T> supplier,
+                              Consumer<? super T> disposer,
+                              Class<T> type,
+                              Set<Annotation> qualifiers) {
+            return this.produce(supplier, disposer, Set.of(type), qualifiers);
         }
 
-        private <T> T produce(Supplier<? extends T> s, Class<T> type, Annotation... qualifiers) {
-            return this.produce(s, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
+        private <T> T produce(Supplier<? extends T> supplier,
+                              Consumer<? super T> disposer,
+                              Class<T> type,
+                              Annotation... qualifiers) {
+            return this.produce(supplier, disposer, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
         }
 
-        private <T> T produce(Supplier<? extends T> s, TypeLiteral<T> type, Set<Annotation> qualifiers) {
-            return this.produce(s, Set.of(type.getType()), qualifiers);
+        private <T> T produce(Supplier<? extends T> supplier,
+                              Consumer<? super T> disposer,
+                              TypeLiteral<T> type,
+                              Set<Annotation> qualifiers) {
+            return this.produce(supplier, disposer, Set.of(type.getType()), qualifiers);
         }
 
-        private <T> T produce(Supplier<? extends T> s, TypeLiteral<T> type, Annotation... qualifiers) {
-            return this.produce(s, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
+        private <T> T produce(Supplier<? extends T> supplier,
+                              Consumer<? super T> disposer,
+                              TypeLiteral<T> type,
+                              Annotation... qualifiers) {
+            return this.produce(supplier, disposer, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
         }
 
-        private <T> T produce(Supplier<? extends T> s, Set<Type> types, Annotation... qualifiers) {
-            return this.produce(s, types, Set.copyOf(Arrays.asList(qualifiers)));
+        private <T> T produce(Supplier<? extends T> supplier,
+                              Consumer<? super T> disposer,
+                              Set<Type> types,
+                              Annotation... qualifiers) {
+            return this.produce(supplier, disposer, types, Set.copyOf(Arrays.asList(qualifiers)));
         }
 
-        private <T> T produce(Supplier<? extends T> s, Set<Type> types, Set<Annotation> qualifiers) {
-            Objects.requireNonNull(s, "s");
-            Map<ProductionId, Production<?>> map2 = tl.get().computeIfAbsent(this, k -> new HashMap<>());
+        private <T> T produce(Supplier<? extends T> supplier,
+                              Consumer<? super T> disposer,
+                              Set<Type> types,
+                              Set<Annotation> qualifiers) {
+            Objects.requireNonNull(supplier, "supplier");
+            Objects.requireNonNull(disposer, "disposer");
             @SuppressWarnings("unchecked")
-                Production<T> production =
-                (Production<T>) map2.computeIfAbsent(new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers)),
-                                                     k -> new Production<>(s.get()));
-            ++production.rc;
+            Production<T> production = (Production<T>) TL.get()
+                .computeIfAbsent(this, k -> new HashMap<>())
+                .computeIfAbsent(new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers)),
+                                 k -> new Production<>(supplier.get(), disposer));
+            int rc = production.reference();
+            assert rc > 0;
             return production.object;
         }
 
-        @SuppressWarnings("unchecked")
-        private <T> void dispose(Consumer<? super T> c, Class<T> type, Set<Annotation> qualifiers) {
-            this.dispose(c, Set.of(type), qualifiers);
+        private <T> void dispose(Class<T> type, Set<Annotation> qualifiers) {
+            this.dispose(Set.of(type), qualifiers);
         }
 
-        @SuppressWarnings("unchecked")
-        private <T> void dispose(Consumer<? super T> c, Class<T> type, Annotation... qualifiers) {
-            this.dispose(c, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
+        private <T> void dispose(Class<T> type, Annotation... qualifiers) {
+            this.dispose(Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
         }
 
-        private <T> void dispose(Consumer<? super T> c, TypeLiteral<T> type, Set<Annotation> qualifiers) {
-            this.dispose(c, Set.of(type.getType()), qualifiers);
+        private <T> void dispose(TypeLiteral<T> type, Set<Annotation> qualifiers) {
+            this.dispose(Set.of(type.getType()), qualifiers);
         }
 
-        private <T> void dispose(Consumer<? super T> c, TypeLiteral<T> type, Annotation... qualifiers) {
-            this.dispose(c, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
+        private <T> void dispose(TypeLiteral<T> type, Annotation... qualifiers) {
+            this.dispose(Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
         }
 
-        private <T> void dispose(Consumer<? super T> c, Set<Type> types, Annotation... qualifiers) {
-            this.dispose(c, types, Set.copyOf(Arrays.asList(qualifiers)));
+        private <T> void dispose(Set<Type> types, Annotation... qualifiers) {
+            this.dispose(types, Set.copyOf(Arrays.asList(qualifiers)));
         }
 
-        @SuppressWarnings("unchecked")
-        private <T> void dispose(Consumer<? super T> c, Set<Type> types, Set<Annotation> qualifiers) {
-            Objects.requireNonNull(c, "c");
-            Map<ProductionId, Production<?>> map2 = tl.get().get(this);
-            if (map2 != null) {
+        private <T> void dispose(Set<Type> types, Set<Annotation> qualifiers) {
+            Map<ReferenceCountingProducer, Map<ProductionId, Production<?>>> tlMap = TL.get();
+            Map<ProductionId, Production<?>> map = tlMap.get(this);
+            if (map != null) {
                 ProductionId id = new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers));
-                Production<?> production = map2.get(id);
-                if (production != null && --production.rc == 0) {
-                    map2.remove(id);
-                    c.accept((T) production.object);
+                @SuppressWarnings("unchecked")
+                Production<T> production = (Production<T>) map.get(id);
+                if (production != null) {
+                    int rc = production.unreference();
+                    if (rc == 0) {
+                        map.remove(id);
+                        if (map.isEmpty()) {
+                            tlMap.remove(this);
+                        }
+                    } else {
+                        assert rc > 0;
+                    }
+                }
+            }
+        }
+
+        @PreDestroy
+        private void preDestroy() {
+            Map<ProductionId, Production<?>> map = TL.get().remove(this);
+            if (map != null) {
+                // This map shouldn't exist. If it does exist, it should at least be empty. We shouldn't be here. Ensure
+                // that everything is disposed properly nonetheless and log the problem.
+                RuntimeException re = null;
+                for (Entry<?, ? extends Production<?>> entry : map.entrySet()) {
+                    if (LOGGER.isLoggable(Level.WARNING)) {
+                        LOGGER.logp(Level.WARNING, this.getClass().getName(), "preDestroy",
+                                    "Disposing {0} but it should have already been disposed!", entry);
+                    }
+                    try {
+                        entry.getValue().dispose();
+                    } catch (RuntimeException e) {
+                        if (re == null) {
+                            re = e;
+                        } else {
+                            re.addSuppressed(e);
+                        }
+                    }
+                }
+                if (re != null) {
+                    throw re;
                 }
             }
         }
 
         private static final class Production<T> {
 
-            private final T object;
+            private T object;
+
+            private final Consumer<? super T> disposer;
 
             private int rc;
 
-            private Production(T object) {
+            private Production(T object, Consumer<? super T> disposer) {
                 super();
                 this.object = object;
+                this.disposer = Objects.requireNonNull(disposer, "disposer");
+            }
+
+            private int reference() {
+                return ++this.rc;
+            }
+
+            private int unreference() {
+                int rc = --this.rc;
+                if (rc == 0) {
+                    this.disposeIfUnreferenced();
+                } else if (rc < 0) {
+                    throw new AssertionError("Unexpected negative reference count: " + rc);
+                }
+                return rc;
+            }
+
+            private boolean disposeIfUnreferenced() {
+                if (this.rc == 0) {
+                    this.dispose();
+                    return true;
+                } else {
+                    assert this.rc > 0 : "Unexpected negative reference count: " + this.rc;
+                }
+                return false;
+            }
+
+            void dispose() {
+                T t = this.object;
+                this.object = null;
+                this.disposer.accept(t);
             }
 
         }
