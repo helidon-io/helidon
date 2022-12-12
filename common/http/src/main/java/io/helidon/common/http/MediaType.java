@@ -476,6 +476,25 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     }
 
     /**
+     * Create a new {@code MediaType} instance with the same type and subtype.
+     * All parameters are trimmed. If current {@code MediaType} instance does not contain
+     * parameters, the same instance is returned.
+     *
+     * @return {@code MediaType} instance without parameters.
+     * @deprecated will be removed in 4.x version.
+     */
+    @Deprecated(since = "2.5.5", forRemoval = true)
+    public MediaType withoutParameters() {
+        if (this.parameters.isEmpty()) {
+            return this;
+        }
+        return MediaType.builder()
+                .type(this.type)
+                .subtype(this.subtype)
+                .build();
+    }
+
+    /**
      * Gets {@link Optional} value of charset parameter.
      *
      * @return Charset parameter.

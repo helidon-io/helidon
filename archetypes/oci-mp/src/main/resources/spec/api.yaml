@@ -1,0 +1,69 @@
+info:
+  title: Hello World Greet Helidon MP Application
+  version: '1.0'
+openapi: 3.0.3
+paths:
+  /greet:
+    get:
+      summary: Gets default greet message
+      operationId: getDefaultMessage
+      tags:
+        - greet
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GreetResponse'
+          description: OK
+  /greet/{name}:
+    get:
+      summary: Gets message based on the parameter name
+      operationId: getMessage
+      tags:
+        - greet
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GreetResponse'
+          description: OK
+  /greet/greeting:
+    put:
+      summary: Set the greeting to use in future messages.
+      operationId: updateGreeting
+      tags:
+        - greet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GreetUpdate'
+        required: true
+      responses:
+        '204':
+          description: Greeting updated
+        '400':
+          description: JSON body content did not contain setting for 'greeting'
+components:
+  schemas:
+    GreetResponse:
+      properties:
+        message:
+          type: string
+        date:
+          format: date
+          type: string
+      type: object
+    GreetUpdate:
+      properties:
+        greeting:
+          type: string
+      type: object
