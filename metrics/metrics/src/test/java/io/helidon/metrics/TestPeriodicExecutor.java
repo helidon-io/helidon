@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.metrics;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -33,20 +35,20 @@ import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class TestPeriodicExecutor {
 
-    private static final int SLEEP_TIME_MS = 1500;
-    private static final int SLEEP_TIME_NO_DATA_MS = 100;
+    private static final int APPROX_TEST_DURATION_MS = 1500;
+    private static final int MAX_TEST_WAIT_TIME_MS = APPROX_TEST_DURATION_MS * 15 / 10; // 1.5 * approx test duration
 
     private static final int FAST_INTERVAL = 250;
     private static final int SLOW_INTERVAL = 400;
 
-    private static final double SLOWDOWN_FACTOR = 0.80; // for slow pipelines!
-
-    private static final double MIN_FAST_COUNT = 1500 / FAST_INTERVAL * SLOWDOWN_FACTOR;
-    private static final double MIN_SLOW_COUNT = 1500 / SLOW_INTERVAL * SLOWDOWN_FACTOR;
+    private static final int MIN_FAST_COUNT = APPROX_TEST_DURATION_MS / FAST_INTERVAL;
+    private static final int MIN_SLOW_COUNT = APPROX_TEST_DURATION_MS / SLOW_INTERVAL;
 
     private static final Logger PERIODIC_EXECUTOR_LOGGER = Logger.getLogger(PeriodicExecutor.class.getName());
 
@@ -59,13 +61,28 @@ class TestPeriodicExecutor {
             AtomicInteger countA = new AtomicInteger();
             AtomicInteger countB = new AtomicInteger();
 
-            exec.enrollRunner(() -> countA.incrementAndGet(), Duration.ofMillis(FAST_INTERVAL));
-            exec.enrollRunner(() -> countB.incrementAndGet(), Duration.ofMillis(SLOW_INTERVAL));
+            CountDownLatch latchA = new CountDownLatch(MIN_FAST_COUNT);
+            CountDownLatch latchB = new CountDownLatch(MIN_SLOW_COUNT);
 
-            Thread.sleep(SLEEP_TIME_MS);
+            long startTime = System.nanoTime();
+            exec.enrollRunner(() -> {
+                countA.incrementAndGet();
+                latchA.countDown();
+            }, Duration.ofMillis(FAST_INTERVAL));
 
-            assertThat("CountA", (double) countA.get(), is(greaterThan(MIN_FAST_COUNT)));
-            assertThat("CountB", (double) countB.get(), is(greaterThan(MIN_SLOW_COUNT)));
+            exec.enrollRunner(() -> {
+                countB.incrementAndGet();
+                latchB.countDown();
+            }, Duration.ofMillis(SLOW_INTERVAL));
+
+            assertThat("Wait latch for fast interval", latchA.await(MAX_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS), is(true));
+            assertThat("Wait latch for slow interval", latchB.await(MAX_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS), is(true));
+
+            Duration elapsedTime = Duration.ofNanos(System.nanoTime() - startTime);
+
+            assertThat("CountA", countA.get(), is(greaterThanOrEqualTo(MIN_FAST_COUNT)));
+            assertThat("CountB", countB.get(), is(greaterThanOrEqualTo(MIN_SLOW_COUNT)));
+            assertThat("Wait duration", elapsedTime, greaterThanOrEqualTo(Duration.ofMillis(1500)));
         } finally {
             if (exec.executorState() == PeriodicExecutor.State.STARTED) {
                 exec.stopExecutor();
@@ -80,16 +97,23 @@ class TestPeriodicExecutor {
             AtomicInteger countA = new AtomicInteger();
             AtomicInteger countB = new AtomicInteger();
 
-            exec.enrollRunner(() -> countA.incrementAndGet(), Duration.ofMillis(FAST_INTERVAL));
+            CountDownLatch latchA = new CountDownLatch(MIN_FAST_COUNT);
+            CountDownLatch latchB = new CountDownLatch(MIN_SLOW_COUNT);
+
+            exec.enrollRunner(() -> {
+                countA.incrementAndGet();
+                latchA.countDown();
+            }, Duration.ofMillis(FAST_INTERVAL));
 
             exec.startExecutor();
 
-            exec.enrollRunner(() -> countB.incrementAndGet(), Duration.ofMillis(SLOW_INTERVAL));
+            exec.enrollRunner(() -> {
+                countB.incrementAndGet();
+                latchB.countDown();
+            }, Duration.ofMillis(SLOW_INTERVAL));
 
-            Thread.sleep(SLEEP_TIME_MS);
-
-            assertThat("CountA", (double) countA.get(), is(greaterThan(MIN_FAST_COUNT)));
-            assertThat("CountB", (double) countB.get(), is(greaterThan(MIN_SLOW_COUNT)));
+            assertThat("Wait latch for fast interval", latchA.await(MAX_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS), is(true));
+            assertThat("Wait latch for slow interval", latchB.await(MAX_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS), is(true));
         } finally {
             if (exec.executorState() == PeriodicExecutor.State.STARTED) {
                 exec.stopExecutor();
@@ -104,17 +128,25 @@ class TestPeriodicExecutor {
             AtomicInteger countA = new AtomicInteger();
             AtomicInteger countB = new AtomicInteger();
 
-            exec.enrollRunner(() -> countA.incrementAndGet(), Duration.ofMillis(FAST_INTERVAL));
+            CountDownLatch latchA = new CountDownLatch(MIN_FAST_COUNT);
+
+            exec.enrollRunner(() -> {
+                countA.incrementAndGet();
+                latchA.countDown();
+            }, Duration.ofMillis(FAST_INTERVAL));
 
             exec.startExecutor();
-            Thread.sleep(SLEEP_TIME_MS);
+            assertThat("Wait latch", latchA.await(MAX_TEST_WAIT_TIME_MS, TimeUnit.MILLISECONDS), is(true));
 
             exec.stopExecutor();
 
             exec.enrollRunner(() -> countB.incrementAndGet(), Duration.ofMillis(SLOW_INTERVAL));
 
-            assertThat("CountA", (double) countA.get(), is(greaterThan(MIN_FAST_COUNT))); // should be 8
-            assertThat("CountB", (double) countB.get(), is(0.0));
+            // The executor is no longer running, so we cannot use a countdown latch to know when to check countB. Use time.
+            Thread.sleep(MAX_TEST_WAIT_TIME_MS);
+
+            assertThat("CountA", countA.get(), is(greaterThanOrEqualTo(MIN_FAST_COUNT))); // should be 8
+            assertThat("CountB", countB.get(), is(0));
         } finally {
             if (exec.executorState() == PeriodicExecutor.State.STARTED) {
                 exec.stopExecutor();
@@ -130,7 +162,8 @@ class TestPeriodicExecutor {
         try {
             PeriodicExecutor executor = PeriodicExecutor.create();
             executor.stopExecutor();
-            Thread.sleep(SLEEP_TIME_NO_DATA_MS);
+
+            waitForExecutorState(executor, PeriodicExecutor.State.STOPPED);
             handler.clear();
 
             executor.stopExecutor();
@@ -152,7 +185,7 @@ class TestPeriodicExecutor {
             PERIODIC_EXECUTOR_LOGGER.setLevel(Level.FINE);
             PeriodicExecutor executor = PeriodicExecutor.create();
             executor.stopExecutor();
-            Thread.sleep(SLEEP_TIME_NO_DATA_MS);
+            waitForExecutorState(executor, PeriodicExecutor.State.STOPPED);
 
             executor.stopExecutor();
             handler.clear();
@@ -184,7 +217,7 @@ class TestPeriodicExecutor {
 
             if (testState == PeriodicExecutor.State.STARTED) {
                 executor.startExecutor();
-                Thread.sleep(SLEEP_TIME_NO_DATA_MS);
+                waitForExecutorState(executor, PeriodicExecutor.State.STARTED);
             }
 
             handler.clear();
@@ -203,6 +236,15 @@ class TestPeriodicExecutor {
             PERIODIC_EXECUTOR_LOGGER.removeHandler(handler);
             PERIODIC_EXECUTOR_LOGGER.setLevel(originalLevel);
         }
+    }
+
+    private void waitForExecutorState(PeriodicExecutor executor, PeriodicExecutor.State expectedState) {
+        for (int i = MAX_TEST_WAIT_TIME_MS; i > 0; i -= 500) {
+            if (executor.executorState() == expectedState) {
+                return;
+            }
+        }
+        fail("Timed out waiting for executor in state " + executor.executorState() + " to enter state " + expectedState.name());
     }
 
     private static class MyHandler extends Handler {

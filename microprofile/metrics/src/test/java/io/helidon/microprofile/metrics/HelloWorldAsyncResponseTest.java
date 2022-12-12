@@ -133,7 +133,7 @@ public class HelloWorldAsyncResponseTest {
     }
 
     @Test
-    public void testAsyncWithArg() throws InterruptedException {
+    public void testAsyncWithArg() {
         LongStream.range(0, 3).forEach(
                 i -> webTarget
                         .path("helloworld/slowWithArg/Johan")
