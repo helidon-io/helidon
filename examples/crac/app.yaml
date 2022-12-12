@@ -51,6 +51,7 @@ spec:
           ports:
             - containerPort: 7001
           securityContext:
+            # TODO: be nicer
             privileged: true
           readinessProbe:
             tcpSocket:
