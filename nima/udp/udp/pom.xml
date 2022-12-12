@@ -27,10 +27,6 @@
     <artifactId>helidon-nima-udp</artifactId>
     <name>Helidon Níma UDP</name>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.builder</groupId>
