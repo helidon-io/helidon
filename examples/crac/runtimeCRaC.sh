@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-if [ ! -d "./cr" ];
+if [ ! -d "/crac-checkpoint/cr" ];
 then
 	  echo "==== Creating CRaC checkpoint ===="
 	  echo "=== Checking CRIU compatibility(don't forget --privileged) ==="
@@ -32,12 +32,12 @@ then
 
     echo "=== Pre-starting Helidon MP app ==="
 	  set +e
-    $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=cr -jar ./*.jar
+    $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=/crac-checkpoint/cr -jar ./*.jar
     set -e
 
     echo "=== CRaC checkpoint created, checking log dump for errors ==="
     cat ./cr/dump*.log | grep "Warn\|Err\|succ"
 fi
 echo "==== Starting directly from CRaC checkpoint ===="
-exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=cr
+exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=/crac-checkpoint/cr
 

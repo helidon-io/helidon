@@ -1,3 +1,4 @@
+#!/bin/bash -e
 #
 # Copyright (c) 2022 Oracle and/or its affiliates.
 #
@@ -13,28 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM ubuntu:22.04 as ubuntu-crac
+eval $(minikube docker-env)
+NAMESPACE=crac-helloworld
 
-WORKDIR /usr/share
+mvn package -DskipTests
+docker build -t crac-helloworld . -f Dockerfile.crac
+# First time ran, checkpoint is created, stop with Ctrl-C
+#docker run --privileged -p 7001:7001 --name crac-helloworld crac-helloworld
+# Second time starting from checkpoint, stop with Ctrl-C
+#docker start -i crac-helloworld
 
-ENV CRAC_ARTEFACT=openjdk-17-crac+3_linux-x64
-ENV JAVA_HOME=/usr/share/$CRAC_ARTEFACT
-
-# Install CRaC
-RUN apt-get -qq update && apt-get install -y wget \
-&& wget -q https://github.com/CRaC/openjdk-builds/releases/download/17-crac%2B3/$CRAC_ARTEFACT.tar.gz \
-&& tar zxf $CRAC_ARTEFACT.tar.gz \
-&& ln -s $JAVA_HOME/bin/java /bin/
-
-FROM ubuntu-crac
-WORKDIR /helidon
-
-ADD target/*.jar .
-ADD target/libs libs
-ADD runtimeCRaC.sh .
-RUN chmod +x ./runtimeCRaC.sh
-
-ENTRYPOINT ["./runtimeCRaC.sh"]
-
-EXPOSE 7001
-
+kubectl delete namespace ${NAMESPACE}
+kubectl create namespace ${NAMESPACE}
+kubectl config set-context --current --namespace=${NAMESPACE}
+kubectl apply -f . --namespace ${NAMESPACE}

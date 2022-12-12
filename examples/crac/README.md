@@ -8,21 +8,34 @@ therefore CRaC checkpoint needs to be created in runtime.
 
 ```bash
 mvn clean package
-docker build -t crac-runtime-helloworld . -f Dockerfile.runtime_crac
+docker build -t crac-helloworld . -f Dockerfile.crac
 # First time ran, checkpoint is created, stop with Ctrl-C
-docker run --privileged -p 7001:7001 --name crac-runtime-helloworld crac-runtime-helloworld
+docker run --privileged -p 7001:7001 --name crac-helloworld crac-helloworld
 # Second time starting from checkpoint, stop with Ctrl-C
-docker start -i crac-runtime-helloworld
+docker start -i crac-helloworld
 ```
-
-## Buildtime CRaC
-Docker buildx ...
-
-[//]: # (TODO docker buildx with privileged access?)
 
 ### Exercise the app
 ```
 curl -X GET http://localhost:7001/helloworld
 curl -X GET http://localhost:7001/helloworld/earth
 curl -X GET http://localhost:7001/another
+```
+
+## Kubernetes CRaC
+
+```shell
+minikube start
+bash deploy-minikube.sh
+curl $(minikube service crac-helloworld -n crac-helloworld --url)/helloworld/earth | jq
+```
+
+```shell
+kubectl get pods
+# Check first start
+kubectl logs --previous --tail=100 -l app=crac-helloworl
+# Check restart
+kubectl logs -l app=crac-helloworl
+# Scale-up quickly 
+kubectl scale --replicas=3 deployment/crac-helloworld
 ```

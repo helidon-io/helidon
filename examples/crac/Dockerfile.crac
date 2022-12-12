@@ -13,6 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+FROM debian:stretch-slim as ubuntu-crac
 
+WORKDIR /usr/share
 
-# TODO: docker buildx with priviledged access? - https://docs.docker.com/engine/reference/commandline/buildx_build/#allow
+ENV CRAC_ARTEFACT=openjdk-17-crac+3_linux-x64
+ENV JAVA_HOME=/usr/share/$CRAC_ARTEFACT
+
+# Install CRaC
+RUN apt-get -qq update && apt-get install -y wget
+RUN wget https://github.com/CRaC/openjdk-builds/releases/download/17-crac%2B3/$CRAC_ARTEFACT.tar.gz \
+&& tar zxf $CRAC_ARTEFACT.tar.gz \
+&& ln -s $JAVA_HOME/bin/java /bin/
+
+FROM ubuntu-crac
+WORKDIR /helidon
+
+ADD target/*.jar .
+ADD target/libs libs
+ADD runtimeCRaC.sh .
+RUN chmod +x ./runtimeCRaC.sh
+
+ENTRYPOINT ["./runtimeCRaC.sh"]
+
+EXPOSE 7001
+
