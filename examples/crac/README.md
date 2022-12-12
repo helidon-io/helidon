@@ -8,7 +8,7 @@ therefore CRaC checkpoint needs to be created in runtime.
 
 ```bash
 mvn clean package
-docker build -t crac-helloworld . -f Dockerfile.crac
+docker build --build-arg CR_DIR=~/cr -t crac-helloworld . -f Dockerfile.crac
 # First time ran, checkpoint is created, stop with Ctrl-C
 docker run --privileged -p 7001:7001 --name crac-helloworld crac-helloworld
 # Second time starting from checkpoint, stop with Ctrl-C
@@ -32,10 +32,10 @@ curl $(minikube service crac-helloworld -n crac-helloworld --url)/helloworld/ear
 
 ```shell
 kubectl get pods
-# Check first start
-kubectl logs --previous --tail=100 -l app=crac-helloworl
-# Check restart
-kubectl logs -l app=crac-helloworl
+# Check first start - leghtly checkpoint creation
+kubectl logs --previous --tail=100 -l app=crac-helloworld
+# Check restart - fast checkpoint restoration
+kubectl logs -l app=crac-helloworld
 # Scale-up quickly 
 kubectl scale --replicas=3 deployment/crac-helloworld
 ```

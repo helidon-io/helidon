@@ -19,12 +19,10 @@ NAMESPACE=crac-helloworld
 
 mvn package -DskipTests
 docker build -t crac-helloworld . -f Dockerfile.crac
-# First time ran, checkpoint is created, stop with Ctrl-C
-#docker run --privileged -p 7001:7001 --name crac-helloworld crac-helloworld
-# Second time starting from checkpoint, stop with Ctrl-C
-#docker start -i crac-helloworld
 
 kubectl delete namespace ${NAMESPACE}
+# Cleanup any previous checkpoint
+minikube ssh "sudo rm -rf /crac-checkpoint/cr"
 kubectl create namespace ${NAMESPACE}
 kubectl config set-context --current --namespace=${NAMESPACE}
 kubectl apply -f . --namespace ${NAMESPACE}

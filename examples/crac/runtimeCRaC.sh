@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-if [ ! -d "/crac-checkpoint/cr" ];
+if [ ! -d "$CR_DIR" ];
 then
 	  echo "==== Creating CRaC checkpoint ===="
 	  echo "=== Checking CRIU compatibility(don't forget --privileged) ==="
@@ -36,8 +36,10 @@ then
     set -e
 
     echo "=== CRaC checkpoint created, checking log dump for errors ==="
-    cat ./cr/dump*.log | grep "Warn\|Err\|succ"
-fi
+    cat $CR_DIR/dump*.log | grep "Warn\|Err\|succ"
+else
 echo "==== Starting directly from CRaC checkpoint ===="
-exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=/crac-checkpoint/cr
+exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=$CR_DIR
+fi
+
 

@@ -17,8 +17,11 @@ FROM debian:stretch-slim as ubuntu-crac
 
 WORKDIR /usr/share
 
+ARG CHECKPOINT_DIR
+
 ENV CRAC_ARTEFACT=openjdk-17-crac+3_linux-x64
 ENV JAVA_HOME=/usr/share/$CRAC_ARTEFACT
+ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
 
 # Install CRaC
 RUN apt-get -qq update && apt-get install -y wget
