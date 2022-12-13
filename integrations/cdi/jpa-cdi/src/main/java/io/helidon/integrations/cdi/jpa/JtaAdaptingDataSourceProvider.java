@@ -179,7 +179,7 @@ class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourc
     private JtaAdaptingDataSource getDefaultJtaDataSource() {
         return
             jtaDataSourcesByName.computeIfAbsent(NULL_DATASOURCE_NAME,
-                                                 n -> new JtaAdaptingDataSource(this.transactionManager,
+                                                 n -> new JtaAdaptingDataSource(this.transactionManager::getTransaction,
                                                                                 this.tsr,
                                                                                 this.interposedSynchronizations,
                                                                                 this.exceptionConverter,
@@ -189,7 +189,7 @@ class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourc
     private JtaAdaptingDataSource getNamedJtaDataSource(String name) {
         return
             jtaDataSourcesByName.computeIfAbsent(name,
-                                                 n -> new JtaAdaptingDataSource(this.transactionManager,
+                                                 n -> new JtaAdaptingDataSource(this.transactionManager::getTransaction,
                                                                                 this.tsr,
                                                                                 this.interposedSynchronizations,
                                                                                 this.exceptionConverter,

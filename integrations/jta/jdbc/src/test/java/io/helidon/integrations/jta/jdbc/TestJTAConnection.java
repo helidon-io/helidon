@@ -134,11 +134,11 @@ final class TestJtaConnection {
         assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
 
         try (Connection physicalConnection = h2ds.getConnection();
-             JtaConnection logicalConnection = (JtaConnection) JtaConnection.connection(tm::getTransaction,
-                                                                                        tsr,
-                                                                                        true,
-                                                                                        null,
-                                                                                        physicalConnection)) {
+             JtaConnection logicalConnection = new JtaConnection(tm::getTransaction,
+                                                                 tsr,
+                                                                 true,
+                                                                 null,
+                                                                 physicalConnection)) {
 
             // Make sure everything is hooked up properly.
             assertThat(logicalConnection.delegate(), sameInstance(physicalConnection));

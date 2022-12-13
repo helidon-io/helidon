@@ -67,7 +67,7 @@ public interface ExceptionConverter {
      * XAException} with {@linkplain XAException#errorCode an appropriate error code}, idiomatically following the rules
      * of the <a href="https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf">XA specification</a>.
      *
-     * @param xaRoutine the {@link XARoutine}
+     * @param xaRoutine the {@link XARoutine}; must not be {@code null}
      *
      * @param exception the {@link Exception} to convert; most commonly a variety of {@link java.sql.SQLException} or
      * {@link RuntimeException}; <strong>if supplied with an {@link XAException} this {@link ExceptionConverter} must
