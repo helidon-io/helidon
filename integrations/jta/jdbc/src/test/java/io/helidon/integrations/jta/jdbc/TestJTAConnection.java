@@ -138,7 +138,8 @@ final class TestJtaConnection {
                                                                  tsr,
                                                                  true,
                                                                  null,
-                                                                 physicalConnection)) {
+                                                                 physicalConnection,
+                                                                 false)) {
 
             // Make sure everything is hooked up properly.
             assertThat(logicalConnection.delegate(), sameInstance(physicalConnection));

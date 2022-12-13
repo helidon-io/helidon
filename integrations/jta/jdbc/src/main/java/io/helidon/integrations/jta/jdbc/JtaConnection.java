@@ -138,19 +138,27 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
      *
+     * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
+     * there is one, will be made immediately
+     *
      * @exception NullPointerException if any parameter is {@code null}
+     *
+     * @exception SQLException if transaction enlistment fails
      */
     JtaConnection(TransactionSupplier transactionSupplier,
                   TransactionSynchronizationRegistry transactionSynchronizationRegistry,
                   boolean interposedSynchronizations,
                   ExceptionConverter exceptionConverter,
-                  Connection delegate) {
+                  Connection delegate,
+                  boolean immediateEnlistment)
+        throws SQLException {
         this(transactionSupplier,
              transactionSynchronizationRegistry,
              interposedSynchronizations,
              exceptionConverter,
              delegate,
-             null);
+             null,
+             immediateEnlistment);
     }
 
     JtaConnection(TransactionSupplier transactionSupplier,
@@ -158,7 +166,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
                   boolean interposedSynchronizations,
                   ExceptionConverter exceptionConverter,
                   Connection delegate,
-                  XAResource xaResource) {
+                  XAResource xaResource,
+                  boolean immediateEnlistment)
+        throws SQLException {
         super(delegate,
               true, // closeable
               true); // strict isClosed checking; always a good thing
@@ -167,6 +177,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.interposedSynchronizations = interposedSynchronizations;
         this.exceptionConverter = exceptionConverter; // nullable
         this.xaResource = xaResource; // nullable
+        if (immediateEnlistment) {
+            this.enlist();
+        }
     }
 
 
@@ -845,15 +858,15 @@ class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_COMMITTED:
         case Status.STATUS_NO_TRANSACTION:
         case Status.STATUS_ROLLEDBACK:
-            // Terminal; the two-phase commit process has already happened, or there's no transaction at all. Very
-            // common. Return without enlisting.
+            // Terminal; the two-phase commit process has already happened, or there's no transaction at all. Enlistment
+            // is impossible. Very common. Return without enlisting.
             return;
         case Status.STATUS_COMMITTING:
         case Status.STATUS_MARKED_ROLLBACK:
         case Status.STATUS_PREPARED:
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
-            // Interim or effectively interim. Extremely uncommon. Throw to prevent accidental side effects.
+            // Interim or effectively interim. Uncommon. Throw to prevent accidental side effects.
             throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus, "25000");
         case Status.STATUS_UNKNOWN:
         default:

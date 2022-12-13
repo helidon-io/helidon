@@ -80,6 +80,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
 
     private final boolean interposedSynchronizations;
 
+    private final boolean immediateEnlistment;
+
     private final ExceptionConverter exceptionConverter;
 
 
@@ -114,6 +116,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
         this.tsr = Objects.requireNonNull(tsr, "tsr");
         this.interposedSynchronizations =
             Boolean.parseBoolean(System.getProperty("helidon.jta.interposedSynchronizations", "true"));
+        this.immediateEnlistment =
+            Boolean.parseBoolean(System.getProperty("helidon.jta.immediateEnlistment", "false"));
         Instance<ExceptionConverter> i = objects.select(ExceptionConverter.class);
         this.exceptionConverter = i.isUnsatisfied() ? null : i.get();
     }
@@ -162,7 +166,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
                                                                                 this.tsr,
                                                                                 this.interposedSynchronizations,
                                                                                 this.exceptionConverter,
-                                                                                this.objects.select(DataSource.class).get()));
+                                                                                this.objects.select(DataSource.class).get(),
+                                                                                this.immediateEnlistment));
     }
 
     private JtaAdaptingDataSource getNamedJtaDataSource(String name) {
@@ -173,7 +178,8 @@ final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.Dat
                                                                                 this.interposedSynchronizations,
                                                                                 this.exceptionConverter,
                                                                                 this.objects.select(DataSource.class,
-                                                                                                    NamedLiteral.of(n)).get()));
+                                                                                                    NamedLiteral.of(n)).get(),
+                                                                                this.immediateEnlistment));
     }
 
     private DataSource getNamedNonJtaDataSource(String name) {
