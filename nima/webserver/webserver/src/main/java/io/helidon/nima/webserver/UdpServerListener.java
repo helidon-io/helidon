@@ -26,7 +26,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +49,7 @@ import static java.lang.System.Logger.Level.TRACE;
 class UdpServerListener implements ConnectionListener {
     private static final System.Logger LOGGER = System.getLogger(UdpServerListener.class.getName());
 
-    private static final int BUFFER_SIZE = 16 * 1024;
+    private static final int BUFFER_SIZE = 64 * 1024;
     private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
@@ -117,6 +119,16 @@ class UdpServerListener implements ConnectionListener {
             channel = DatagramChannel.open();
             channel.bind(configuredAddress);
             localPort = channel.socket().getLocalPort();
+
+            if (LOGGER.isLoggable(INFO)) {
+                String format = "[%s] udp://%s:%s bound for socket '%s'";
+                String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(channel));
+                LOGGER.log(INFO, String.format(format,
+                        serverChannelId,
+                        configuredAddress.getAddress().getHostAddress(),
+                        localPort,
+                        socketName));
+            }
         } catch (IOException e) {
             LOGGER.log(TRACE, "Failed to open socket channel", e);
             throw new RuntimeException(e);
@@ -168,13 +180,12 @@ class UdpServerListener implements ConnectionListener {
      */
     private class Message implements UdpMessage {
 
-        private final byte[] bytes;
+        private final ByteBuffer readBuffer;
         private final Client client;
 
         Message(InetSocketAddress remote, ByteBuffer readBuffer) {
             this.client = new Client(remote);
-            bytes = new byte[readBuffer.remaining()];
-            readBuffer.get(bytes);
+            this.readBuffer = readBuffer;
         }
 
         @Override
@@ -185,7 +196,9 @@ class UdpServerListener implements ConnectionListener {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T as(Class<T> clazz) {
-            if (clazz.equals(String.class)) {
+            if (clazz.equals(ByteBuffer.class)) {
+                return (T) readBuffer;
+            } else if (clazz.equals(String.class)) {
                 return (T) new String(asByteArray(), StandardCharsets.UTF_8);
             } else if (clazz.equals(byte[].class)) {
                 return (T) asByteArray();
@@ -205,6 +218,8 @@ class UdpServerListener implements ConnectionListener {
 
         @Override
         public byte[] asByteArray() {
+            byte[] bytes = new byte[readBuffer.remaining()];
+            readBuffer.get(bytes);
             return bytes;
         }
     }
@@ -244,6 +259,22 @@ class UdpServerListener implements ConnectionListener {
         @Override
         public void disconnect() throws IOException {
             channel.disconnect();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Client client)) {
+                return false;
+            }
+            return remote.equals(client.remote);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(remote);
         }
 
         private ByteBuffer writeBuffer() {
