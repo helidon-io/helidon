@@ -279,8 +279,17 @@ public final class Http {
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.6">HTTP/1.1 documentation</a>.
          *
          * @since 2.0
+         * @deprecated use {@link #HTTP_VERSION_NOT_SUPPORTED_505} instead (inconsistent name)
          */
-        HTTP_VERSION_NOT_SUPPORTED(505, "HTTP Version Not Supported");
+        @Deprecated(forRemoval = true, since = "3.0.3")
+        HTTP_VERSION_NOT_SUPPORTED(505, "HTTP Version Not Supported"),
+        /**
+         * 505 HTTP Version Not Supported, see
+         * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.6">HTTP/1.1 documentation</a>.
+         *
+         * @since 3.0.3
+         */
+        HTTP_VERSION_NOT_SUPPORTED_505(505, "HTTP Version Not Supported");
 
         private final int code;
         private final String reason;
