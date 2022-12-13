@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.configurable.Whitelist;
 import io.helidon.common.context.Context;
 import io.helidon.tracing.Tracer;
 
@@ -43,6 +44,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Optional<Transport> transport;
     private final Context context;
     private final boolean printFeatureDetails;
+    private final Whitelist trustedProxies;
 
     /**
      * Creates new instance.
@@ -58,6 +60,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.transport = builder.transport();
         this.context = builder.context();
         this.printFeatureDetails = builder.printFeatureDetails();
+        this.trustedProxies = builder.defaultSocketBuilder().trustedProxies();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(WebServer.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -189,6 +192,11 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfig.requestedUriDiscoveryTypes();
     }
 
+    @Override
+    public Whitelist trustedProxies() {
+        return trustedProxies;
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -210,6 +218,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final BackpressureStrategy backpressureStrategy;
         private final int maxUpgradeContentLength;
         private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
+        private Whitelist trustedProxies;
 
         /**
          * Creates new instance.
@@ -235,6 +244,7 @@ class ServerBasicConfig implements ServerConfiguration {
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
             this.requestedUriDiscoveryTypes = builder.requestedUriDiscoveryTypes();
+            this.trustedProxies = builder.trustedProxies();
         }
 
         @Override
@@ -350,6 +360,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes() {
             return requestedUriDiscoveryTypes;
+        }
+
+        @Override
+        public Whitelist trustedProxies() {
+            return trustedProxies;
         }
     }
 }

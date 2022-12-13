@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.configurable.Whitelist;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
@@ -260,10 +261,11 @@ public interface SocketConfiguration {
     List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes();
 
     /**
-     * Whitelist for host names
-     * @return
+     * Return the whitelist for trusted proxies.
+     *
+     * @return whitelist for trusted proxies
      */
-    Whitelist requestedUriWhitelist();
+    Whitelist trustedProxies();
 
     /**
      * Maximum length of the content of an upgrade request.
@@ -525,6 +527,15 @@ public interface SocketConfiguration {
         B requestedUriDiscoveryEnabled(boolean enabled);
 
         /**
+         * Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests.
+         *
+         * @param trustedProxies to apply to forwarded headers
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "requested-uri-discovery.trusted-proxies")
+        B trustedProxies(Whitelist trustedProxies);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -572,6 +583,7 @@ public interface SocketConfiguration {
             config.get("requested-uri-discovery.enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
             config.get("requested-uri-discovery.types").asList(RequestedUriDiscoveryType.class)
                     .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
+            config.get("requested-uri-discovery.trusted-proxies").as(Whitelist.class).ifPresent(this::trustedProxies);
 
             return (B) this;
         }
@@ -613,6 +625,7 @@ public interface SocketConfiguration {
         private long maxBufferSize = 5 * 1024 * 1024;
         private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
         private Boolean requestedUriDiscoveryEnabled;
+        private Whitelist trustedProxies;
 
         private Builder() {
         }
@@ -884,6 +897,17 @@ public interface SocketConfiguration {
             return this;
         }
 
+        /**
+         * Configure the trusted proxy settings.
+         *
+         * @param trustedProxies prescribing proxies to be trusted
+         * @return updated builder instance
+         */
+        public Builder trustedProxies(Whitelist trustedProxies) {
+            this.trustedProxies = trustedProxies;
+            return this;
+        }
+
         @Override
         public Builder config(Config config) {
             SocketConfigurationBuilder.super.config(config);
@@ -896,6 +920,7 @@ public interface SocketConfiguration {
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
+            config.get("trusted-proxies").as(Whitelist.class).ifPresent(this::trustedProxies);
 
             return this;
         }
@@ -995,6 +1020,10 @@ public interface SocketConfiguration {
                 return requestedUriDiscoveryTypes;
             }
             return List.of(RequestedUriDiscoveryType.HOST);
+        }
+
+        Whitelist trustedProxies() {
+            return trustedProxies;
         }
     }
 }

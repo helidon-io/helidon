@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.configurable.Whitelist;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -616,6 +617,12 @@ public interface WebServer {
         @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             defaultSocket(it -> it.requestedUriDiscoveryEnabled(enabled));
+            return this;
+        }
+
+        @Override
+        public Builder trustedProxies(Whitelist trustedProxies) {
+            this.configurationBuilder.trustedProxies(trustedProxies);
             return this;
         }
 

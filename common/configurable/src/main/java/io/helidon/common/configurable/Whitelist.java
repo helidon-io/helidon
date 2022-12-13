@@ -1,4 +1,19 @@
-package io.helidon.webserver;
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.common.configurable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,16 +21,18 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Whitelist provides a way to define a list of allowed values and to test if a value is within the bounds of the configuration.
  * <p>
  * The algorithm of testing that a value is allowed:
- * <nl>
- * <li>Iterate through all whitelist patterns, if none found, value is not permitted</li>
- * <li>Iterate through all blacklist patterns, if found, value is not permitted</li>
+ * <ol>
+ * <li>Iterate through all whitelist patterns, if none matches, value is not permitted</li>
+ * <li>Iterate through all blacklist patterns, if any matches, value is not permitted</li>
  * <li>Value is permitted</li>
- * </nl>
+ * </ol>
  */
 public interface Whitelist extends Predicate<String> {
     /**
@@ -46,8 +63,9 @@ public interface Whitelist extends Predicate<String> {
     boolean test(String value);
 
     /**
-     * Fluent API builder for Whitelist
+     * Fluent API builder for {@code Whitelist}.
      */
+    @Configured
     final class Builder implements io.helidon.common.Builder<Builder, Whitelist> {
         private final List<Predicate<String>> allowedPredicates = new ArrayList<>();
         private final List<Predicate<String>> deniedPredicates = new ArrayList<>();
@@ -83,91 +101,214 @@ public interface Whitelist extends Predicate<String> {
             return this;
         }
 
+        /**
+         * Allows all strings to match (subject to other, deny, matchers).
+         *
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "allow.all", type = Boolean.class)
         public Builder allowAll() {
             return addAllowed(new AllowAllPredicate());
         }
 
+        /**
+         * Adds a list of exact strings any of which, if matched, allows matching for a candidate string.
+         *
+         * @param exacts which allow matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "allow.exact")
         public Builder allowed(List<String> exacts) {
             exacts.forEach(this::addAllowed);
             return this;
         }
 
+        /**
+         * Adds a list of prefixes any of which, if matched, allows matching for a candidate string.
+         *
+         * @param prefixes which allow matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "allow.prefix")
         public Builder allowedPrefixes(List<String> prefixes) {
             prefixes.forEach(this::addAllowedPrefix);
             return this;
         }
 
+        /**
+         * Adds a list of suffixes any of which, if matched, allows matching for a candidate string.
+         *
+         * @param suffixes which allow matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "allow.suffix")
         public Builder allowedSuffixes(List<String> suffixes) {
             suffixes.forEach(this::addAllowedSuffix);
             return this;
         }
 
+        /**
+         * Adds a list of {@link Pattern} any of which, if matched, allows matching for a candidate string.
+         *
+         * @param patterns which allow matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "allow.pattern")
         public Builder allowedPatterns(List<Pattern> patterns) {
             patterns.forEach(this::addAllowedPattern);
             return this;
         }
 
+        /**
+         * Adds an exact string which, if matched, allows matching for a candidate string.
+         *
+         * @param exact which allows matching
+         * @return updated builder
+         */
         public Builder addAllowed(String exact) {
             return addAllowed(new ExactPredicate(exact));
         }
 
+        /**
+         * Adds a {@link Pattern} which, if matched, allows matching for a candidate string.
+         *
+         * @param pattern which allows matching
+         * @return updated builder
+         */
         public Builder addAllowedPattern(Pattern pattern) {
             return addAllowed(new PatternPredicate(pattern));
         }
 
+        /**
+         * Adds a prefix which, if matched, allows matching for a candidate string.
+         *
+         * @param prefix which allows matching
+         * @return updated builder
+         */
         public Builder addAllowedPrefix(String prefix) {
             return addAllowed(new PrefixPredicate(prefix));
         }
 
+        /**
+         * Adds a suffix which, if matched, allows matching for a candidate string.
+         *
+         * @param suffix which allows matching
+         * @return updated builder
+         */
         public Builder addAllowedSuffix(String suffix) {
             return addAllowed(new SuffixPredicate(suffix));
         }
 
+        /**
+         * Adds a predicate which, if matched, allows matching for a candidate string.
+         *
+         * @param predicate which allows matching
+         * @return updated builder
+         */
         public Builder addAllowed(Predicate<String> predicate) {
             this.allowedPredicates.add(predicate);
             return this;
         }
 
+        /**
+         * Adds exact strings a match by any of which denies matching for a candidate string.
+         *
+         * @param exacts which deny matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "deny.exact")
         public Builder denied(List<String> exacts) {
             exacts.forEach(this::addDenied);
             return this;
         }
 
+        /**
+         * Adds prefixes a match by any of which denies matching for a candidate string.
+         *
+         * @param prefixes which deny matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "deny.prefix")
         public Builder deniedPrefixes(List<String> prefixes) {
             prefixes.forEach(this::addDeniedPrefix);
             return this;
         }
 
+        /**
+         * Adds suffixes a match by any of which denies matching for a candidate string.
+         *
+         * @param suffixes which deny matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "deny.suffix")
         public Builder deniedSuffixes(List<String> suffixes) {
             suffixes.forEach(this::addDeniedSuffix);
             return this;
         }
 
+        /**
+         * Adds patterns a match by any of which denies matching for a candidate string.
+         *
+         * @param patterns which deny matching
+         * @return updated builder
+         */
+        @ConfiguredOption(key = "deny.pattern")
         public Builder deniedPatterns(List<Pattern> patterns) {
             patterns.forEach(this::addDeniedPattern);
             return this;
         }
 
+        /**
+         * Adds an exact string which, if matched, denies matching for a candidate string.
+         *
+         * @param exact match to deny matching
+         * @return updated builder
+         */
         public Builder addDenied(String exact) {
             return addDenied(new ExactPredicate(exact));
         }
 
+        /**
+         * Adds a {@link Pattern} which, if matched, denies matching for a candidate string.
+         *
+         * @param pattern to deny matching
+         * @return updated builder
+         */
         public Builder addDeniedPattern(Pattern pattern) {
             return addDenied(new PatternPredicate(pattern));
         }
 
+        /**
+         * Adds a prefix which, if matched, denies matching for a candidate string.
+         *
+         * @param prefix to deny matching
+         * @return updated builder
+         */
         public Builder addDeniedPrefix(String prefix) {
             return addDenied(new PrefixPredicate(prefix));
         }
 
+        /**
+         * Adds a suffix which, if matched, denies matching for a candidate string.
+         *
+         * @param suffix to deny matching
+         * @return updated builder
+         */
         public Builder addDeniedSuffix(String suffix) {
             return addDenied(new SuffixPredicate(suffix));
         }
 
+        /**
+         * Adds a predicate which, if matched, denies matching for a candidate string.
+         *
+         * @param predicate to deny matching
+         * @return updated builder
+         */
         public Builder addDenied(Predicate<String> predicate) {
             this.deniedPredicates.add(predicate);
             return this;
         }
+
         private static final class WhiteListImpl implements Whitelist {
 
             private final List<Predicate<String>> allowedPredicates;
@@ -183,7 +324,7 @@ public interface Whitelist extends Predicate<String> {
                 for (Predicate<String> allowedPredicate : allowedPredicates) {
                     if (allowedPredicate.test(value)) {
                         // value is allowed, let's check it is not explicitly denied
-                        return testDenied(value);
+                        return testNotDenied(value);
                     }
                 }
 
@@ -196,7 +337,7 @@ public interface Whitelist extends Predicate<String> {
                 return "Allowed: " + allowedPredicates + ", Denied: " + deniedPredicates;
             }
 
-            private boolean testDenied(String value) {
+            private boolean testNotDenied(String value) {
                 for (Predicate<String> deniedPredicate : deniedPredicates) {
                     if (deniedPredicate.test(value)) {
                         return false;
@@ -221,7 +362,12 @@ public interface Whitelist extends Predicate<String> {
         private static final class ExactPredicate implements Predicate<String> {
             private final String testValue;
 
-            public ExactPredicate(String exact) {
+            /**
+             * Creates a new {@code ExactPredicate} from the provided exact-match string.
+             *
+             * @param exact match string
+             */
+            ExactPredicate(String exact) {
                 this.testValue = exact;
             }
 

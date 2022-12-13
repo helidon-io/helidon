@@ -137,6 +137,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-configurable</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-http</artifactId>
         </dependency>
         <dependency>

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import io.helidon.common.configurable.Whitelist;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.UriInfo;
@@ -51,20 +52,26 @@ class RequestedUriTest {
         WebServer webServer = mock(WebServer.class);
 
         // set test "when"
+        when(bareRequest.remoteAddress()).thenReturn(testData.remoteAddress());
         when(bareRequest.uri()).thenReturn(testData.uri());
         when(bareRequest.isSecure()).thenReturn(testData.isSecure());
+        when(sc.trustedProxies()).thenReturn(testData.trustedProxies());
         when(sc.requestedUriDiscoveryTypes()).thenReturn(testData.discoveryTypes());
         Request request = new TestRequest(bareRequest, webServer, new HashRequestHeaders(testData.headers()), testData.path());
 
-        assertThat(request.requestedUri(), is(testData.expectedUriInfo()));
+        assertThat(testData.testDescription(), request.requestedUri(), is(testData.expectedUriInfo()));
     }
 
     private static Stream<TestData> testData() {
         return Stream.of(
                 new TestData("Forwarded header",
+                             "myLB",
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(FORWARDED),
+                             Whitelist.builder()
+                                     .addAllowed("myLB")
+                                     .build(),
                              Map.of(
                                      Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
                                      Http.Header.X_FORWARDED_PORT, List.of("7879"),
@@ -76,9 +83,13 @@ class RequestedUriTest {
                              path("/path"),
                              new UriInfo("https", "myfhost", 7878, "/path", Optional.empty())),
                 new TestData("Forwarded header fallback to Host header",
+                             "myLB",
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(FORWARDED),
+                             Whitelist.builder()
+                                     .addAllowed("myLB")
+                                     .build(),
                              Map.of(
                                      Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
                                      Http.Header.X_FORWARDED_PORT, List.of("7879"),
@@ -89,9 +100,13 @@ class RequestedUriTest {
                              path("/path"),
                              new UriInfo("http", "myhost", 9999, "/path", Optional.empty())),
                 new TestData("X-Forwarded all headers",
+                             "myLB",
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(X_FORWARDED),
+                             Whitelist.builder()
+                                     .addAllowed("myLB")
+                                     .build(),
                              Map.of(
                                      Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
                                      Http.Header.X_FORWARDED_PORT, List.of("7879"),
@@ -103,9 +118,13 @@ class RequestedUriTest {
                              path("/path"),
                              new UriInfo("xhttps", "myxhost", 7879, "/reversed/path", Optional.empty())),
                 new TestData("X-Forwarded some headers",
+                             "myLB",
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(X_FORWARDED),
+                             Whitelist.builder()
+                                     .addAllowed("myLB")
+                                     .build(),
                              Map.of(
                                      Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
                                      Http.Header.X_FORWARDED_PREFIX, List.of("/reversed"),
@@ -114,10 +133,15 @@ class RequestedUriTest {
                              ),
                              path("/path"),
                              new UriInfo("http", "myxhost", 80, "/reversed/path", Optional.empty())),
+                // Falls back to Host header because the user selected X-Forwarded for the discovery type
                 new TestData("X-Forwarded fallback to Host header",
+                             "myLB",
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(X_FORWARDED),
+                             Whitelist.builder()
+                                     .addAllowed("myLB")
+                                     .build(),
                              Map.of(
                                      Http.Header.FORWARDED, List.of("host=myfhost:7878;proto=https"),
                                      Http.Header.HOST, List.of("myhost:9999")
@@ -125,9 +149,13 @@ class RequestedUriTest {
                              path("/path"),
                              new UriInfo("http", "myhost", 9999, "/path", Optional.empty())),
                 new TestData("Default (Host header)",
+                             "myLB",
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(HOST),
+                             Whitelist.builder() // whitelist should be ignored; this data uses HOST
+                                     .addAllowed("myLB")
+                                     .build(),
                              Map.of(
                                      Http.Header.X_FORWARDED_HOST, List.of("myxhost"),
                                      Http.Header.X_FORWARDED_PORT, List.of("7879"),
@@ -147,9 +175,11 @@ class RequestedUriTest {
     }
 
     private record TestData(String testDescription,
+                            String remoteAddress,
                             boolean isSecure,
                             URI uri,
                             List<SocketConfiguration.RequestedUriDiscoveryType> discoveryTypes,
+                            Whitelist trustedProxies,
                             Map<String, List<String>> headers,
                             HttpRequest.Path path,
                             UriInfo expectedUriInfo) {

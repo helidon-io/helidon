@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.configurable.Whitelist;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -575,6 +576,12 @@ public interface ServerConfiguration extends SocketConfiguration {
         @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             defaultSocketBuilder().requestedUriDiscoveryEnabled(enabled);
+            return this;
+        }
+
+        @Override
+        public Builder trustedProxies(Whitelist trustedProxies) {
+            defaultSocketBuilder().trustedProxies(trustedProxies);
             return this;
         }
 
