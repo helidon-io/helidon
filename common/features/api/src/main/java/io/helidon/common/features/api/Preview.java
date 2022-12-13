@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for preview feature modules.
- * Preview feature may be changed including backward incompatible changes in between major versions of Helidon.
+ * Preview feature may be changed including backward incompatible changes in between minor versions of Helidon.
  * Preview features are considered production ready features.
  *
  * @see Incubating - mutualy exclusive with Incubating
