@@ -51,6 +51,7 @@
         <module>micrometer</module>
         <module>vault</module>
         <module>microstream</module>
+        <module>kotlin-support</module>
     </modules>
 
     <build>
