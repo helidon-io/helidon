@@ -44,7 +44,7 @@ Let's change a little class `MessageServiceImpl` for our example :
 5) Replace implementation of the method `public Message getMessage(@PathParam("name") String name)` by this:
 ```java
         Message result = new Message();
-        return result.message(defaultMessage.get().getMessage()).greeting(name);
+        return result.message(name).greeting(defaultMessage.get().getGreeting());
 ```
 6) Replace implementation of the method `public Response updateGreeting(@Valid @NotNull Message message)` by this:
 ```java

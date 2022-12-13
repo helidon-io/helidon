@@ -29,7 +29,7 @@
         <version>3.0.1</version>
         <relativePath/>
     </parent>
-    <artifactId>openapi-se-client</artifactId>
+    <artifactId>openapi-java-client</artifactId>
     <name>openapi-java-client</name>
         <description>This is a sample for Helidon Quickstart project.</description>
     <version>1.0.0</version>
