@@ -22,6 +22,11 @@ import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for logging observe provider.
+ * <p>
+ * Java Util Logging uses weak references to loggers (and does not support adding level configuration to LogManager at runtime),
+ *  so changing a log level for a logger may be temporary (in case a garbage collector runs and the reference is not kept
+ *  anywhere).
+ * In Helidon, most loggers are referenced for the duration of the application, so this should not impact Helidon components.
  */
 public class LogObserveProvider implements ObserveProvider {
     @Override

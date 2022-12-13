@@ -17,6 +17,8 @@
 package io.helidon.nima.observe.log;
 
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.IdentityHashMap;
@@ -34,8 +36,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
@@ -65,10 +67,11 @@ class LogService implements HttpService {
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
     private final boolean permitAll;
     private final boolean logStreamEnabled;
-    private final Http.HeaderValue logStreamMediaType;
+    private final Http.HeaderValue logStreamMediaTypeHeader;
     private final long logStreamSleepSeconds;
     private final int logStreamQueueSize;
     private final String logStreamIdleString;
+    private final Charset logStreamCharset;
 
     private LogService(Builder builder) {
         this.logManager = LogManager.getLogManager();
@@ -76,10 +79,11 @@ class LogService implements HttpService {
 
         this.permitAll = builder.permitAll;
         this.logStreamEnabled = builder.logStreamEnabled;
-        this.logStreamMediaType = builder.logStreamMediaType;
+        this.logStreamMediaTypeHeader = builder.logStreamMediaTypeHeader;
         this.logStreamSleepSeconds = builder.logStreamSleepSeconds;
         this.logStreamQueueSize = builder.logStreamQueueSize;
         this.logStreamIdleString = builder.logStreamIdleString;
+        this.logStreamCharset = builder.logStreamCharset;
     }
 
     static HttpService create(Config config) {
@@ -104,7 +108,7 @@ class LogService implements HttpService {
                 .delete("/loggers/{logger}", this::unsetLoggerHandler);
 
         if (logStreamEnabled) {
-                rules.get("/", this::logHandler);
+            rules.get("/", this::logHandler);
         }
     }
 
@@ -115,21 +119,21 @@ class LogService implements HttpService {
 
     private void logHandler(ServerRequest req, ServerResponse res) throws Exception {
         initializeLogHandling();
-        res.header(logStreamMediaType);
+        res.header(logStreamMediaTypeHeader);
         // do not cache more than x lines, to prevent OOM
         var q = new ArrayBlockingQueue<String>(logStreamQueueSize);
 
         // we do not care if the offer fails, it means the consumer is slow and will miss some lines
         listeners.put(req, q::offer);
 
-        try (OutputStreamWriter out = new OutputStreamWriter(res.outputStream())) {
+        try (OutputStreamWriter out = new OutputStreamWriter(res.outputStream(), logStreamCharset)) {
 
             while (true) {
                 try {
                     String poll = q.poll(logStreamSleepSeconds, TimeUnit.SECONDS);
                     if (poll == null) {
                         // check if we are still alive
-                        out.write(DEFAULT_IDLE_STRING);
+                        out.write(logStreamIdleString);
                         out.flush();
                     } else {
                         out.write(poll);
@@ -257,10 +261,13 @@ class LogService implements HttpService {
     static class Builder implements io.helidon.common.Builder<Builder, LogService> {
         private boolean permitAll = false;
         private boolean logStreamEnabled = true;
-        private Http.HeaderValue logStreamMediaType = Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN;
+        private Http.HeaderValue logStreamMediaTypeHeader = Http.Header.create(Http.Header.CONTENT_TYPE,
+                                                                               HttpMediaType.PLAINTEXT_UTF_8.text());
+        private Charset logStreamCharset = StandardCharsets.UTF_8;
         private long logStreamSleepSeconds = 5L;
         private int logStreamQueueSize = 100;
         private String logStreamIdleString = DEFAULT_IDLE_STRING;
+
 
         private Builder() {
         }
@@ -277,7 +284,7 @@ class LogService implements HttpService {
             logStreamConfig.get("enabled").asBoolean().ifPresent(this::logStreamEnabled);
             logStreamConfig.get("content-type")
                     .asString()
-                    .as(MediaTypes::create)
+                    .as(HttpMediaType::create)
                     .ifPresent(this::logStreamMediaType);
             logStreamConfig.get("sleep-seconds").asLong().ifPresent(this::logStreamSleepSeconds);
             logStreamConfig.get("queue-size").asInt().ifPresent(this::logStreamQueueSize);
@@ -296,9 +303,14 @@ class LogService implements HttpService {
             return this;
         }
 
-        Builder logStreamMediaType(MediaType logStreamMediaType) {
-            this.logStreamMediaType = Http.Header.createCached(Http.Header.CONTENT_TYPE, logStreamMediaType.text());
+        Builder logStreamMediaType(HttpMediaType logStreamMediaType) {
+            this.logStreamMediaTypeHeader = Http.Header.createCached(Http.Header.CONTENT_TYPE, logStreamMediaType.text());
+            this.logStreamCharset = logStreamMediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
             return this;
+        }
+
+        Builder logStreamMediaType(MediaType logStreamMediaType) {
+            return logStreamMediaType(HttpMediaType.create(logStreamMediaType));
         }
 
         Builder logStreamSleepSeconds(long logStreamSleepSeconds) {
