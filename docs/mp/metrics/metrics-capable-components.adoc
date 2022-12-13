@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Metrics-Capable Modules
+:h1-prefix: MP
 :description: Helidon MP metrics-capable modules
 :keywords: helidon, metrics, metrics-capable, microprofile, guide
 :intro-project-name: {h1-prefix}
