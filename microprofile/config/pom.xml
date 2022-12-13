@@ -59,6 +59,12 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <!-- provided by CDI implementation -->
@@ -106,6 +112,19 @@
                         <NESTED_YAMLPROPERTY>overridden</NESTED_YAMLPROPERTY>
                         <YAMLPROPERTY>overridden</YAMLPROPERTY>
                     </environmentVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

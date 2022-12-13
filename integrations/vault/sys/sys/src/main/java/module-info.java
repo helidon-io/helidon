@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Sys operations for Vault.
  *
  * @see io.helidon.integrations.vault.sys.Sys
  * @see io.helidon.integrations.vault.sys.SysRx
  */
+@Feature(value = "Sys",
+        description = "System operations",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Sys"}
+)
 module io.helidon.integrations.vault.sys {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires transitive io.helidon.common.reactive;

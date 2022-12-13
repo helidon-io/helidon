@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Tracing integration with Jersey.
  */
+@Feature(value = "Jersey Server",
+        description = "Tracing integration with Jersey server",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"Tracing", "Integration", "Jersey"}
+)
 module io.helidon.tracing.jersey {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.annotation;
 

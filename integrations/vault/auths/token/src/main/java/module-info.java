@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Token authentication method for Vault.
  */
+@Feature(value = "Token",
+        description = "Token Authentication Method",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Auth", "Token"}
+)
 module io.helidon.integrations.vault.auths.token {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.integrations.vault;

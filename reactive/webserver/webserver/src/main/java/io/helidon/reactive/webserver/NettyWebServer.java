@@ -38,11 +38,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
+import io.helidon.common.features.HelidonFeatures;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.media.common.MessageBodyReaderContext;
 import io.helidon.reactive.media.common.MessageBodyWriterContext;

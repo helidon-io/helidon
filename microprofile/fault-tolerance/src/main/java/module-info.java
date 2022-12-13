@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Microprofile fault tolerance implementation.
  *
  * @see org.eclipse.microprofile.faulttolerance
  */
+@Feature(value = "Fault Tolerance",
+        description = "MicroProfile Fault Tolerance spec implementation",
+        in = HelidonFlavor.MP,
+        path = "FT"
+)
 module io.helidon.microprofile.faulttolerance {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.annotation;
     requires jakarta.inject;

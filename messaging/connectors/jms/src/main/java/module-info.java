@@ -14,10 +14,24 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Microprofile messaging JMS connector.
  */
+@Preview
+@Feature(value = "JMS Connector",
+        description = "Reactive messaging connector for JMS",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
+        path = {"Messaging", "JMS"}
+)
+@Aot(false)
 module io.helidon.messaging.connectors.jms {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires static jakarta.cdi;

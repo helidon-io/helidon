@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 import io.helidon.reactive.webclient.tracing.WebClientTracingProvider;
 
 /**
  * Helidon WebClient Tracing.
  */
+@Feature(value = "Tracing",
+        description = "Reactive web client support for tracing",
+        in = HelidonFlavor.SE,
+        path = {"WebClient", "Tracing"}
+)
 module io.helidon.reactive.webclient.tracing {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.reactive.webclient;
     requires io.helidon.common.context;
     requires io.helidon.tracing.config;

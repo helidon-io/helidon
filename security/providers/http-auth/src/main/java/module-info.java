@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Basic and digest authentication provider.
  */
+@Feature(value = "HTTP Basic",
+        description = "Security provider for HTTP Basic authentication and outbound",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "HttpBasic"}
+)
 module io.helidon.security.providers.httpauth {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.security;

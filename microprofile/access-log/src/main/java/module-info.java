@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * MicroProfile access log extension.
  */
+@Feature(value = "Access Log",
+        description = "Access log support",
+        in = HelidonFlavor.MP,
+        path = {"Server", "AccessLog"}
+)
 module io.helidon.microprofile.accesslog {
+    requires static io.helidon.common.features.api;
+
     requires jakarta.annotation;
 
     requires io.helidon.microprofile.server;

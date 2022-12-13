@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.media.common.spi.MediaSupportProvider;
 import io.helidon.reactive.media.jackson.JacksonProvider;
 import io.helidon.reactive.media.jackson.JacksonSupport;
@@ -23,7 +25,12 @@ import io.helidon.reactive.media.jackson.JacksonSupport;
  *
  * @see JacksonSupport
  */
+@Feature(value = "Jackson",
+        description = "Media support for Jackson",
+        path = {"Media", "Jackson"},
+        in = HelidonFlavor.SE)
 module io.helidon.reactive.media.jackson {
+    requires static io.helidon.common.features.api;
 
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
