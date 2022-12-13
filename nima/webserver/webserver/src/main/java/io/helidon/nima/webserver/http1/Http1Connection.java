@@ -243,7 +243,7 @@ public class Http1Connection implements ServerConnection {
         requestId++;
 
         if (entity == EntityStyle.NONE) {
-            Http1ServerRequest request = Http1ServerRequest.create(ctx, prologue, headers, requestId);
+            Http1ServerRequest request = Http1ServerRequest.create(ctx, routing.security(), prologue, headers, requestId);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,
@@ -292,6 +292,7 @@ public class Http1Connection implements ServerConnection {
 
         CountDownLatch entityReadLatch = new CountDownLatch(1);
         Http1ServerRequest request = Http1ServerRequest.create(ctx,
+                                                               routing.security(),
                                                                prologue,
                                                                ServerRequestHeaders.create(headers),
                                                                decoder,

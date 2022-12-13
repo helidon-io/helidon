@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-/**
- * Types that are security related and can be used across all components (servers, clients etc.).
- */
-module io.helidon.common.security {
-    exports io.helidon.common.security;
+package io.helidon.nima.webserver.context;
+
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.webclient.http1.Http1Client;
+
+@ServerTest
+class ContextFeatureIT extends ContextFeatureBase {
+    ContextFeatureIT(Http1Client client) {
+        super(client);
+    }
 }

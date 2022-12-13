@@ -69,6 +69,6 @@ public class StandaloneQuickstartMain {
         GreetService greetService = new GreetService();
 
         routing.register("/greet", greetService)
-                .update(observe);
+                .addFeature(observe);
     }
 }

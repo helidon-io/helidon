@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.nima.observe.log;
 
 import java.io.OutputStreamWriter;
@@ -18,11 +34,12 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
-import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.SecureHandler;
@@ -36,48 +53,59 @@ import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-public class LogService implements HttpService {
+class LogService implements HttpService {
     private static final EntityWriter<JsonObject> WRITER = JsonpMediaSupportProvider.serverResponseWriter();
     private static final EntityReader<JsonObject> READER = JsonpMediaSupportProvider.serverRequestReader();
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-    private static final String IDLE_STRINGS = "%\n";
+    private static final String DEFAULT_IDLE_STRING = "%\n";
 
     private final LogManager logManager;
     private final Logger root;
     private final Map<Object, Consumer<String>> listeners = Collections.synchronizedMap(new IdentityHashMap<>());
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
+    private final boolean permitAll;
+    private final boolean logStreamEnabled;
+    private final Http.HeaderValue logStreamMediaType;
+    private final long logStreamSleepSeconds;
+    private final int logStreamQueueSize;
+    private final String logStreamIdleString;
 
-    private LogService() {
+    private LogService(Builder builder) {
         this.logManager = LogManager.getLogManager();
         this.root = Logger.getLogger("");
+
+        this.permitAll = builder.permitAll;
+        this.logStreamEnabled = builder.logStreamEnabled;
+        this.logStreamMediaType = builder.logStreamMediaType;
+        this.logStreamSleepSeconds = builder.logStreamSleepSeconds;
+        this.logStreamQueueSize = builder.logStreamQueueSize;
+        this.logStreamIdleString = builder.logStreamIdleString;
     }
 
-    public static HttpService create(Config config) {
-        // todo use config to check if this should enforced
-        /*
-        observe:
-          log:
-            allow-all: true
+    static HttpService create(Config config) {
+        return builder().config(config).build();
+    }
 
-            /{.*}
-         */
-
-        return new LogService();
+    static Builder builder() {
+        return new Builder();
     }
 
     @Override
     public void routing(HttpRules rules) {
-        Handler secureHandler = SecureHandler.create(false, true, "nima-observe");
+        if (!permitAll) {
+            rules.any(SecureHandler.authorize("nima-observe"));
+        }
 
-        rules.any(SecureHandler.authorize().authenticate().roleHint("nima-observe"))
-                .get("/loggers")
-                .get("/loggers", SecureHandler.handler(this::allLoggersHandler)
-                        .authenticate(true))
+        rules.get("/loggers")
+                .get("/loggers", this::allLoggersHandler)
                 .get("/loggers", this::allLoggersHandler)
                 .get("/loggers/{logger}", this::loggerHandler)
                 .post("/loggers/{logger}", this::setLevelHandler)
-                .delete("/loggers/{logger}", this::unsetLoggerHandler)
-                .get("/", this::logHandler);
+                .delete("/loggers/{logger}", this::unsetLoggerHandler);
+
+        if (logStreamEnabled) {
+                rules.get("/", this::logHandler);
+        }
     }
 
     @Override
@@ -87,9 +115,9 @@ public class LogService implements HttpService {
 
     private void logHandler(ServerRequest req, ServerResponse res) throws Exception {
         initializeLogHandling();
-        res.header(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
+        res.header(logStreamMediaType);
         // do not cache more than x lines, to prevent OOM
-        var q = new ArrayBlockingQueue<String>(1000);
+        var q = new ArrayBlockingQueue<String>(logStreamQueueSize);
 
         // we do not care if the offer fails, it means the consumer is slow and will miss some lines
         listeners.put(req, q::offer);
@@ -98,10 +126,10 @@ public class LogService implements HttpService {
 
             while (true) {
                 try {
-                    String poll = q.poll(5, TimeUnit.SECONDS);
+                    String poll = q.poll(logStreamSleepSeconds, TimeUnit.SECONDS);
                     if (poll == null) {
                         // check if we are still alive
-                        out.write(IDLE_STRINGS);
+                        out.write(DEFAULT_IDLE_STRING);
                         out.flush();
                     } else {
                         out.write(poll);
@@ -224,6 +252,69 @@ public class LogService implements HttpService {
                      res.outputStream(),
                      req.headers(),
                      res.headers());
+    }
+
+    static class Builder implements io.helidon.common.Builder<Builder, LogService> {
+        private boolean permitAll = false;
+        private boolean logStreamEnabled = true;
+        private Http.HeaderValue logStreamMediaType = Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN;
+        private long logStreamSleepSeconds = 5L;
+        private int logStreamQueueSize = 100;
+        private String logStreamIdleString = DEFAULT_IDLE_STRING;
+
+        private Builder() {
+        }
+
+        @Override
+        public LogService build() {
+            return new LogService(this);
+        }
+
+        Builder config(Config config) {
+            config.get("permit-all").asBoolean().ifPresent(this::permitAll);
+
+            Config logStreamConfig = config.get("stream");
+            logStreamConfig.get("enabled").asBoolean().ifPresent(this::logStreamEnabled);
+            logStreamConfig.get("content-type")
+                    .asString()
+                    .as(MediaTypes::create)
+                    .ifPresent(this::logStreamMediaType);
+            logStreamConfig.get("sleep-seconds").asLong().ifPresent(this::logStreamSleepSeconds);
+            logStreamConfig.get("queue-size").asInt().ifPresent(this::logStreamQueueSize);
+            logStreamConfig.get("idle-string").asString().ifPresent(this::logStreamIdleString);
+
+            return this;
+        }
+
+        Builder permitAll(boolean permitAll) {
+            this.permitAll = permitAll;
+            return this;
+        }
+
+        Builder logStreamEnabled(boolean logStreamAllow) {
+            this.logStreamEnabled = logStreamAllow;
+            return this;
+        }
+
+        Builder logStreamMediaType(MediaType logStreamMediaType) {
+            this.logStreamMediaType = Http.Header.createCached(Http.Header.CONTENT_TYPE, logStreamMediaType.text());
+            return this;
+        }
+
+        Builder logStreamSleepSeconds(long logStreamSleepSeconds) {
+            this.logStreamSleepSeconds = logStreamSleepSeconds;
+            return this;
+        }
+
+        Builder logStreamQueueSize(int logStreamQueueSize) {
+            this.logStreamQueueSize = logStreamQueueSize;
+            return this;
+        }
+
+        Builder logStreamIdleString(String string) {
+            this.logStreamIdleString = string;
+            return this;
+        }
     }
 
     private static class LogMessageFilter implements Filter {

@@ -17,6 +17,7 @@
 package io.helidon.examples.nima.observe;
 
 import io.helidon.common.http.Http;
+import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -36,7 +37,9 @@ abstract class AbstractObserveTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        ObserveMain.routing(builder);
+        Config config = Config.create();
+
+        ObserveMain.routing(config, builder);
     }
 
     @Test
@@ -51,7 +54,8 @@ abstract class AbstractObserveTest {
     @Test
     void testConfigObserver() {
         try (Http1ClientResponse response = client.get("/observe/config/profile").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            // this requires basic authentication
+            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
         }
     }
 

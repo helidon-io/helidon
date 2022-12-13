@@ -46,7 +46,7 @@ final class ProtoMarshaller {
         } catch (ReflectiveOperationException e) {
             String msg = "Attempting to use class \""
                     + clazz.getName()
-                    +"\", which is not a valid Protocol buffer message, with a default marshaller";
+                    + "\", which is not a valid Protocol buffer message, with a default marshaller";
 
             throw new IllegalArgumentException(msg, e);
         }

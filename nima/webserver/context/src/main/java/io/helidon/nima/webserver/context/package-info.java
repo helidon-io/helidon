@@ -16,7 +16,7 @@
 
 /**
  * Integration of {@link io.helidon.common.context.Context} with {@link io.helidon.nima.webserver.WebServer}.
- * Register {@link io.helidon.nima.webserver.context.ContextFilter} with
+ * Register {@link io.helidon.nima.webserver.context.ContextFeature} with
  * {@link io.helidon.nima.webserver.http.HttpRouting.Builder#addFilter(io.helidon.nima.webserver.http.Filter) routing builder}.
  * This will create a request specific context accessible through {@link io.helidon.common.context.Contexts#context()}.
  */

@@ -18,7 +18,10 @@ import io.helidon.nima.observe.log.LogObserveProvider;
 import io.helidon.nima.observe.spi.ObserveProvider;
 
 /**
- * Observability features.
+ * Observe log module.
+ * Log observability allows reading and configuring of log levels of various loggers and reading log messages.
+ * <p>
+ * Log endpoint is protected by default and is available at {@code /observe/log} (configurable).
  */
 module io.helidon.nima.observe.log {
     requires transitive io.helidon.nima.observe;

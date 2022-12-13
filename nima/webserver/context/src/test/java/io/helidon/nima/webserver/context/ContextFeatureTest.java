@@ -16,12 +16,12 @@
 
 package io.helidon.nima.webserver.context;
 
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.testing.junit5.webserver.DirectClient;
+import io.helidon.nima.testing.junit5.webserver.RoutingTest;
 
-@ServerTest
-class ContextFilterIT extends ContextFilterBase{
-    ContextFilterIT(Http1Client client) {
+@RoutingTest
+class ContextFeatureTest extends ContextFeatureBase {
+    ContextFeatureTest(DirectClient client) {
         super(client);
     }
 }

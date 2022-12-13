@@ -39,9 +39,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link io.helidon.nima.webserver.accesslog.AccessLogFilter}.
+ * Unit test for {@link AccessLogFeature}.
  */
-class AccessLogFilterTest {
+class AccessLogFeatureTest {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS ZZZ");
     private static final ZonedDateTime BEGIN_TIME = ZonedDateTime.parse("2007-12-03T10:15:30.000 +0000", FORMATTER);
     private static final ZonedDateTime END_TIME = ZonedDateTime.parse("2007-12-03T10:15:31.140 +0000", FORMATTER);
@@ -57,7 +57,7 @@ class AccessLogFilterTest {
 
     @Test
     void testHelidonFormat() {
-        AccessLogFilter accessLog = AccessLogFilter.create();
+        AccessLogFeature accessLog = AccessLogFeature.create();
 
         RoutingRequest request = mock(RoutingRequest.class);
         PeerInfo pi = mock(PeerInfo.class);
@@ -96,7 +96,7 @@ class AccessLogFilterTest {
 
     @Test
     void testCommonFormat() {
-        AccessLogFilter accessLog = AccessLogFilter.builder()
+        AccessLogFeature accessLog = AccessLogFeature.builder()
                 .commonLogFormat()
                 .build();
 
@@ -137,7 +137,7 @@ class AccessLogFilterTest {
 
     @Test
     void testCustomFormat() {
-        AccessLogFilter accessLog = AccessLogFilter.builder()
+        AccessLogFeature accessLog = AccessLogFeature.builder()
                 .add(TimestampLogEntry.builder().formatter(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).build())
                 .add(HeaderLogEntry.create("Referer"))
                 .build();

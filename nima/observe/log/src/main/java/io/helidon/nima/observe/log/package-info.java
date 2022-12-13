@@ -15,8 +15,9 @@
  */
 
 /**
- * Types that are security related and can be used across all components (servers, clients etc.).
+ * Observe log module.
+ * Log observability allows reading and configuring of log levels of various loggers and reading log messages.
+ * <p>
+ * Log endpoint is protected by default and is available at {@code /observe/log} (configurable).
  */
-module io.helidon.common.security {
-    exports io.helidon.common.security;
-}
+package io.helidon.nima.observe.log;

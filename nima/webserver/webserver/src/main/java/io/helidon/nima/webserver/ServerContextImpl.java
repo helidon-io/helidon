@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-/**
- * Types that are security related and can be used across all components (servers, clients etc.).
- */
-module io.helidon.common.security {
-    exports io.helidon.common.security;
+package io.helidon.nima.webserver;
+
+import io.helidon.common.context.Context;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
+
+record ServerContextImpl(Context context,
+                         MediaContext mediaContext,
+                         ContentEncodingContext contentEncodingContext) implements ServerContext {
 }

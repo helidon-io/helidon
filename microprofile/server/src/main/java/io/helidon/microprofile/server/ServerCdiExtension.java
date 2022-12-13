@@ -41,7 +41,7 @@ import io.helidon.config.mp.Prioritized;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.context.ContextFilter;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
@@ -319,8 +319,8 @@ public class ServerCdiExtension implements Extension {
         registerJaxRsApplications(beanManager);
 
         // support for Helidon common Context
-        routingBuilder.addFilter(ContextFilter.create());
-        namedRoutings.forEach((name, value) -> value.addFilter(ContextFilter.create()));
+        routingBuilder.addFeature(ContextFeature.create());
+        namedRoutings.forEach((name, value) -> value.addFeature(ContextFeature.create()));
 
         // start the webserver
         serverBuilder.routerBuilder(WebServer.DEFAULT_SOCKET_NAME).addRouting(routingBuilder.build());

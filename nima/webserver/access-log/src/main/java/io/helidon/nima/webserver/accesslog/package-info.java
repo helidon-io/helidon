@@ -17,6 +17,6 @@
 /**
  * Access log support for Helidon Server.
  *
- * @see io.helidon.nima.webserver.accesslog.AccessLogFilter
+ * @see io.helidon.nima.webserver.accesslog.AccessLogFeature
  */
 package io.helidon.nima.webserver.accesslog;

@@ -26,14 +26,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
+import io.helidon.common.http.ForbiddenException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.PathMatchers;
+import io.helidon.common.http.UnauthorizedException;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.nima.webserver.http.FilterChain;
+import io.helidon.nima.webserver.http.HttpFeature;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.HttpSecurity;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.security.EndpointConfig;
@@ -59,8 +64,8 @@ import io.helidon.tracing.Span;
  * // Web server routing builder - this is our integration point
  * {@link io.helidon.nima.webserver.http.HttpRouting} routing = HttpRouting.builder()
  * // register the WebSecurity to create context (shared by all routes)
- * .register({@link WebSecurity}.{@link
- * WebSecurity#create(Security) from(security)})
+ * .register({@link SecurityFeature}.{@link
+ * SecurityFeature#create(Security) from(security)})
  * </pre>
  * <p>
  * Other methods are to create security enforcement points (gates) for routes (e.g. you are expected to use them for a get, post
@@ -87,11 +92,11 @@ import io.helidon.tracing.Span;
  * <pre>
  * // continue from example above...
  * // create a gate for method GET: authenticate all paths under /user and require role "user" for authorization
- * .get("/user[/{*}]", WebSecurity.{@link WebSecurity#rolesAllowed(String...)
+ * .get("/user[/{*}]", WebSecurity.{@link SecurityFeature#rolesAllowed(String...)
  * rolesAllowed("user")})
  * </pre>
  */
-public final class WebSecurity implements HttpService {
+public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighted {
     /**
      * Security can accept additional headers to be added to security request.
      * This will be used to obtain multivalue string map (a map of string to list of strings) from context (appropriate
@@ -99,21 +104,24 @@ public final class WebSecurity implements HttpService {
      */
     public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
 
-    private static final Logger LOGGER = Logger.getLogger(WebSecurity.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SecurityFeature.class.getName());
     private static final AtomicInteger SECURITY_COUNTER = new AtomicInteger();
+    private static final double WEIGHT = 800;
 
     private final Security security;
     private final Config config;
     private final SecurityHandler defaultHandler;
+    private final double weight;
 
-    private WebSecurity(Security security, Config config) {
+    private SecurityFeature(Security security, Config config) {
         this(security, config, SecurityHandler.create());
     }
 
-    private WebSecurity(Security security, Config config, SecurityHandler defaultHandler) {
+    private SecurityFeature(Security security, Config config, SecurityHandler defaultHandler) {
         this.security = security;
         this.config = config;
         this.defaultHandler = defaultHandler;
+        this.weight = (config == null) ? WEIGHT : config.get("web-server.weight").asDouble().orElse(WEIGHT);
     }
 
     /**
@@ -130,8 +138,8 @@ public final class WebSecurity implements HttpService {
      * @param security initialized security
      * @return routing config consumer
      */
-    public static WebSecurity create(Security security) {
-        return new WebSecurity(security, null);
+    public static SecurityFeature create(Security security) {
+        return new SecurityFeature(security, null);
     }
 
     /**
@@ -143,7 +151,7 @@ public final class WebSecurity implements HttpService {
      * @param config Config instance to load security and web server integration from configuration
      * @return routing config consumer
      */
-    public static WebSecurity create(Config config) {
+    public static SecurityFeature create(Config config) {
         Security security = Security.create(config);
         return create(security, config);
     }
@@ -158,8 +166,8 @@ public final class WebSecurity implements HttpService {
      * @param config   Config instance to load security and web server integration from configuration
      * @return routing config consumer
      */
-    public static WebSecurity create(Security security, Config config) {
-        return new WebSecurity(security, config);
+    public static SecurityFeature create(Security security, Config config) {
+        return new SecurityFeature(security, config);
     }
 
     /**
@@ -322,18 +330,19 @@ public final class WebSecurity implements HttpService {
      * @param defaultHandler if a security handler is configured for a route, it will take its defaults from this handler
      * @return new instance of web security with the handler default
      */
-    public WebSecurity securityDefaults(SecurityHandler defaultHandler) {
+    public SecurityFeature securityDefaults(SecurityHandler defaultHandler) {
         Objects.requireNonNull(defaultHandler, "Default security handler must not be null");
-        return new WebSecurity(security, config, defaultHandler);
+        return new SecurityFeature(security, config, defaultHandler);
     }
 
     @Override
-    public void routing(HttpRules rules) {
+    public void setup(HttpRouting.Builder rules) {
         if (!security.enabled()) {
             LOGGER.info("Security is disabled. Not registering any security handlers");
             return;
         }
-        rules.any(this::registerContext);
+        rules.security(this);
+        rules.addFilter(this::registerContext);
 
         if (null != config) {
             // only configure routing if we were asked to do so (otherwise it must be configured by hand on web server)
@@ -341,7 +350,53 @@ public final class WebSecurity implements HttpService {
         }
     }
 
-    private void registerContext(ServerRequest req, ServerResponse res) {
+    @Override
+    public boolean authenticate(ServerRequest request, ServerResponse response, boolean requiredHint)
+            throws UnauthorizedException {
+        // if the authentication is required and we were not configured to handle this already, just throw
+        if (requiredHint) {
+            if (!request.context()
+                    .get(SecurityContext.class)
+                    .map(SecurityContext::isAuthenticated)
+                    .orElse(false)) {
+                throw new UnauthorizedException("User not authenticated");
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean authorize(ServerRequest request, ServerResponse response, String... roleHint) throws ForbiddenException {
+        Optional<SecurityContext> maybeContext = request.context().get(SecurityContext.class);
+
+        if (maybeContext.isEmpty()) {
+            if (roleHint.length == 0) {
+                return true;
+            }
+            throw new ForbiddenException("This endpoint is restricted");
+        }
+
+        SecurityContext ctx = maybeContext.get();
+
+        if (roleHint.length == 0) {
+            if (!ctx.isAuthorized()) {
+                throw new ForbiddenException("This endpoint is restricted");
+            }
+            return true;
+        }
+        if (!ctx.isAuthorized()) {
+            for (String role : roleHint) {
+                if (ctx.isUserInRole(role)) {
+                    return true;
+                }
+            }
+            throw new ForbiddenException("This endpoint is restricted");
+        }
+        // authorized through security already
+        return true;
+    }
+
+    private void registerContext(FilterChain chain, ServerRequest req, ServerResponse res) {
         // todo use Headers instead, this is not case insensitive
         Map<String, List<String>> allHeaders = new HashMap<>(req.headers().toMap());
 
@@ -377,7 +432,12 @@ public final class WebSecurity implements HttpService {
             context.register(defaultHandler);
         }
 
-        res.next();
+        chain.proceed();
+    }
+
+    @Override
+    public double weight() {
+        return weight;
     }
 
     private void registerRouting(HttpRules routing) {

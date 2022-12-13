@@ -123,13 +123,6 @@ public interface WebServer {
     boolean hasTls(String socketName);
 
     /**
-     * Context associated with the {@code WebServer}, used as a parent for request contexts.
-     *
-     * @return a server context
-     */
-    Context context();
-
-    /**
      * Fluent API builder for {@link WebServer}.
      */
     class Builder implements io.helidon.common.Builder<Builder, WebServer>, Router.RouterBuilder<Builder> {
@@ -409,6 +402,7 @@ public interface WebServer {
          * @return an updated builder
          */
         public Builder context(Context context) {
+            Objects.requireNonNull(context);
             this.context = context;
             return this;
         }
