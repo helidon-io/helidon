@@ -22,6 +22,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * Hamcrest matcher capable of configured retries before failing the assertion, plus more generic retry processing.
  */
@@ -41,10 +43,8 @@ public class MatcherWithRetry {
      * @param matcher Hamcrest matcher which evaluates the supplied value
      * @return the supplied value
      * @param <T> type of the supplied value
-     * @throws InterruptedException if the sleep is interrupted
      */
-    public static <T> T assertThatWithRetry(String reason, Supplier<T> actualSupplier, Matcher<? super T> matcher)
-            throws InterruptedException {
+    public static <T> T assertThatWithRetry(String reason, Supplier<T> actualSupplier, Matcher<? super T> matcher) {
 
         T actual = null;
         for (int i = 0; i < RETRY_COUNT; i++) {
@@ -52,7 +52,11 @@ public class MatcherWithRetry {
             if (matcher.matches(actual)) {
                 return actual;
             }
-            Thread.sleep(RETRY_DELAY_MS);
+            try {
+                Thread.sleep(RETRY_DELAY_MS);
+            } catch (InterruptedException e) {
+                fail("Error sleeping during assertThatWithRetry", e);
+            }
         }
 
         Description description = new StringDescription();
