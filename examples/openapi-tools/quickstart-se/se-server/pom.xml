@@ -29,7 +29,7 @@
         <relativePath/>
     </parent>
     <groupId>org.openapitools</groupId>
-    <artifactId>openapi-se-server</artifactId>
+    <artifactId>openapi-java-server</artifactId>
     <version>1.0.0</version>
     <name>openapi-java-server</name>
     <description>This is a sample for Helidon Quickstart project.</description>
