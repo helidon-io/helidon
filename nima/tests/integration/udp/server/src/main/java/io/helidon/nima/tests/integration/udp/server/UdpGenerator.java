@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static io.helidon.nima.tests.integration.udp.server.UdpServer.ACK_FREQUENCY;
 
@@ -38,16 +37,16 @@ public class UdpGenerator implements Runnable {
 
     private int threads = 4;
     private int packetSize = 4 * 1024;
-    private Duration run = Duration.ofMinutes(2);
-    private Duration warmup = Duration.ofSeconds(30);
+    private Duration run = Duration.ofMinutes(1);
+    private Duration warmup = Duration.ofSeconds(20);
 
     private volatile long startTime;
     private volatile long endTime;
     private final ExecutorService executor;
     private final InetSocketAddress address;
 
-    private final AtomicLong bytesSent = new AtomicLong();
-    private final AtomicLong messagesSent = new AtomicLong();
+    private long bytesSent = 0L;
+    private long messagesSent = 0L;
 
     /**
      * CLI main method.
@@ -92,6 +91,7 @@ public class UdpGenerator implements Runnable {
                 .allowSetThreadLocals(false)
                 .inheritInheritableThreadLocals(false)
                 .factory());
+        display();
     }
 
     private void usage() {
@@ -104,6 +104,15 @@ public class UdpGenerator implements Runnable {
         System.exit(1);
     }
 
+    private void display() {
+        System.out.println("UDP load generator");
+        System.out.println("  udp://" + address.getAddress().getHostAddress() + ":" + address.getPort());
+        System.out.println("  warmup: " + warmup);
+        System.out.println("  run: " + run);
+        System.out.println("  threads: " + threads);
+        System.out.println("  packet-size: " + (packetSize / 1024) + "k");
+    }
+
     /**
      * Runs the benchmark with all its phases.
      */
@@ -111,15 +120,15 @@ public class UdpGenerator implements Runnable {
         try {
             System.out.print("Starting warmup phase ... ");
             runPhase(warmup);
-            System.out.println("OK");
+            System.out.println("DONE");
 
             System.out.print("Starting run phase ... ");
             runPhase(run);
-            System.out.println("OK\n");
+            System.out.println("DONE\n");
 
-            long actualDuration = (System.nanoTime() - startTime) / 1024 / 1024;
-            System.out.printf("MB/S %.2f%n", (bytesSent.get() * 8 / 1024.0 / 1024.0) / actualDuration);
-            System.out.printf("TP/S %.2f%n", messagesSent.get() / (double) actualDuration);
+            double actualDuration = (endTime - startTime) / 1_000_000_000.0;
+            System.out.printf("TPS %.2f%n", messagesSent / actualDuration);
+            System.out.printf("Mbps %.2f%n", bytesSent / 1024.0 / 1024.0 / actualDuration * 8);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
@@ -131,16 +140,20 @@ public class UdpGenerator implements Runnable {
     private void runPhase(Duration duration) throws InterruptedException, ExecutionException, TimeoutException {
         startTime = System.nanoTime();
         endTime = startTime + duration.toNanos();
-        bytesSent.set(0L);
-        messagesSent.set(0L);
 
+        UdpThreadClient[] clients = new UdpThreadClient[threads];
         Future<?>[] futures = new Future[threads];
         for (int i = 0; i < threads; i++) {
-            futures[i] = executor.submit(new UdpThreadClient());
+            clients[i] = new UdpThreadClient();
+            futures[i] = executor.submit(clients[i]);
         }
         long await = (long) (duration.toNanos() * 1.2d);
         for (int i = 0; i < threads; i++) {
             futures[i].get(await, TimeUnit.NANOSECONDS);
+        }
+        for (int i = 0; i < threads; i++) {
+            bytesSent += clients[i].bytesSent;
+            messagesSent += clients[i].messagesSent;
         }
     }
 
@@ -149,6 +162,9 @@ public class UdpGenerator implements Runnable {
         private long n = 0;
         private final ByteBuffer ack = ByteBuffer.allocate("ack".length());
         private final ByteBuffer data;
+
+        long bytesSent = 0L;
+        long messagesSent = 0L;
 
         UdpThreadClient() {
             data = ByteBuffer.allocate(packetSize);
@@ -178,8 +194,8 @@ public class UdpGenerator implements Runnable {
                     }
 
                     // Update stats
-                    bytesSent.addAndGet(sent);
-                    messagesSent.incrementAndGet();
+                    bytesSent += sent;
+                    messagesSent++;
                 }
                 channel.disconnect();
             } catch (IOException e) {
