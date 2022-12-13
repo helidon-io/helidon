@@ -29,7 +29,7 @@
         <version>3.0.1</version>
         <relativePath/>
     </parent>
-    <artifactId>openapi-java-client</artifactId>
+    <artifactId>openapi-mp-client</artifactId>
     <name>openapi-java-client</name>
     <version>1.0.0</version>
     <url>https://github.com/openapitools/openapi-generator</url>
