@@ -91,6 +91,7 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
         Objects.requireNonNull(ts, "ts");
         Objects.requireNonNull(tsr, "tsr");
         if (ds instanceof XADataSource xads) {
+<<<<<<< HEAD
             // Some connection pools supply XADataSource objects that pool XAConnections while also unconventionally
             // exposing them to end users, and also implement the javax.sql.DataSource interface by throwing exceptions
             // when its methods are invoked. Although XAConnections are not intended for end users, when logical
@@ -107,6 +108,22 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
             this.acs =
                 (u, p) -> new JtaConnection(ts, tsr, interposedSynchronizations, ec, ds.getConnection(u, p), immediateEnlistment);
             this.uacs = () -> new JtaConnection(ts, tsr, interposedSynchronizations, ec, ds.getConnection(), immediateEnlistment);
+=======
+            // Some connection pools supply XADataSource objects that pool XAConnections and also "implement" the
+            // javax.sql.DataSource interface by throwing exceptions when its methods are invoked. In all likelihood,
+            // they should not do any of this, given that XAConnections are supposed to be for the innards of connection
+            // pools, not for end users.  Nevertheless, when such XAConnections are pooled and logical representations
+            // of them are supplied by such a connection pool, those representations must be closed, counter to the
+            // documentation of the (inherited) PooledConnection#close() method, which reads, in part: "An application
+            // never calls this method directly; it is called by the connection pool module, or manager."  As of this
+            // writing this branch of this constructor implements this non-standard behavior.
+            this.acs = (u, p) -> xa(ts, tsr, interposedSynchronizations, ec, xads.getXAConnection(u, p), true);
+            this.uacs = () -> xa(ts, tsr, interposedSynchronizations, ec, xads.getXAConnection(), true);
+        } else {
+            Objects.requireNonNull(ds, "ds");
+            this.acs = (u, p) -> new JtaConnection(ts, tsr, interposedSynchronizations, ec, ds.getConnection(u, p));
+            this.uacs = () -> new JtaConnection(ts, tsr, interposedSynchronizations, ec, ds.getConnection());
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
         }
     }
 
@@ -129,9 +146,12 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
      *
      * @param xads an {@link XADataSource} supplied by a connection pool implementation; must not be {@code null}
      *
+<<<<<<< HEAD
      * @param immediateEnlistment whether attempts to enlist new {@link Connection}s in a global transaction should be
      * made immediately upon {@link Connection} allocation
      *
+=======
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
      * @param closeXac whether or not {@link XAConnection}s {@linkplain XADataSource#getXAConnection() supplied} by the
      * supplied {@link XADataSource} should be {@linkplain javax.sql.PooledConnection#close() closed} when {@linkplain
      * XAConnection#getConnection() their <code>Connection</code>}s are {@linkplain Connection#close() closed} (in a
@@ -142,11 +162,19 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
      * @deprecated This constructor exists only to handle certain XA-aware connection pools that allow an end-user
      * caller to "borrow" {@link XAConnection}s and to "return" them using their {@link
      * javax.sql.PooledConnection#close() close()} methods, a non-standard practice which is discouraged by the
+<<<<<<< HEAD
      * documentation of {@link javax.sql.PooledConnection} (from which {@link XAConnection} inherits).  For
      * such connection pools, {@link XAConnection}s that are "borrowed" must be returned in this manner to avoid leaks.
      * This constructor implements this behavior.  Before using it, you should make sure that the connection pool in
      * question implementing or supplying the {@link XADataSource} has the behavior described above; normally an {@link
      * XAConnection} should not be used directly or closed by end-user code.
+=======
+     * documentation of {@link javax.sql.PooledConnection#close()}, which an {@link XAConnection} inherits.
+     * Nevertheless for such connection pools {@link XAConnection}s that are "borrowed" must be returned in this manner
+     * to avoid leaks.  This constructor implements this behavior.  Before using it, you should make sure that the
+     * connection pool in question implementing or supplying the {@link XADataSource} has the behavior described above;
+     * normally an {@link XAConnection} should not be used directly or closed by end-user code.
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
      */
     @Deprecated(since = "3.1.0")
     public JtaAdaptingDataSource(TransactionSupplier ts,
@@ -154,7 +182,10 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
                                  boolean interposedSynchronizations,
                                  ExceptionConverter ec,
                                  XADataSource xads,
+<<<<<<< HEAD
                                  boolean immediateEnlistment,
+=======
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
                                  boolean closeXac) {
         super();
         Objects.requireNonNull(xads, "xads");
@@ -167,9 +198,14 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
         // PooledConnection#close() method, which reads, in part: "An application never calls this method directly; it
         // is called by the connection pool module, or manager."  As of this writing this constructor permits this
         // non-standard behavior when closeXac is true.
+<<<<<<< HEAD
         this.acs =
             (u, p) -> xa(ts, tsr, interposedSynchronizations, ec, xads.getXAConnection(u, p), immediateEnlistment, closeXac);
         this.uacs = () -> xa(ts, tsr, interposedSynchronizations, ec, xads.getXAConnection(), immediateEnlistment, closeXac);
+=======
+        this.acs = (u, p) -> xa(ts, tsr, interposedSynchronizations, ec, xads.getXAConnection(u, p), closeXac);
+        this.uacs = () -> xa(ts, tsr, interposedSynchronizations, ec, xads.getXAConnection(), closeXac);
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
     }
 
     @Override // DataSource
@@ -194,6 +230,7 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
                                     boolean interposedSynchronizations,
                                     ExceptionConverter ec,
                                     XAConnection xac,
+<<<<<<< HEAD
                                     boolean immediateEnlistment,
                                     boolean closeXac)
         throws SQLException {
@@ -225,6 +262,19 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
                               xac.getConnection(),
                               xac::getXAResource,
                               immediateEnlistment);
+=======
+                                    boolean closeXac)
+        throws SQLException {
+        return
+            closeXac
+            ? new JtaConnection(ts, tsr, interposedSynchronizations, ec, xac.getConnection(), xac.getXAResource()) {
+                    @Override
+                    protected void onClose() throws SQLException {
+                        xac.close();
+                    }
+                }
+            : new JtaConnection(ts, tsr, interposedSynchronizations, ec, xac.getConnection(), xac.getXAResource());
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
     }
 
 

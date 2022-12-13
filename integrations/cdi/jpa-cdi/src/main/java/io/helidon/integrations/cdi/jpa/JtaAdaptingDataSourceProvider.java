@@ -33,7 +33,7 @@ import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
 @Singleton
-class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
+final class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourceProvider {
 
 
     /*
@@ -87,27 +87,6 @@ class JtaAdaptingDataSourceProvider implements PersistenceUnitInfoBean.DataSourc
      * Constructors.
      */
 
-
-    /**
-     * Creates a new {@link JtaAdaptingDataSourceProvider}.
-     *
-     * <p>This constructor exists only to conform to <a
-     * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#unproxyable">section 3.15 of the CDI specification</a> and
-     * for no other purpose.</p>
-     *
-     * @deprecated Please use the {@link #JtaAdaptingDataSourceProvider(Instance, TransactionManager,
-     * TransactionSynchronizationRegistry)} constructor instead.
-     */
-    @Deprecated // for CDI container use only
-    JtaAdaptingDataSourceProvider() {
-        super();
-        this.jtaDataSourcesByName = null;
-        this.objects = null;
-        this.transactionManager = null;
-        this.tsr = null;
-        this.interposedSynchronizations = true;
-        this.exceptionConverter = null;
-    }
 
     /**
      * Creates a new {@link JtaAdaptingDataSourceProvider}.

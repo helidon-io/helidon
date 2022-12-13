@@ -174,6 +174,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * Instance methods.
      */
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 12907b44f4 (Squashable commit; interim work; tried to quash the git case silliness around JtaConnection)
     @Override // ConditionallyCloseableConnection
     public final void setCloseable(boolean closeable) {
         super.setCloseable(closeable);
