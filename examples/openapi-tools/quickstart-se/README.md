@@ -4,7 +4,7 @@ The goal of this example is to show how a user can easily create a Helidon SE se
 
 Here we will show the steps that a user has to do to create Helidon SE server and client using OpenAPI Generator and what has to be done to make the generated server and client fully functional.
 
-For generation of our projects we will use `openapi-generator-cli.jar` that can be downloaded form the maven repository (instructions and other options can be found [here](https://openapi-generator.tech/docs/installation)) and OpenAPI document `quickstart.yaml` that can be found next to this `README.md`.
+For generation of our projects we will use `openapi-generator-cli.jar` that can be downloaded from the maven repository (instructions and other options can be found [here](https://openapi-generator.tech/docs/installation)) and OpenAPI document `quickstart.yaml` that can be found next to this `README.md`.
 
 ## Build, prepare and run the Helidon SE server
 
@@ -36,17 +36,19 @@ Let's change a little class `MessageServiceImpl` for our example :
         defaultMessage.set(message);
     }
 ```
-4) Replace implementation of the method `public void getDefaultMessage(ServerRequest request, ServerResponse response)` by this:
+3) Replace implementation of the method `public void getDefaultMessage(ServerRequest request, ServerResponse response)` by this:
 ```java
         response.send(defaultMessage.get());
 ```
-5) Replace implementation of the method `public void getMessage(ServerRequest request, ServerResponse response)` by this:
+4) Replace implementation of the method `public void getMessage(ServerRequest request, ServerResponse response)` by this:
 ```java
         String name = request.path().param("name");
-        defaultMessage.get().setMessage(name);
-        response.send(defaultMessage.get());
+        Message result = new Message();
+        result.setMessage(name);
+        result.setGreeting(defaultMessage.get().getGreeting());
+        response.send(result);
 ```
-6) Replace implementation of the method `public void updateGreeting(ServerRequest request, ServerResponse response, Message message)` by this:
+5) Replace implementation of the method `public void updateGreeting(ServerRequest request, ServerResponse response, Message message)` by this:
 ```java
         if (message.getGreeting() == null) {
         Message jsonError = new Message();
@@ -126,8 +128,10 @@ To make our client application fully functional let's add some classes, dependen
     </dependency>
 ```
 
-2) Let's add a class `MessageService` that will use `MessageApi` and `ApiClient` to interact with the server :
+2) Let's add a class `MessageService` to the `api` package that will use `MessageApi` and `ApiClient` to interact with the server :
 ```java
+package org.openapitools.client.api;
+
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
