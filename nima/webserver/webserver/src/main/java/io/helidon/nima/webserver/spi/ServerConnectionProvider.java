@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,63 +16,38 @@
 
 package io.helidon.nima.webserver.spi;
 
-import java.util.Set;
-
-import io.helidon.common.buffers.BufferData;
-import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.config.Config;
+import io.helidon.nima.webserver.ServerConnectionSelector;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for server connection providers.
- * Connection provider is given a chance to analyze request bytes and decide whether this is a connection it can accept.
+ * This interface serves as {@link io.helidon.nima.webserver.ServerConnectionSelector} builder
+ * which receives requested configuration nodes from the server configuration when server builder
+ * is running.
  */
 public interface ServerConnectionProvider {
-    /**
-     * How many bytes are needed to identify this connection.
-     *
-     * @return number of bytes needed, return 0 if this is not a fixed value
-     */
-    int bytesToIdentifyConnection();
 
     /**
-     * Does this provider support current server connection.
-     * The same buffer will be sent to {@link ServerConnection#handle()}
+     * Provider's specific configuration nodes names.
      *
-     * @param data bytes (with available bytes of at least {@link #bytesToIdentifyConnection()})
-     * @return support response
+     * @return names of the nodes to request
      */
-    Support supports(BufferData data);
+    Iterable<String> configKeys();
 
     /**
-     * Application protocols supported by this provider, used for example for ALPN negotiation.
+     * Provider's configuration reader.
+     * Node with {@code configKey()} name will be provided. May receive empty config
+     * when node with specified key is missing.
      *
-     * @return set of supported protocols
+     * @param config {@link io.helidon.config.Config} configuration node
      */
-    Set<String> supportedApplicationProtocols();
+    void config(Config config);
 
     /**
-     * Create a new connection.
-     * All methods will be invoked from a SINGLE virtual thread.
+     * Creates an instance of server connection selector.
      *
-     * @param ctx connection context with access to data writer, data reader and other useful information
-     * @return a new server connection
+     * @return new server connection selector
      */
-    ServerConnection connection(ConnectionContext ctx);
+    ServerConnectionSelector create();
 
-    /**
-     * Support by this provider.
-     */
-    enum Support {
-        /**
-         * Yes, this is a connection this provider can handle.
-         */
-        SUPPORTED,
-        /**
-         * No, this connection is not compatible with this provider.
-         */
-        UNSUPPORTED,
-        /**
-         * We do not have enough bytes to decide, please ask this provider again with more bytes.
-         */
-        UNKNOWN
-    }
 }

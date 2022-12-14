@@ -144,9 +144,10 @@ public interface WebServer {
         private final Map<String, Router.Builder> routers = new HashMap<>();
         private final DirectHandlers.Builder simpleHandlers = DirectHandlers.builder();
 
-        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
-                HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
+        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
+                = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
+        private Config providersConfig = Config.empty();
         private MediaContext mediaContext = MediaContext.create();
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
@@ -231,6 +232,9 @@ public interface WebServer {
                             connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
                         });
                     });
+            // Store providers config node for later usage.
+            providersConfig = config.get("connection-providers");
+
             return this;
         }
 
@@ -361,7 +365,7 @@ public interface WebServer {
         }
 
         /**
-         * Configure a connection provider. This instance has priority over provider(s) discovered by service loader.
+         * Configure a connection providers. This instance has priority over provider(s) discovered by service loader.
          *
          * @param connectionProvider explicit connection provider
          * @return updated builder
@@ -475,8 +479,13 @@ public interface WebServer {
             return result;
         }
 
-        List<ServerConnectionProvider> connectionProviders() {
-            return connectionProviders.build().asList();
+        List<ServerConnectionSelector> connectionProviders() {
+            List<ServerConnectionProvider> providers = connectionProviders.build().asList();
+            // Send configuration nodes to providers
+            providers.forEach(
+                    provider -> provider.configKeys().forEach(
+                            key -> provider.config(providersConfig.get(key))));
+            return providers.stream().map(ServerConnectionProvider::create).toList();
         }
 
         private ListenerConfiguration.Builder socket(String socketName) {
@@ -487,4 +496,5 @@ public interface WebServer {
             return routers.computeIfAbsent(socketName, it -> Router.builder());
         }
     }
+
 }

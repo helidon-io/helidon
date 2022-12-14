@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.util.LinkedList;
 import java.util.List;
 
 final class Http1ConnectionListenerUtil {
@@ -32,6 +33,19 @@ final class Http1ConnectionListenerUtil {
         }
     }
 
+    // Reverse operation to toSingleListener. Allows builder restoration from existing configuration data.
+    static List<Http1ConnectionListener> singleListenerToList(Http1ConnectionListener listener) {
+        if (listener instanceof NoOpFrameListener) {
+            return new LinkedList<>();
+        }
+        if (listener instanceof ListFrameListener frameListener) {
+            return new LinkedList<>(frameListener.delegates);
+        }
+        List<Http1ConnectionListener> listeners = new LinkedList<>();
+        listeners.add(listener);
+        return listeners;
+    }
+
     private static final class NoOpFrameListener implements Http1ConnectionListener {
         private static final NoOpFrameListener INSTANCE = new NoOpFrameListener();
     }
@@ -44,4 +58,5 @@ final class Http1ConnectionListenerUtil {
         }
 
     }
+
 }
