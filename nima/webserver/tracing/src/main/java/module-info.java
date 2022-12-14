@@ -21,7 +21,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Níma WebServer Tracing support.
  */
 @Feature(value = "Tracing",
-        description = "Nima Tracing",
+        description = "Tracing",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE)
 module io.helidon.nima.webserver.tracing {
