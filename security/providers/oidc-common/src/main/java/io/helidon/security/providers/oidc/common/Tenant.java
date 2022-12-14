@@ -35,7 +35,7 @@ import jakarta.ws.rs.client.WebTarget;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
- * Holder of the tenant configuration resolved in runtime. Used for OIDC lazy loading.
+ * Holder of the tenant configuration resolved at runtime. Used for OIDC lazy loading.
  */
 public final class Tenant {
 

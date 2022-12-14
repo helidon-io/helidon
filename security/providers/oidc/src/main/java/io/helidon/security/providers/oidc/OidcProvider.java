@@ -146,16 +146,27 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private CompletionStage<AuthenticationResponse> authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
-        return tenantAuthHandlers.computeValue(tenantId, () -> {
-                    TenantConfig possibleConfig = tenantConfigFinders.stream()
-                            .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
-                            .flatMap(Optional::stream)
-                            .findFirst()
-                            .orElse(oidcConfig.tenantConfig(tenantId));
-                    Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
-                    return Optional.of(new TenantAuthenticationHandler(oidcConfig, tenant, useJwtGroups, optional));
-                }).get()
-                .authenticate(tenantId, providerRequest);
+        Optional<TenantAuthenticationHandler> tenantHandler = tenantAuthHandlers.get(tenantId);
+        if (tenantHandler.isPresent()) {
+            return tenantHandler.get().authenticate(tenantId, providerRequest);
+        } else {
+            return CompletableFuture.supplyAsync(
+                            () -> {
+                                TenantConfig possibleConfig = tenantConfigFinders.stream()
+                                        .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
+                                        .flatMap(Optional::stream)
+                                        .findFirst()
+                                        .orElse(oidcConfig.tenantConfig(tenantId));
+                                Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
+                                TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
+                                                                                                      tenant,
+                                                                                                      useJwtGroups,
+                                                                                                      optional);
+                                return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get();
+                            },
+                            providerRequest.securityContext().executorService())
+                    .thenCompose(handler -> handler.authenticate(tenantId, providerRequest));
+        }
     }
 
     private Single<String> findTenantIdFromRedirects(ProviderRequest providerRequest) {

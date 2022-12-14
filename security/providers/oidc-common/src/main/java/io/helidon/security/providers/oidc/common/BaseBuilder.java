@@ -24,8 +24,10 @@ import io.helidon.common.Builder;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -34,7 +36,8 @@ import jakarta.json.JsonReaderFactory;
 /**
  * Base builder of the OIDC config components.
  */
-abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> implements Builder<B, T> {
+@Configured
+abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B, T> {
 
     static final String DEFAULT_SERVER_TYPE = "@default";
     static final String DEFAULT_BASE_SCOPES = "openid";
@@ -42,9 +45,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
     private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
-
-    @SuppressWarnings("unchecked")
-    private final B me = (B) this;
 
     private JsonObject oidcMetadata;
     private OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
@@ -85,6 +85,12 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         collector.collect().checkValid();
     }
 
+    /**
+     * Update this builder with values from configuration.
+     *
+     * @param config provided config
+     * @return updated builder instance
+     */
     public B config(Config config) {
         config.get("client-id").asString().ifPresent(this::clientId);
         config.get("client-secret").asString().ifPresent(this::clientSecret);
@@ -118,7 +124,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         config.get("server-type").asString().ifPresent(this::serverType);
 
         config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
-        return me;
+        return identity();
     }
 
     /**
@@ -130,7 +136,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B clientId(String clientId) {
         this.clientId = clientId;
-        return me;
+        return identity();
     }
 
     /**
@@ -144,7 +150,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B clientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
-        return me;
+        return identity();
     }
 
     /**
@@ -156,7 +162,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B identityUri(URI uri) {
         this.identityUri = uri;
-        return me;
+        return identity();
     }
 
     /**
@@ -167,7 +173,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      */
     public B realm(String realm) {
         this.realm = realm;
-        return me;
+        return identity();
     }
 
     /**
@@ -179,7 +185,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B audience(String audience) {
         this.audience = audience;
-        return me;
+        return identity();
     }
 
     /**
@@ -191,7 +197,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B issuer(String issuer) {
         this.issuer = issuer;
-        return me;
+        return identity();
     }
 
     /**
@@ -204,7 +210,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption("true")
     public B validateJwtWithJwk(Boolean useJwk) {
         this.validateJwtWithJwk = useJwk;
-        return me;
+        return identity();
     }
 
     /**
@@ -218,7 +224,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     public B introspectEndpointUri(URI uri) {
         validateJwtWithJwk(false);
         this.introspectUri = uri;
-        return me;
+        return identity();
     }
 
     /**
@@ -232,7 +238,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     public B signJwk(Resource resource) {
         validateJwtWithJwk(true);
         this.signJwk = JwkKeys.builder().resource(resource).build();
-        return me;
+        return identity();
     }
 
     /**
@@ -244,7 +250,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     public B signJwk(JwkKeys jwk) {
         validateJwtWithJwk(true);
         this.signJwk = jwk;
-        return me;
+        return identity();
     }
 
     /**
@@ -272,7 +278,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
                                                        + " is not supported.");
         }
         this.tokenEndpointAuthentication = tokenEndpointAuthentication;
-        return me;
+        return identity();
     }
 
     /**
@@ -287,7 +293,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B authorizationEndpointUri(URI uri) {
         this.authorizationEndpointUri = uri;
-        return me;
+        return identity();
     }
 
     /**
@@ -300,7 +306,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      */
     public B logoutEndpointUri(URI logoutEndpointUri) {
         this.logoutEndpointUri = logoutEndpointUri;
-        return me;
+        return identity();
     }
 
     /**
@@ -315,7 +321,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B tokenEndpointUri(URI uri) {
         this.tokenEndpointUri = uri;
-        return me;
+        return identity();
     }
 
     /**
@@ -339,7 +345,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
      */
     public B oidcMetadata(JsonObject metadata) {
         this.oidcMetadata = metadata;
-        return me;
+        return identity();
     }
 
     /**
@@ -353,7 +359,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption(value = DEFAULT_BASE_SCOPES)
     public B baseScopes(String scopes) {
         this.baseScopes = scopes;
-        return me;
+        return identity();
     }
 
     /**
@@ -368,7 +374,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption("true")
     public B oidcMetadataWellKnown(boolean useWellKnown) {
         this.useWellKnown = useWellKnown;
-        return me;
+        return identity();
     }
 
 
@@ -383,7 +389,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption(value = DEFAULT_SERVER_TYPE)
     public B serverType(String type) {
         this.serverType = type;
-        return me;
+        return identity();
     }
 
     /**
@@ -395,7 +401,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption(key = "client-timeout-millis", value = "30000")
     public B clientTimeout(Duration duration) {
         this.clientTimeout = duration;
-        return me;
+        return identity();
     }
 
     /**
@@ -409,7 +415,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
     @ConfiguredOption
     public B scopeAudience(String audience) {
         this.scopeAudience = audience;
-        return me;
+        return identity();
     }
 
     private void clientTimeoutMillis(long millis) {
@@ -490,5 +496,9 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
 
     String scopeAudience() {
         return scopeAudience;
+    }
+
+    String name() {
+        return TenantConfigFinder.DEFAULT_TENANT_ID;
     }
 }

@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -32,6 +35,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -134,6 +138,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 public final class OidcSupport implements Service {
     private static final Logger LOGGER = Logger.getLogger(OidcSupport.class.getName());
+    private static final Supplier<ExecutorService> OIDC_SUPPORT_SERVICE = ThreadPoolSupplier.create("oidc-support");
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
@@ -229,8 +234,10 @@ public final class OidcSupport implements Service {
     }
 
     private void processTenantLogout(ServerRequest req, ServerResponse res, String tenantName) {
-        Tenant tenant = obtainCurrentTenant(tenantName);
+        obtainCurrentTenant(tenantName).forSingle(tenant -> logoutWithTenant(req, res, tenant));
+    }
 
+    private void logoutWithTenant(ServerRequest req, ServerResponse res, Tenant tenant) {
         OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
         OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
 
@@ -298,16 +305,24 @@ public final class OidcSupport implements Service {
         }
     }
 
-    private Tenant obtainCurrentTenant(String tenantName) {
-        return tenants.computeValue(tenantName,
-                                    () -> oidcConfigFinders.stream()
-                                            .map(finder -> finder.config(tenantName))
-                                            .flatMap(Optional::stream)
-                                            .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
-                                            .findFirst()
-                                            .or(() -> Optional.of(Tenant.create(oidcConfig,
-                                                                                oidcConfig.tenantConfig(tenantName)))))
-                .get();
+    private Single<Tenant> obtainCurrentTenant(String tenantName) {
+        Optional<Tenant> maybeTenant = tenants.get(tenantName);
+        if (maybeTenant.isPresent()) {
+            return Single.just(maybeTenant.get());
+        } else {
+            CompletableFuture<Tenant> tenantCompletableFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        Tenant tenant = oidcConfigFinders.stream()
+                                .map(finder -> finder.config(tenantName))
+                                .flatMap(Optional::stream)
+                                .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
+                                .findFirst()
+                                .orElseGet(() -> Tenant.create(oidcConfig, oidcConfig.tenantConfig(tenantName)));
+                        return tenants.computeValue(tenantName, () -> Optional.of(tenant)).get();
+                    },
+                    OIDC_SUPPORT_SERVICE.get());
+            return Single.create(tenantCompletableFuture);
+        }
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -344,7 +359,10 @@ public final class OidcSupport implements Service {
     private void processCode(String code, ServerRequest req, ServerResponse res) {
         String tenantName = req.queryParams().first(oidcConfig.tenantParamName()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
 
-        Tenant tenant = obtainCurrentTenant(tenantName);
+        obtainCurrentTenant(tenantName).forSingle(tenant -> processCodeWithTenant(code, req, res, tenantName, tenant));
+    }
+
+    private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
         TenantConfig tenantConfig = tenant.tenantConfig();
 
         WebClient webClient = tenant.appWebClient();
@@ -366,7 +384,6 @@ public final class OidcSupport implements Service {
                                     (status, errorEntity) -> processError(res, status, errorEntity),
                                     (t, message) -> processError(res, t, message))
                 .ignoreElement();
-
     }
 
     private Object postLogoutUri(ServerRequest req) {

@@ -1129,10 +1129,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         private void tenantFromConfig(Config defaultConfig, Config tenantConfig) {
-            String name = tenantConfig.get(TENANT_IDENT).asString()
-                    .orElseThrow(() -> new IllegalStateException("Every tenant need to have \"" + TENANT_IDENT + "\" specified"));
-            addTenantConfig(name, TenantConfig.tenantBuilder().config(defaultConfig).config(tenantConfig).build());
-
+            addTenantConfig(TenantConfig.tenantBuilder().config(defaultConfig).config(tenantConfig).build());
         }
 
         /**
@@ -1625,12 +1622,10 @@ public final class OidcConfig extends TenantConfigImpl {
          * Name of the cookie to use for tenant name.
          * Defaults to {@value #DEFAULT_TENANT_COOKIE_NAME}.
          *
-         * This cookie is only used when logout is enabled, as otherwise it is not needed.
-         * Content of this cookie is encrypted.
-         *
          * @param cookieName name of a cookie
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "cookie-name-tenant", value = DEFAULT_TENANT_COOKIE_NAME)
         public Builder cookieTenantName(String cookieName) {
             this.tenantCookieBuilder.cookieName(cookieName);
             return this;
@@ -1652,12 +1647,12 @@ public final class OidcConfig extends TenantConfigImpl {
         /**
          * Add specific {@link TenantConfig} instance.
          *
-         * @param tenant tenant name
          * @param tenantConfig tenant configuration
          * @return updated builder instance
          */
-        public Builder addTenantConfig(String tenant, TenantConfig tenantConfig) {
-            tenantConfigurations.put(tenant, tenantConfig);
+        @ConfiguredOption(key = "tenants", type = TenantConfig.class, description = "Configurations of the tenants")
+        public Builder addTenantConfig(TenantConfig tenantConfig) {
+            tenantConfigurations.put(tenantConfig.name(), tenantConfig);
             return this;
         }
 
