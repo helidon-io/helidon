@@ -20,8 +20,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Helidon WebServer CORS support.
  */
-@Feature(value = "Nima CORS",
-        description = "CORS support for Nima WebServer",
+@Feature(value = "CORS",
+        description = "CORS support for WebServer",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
         path = {"WebServer", "CORS"})
