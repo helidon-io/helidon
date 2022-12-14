@@ -20,8 +20,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Fault tolerance module for Helidon reactive implementation.
  */
-@Feature(value = "Nima Fault Tolerance",
-        description = "Nima Fault Tolerance",
+@Feature(value = "Fault Tolerance",
+        description = "Fault Tolerance",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
         path = "Fault Tolerance"
