@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.webclient.metrics.WebClientMetricsProvider;
 import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 
 /**
  * Helidon WebClient Metrics.
  */
+@Feature(value = "Metrics",
+        description = "Reactive web client support for metrics",
+        in = HelidonFlavor.SE,
+        path = {"WebClient", "Metrics"}
+)
 module io.helidon.reactive.webclient.metrics {
+    requires static io.helidon.common.features.api;
 
     requires io.helidon.metrics;
     requires io.helidon.reactive.webclient;

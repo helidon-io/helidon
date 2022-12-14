@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 
 /**
@@ -21,7 +23,14 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
  *
  * @see org.eclipse.microprofile.openapi
  */
+@Feature(value = "Open API",
+        description = "MicroProfile Open API spec implementation",
+        in = HelidonFlavor.MP,
+        path = "Open API"
+)
 module io.helidon.microprofile.openapi {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     
     requires smallrye.open.api.core;

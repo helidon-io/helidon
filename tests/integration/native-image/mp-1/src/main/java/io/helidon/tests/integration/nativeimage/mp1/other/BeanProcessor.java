@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ public final class BeanProcessor {
         Package samplePackage = sampleClass.getPackage();
         Package proxyPackage = proxyClass.getPackage();
 
-        System.out.println(samplePackage);
-        System.out.println(proxyPackage);
-        System.out.println("Equals: " + samplePackage.equals(proxyPackage));
+        System.out.println("original package: " + samplePackage);
+        System.out.println("proxy package: " + proxyPackage);
 
         String name = bean.getName();
         return name;

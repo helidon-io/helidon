@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Zipkin tracing support.
  */
+@Feature(value = "Zipkin",
+        description = "Zipkin tracer integration",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"Tracing", "Zipkin"}
+)
 module io.helidon.tracing.zipkin {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.tracing;

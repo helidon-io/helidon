@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.dbclient.jsonp.JsonProcessingMapperProvider;
 import io.helidon.reactive.dbclient.spi.DbMapperProvider;
 
 /**
  * Helidon DB JSON-P Mapper.
  */
+@Feature(value = "JSON-P",
+        description = "JSON Processing mapping DbRow",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "JSON-P"}
+)
 module io.helidon.reactive.dbclient.jsonp {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires io.helidon.reactive.dbclient;
     requires jakarta.json;

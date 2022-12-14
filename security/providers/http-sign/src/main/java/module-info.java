@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Http signature provider.
  */
+@Feature(value = "HTTP Signatures",
+        description = "Security provider for HTTP Signature authentication and outbound",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "HttpSign"}
+)
 module io.helidon.security.providers.httpsign {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires static io.helidon.config.metadata;

@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * gRPC microprofile metrics module
  */
+@Feature(value = "Metrics",
+        description = "Metrics for gRPC",
+        in = HelidonFlavor.MP,
+        path = {"grpc", "Metrics"}
+)
 module io.helidon.microprofile.grpc.metrics {
+    requires static io.helidon.common.features.api;
+
     exports io.helidon.microprofile.grpc.metrics;
 
     requires transitive io.helidon.grpc.metrics;
