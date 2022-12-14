@@ -20,9 +20,9 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * WebServer Access log.
  */
-@Feature(value = "Nima Access Log",
+@Feature(value = "Access Log",
         in = HelidonFlavor.NIMA,
-        description = "Nima Access log support",
+        description = "Access log support",
         invalidIn = HelidonFlavor.SE,
         path = {"WebServer", "AccessLog"})
 module io.helidon.nima.webserver.accesslog {
