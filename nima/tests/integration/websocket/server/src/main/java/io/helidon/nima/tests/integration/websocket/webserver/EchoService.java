@@ -26,7 +26,7 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 import io.helidon.nima.websocket.WsUpgradeException;
-import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
+import io.helidon.nima.websocket.webserver.WsUpgrader;
 
 class EchoService implements WsListener {
     private final AtomicReference<CloseInfo> closed = new AtomicReference<>();
@@ -54,10 +54,10 @@ class EchoService implements WsListener {
     @Override
     public Optional<Headers> onHttpUpgrade(HttpPrologue prologue, Headers headers) throws WsUpgradeException {
         WritableHeaders<?> upgradeHeaders = WritableHeaders.create();
-        if (headers.contains(WsUpgradeProvider.PROTOCOL)) {
-            List<String> subProtocols = headers.get(WsUpgradeProvider.PROTOCOL).allValues(true);
+        if (headers.contains(WsUpgrader.PROTOCOL)) {
+            List<String> subProtocols = headers.get(WsUpgrader.PROTOCOL).allValues(true);
             if (subProtocols.contains("chat")) {
-                upgradeHeaders.set(WsUpgradeProvider.PROTOCOL, "chat");
+                upgradeHeaders.set(WsUpgrader.PROTOCOL, "chat");
                 subProtocol = "chat";
             } else {
                 throw new WsUpgradeException("Unable to negotiate WS sub-protocol");
@@ -65,10 +65,10 @@ class EchoService implements WsListener {
         } else {
             subProtocol = null;
         }
-        if (headers.contains(WsUpgradeProvider.EXTENSIONS)) {
-            List<String> extensions = headers.get(WsUpgradeProvider.EXTENSIONS).allValues(true);
+        if (headers.contains(WsUpgrader.EXTENSIONS)) {
+            List<String> extensions = headers.get(WsUpgrader.EXTENSIONS).allValues(true);
             if (extensions.contains("nima")) {
-                upgradeHeaders.set(WsUpgradeProvider.EXTENSIONS, "nima");
+                upgradeHeaders.set(WsUpgrader.EXTENSIONS, "nima");
             } else {
                 throw new WsUpgradeException("Unable to negotiate WS extensions");
             }

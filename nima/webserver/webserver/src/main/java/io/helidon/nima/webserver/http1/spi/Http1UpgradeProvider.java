@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,38 @@
 
 package io.helidon.nima.webserver.http1.spi;
 
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.config.Config;
+import io.helidon.nima.webserver.http1.Http1Upgrader;
 
 /**
- * {@link java.util.ServiceLoader} provider interface for upgrading an HTTP/1.1 connection.
+ * {@link java.util.ServiceLoader} provider interface for HTTP/1.1 connection upgrade provider.
+ * This interface serves as {@link io.helidon.nima.webserver.http1.Http1Upgrader} builder
+ * which receives requested configuration nodes from the server configuration when server builder
+ * is running.
  */
 public interface Http1UpgradeProvider {
-    /**
-     * Expected value of the protocol upgrade, such as {@code h2c}, or {@code websocket}.
-     * If an implementation supports multiple protocols, please implement this provider for each protocol
-     *
-     * @return supported protocol
-     */
-    String supportedProtocol();
 
     /**
-     * Upgrade connection.
+     * Provider's specific configuration node name.
      *
-     * @param ctx      connection context
-     * @param prologue http prologue of the upgrade request
-     * @param headers  http headers of the upgrade request
-     * @return a new connection to use instead of the original {@link io.helidon.nima.webserver.http1.Http1Connection}
+     * @return name of the node to request
      */
-    ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers);
+    String configKey();
+
+    /**
+     * Provider's configuration reader.
+     * Node with {@code configKey()} name will be provided. May receive empty config
+     * when node with specified key is missing.
+     *
+     * @param config {@link io.helidon.config.Config} configuration node
+     */
+    void config(Config config);
+
+    /**
+     * Creates an instance of server HTTP/1.1 connection upgrade selector.
+     *
+     * @return new server HTTP/1.1 connection upgrade selector
+     */
+    Http1Upgrader create();
+
 }

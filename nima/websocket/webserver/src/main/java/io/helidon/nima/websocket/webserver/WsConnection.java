@@ -32,7 +32,7 @@ import io.helidon.nima.websocket.CloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
-import static io.helidon.nima.websocket.webserver.WsUpgradeProvider.PROTOCOL;
+import static io.helidon.nima.websocket.webserver.WsUpgrader.PROTOCOL;
 
 class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
