@@ -24,12 +24,12 @@ import jakarta.transaction.Status;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
 @Singleton
-final class JtaTransactionSupport2 implements TransactionSupport2 {
+final class JtaTransactionRegistry implements TransactionRegistry {
 
     private final TransactionSynchronizationRegistry tsr;
 
     @Inject
-    JtaTransactionSupport2(TransactionSynchronizationRegistry tsr) {
+    JtaTransactionRegistry(TransactionSynchronizationRegistry tsr) {
         super();
         this.tsr = Objects.requireNonNull(tsr, "tsr");
     }

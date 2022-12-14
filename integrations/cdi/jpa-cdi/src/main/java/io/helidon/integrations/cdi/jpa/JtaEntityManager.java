@@ -29,7 +29,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.integrations.cdi.jpa.TransactionSupport2.CompletionStatus;
+import io.helidon.integrations.cdi.jpa.TransactionRegistry.CompletionStatus;
 
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;

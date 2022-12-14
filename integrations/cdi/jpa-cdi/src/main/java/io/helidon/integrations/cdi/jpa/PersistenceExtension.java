@@ -270,11 +270,11 @@ public final class PersistenceExtension implements Extension {
             Class.forName("jakarta.transaction.TransactionSynchronizationRegistry",
                           false,
                           Thread.currentThread().getContextClassLoader());
-            event.addAnnotatedType(JtaTransactionSupport2.class, JtaTransactionSupport2.class.getName());
+            event.addAnnotatedType(JtaTransactionRegistry.class, JtaTransactionRegistry.class.getName());
             event.addAnnotatedType(JtaAdaptingDataSourceProvider.class, JtaAdaptingDataSourceProvider.class.getName());
             this.transactionsSupported = true;
         } catch (ClassNotFoundException e) {
-            event.addAnnotatedType(NoTransactionSupport2.class, NoTransactionSupport2.class.getName());
+            event.addAnnotatedType(NoTransactionRegistry.class, NoTransactionRegistry.class.getName());
             event.addAnnotatedType(JtaAbsentDataSourceProvider.class, JtaAbsentDataSourceProvider.class.getName());
             this.transactionsSupported = false;
         }
@@ -1222,13 +1222,13 @@ public final class PersistenceExtension implements Extension {
         return instance.select(ReferenceCountingProducer.class)
             .get()
             .produce(() -> {
-                    TransactionSupport2 ts =
-                        getOrDefault(instance.select(TransactionSupport2.class),
+                    TransactionRegistry tr =
+                        getOrDefault(instance.select(TransactionRegistry.class),
                                      selectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY));
                     return
-                        new JtaExtendedEntityManager(ts::active,
-                                                     ts::get,
-                                                     ts::put,
+                        new JtaExtendedEntityManager(tr::active,
+                                                     tr::get,
+                                                     tr::put,
                                                      instance.select(EntityManagerFactory.class,
                                                                      containerManagedSelectionQualifiers
                                                                      .toArray(EMPTY_ANNOTATION_ARRAY))
@@ -1322,12 +1322,12 @@ public final class PersistenceExtension implements Extension {
         return instance.select(ReferenceCountingProducer.class)
             .get()
             .produce(() -> {
-                    TransactionSupport2 ts = getOrDefault(instance.select(TransactionSupport2.class), selectionQualifiers);
+                    TransactionRegistry tr = getOrDefault(instance.select(TransactionRegistry.class), selectionQualifiers);
                     return
-                        new JtaEntityManager(ts::active,
-                                             ts::addCompletionListener,
-                                             ts::get,
-                                             ts::put,
+                        new JtaEntityManager(tr::active,
+                                             tr::addCompletionListener,
+                                             tr::get,
+                                             tr::put,
                                              instance.select(EntityManagerFactory.class,
                                                              containerManagedSelectionQualifiers.toArray(EMPTY_ANNOTATION_ARRAY))
                                              .get()::createEntityManager,

@@ -17,7 +17,7 @@ package io.helidon.integrations.cdi.jpa;
 
 import java.util.function.Consumer;
 
-interface TransactionSupport2 {
+interface TransactionRegistry {
 
     boolean active();
 

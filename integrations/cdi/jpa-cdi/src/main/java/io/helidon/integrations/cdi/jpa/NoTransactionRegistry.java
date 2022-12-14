@@ -21,10 +21,10 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
-final class NoTransactionSupport2 implements TransactionSupport2 {
+final class NoTransactionRegistry implements TransactionRegistry {
 
     @Inject
-    NoTransactionSupport2() {
+    NoTransactionRegistry() {
         super();
     }
 
