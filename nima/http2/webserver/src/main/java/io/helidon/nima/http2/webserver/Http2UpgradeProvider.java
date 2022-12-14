@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,68 +16,101 @@
 
 package io.helidon.nima.http2.webserver;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
-import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.http2.Http2Settings;
-import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.config.Config;
+import io.helidon.nima.webserver.http1.Http1Upgrader;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.nima.webserver.spi.ServerConnection;
 
 /**
  * {@link java.util.ServiceLoader} upgrade protocol provider to upgrade from HTTP/1.1 to HTTP/2.
  */
 public class Http2UpgradeProvider implements Http1UpgradeProvider {
-    private static final byte[] SWITCHING_PROTOCOLS_BYTES = (
-            "HTTP/1.1 101 Switching Protocols\r\n"
-                    + "Connection: Upgrade\r\n"
-                    + "Upgrade: h2c\r\n\r\n")
-            .getBytes(StandardCharsets.UTF_8);
-    private static final HeaderName HTTP2_SETTINGS_HEADER_NAME = Header.create("HTTP2-Settings");
-    private static final Base64.Decoder BASE_64_DECODER = Base64.getDecoder();
 
-    @Override
-    public String supportedProtocol() {
-        return "h2c";
+    private Http2Config config;
+
+    /**
+     * Create a new instance with default configuration.
+     *
+     * @deprecated to be used solely by {@link java.util.ServiceLoader}
+     */
+    public Http2UpgradeProvider() {
+        config = Http2Config.builder().build();
+    }
+
+    private Http2UpgradeProvider(Http2Config config) {
+        this.config = config;
     }
 
     @Override
-    public ServerConnection upgrade(ConnectionContext ctx,
-                                    HttpPrologue prologue,
-                                    WritableHeaders<?> headers) {
-        Http2Connection connection = new Http2Connection(ctx);
-        if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
-            connection.clientSettings(Http2Settings.create(BufferData.create(BASE_64_DECODER.decode(headers.get(
-                    HTTP2_SETTINGS_HEADER_NAME).value().getBytes(StandardCharsets.US_ASCII)))));
-        } else {
-            throw new RuntimeException("Bad request -> not " + HTTP2_SETTINGS_HEADER_NAME + " header");
+    public String configKey() {
+        return Http2ConnectionProvider.CONFIG_NAME;
+    }
+
+    @Override
+    public void config(Config config) {
+        // Empty node can't overwrite existing configuration.
+        if (config.exists()) {
+            // Initialize builder with existing configuration
+            this.config = Http2Config.builder(this.config)
+                    // Overwrite values from config node
+                    .config(config)
+                    .build();
         }
-        Http2Headers http2Headers = Http2Headers.create(headers);
-        http2Headers.path(prologue.uriPath().rawPath());
-        http2Headers.method(prologue.method());
-        headers.remove(Header.HOST,
-                       it -> http2Headers.authority(it.value()));
-        http2Headers.scheme("http"); // TODO need to get if https (ctx)?
-
-        HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
-                                                       prologue.protocol(),
-                                                       Http2Connection.PROTOCOL_VERSION,
-                                                       prologue.method(),
-                                                       prologue.uriPath(),
-                                                       prologue.query(),
-                                                       prologue.fragment());
-
-        connection.upgradeConnectionData(newPrologue, http2Headers);
-        connection.expectPreface();
-        DataWriter dataWriter = ctx.dataWriter();
-        dataWriter.write(BufferData.create(SWITCHING_PROTOCOLS_BYTES));
-        return connection;
     }
+
+    @Override
+    public Http1Upgrader create() {
+        return new Http2Upgrader(config);
+    }
+
+    /**
+     * Builder to set up this provider.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Fluent API builder for {@link Http2UpgradeProvider}.
+     */
+    public static class Builder implements io.helidon.common.Builder<Http2UpgradeProvider.Builder, Http2UpgradeProvider> {
+
+        private final Http2Config.Builder configBuilder;
+
+        private Builder() {
+            this.configBuilder = Http2Config.builder();
+        }
+
+        /**
+         * The size of the largest frame payload that the sender is willing to receive in bytes.
+         * See RFC 9113 section 6.5.2 for details.
+         *
+         * @param maxFrameSize maximum length of the frame payload
+         * @return updated builder
+         */
+        public Builder maxFrameSize(long maxFrameSize) {
+            configBuilder.maxFrameSize(maxFrameSize);
+            return this;
+        }
+
+        /**
+         * The maximum field section size that the sender is prepared to accept in bytes.
+         * See RFC 9113 section 6.5.2 for details.
+         *
+         * @param maxHeaderListSize maximum field section size
+         * @return updated builder
+         */
+        public Builder maxHeaderListSize(long maxHeaderListSize) {
+            configBuilder.maxHeaderListSize(maxHeaderListSize);
+            return this;
+        }
+
+        @Override
+        public Http2UpgradeProvider build() {
+            return new Http2UpgradeProvider(configBuilder.build());
+        }
+
+    }
+
 }

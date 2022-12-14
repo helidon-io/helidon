@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,36 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ServerConnectionSelector;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for HTTP/1.1 server connection provider.
+ * {@link io.helidon.nima.webserver.spi.ServerConnectionProvider} implementation for HTTP/1.1 server connection provider.
  */
 public class Http1ConnectionProvider implements ServerConnectionProvider {
-    private static final String PROTOCOL = " HTTP/1.1\r";
-    private static final int DEFAULT_MAX_PROLOGUE_LENGTH = 2048;
-    private static final int DEFAULT_MAX_HEADERS_SIZE = 16384;
-    private static final boolean DEFAULT_VALIDATE_HEADERS = true;
-    private static final boolean DEFAULT_VALIDATE_PATH = true;
 
-    private final int maxPrologueLength;
-    private final int maxHeadersSize;
-    private final boolean validateHeaders;
-    private final boolean validatePath;
-    private final Map<String, Http1UpgradeProvider> upgradeProviderMap;
-    private final Http1ConnectionListener sendListener;
-    private final Http1ConnectionListener recvListener;
+    /** HTTP/1.1 server connection provider configuration node name. */
+    private static final String CONFIG_NAME = "http_1_1";
+
+    // Config key to HTTP/1.1 connection upgrade providers mapping
+    private final Map<String, List<Http1UpgradeProvider>> providersConfigMap;
+
+    private Http1Config config;
+
+    private Http1ConnectionProvider(Http1Config config, List<Http1UpgradeProvider> providers) {
+        this.config = config;
+        this.providersConfigMap = initUpgradeProvidersConfigMap(providers);
+    }
 
     /**
      * Create a new instance with default configuration.
@@ -57,17 +54,78 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
      */
     @Deprecated
     public Http1ConnectionProvider() {
-        this(builder());
+        this.config = Http1Config.builder().build();
+        this.providersConfigMap = initUpgradeProvidersConfigMap(upgradeProviderBuilder().build());
     }
 
-    private Http1ConnectionProvider(Builder builder) {
-        this.maxPrologueLength = builder.maxPrologueLength;
-        this.maxHeadersSize = builder.maxHeaderSize;
-        this.validateHeaders = builder.validateHeaders;
-        this.validatePath = builder.validatePath;
-        this.upgradeProviderMap = builder.upgradeProviders();
-        this.sendListener = builder.sendListener();
-        this.recvListener = builder.recvListener();
+
+    // Constructor helper: Build config key to HTTP/1.1 connection upgrading providers mapping
+    private static Map<String, List<Http1UpgradeProvider>> initUpgradeProvidersConfigMap(
+            List<Http1UpgradeProvider> factories) {
+        Map<String, List<Http1UpgradeProvider>> map = new HashMap<>(factories.size());
+        factories.forEach(factory -> addProviderConfigMapping(map, factory));
+        return map;
+    }
+
+    // Constructor helper: Add config key to HTTP/1.1 connection upgrading providers mapping into provided map
+    private static void addProviderConfigMapping(Map<String, List<Http1UpgradeProvider>> map, Http1UpgradeProvider provider) {
+        List<Http1UpgradeProvider> providers;
+        if (map.containsKey(provider.configKey())) {
+            providers = map.get(provider.configKey());
+        } else {
+            providers = new LinkedList<>();
+            map.put(provider.configKey(), providers);
+        }
+        providers.add(provider);
+    }
+
+    // Returns all config keys of Http1UpgradeProvider instances and this provider.
+    // This method is called just once from WebServer.Builder so let's build the list on the fly.
+    @Override
+    public Iterable<String> configKeys() {
+        List<String> keys = new ArrayList<>(providersConfigMap.keySet().size() + 1);
+        keys.addAll(providersConfigMap.keySet());
+        keys.add(CONFIG_NAME);
+        return keys;
+    }
+
+    @Override
+    public void config(Config config) {
+        if (CONFIG_NAME.equals(config.name())) {
+            // Empty node can't overwrite existing local configuration.
+            if (config.exists()) {
+                // Initialize builder with existing configuration
+                this.config = Http1Config.builder(this.config)
+                        // Overwrite values from config node
+                        .config(config)
+                        .build();
+            }
+        // Send configuration nodes to HTTP/1.1 connection upgrading providers including possible empty nodes.
+        } else {
+            List<Http1UpgradeProvider> providers = providersConfigMap.get(config.name());
+            if (providers != null) {
+                providers.forEach(provider -> provider.config(config));
+            }
+        }
+    }
+
+    @Override
+    public ServerConnectionSelector create() {
+        // Calculate providers count to properly scale HashMap instance
+        int size = 0;
+        for (List<Http1UpgradeProvider> providers : providersConfigMap.values()) {
+            size += providers.size();
+        }
+        // Build HTTP/1.1 connection upgrade providers map.
+        Map<String, Http1Upgrader> selectors = new HashMap<>(size);
+        for (List<Http1UpgradeProvider> providers : providersConfigMap.values()) {
+            for (Http1UpgradeProvider provider : providers) {
+                Http1Upgrader selector = provider.create();
+                selectors.putIfAbsent(selector.supportedProtocol(), selector);
+            }
+        }
+        // Map passed to connection provider instance must be immutable
+        return new Http1ConnectionSelector(config, Map.copyOf(selectors));
     }
 
     /**
@@ -79,83 +137,17 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
         return new Builder();
     }
 
-    @Override
-    public int bytesToIdentifyConnection() {
-        // the request must begin with
-        return 0;
-    }
-
-    @Override
-    public Support supports(BufferData request) {
-        // we are looking for first \n, if preceded by \r -> try if ours, otherwise not supported
-
-        /*
-        > GET /loom/slow HTTP/1.1
-        > Host: localhost:8080
-        > User-Agent: curl/7.54.0
-        > Accept: * /*
-         */
-
-        int lf = request.indexOf(Bytes.LF_BYTE);
-        if (lf == -1) {
-            // in case we have reached the max prologue length, we just consider this to be HTTP/1.1 so we can send
-            // proper error. This means that maxPrologueLength should always be higher than any protocol requirements to
-            // identify a connection (e.g. this is the fallback protocol)
-            return (request.available() <= maxPrologueLength) ? Support.SUPPORTED : Support.UNSUPPORTED;
-        } else {
-            return request.readString(lf).endsWith(PROTOCOL) ? Support.SUPPORTED : Support.UNSUPPORTED;
-        }
-    }
-
-    @Override
-    public Set<String> supportedApplicationProtocols() {
-        return Set.of("http/1.1");
-    }
-
-    @Override
-    public ServerConnection connection(ConnectionContext ctx) {
-        return new Http1Connection(ctx,
-                                   recvListener,
-                                   sendListener,
-                                   maxPrologueLength,
-                                   maxHeadersSize,
-                                   validateHeaders,
-                                   validatePath,
-                                   upgradeProviderMap);
-    }
-
     /**
-     * Fluent API builder for {@link io.helidon.nima.webserver.http1.Http1ConnectionProvider}.
+     * Fluent API builder for {@link Http1ConnectionProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, Http1ConnectionProvider> {
+    public static class Builder implements io.helidon.common.Builder<Http1ConnectionProvider.Builder, Http1ConnectionProvider> {
 
-        private final List<Http1ConnectionListener> sendListeners = new LinkedList<>();
-        private final List<Http1ConnectionListener> recvListeners = new LinkedList<>();
-        private final HelidonServiceLoader.Builder<Http1UpgradeProvider> upgradeProviders =
-                HelidonServiceLoader.builder(ServiceLoader.load(Http1UpgradeProvider.class));
-
-        private int maxPrologueLength = DEFAULT_MAX_PROLOGUE_LENGTH;
-        private int maxHeaderSize = DEFAULT_MAX_HEADERS_SIZE;
-        private boolean validateHeaders = DEFAULT_VALIDATE_HEADERS;
-        private boolean validatePath = DEFAULT_VALIDATE_PATH;
+        private final Http1Config.Builder configBuilder;
+        private final UpgradeProviderBuilder upgradeProviderBuilder;
 
         private Builder() {
-            Config config = Config.create()
-                    .get("server.connection-providers.http_1_1");
-
-            config.get("validate-headers").asBoolean().ifPresent(this::validateHeaders);
-            config.get("validate-path").asBoolean().ifPresent(this::validatePath);
-            if (config.get("recv-log").asBoolean().orElse(true)) {
-                addSendListener(new Http1LoggingConnectionListener("send"));
-            }
-            if (config.get("send-log").asBoolean().orElse(true)) {
-                addReceiveListener(new Http1LoggingConnectionListener("recv"));
-            }
-        }
-
-        @Override
-        public Http1ConnectionProvider build() {
-            return new Http1ConnectionProvider(this);
+            configBuilder = Http1Config.builder();
+            upgradeProviderBuilder = upgradeProviderBuilder();
         }
 
         /**
@@ -165,7 +157,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
          * @return updated builder
          */
         public Builder maxPrologueLength(int maxPrologueLength) {
-            this.maxPrologueLength = maxPrologueLength;
+            configBuilder.maxPrologueLength(maxPrologueLength);
             return this;
         }
 
@@ -176,7 +168,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
          * @return updated builder
          */
         public Builder maxHeadersSize(int maxHeadersSize) {
-            this.maxHeaderSize = maxHeadersSize;
+            configBuilder.maxHeaderSize(maxHeadersSize);
             return this;
         }
 
@@ -191,7 +183,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
          * @return updated builder
          */
         public Builder validateHeaders(boolean validateHeaders) {
-            this.validateHeaders = validateHeaders;
+            configBuilder.validateHeaders(validateHeaders);
             return this;
         }
 
@@ -202,7 +194,7 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
          * @return updated builder
          */
         public Builder validatePath(boolean validatePath) {
-            this.validatePath = validatePath;
+            configBuilder.validatePath(validatePath);
             return this;
         }
 
@@ -213,48 +205,42 @@ public class Http1ConnectionProvider implements ServerConnectionProvider {
          * @return updated builder
          */
         public Builder addUpgradeProvider(Http1UpgradeProvider provider) {
-            upgradeProviders.addService(provider);
+            upgradeProviderBuilder.addUpgradeProvider(provider);
             return this;
         }
 
-        /**
-         * Add a send listener.
-         *
-         * @param listener listener to add
-         * @return updated builder
-         */
-        public Builder addSendListener(Http1ConnectionListener listener) {
-            sendListeners.add(listener);
-            return this;
+        @Override
+        public Http1ConnectionProvider build() {
+            return new Http1ConnectionProvider(configBuilder.build(), upgradeFactories());
         }
 
-        /**
-         * Add a receive listener.
-         *
-         * @param listener listener to add
-         * @return updated builder
-         */
-        public Builder addReceiveListener(Http1ConnectionListener listener) {
-            recvListeners.add(listener);
-            return this;
+        private List<Http1UpgradeProvider> upgradeFactories() {
+            return upgradeProviderBuilder.build();
         }
 
-        Http1ConnectionListener sendListener() {
-            return Http1ConnectionListener.create(sendListeners);
-        }
-
-        Http1ConnectionListener recvListener() {
-            return Http1ConnectionListener.create(recvListeners);
-        }
-
-        Map<String, Http1UpgradeProvider> upgradeProviders() {
-            List<Http1UpgradeProvider> providers = upgradeProviders.build().asList();
-            Map<String, Http1UpgradeProvider> providerMap = new HashMap<>();
-
-            for (Http1UpgradeProvider upgradeProvider : providers) {        // sorted by weight
-                providerMap.putIfAbsent(upgradeProvider.supportedProtocol(), upgradeProvider);
-            }
-            return Map.copyOf(providerMap);
-        }
     }
+
+    private static UpgradeProviderBuilder upgradeProviderBuilder() {
+        return new UpgradeProviderBuilder();
+    }
+
+    static class UpgradeProviderBuilder {
+
+        private final HelidonServiceLoader.Builder<Http1UpgradeProvider> builder;
+
+        private UpgradeProviderBuilder() {
+            builder = HelidonServiceLoader.builder(ServiceLoader.load(Http1UpgradeProvider.class));
+        }
+
+        UpgradeProviderBuilder addUpgradeProvider(Http1UpgradeProvider provider) {
+            builder.addService(provider);
+            return this;
+        }
+
+        List<Http1UpgradeProvider> build() {
+            return builder.build().asList();
+        }
+
+    }
+
 }

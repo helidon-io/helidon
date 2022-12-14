@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ public class Http2Connection implements ServerConnection {
 
     private final Map<Integer, StreamContext> streams = new HashMap<>(1000);
     private final ConnectionContext ctx;
+    private final Http2Config config;
     private final HttpRouting routing;
     private final Http2Headers.DynamicTable requestDynamicTable;
     private final Http2HuffmanDecoder requestHuffman;
@@ -85,9 +86,7 @@ public class Http2Connection implements ServerConnection {
     private final WindowSize connectionWindowSize = new WindowSize();
     private final DataReader reader;
 
-    private Http2Settings serverSettings = Http2Settings.builder()
-            .add(Http2Setting.ENABLE_PUSH, false)
-            .build();
+    private final Http2Settings serverSettings;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
             .build();
@@ -104,9 +103,13 @@ public class Http2Connection implements ServerConnection {
     private long maxClientFrameSize = 16_384;
     private int streamInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
 
-    Http2Connection(ConnectionContext ctx) {
+    Http2Connection(ConnectionContext ctx, Http2Config config) {
         this.ctx = ctx;
-
+        this.config = config;
+        this.serverSettings = config.apply(
+                        Http2Settings.builder()
+                                .add(Http2Setting.ENABLE_PUSH, false))
+                .build();
         this.connectionWriter = new Http2ConnectionWriter(ctx, ctx.dataWriter(), List.of(new Http2LoggingFrameListener("send")));
         this.requestDynamicTable = Http2Headers.DynamicTable.create(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
         this.requestHuffman = new Http2HuffmanDecoder();
@@ -655,6 +658,16 @@ public class Http2Connection implements ServerConnection {
         } catch (InterruptedException e) {
             throw new CloseConnectionException("Failed to update header table size, interrupted", e);
         }
+    }
+
+    // jUnit Http2Config pkg only visible test accessor.
+    Http2Config config() {
+        return config;
+    }
+
+    // jUnit Http2Settings pkg only visible test accessor.
+    Http2Settings serverSettings() {
+        return serverSettings;
     }
 
     private enum State {

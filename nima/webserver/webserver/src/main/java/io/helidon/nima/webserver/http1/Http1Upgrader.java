@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2023 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.nima.webserver.http1;
+
+import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.WritableHeaders;
+import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.spi.ServerConnection;
+
+/**
+ * HTTP/1.1 connection upgrade.
+ */
+public interface Http1Upgrader {
+    /**
+     * Expected value of the protocol upgrade, such as {@code h2c}, or {@code websocket}.
+     * If an implementation supports multiple protocols, please implement this selector for each protocol
+     *
+     * @return supported protocol
+     */
+    String supportedProtocol();
+
+    /**
+     * Upgrade connection.
+     *
+     * @param ctx      connection context
+     * @param prologue http prologue of the upgrade request
+     * @param headers  http headers of the upgrade request
+     * @return a new connection to use instead of the original {@link io.helidon.nima.webserver.http1.Http1Connection}
+     */
+    ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers);
+
+}

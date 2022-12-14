@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.DirectTransportRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
 import static java.lang.System.Logger.Level.TRACE;
@@ -54,16 +53,15 @@ public class Http1Connection implements ServerConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
 
     private final ConnectionContext ctx;
+    private final Http1Config config;
     private final DataWriter writer;
     private final DataReader reader;
-    private final Http1ConnectionListener recvListener;
-    private final Map<String, Http1UpgradeProvider> upgradeProviderMap;
+    private final Map<String, Http1Upgrader> upgradeProviderMap;
     private final boolean canUpgrade;
     private final Http1Headers http1headers;
     private final Http1Prologue http1prologue;
     // todo pass from server config
     private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
-    private final Http1ConnectionListener sendListener;
     private final HttpRouting routing;
     private final long maxPayloadSize;
 
@@ -76,32 +74,21 @@ public class Http1Connection implements ServerConnection {
      * Create a new connection.
      *
      * @param ctx                connection context
-     * @param recvListener       receive listener to get events for incoming traffic
-     * @param sendListener       send listener to get events for outgoing traffic
-     * @param maxPrologueLength  maximal size of prologue (initial line)
-     * @param maxHeadersSize     maximal size of headers in bytes
-     * @param validateHeaders    whether to validate request headers
-     * @param validatePath       whether to validate path
+     * @param config             connection provider configuration
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
      */
     public Http1Connection(ConnectionContext ctx,
-                           Http1ConnectionListener recvListener,
-                           Http1ConnectionListener sendListener,
-                           int maxPrologueLength,
-                           int maxHeadersSize,
-                           boolean validateHeaders,
-                           boolean validatePath,
-                           Map<String, Http1UpgradeProvider> upgradeProviderMap) {
+                           Http1Config config,
+                           Map<String, Http1Upgrader> upgradeProviderMap) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
-        this.sendListener = sendListener;
-        this.recvListener = recvListener;
+        this.config = config;
         this.upgradeProviderMap = upgradeProviderMap;
         this.canUpgrade = !upgradeProviderMap.isEmpty();
-        this.reader.listener(recvListener, ctx);
-        this.http1headers = new Http1Headers(reader, maxHeadersSize, validateHeaders);
-        this.http1prologue = new Http1Prologue(reader, maxPrologueLength, validatePath);
+        this.reader.listener(config.recvListeners(), ctx);
+        this.http1headers = new Http1Headers(reader, config.maxHeadersSize(), config.validateHeaders());
+        this.http1prologue = new Http1Prologue(reader, config.maxPrologueLength(), config.validatePath());
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.maxPayloadSize();
     }
@@ -113,16 +100,16 @@ public class Http1Connection implements ServerConnection {
             while (true) {
                 // prologue (first line of request)
                 HttpPrologue prologue = http1prologue.readPrologue();
-                recvListener.prologue(ctx, prologue);
+                config.recvListeners().prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
-                recvListener.headers(ctx, headers);
+                config.recvListeners().headers(ctx, headers);
 
                 if (canUpgrade) {
                     if (headers.contains(Http.Header.UPGRADE)) {
-                        Http1UpgradeProvider upgrader = upgradeProviderMap.get(headers.get(Http.Header.UPGRADE).value());
+                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.Header.UPGRADE).value());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
                             // upgrader may decide not to upgrade this connection
@@ -245,7 +232,7 @@ public class Http1Connection implements ServerConnection {
         if (entity == EntityStyle.NONE) {
             Http1ServerRequest request = Http1ServerRequest.create(ctx, routing.security(), prologue, headers, requestId);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
-                                                                   sendListener,
+                                                                   config.sendListeners(),
                                                                    writer,
                                                                    request,
                                                                    !request.headers()
@@ -300,7 +287,7 @@ public class Http1Connection implements ServerConnection {
                                                                entityReadLatch,
                                                                () -> this.readEntityFromPipeline(prologue, headers));
         Http1ServerResponse response = new Http1ServerResponse(ctx,
-                                                               sendListener,
+                                                               config.sendListeners(),
                                                                writer,
                                                                request,
                                                                !request.headers()
@@ -361,12 +348,18 @@ public class Http1Connection implements ServerConnection {
             buffer.write(message);
         }
 
-        sendListener.headers(ctx, headers);
-        sendListener.data(ctx, buffer);
+        config.sendListeners().headers(ctx, headers);
+        config.sendListeners().data(ctx, buffer);
         writer.write(buffer);
 
         if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
     }
+
+    // jUnit Http2Config pkg only visible test accessor.
+    Http1Config config() {
+        return config;
+    }
+
 }

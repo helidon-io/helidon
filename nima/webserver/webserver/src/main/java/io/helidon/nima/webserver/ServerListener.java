@@ -42,7 +42,6 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.http.DirectHandlers;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
@@ -72,7 +71,7 @@ class ServerListener {
     private volatile ServerSocket serverSocket;
 
     ServerListener(ServerContext serverContext,
-                   List<ServerConnectionProvider> connectionProviders,
+                   List<ServerConnectionSelector> connectionProviders,
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
