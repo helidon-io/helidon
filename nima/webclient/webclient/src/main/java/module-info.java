@@ -24,8 +24,8 @@ import io.helidon.nima.webclient.spi.DnsResolverProvider;
 /**
  * WebClient API and HTTP/1.1 implementation.
  */
-@Feature(value = "Nima Web Client",
-        description = "Nima Web Client",
+@Feature(value = "Web Client",
+        description = "Web Client",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
         path = "Web Client"
