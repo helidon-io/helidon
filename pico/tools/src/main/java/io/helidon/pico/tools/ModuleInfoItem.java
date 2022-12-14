@@ -32,7 +32,7 @@ import io.helidon.builder.Singular;
  * instead of needing to use anything provided here.
  */
 @Builder
-public interface Item {
+public interface ModuleInfoItem {
 
     /**
      * The comments that proceed the item definition.

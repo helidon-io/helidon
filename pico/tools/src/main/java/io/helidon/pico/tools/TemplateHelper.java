@@ -191,17 +191,17 @@ class TemplateHelper {
                                              Set<String> missingArgs,
                                              String delimStart,
                                              String delimEnd) throws IOException {
-        if (null == target) {
+        if (target == null) {
             return null;
         }
 
         Handlebars handlebars = new Handlebars();
         Template template = handlebars.compileInline(target);
 
-        if (Objects.nonNull(delimStart)) {
+        if (delimStart != null) {
             handlebars.setStartDelimiter(delimStart);
         }
-        if (Objects.nonNull(delimEnd)) {
+        if (delimEnd != null) {
             handlebars.setEndDelimiter(delimEnd);
         }
 

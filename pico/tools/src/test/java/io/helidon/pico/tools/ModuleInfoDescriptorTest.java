@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import java.lang.module.ModuleDescriptor;
+import java.io.File;
 import java.util.List;
 
 import io.helidon.pico.Contract;
@@ -111,7 +111,7 @@ class ModuleInfoDescriptorTest {
                 .addItem(ModuleInfoDescriptor.providesContract("cn2", "impl2"))
                 .addItem(ModuleInfoDescriptor.providesContract("cn1"))
                 .addItem(ModuleInfoDescriptor.exportsPackage("export2"))
-                .addItem(DefaultItem.builder()
+                .addItem(DefaultModuleInfoItem.builder()
                                  .exports(true)
                                  .target("export1")
                                  .addWithOrTo("private.module.name")
@@ -135,15 +135,15 @@ class ModuleInfoDescriptorTest {
     @Test
     void innerCommentsNotSupported() {
         String moduleInfo = "module test {\nprovides /* inner comment */ cn;\n}";
-        ToolsException te = assertThrows(ToolsException.class, () -> ModuleInfoDescriptor.uncheckedLoad(moduleInfo));
+        ToolsException te = assertThrows(ToolsException.class, () -> ModuleInfoDescriptor.create(moduleInfo));
         assertThat(te.getMessage(),
                    equalTo("unable to parse lines that have inner comments: 'provides /* inner comment */ cn'"));
     }
 
     @Test
-    void m0() throws Exception {
+    void loadCreateAndSave() throws Exception {
         ModuleInfoDescriptor descriptor = ModuleInfoDescriptor
-                        .load(CommonUtils.loadStringFromResource("testsubjects/m0._java_"),
+                        .create(CommonUtils.loadStringFromResource("testsubjects/m0._java_"),
                               ModuleInfoDescriptor.Ordering.NATURAL);
         assertThat(descriptor.contents(false),
                    equalTo("module io.helidon.pico {\n"
@@ -159,9 +159,25 @@ class ModuleInfoDescriptorTest {
                                    + "}"));
 
         String contents = CommonUtils.loadStringFromFile("target/test-classes/testsubjects/m0._java_").trim();
-        descriptor = ModuleInfoDescriptor.load(contents, ModuleInfoDescriptor.Ordering.NATURAL_PRESERVE_COMMENTS);
+        descriptor = ModuleInfoDescriptor.create(contents, ModuleInfoDescriptor.Ordering.NATURAL_PRESERVE_COMMENTS);
         assertThat(descriptor.contents(false),
                    equalTo(contents));
+
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("module-info", "");
+            descriptor.save(tempFile.toPath());
+
+            String contents2 = CommonUtils.loadStringFromFile("target/test-classes/testsubjects/m0._java_").trim();
+            assertThat(contents, equalTo(contents2));
+            ModuleInfoDescriptor descriptor2 =
+                    ModuleInfoDescriptor.create(contents, ModuleInfoDescriptor.Ordering.NATURAL_PRESERVE_COMMENTS);
+            assertThat(descriptor, equalTo(descriptor2));
+        } finally {
+            if (tempFile != null) {
+                tempFile.delete();
+            }
+        }
     }
 
 }
