@@ -413,9 +413,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 isChunked = false;
             } else {
                 contentLength = -1;
+                // Add chunked encoding, if there is no other transfer-encoding headers
                 if (!headers.contains(Http.Header.TRANSFER_ENCODING)) {
-                    // todo check if contains other transfer encoding to combine them together
                     headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                } else {
+                    // Add chunked encoding, if it's not part of existing transfer-encoding headers
+                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    }
                 }
             }
 
