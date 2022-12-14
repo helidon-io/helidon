@@ -317,8 +317,7 @@ public final class OidcSupport implements Service {
                                 .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
                                 .findFirst()
                                 .orElseGet(() -> Tenant.create(oidcConfig, oidcConfig.tenantConfig(tenantName)));
-                        tenants.put(tenantName, tenant);
-                        return tenant;
+                        return tenants.computeValue(tenantName, () -> Optional.of(tenant)).get();
                     },
                     OIDC_SUPPORT_SERVICE.get());
             return Single.create(tenantCompletableFuture);
