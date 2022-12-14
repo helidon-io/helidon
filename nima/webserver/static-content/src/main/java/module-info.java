@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon Níma WebServer static content support.
  */
+@Feature(value = "Nima Static Content",
+        description = "Static content support for Nima WebServer",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"WebServer", "Static Content"}
+)
 module io.helidon.nima.webserver.staticcontent {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires transitive io.helidon.nima.webserver;
