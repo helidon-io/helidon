@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Níma WebServer Tracing support.
  */
+@Feature(value = "Tracing",
+        description = "Nima Tracing",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE)
 module io.helidon.nima.webserver.tracing {
+    requires io.helidon.common.features.api;
     requires io.helidon.common.http;
     requires io.helidon.nima.webserver;
     requires io.helidon.tracing;
     requires io.helidon.tracing.config;
+
 
     exports io.helidon.nima.webserver.tracing;
 }
