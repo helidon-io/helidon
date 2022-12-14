@@ -30,11 +30,12 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 
 /**
  * Base builder of the OIDC config components.
  */
-abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> implements Builder<T> {
+abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<T> {
 
     static final String DEFAULT_SERVER_TYPE = "@default";
     static final String DEFAULT_BASE_SCOPES = "openid";
@@ -85,6 +86,12 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
         collector.collect().checkValid();
     }
 
+    /**
+     * Update this builder with values from configuration.
+     *
+     * @param config provided config
+     * @return updated builder instance
+     */
     public B config(Config config) {
         config.get("client-id").asString().ifPresent(this::clientId);
         config.get("client-secret").asString().ifPresent(this::clientSecret);
@@ -491,5 +498,9 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T extends TenantConfig> 
 
     String scopeAudience() {
         return scopeAudience;
+    }
+
+    String name() {
+        return TenantConfigFinder.DEFAULT_TENANT_ID;
     }
 }
