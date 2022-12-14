@@ -36,7 +36,7 @@ package io.helidon.builder;
  * @see io.helidon.builder.Builder#interceptor()
  */
 @FunctionalInterface
-public interface Interceptor<T> {
+public interface BuilderInterceptor<T> {
 
     /**
      * Provides the ability to intercept (i.e., including decoration or mutation) the target.

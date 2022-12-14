@@ -118,11 +118,11 @@ public class BodyContext {
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
         String interceptorType = searchForBuilderAnnotation("interceptor", builderTriggerAnnotation, typeInfo);
-        this.interceptorTypeName = (Void.class.getName().equals(interceptorType) || Objects.isNull(interceptorType))
+        this.interceptorTypeName = (interceptorType == null || Void.class.getName().equals(interceptorType))
                 ? null : DefaultTypeName.createFromTypeName(interceptorType);
         String interceptorCreateMethod =
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
-        this.interceptorCreateMethod = ("".equals(interceptorCreateMethod) || Objects.isNull(interceptorCreateMethod))
+        this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
                 ? null : interceptorCreateMethod;
     }
 

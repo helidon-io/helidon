@@ -22,7 +22,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Demonstrates interception of builders.
  */
-@Builder(interceptor = BeanBuilderInterceptor.class)
+@Builder(interceptor = BeanBuilderBuilderInterceptor.class)
 public interface InterceptedBean {
 
     /**

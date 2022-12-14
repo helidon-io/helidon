@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import io.helidon.builder.Annotated;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
-import io.helidon.builder.Interceptor;
+import io.helidon.builder.BuilderInterceptor;
 import io.helidon.builder.RequiredAttributeVisitor;
 import io.helidon.builder.Singular;
 import io.helidon.builder.processor.spi.BuilderCreatorProvider;
@@ -449,7 +449,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             if (ctx.doingConcreteType()) {
                 builder.append("import ").append(RequiredAttributeVisitor.class.getName()).append(";\n");
             }
-            builder.append("import ").append(Interceptor.class.getName()).append(";\n");
+            builder.append("import ").append(BuilderInterceptor.class.getName()).append(";\n");
             builder.append("\n");
         }
     }

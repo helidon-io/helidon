@@ -158,15 +158,12 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * Returns true if the executable element passed is acceptable for processing (i.e., not a static and not a default method
      * on interfaces, and abstract methods on abstract classes).
      *
-     * @param ee                the executable element
+     * @param ee the executable element
      * @return true if not able to accept
      */
     protected boolean canAccept(ExecutableElement ee) {
         Set<Modifier> mods = ee.getModifiers();
-        if (mods.contains(Modifier.ABSTRACT)) {
-            return true;
-        }
-        return false;
+        return mods.contains(Modifier.ABSTRACT);
     }
 
     private Optional<TypeInfo> toTypeInfo(AnnotationAndValue annotation,

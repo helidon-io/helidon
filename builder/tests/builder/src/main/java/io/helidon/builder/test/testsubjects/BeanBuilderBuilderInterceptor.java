@@ -16,12 +16,12 @@
 
 package io.helidon.builder.test.testsubjects;
 
-import io.helidon.builder.Interceptor;
+import io.helidon.builder.BuilderInterceptor;
 
 /**
  * See {@link InterceptedBean}.
  */
-class BeanBuilderInterceptor implements Interceptor<DefaultInterceptedBean.Builder> {
+class BeanBuilderBuilderInterceptor implements BuilderInterceptor<DefaultInterceptedBean.Builder> {
     private int callCount;
 
     @Override

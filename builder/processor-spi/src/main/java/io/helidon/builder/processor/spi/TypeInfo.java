@@ -51,7 +51,7 @@ public interface TypeInfo {
     List<AnnotationAndValue> annotations();
 
     /**
-     * The elements that make up the type that are "relevant" for processing.
+     * The elements that make up the type that are relevant for processing.
      *
      * @return the elements that make up the type that are relevant for processing
      */

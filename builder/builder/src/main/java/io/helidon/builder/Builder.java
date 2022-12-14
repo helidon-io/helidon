@@ -181,7 +181,7 @@ public @interface Builder {
     boolean allowNulls() default DEFAULT_ALLOW_NULLS;
 
     /**
-     * The interceptor implementation type. See {@link Interceptor} for further details. Any interceptor applied will be called
+     * The interceptor implementation type. See {@link BuilderInterceptor} for further details. Any interceptor applied will be called
      * prior to validation.
      *
      * @return the interceptor implementation class

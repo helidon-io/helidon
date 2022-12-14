@@ -19,7 +19,7 @@ package io.helidon.builder.test.nodeps;
 /**
  * See {@link NoDepsInterceptedBean}. Notice how the Builder annotation on {@link NoDepsInterceptedBean} sets the
  * {@link io.helidon.builder.Builder#requireLibraryDependencies()} attribute to {@code false}, which is why this class does not
- * need to implement {@link io.helidon.builder.Interceptor}.
+ * need to implement {@link io.helidon.builder.BuilderInterceptor}.
  */
 class NoDepsBeanBuilderInterceptor /* implements Interceptor<DefaultInterceptedBean.Builder> */ {
     private int callCount;
