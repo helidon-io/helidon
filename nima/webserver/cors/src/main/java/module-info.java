@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon WebServer CORS support.
  */
+@Feature(value = "Nima CORS",
+        description = "CORS support for Nima WebServer",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"WebServer", "CORS"})
 module io.helidon.nima.webserver.cors {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires transitive io.helidon.cors;
