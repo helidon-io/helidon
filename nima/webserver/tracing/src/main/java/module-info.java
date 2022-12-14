@@ -25,7 +25,8 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE)
 module io.helidon.nima.webserver.tracing {
-    requires io.helidon.common.features.api;
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common.http;
     requires io.helidon.nima.webserver;
     requires io.helidon.tracing;

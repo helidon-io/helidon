@@ -46,6 +46,12 @@
             <artifactId>helidon-tracing-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
             <scope>test</scope>
@@ -59,10 +65,6 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-api</artifactId>
         </dependency>
     </dependencies>
 
