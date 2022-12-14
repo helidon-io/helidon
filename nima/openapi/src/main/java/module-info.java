@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Open API integration with Níma WebServer.
  */
 @Feature(value = "OpenAPI",
-        description = "Nima OpenAPI",
+        description = "OpenAPI",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
         path = "OpenAPI"
