@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.common.Version;
+import io.helidon.common.context.Context;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -44,15 +45,17 @@ class LoomServer implements WebServer {
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
+    private final Context context;
     private final boolean registerShutdownHook;
-    private volatile Thread shutdownHook;
 
+    private volatile Thread shutdownHook;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
         this.registerShutdownHook = builder.shutdownHook();
-        ServerContextImpl serverContext = new ServerContextImpl(builder.context(),
+        this.context = builder.context();
+        ServerContextImpl serverContext = new ServerContextImpl(context,
                                                                 builder.mediaContext(),
                                                                 builder.contentEncodingContext());
 
@@ -158,6 +161,11 @@ class LoomServer implements WebServer {
     @Override
     public boolean hasTls(String socketName) {
         return false;
+    }
+
+    @Override
+    public Context context() {
+        return context;
     }
 
     private void stopIt() {

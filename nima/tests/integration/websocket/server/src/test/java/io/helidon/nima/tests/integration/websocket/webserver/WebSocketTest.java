@@ -31,8 +31,8 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.websocket.CloseCodes;
-import io.helidon.nima.websocket.webserver.WebSocketRouting;
+import io.helidon.nima.websocket.WsCloseCodes;
+import io.helidon.nima.websocket.webserver.WsRouting;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +60,7 @@ class WebSocketTest {
     @SetUpRoute
     static void router(Router.RouterBuilder<?> router) {
         service = new EchoService();
-        router.addRouting(WebSocketRouting.builder().endpoint("/echo", service));
+        router.addRouting(WsRouting.builder().endpoint("/echo", service));
     }
 
     @BeforeEach
@@ -72,7 +72,7 @@ class WebSocketTest {
     void checkClosed() {
         EchoService.CloseInfo closeInfo = service.closeInfo();
         assertThat(closeInfo, notNullValue());
-        assertThat(closeInfo.status(), is(CloseCodes.NORMAL_CLOSE));
+        assertThat(closeInfo.status(), is(WsCloseCodes.NORMAL_CLOSE));
         assertThat(closeInfo.reason(), is("normal"));
     }
 
@@ -89,7 +89,7 @@ class WebSocketTest {
         ws.request(10);
 
         ws.sendText("Hello", true).get(5, TimeUnit.SECONDS);
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
+        ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
         List<String> results = listener.getResults();
         assertThat(results, contains("Hello"));
@@ -106,7 +106,7 @@ class WebSocketTest {
 
         ws.sendText("First", true).get(5, TimeUnit.SECONDS);
         ws.sendText("Second", true).get(5, TimeUnit.SECONDS);
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
+        ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
         assertThat(listener.getResults(), contains("First", "Second"));
     }
 
@@ -122,7 +122,7 @@ class WebSocketTest {
         ws.sendText("First", false).get(5, TimeUnit.SECONDS);
         ws.sendText("Second", true).get(5, TimeUnit.SECONDS);
         ws.sendText("Third", true).get(5, TimeUnit.SECONDS);
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
+        ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
         assertThat(listener.getResults(), contains("FirstSecond", "Third"));
     }

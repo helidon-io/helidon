@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,21 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ServiceLoader;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.testing.junit5.webserver.spi.DirectJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -38,6 +39,8 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import static io.helidon.nima.testing.junit5.webserver.Junit5Util.withStaticMethods;
+
 /**
  * JUnit5 extension to support Helidon Níma WebServer in tests.
  */
@@ -45,11 +48,16 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                                               AfterAllCallback,
                                               InvocationInterceptor,
                                               BeforeEachCallback,
+                                              AfterEachCallback,
                                               ParameterResolver {
 
-    private final Map<String, DirectClient> clients = new HashMap<>();
+    private final List<DirectJunitExtension> extensions;
 
     private Class<?> testClass;
+
+    HelidonRoutingJunitExtension() {
+        this.extensions = HelidonServiceLoader.create(ServiceLoader.load(DirectJunitExtension.class)).asList();
+    }
 
     @Override
     public void beforeAll(ExtensionContext context) {
@@ -62,37 +70,40 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                                                     + RoutingTest.class.getName() + " annotation");
         }
 
+        extensions.forEach(it -> it.beforeAll(context));
+
         initRoutings();
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
-        clients.values().forEach(DirectClient::close);
+        extensions.forEach(it -> it.afterAll(context));
     }
 
     @Override
-    public void beforeEach(ExtensionContext extensionContext) {
-        clients.values().forEach(client -> client.clientTlsPrincipal(null)
-                .clientTlsCertificates(null)
-                .clientHost("helidon-unit")
-                .clientPort(65000)
-                .serverHost("helidon-unit-server")
-                .serverPort(8080)
-        );
+    public void beforeEach(ExtensionContext context) {
+        extensions.forEach(it -> it.beforeAll(context));
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) {
+        extensions.forEach(it -> it.afterEach(context));
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
 
-        Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(DirectClient.class)) {
-            return true;
+        for (DirectJunitExtension extension : extensions) {
+            if (extension.supportsParameter(parameterContext, extensionContext)) {
+                return true;
+            }
         }
 
-        // todo shall we use context?
-        // return Context.singletonContext().value(GenericType.create(paramType)).isPresent();
-        return false;
+        Class<?> paramType = parameterContext.getParameter().getType();
+        return Contexts.globalContext()
+                .get(paramType)
+                .isPresent();
     }
 
     @Override
@@ -100,98 +111,72 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
             throws ParameterResolutionException {
 
         Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(DirectClient.class)) {
-            Socket socketAnnot = parameterContext.getParameter().getAnnotation(Socket.class);
-            String socketName = socketAnnot != null ? socketAnnot.value() : WebServer.DEFAULT_SOCKET_NAME;
 
-            DirectClient directClient = clients.get(socketName);
-
-            if (directClient == null) {
-                if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
-                    throw new IllegalStateException("There is no default routing specified. Please add static method "
-                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
-                                                            + " or HttpRules");
-                } else {
-                    throw new IllegalStateException("There is no default routing specified for socket \"" + socketName + "\"."
-                                                            + " Please add static method "
-                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
-                                                            + " or HttpRules, and add @Socket(\"" + socketName + "\") "
-                                                            + "annotation to the parameter");
-                }
+        for (DirectJunitExtension extension : extensions) {
+            if (extension.supportsParameter(parameterContext, extensionContext)) {
+                return extension.resolveParameter(parameterContext, extensionContext, paramType);
             }
-            return directClient;
         }
 
-        // todo shall we use context?
-        // return Context.singletonContext().value(GenericType.create(paramType)).orElse(null);
-        return false;
+        return Contexts.globalContext()
+                .get(paramType)
+                .orElseThrow(() -> new ParameterResolutionException("Failed to resolve parameter of type "
+                                                                            + paramType.getName()));
     }
 
     private void initRoutings() {
-        LinkedList<Class<?>> hierarchy = new LinkedList<>();
-        Class<?> analyzedClass = testClass;
-        while (analyzedClass != null && !analyzedClass.equals(Object.class)) {
-            hierarchy.addFirst(analyzedClass);
-            analyzedClass = analyzedClass.getSuperclass();
-        }
+        withStaticMethods(testClass, SetUpRoute.class, (
+                (setUpRoute, method) -> {
+                    String socketName = setUpRoute.value();
+                    SetUpRouteHandler methodConsumer = createRoutingMethodCall(method);
+                    methodConsumer.handle(socketName);
+                }));
+    }
 
-        for (Class<?> aClass : hierarchy) {
-            for (Method method : aClass.getDeclaredMethods()) {
-                SetUpRoute annotation = method.getDeclaredAnnotation(SetUpRoute.class);
-                if (annotation != null) {
-                    // maybe our method
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        HttpRouting.Builder router = HttpRouting.builder();
-                        String routingSocketName = routingMethod(method, router);
-                        HttpRouting resultingRouting = router.build();
-                        if (clients.putIfAbsent(routingSocketName, new DirectClient(resultingRouting)) != null) {
-                            throw new IllegalStateException("Method "
-                                                                    + method
-                                                                    + " defines routing for socket \""
-                                                                    + routingSocketName
-                                                                    + "\""
-                                                                    + " that is already defined for class \""
-                                                                    + aClass.getName()
-                                                                    + "\".");
-                        }
-                    } else {
-                        throw new IllegalStateException("Method " + method + " is annotated with "
-                                                                + SetUpRoute.class.getSimpleName()
-                                                                + " yet it is not static in class "
-                                                                + aClass.getName());
-                    }
+    private SetUpRouteHandler createRoutingMethodCall(Method method) {
+        // @SetUpRoute may have parameters handled by different extensions
+        List<DirectJunitExtension.ParamHandler> handlers = new ArrayList<>();
+        for (Parameter parameter : method.getParameters()) {
+            // for each parameter, resolve parameter handler
+            boolean found = false;
+            for (DirectJunitExtension extension : extensions) {
+                Optional<? extends DirectJunitExtension.ParamHandler> paramHandler =
+                        extension.setUpRouteParamHandler(parameter.getType());
+                if (paramHandler.isPresent()) {
+                    // we care about the extension with the highest priority only
+                    handlers.add(paramHandler.get());
+                    found = true;
+                    break;
                 }
             }
-        }
-    }
-
-    private String routingMethod(Method method, HttpRules router) {
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        int parameterCount = parameterTypes.length;
-        if (parameterCount != 1) {
-            throw new IllegalArgumentException("Method " + method + " must have one parameter of "
-                                                       + HttpRules.class.getName());
-        }
-        Class<?> parameterType = parameterTypes[0];
-        Annotation[] annotations = method.getParameterAnnotations()[0];
-        String result = WebServer.DEFAULT_SOCKET_NAME;
-        for (Annotation annotation : annotations) {
-            if (annotation.annotationType().equals(Socket.class)) {
-                result = ((Socket) annotation).value();
+            if (!found) {
+                throw new IllegalArgumentException("Method " + method + " has a parameter " + parameter.getType() + " that is "
+                                                           + "not supported by any available testing extension");
             }
         }
-        if (HttpRules.class.isAssignableFrom(parameterType)) {
+        return socketName -> {
+            Object[] values = new Object[handlers.size()];
+
+            for (int i = 0; i < handlers.size(); i++) {
+                values[i] = handlers.get(i).get(socketName);
+            }
+
             try {
                 method.setAccessible(true);
-                method.invoke(null, router);
+                method.invoke(null, values);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new IllegalStateException("Cannot invoke router/socket method", e);
+                throw new IllegalStateException("Cannot invoke @SetUpRoute method", e);
             }
-        } else {
-            throw new IllegalArgumentException("Method " + method + " must have parameter of "
-                                                       + HttpRules.class.getName());
-        }
-        return result;
+
+            for (int i = 0; i < values.length; i++) {
+                Object value = values[i];
+                DirectJunitExtension.ParamHandler handler = handlers.get(i);
+                handler.handle(method, socketName, value);
+            }
+        };
     }
 
+    private interface SetUpRouteHandler {
+        void handle(String socketName);
+    }
 }

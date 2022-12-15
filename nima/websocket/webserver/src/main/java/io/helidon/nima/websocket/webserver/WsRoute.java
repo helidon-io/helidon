@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,31 +24,40 @@ import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Route;
 import io.helidon.nima.websocket.WsListener;
 
-class WebSocket implements Route {
+/**
+ * WebSocket route. Result of routing in
+ * {@link io.helidon.nima.websocket.webserver.WsRouting#findRoute(io.helidon.common.http.HttpPrologue)}.
+ */
+public class WsRoute implements Route {
     private final PathMatcher pathMatcher;
     private final Supplier<WsListener> listenerSupplier;
 
-    private WebSocket(PathMatcher pathMatcher, Supplier<WsListener> listenerSupplier) {
+    private WsRoute(PathMatcher pathMatcher, Supplier<WsListener> listenerSupplier) {
         this.pathMatcher = pathMatcher;
         this.listenerSupplier = listenerSupplier;
     }
 
-    static WebSocket create(String path, WsListener listener) {
+    static WsRoute create(String path, WsListener listener) {
         PathMatcher pathMatcher = PathMatchers.create(path);
-        return new WebSocket(pathMatcher, () -> listener);
+        return new WsRoute(pathMatcher, () -> listener);
     }
 
-    static WebSocket create(String path, Supplier<WsListener> listener) {
+    static WsRoute create(String path, Supplier<WsListener> listener) {
         PathMatcher pathMatcher = PathMatchers.create(path);
-        return new WebSocket(pathMatcher, listener);
+        return new WsRoute(pathMatcher, listener);
+    }
+
+    /**
+     * WebSocket listener associated with this route.
+     *
+     * @return listener
+     */
+    public WsListener listener() {
+        return listenerSupplier.get();
     }
 
     PathMatchers.MatchResult accepts(HttpPrologue prologue) {
         return pathMatcher.match(prologue.uriPath());
-    }
-
-    WsListener listener() {
-        return listenerSupplier.get();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,19 @@ package io.helidon.nima.testing.junit5.webserver;
 
 import java.net.URI;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.ListenerConfiguration;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -34,17 +40,36 @@ class TestServerTest {
     private final Http1Client httpClient;
     private final WebServer server;
     private final URI uri;
+    private final URI customUri;
 
-    TestServerTest(SocketHttpClient socketClient, Http1Client httpClient, WebServer server, URI uri) {
+    TestServerTest(SocketHttpClient socketClient,
+                   Http1Client httpClient,
+                   WebServer server,
+                   @Socket("@default") URI defaultUri,
+                   @Socket("socket") URI customUri) {
         this.socketClient = socketClient;
         this.httpClient = httpClient;
         this.server = server;
-        this.uri = uri;
+        this.uri = defaultUri;
+        this.customUri = customUri;
     }
 
     @SetUpServer
     static void setUp(WebServer.Builder builder) {
-        builder.socket("socket", it -> it.port(0));
+        Context serverContext = Context.create();
+        serverContext.register(TestServerTest.class, "server");
+
+        builder.context(serverContext);
+    }
+
+    @SetUpRoute("socket")
+    static void routing(ListenerConfiguration.Builder l, HttpRouting.Builder r) {
+        l.writeQueueLength(10);
+    }
+
+    @SetUpRoute("socket2")
+    static void routing2(HttpRouting.Builder r, ListenerConfiguration.Builder l) {
+        l.writeQueueLength(10);
     }
 
     @Test
@@ -122,17 +147,20 @@ class TestServerTest {
     void testUriInjected() {
         assertThat(uri, notNullValue());
         assertThat(uri.getHost(), is("localhost"));
-        if (server != null) {
-            assertThat(uri.getPort(), is(server.port()));
-        }
+        assertThat(uri.getPort(), is(server.port()));
+    }
+
+    @Test
+    void testCustomUriInjected() {
+        assertThat(customUri, notNullValue());
+        assertThat(customUri.getHost(), is("localhost"));
+        assertThat(customUri.getPort(), is(server.port("socket")));
     }
 
     @Test
     void testUriInjectedParameter(URI uri) {
         assertThat(uri, notNullValue());
         assertThat(uri.getHost(), is("localhost"));
-        if (server != null) {
-            assertThat(uri.getPort(), is(server.port()));
-        }
+        assertThat(uri.getPort(), is(server.port()));
     }
 }

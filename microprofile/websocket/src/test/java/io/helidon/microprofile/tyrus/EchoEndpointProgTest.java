@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.nima.websocket.CloseCodes;
+import io.helidon.nima.websocket.WsCloseCodes;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.websocket.Endpoint;
@@ -51,7 +51,7 @@ class EchoEndpointProgTest extends EchoEndpointBaseTest {
 
         await(ws.sendText(HELLO_WORLD, true));
         assertThat(listener.awaitEcho(), is(HELLO_WORLD));
-        ws.sendClose(CloseCodes.NORMAL_CLOSE, "normal").get();
+        ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get();
     }
 
     @Dependent
