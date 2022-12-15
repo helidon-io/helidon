@@ -79,7 +79,14 @@ class JdbcDbClient implements DbClient {
                 dbMapperManager,
                 mapperManager);
 
-        T result = executor.apply(execute);
+        T result;
+
+        try {
+            result = executor.apply(execute);
+        } catch (RuntimeException e) {
+            execute.doRollback();
+            throw e;
+        }
 
         if (result instanceof Multi) {
             Multi<U> multi = (Multi<U>) result;
