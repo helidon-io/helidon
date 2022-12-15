@@ -28,13 +28,16 @@ import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
@@ -180,6 +183,9 @@ class UdpServerListener implements ConnectionListener {
      */
     private class Message implements UdpMessage {
 
+        private static final LazyValue<Map<Class<?>, EntityReader<?>>> READERS =
+                LazyValue.create(ConcurrentHashMap::new);
+
         private final ByteBuffer readBuffer;
         private final Client client;
 
@@ -206,7 +212,8 @@ class UdpServerListener implements ConnectionListener {
                 return (T) asInputStream();
             } else {
                 GenericType<T> type = GenericType.create(clazz);
-                EntityReader<T> reader = mediaContext.reader(type, EMPTY_HEADERS);
+                EntityReader<T> reader = (EntityReader<T>) READERS.get().computeIfAbsent(clazz,
+                        c -> mediaContext.reader(type, EMPTY_HEADERS));
                 return reader.read(type, asInputStream(), EMPTY_HEADERS);
             }
         }
@@ -228,6 +235,9 @@ class UdpServerListener implements ConnectionListener {
      * Implementation of UdpClient interface.
      */
     private class Client implements UdpClient {
+
+        private static final LazyValue<Map<Class<?>, EntityWriter<?>>> WRITERS =
+                LazyValue.create(ConcurrentHashMap::new);
 
         private ByteBuffer writeBuffer;
         private final InetSocketAddress remote;
@@ -297,8 +307,10 @@ class UdpServerListener implements ConnectionListener {
             } else if (msg instanceof InputStream is) {
                 sendMessage(is);
             } else {
-                GenericType<Object> type = (GenericType<Object>) GenericType.create(msg.getClass());
-                EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS);
+                Class<?> clazz = msg.getClass();
+                GenericType<Object> type = (GenericType<Object>) GenericType.create(clazz);
+                EntityWriter<Object> writer = (EntityWriter<Object>) WRITERS.get().computeIfAbsent(clazz,
+                        c -> mediaContext.writer(type, EMPTY_HEADERS));
                 ByteBuffer buffer = writeBuffer();
                 writer.write(type, msg, new OutputStream() {
                     @Override
