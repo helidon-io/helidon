@@ -45,7 +45,6 @@ public interface TenantConfig {
      * Client id of this client.
      *
      * @return client id
-     * @see BaseBuilder#clientId(String)
      */
     String clientId();
 
@@ -60,7 +59,6 @@ public interface TenantConfig {
      * Base scopes to require from OIDC server.
      *
      * @return base scopes
-     * @see BaseBuilder#baseScopes(String)
      */
     String baseScopes();
 
@@ -68,7 +66,6 @@ public interface TenantConfig {
      * Whether to validate JWT with JWK information (e.g. verify signatures locally).
      *
      * @return if we should validate JWT with JWK
-     * @see BaseBuilder#validateJwtWithJwk(Boolean)
      */
     boolean validateJwtWithJwk();
 
@@ -77,7 +74,6 @@ public interface TenantConfig {
      * Empty if no introspection endpoint has been provided via configuration.
      *
      * @return introspection endpoint URI
-     * @see BaseBuilder#introspectEndpointUri(java.net.URI)
      */
     Optional<URI> tenantIntrospectUri();
 
@@ -86,7 +82,6 @@ public interface TenantConfig {
      * Empty if no issuer has been provided via configuration.
      *
      * @return token issuer
-     * @see BaseBuilder#issuer(String)
      */
     Optional<String> tenantIssuer();
 
@@ -95,7 +90,6 @@ public interface TenantConfig {
      * Empty if no jwk has been provided via configuration.
      *
      * @return set of keys used to verify tokens
-     * @see BaseBuilder#signJwk(JwkKeys)
      */
     Optional<JwkKeys> tenantSignJwk();
 
@@ -104,7 +98,6 @@ public interface TenantConfig {
      * Empty if no logout endpoint uri has been provided via configuration.
      *
      * @return URI of the logout endpoint
-     * @see BaseBuilder#logoutEndpointUri(java.net.URI)
      */
     Optional<URI> tenantLogoutEndpointUri();
 
@@ -113,7 +106,6 @@ public interface TenantConfig {
      * Empty if no token endpoint uri has been provided via configuration.
      *
      * @return endpoint URI
-     * @see BaseBuilder#tokenEndpointUri(java.net.URI)
      */
     Optional<URI> tenantTokenEndpointUri();
 
@@ -121,7 +113,6 @@ public interface TenantConfig {
      * Expected token audience.
      *
      * @return audience
-     * @see BaseBuilder#audience(String)
      */
     String audience();
 
@@ -129,7 +120,6 @@ public interface TenantConfig {
      * Audience URI of custom scopes.
      *
      * @return scope audience
-     * @see BaseBuilder#scopeAudience(String)
      */
     String scopeAudience();
 
@@ -137,7 +127,6 @@ public interface TenantConfig {
      * Identity server URI.
      *
      * @return identity server URI
-     * @see BaseBuilder#identityUri(URI)
      */
     URI identityUri();
 
@@ -166,7 +155,6 @@ public interface TenantConfig {
      * Authorization endpoint.
      *
      * @return authorization endpoint uri as a string
-     * @see BaseBuilder#authorizationEndpointUri(URI)
      */
     Optional<URI> authorizationEndpoint();
 
@@ -174,7 +162,6 @@ public interface TenantConfig {
      * Client secret.
      *
      * @return configured client secret
-     * @see BaseBuilder#clientSecret(String)
      */
     String clientSecret();
 
@@ -182,7 +169,6 @@ public interface TenantConfig {
      * Server type.
      *
      * @return configured server type
-     * @see BaseBuilder#serverType(String)
      */
     String serverType();
 
@@ -190,7 +176,6 @@ public interface TenantConfig {
      * OIDC metadata.
      *
      * @return configured oidc metadata
-     * @see BaseBuilder#oidcMetadata(JsonObject)
      */
     JsonObject oidcMetadata();
 
@@ -198,7 +183,6 @@ public interface TenantConfig {
      * Whether to use OIDC well known metadata.
      *
      * @return configured oidc metadata
-     * @see BaseBuilder#oidcMetadataWellKnown(boolean)
      */
     boolean useWellKnown();
 

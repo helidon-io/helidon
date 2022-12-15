@@ -826,7 +826,6 @@ public final class OidcConfig extends TenantConfigImpl {
      * Token endpoint URI.
      *
      * @return endpoint URI
-     * @see BaseBuilder#tokenEndpointUri(java.net.URI)
      */
     public URI tokenEndpointUri() {
         return defaultTenant.get().tokenEndpointUri();
@@ -836,7 +835,6 @@ public final class OidcConfig extends TenantConfigImpl {
      * Authorization endpoint.
      *
      * @return authorization endpoint uri as a string
-     * @see BaseBuilder#authorizationEndpointUri(URI)
      */
     public String authorizationEndpointUri() {
         return defaultTenant.get().authorizationEndpointUri();
@@ -866,7 +864,6 @@ public final class OidcConfig extends TenantConfigImpl {
      * JWK used for signature validation.
      *
      * @return set of keys used use to verify tokens
-     * @see BaseBuilder#signJwk(JwkKeys)
      */
     public JwkKeys signJwk() {
         return defaultTenant.get().signJwk();
