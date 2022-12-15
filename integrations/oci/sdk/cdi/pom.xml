@@ -48,6 +48,7 @@
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
