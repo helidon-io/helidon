@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.util.logging.Logger;
 import javax.sql.CommonDataSource;
 
 /**
- * A skeletal implementation of the {@link CommonDataSource}
- * interface.
+ * A <a href="https://download.oracle.com/otn-pub/jcp/jdbc-4_3-mrel3-spec/jdbc4.3-fr-spec.pdf" target="_parent">JDBC
+ * 4.3</a>-compliant skeletal implementation of the {@link CommonDataSource} interface.
  */
 public abstract class AbstractCommonDataSource implements CommonDataSource {
 
@@ -32,6 +32,9 @@ public abstract class AbstractCommonDataSource implements CommonDataSource {
 
     private PrintWriter logWriter;
 
+    /**
+     * Creates a new {@link AbstractCommonDataSource}.
+     */
     protected AbstractCommonDataSource() {
         super();
     }
@@ -42,7 +45,7 @@ public abstract class AbstractCommonDataSource implements CommonDataSource {
     }
 
     @Override
-    public void setLogWriter(final PrintWriter logWriter) throws SQLException {
+    public void setLogWriter(PrintWriter logWriter) throws SQLException {
         this.logWriter = logWriter;
     }
 
@@ -52,7 +55,7 @@ public abstract class AbstractCommonDataSource implements CommonDataSource {
     }
 
     @Override
-    public void setLoginTimeout(final int loginTimeout) throws SQLException {
+    public void setLoginTimeout(int loginTimeout) throws SQLException {
         this.loginTimeout = loginTimeout;
     }
 

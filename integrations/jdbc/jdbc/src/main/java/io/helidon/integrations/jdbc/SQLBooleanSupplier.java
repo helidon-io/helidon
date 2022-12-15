@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.integrations.jdbc;
+
+import java.sql.SQLException;
 
 /**
- * Support for JDBC constructs.
+ * A useful functional interface whose implementations can perform work that may throw a {@link SQLException}.
+ *
+ * @see #getAsBoolean()
  */
-module io.helidon.integrations.jdbc {
+@FunctionalInterface
+public interface SQLBooleanSupplier {
 
-    // Tests use H2 which requires resolution of java.naming at compile time only.
-    requires static java.naming;
-
-    requires transitive java.sql;
-
-    exports io.helidon.integrations.jdbc;
+    /**
+     * Performs work and returns the result.
+     *
+     * @return a {@code boolean}
+     *
+     * @exception SQLException if a database access error occurs
+     */
+    boolean getAsBoolean() throws SQLException;
 
 }

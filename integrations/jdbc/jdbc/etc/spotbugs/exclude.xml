@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-  -->
+-->
 <FindBugsFilter
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="https://github.com/spotbugs/filter/3.1.0"
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.1.0
                         https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
-    <!-- These are delegating classes. User input validation would need to occur upstream -->
+    <!-- These are delegating classes. User input validation would need to occur upstream. -->
     <Match>
-        <Class name="io.helidon.integrations.jdbc.DelegatingConnection"/>
+        <Package name="io.helidon.integrations.jdbc"/>
         <Bug pattern="EXTERNAL_CONFIG_CONTROL"/>
     </Match>
     <Match>
-        <Class name="io.helidon.integrations.jdbc.DelegatingConnection"/>
+        <Package name="io.helidon.integrations.jdbc"/>
         <Bug pattern="SQL_INJECTION_JDBC"/>
     </Match>
 </FindBugsFilter>
