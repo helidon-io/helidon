@@ -361,8 +361,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
             // try chunked data optimization
             if (firstByte && firstBuffer == null) {
-                // if somebody re-uses the byte buffer sent to us, we must copy it
-                firstBuffer = buffer.copy();
+                // buffer always created locally so no need for buffer.copy() here
+                firstBuffer = buffer;
                 return;
             }
 
