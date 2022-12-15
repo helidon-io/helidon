@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,24 @@ public class JdbcClientTest {
 
         assertThat(result, CoreMatchers.instanceOf(RuntimeException.class));
         assertThat("Wrong exception propagated.", ((RuntimeException) result).getMessage(), is(equalTo(message)));
+    }
+
+    @Test
+    void txExceptionHandling() {
+        String message = "BOOM IN TX!!!";
+
+        JdbcDbClient dbClient = (JdbcDbClient) JdbcDbClientProviderBuilder.create()
+                .connectionPool(POOL)
+                .build();
+        try {
+            dbClient.inTransaction(tx -> {
+                throw new RuntimeException(message);
+            });
+        } catch (RuntimeException result) {
+            assertThat("Wrong exception propagated.", result.getMessage(), is(equalTo(message)));
+            return;
+        }
+        fail("Wrong (or no) exception propagated, expected RuntimeException!");
     }
 
     @Test
