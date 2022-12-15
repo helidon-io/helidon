@@ -27,34 +27,35 @@ import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.EmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
+import io.helidon.messaging.NackHandler;
 
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.reactivestreams.FlowAdapters;
 
-interface NackHandler<K, V> {
+interface KafkaNackHandler<K, V> extends NackHandler<KafkaMessage<K, V>> {
 
     Function<Throwable, CompletionStage<Void>> getNack(KafkaMessage<K, V> message);
 
-    static <K, V> NackHandler<K, V> create(EmittingPublisher<KafkaMessage<K, V>> emitter, Config config) {
+    static <K, V> KafkaNackHandler<K, V> create(EmittingPublisher<KafkaMessage<K, V>> emitter, Config config) {
         Config dlq = config.get("nack-dlq");
         Config logOnly = config.get("nack-log-only");
         if (dlq.exists()) {
             dlq = dlq.detach();
-            return new NackHandler.KafkaDLQ<>(emitter, config, dlq);
+            return new KafkaNackHandler.KafkaDLQ<>(emitter, config, dlq);
         } else if (logOnly.exists() && logOnly.asBoolean().orElse(true)) {
             logOnly = logOnly.detach();
-            return new NackHandler.Log<>(config, logOnly);
+            return new KafkaNackHandler.Log<>(config, logOnly);
         }
-        return new NackHandler.KillChannel<>(emitter);
+        return new KafkaNackHandler.KillChannel<>(emitter);
     }
 
-    class Log<K, V> implements NackHandler<K, V> {
+    class Log<K, V> implements KafkaNackHandler<K, V> {
 
         Log(Config config, Config logOnlyConfig) {
         }
 
-        private static final Logger LOGGER = Logger.getLogger(NackHandler.Log.class.getName());
+        private static final Logger LOGGER = Logger.getLogger(KafkaNackHandler.Log.class.getName());
 
         @Override
         public Function<Throwable, CompletionStage<Void>> getNack(KafkaMessage<K, V> message) {
@@ -67,9 +68,9 @@ interface NackHandler<K, V> {
         }
     }
 
-    class KillChannel<K, V> implements NackHandler<K, V> {
+    class KillChannel<K, V> implements KafkaNackHandler<K, V> {
 
-        private static final Logger LOGGER = Logger.getLogger(NackHandler.KillChannel.class.getName());
+        private static final Logger LOGGER = Logger.getLogger(KafkaNackHandler.KillChannel.class.getName());
         private final EmittingPublisher<KafkaMessage<K, V>> emitter;
 
         KillChannel(EmittingPublisher<KafkaMessage<K, V>> emitter) {
@@ -88,7 +89,7 @@ interface NackHandler<K, V> {
         }
     }
 
-    class KafkaDLQ<K, V> implements NackHandler<K, V> {
+    class KafkaDLQ<K, V> implements KafkaNackHandler<K, V> {
 
         private static final String DESERIALIZER_MASK = "([^.]*)Deserializer([^.]*$)";
         private static final String DESERIALIZER_REPLACEMENT = "$1Serializer$2";
@@ -149,7 +150,7 @@ interface NackHandler<K, V> {
 
         @Override
         public Function<Throwable, CompletionStage<Void>> getNack(KafkaMessage<K, V> message) {
-            return throwable -> this.nack(throwable, message);
+            return t -> this.nack(t, message);
         }
 
         private CompletionStage<Void> nack(Throwable t, KafkaMessage<K, V> origMsg) {

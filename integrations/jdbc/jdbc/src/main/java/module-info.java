@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@
  * Support for JDBC constructs.
  */
 module io.helidon.integrations.jdbc {
+
+    // Tests use H2 which requires resolution of java.naming at compile time only.
+    requires static java.naming;
 
     requires transitive java.sql;
 

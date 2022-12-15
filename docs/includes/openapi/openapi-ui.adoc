@@ -1,0 +1,200 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+// Following make editing the included file a little easier
+:flavor-lc: se
+:flavor-uc: SE
+:se-flavor:
+
+// tag::preamble[]
+:feature-name: Helidon OpenAPI UI support
+:screen-capture-start: openapi-ui-screen-capture-greeting-{flavor-lc}-start.png
+:screen-capture-expanded: openapi-ui-screen-capture-greeting-{flavor-lc}-expanded.png
+// end::preamble[]
+
+// tag::intro[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Additional Information, Additional Information>>
+
+// end::intro[]
+
+// tag::overview[]
+== Overview
+
+SmallRye offers an link:{smallrye-openapi-ui-base-url}[OpenAPI user interface component] which displays a web page based on your application's OpenAPI document.
+Through that UI, users can invoke the operations declared in the document.
+While not generally suitable for end-users, the OpenAPI UI can be useful for demonstrating and "test driving" your service's endpoints.
+
+The Helidon OpenAPI component allows you to integrate the SmallRye UI into your application, adding the UI web page to your application very simply.
+
+
+// end::overview[]
+
+// tag::dependencies[]
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml,subs=+macros]
+----
+<dependency>
+    <groupId>io.helidon.integrations.openapi-ui</groupId>
+    <artifactId>helidon-integrations-openapi-ui</artifactId>
+ifdef::mp-flavor[    <scope>runtime</scope>]
+</dependency>
+----
+
+// end::dependencies[]
+
+// tag::usage[]
+// tag::usage-start[]
+== Usage
+ifdef::se-flavor[]
+Make sure your application creates a Helidon `OpenAPISupport` instance and registers it for routing (described in detail in link:{openapi-page}[the Helidon OpenAPI documentation]). `OpenAPISupport` automatically prepares the OpenAPI UI with default settings if you also declare a dependency on the Helidon OpenAPI UI integration component as explained above. The <<API,API>> section below illustrates adding OpenAPI to your application and customizing the UI behavior.
+endif::se-flavor[]
+
+After you modify, build, and start your Helidon {flavor-uc} service, you can access the OpenAPI UI by default at `http://your-host:your-port/openapi/ui`.
+Helidon also uses conventional content negotiation at `http://your-host:your-port/openapi` returning the UI to browsers (or any client that accepts HTML) and the OpenAPI document otherwise.
+
+You can customize the path using
+ifdef::se-flavor[either the API or ]
+xref:Configuration[configuration].
+
+The example below shows the UI
+ifdef::se-flavor[]
+if you modify the Helidon SE QuickStart greeting application to contain a static OpenAPI file which describes the service endpoints.
+endif::se-flavor[]
+ifdef::mp-flavor[]
+for the Helidon MP QuickStart greeting application.
+endif::mp-flavor[]
+
+.OpenAPI UI Screen for Helidon {flavor-uc} QuickStart Greeting Application
+image::{screen-capture-start}[align="center",title="Example OpenAPI UI Screen"]
+
+// end::usage-start[]
+
+// tag::usage-expanded-screen[]
+With the OpenAPI UI displayed, follow these steps to access one of your service's operations.
+
+. Find the operation you want to run and click on its row in the list.
+. The UI expands the operation, showing any input parameters and the possible responses. Click the "Try it out" button in the operation's row.
+. The UI now allows you to type into the input parameter field(s) to the right of each parameter name. Enter any required parameter values (first highlighted rectangle) and any non-required values you wish, then click "Execute" (highlighted arrow).
+. Just below the "Execute" button the UI shows several sections: +
+* the equivalent `curl` command for submitting the request with your inputs,
+* the URL used for the request, and
+* a new "Server response" section (second highlighted rectangle) containing several items from the response: +
+** HTTP status code
+** body
+** headers
+
+The next image shows the screen after you submit the "Returns a personalized greeting" operation.
+
+Note that the UI shows the actual response from invoking the operation in the "Server response" section. The "Responses" section farther below describes the possible responses from the operation as declared in the OpenAPI document for the application.
+
+.Example OpenAPI UI Screen
+image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen"]
+
+// end::usage-expanded-screen[]
+// end::usage[]
+
+// tag::config-intro[]
+== Configuration
+To use configuration to control how the Helidon OpenAPI UI service behaves, add an `openapi.ui` section to
+ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
+ifdef::se-flavor[your configuration file, such as `application.yaml`.]
+
+include::{rootdir}/config/io_helidon_openapi_OpenApiUi.adoc[tag=config,leveloffset=+1]
+The default UI `web-context` value is the web context for your `OpenAPISupport` service with the added suffix `/ui`. If you use the default web context for both `OpenAPISupport` and the UI, the UI responds at `/openapi/ui`.
+
+// end::config-intro[]
+
+// tag::config-details[]
+
+You can use configuration to affect the UI path in two ways:
+
+* Configure the OpenAPI endpoint path (the `/openapi` part).
++
+Recall that you can xref:{openapi-page}#config[configure the Helidon OpenAPI component] to change where it serves the OpenAPI document.
++
+.Configuring the OpenAPI web context
+ifdef::se-flavor[]
+[source,yaml]
+----
+openapi:
+  web-context: /my-openapi
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source,properties]
+----
+openapi.web-context=/my-openapi
+----
+endif::mp-flavor[]
++
+In this case, the path for the UI component is your customized OpenAPI path with `/ui` as a suffix.
+With the example above, the UI responds at `/my-openapi/ui` and
+Helidon uses standard content negotiation at `/my-openapi` to return either the OpenAPI document or the UI.
+* Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
++
+.Configuring the OpenAPI UI web context
+ifdef::se-flavor[]
+[source,yaml]
+----
+openapi:
+  ui:
+    web-context: /my-ui
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source,properties]
+----
+openapi.ui.web-context=/my-ui
+----
+endif::mp-flavor[]
++
+[NOTE]
+====
+The `openapi.ui.web-context` setting assigns the _entire_ web-context for the UI, not the suffix appended to the `OpenAPISupport` endpoint.
+====
+With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
+
+The SmallRye OpenAPI UI component accepts several options, but they are of minimal use to application developers and they must be passed to the SmallRye UI code programmatically.
+Helidon allows you to specify these values using configuration in the `openapi.ui.options` section. Helidon then passes the corresponding options to SmallRye for you.
+To configure any of these settings, use the enum values--they are all lower case--declared in  the SmallRye link:{smallrye-openapi-ui-base-url}/src/main/java/io/smallrye/openapi/ui/Option.java[`Option.java`] class as the keys in your Helidon configuration.
+
+[NOTE]
+====
+Helidon prepares several of the SmallRye options automatically based on other settings.
+Any options you configure override the values Helidon assigns, possibly interfering with the proper operation of the UI.
+====
+
+// end::config-details[]
+
+// tag::additional-info[]
+== Additional Information
+
+xref:{openapi-page}[Helidon OpenAPI {flavor-uc} documentation]
+
+link:{smallrye-openapi-ui-base-url}[SmallRye OpenAPI UI GitHub site]
+// end::additional-info[]

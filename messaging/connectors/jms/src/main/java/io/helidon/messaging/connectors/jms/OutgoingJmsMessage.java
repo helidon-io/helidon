@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
         this.postProcessors.add(processor);
     }
 
-    jakarta.jms.Message toJmsMessage(Session session, MessageMappers.MessageMapper defaultMapper) throws JMSException {
+    jakarta.jms.Message toJmsMessage(Session session, MessageMapper defaultMapper) throws JMSException {
         jakarta.jms.Message jmsMessage;
         if (mapper != null) {
             jmsMessage = mapper.apply(getPayload(), session);

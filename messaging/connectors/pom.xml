@@ -32,9 +32,10 @@
 
     <modules>
         <module>kafka</module>
+        <module>jms-shim</module>
         <module>jms</module>
         <module>aq</module>
-        <module>jms-shim</module>
+        <module>wls-jms</module>
         <module>mock</module>
     </modules>
 </project>
