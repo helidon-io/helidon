@@ -32,6 +32,10 @@ import io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState;
 
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
+<<<<<<< HEAD
+=======
+import jakarta.transaction.InvalidTransactionException;
+>>>>>>> 221682280f (Squashable commit; interim work)
 import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
@@ -111,7 +115,11 @@ final class TestJtaConnection {
             break;
         }
         this.tm.setTransactionTimeout(0);
+<<<<<<< HEAD
         assertThat(ASSOCIATIONS.size(), is(0));
+=======
+        // assertThat(ASSOCIATIONS.size(), is(0));
+>>>>>>> 221682280f (Squashable commit; interim work)
     }
 
     @DisplayName("Spike")
@@ -214,7 +222,11 @@ final class TestJtaConnection {
             // TransactionSynchronizationRegistry, so the enlisted() method thinks we're already enlisted, so
             // getHoldability() skips enlistment, so everything stays as it was.
             assertThat(ASSOCIATIONS.get(xid).branchState(), is(IDLE));
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 221682280f (Squashable commit; interim work)
             // Commit (we didn't actually do any work) AND DISASSOCIATE the transaction, which can only happen with a
             // call to TransactionManager.commit(), not just Transaction.commit().
             tm.commit();
@@ -257,9 +269,18 @@ final class TestJtaConnection {
 
                 }
                 public void afterCompletion(int status) {
+<<<<<<< HEAD
                     assertThat(status, is(Status.STATUS_ROLLEDBACK));
                     assertThat(Thread.currentThread(), not(mainThread));
                     latch.countDown();
+=======
+                    try {
+                        assertThat(status, is(Status.STATUS_ROLLEDBACK));
+                        assertThat(Thread.currentThread(), not(mainThread));
+                    } finally {
+                        latch.countDown();
+                    }
+>>>>>>> 221682280f (Squashable commit; interim work)
                 }
             });
 
@@ -299,4 +320,104 @@ final class TestJtaConnection {
         LOGGER.info("Ending testTimeout()");
     }
 
+<<<<<<< HEAD
+=======
+    @Test
+    final void testBeginSuspendBeginCommitResumeCommit()
+        throws HeuristicMixedException,
+               HeuristicRollbackException,
+               InvalidTransactionException,
+               NotSupportedException,
+               RollbackException,
+               SQLException,
+               SystemException {
+        LOGGER.info("Starting testBeginSuspendBeginCommitResumeCommit()");
+
+        tm.begin();
+
+        Transaction t = tm.getTransaction();
+        assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
+
+        Connection physicalConnection = h2ds.getConnection();
+        JtaConnection logicalConnection =
+            new JtaConnection(tm::getTransaction,
+                              tsr,
+                              true,
+                              null,
+                              physicalConnection,
+                              true);
+
+        assertThat(logicalConnection.enlisted(), is(true));
+        assertThat(logicalConnection.delegate(), sameInstance(physicalConnection));
+
+        // Suspend the current transaction.  It will stay in Status.STATUS_ACTIVE state, because suspension has no
+        // effect on the actual state of the *Transaction*, only on the state of its association with the current
+        // thread.
+        Transaction s = tm.suspend();
+        assertThat(s, sameInstance(t));
+        assertThat(s.getStatus(), is(Status.STATUS_ACTIVE));
+
+        // The TransactionManager will report that there is no transaction.
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+
+        assertThat(logicalConnection.enlisted(), is(true)); // we're enlisted in a suspended transaction
+        assertThat(logicalConnection.isCloseable(), is(false)); // we're still enlisted in a suspended transaction
+
+        logicalConnection.close(); // doesn't really close, but the caller thinks it did, which is what we want
+        assertThat(logicalConnection.isClosePending(), is(true));
+        assertThat(logicalConnection.isClosed(), is(true));
+        assertThat(physicalConnection.isClosed(), is(false));
+
+        tm.begin();
+        t = tm.getTransaction();
+        assertThat(t, not(s));
+        assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
+        assertThat(s.getStatus(), is(Status.STATUS_ACTIVE));
+        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
+
+        Connection physicalConnection2 = h2ds.getConnection();
+        JtaConnection logicalConnection2 =
+            new JtaConnection(tm::getTransaction,
+                              tsr,
+                              true,
+                              null,
+                              physicalConnection2,
+                              true);
+
+        assertThat(logicalConnection2.enlisted(), is(true));
+        assertThat(logicalConnection2.delegate(), sameInstance(physicalConnection2));
+
+        tm.commit();
+
+        assertThat(t.getStatus(), is(Status.STATUS_COMMITTED));
+        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
+
+        assertThat(logicalConnection2.enlisted(), is(false)); // we can call this because we haven't closed yet
+
+        assertThat(logicalConnection2.isCloseable(), is(true));
+        logicalConnection2.close();
+        assertThat(logicalConnection2.isClosed(), is(true));
+        assertThat(physicalConnection2.isClosed(), is(true));
+
+        tm.resume(s);
+        
+        t = tm.getTransaction();
+        assertThat(t, sameInstance(s));
+        assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
+
+        tm.commit();
+
+        assertThat(logicalConnection.isClosePending(), is(true));
+
+        assertThat(logicalConnection.isClosed(), is(true)); // returns true only because close is pending
+        assertThat(logicalConnection.delegate().isClosed(), is(false));
+
+        assertThat(physicalConnection.isClosed(), is(false)); // logicalConnection was never *really* closed
+        assertThat(logicalConnection2.isClosed(), is(true));
+        assertThat(physicalConnection2.isClosed(), is(true));
+
+        LOGGER.info("Ending testBeginSuspendBeginCommitResumeCommit()");
+    }
+
+>>>>>>> 221682280f (Squashable commit; interim work)
 }
