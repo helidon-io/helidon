@@ -28,7 +28,7 @@ import io.helidon.nima.webserver.ServerLifecycle;
  * Main difference is that a feature can add {@link io.helidon.nima.webserver.http.Filter Filters} and it cannot be
  * registered on a path (that is left to the discretion of the feature developer).
  * <p>
- * Feature are not registered immediately - each feature can define a {@link io.helidon.common.Weight} or implement
+ * Features are not registered immediately - each feature can define a {@link io.helidon.common.Weight} or implement
  * {@link io.helidon.common.Weighted} to order features according to their weight. Higher weighted features are registered first.
  * This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
  */
