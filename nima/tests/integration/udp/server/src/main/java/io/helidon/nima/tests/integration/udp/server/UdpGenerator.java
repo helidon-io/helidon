@@ -28,8 +28,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static io.helidon.nima.tests.integration.udp.server.UdpServer.ACK_FREQUENCY;
-
 /**
  * UDP load generator for performance testing.
  */
@@ -39,6 +37,7 @@ public class UdpGenerator implements Runnable {
     private int packetSize = 4 * 1024;
     private Duration run = Duration.ofMinutes(1);
     private Duration warmup = Duration.ofSeconds(20);
+    private int ackPeriod = 10;
 
     private volatile long startTime;
     private volatile long endTime;
@@ -68,6 +67,7 @@ public class UdpGenerator implements Runnable {
                     case "--threads" -> threads = Integer.parseInt(args[++i]);
                     case "--warmup" -> warmup = Duration.parse(args[++i]);
                     case "--run" -> run = Duration.parse(args[++i]);
+                    case "--ack-period" -> ackPeriod = Integer.parseInt(args[++i]);
                     case "--packet-size" -> {
                         String value = args[++i].trim().toLowerCase();
                         int multiplier = 1;
@@ -99,6 +99,7 @@ public class UdpGenerator implements Runnable {
                 "[--host host (default: localhost)] " +
                 "[--port port (default: 8888)] " +
                 "[--threads threads (default: 4)] " +
+                "[--ack-period period (default: 10)] " +
                 "[--warmup duration (default: PT30S)] " +
                 "[--run duration (default: PT2M)]");
         System.exit(1);
@@ -110,6 +111,7 @@ public class UdpGenerator implements Runnable {
         System.out.println("  warmup: " + warmup);
         System.out.println("  run: " + run);
         System.out.println("  threads: " + threads);
+        System.out.println("  ack-period: " + ackPeriod);
         System.out.println("  packet-size: " + (packetSize / 1024) + "k");
     }
 
@@ -188,7 +190,7 @@ public class UdpGenerator implements Runnable {
                     data.reset();
 
                     // Receive ACK as a form of primitive flow control
-                    if (n++ % ACK_FREQUENCY == 0) {
+                    if (n++ % ackPeriod == 0) {
                         ack.clear();
                         channel.receive(ack);
                     }

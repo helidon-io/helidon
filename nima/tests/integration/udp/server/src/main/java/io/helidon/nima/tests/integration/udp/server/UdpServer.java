@@ -33,17 +33,45 @@ import io.helidon.nima.webserver.WebServer;
  */
 public class UdpServer {
 
-    static final int ACK_FREQUENCY = 10;
     static final ByteBuffer ACK = ByteBuffer.wrap("ack".getBytes(StandardCharsets.UTF_8));
 
+    private static int port = 8888;
+    private static int ackPeriod = 10;
+
     public static void main(String[] args) {
+        try {
+            for (int i = 0; i < args.length; i++) {
+                switch (args[i]) {
+                    case "--port" -> port = Integer.parseInt(args[++i]);
+                    case "--ack-period" -> ackPeriod = Integer.parseInt(args[++i]);
+                    default -> usage();
+                }
+            }
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            usage();
+        }
+
+        display();
+
         WebServer webServer = WebServer
                 .builder()
                 .udp(true)
-                .port(8888)
+                .port(port)
                 .udpEndpoint(new EchoService())
                 .build();
         webServer.start();
+    }
+
+    private static void usage() {
+        System.err.println("udpserver [--port port (default: 8888)] " +
+                "[--ack-period period (default: 10)] ");
+        System.exit(1);
+    }
+
+    private static  void display() {
+        System.out.println("UDP server");
+        System.out.println("  udp://localhost:" + port);
+        System.out.println("  ack-period: " + ackPeriod);
     }
 
     static class EchoService implements UdpEndpoint {
@@ -76,7 +104,7 @@ public class UdpServer {
          */
         private void sendAckMaybe(UdpClient client) throws IOException {
             AtomicLong n = counters.computeIfAbsent(client, c -> new AtomicLong());
-            if (n.getAndIncrement() % ACK_FREQUENCY == 0) {
+            if (n.getAndIncrement() % ackPeriod == 0) {
                 client.sendMessage(ACK);
             }
         }
