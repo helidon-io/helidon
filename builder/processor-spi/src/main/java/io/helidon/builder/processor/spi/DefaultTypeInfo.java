@@ -18,7 +18,6 @@ package io.helidon.builder.processor.spi;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,9 +46,9 @@ public class DefaultTypeInfo implements TypeInfo {
     protected DefaultTypeInfo(Builder b) {
         this.typeName = b.typeName;
         this.typeKind = b.typeKind;
-        this.annotations = Collections.unmodifiableList(new ArrayList<>(b.annotations));
-        this.elementInfo = Collections.unmodifiableList(new ArrayList<>(b.elementInfo));
-        this.otherElementInfo = Collections.unmodifiableList(new ArrayList<>(b.otherElementInfo));
+        this.annotations = List.copyOf(b.annotations);
+        this.elementInfo = List.copyOf(b.elementInfo);
+        this.otherElementInfo = List.copyOf(b.otherElementInfo);
         this.superTypeInfo = b.superTypeInfo;
     }
 
