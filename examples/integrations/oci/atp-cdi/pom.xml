@@ -33,16 +33,6 @@
     <name>Helidon Examples Integration OCI ATP CDI</name>
     <description>CDI integration with OCI ATP.</description>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-shaded-full</artifactId>
-                <version>${version.lib.oci}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -64,12 +54,7 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-shaded-full</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <scope>runtime</scope>
+            <artifactId>oci-java-sdk-database</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

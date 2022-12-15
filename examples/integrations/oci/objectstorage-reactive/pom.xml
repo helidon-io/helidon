@@ -36,15 +36,7 @@
     <properties>
         <mainClass>io.helidon.examples.integrations.oci.objecstorage.reactive.OciObjectStorageMain</mainClass>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-shaded-full</artifactId>
-                <version>${version.lib.oci}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -56,12 +48,7 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-shaded-full</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <scope>runtime</scope>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
         </dependency>
     </dependencies>
 

@@ -108,9 +108,6 @@ Once you have created an ObjectStorage client you can use it as described in:
 * link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
 * link:{oci-objstore-url}[OCI Object Storage Overview]
 
-
-include::{rootdir}/includes/oci.adoc[leveloffset=+1]
-
 == References
 
 * link:{helidon-github-tree-url}/examples/integrations/oci[OCI SDK Usage Examples]
