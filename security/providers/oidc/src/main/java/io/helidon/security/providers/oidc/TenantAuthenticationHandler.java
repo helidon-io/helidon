@@ -149,7 +149,7 @@ class TenantAuthenticationHandler {
         }
         // clean the scope audience - must end with / if exists
         String configuredScopeAudience = tenantConfig.scopeAudience();
-        if (null == configuredScopeAudience || configuredScopeAudience.isEmpty()) {
+        if (configuredScopeAudience == null || configuredScopeAudience.isEmpty()) {
             this.scopeAppender = StringBuilder::append;
         } else {
             if (configuredScopeAudience.endsWith("/")) {
