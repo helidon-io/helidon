@@ -244,6 +244,8 @@ public class ServerCdiExtension implements Extension, Resource {
         LOGGER.info(() -> "Server started on "
                 + protocol + "://" + host + ":" + port
                 + note + startupTimeReport);
+        //TODO: Remove, for startup time measurements only
+        if (Boolean.parseBoolean(System.getProperty("dieAfterStart", "false"))) System.exit(0);
 
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
