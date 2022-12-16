@@ -80,6 +80,7 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_webserver_SocketConfiguration.adoc[SocketConfiguration (webserver)]
 - xref:{rootdir}/config/io_helidon_webserver_SocketConfiguration_SocketConfigurationBuilder.adoc[SocketConfigurationBuilder (webserver.SocketConfiguration)]
 - xref:{rootdir}/config/io_helidon_common_configurable_ThreadPoolSupplier.adoc[ThreadPoolSupplier (common.configurable)]
+- xref:{rootdir}/config/io_helidon_security_providers_oidc_common_TenantConfig.adoc[TenantConfig (security.providers.oidc.common)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_Timeout.adoc[Timeout (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler (security.util)]
 - xref:{rootdir}/config/io_helidon_tracing_TracerBuilder.adoc[TracerBuilder (tracing)]

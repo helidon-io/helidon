@@ -287,8 +287,9 @@ public final class SecurityHandler implements Handler {
 
         // update environment in context with the found headers
         securityContext.env(securityContext.env().derive()
-                                       .headers(headers)
-                                       .build());
+                                    .headers(headers)
+                                    .queryParams(req.queryParams())
+                                    .build());
     }
 
     @Override

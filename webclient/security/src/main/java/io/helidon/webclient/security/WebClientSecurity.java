@@ -116,12 +116,14 @@ public class WebClientSecurity implements WebClientService {
         try {
             SecurityEnvironment.Builder outboundEnv = context.env()
                     .derive()
-                    .clearHeaders();
+                    .clearHeaders()
+                    .clearQueryParams();
 
             outboundEnv.method(request.method().name())
                     .path(request.path().toString())
                     .targetUri(request.uri())
-                    .headers(request.headers().toMap());
+                    .headers(request.headers().toMap())
+                    .queryParams(request.queryParams());
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
             Map<String, String> propMap = request.properties();

@@ -17,22 +17,38 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import io.helidon.common.configurable.LruCache;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
+import io.helidon.security.providers.oidc.common.Tenant;
+import io.helidon.security.providers.oidc.common.TenantConfig;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webserver.ResponseHeaders;
@@ -44,6 +60,9 @@ import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 import jakarta.json.JsonObject;
+
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
+
 
 /**
  * OIDC integration requires web resources to be exposed through a web server.
@@ -119,22 +138,24 @@ import jakarta.json.JsonObject;
  */
 public final class OidcSupport implements Service {
     private static final Logger LOGGER = Logger.getLogger(OidcSupport.class.getName());
+    private static final Supplier<ExecutorService> OIDC_SUPPORT_SERVICE = ThreadPoolSupplier.create("oidc-support");
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
 
+    private final List<TenantConfigFinder> oidcConfigFinders;
+    private final LruCache<String, Tenant> tenants = LruCache.create();
     private final OidcConfig oidcConfig;
-    private final OidcCookieHandler tokenCookieHandler;
-    private final OidcCookieHandler idTokenCookieHandler;
     private final boolean enabled;
     private final CorsSupport corsSupport;
 
     private OidcSupport(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
-        this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
-        this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
         this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
+        this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
+
+        this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
     }
 
     /**
@@ -208,6 +229,18 @@ public final class OidcSupport implements Service {
     }
 
     private void processLogout(ServerRequest req, ServerResponse res) {
+        findTenantName(req)
+                .forSingle(tenantName -> processTenantLogout(req, res, tenantName));
+    }
+
+    private void processTenantLogout(ServerRequest req, ServerResponse res, String tenantName) {
+        obtainCurrentTenant(tenantName).forSingle(tenant -> logoutWithTenant(req, res, tenant));
+    }
+
+    private void logoutWithTenant(ServerRequest req, ServerResponse res, Tenant tenant) {
+        OidcCookieHandler idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+        OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
+
         Optional<String> idTokenCookie = req.headers()
                 .cookies()
                 .first(idTokenCookieHandler.cookieName());
@@ -223,7 +256,7 @@ public final class OidcSupport implements Service {
 
         idTokenCookieHandler.decrypt(encryptedIdToken)
                 .forSingle(idToken -> {
-                    StringBuilder sb = new StringBuilder(oidcConfig.logoutEndpointUri()
+                    StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
                                                                  + "?id_token_hint="
                                                                  + idToken
                                                                  + "&post_logout_redirect_uri=" + postLogoutUri(req));
@@ -240,6 +273,56 @@ public final class OidcSupport implements Service {
                             .send();
                 })
                 .exceptionallyAccept(t -> sendError(res, t));
+    }
+
+    private Single<String> findTenantName(ServerRequest request) {
+        List<String> missingLocations = new LinkedList<>();
+        Optional<String> tenantId = Optional.empty();
+        if (oidcConfig.useParam()) {
+            tenantId = request.queryParams().first(oidcConfig.tenantParamName());
+
+            if (tenantId.isEmpty()) {
+                missingLocations.add("query-param");
+            }
+        }
+        if (oidcConfig.useCookie() && tenantId.isEmpty()) {
+            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+                    .findCookie(request.headers().toMap());
+
+            if (cookie.isPresent()) {
+                return cookie.get();
+            }
+            missingLocations.add("cookie");
+        }
+        if (tenantId.isPresent()) {
+            return Single.just(tenantId.get());
+        } else {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("Missing tenant id, could not find in either of: " + missingLocations
+                                      + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
+            }
+            return Single.just(DEFAULT_TENANT_ID);
+        }
+    }
+
+    private Single<Tenant> obtainCurrentTenant(String tenantName) {
+        Optional<Tenant> maybeTenant = tenants.get(tenantName);
+        if (maybeTenant.isPresent()) {
+            return Single.just(maybeTenant.get());
+        } else {
+            CompletableFuture<Tenant> tenantCompletableFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        Tenant tenant = oidcConfigFinders.stream()
+                                .map(finder -> finder.config(tenantName))
+                                .flatMap(Optional::stream)
+                                .map(tenantConfig -> Tenant.create(oidcConfig, tenantConfig))
+                                .findFirst()
+                                .orElseGet(() -> Tenant.create(oidcConfig, oidcConfig.tenantConfig(tenantName)));
+                        return tenants.computeValue(tenantName, () -> Optional.of(tenant)).get();
+                    },
+                    OIDC_SUPPORT_SERVICE.get());
+            return Single.create(tenantCompletableFuture);
+        }
     }
 
     private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
@@ -274,28 +357,33 @@ public final class OidcSupport implements Service {
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
-        WebClient webClient = oidcConfig.appWebClient();
+        String tenantName = req.queryParams().first(oidcConfig.tenantParamName()).orElse(TenantConfigFinder.DEFAULT_TENANT_ID);
+
+        obtainCurrentTenant(tenantName).forSingle(tenant -> processCodeWithTenant(code, req, res, tenantName, tenant));
+    }
+
+    private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
+        TenantConfig tenantConfig = tenant.tenantConfig();
+
+        WebClient webClient = tenant.appWebClient();
 
         FormParams.Builder form = FormParams.builder()
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", redirectUri(req));
+                .add("redirect_uri", redirectUri(req, tenantName));
 
         WebClientRequestBuilder post = webClient.post()
-                .uri(oidcConfig.tokenEndpointUri())
+                .uri(tenant.tokenEndpointUri())
                 .accept(io.helidon.common.http.MediaType.APPLICATION_JSON);
 
-        oidcConfig.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN,
-                                 post,
-                                 form);
+        OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
 
         OidcConfig.postJsonResponse(post,
                                     form.build(),
-                                    json -> processJsonResponse(req, res, json),
+                                    json -> processJsonResponse(req, res, json, tenantName),
                                     (status, errorEntity) -> processError(res, status, errorEntity),
                                     (t, message) -> processError(res, t, message))
                 .ignoreElement();
-
     }
 
     private Object postLogoutUri(ServerRequest req) {
@@ -315,18 +403,23 @@ public final class OidcSupport implements Service {
         }
     }
 
-    private String redirectUri(ServerRequest req) {
+    private String redirectUri(ServerRequest req, String tenantName) {
         Optional<String> host = req.headers().first("host");
+        String uri;
 
         if (host.isPresent()) {
             String scheme = req.isSecure() ? "https" : "http";
-            return oidcConfig.redirectUriWithHost(scheme + "://" + host.get());
+            uri = oidcConfig.redirectUriWithHost(scheme + "://" + host.get());
         } else {
-            return oidcConfig.redirectUriWithHost();
+            uri = oidcConfig.redirectUriWithHost();
         }
+        return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
     }
 
-    private String processJsonResponse(ServerRequest req, ServerResponse res, JsonObject json) {
+    private String processJsonResponse(ServerRequest req,
+                                       ServerResponse res,
+                                       JsonObject json,
+                                       String tenantName) {
         String tokenValue = json.getString("access_token");
         String idToken = json.getString("id_token", null);
 
@@ -334,7 +427,8 @@ public final class OidcSupport implements Service {
         String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            state = (state.contains("?") ? "&" : "?") + oidcConfig.paramName() + "=" + tokenValue;
+            state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + tokenValue;
+            state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
         }
 
         state = increaseRedirectCounter(state);
@@ -343,11 +437,17 @@ public final class OidcSupport implements Service {
         if (oidcConfig.useCookie()) {
             ResponseHeaders headers = res.headers();
 
+            OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
+            tenantCookieHandler.createCookie(tenantName)
+                    .forSingle(builder -> headers.addCookie(builder.build()))
+                    .exceptionallyAccept(t -> sendError(res, t));
+
+            OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
             tokenCookieHandler.createCookie(tokenValue)
                     .forSingle(builder -> {
                         headers.addCookie(builder.build());
                         if (idToken != null && oidcConfig.logoutEnabled()) {
-                            idTokenCookieHandler.createCookie(idToken)
+                            tokenCookieHandler.createCookie(idToken)
                                     .forSingle(it -> {
                                         headers.addCookie(it.build());
                                         res.send();
@@ -363,6 +463,10 @@ public final class OidcSupport implements Service {
         }
 
         return "done";
+    }
+
+    private String encode(String toEncode) {
+        return URLEncoder.encode(toEncode, StandardCharsets.UTF_8);
     }
 
     private void sendError(ServerResponse response, Throwable t) {
@@ -446,8 +550,17 @@ public final class OidcSupport implements Service {
      * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcSupport}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, OidcSupport> {
+
+        private static final int BUILDER_PRIORITY = 50000;
+        private static final int DEFAULT_PRIORITY = 100000;
+
+        private final HelidonServiceLoader.Builder<TenantConfigProvider> tenantConfigProviders = HelidonServiceLoader
+                .builder(ServiceLoader.load(TenantConfigProvider.class))
+                .defaultPriority(BUILDER_PRIORITY);
         private boolean enabled = true;
+        private Config config = Config.empty();
         private OidcConfig oidcConfig;
+        private List<TenantConfigFinder> tenantConfigFinders;
 
         private Builder() {
         }
@@ -472,6 +585,9 @@ public final class OidcSupport implements Service {
             if (enabled && (oidcConfig == null)) {
                 throw new IllegalStateException("When OIDC and security is enabled, OIDC configuration must be provided");
             }
+            tenantConfigFinders = tenantConfigProviders.build().asList().stream()
+                    .map(provider -> provider.createTenantConfigFinder(config))
+                    .collect(Collectors.toList());
             return new OidcSupport(this);
         }
 
@@ -487,7 +603,10 @@ public final class OidcSupport implements Service {
 
             if (enabled) {
                 this.oidcConfig = OidcConfig.create(config);
+                this.config = config;
             }
+
+            config.get("discover-tenant-config-providers").asBoolean().ifPresent(this::discoverTenantConfigProviders);
             return this;
         }
 
@@ -528,6 +647,41 @@ public final class OidcSupport implements Service {
          */
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
+            return this;
+        }
+
+        /**
+         * Whether to allow {@link TenantConfigProvider} service loader discovery.
+         * Default value is {@code true}.
+         *
+         * @param discoverConfigProviders whether to use service loader
+         * @return updated builder instance
+         */
+        public Builder discoverTenantConfigProviders(boolean discoverConfigProviders) {
+            tenantConfigProviders.useSystemServiceLoader(discoverConfigProviders);
+            return this;
+        }
+
+        /**
+         * Add specific {@link TenantConfigFinder} implementation.
+         * Priority {@link #BUILDER_PRIORITY} is used.
+         *
+         * @param configFinder config finder implementation
+         * @return updated builder instance
+         */
+        public Builder addTenantConfigFinder(TenantConfigFinder configFinder) {
+            return addTenantConfigFinder(configFinder, BUILDER_PRIORITY);
+        }
+
+        /**
+         * Add specific {@link TenantConfigFinder} implementation with specific priority.
+         *
+         * @param configFinder config finder implementation
+         * @param priority finder priority
+         * @return updated builder instance
+         */
+        public Builder addTenantConfigFinder(TenantConfigFinder configFinder, int priority) {
+            tenantConfigProviders.addService(config -> configFinder, priority);
             return this;
         }
     }
