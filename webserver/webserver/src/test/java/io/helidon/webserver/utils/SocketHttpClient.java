@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class SocketHttpClient implements AutoCloseable {
 
     private static final Logger LOGGER = Logger.getLogger(SocketHttpClient.class.getName());
-    private static final String EOL = "\r\n";
+    static final String EOL = "\r\n";
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
 
     private final Socket socket;
@@ -293,6 +293,29 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Wait for text coming from socket.
+     * @param expectedStartsWith expected beginning
+     * @param expectedEndsWith expected end
+     * @return this http client
+     */
+    public SocketHttpClient awaitResponse(String expectedStartsWith, String expectedEndsWith) {
+        StringBuilder sb = new StringBuilder();
+        String t;
+        while (true) {
+            try {
+                if ((t = socketReader.readLine()) == null) break;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            sb.append(t).append("\n");
+            if (sb.toString().startsWith(expectedStartsWith) && sb.toString().endsWith(expectedEndsWith)) {
+                break;
+            }
+        }
+        return this;
+    }
+
+    /**
      * Sends a request to the webserver.
      *
      * @param method the http method
@@ -380,6 +403,37 @@ public class SocketHttpClient implements AutoCloseable {
         pw.print(EOL);
         pw.print(EOL);
         pw.flush();
+    }
+
+    /**
+     * Send supplied text manually to socket.
+     * @param requestString text to send
+     * @param args format arguments
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient manualReq(String requestString, Object... args) throws IOException {
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        pw.printf(requestString.replaceAll("\\n",EOL), args);
+        pw.flush();
+        return this;
+    }
+
+
+    /**
+     * Continue sending more to text to socket.
+     * @param payload text to be sent
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient continuePayload(String payload)
+            throws IOException {
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        if (payload != null) {
+            pw.print(payload);
+        }
+        pw.flush();
+        return this;
     }
 
     /**
