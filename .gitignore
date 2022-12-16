@@ -51,6 +51,7 @@ nb-configuration.xml
 .settings/
 .project
 .classpath
+.factorypath
 
 # Asciidoctor
 .asciidoctor/
