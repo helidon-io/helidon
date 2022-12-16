@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.spi;
+package io.helidon.pico;
 
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.PicoServices;
+import java.util.Optional;
+
+import io.helidon.builder.Builder;
+import io.helidon.common.config.Config;
 
 /**
- * Java {@link java.util.ServiceLoader} provider interface to find implementation of {@link io.helidon.pico.PicoServices}.
+ * This is the bootstrap needed to provide to {@code Pico} initialization.
+ *
+ * @see io.helidon.pico.spi.PicoServicesProvider
  */
-public interface PicoServicesProvider {
+@Builder
+public interface Bootstrap {
 
     /**
-     * Provide the {@code Pico} Services implementation, using the provided primordial {@link io.helidon.pico.Bootstrap}
-     * configuration instance.
+     * Provides the base primordial bootstrap configuration to the {@link io.helidon.pico.spi.PicoServicesProvider}.
+     * The provider will then bootstrap its {@link io.helidon.pico.PicoServicesConfig} to any provided bootstrap
+     * configuration instance provided, etc.
      *
-     * @param bootstrap the primordial bootstrap configuration
-     * @return Pico services
+     * @return the bootstrap configuration
      */
-    PicoServices services(Bootstrap bootstrap);
+    Optional<Config> config();
 
 }

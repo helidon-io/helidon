@@ -48,10 +48,9 @@
         <module>types</module>
         <module>builder-config</module>
         <module>pico</module>
+        <module>tools</module>
 <!--        <module>config</module>-->
-<!--        <module>pico</module>-->
 <!--        <module>tck</module>-->
-<!--        <module>tools</module>-->
 <!--        <module>processor</module>-->
 <!--        <module>maven-plugin</module>-->
 <!--        <module>test-support</module>-->

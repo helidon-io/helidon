@@ -1454,6 +1454,11 @@
                 <artifactId>helidon-pico-types</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Pico Config Builder -->
             <dependency>

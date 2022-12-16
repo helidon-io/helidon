@@ -14,32 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.test.testsubjects;
+/**
+ * The Pico Tools module.
+ */
+module io.helidon.pico.tools {
+    requires io.helidon.builder;
+    requires io.helidon.common.config;
+    requires io.helidon.pico.types;
+    requires transitive io.helidon.pico;
 
-import java.util.Objects;
+    requires static io.helidon.config.metadata;
 
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.Services;
+    requires handlebars;
+    requires io.helidon.common;
 
-import jakarta.inject.Singleton;
-
-@Singleton
-public class PicoServices3 implements PicoServices {
-    private final Bootstrap bootstrap;
-
-    public PicoServices3(Bootstrap bootstrap) {
-        this.bootstrap = Objects.requireNonNull(bootstrap);
-    }
-
-    @Override
-    public Services services() {
-        return null;
-    }
-
-    @Override
-    public Bootstrap bootstrap() {
-        return bootstrap;
-    }
-
+    exports io.helidon.pico.tools;
 }
