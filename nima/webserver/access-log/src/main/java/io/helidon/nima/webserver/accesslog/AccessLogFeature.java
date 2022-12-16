@@ -23,16 +23,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.http.Filter;
 import io.helidon.nima.webserver.http.FilterChain;
+import io.helidon.nima.webserver.http.HttpFeature;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.RoutingRequest;
 import io.helidon.nima.webserver.http.RoutingResponse;
 
 /**
  * Service that adds support for Access logging to Server.
  */
-public final class AccessLogFilter implements Filter {
+public final class AccessLogFeature implements HttpFeature, Weighted {
     /**
      * Name of the {@link System#getLogger(String)} used to log access log records.
      * The message logged contains all information, so the format should be modified
@@ -42,17 +44,20 @@ public final class AccessLogFilter implements Filter {
      */
     public static final String DEFAULT_LOGGER_NAME = "io.helidon.nima.webserver.AccessLog";
     private static final Pattern HEADER_ENTRY_PATTERN = Pattern.compile("%\\{(.*?)}i");
+    private static final double WEIGHT = 1000;
 
     private final List<AccessLogEntry> logFormat;
     private final System.Logger logger;
     private final boolean enabled;
     private final Clock clock;
+    private final double weight;
 
-    private AccessLogFilter(Builder builder) {
+    private AccessLogFeature(Builder builder) {
         this.enabled = builder.enabled;
         this.logFormat = builder.entries;
         this.clock = builder.clock;
         this.logger = System.getLogger(builder.loggerName);
+        this.weight = builder.weight;
     }
 
     /**
@@ -60,7 +65,7 @@ public final class AccessLogFilter implements Filter {
      *
      * @return a new access log support to be registered with WebServer routing
      */
-    public static AccessLogFilter create() {
+    public static AccessLogFeature create() {
         return builder().build();
     }
 
@@ -70,7 +75,7 @@ public final class AccessLogFilter implements Filter {
      * @param config to configure a new access log support instance
      * @return a new access log support to be registered with WebServer routing
      */
-    public static AccessLogFilter create(Config config) {
+    public static AccessLogFeature create(Config config) {
         return builder()
                 .config(config)
                 .build();
@@ -86,7 +91,11 @@ public final class AccessLogFilter implements Filter {
     }
 
     @Override
-    public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
+    public void setup(HttpRouting.Builder routing) {
+        routing.addFilter(this::filter);
+    }
+
+    private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
         ZonedDateTime now = ZonedDateTime.now(clock);
         long nanoNow = System.nanoTime();
 
@@ -157,9 +166,9 @@ public final class AccessLogFilter implements Filter {
     }
 
     /**
-     * A fluent API Builder for {@link AccessLogFilter}.
+     * A fluent API Builder for {@link AccessLogFeature}.
      */
-    public static final class Builder implements io.helidon.common.Builder<Builder, AccessLogFilter> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, AccessLogFeature> {
         private static final List<AccessLogEntry> COMMON_FORMAT = List.of(
                 HostLogEntry.create(),
                 UserIdLogEntry.create(),
@@ -181,19 +190,21 @@ public final class AccessLogFilter implements Filter {
         );
 
         private final List<AccessLogEntry> entries = new LinkedList<>();
+
         private Clock clock = Clock.systemDefaultZone();
         private String loggerName = DEFAULT_LOGGER_NAME;
         private boolean enabled = true;
+        private double weight = WEIGHT;
 
         private Builder() {
         }
 
         @Override
-        public AccessLogFilter build() {
+        public AccessLogFeature build() {
             if (entries.isEmpty()) {
                 defaultLogFormat();
             }
-            return new AccessLogFilter(this);
+            return new AccessLogFeature(this);
         }
 
         /**
@@ -390,6 +401,19 @@ public final class AccessLogFilter implements Filter {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("logger-name").asString().ifPresent(this::loggerName);
             config.get("format").asString().ifPresent(this::configLogFormat);
+            config.get("weight").asDouble().ifPresent(this::weight);
+            return this;
+        }
+
+        /**
+         * Configure a new weight for this feature.
+         * Changing weight may change ordering of features.
+         *
+         * @param weight new weight to use
+         * @return updated builder
+         */
+        public Builder weight(double weight) {
+            this.weight = weight;
             return this;
         }
 

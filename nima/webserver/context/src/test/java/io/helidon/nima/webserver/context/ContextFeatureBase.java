@@ -32,19 +32,19 @@ import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-abstract class ContextFilterBase {
+abstract class ContextFeatureBase {
     private final Http1Client client;
 
-    ContextFilterBase(Http1Client client) {
+    ContextFeatureBase(Http1Client client) {
         this.client = client;
     }
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        Contexts.globalContext().register(ContextFilterBase.class, "fixed-value");
+        Contexts.globalContext().register(ContextFeatureBase.class, "fixed-value");
 
-        router.addFilter(ContextFilter.create())
-                .get("/*", ContextFilterBase::testingHandler);
+        router.addFeature(ContextFeature.create())
+                .get("/*", ContextFeatureBase::testingHandler);
     }
 
     @Test
@@ -64,9 +64,9 @@ abstract class ContextFilterBase {
         assertThat(optionalContext, optionalPresent());
 
         Context context = optionalContext.get();
-        String value = context.get(ContextFilterBase.class, String.class).get();
+        String value = context.get(ContextFeatureBase.class, String.class).get();
         // then set it to a different value (will not impact parent)
-        context.register(ContextFilterBase.class, "request-value");
+        context.register(ContextFeatureBase.class, "request-value");
         // make sure we get the value registered with parent context (will be validated by client)
         res.send(value);
     }

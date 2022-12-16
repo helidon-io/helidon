@@ -21,16 +21,12 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.context.Context;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 
 final class ConnectionContextImpl implements ConnectionContext {
-    private final MediaContext mediaContext;
-    private final ContentEncodingContext contentEncodingContext;
+    private final ServerContext serverContext;
     private final ExecutorService sharedExecutor;
     private final DataWriter dataWriter;
     private final DataReader dataReader;
@@ -40,10 +36,8 @@ final class ConnectionContextImpl implements ConnectionContext {
     private final DirectHandlers simpleHandlers;
     private final HelidonSocket socket;
     private final long maxPayloadSize;
-    private final Context context;
 
-    ConnectionContextImpl(MediaContext mediaContext,
-                          ContentEncodingContext contentEncodingContext,
+    ConnectionContextImpl(ServerContext serverContext,
                           ExecutorService sharedExecutor,
                           DataWriter dataWriter,
                           DataReader dataReader,
@@ -52,10 +46,8 @@ final class ConnectionContextImpl implements ConnectionContext {
                           String childSocketId,
                           DirectHandlers simpleHandlers,
                           HelidonSocket socket,
-                          long maxPayloadSize,
-                          Context context) {
-        this.mediaContext = mediaContext;
-        this.contentEncodingContext = contentEncodingContext;
+                          long maxPayloadSize) {
+        this.serverContext = serverContext;
         this.sharedExecutor = sharedExecutor;
         this.dataWriter = dataWriter;
         this.dataReader = dataReader;
@@ -65,17 +57,11 @@ final class ConnectionContextImpl implements ConnectionContext {
         this.simpleHandlers = simpleHandlers;
         this.socket = socket;
         this.maxPayloadSize = maxPayloadSize;
-        this.context = context;
     }
 
     @Override
-    public MediaContext mediaContext() {
-        return mediaContext;
-    }
-
-    @Override
-    public ContentEncodingContext contentEncodingContext() {
-        return contentEncodingContext;
+    public ServerContext serverContext() {
+        return serverContext;
     }
 
     @Override
@@ -134,17 +120,12 @@ final class ConnectionContextImpl implements ConnectionContext {
     }
 
     @Override
-    public Context context() {
-        return context;
-    }
-
-    @Override
     public int hashCode() {
         return Objects.hash(sharedExecutor,
-                dataWriter,
-                router,
-                socketId,
-                childSocketId);
+                            dataWriter,
+                            router,
+                            socketId,
+                            childSocketId);
     }
 
     @Override
@@ -166,10 +147,16 @@ final class ConnectionContextImpl implements ConnectionContext {
     @Override
     public String toString() {
         return "ConnectionContextImpl["
-                + "sharedExecutor=" + sharedExecutor + ", "
-                + "dataWriter=" + dataWriter + ", "
-                + "router=" + router + ", "
-                + "socketId=" + socketId + ", "
-                + "childSocketId=" + childSocketId + ']';
+                + "serverContext=" + serverContext
+                + ", sharedExecutor=" + sharedExecutor
+                + ", dataWriter=" + dataWriter
+                + ", dataReader=" + dataReader
+                + ", router=" + router
+                + ", socketId='" + socketId + '\''
+                + ", childSocketId='" + childSocketId + '\''
+                + ", simpleHandlers=" + simpleHandlers
+                + ", socket=" + socket
+                + ", maxPayloadSize=" + maxPayloadSize
+                + ']';
     }
 }

@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver.context;
-
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.webclient.http1.Http1Client;
-
-@ServerTest
-class ContextFilterIT extends ContextFilterBase{
-    ContextFilterIT(Http1Client client) {
-        super(client);
-    }
-}
+/**
+ * Types that are security related and can be used across all components (servers, clients etc.).
+ */
+package io.helidon.common.security;

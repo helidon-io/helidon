@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ class SecurityFilterTest {
 
     @Test
     void testAtnAbortWith() {
-        SecurityFeature feature = SecurityFeature.builder(security)
+        JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                 .build();
 
         SecurityContext securityContext = security.createContext("testAbortWith");
@@ -90,7 +90,7 @@ class SecurityFilterTest {
 
     @Test
     void testAtnThrowException() {
-        SecurityFeature feature = SecurityFeature.builder(security)
+        JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                 .useAbortWith(false)
                 .build();
 
@@ -123,7 +123,7 @@ class SecurityFilterTest {
 
     @Test
     void testAtzAbortWith() {
-        SecurityFeature feature = SecurityFeature.builder(security)
+        JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                 .build();
 
         SecurityContext securityContext = security.createContext("testAbortWith");
@@ -152,7 +152,7 @@ class SecurityFilterTest {
 
     @Test
     void testAtzThrowException() {
-        SecurityFeature feature = SecurityFeature.builder(security)
+        JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                 .useAbortWith(false)
                 .build();
 

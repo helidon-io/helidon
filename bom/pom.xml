@@ -672,6 +672,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
@@ -1388,6 +1393,11 @@
             <dependency>
                 <groupId>io.helidon.nima.observe</groupId>
                 <artifactId>helidon-nima-observe-info</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.observe</groupId>
+                <artifactId>helidon-nima-observe-log</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

@@ -49,7 +49,7 @@ import org.glassfish.jersey.process.internal.RequestScoped;
  * </pre>
  */
 @ConstrainedTo(RuntimeType.SERVER)
-public final class SecurityFeature implements Feature {
+public final class JerseySecurityFeature implements Feature {
     private final Security security;
     private final FeatureConfig featureConfig;
 
@@ -58,7 +58,7 @@ public final class SecurityFeature implements Feature {
      *
      * This constructor is workaround solution for Jersey instantiation problem.
      */
-    public SecurityFeature() {
+    public JerseySecurityFeature() {
         this.security = null;
         this.featureConfig = null;
     }
@@ -68,18 +68,18 @@ public final class SecurityFeature implements Feature {
      *
      * @param security Fully configured security component to integrate with Jersey
      */
-    public SecurityFeature(Security security) {
+    public JerseySecurityFeature(Security security) {
         this.security = security;
         this.featureConfig = new FeatureConfig(builder(security).config(security.configFor("jersey")));
     }
 
-    private SecurityFeature(Builder builder) {
+    private JerseySecurityFeature(Builder builder) {
         this.security = builder.security;
         this.featureConfig = new FeatureConfig(builder);
     }
 
     /**
-     * Builder for {@link SecurityFeature}.
+     * Builder for {@link JerseySecurityFeature}.
      *
      * @param security Security instance to create this feature for (cannot build a feature without security instance)
      * @return Builder to configure feature
@@ -126,9 +126,9 @@ public final class SecurityFeature implements Feature {
     }
 
     /**
-     * {@link SecurityFeature} fluent API builder.
+     * {@link JerseySecurityFeature} fluent API builder.
      */
-    public static final class Builder implements io.helidon.common.Builder<Builder, SecurityFeature> {
+    public static final class Builder implements io.helidon.common.Builder<Builder, JerseySecurityFeature> {
         private final Security security;
         private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private boolean authorizeAnnotatedOnly = FeatureConfig.DEFAULT_ATZ_ANNOTATED_ONLY;
@@ -313,8 +313,8 @@ public final class SecurityFeature implements Feature {
          * @return feature to register with Jersey
          */
         @Override
-        public SecurityFeature build() {
-            return new SecurityFeature(this);
+        public JerseySecurityFeature build() {
+            return new JerseySecurityFeature(this);
         }
 
         Security security() {

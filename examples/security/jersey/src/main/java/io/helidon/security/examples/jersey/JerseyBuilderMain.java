@@ -27,7 +27,7 @@ import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.jersey.JerseySupport;
 import io.helidon.security.Security;
-import io.helidon.security.integration.jersey.SecurityFeature;
+import io.helidon.security.integration.jersey.JerseySecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -79,8 +79,8 @@ public final class JerseyBuilderMain {
         return server;
     }
 
-    private static SecurityFeature buildSecurity() {
-        return new SecurityFeature(
+    private static JerseySecurityFeature buildSecurity() {
+        return new JerseySecurityFeature(
                 Security.builder()
                         // add the security provider to use
                         .addProvider(HttpBasicAuthProvider.builder()

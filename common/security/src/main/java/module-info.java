@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver.context;
-
-import io.helidon.nima.testing.junit5.webserver.DirectClient;
-import io.helidon.nima.testing.junit5.webserver.RoutingTest;
-
-@RoutingTest
-class ContextFilterTest extends ContextFilterBase {
-    ContextFilterTest(DirectClient client) {
-        super(client);
-    }
+/**
+ * Types that are security related and can be used across all components (servers, clients etc.).
+ */
+module io.helidon.common.security {
+    exports io.helidon.common.security;
 }

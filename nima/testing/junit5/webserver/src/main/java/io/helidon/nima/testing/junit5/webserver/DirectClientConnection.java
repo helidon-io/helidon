@@ -31,6 +31,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
@@ -143,8 +144,9 @@ class DirectClientConnection implements ClientConnection {
         ExecutorService executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("direct-test-server", 1)
                                                                                      .factory());
         ConnectionContext ctx = ConnectionContext.create(
-                MediaContext.create(),
-                ContentEncodingContext.create(),
+                ServerContext.create(Context.create(),
+                                     MediaContext.create(),
+                                     ContentEncodingContext.create()),
                 executorService,
                 serverWriter,
                 serverReader,
@@ -153,8 +155,7 @@ class DirectClientConnection implements ClientConnection {
                 "unit-channel",
                 DirectHandlers.builder().build(),
                 socket,
-                -1,
-                Context.create());
+                -1);
 
         ServerConnection connection = Http1ConnectionProvider.builder()
                 .build()

@@ -107,8 +107,6 @@ public final class ErrorHandlers {
             } else {
                 handleError(ctx, request, response, exception, errorHandler);
             }
-        } catch (HttpException e) {
-            handleError(ctx, request, response, e);
         } catch (RuntimeException e) {
             handleError(ctx, request, response, e);
         } catch (Exception e) {
@@ -166,25 +164,24 @@ public final class ErrorHandlers {
     }
 
     private void unhandledError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
-        // to be handled by error handler
-        handleRequestException(ctx, request, response, RequestException.builder()
-                .cause(e)
-                .type(DirectHandler.EventType.INTERNAL_ERROR)
-                .message(e.getMessage())
-                .request(DirectTransportRequest.create(request.prologue(), request.headers()))
-                .build());
-    }
-
-    private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, HttpException e) {
-        // to be handled by error handler
-        handleRequestException(ctx, request, response, RequestException.builder()
-                .cause(e)
-                .type(DirectHandler.EventType.OTHER)
-                .message(e.getMessage())
-                .status(e.status())
-                .setKeepAlive(e.keepAlive())
-                .request(DirectTransportRequest.create(request.prologue(), request.headers()))
-                .build());
+        if (e instanceof HttpException httpException) {
+            handleRequestException(ctx, request, response, RequestException.builder()
+                    .cause(e)
+                    .type(DirectHandler.EventType.OTHER)
+                    .message(e.getMessage())
+                    .status(httpException.status())
+                    .setKeepAlive(httpException.keepAlive())
+                    .request(DirectTransportRequest.create(request.prologue(), request.headers()))
+                    .build());
+        } else {
+            // to be handled by error handler
+            handleRequestException(ctx, request, response, RequestException.builder()
+                    .cause(e)
+                    .type(DirectHandler.EventType.INTERNAL_ERROR)
+                    .message(e.getMessage())
+                    .request(DirectTransportRequest.create(request.prologue(), request.headers()))
+                    .build());
+        }
     }
 
     private void handleError(ConnectionContext ctx,

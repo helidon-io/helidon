@@ -44,7 +44,7 @@ import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
-import io.helidon.security.integration.nima.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 
@@ -254,11 +254,11 @@ public final class OidcService implements HttpService {
         Context context = Contexts.context().orElseThrow(() -> new SecurityException("Context must be available"));
 
         Map<String, List<String>> newHeaders = context
-                .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
+                .get(SecurityFeature.CONTEXT_ADD_HEADERS, Map.class)
                 .map(theMap -> (Map<String, List<String>>) theMap)
                 .orElseGet(() -> {
                     Map<String, List<String>> newMap = new HashMap<>();
-                    context.register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
+                    context.register(SecurityFeature.CONTEXT_ADD_HEADERS, newMap);
                     return newMap;
                 });
 

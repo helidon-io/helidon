@@ -35,7 +35,7 @@ public final class UserLogEntry extends AbstractLogEntry {
      * Create a new user log entry.
      *
      * @return a new access log entry for username
-     * @see AccessLogFilter.Builder#add(AccessLogEntry)
+     * @see AccessLogFeature.Builder#add(AccessLogEntry)
      */
     public static UserLogEntry create() {
         return builder().build();

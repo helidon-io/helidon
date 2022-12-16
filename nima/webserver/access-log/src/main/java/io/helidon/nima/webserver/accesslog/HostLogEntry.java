@@ -27,7 +27,7 @@ public final class HostLogEntry extends AbstractLogEntry {
      * Create a new host log entry.
      *
      * @return a new access log entry for host
-     * @see AccessLogFilter.Builder#add(AccessLogEntry)
+     * @see AccessLogFeature.Builder#add(AccessLogEntry)
      */
     public static HostLogEntry create() {
         return builder().build();

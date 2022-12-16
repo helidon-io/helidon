@@ -114,6 +114,11 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         pkg = "".equals(pkg) ? proto.getPackage() : pkg;
         String outerClass = getOuterClass(proto);
 
+        /*
+        We have to use reflection here
+         - to load the class
+         - to invoke a static method on it
+         */
         Class<ReqT> requestType = load(pkg + "." + outerClass + mtd.getInputType().getFullName().replace('.', '$'));
         Class<ResT> responsetype = load(pkg + "." + outerClass + mtd.getOutputType().getFullName().replace('.', '$'));
 
@@ -133,7 +138,7 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         try {
             return (Class<T>) Grpc.class.getClassLoader().loadClass(className);
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Failed to load class for grpc", e);
+            throw new IllegalArgumentException("Failed to load class \"" + className + "\" for grpc", e);
         }
     }
 
