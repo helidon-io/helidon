@@ -62,8 +62,5 @@ public class ObserveMain {
                 .addFeature(ContextFeature.create(config.get("context")))
                 .addFeature(ObserveFeature.create(config.get("observe")))
                 .get("/", (req, res) -> res.send("Níma Works!"));
-        // map both security exceptions to not found
-        //.error(ForbiddenException.class, (req, res, throwable) -> res.status(NOT_FOUND_404).send())
-        //.error(UnauthorizedException.class, (req, res, throwable) -> res.status(NOT_FOUND_404).send());
     }
 }
