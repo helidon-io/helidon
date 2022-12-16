@@ -57,6 +57,7 @@
         <module>jep290</module>
         <module>mp-bean-validation</module>
         <module>restclient</module>
+        <module>oidc</module>
     </modules>
 
     <profiles>

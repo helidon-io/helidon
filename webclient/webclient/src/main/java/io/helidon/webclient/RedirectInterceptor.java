@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,11 @@ class RedirectInterceptor implements HttpInterceptor {
                     .create(clientRequest);
             if (URI.create(newUri).getHost() == null) {
                 URI uri = clientRequest.uri();
-                requestBuilder.uri(uri.getScheme() + "://" + uri.getAuthority());
-                requestBuilder.path(newUri);
+                String path = newUri;
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                requestBuilder.uri(uri.getScheme() + "://" + uri.getAuthority() + path);
             } else {
                 requestBuilder.uri(newUri);
             }

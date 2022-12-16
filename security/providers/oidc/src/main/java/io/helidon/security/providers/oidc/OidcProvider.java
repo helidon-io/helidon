@@ -17,67 +17,50 @@
 package io.helidon.security.providers.oidc;
 
 import java.lang.annotation.Annotation;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.common.Errors;
-import io.helidon.common.http.FormParams;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
+import io.helidon.common.configurable.LruCache;
 import io.helidon.common.reactive.Single;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
-import io.helidon.security.Grant;
 import io.helidon.security.OutboundSecurityResponse;
-import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
-import io.helidon.security.Role;
-import io.helidon.security.Security;
 import io.helidon.security.SecurityEnvironment;
-import io.helidon.security.SecurityLevel;
-import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.scope.ScopeValidator;
-import io.helidon.security.jwt.Jwt;
-import io.helidon.security.jwt.JwtException;
-import io.helidon.security.jwt.JwtUtil;
-import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
-import io.helidon.security.providers.oidc.common.OidcCookieHandler;
+import io.helidon.security.providers.oidc.common.Tenant;
+import io.helidon.security.providers.oidc.common.TenantConfig;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
+import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
+import io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webclient.WebClientRequestBuilder;
 
-import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
  * Open ID Connect authentication provider.
@@ -97,15 +80,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
-    private final TokenHandler paramHeaderHandler;
-
-    private final BiFunction<SignedJwt, Errors.Collector, Single<Errors.Collector>> jwtValidator;
-    private final Pattern attemptPattern;
+    private final List<TenantIdFinder> tenantIdFinders;
+    private final List<TenantConfigFinder> tenantConfigFinders;
     private final boolean propagate;
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
-    private final BiConsumer<StringBuilder, String> scopeAppender;
-    private final OidcCookieHandler cookieHandler;
+    private final LruCache<String, TenantAuthenticationHandler> tenantAuthHandlers = LruCache.create();
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -113,88 +93,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         this.propagate = builder.propagate && (oidcOutboundConfig.hasOutbound());
         this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
-        this.cookieHandler = oidcConfig.tokenCookieHandler();
 
-        attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
+        tenantConfigFinders = List.copyOf(builder.tenantConfigFinders);
+        tenantIdFinders = List.copyOf(builder.tenantIdFinders);
 
-        // must re-configure integration with webserver and jersey
-
-        if (oidcConfig.useParam()) {
-            paramHeaderHandler = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
-        } else {
-            paramHeaderHandler = null;
-        }
-
-        // clean the scope audience - must end with / if exists
-        String configuredScopeAudience = oidcConfig.scopeAudience();
-        if (null == configuredScopeAudience || configuredScopeAudience.isEmpty()) {
-            this.scopeAppender = StringBuilder::append;
-        } else {
-            if (configuredScopeAudience.endsWith("/")) {
-                this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience).append(scope);
-            } else {
-                this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience)
-                        .append("/")
-                        .append(scope);
-            }
-        }
-
-        if (oidcConfig.validateJwtWithJwk()) {
-            this.jwtValidator = (signedJwt, collector) -> {
-                JwkKeys jwk = oidcConfig.signJwk();
-                Errors errors = signedJwt.verifySignature(jwk);
-                errors.forEach(errorMessage -> {
-                    switch (errorMessage.getSeverity()) {
-                    case FATAL:
-                        collector.fatal(errorMessage.getSource(), errorMessage.getMessage());
-                        break;
-                    case WARN:
-                        collector.warn(errorMessage.getSource(), errorMessage.getMessage());
-                        break;
-                    case HINT:
-                    default:
-                        collector.hint(errorMessage.getSource(), errorMessage.getMessage());
-                        break;
-                    }
-                });
-                return Single.just(collector);
-            };
-        } else {
-            this.jwtValidator = (signedJwt, collector) -> {
-                FormParams.Builder form = FormParams.builder()
-                        .add("token", signedJwt.tokenContent());
-
-                WebClientRequestBuilder post = oidcConfig.appWebClient()
-                        .post()
-                        .uri(oidcConfig.introspectUri())
-                        .accept(MediaType.APPLICATION_JSON)
-                        .headers(it -> {
-                            it.add(Http.Header.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
-                            return it;
-                        });
-
-                oidcConfig.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, post, form);
-
-                return postJsonResponse(post,
-                                        form.build(),
-                                        json -> {
-                                            if (!json.getBoolean("active")) {
-                                                collector.fatal(json, "Token is not active");
-                                            }
-                                            return collector;
-                                        },
-                                        (status, message) ->
-                                                Optional.of(collector.fatal(status,
-                                                                            "Failed to validate token, response "
-                                                                                    + "status: "
-                                                                                    + status
-                                                                                    + ", entity: " + message)),
-                                        (t, message) ->
-                                                Optional.of(collector.fatal(t,
-                                                                            "Failed to validate token, request failed: "
-                                                                                    + message)));
-            };
-        }
+        tenantConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenantAuthHandlers::remove));
     }
 
     /**
@@ -233,297 +136,67 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        /*
-        1. Get token from request - if available, validate it and continue
-        2. If not - Redirect to login page
-         */
+        Single<String> tenantIdSingle = tenantIdFinders.stream()
+                .map(tenantIdFinder -> tenantIdFinder.tenantId(providerRequest))
+                .flatMap(Optional::stream)
+                .findFirst()
+                .map(Single::just)
+                .orElseGet(() -> findTenantIdFromRedirects(providerRequest));
+        return  tenantIdSingle.flatMapCompletionStage(tenantId -> authenticateWithTenant(tenantId, providerRequest));
+    }
+
+    private CompletionStage<AuthenticationResponse> authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
+        Optional<TenantAuthenticationHandler> tenantHandler = tenantAuthHandlers.get(tenantId);
+        if (tenantHandler.isPresent()) {
+            return tenantHandler.get().authenticate(tenantId, providerRequest);
+        } else {
+            return CompletableFuture.supplyAsync(
+                            () -> {
+                                TenantConfig possibleConfig = tenantConfigFinders.stream()
+                                        .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
+                                        .flatMap(Optional::stream)
+                                        .findFirst()
+                                        .orElse(oidcConfig.tenantConfig(tenantId));
+                                Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
+                                TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
+                                                                                                      tenant,
+                                                                                                      useJwtGroups,
+                                                                                                      optional);
+                                return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get();
+                            },
+                            providerRequest.securityContext().executorService())
+                    .thenCompose(handler -> handler.authenticate(tenantId, providerRequest));
+        }
+    }
+
+    private Single<String> findTenantIdFromRedirects(ProviderRequest providerRequest) {
         List<String> missingLocations = new LinkedList<>();
+        Optional<String> tenantId = Optional.empty();
+        missingLocations.add("tenant-id-finder");
+        if (oidcConfig.useParam()) {
+            tenantId = providerRequest.env().queryParams().first(oidcConfig.tenantParamName());
 
-        Optional<String> token = Optional.empty();
-
-        try {
-            if (oidcConfig.useHeader()) {
-                token = token
-                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()));
-
-                if (token.isEmpty()) {
-                    missingLocations.add("header");
-                }
-            }
-
-            if (oidcConfig.useParam()) {
-                token = token
-                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()));
-
-                if (token.isEmpty()) {
-                    missingLocations.add("query-param");
-                }
-            }
-
-            if (oidcConfig.useCookie()) {
-                if (token.isEmpty()) {
-                    // only do this for cookies
-                    Optional<Single<String>> cookie = cookieHandler.findCookie(providerRequest.env().headers());
-                    if (cookie.isEmpty()) {
-                        missingLocations.add("cookie");
-                    } else {
-                        return cookie.get()
-                                .flatMapSingle(it -> validateToken(providerRequest, it))
-                                .onErrorResumeWithSingle(throwable -> {
-                                    if (LOGGER.isLoggable(Level.FINEST)) {
-                                        LOGGER.log(Level.FINEST, "Invalid token in cookie", throwable);
-                                    }
-                                    return Single.just(errorResponse(providerRequest,
-                                                                     Http.Status.UNAUTHORIZED_401,
-                                                                     null,
-                                                                     "Invalid token"));
-                                });
-                    }
-                }
-            }
-        } catch (SecurityException e) {
-            LOGGER.log(Level.FINEST, "Failed to extract token from one of the configured locations", e);
-            return failOrAbstain("Failed to extract one of the configured tokens" + e);
-        }
-
-        if (token.isPresent()) {
-            return validateToken(providerRequest, token.get());
-        } else {
-            LOGGER.finest(() -> "Missing token, could not find in either of: " + missingLocations);
-            return CompletableFuture.completedFuture(errorResponse(providerRequest,
-                                                                   Http.Status.UNAUTHORIZED_401,
-                                                                   null,
-                                                                   "Missing token, could not find in either of: "
-                                                                           + missingLocations));
-        }
-    }
-
-    private Set<String> expectedScopes(ProviderRequest request) {
-
-        Set<String> result = new HashSet<>();
-
-        for (SecurityLevel securityLevel : request.endpointConfig().securityLevels()) {
-            List<ScopeValidator.Scopes> expectedScopes = securityLevel.combineAnnotations(ScopeValidator.Scopes.class,
-                                                                                          EndpointConfig.AnnotationScope
-                                                                                                  .values());
-            expectedScopes.stream()
-                    .map(ScopeValidator.Scopes::value)
-                    .map(Arrays::asList)
-                    .map(List::stream)
-                    .forEach(stream -> stream.map(ScopeValidator.Scope::value)
-                            .forEach(result::add));
-
-            List<ScopeValidator.Scope> expectedScopeAnnotations = securityLevel.combineAnnotations(ScopeValidator.Scope.class,
-                                                                                                   EndpointConfig.AnnotationScope
-                                                                                                           .values());
-
-            expectedScopeAnnotations.stream()
-                    .map(ScopeValidator.Scope::value)
-                    .forEach(result::add);
-        }
-
-        return result;
-    }
-
-    private AuthenticationResponse errorResponse(ProviderRequest providerRequest,
-                                                 Http.Status status,
-                                                 String code,
-                                                 String description) {
-        if (oidcConfig.shouldRedirect()) {
-            // make sure we do not exceed redirect limit
-            String state = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(state);
-            if (redirectAttempt >= oidcConfig.maxRedirects()) {
-                return errorResponseNoRedirect(code, description, status);
-            }
-
-            Set<String> expectedScopes = expectedScopes(providerRequest);
-
-            StringBuilder scopes = new StringBuilder(oidcConfig.baseScopes());
-
-            for (String expectedScope : expectedScopes) {
-                if (scopes.length() > 0) {
-                    // space after base scopes
-                    scopes.append(' ');
-                }
-                String scope = expectedScope;
-                if (scope.startsWith("/")) {
-                    scope = scope.substring(1);
-                }
-                scopeAppender.accept(scopes, scope);
-            }
-
-            String scopeString;
-            scopeString = URLEncoder.encode(scopes.toString(), StandardCharsets.UTF_8);
-
-            String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
-            String nonce = UUID.randomUUID().toString();
-            String redirectUri = redirectUri(providerRequest.env());
-
-
-            StringBuilder queryString = new StringBuilder("?");
-            queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
-            queryString.append("response_type=code&");
-            queryString.append("redirect_uri=").append(redirectUri).append("&");
-            queryString.append("scope=").append(scopeString).append("&");
-            queryString.append("nonce=").append(nonce).append("&");
-            queryString.append("state=").append(encodeState(state));
-
-            // must redirect
-            return AuthenticationResponse
-                    .builder()
-                    .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
-                    .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
-                    .description("Redirecting to identity server: " + description)
-                    .responseHeader("Location", authorizationEndpoint + queryString)
-                    .build();
-        } else {
-            return errorResponseNoRedirect(code, description, status);
-        }
-    }
-
-    private String redirectUri(SecurityEnvironment env) {
-        for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
-            if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
-                String firstHost = entry.getValue().get(0);
-                return oidcConfig.redirectUriWithHost(oidcConfig.forceHttpsRedirects() ? "https" : env.transport()
-                        + "://" + firstHost);
+            if (tenantId.isEmpty()) {
+                missingLocations.add("query-param");
             }
         }
+        if (oidcConfig.useCookie() && tenantId.isEmpty()) {
+            Optional<Single<String>> cookie = oidcConfig.tenantCookieHandler()
+                    .findCookie(providerRequest.env().headers());
 
-        return oidcConfig.redirectUriWithHost();
-    }
-
-    private CompletionStage<AuthenticationResponse> failOrAbstain(String message) {
-        if (optional) {
-            return CompletableFuture.completedFuture(AuthenticationResponse.builder()
-                                                             .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                                                             .description(message)
-                                                             .build());
-        } else {
-            return CompletableFuture.completedFuture(AuthenticationResponse.builder()
-                                                             .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                                                             .description(message)
-                                                             .build());
-        }
-    }
-
-    private AuthenticationResponse errorResponseNoRedirect(String code, String description, Http.Status status) {
-        if (optional) {
-            return AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(description)
-                    .build();
-        }
-        if (null == code) {
-            return AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.FAILURE)
-                    .statusCode(Http.Status.UNAUTHORIZED_401.code())
-                    .responseHeader(Http.Header.WWW_AUTHENTICATE, "Bearer realm=\"" + oidcConfig.realm() + "\"")
-                    .description(description)
-                    .build();
-        } else {
-            return AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.FAILURE)
-                    .statusCode(status.code())
-                    .responseHeader(Http.Header.WWW_AUTHENTICATE, errorHeader(code, description))
-                    .description(description)
-                    .build();
-        }
-    }
-
-    private int redirectAttempt(String state) {
-        if (state.contains("?")) {
-            // there are parameters
-            Matcher matcher = attemptPattern.matcher(state);
-            if (matcher.matches()) {
-                return Integer.parseInt(matcher.group(1));
+            if (cookie.isPresent()) {
+                return cookie.get();
             }
+            missingLocations.add("cookie");
         }
-
-        return 1;
-    }
-
-    private String errorHeader(String code, String description) {
-        return "Bearer realm=\"" + oidcConfig.realm() + "\", error=\"" + code + "\", error_description=\"" + description + "\"";
-    }
-
-    private String origUri(ProviderRequest providerRequest) {
-        List<String> origUri = providerRequest.env().headers()
-                .getOrDefault(Security.HEADER_ORIG_URI, List.of());
-
-        if (origUri.isEmpty()) {
-            origUri = List.of(providerRequest.env().targetUri().getPath());
-        }
-
-        return origUri.get(0);
-    }
-
-    private String encodeState(String state) {
-        return URLEncoder.encode(state, StandardCharsets.UTF_8);
-    }
-
-    private Single<AuthenticationResponse> validateToken(ProviderRequest providerRequest, String token) {
-        SignedJwt signedJwt;
-        try {
-            signedJwt = SignedJwt.parseToken(token);
-        } catch (Exception e) {
-            //invalid token
-            LOGGER.log(Level.FINEST, "Could not parse inbound token", e);
-            return Single.just(AuthenticationResponse.failed("Invalid token", e));
-        }
-
-        return jwtValidator.apply(signedJwt, Errors.collector())
-                .map(it -> processValidationResult(providerRequest,
-                                                   signedJwt,
-                                                   it))
-                .onErrorResume(t -> {
-                    LOGGER.log(Level.FINEST, "Failed to validate request", t);
-                    return AuthenticationResponse.failed("Failed to validate JWT", t);
-                });
-    }
-
-    private AuthenticationResponse processValidationResult(ProviderRequest providerRequest,
-                                                           SignedJwt signedJwt,
-                                                           Errors.Collector collector) {
-        Jwt jwt = signedJwt.getJwt();
-        Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(oidcConfig.issuer(), oidcConfig.audience());
-
-        if (errors.isValid() && validationErrors.isValid()) {
-
-            errors.log(LOGGER);
-            Subject subject = buildSubject(jwt, signedJwt);
-
-            Set<String> scopes = subject.grantsByType("scope")
-                    .stream()
-                    .map(Grant::getName)
-                    .collect(Collectors.toSet());
-
-            // make sure we have the correct scopes
-            Set<String> expectedScopes = expectedScopes(providerRequest);
-            List<String> missingScopes = new LinkedList<>();
-            for (String expectedScope : expectedScopes) {
-                if (!scopes.contains(expectedScope)) {
-                    missingScopes.add(expectedScope);
-                }
-            }
-
-            if (missingScopes.isEmpty()) {
-                return AuthenticationResponse.success(subject);
-            } else {
-                return errorResponse(providerRequest,
-                                     Http.Status.FORBIDDEN_403,
-                                     "insufficient_scope",
-                                     "Scopes " + missingScopes + " are missing");
-            }
+        if (tenantId.isPresent()) {
+            return Single.just(tenantId.get());
         } else {
             if (LOGGER.isLoggable(Level.FINEST)) {
-                // only log errors when details requested
-                errors.log(LOGGER);
-                validationErrors.log(LOGGER);
+                LOGGER.finest("Missing tenant id, could not find in either of: " + missingLocations
+                                      + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
             }
-            return errorResponse(providerRequest, Http.Status.UNAUTHORIZED_401, "invalid_token", "Token not valid");
+            return Single.just(DEFAULT_TENANT_ID);
         }
     }
 
@@ -567,61 +240,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return CompletableFuture.completedFuture(OutboundSecurityResponse.empty());
     }
 
-    private Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
-        Principal principal = buildPrincipal(jwt);
-
-        TokenCredential.Builder builder = TokenCredential.builder();
-        jwt.issueTime().ifPresent(builder::issueTime);
-        jwt.expirationTime().ifPresent(builder::expTime);
-        jwt.issuer().ifPresent(builder::issuer);
-        builder.token(signedJwt.tokenContent());
-        builder.addToken(Jwt.class, jwt);
-        builder.addToken(SignedJwt.class, signedJwt);
-
-        Subject.Builder subjectBuilder = Subject.builder()
-                .principal(principal)
-                .addPublicCredential(TokenCredential.class, builder.build());
-
-        if (useJwtGroups) {
-            Optional<List<String>> userGroups = jwt.userGroups();
-            userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
-        }
-
-        Optional<List<String>> scopes = jwt.scopes();
-        scopes.ifPresent(scopeList -> scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
-                                                                                                 .name(scope)
-                                                                                                 .type("scope")
-                                                                                                 .build())));
-
-        return subjectBuilder.build();
-
-    }
-
-    private Principal buildPrincipal(Jwt jwt) {
-        String subject = jwt.subject()
-                .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
-
-        String name = jwt.preferredUsername()
-                .orElse(subject);
-
-        Principal.Builder builder = Principal.builder();
-
-        builder.name(name)
-                .id(subject);
-
-        jwt.payloadClaims()
-                .forEach((key, jsonValue) -> builder.addAttribute(key, JwtUtil.toObject(jsonValue)));
-
-        jwt.email().ifPresent(value -> builder.addAttribute("email", value));
-        jwt.emailVerified().ifPresent(value -> builder.addAttribute("email_verified", value));
-        jwt.locale().ifPresent(value -> builder.addAttribute("locale", value));
-        jwt.familyName().ifPresent(value -> builder.addAttribute("family_name", value));
-        jwt.givenName().ifPresent(value -> builder.addAttribute("given_name", value));
-        jwt.fullName().ifPresent(value -> builder.addAttribute("full_name", value));
-
-        return builder.build();
-    }
-
     /**
      * Builder for {@link io.helidon.security.providers.oidc.OidcProvider}.
      */
@@ -629,13 +247,26 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 description = "Open ID Connect security provider",
                 provides = {AuthenticationProvider.class, SecurityProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, OidcProvider> {
+
+        private static final int BUILDER_PRIORITY = 50000;
+        private static final int DEFAULT_PRIORITY = 100000;
+
+        private final HelidonServiceLoader.Builder<TenantConfigProvider> tenantConfigProviders = HelidonServiceLoader
+                .builder(ServiceLoader.load(TenantConfigProvider.class))
+                .defaultPriority(BUILDER_PRIORITY);
+        private final HelidonServiceLoader.Builder<TenantIdProvider> tenantIdProviders = HelidonServiceLoader
+                .builder(ServiceLoader.load(TenantIdProvider.class))
+                .defaultPriority(BUILDER_PRIORITY);
         private boolean optional = false;
         private OidcConfig oidcConfig;
+        private List<TenantIdFinder> tenantIdFinders;
+        private List<TenantConfigFinder> tenantConfigFinders;
         // identity propagation is disabled by default. In general we should not reuse the same token
         // for outbound calls, unless it is the same audience
         private Boolean propagate;
         private boolean useJwtGroups = true;
         private OutboundConfig outboundConfig;
+        private Config config = Config.empty();
         private TokenHandler defaultOutboundHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
                 .tokenPrefix("Bearer ")
@@ -646,6 +277,14 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             if (null == oidcConfig) {
                 throw new IllegalArgumentException("OidcConfig must be configured");
             }
+            tenantIdProviders.addService(new DefaultTenantIdProvider());
+            tenantConfigFinders = tenantConfigProviders.build().asList().stream()
+                    .map(provider -> provider.createTenantConfigFinder(config))
+                    .collect(Collectors.toList());
+            tenantIdFinders = tenantIdProviders.build().asList().stream()
+                    .map(provider -> provider.createTenantIdFinder(config))
+                    .collect(Collectors.toList());
+
             if (outboundConfig == null) {
                 outboundConfig = OutboundConfig.builder()
                         .build();
@@ -694,6 +333,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * @return updated builder instance
          */
         public Builder config(Config config) {
+            this.config = config;
             config.get("optional").asBoolean().ifPresent(this::optional);
             if (null == oidcConfig) {
                 if (config.get("identity-uri").exists()) {
@@ -706,7 +346,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(config)));
             }
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
-
+            config.get("discover-tenant-config-providers").asBoolean().ifPresent(this::discoverTenantConfigProviders);
+            config.get("discover-tenant-id-providers").asBoolean().ifPresent(this::discoverTenantIdProviders);
             return this;
         }
 
@@ -774,6 +415,78 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             this.useJwtGroups = useJwtGroups;
             return this;
         }
+
+        /**
+         * Whether to allow {@link TenantConfigProvider} service loader discovery.
+         * Default value is {@code true}.
+         *
+         * @param discoverConfigProviders whether to use service loader
+         * @return updated builder instance
+         */
+        public Builder discoverTenantConfigProviders(boolean discoverConfigProviders) {
+            tenantConfigProviders.useSystemServiceLoader(discoverConfigProviders);
+            return this;
+        }
+
+        /**
+         * Whether to allow {@link TenantIdFinder} service loader discovery.
+         * Default value is {@code true}.
+         *
+         * @param discoverIdProviders whether to use service loader
+         * @return updated builder instance
+         */
+        public Builder discoverTenantIdProviders(boolean discoverIdProviders) {
+            tenantIdProviders.useSystemServiceLoader(discoverIdProviders);
+            return this;
+        }
+
+
+        /**
+         * Add specific {@link TenantConfigFinder} implementation.
+         * Priority {@link #BUILDER_PRIORITY} is used.
+         *
+         * @param configFinder config finder implementation
+         * @return updated builder instance
+         */
+        public Builder addTenantConfigFinder(TenantConfigFinder configFinder) {
+            return addTenantConfigFinder(configFinder, BUILDER_PRIORITY);
+        }
+
+        /**
+         * Add specific {@link TenantConfigFinder} implementation with specific priority.
+         *
+         * @param configFinder config finder implementation
+         * @param priority finder priority
+         * @return updated builder instance
+         */
+        public Builder addTenantConfigFinder(TenantConfigFinder configFinder, int priority) {
+            tenantConfigProviders.addService(config -> configFinder, priority);
+            return this;
+        }
+
+        /**
+         * Add specific {@link TenantIdFinder} implementation.
+         * Priority {@link #BUILDER_PRIORITY} is used.
+         *
+         * @param idFinder id finder implementation
+         * @return updated builder instance
+         */
+        public Builder addTenantConfigFinder(TenantIdFinder idFinder) {
+            return addTenantConfigFinder(idFinder, BUILDER_PRIORITY);
+        }
+
+        /**
+         * Add specific {@link TenantIdFinder} implementation with specific priority.
+         *
+         * @param idFinder id finder implementation
+         * @param priority finder priority
+         * @return updated builder instance
+         */
+        public Builder addTenantConfigFinder(TenantIdFinder idFinder, int priority) {
+            tenantIdProviders.addService(config -> idFinder, priority);
+            return this;
+        }
+
     }
 
     private static final class OidcOutboundConfig {
