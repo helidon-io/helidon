@@ -58,6 +58,11 @@
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-vault</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -62,7 +62,8 @@ You also need to add the following dependency to your application for this
 ----
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-common</artifactId>
+    <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+    <scope>runtime</scope>
 </dependency>
 ----
 
