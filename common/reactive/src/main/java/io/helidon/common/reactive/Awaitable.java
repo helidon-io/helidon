@@ -64,6 +64,7 @@ public interface Awaitable<T> {
      * @throws java.util.concurrent.CompletionException   if this future completed exceptionally,
      *                                                    was interrupted while waiting or the wait timed out
      */
+    @Deprecated
     default T await(long timeout, TimeUnit unit) {
         try {
             return this.toCompletableFuture().get(timeout, unit);

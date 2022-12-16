@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.microstream.health;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -130,9 +131,23 @@ public class MicrostreamHealthCheck implements HealthCheck {
          * @param timeUnit the time unit of the timeout argument
          * @return updated builder instance
          */
+        @Deprecated
         public Builder timeout(long duration, TimeUnit timeUnit) {
             this.timeoutDuration = duration;
             this.timeoutUnit = timeUnit;
+            return this;
+        }
+
+        /**
+         * Set custom timeout to wait for statement execution response. Default value is
+         * 10 seconds.
+         *
+         * @param duration the maximum time to wait for statement execution response
+         * @return updated builder instance
+         */
+        public Builder timeout(Duration duration) {
+            this.timeoutDuration = duration.toNanos();
+            this.timeoutUnit = TimeUnit.NANOSECONDS;
             return this;
         }
     }
