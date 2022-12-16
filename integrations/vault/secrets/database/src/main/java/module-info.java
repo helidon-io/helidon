@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Vault's Database Secrets Engine support.
  */
+@Feature(value = "Database",
+        description = "Database Secrets Engine",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Secrets", "Database"}
+)
 module io.helidon.integrations.vault.secrets.database {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires transitive io.helidon.common.reactive;

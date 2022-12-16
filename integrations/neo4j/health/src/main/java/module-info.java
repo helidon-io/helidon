@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Neo4j health checks module.
  */
+@Preview
+@Feature(value = "Neo4j Health",
+        description = "Health check for Neo4j integration",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Neo4j", "Health"}
+)
 module io.helidon.integrations.neo4j.health {
+    requires static io.helidon.common.features.api;
+
     requires microprofile.health.api;
     requires org.neo4j.driver;
 

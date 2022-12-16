@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Vault authentication method for Kubernetes.
  */
+@Feature(value = "k8s",
+        description = "Kubernetes Authentication Method",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Auth", "k8s"}
+)
 module io.helidon.integrations.vault.auths.k8s {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.integrations.vault;
     requires io.helidon.reactive.webclient;
     requires io.helidon.reactive.faulttolerance;

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
 import io.helidon.nima.webclient.NoDnsResolverProvider;
@@ -22,7 +24,15 @@ import io.helidon.nima.webclient.spi.DnsResolverProvider;
 /**
  * WebClient API and HTTP/1.1 implementation.
  */
+@Feature(value = "Web Client",
+        description = "Web Client",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = "Web Client"
+)
 module io.helidon.nima.webclient {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.nima.common.tls;
     requires transitive io.helidon.common.socket;

@@ -30,6 +30,14 @@
     <name>Helidon CDI Integrations Eclipselink</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -122,6 +130,19 @@
                   <javax.sql.DataSource.test.dataSource.user>jdbc:h2:mem:test</javax.sql.DataSource.test.dataSource.user>
                 </systemPropertyVariables>
               </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
         </plugins>
     </build>

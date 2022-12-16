@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
+
 /**
  * Open API integration with Níma WebServer.
  */
+@Feature(value = "OpenAPI",
+        description = "OpenAPI",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = "OpenAPI"
+)
 module io.helidon.nima.openapi {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires io.helidon.common;
     requires io.helidon.common.http;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * config git module.
  */
+@Feature(value = "git",
+        description = "Config source based on a git repository",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
+        path = {"Config", "git"}
+)
 module io.helidon.config.git {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.config;
     requires java.logging;
     requires org.eclipse.jgit;

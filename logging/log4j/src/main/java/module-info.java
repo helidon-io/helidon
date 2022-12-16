@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon Log4j MDC module.
  */
+@Feature(value = "Log4j",
+        description = "Log4j MDC support",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Logging", "Log4j"}
+)
+@Aot(description = "Only programmatic configuration supported, does not work with Helidon loggers")
 module io.helidon.logging.log4j {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common.context;
     requires org.apache.logging.log4j;
     requires io.helidon.logging.common;
