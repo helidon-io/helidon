@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micrometer;
-
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.junit.jupiter.api.Test;
+package io.helidon.integrations.micrometer.reactive;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
+import io.helidon.integrations.micrometer.BuiltInRegistryType;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.junit.jupiter.api.Test;
+
 public class MicrometerTestAddingMeters {
 
     @Test
     public void addCounter() {
-        MeterRegistryFactory factory = MeterRegistryFactory.builder()
-                .enrollBuiltInRegistry(MeterRegistryFactory.BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
+        ReactiveMeterRegistryFactory factory = ReactiveMeterRegistryFactory.builder()
+                .enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS, PrometheusConfig.DEFAULT)
                 .build();
 
         MicrometerSupport support = MicrometerSupport.builder()
@@ -47,7 +48,7 @@ public class MicrometerTestAddingMeters {
 
         String output =
                 PrometheusMeterRegistry.class.cast(
-                        factory.enrolledBuiltInRegistries().get(MeterRegistryFactory.BuiltInRegistryType.PROMETHEUS))
+                        factory.enrolledBuiltInRegistries().get(BuiltInRegistryType.PROMETHEUS))
                         .scrape();
 
         assertThat(output, containsString("testCounter_total{number=\"one\",} 1.0"));

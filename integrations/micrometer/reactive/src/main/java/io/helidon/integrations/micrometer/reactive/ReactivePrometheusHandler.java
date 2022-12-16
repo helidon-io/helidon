@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.reactive;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -51,7 +51,7 @@ class ReactivePrometheusHandler implements Handler {
         } else if (req.method() == Http.Method.OPTIONS) {
             StringWriter writer = new StringWriter();
             try {
-                MicrometerPrometheusRegistrySupport.metadata(writer, registry);
+                ReactiveMicrometerPrometheusRegistrySupport.metadata(writer, registry);
                 res.send(writer.toString());
             } catch (IOException e) {
                 res.status(Http.Status.INTERNAL_SERVER_ERROR_500)

@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import io.helidon.integrations.micrometer.MicrometerFeature;
+import io.helidon.integrations.micrometer.nima.MicrometerFeature;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
 import io.helidon.nima.webserver.http.HttpRules;

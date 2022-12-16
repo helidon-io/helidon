@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micrometer;
 
+package io.helidon.integrations.micrometer.nima;
+
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.integrations.micrometer.BuiltInRegistryType;
+import io.helidon.nima.webserver.http.Handler;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterRegistryConfig;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,16 +35,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import io.helidon.common.http.Http;
-import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.config.MeterRegistryConfig;
 
 /**
  * Provides access to the {@link MeterRegistry} Helidon SE uses to collect meters and report their metrics.
@@ -83,7 +82,7 @@ import io.micrometer.core.instrument.config.MeterRegistryConfig;
  *     {@link ServerResponse}.
  * </p>
  */
-public final class MeterRegistryFactory {
+public final class NimaMeterRegistryFactory {
 
     /**
      * Config key for specifying built-in registry types to enroll.
@@ -91,12 +90,11 @@ public final class MeterRegistryFactory {
     static final String BUILTIN_REGISTRIES_CONFIG_KEY = "builtin-registries";
 
     private static final String NO_MATCHING_REGISTRY_ERROR_MESSAGE = "No registered MeterRegistry matches the request";
-    private static final Logger LOGGER = Logger.getLogger(MeterRegistryFactory.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(NimaMeterRegistryFactory.class.getName());
 
-    private static MeterRegistryFactory instance = create();
+    private static NimaMeterRegistryFactory instance = create();
 
     private final CompositeMeterRegistry compositeMeterRegistry;
-    private final List<Enrollment> registryEnrollments;
     private final List<NimaEnrollment> nimaRegistryEnrollments;
 
     // for testing
@@ -107,7 +105,7 @@ public final class MeterRegistryFactory {
      *
      * @return initialized MeterRegistryFactory
      */
-    public static MeterRegistryFactory create() {
+    public static NimaMeterRegistryFactory create() {
         return create(Config.empty());
     }
 
@@ -117,7 +115,7 @@ public final class MeterRegistryFactory {
      * @param config the config to use in initializing the factory
      * @return initialized MeterRegistryFactory
      */
-    public static MeterRegistryFactory create(Config config) {
+    public static NimaMeterRegistryFactory create(Config config) {
         return builder().config(config).build();
     }
 
@@ -126,7 +124,7 @@ public final class MeterRegistryFactory {
      *
      * @return factory singleton
      */
-    public static MeterRegistryFactory getInstance() {
+    public static NimaMeterRegistryFactory getInstance() {
         return instance;
     }
 
@@ -135,9 +133,9 @@ public final class MeterRegistryFactory {
      *
      * @param builder the Builder to use in constructing the new singleton instance
      *
-     * @return MeterRegistryFactory using the Builder
+     * @return NimaMeterRegistryFactory using the Builder
      */
-    public static MeterRegistryFactory getInstance(Builder builder) {
+    public static NimaMeterRegistryFactory getInstance(Builder builder) {
         instance = builder.build();
         return instance;
     }
@@ -151,19 +149,12 @@ public final class MeterRegistryFactory {
         return new Builder();
     }
 
-    private MeterRegistryFactory(Builder builder) {
+    private NimaMeterRegistryFactory(Builder builder) {
         compositeMeterRegistry = new CompositeMeterRegistry();
-        if (builder.explicitAndBuiltInEnrollments().isEmpty()) {
+        nimaRegistryEnrollments = builder.nimaRegistryEnrollments();
+        if (nimaRegistryEnrollments.isEmpty()) {
             builder.enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS);
         }
-        registryEnrollments = builder.explicitAndBuiltInEnrollments();
-        builder.builtInRegistriesRequested.forEach((builtInRegistryType, builtInRegistrySupport) -> {
-            MeterRegistry meterRegistry = builtInRegistrySupport.registry();
-            builtInRegistryEnrollments.put(builtInRegistryType, meterRegistry);
-        });
-        registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
-
-        nimaRegistryEnrollments = builder.nimaRegistryEnrollments();
         nimaRegistryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
     }
 
@@ -174,69 +165,6 @@ public final class MeterRegistryFactory {
      */
     public MeterRegistry meterRegistry() {
         return compositeMeterRegistry;
-    }
-
-    /**
-     * Available built-in registry types.
-     */
-    public enum BuiltInRegistryType {
-
-        /**
-         * Prometheus built-in registry type.
-         */
-        PROMETHEUS;
-
-        /**
-         * Describes an unrecognized built-in registry type.
-         */
-        public static class UnrecognizedBuiltInRegistryTypeException extends Exception {
-
-            private static final long serialVersionUID = 9079876961827144352L;
-            private final String unrecognizedType;
-
-            /**
-             * Creates a new instance of the exception.
-             *
-             * @param unrecognizedType the unrecognized type
-             */
-            public UnrecognizedBuiltInRegistryTypeException(String unrecognizedType) {
-                super();
-                this.unrecognizedType = unrecognizedType;
-            }
-
-            /**
-             * Returns the unrecognized type.
-             *
-             * @return the unrecognized type
-             */
-            public String unrecognizedType() {
-                return unrecognizedType;
-            }
-
-            @Override
-            public String getMessage() {
-                return "Unrecognized built-in Micrometer registry type: " + unrecognizedType;
-            }
-        }
-
-        static BuiltInRegistryType valueByName(String name) throws UnrecognizedBuiltInRegistryTypeException {
-            try {
-                return valueOf(name.trim()
-                        .toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException e) {
-                throw new UnrecognizedBuiltInRegistryTypeException(name);
-            }
-        }
-    }
-
-    Handler matchingHandler(ServerRequest serverRequest, ServerResponse serverResponse) {
-        return registryEnrollments.stream()
-                .map(e -> e.handlerFn().apply(serverRequest))
-                .flatMap(Optional::stream)
-                .findFirst()
-                .orElse((req, res) -> res
-                        .status(Http.Status.NOT_ACCEPTABLE_406)
-                        .send(NO_MATCHING_REGISTRY_ERROR_MESSAGE));
     }
 
     io.helidon.nima.webserver.http.Handler matchingHandler(io.helidon.nima.webserver.http.ServerRequest serverRequest,
@@ -253,18 +181,17 @@ public final class MeterRegistryFactory {
     /**
      * Builder for constructing {@code MeterRegistryFactory} instances.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, MeterRegistryFactory> {
+    public static class Builder implements io.helidon.common.Builder<Builder, NimaMeterRegistryFactory> {
 
-        private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
         private final List<NimaEnrollment> explicitNimaRegistryEnrollments = new ArrayList<>();
 
-        private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> builtInRegistriesRequested = new HashMap<>();
+        private final Map<BuiltInRegistryType, NimaMicrometerPrometheusRegistrySupport> builtInRegistriesRequested = new HashMap<>();
 
         private final List<LogRecord> logRecords = new ArrayList<>();
 
         @Override
-        public MeterRegistryFactory build() {
-            return new MeterRegistryFactory(this);
+        public NimaMeterRegistryFactory build() {
+            return new NimaMeterRegistryFactory(this);
         }
 
         /**
@@ -293,7 +220,7 @@ public final class MeterRegistryFactory {
          * @return updated builder instance
          */
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType, MeterRegistryConfig meterRegistryConfig) {
-            MicrometerBuiltInRegistrySupport builtInRegistrySupport = MicrometerBuiltInRegistrySupport.create(builtInRegistryType,
+            NimaMicrometerPrometheusRegistrySupport builtInRegistrySupport = NimaMicrometerPrometheusRegistrySupport.create(builtInRegistryType,
                     meterRegistryConfig);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
@@ -306,8 +233,8 @@ public final class MeterRegistryFactory {
          * @return updated builder instance
          */
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType) {
-            MicrometerBuiltInRegistrySupport builtInRegistrySupport =
-                    MicrometerBuiltInRegistrySupport.create(builtInRegistryType);
+            NimaMicrometerPrometheusRegistrySupport builtInRegistrySupport =
+                    NimaMicrometerPrometheusRegistrySupport.create(builtInRegistryType);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
         }
@@ -320,22 +247,9 @@ public final class MeterRegistryFactory {
          * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
          * @return updated builder instance
          */
-        public Builder enrollRegistry(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFunction) {
-            explicitRegistryEnrollments.add(new Enrollment(meterRegistry, handlerFunction));
-            return this;
-        }
-
-        /**
-         * Records a {@code MetricRegistry} to be managed by {@code MicrometerSupport}, along with the function that returns an
-         * {@code Optional} of a {@code Handler} for processing a given request to the Micrometer endpoint.
-         *
-         * @param meterRegistry the registry to enroll
-         * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
-         * @return updated builder instance
-         */
         public Builder enrollRegistryNima(MeterRegistry meterRegistry,
-                                          Function<io.helidon.nima.webserver.http.ServerRequest,
-                                                  Optional<io.helidon.nima.webserver.http.Handler>> handlerFunction) {
+                                          Function<ServerRequest,
+                                                  Optional<Handler>> handlerFunction) {
             explicitNimaRegistryEnrollments.add(new NimaEnrollment(meterRegistry, handlerFunction));
             return this;
         }
@@ -345,22 +259,12 @@ public final class MeterRegistryFactory {
             return logRecords;
         }
 
-        private List<Enrollment> explicitAndBuiltInEnrollments() {
-            List<Enrollment> result = new ArrayList<>(explicitRegistryEnrollments);
-            builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
-                MeterRegistry meterRegistry = builtInRegistrySupport.registry();
-                result.add(new Enrollment(meterRegistry,
-                        builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
-            });
-            return result;
-        }
-
         List<NimaEnrollment> nimaRegistryEnrollments() {
             List<NimaEnrollment> result = new ArrayList<>(explicitNimaRegistryEnrollments);
             builtInRegistriesRequested.forEach((builtInRegistrySupportType, builtInRegistrySupport) -> {
                 MeterRegistry meterRegistry = builtInRegistrySupport.registry();
                 result.add(new NimaEnrollment(meterRegistry,
-                                          builtInRegistrySupport.requestNimaToHandlerFn(meterRegistry)));
+                                          builtInRegistrySupport.requestToHandlerFn(meterRegistry)));
             });
             return result;
         }
@@ -381,7 +285,7 @@ public final class MeterRegistryFactory {
         private void enrollBuiltInRegistries(Config registriesConfig) {
             // in case config is created from MP config, node type is OBJECT instead of LIST
             // as MP config flattens everything
-            Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport> candidateBuiltInRegistryTypes =
+            Map<BuiltInRegistryType, NimaMicrometerPrometheusRegistrySupport> candidateBuiltInRegistryTypes =
                     new HashMap<>();
             List<String> unrecognizedTypes = new ArrayList<>();
 
@@ -393,8 +297,8 @@ public final class MeterRegistryFactory {
                                 BuiltInRegistryType type =
                                         BuiltInRegistryType.valueByName(registryType);
 
-                                MicrometerBuiltInRegistrySupport builtInRegistrySupport =
-                                        MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
+                                NimaMicrometerPrometheusRegistrySupport builtInRegistrySupport =
+                                        NimaMicrometerPrometheusRegistrySupport.create(type, registryConfig.asNode());
 
                                 candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
                             } catch (BuiltInRegistryType.UnrecognizedBuiltInRegistryTypeException e) {
@@ -430,26 +334,6 @@ public final class MeterRegistryFactory {
     // for testing
     Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries() {
         return builtInRegistryEnrollments;
-    }
-
-
-    private static class Enrollment {
-
-        private final MeterRegistry meterRegistry;
-        private final Function<ServerRequest, Optional<Handler>> handlerFn;
-
-        private Enrollment(MeterRegistry meterRegistry, Function<ServerRequest, Optional<Handler>> handlerFn) {
-            this.meterRegistry = meterRegistry;
-            this.handlerFn = handlerFn;
-        }
-
-        private MeterRegistry meterRegistry() {
-            return meterRegistry;
-        }
-
-        private Function<ServerRequest, Optional<Handler>> handlerFn() {
-            return handlerFn;
-        }
     }
 
     private static class NimaEnrollment {

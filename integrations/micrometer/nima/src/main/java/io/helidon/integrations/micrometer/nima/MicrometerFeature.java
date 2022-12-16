@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.nima;
 
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
-import io.helidon.reactive.servicecommon.HelidonRestServiceSupport;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.nima.servicecommon.HelidonFeatureSupport;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -32,26 +31,26 @@ import io.micrometer.core.instrument.MeterRegistry;
  * Implements simple Micrometer support.
  * <p>
  * Developers create Micrometer {@code MeterRegistry} objects and enroll them with
- * {@link Builder}, providing with each enrollment a Helidon {@code Handler} for expressing the registry's
+ * {@link MicrometerFeature.Builder}, providing with each enrollment a Helidon {@code Handler} for expressing the registry's
  * data in an HTTP response.
  * </p>
  * <p>Alternatively, developers can enroll any of the built-in registries represented by
- * the {@link MeterRegistryFactory.BuiltInRegistryType} enum.</p>
+ * the {@link io.helidon.integrations.micrometer.MeterRegistryFactory.BuiltInRegistryType} enum.</p>
  * <p>
  * Having enrolled Micrometer meter registries with {@code MicrometerSupport.Builder} and built the
  * {@code MicrometerSupport} object, developers can invoke the {@link #registry()} method and use the returned {@code
  * MeterRegistry} to create or locate meters.
  * </p>
  */
-public class MicrometerSupport extends HelidonRestServiceSupport {
+public class MicrometerFeature extends HelidonFeatureSupport {
 
     static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
 
-    private final MeterRegistryFactory meterRegistryFactory;
+    private final NimaMeterRegistryFactory meterRegistryFactory;
 
-    private MicrometerSupport(Builder builder) {
-        super(Logger.getLogger(MicrometerSupport.class.getName()), builder, SERVICE_NAME);
+    private MicrometerFeature(Builder builder) {
+        super(System.getLogger(MicrometerFeature.class.getName()), builder, SERVICE_NAME);
 
         meterRegistryFactory = builder.meterRegistryFactorySupplier.get();
     }
@@ -70,7 +69,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
      *
      * @return default MicrometerSupport
      */
-    public static MicrometerSupport create() {
+    public static MicrometerFeature create() {
         return builder().build();
     }
 
@@ -80,7 +79,7 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
      * @param config Config settings for Micrometer set-up
      * @return newly-created MicrometerSupport
      */
-    public static MicrometerSupport create(Config config) {
+    public static MicrometerFeature create(Config config) {
         return builder().config(config).build();
     }
 
@@ -94,19 +93,18 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
-        configureEndpoint(rules, rules);
-    }
-
-    @Override
-    protected void postConfigureEndpoint(Routing.Rules defaultRules, Routing.Rules serviceEndpointRoutingRules) {
-        defaultRules
-                .any(new MetricsContextHandler(registry()))
+    protected void postSetup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
+        defaultRouting
                 .get(context(), this::getOrOptions)
                 .options(context(), this::getOrOptions);
     }
 
-    private void getOrOptions(ServerRequest serverRequest, ServerResponse serverResponse) {
+    @Override
+    public void beforeStart() {
+        Contexts.globalContext().register(registry());
+    }
+
+    private void getOrOptions(ServerRequest serverRequest, ServerResponse serverResponse) throws Exception {
         /*
           Each meter registry is paired with a function. For each, invoke the function
           looking for the first non-empty Optional<Handler> and invoke that handler. If
@@ -114,29 +112,29 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
          */
         meterRegistryFactory
                 .matchingHandler(serverRequest, serverResponse)
-                .accept(serverRequest, serverResponse);
+                .handle(serverRequest, serverResponse);
     }
 
     /**
      * Fluid builder for {@code MicrometerSupport} objects.
      */
     @Configured(prefix = "micrometer")
-    public static class Builder extends HelidonRestServiceSupport.Builder<Builder, MicrometerSupport>
-            implements io.helidon.common.Builder<Builder, MicrometerSupport> {
+    public static class Builder extends HelidonFeatureSupport.Builder<Builder, MicrometerFeature>
+            implements io.helidon.common.Builder<Builder, MicrometerFeature> {
 
-        private Supplier<MeterRegistryFactory> meterRegistryFactorySupplier = null;
+        private Supplier<NimaMeterRegistryFactory> meterRegistryFactorySupplier = null;
 
         private Builder() {
             super(DEFAULT_CONTEXT);
         }
 
         @Override
-        public MicrometerSupport build() {
+        public MicrometerFeature build() {
             if (null == meterRegistryFactorySupplier) {
-                meterRegistryFactorySupplier = () -> MeterRegistryFactory.getInstance(
-                        MeterRegistryFactory.builder().config(config()));
+                meterRegistryFactorySupplier = () -> NimaMeterRegistryFactory.getInstance(
+                        NimaMeterRegistryFactory.builder().config(config()));
             }
-            return new MicrometerSupport(this);
+            return new MicrometerFeature(this);
         }
 
         /**
@@ -145,25 +143,9 @@ public class MicrometerSupport extends HelidonRestServiceSupport {
          * @param meterRegistryFactory the MeterRegistry  to use
          * @return updated builder instance
          */
-        public Builder meterRegistryFactorySupplier(MeterRegistryFactory meterRegistryFactory) {
+        public Builder meterRegistryFactorySupplier(NimaMeterRegistryFactory meterRegistryFactory) {
             this.meterRegistryFactorySupplier = () -> meterRegistryFactory;
             return this;
-        }
-    }
-
-    // this class is created for cleaner tracing of web server handlers
-    private static final class MetricsContextHandler implements Handler {
-
-        private final MeterRegistry meterRegistry;
-
-        private MetricsContextHandler(MeterRegistry meterRegistry) {
-            this.meterRegistry = meterRegistry;
-        }
-
-        @Override
-        public void accept(ServerRequest req, ServerResponse res) {
-            req.context().register(meterRegistry);
-            req.next();
         }
     }
 }

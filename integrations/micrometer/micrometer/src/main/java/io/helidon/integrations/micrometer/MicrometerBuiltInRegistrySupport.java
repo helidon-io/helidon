@@ -15,24 +15,18 @@
  */
 package io.helidon.integrations.micrometer;
 
+import io.helidon.config.Config;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterRegistryConfig;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.ServerRequest;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.config.MeterRegistryConfig;
-import io.micrometer.prometheus.PrometheusConfig;
-
 /**
  * Framework for supporting Micrometer registry types.
  */
-abstract class MicrometerBuiltInRegistrySupport {
+public abstract class MicrometerBuiltInRegistrySupport<REQ, HAND> {
     abstract static class AbstractMeterRegistryConfig implements MeterRegistryConfig {
         private final Map<String, String> settings;
 
@@ -49,61 +43,22 @@ abstract class MicrometerBuiltInRegistrySupport {
         }
     }
 
-    static MicrometerBuiltInRegistrySupport create(MeterRegistryFactory.BuiltInRegistryType type,
-            ConfigValue<Config> node) {
-        switch (type) {
-            case PROMETHEUS:
-                return create(type, MicrometerPrometheusRegistrySupport.PrometheusConfigImpl.registryConfig(node));
-
-            default:
-                throw new IllegalArgumentException(unrecognizedMessage(type));
-        }
-    }
-
-    static MicrometerBuiltInRegistrySupport create(MeterRegistryFactory.BuiltInRegistryType type,
-            MeterRegistryConfig meterRegistryConfig) {
-        switch (type) {
-            case PROMETHEUS:
-                return new MicrometerPrometheusRegistrySupport(meterRegistryConfig);
-
-            default:
-                throw new IllegalArgumentException(unrecognizedMessage(type));
-        }
-    }
-
-    static MicrometerBuiltInRegistrySupport create(MeterRegistryFactory.BuiltInRegistryType type) {
-        MeterRegistryConfig meterRegistryConfig;
-        switch (type) {
-            case PROMETHEUS:
-                meterRegistryConfig = PrometheusConfig.DEFAULT;
-                break;
-
-            default:
-                throw new IllegalArgumentException(unrecognizedMessage(type));
-        }
-        return create(type, meterRegistryConfig);
-    }
-
     private final MeterRegistry registry;
 
-    MicrometerBuiltInRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
+    protected MicrometerBuiltInRegistrySupport(MeterRegistryConfig meterRegistryConfig) {
         registry = createRegistry(meterRegistryConfig);
     }
 
-    abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
+    protected abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
 
-    abstract Function<ServerRequest, Optional<Handler>> requestToHandlerFn(MeterRegistry registry);
-
-    abstract Function<io.helidon.nima.webserver.http.ServerRequest,
-            Optional<io.helidon.nima.webserver.http.Handler>> requestNimaToHandlerFn(
-            MeterRegistry meterRegistry);
+    protected abstract Function<REQ, Optional<HAND>> requestToHandlerFn(MeterRegistry registry);
 
 
-    MeterRegistry registry() {
+    public MeterRegistry registry() {
         return registry;
     }
 
-    private static String unrecognizedMessage(MeterRegistryFactory.BuiltInRegistryType type) {
+    protected static String unrecognizedMessage(BuiltInRegistryType type) {
         return String.format("Built-in registry type %s recognized but no support found", type.name());
     }
 }

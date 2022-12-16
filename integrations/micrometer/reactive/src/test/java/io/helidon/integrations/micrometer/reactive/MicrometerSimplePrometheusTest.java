@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micrometer;
+package io.helidon.integrations.micrometer.reactive;
 
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webserver.WebServer;
-
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 public class MicrometerSimplePrometheusTest {
 
@@ -54,7 +52,7 @@ public class MicrometerSimplePrometheusTest {
 
     @BeforeAll
     static void prepAll() {
-        MeterRegistryFactory factory = MeterRegistryFactory.builder()
+        ReactiveMeterRegistryFactory factory = ReactiveMeterRegistryFactory.builder()
                 .enrollRegistry(registry, req -> {
                     // If there is no media type, assume text/plain which means, for us, Prometheus.
                     if (req.headers().bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()

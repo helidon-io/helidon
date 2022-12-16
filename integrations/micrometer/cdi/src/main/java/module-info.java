@@ -46,7 +46,7 @@ module io.helidon.integrations.micrometer.cdi {
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;
     requires io.helidon.reactive.webserver.cors;
-    requires io.helidon.integrations.micrometer;
+    requires io.helidon.integrations.micrometer.nima;
 
     requires micrometer.core;
     requires simpleclient;
