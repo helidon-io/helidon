@@ -16,7 +16,7 @@
 /**
  * Helidon SE OpenAPI Support.
  * <p>
- * Use {@link OpenAPISupport} and its {@code Builder} to include support for
+ * Use {@link io.helidon.openapi.OpenAPISupport} and its {@code Builder} to include support for
  * OpenAPI in your application.
  * <p>
  * Because Helidon SE does not use annotation processing to identify endpoints,

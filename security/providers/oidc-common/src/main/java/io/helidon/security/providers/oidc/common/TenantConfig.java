@@ -22,6 +22,8 @@ import java.util.Optional;
 
 import javax.json.JsonObject;
 
+import io.helidon.config.Config;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
 /**
@@ -46,12 +48,18 @@ public interface TenantConfig {
      */
     String clientId();
 
+    /**
+     * Name of the tenant.
+     *
+     * @return tenant name
+     */
+    String name();
 
     /**
      * Base scopes to require from OIDC server.
      *
      * @return base scopes
-     * @see OidcConfig.Builder#baseScopes(String)
+     * @see BaseBuilder#baseScopes(String)
      */
     String baseScopes();
 
@@ -59,7 +67,7 @@ public interface TenantConfig {
      * Whether to validate JWT with JWK information (e.g. verify signatures locally).
      *
      * @return if we should validate JWT with JWK
-     * @see OidcConfig.Builder#validateJwtWithJwk(Boolean)
+     * @see BaseBuilder#validateJwtWithJwk(Boolean)
      */
     boolean validateJwtWithJwk();
 
@@ -68,7 +76,7 @@ public interface TenantConfig {
      * Empty if no introspection endpoint has been provided via configuration.
      *
      * @return introspection endpoint URI
-     * @see OidcConfig.Builder#introspectEndpointUri(java.net.URI)
+     * @see BaseBuilder#introspectEndpointUri(java.net.URI)
      */
     Optional<URI> tenantIntrospectUri();
 
@@ -77,7 +85,7 @@ public interface TenantConfig {
      * Empty if no issuer has been provided via configuration.
      *
      * @return token issuer
-     * @see OidcConfig.Builder#issuer(String)
+     * @see BaseBuilder#issuer(String)
      */
     Optional<String> tenantIssuer();
 
@@ -95,7 +103,7 @@ public interface TenantConfig {
      * Empty if no logout endpoint uri has been provided via configuration.
      *
      * @return URI of the logout endpoint
-     * @see OidcConfig.Builder#logoutEndpointUri(java.net.URI)
+     * @see BaseBuilder#logoutEndpointUri(java.net.URI)
      */
     Optional<URI> tenantLogoutEndpointUri();
 
@@ -112,7 +120,7 @@ public interface TenantConfig {
      * Expected token audience.
      *
      * @return audience
-     * @see OidcConfig.Builder#audience(String)
+     * @see BaseBuilder#audience(String)
      */
     String audience();
 
@@ -120,7 +128,7 @@ public interface TenantConfig {
      * Audience URI of custom scopes.
      *
      * @return scope audience
-     * @see OidcConfig.Builder#scopeAudience(String)
+     * @see BaseBuilder#scopeAudience(String)
      */
     String scopeAudience();
 
@@ -128,7 +136,7 @@ public interface TenantConfig {
      * Identity server URI.
      *
      * @return identity server URI
-     * @see OidcConfig.Builder#identityUri(URI)
+     * @see BaseBuilder#identityUri(URI)
      */
     URI identityUri();
 
@@ -197,14 +205,44 @@ public interface TenantConfig {
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link TenantConfig}.
      */
     final class Builder extends BaseBuilder<Builder, TenantConfig> {
+        private static final String TENANT_IDENT = "name";
+
+        private String name;
 
         private Builder() {
+        }
+
+        /**
+         * Name of the tenant.
+         *
+         * @param name tenant name
+         * @return updated builder instance
+         */
+        @ConfiguredOption(required = true)
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        @Override
+        public Builder config(Config config) {
+            super.config(config);
+            config.get(TENANT_IDENT).asString().ifPresent(this::name);
+            return this;
         }
 
         @Override
         public TenantConfig build() {
             buildConfiguration();
+            if (name == null) {
+                throw new IllegalStateException("Every tenant need to have \"" + TENANT_IDENT + "\" specified");
+            }
             return new TenantConfigImpl(this);
+        }
+
+        @Override
+        String name() {
+            return name;
         }
     }
 

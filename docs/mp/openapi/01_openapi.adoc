@@ -33,7 +33,9 @@
 :feature-name: MicroProfile OpenAPI
 :common-deps-page-prefix-inc: ../../shared/dependencies/common_shared.adoc
 :microprofile-bundle: true
-:common-openapi-doc: ../../shared/openapi/openapi-shared.adoc
+:rootdir: {docdir}/../..
+:incdir: {rootdir}/shared/openapi
+:common-openapi-doc: {incdir}/openapi-shared.adoc
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.
@@ -41,20 +43,17 @@ that describes your application's endpoints.
 include::{common-deps-page-prefix-inc}[tag=maven-dependency]
 [source,xml,subs="attributes+"]
 ----
-<dependency> <!--1-->
+include::{common-openapi-doc}/[tag=mp-depc]
+----
+
+If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
+[source,xml]
+----
+<dependency>
     <groupId>org.eclipse.microprofile.openapi</groupId>
     <artifactId>microprofile-openapi-api</artifactId>
 </dependency>
-
-<dependency> <!--2-->
-    <groupId>io.helidon.microprofile.openapi</groupId>
-    <artifactId>helidon-microprofile-openapi</artifactId>
-    <scope>runtime</scope>
-</dependency>
 ----
-<1> Defines the MicroProfile OpenAPI annotations so you can use them in your code.
-<2> Adds the Helidon MP OpenAPI runtime support.
-
 
 == OpenAPI support in Helidon MP
 
@@ -172,13 +171,15 @@ accept the element as-is, modify it, or suppress it.
 Change your application's configuration to set `mp.openapi.filter` as the full-qualified
 class name of your class.
 
+[[config]]
 === Update your application configuration
 Beyond the two config properties that denote the model reader and filter, Helidon
 MP OpenAPI supports a number of other mandated settings. These are described in the
 link:{mp-openapi-spec}#configuration[configuration section] of the MicroProfile 
 OpenAPI spec.
 
-include::{common-openapi-doc}[common-config]
+include::{common-openapi-doc}[tag=common-config]
+
 Assign these settings in `META-INF/microprofile-config.properties`.
 
 

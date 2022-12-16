@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.media.common;
+
+import java.util.function.Supplier;
 
 /**
  * Adds methods to support adding readers, writers and media services to the builder.
@@ -31,12 +33,32 @@ public interface MediaContextBuilder<T> {
     T addMediaSupport(MediaSupport mediaSupport);
 
     /**
+     * Adds new instance of {@link MediaSupport}.
+     *
+     * @param mediaSupportSupplier supplier for media support
+     * @return updated instance of the builder
+     */
+    default T addMediaSupport(Supplier<MediaSupport> mediaSupportSupplier) {
+        return addMediaSupport(mediaSupportSupplier.get());
+    }
+
+    /**
      * Registers new reader.
      *
      * @param reader reader
      * @return updated instance of the builder
      */
     T addReader(MessageBodyReader<?> reader);
+
+    /**
+     * Registers new reader.
+     *
+     * @param readerSupplier supplier for a new reader
+     * @return updated instance of the builder
+     */
+    default T addReader(Supplier<MessageBodyReader<?>> readerSupplier) {
+        return addReader(readerSupplier.get());
+    }
 
     /**
      * Registers new stream reader.
@@ -47,6 +69,16 @@ public interface MediaContextBuilder<T> {
     T addStreamReader(MessageBodyStreamReader<?> streamReader);
 
     /**
+     * Registers new stream reader.
+     *
+     * @param streamReaderSupplier supplier for a new stream reader
+     * @return updated instance of the builder
+     */
+    default T addStreamReader(Supplier<MessageBodyStreamReader<?>> streamReaderSupplier) {
+        return addStreamReader(streamReaderSupplier.get());
+    }
+
+    /**
      * Registers new writer.
      *
      * @param writer writer
@@ -55,11 +87,31 @@ public interface MediaContextBuilder<T> {
     T addWriter(MessageBodyWriter<?> writer);
 
     /**
+     * Registers new writer.
+     *
+     * @param writerSupplier writer
+     * @return updated instance of the builder
+     */
+    default T addWriter(Supplier<MessageBodyWriter<?>> writerSupplier){
+        return addWriter(writerSupplier.get());
+    }
+
+    /**
      * Registers new stream writer.
      *
      * @param streamWriter stream writer
      * @return updated instance of the builder
      */
     T addStreamWriter(MessageBodyStreamWriter<?> streamWriter);
+
+    /**
+     * Registers new stream writer.
+     *
+     * @param streamWriterSupplier stream writer
+     * @return updated instance of the builder
+     */
+    default T addStreamWriter(Supplier<MessageBodyStreamWriter<?>> streamWriterSupplier){
+        return addStreamWriter(streamWriterSupplier.get());
+    }
 
 }

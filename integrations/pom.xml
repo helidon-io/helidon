@@ -52,6 +52,7 @@
         <module>oci</module>
         <module>vault</module>
         <module>microstream</module>
+        <module>openapi-ui</module>
     </modules>
 
     <build>
