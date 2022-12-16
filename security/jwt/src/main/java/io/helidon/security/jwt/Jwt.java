@@ -1511,16 +1511,15 @@ public class Jwt {
 
         /**
          * The issuer claim identifies the principal that issued the JWT.
+         * Replaces all previously configured issuers.
          *
          * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.1">RFC 7519, section 4.1.1</a>.
          *
          * @param issuer issuer name or URL
          * @return updated builder instance
-         * @deprecated use {@link #addIssuer(String)} instead
          */
-        @Deprecated(since = "3.0.3", forRemoval = true)
         public Builder issuer(String issuer) {
-            return addIssuer(issuer);
+            return issuers(List.of(issuer));
         }
 
         /**
