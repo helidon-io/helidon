@@ -30,7 +30,6 @@ import io.helidon.reactive.webclient.WebClientTls;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -100,7 +99,7 @@ class CipherSuiteTest {
         assertThat(response, is("It works! Second!"));
     }
 
-    @RepeatedTest(10000)
+    @Test
     void testUnsupportedAlgorithm() {
         Throwable cause = assertThrows(CompletionException.class,
                                        () -> clientOne.get()
