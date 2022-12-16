@@ -447,8 +447,21 @@ public interface IoMulti {
          * @param unit    the time unit of the timeout argument
          * @return this builder
          */
+        @Deprecated
         public OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
             this.timeout = Duration.of(timeout, unit.toChronoUnit());
+            return this;
+        }
+
+        /**
+         * Set max timeout for which is allowed to block write methods,
+         * in case there is no demand from downstream.
+         *
+         * @param timeout the maximum time to block
+         * @return this builder
+         */
+        public OutputStreamMultiBuilder timeout(Duration timeout) {
+            this.timeout = timeout;
             return this;
         }
 

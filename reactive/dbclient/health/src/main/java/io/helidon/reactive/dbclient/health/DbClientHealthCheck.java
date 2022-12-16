@@ -16,6 +16,7 @@
 package io.helidon.reactive.dbclient.health;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +46,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      * This health check will execute health check as defined in provided {@link Config} node.
      *
      * @param dbClient database client used to execute health check statement
-     * @param config {@link Config} node with health check configuration
+     * @param config   {@link Config} node with health check configuration
      * @return health check that can be used with health services
      */
     public static DbClientHealthCheck create(final DbClient dbClient, final Config config) {
@@ -70,7 +71,17 @@ public abstract class DbClientHealthCheck implements HealthCheck {
     private DbClientHealthCheck(Builder builder) {
         this.dbClient = builder.database;
         this.name = builder.name();
-        this.timeout = Duration.of(builder.timeoutDuration, builder.timeoutUnit.toChronoUnit());
+        if (builder.timeout != null && builder.timeoutUnit != null) {
+            throw new HealthCheckBuilderException("Ambiguous configuration - timeout or timeoutDuration with timeoutUnit "
+                    + "must be configured.");
+        } else if (builder.timeout != null) {
+            this.timeout = builder.timeout;
+        } else if (builder.timeoutUnit != null) {
+            this.timeout = Duration.of(builder.timeoutDuration, builder.timeoutUnit.toChronoUnit());
+        } else {
+            //set default value
+            this.timeout = Duration.of(DEFAULT_TIMEOUT_SECONDS, ChronoUnit.SECONDS);
+        }
     }
 
     /**
@@ -183,7 +194,8 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         @Override
         protected Awaitable<?> execPing() {
             return dbClient()
-                    .execute(exec -> exec.namedQuery(statementName).forEach(it -> {}));
+                    .execute(exec -> exec.namedQuery(statementName).forEach(it -> {
+                    }));
         }
 
         // Getter for jUnit tests
@@ -210,7 +222,8 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         @Override
         protected Awaitable<?> execPing() {
             return dbClient()
-                    .execute(exec -> exec.query(statement).forEach(it -> {}));
+                    .execute(exec -> exec.query(statement).forEach(it -> {
+                    }));
         }
 
         // Getter for jUnit tests
@@ -261,6 +274,8 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private long timeoutDuration;
         // Health check timeout units (to wait for statement execution response).
         private TimeUnit timeoutUnit;
+        // Health check timeout (to wait for statement execution response).
+        private Duration timeout;
 
         // Those two boolean variables define 4 ways of query execution:
         //
@@ -286,8 +301,6 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private Builder(DbClient database) {
             this.database = database;
             this.name = database.dbType();
-            this.timeoutDuration = DEFAULT_TIMEOUT_SECONDS;
-            this.timeoutUnit = TimeUnit.SECONDS;
             this.isDML = false;
             this.isNamedstatement = true;
             this.statementName = null;
@@ -308,7 +321,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
                 return isDML
                         ? new DbClientHealthCheckAsNamedDml(this)
                         : new DbClientHealthCheckAsNamedQuery(this);
-            // Statement defined as custom string
+                // Statement defined as custom string
             } else {
                 return isDML
                         ? new DbClientHealthCheckAsDml(this)
@@ -346,61 +359,61 @@ public abstract class DbClientHealthCheck implements HealthCheck {
          */
         public Builder config(final Config config) {
             config.get(CONFIG_NAME)
-                    .as(String.class)
-                    .ifPresent(checkName -> this.name = checkName);
+                  .as(String.class)
+                  .ifPresent(checkName -> this.name = checkName);
             // Lambda expressions require final variables but code needs it's value to be changed.
             // Statement definition:
             //  - false: not set
             //  - true:  statement string already set
-            final boolean[] stmtDef = new boolean[] {false};
+            final boolean[] stmtDef = new boolean[]{false};
             config.get(CONFIG_STMT)
-                    .as(String.class)
-                    .ifPresent(stmt -> {
-                        stmtDef[0] = true;              // Statement definition as statement string
-                        this.isNamedstatement = false;
-                        this.statement = stmt;
-                    });
+                  .as(String.class)
+                  .ifPresent(stmt -> {
+                      stmtDef[0] = true;              // Statement definition as statement string
+                      this.isNamedstatement = false;
+                      this.statement = stmt;
+                  });
             config.get(CONFIG_STMT_NAME)
-                    .as(String.class)
-                    .ifPresent(stmtName -> {
-                        if (stmtDef[0]) {               // Collision with statement definition as statement string
-                            throw new HealthCheckBuilderException(
-                                    String.format(
-                                            "Duplicate statement definition in health check config: "
-                                            + "statement \"%s\" and statement name %s",
-                                            this.statement,
-                                            stmtName));
-                        }
-                        this.isNamedstatement = true;
-                        this.statementName = stmtName;
-                    });
+                  .as(String.class)
+                  .ifPresent(stmtName -> {
+                      if (stmtDef[0]) {               // Collision with statement definition as statement string
+                          throw new HealthCheckBuilderException(
+                                  String.format(
+                                          "Duplicate statement definition in health check config: "
+                                                  + "statement \"%s\" and statement name %s",
+                                          this.statement,
+                                          stmtName));
+                      }
+                      this.isNamedstatement = true;
+                      this.statementName = stmtName;
+                  });
             config.get(CONFIG_TYPE)
-                    .as(String.class)
-                    .ifPresent(type -> {
-                        HelathCheckStMtType stmtType = HelathCheckStMtType.nameToType(type);
-                        if (stmtType == null) {
-                            throw new HealthCheckBuilderException(
-                                    String.format("Unknown statement type: %s", type));
-                        }
-                        switch (stmtType) {
-                            case DML:
-                                this.isDML = true;
-                                break;
-                            case QUERY:
-                                this.isDML = false;
-                                break;
-                            // Code consistency check to make sure all HelathCheckStMtType values are handled.
-                            default:
-                                throw new HealthCheckBuilderException(
-                                    String.format("Unknown HelathCheckStMtType instance: %s",
-                                            stmtType.typeName()));
-                        }
-                    });
+                  .as(String.class)
+                  .ifPresent(type -> {
+                      HelathCheckStMtType stmtType = HelathCheckStMtType.nameToType(type);
+                      if (stmtType == null) {
+                          throw new HealthCheckBuilderException(
+                                  String.format("Unknown statement type: %s", type));
+                      }
+                      switch (stmtType) {
+                          case DML:
+                              this.isDML = true;
+                              break;
+                          case QUERY:
+                              this.isDML = false;
+                              break;
+                          // Code consistency check to make sure all HelathCheckStMtType values are handled.
+                          default:
+                              throw new HealthCheckBuilderException(
+                                      String.format("Unknown HelathCheckStMtType instance: %s",
+                                              stmtType.typeName()));
+                      }
+                  });
             try {
                 config.get(CONFIG_TMOUT_DURATION)
-                        .as(Long.class)
-                        .ifPresent(duration -> this.timeoutDuration = duration);
-            // Number conversion may fail
+                      .as(Long.class)
+                      .ifPresent(duration -> this.timeoutDuration = duration);
+                // Number conversion may fail
             } catch (Throwable t) {
                 throw new HealthCheckBuilderException(
                         String.format("Could not set timeout duration: %s",
@@ -408,15 +421,15 @@ public abstract class DbClientHealthCheck implements HealthCheck {
                         t);
             }
             config.get(CONFIG_TMOUT_UNIT)
-                    .as(String.class)
-                    .ifPresent(tmUnit -> {
-                        final TimeUnit timeUnit = NAME_TO_TIME_UNIT.get(tmUnit.toLowerCase());
-                        if (timeUnit == null) {
-                            throw new HealthCheckBuilderException(
-                                    String.format("Unknown timeout unit name: %s", tmUnit));
-                        }
-                        this.timeoutUnit = timeUnit;
-                    });
+                  .as(String.class)
+                  .ifPresent(tmUnit -> {
+                      final TimeUnit timeUnit = NAME_TO_TIME_UNIT.get(tmUnit.toLowerCase());
+                      if (timeUnit == null) {
+                          throw new HealthCheckBuilderException(
+                                  String.format("Unknown timeout unit name: %s", tmUnit));
+                      }
+                      this.timeoutUnit = timeUnit;
+                  });
             return this;
         }
 
@@ -431,6 +444,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             this.isDML = false;
             return this;
         }
+
         /**
          * Set health check statement type to DML.
          * Allows to override value set in {@link Config} node.
@@ -481,12 +495,25 @@ public abstract class DbClientHealthCheck implements HealthCheck {
          * Default value is {@code 10} seconds.
          *
          * @param duration the maximum time to wait for statement execution response
-         * @param timeUnit    the time unit of the timeout argument
+         * @param timeUnit the time unit of the timeout argument
          * @return updated builder instance
          */
+        @Deprecated
         public Builder timeout(final long duration, final TimeUnit timeUnit) {
             this.timeoutDuration = duration;
             this.timeoutUnit = timeUnit;
+            return this;
+        }
+
+        /**
+         * Set custom timeout to wait for statement execution response.
+         * Default value is {@code 10} seconds.
+         *
+         * @param timeout the maximum time to wait for statement execution response
+         * @return updated builder instance
+         */
+        public Builder timeout(final Duration timeout) {
+            this.timeout = timeout;
             return this;
         }
 
@@ -496,12 +523,18 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             return name;
         }
 
+        @Deprecated
         long timeoutDuration() {
             return timeoutDuration;
         }
 
+        @Deprecated
         TimeUnit timeoutUnit() {
             return timeoutUnit;
+        }
+
+        Duration timeout() {
+            return timeout;
         }
 
         boolean isDML() {

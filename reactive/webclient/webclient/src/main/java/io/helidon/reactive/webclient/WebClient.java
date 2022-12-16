@@ -270,6 +270,7 @@ public interface WebClient {
          * @param unit   time unit
          * @return updated builder instance
          */
+        @Deprecated
         public Builder connectTimeout(long amount, TimeUnit unit) {
             return connectTimeout(Duration.of(amount, unit.toChronoUnit()));
         }
@@ -292,6 +293,7 @@ public interface WebClient {
          * @param unit   time unit
          * @return updated builder instance
          */
+        @Deprecated
         public Builder readTimeout(long amount, TimeUnit unit) {
             return readTimeout(Duration.of(amount, unit.toChronoUnit()));
         }

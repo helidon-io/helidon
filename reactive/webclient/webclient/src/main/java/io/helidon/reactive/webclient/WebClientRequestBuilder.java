@@ -17,6 +17,7 @@ package io.helidon.reactive.webclient;
 
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -271,7 +272,16 @@ public interface WebClientRequestBuilder {
      * @param unit   time unit
      * @return updated builder instance
      */
+    @Deprecated
     WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit);
+
+    /**
+     * Sets new connection timeout for this request.
+     *
+     * @param connectionTimeout amount of time
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder connectTimeout(Duration connectionTimeout);
 
     /**
      * Sets new read timeout for this request.
@@ -280,7 +290,16 @@ public interface WebClientRequestBuilder {
      * @param unit   time unit
      * @return updated builder instance
      */
+    @Deprecated
     WebClientRequestBuilder readTimeout(long amount, TimeUnit unit);
+
+    /**
+     * Sets new read timeout for this request.
+     *
+     * @param readTimeout amount of time
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder readTimeout(Duration readTimeout);
 
     /**
      * Fragment of the request.
