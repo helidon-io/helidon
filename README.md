@@ -25,7 +25,7 @@ In either case your application is just a Java SE program.
 
 ## License
 
-Helidon is available under Apache License 2.0.
+Helidon is available under Apache License 2.0. See the details: [LICENSE.txt](https://github.com/helidon-io/helidon/blob/helidon-3.x/LICENSE.txt).
 
 ## Documentation
 
