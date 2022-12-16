@@ -30,19 +30,17 @@ import io.helidon.reactive.webclient.WebClientTls;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The test of SSL Netty layer.
  */
-public class CipherSuiteTest {
+class CipherSuiteTest {
 
     private static final Logger LOGGER = Logger.getLogger(CipherSuiteTest.class.getName());
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -53,7 +51,7 @@ public class CipherSuiteTest {
     private static WebClient clientTwo;
 
     @BeforeAll
-    public static void startServer() throws Exception {
+    static void startServer() throws Exception {
         webServer = WebServer.builder()
                 .config(CONFIG.get("server"))
                 .routing(r -> r.get("/", (req, res) -> res.send("It works!")))
@@ -79,7 +77,7 @@ public class CipherSuiteTest {
     }
 
     @AfterAll
-    public static void close() throws Exception {
+    static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
                     .await(TIMEOUT);
@@ -87,7 +85,7 @@ public class CipherSuiteTest {
     }
 
     @Test
-    public void testSupportedAlgorithm() {
+    void testSupportedAlgorithm() {
         String response = clientOne.get()
                 .request(String.class)
                 .await(TIMEOUT);
@@ -100,23 +98,20 @@ public class CipherSuiteTest {
         assertThat(response, is("It works! Second!"));
     }
 
-    @RepeatedTest(100)
-    public void testUnsupportedAlgorithm() {
-        CompletionException completionException = assertThrows(CompletionException.class,
-                                                               () -> clientOne.get()
-                                                                       .uri("https://localhost:" + webServer.port("second"))
-                                                                       .request()
-                                                                       .await(TIMEOUT));
-        if (completionException.getCause() instanceof IllegalStateException ise) {
-            //for troubleshooting
-            fail("Unexpected illegal state exception, probably from webclient", ise.getCause() == null ? ise : ise.getCause());
-        }
-        assertThat(completionException.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(completionException.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
+    @Test
+    void testUnsupportedAlgorithm() {
+        Throwable cause = assertThrows(CompletionException.class,
+                                       () -> clientOne.get()
+                                               .uri("https://localhost:" + webServer.port("second"))
+                                               .request()
+                                               .await(TIMEOUT))
+                .getCause();
 
-        completionException = assertThrows(CompletionException.class, () -> clientTwo.get().request().await(TIMEOUT));
-        assertThat(completionException.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(completionException.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
+        assertThat(cause, instanceOf(SSLHandshakeException.class));
+        assertThat(cause.getMessage(), is("Received fatal alert: handshake_failure"));
+
+        cause = assertThrows(CompletionException.class, () -> clientTwo.get().request().await(TIMEOUT)).getCause();
+        assertThat(cause.getCause(), instanceOf(SSLHandshakeException.class));
+        assertThat(cause.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
     }
-
 }
