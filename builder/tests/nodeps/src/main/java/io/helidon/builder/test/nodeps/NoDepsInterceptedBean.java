@@ -14,7 +14,30 @@
  * limitations under the License.
  */
 
+package io.helidon.builder.test.nodeps;
+
+import io.helidon.builder.Builder;
+
 /**
- * Test subjects for the Builder.
+ * Demonstrates interception of builders.
  */
-package io.helidon.builder.test.testsubjects;
+@Builder(requireLibraryDependencies = false,
+         interceptor = NoDepsBeanBuilderInterceptor.class,
+         interceptorCreateMethod = "create")
+public interface NoDepsInterceptedBean {
+
+    /**
+     * The name to say hello to.
+     *
+     * @return the name
+     */
+    String name();
+
+    /**
+     * The hello message will be explicitly overridden to say "hello {@link #name()}".
+     *
+     * @return the hello message
+     */
+    String helloMessage();
+
+}

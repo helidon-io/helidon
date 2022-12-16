@@ -14,7 +14,21 @@
  * limitations under the License.
  */
 
-/**
- * Test subjects for the Builder.
- */
 package io.helidon.builder.test.testsubjects;
+
+import io.helidon.builder.BuilderInterceptor;
+
+/**
+ * See {@link InterceptedBean}.
+ */
+class BeanBuilderInterceptor implements BuilderInterceptor<DefaultInterceptedBean.Builder> {
+    private int callCount;
+
+    @Override
+    public DefaultInterceptedBean.Builder intercept(DefaultInterceptedBean.Builder target) {
+        if (callCount++ > 0) {
+            throw new AssertionError();
+        }
+        return target.helloMessage("Hello " + target.name());
+    }
+}

@@ -14,7 +14,30 @@
  * limitations under the License.
  */
 
-/**
- * Test subjects for the Builder.
- */
 package io.helidon.builder.test.testsubjects;
+
+import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
+
+/**
+ * Demonstrates interception of builders.
+ */
+@Builder(interceptor = BeanBuilderInterceptor.class)
+public interface InterceptedBean {
+
+    /**
+     * The name to say hello to.
+     *
+     * @return the name
+     */
+    @ConfiguredOption(required = true)
+    String name();
+
+    /**
+     * The hello message will be explicitly overridden to say "hello {@link #name()}".
+     *
+     * @return the hello message
+     */
+    String helloMessage();
+
+}

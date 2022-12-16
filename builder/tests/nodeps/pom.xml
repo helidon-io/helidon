@@ -28,33 +28,31 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-builder-test-builder</artifactId>
-    <name>Helidon Builder Tests</name>
+    <artifactId>helidon-builder-test-nodeps</artifactId>
+    <name>Helidon Builder No Dependencies Tests</name>
+    <description>A test that excludes all Helidon dependencies to ensure that builder works in such conditions</description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-processor</artifactId>
-            <scope>provided</scope> <!-- force reactor to build processor 1st -->
+            <artifactId>helidon-builder</artifactId>
+            <version>${helidon.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.helidon.builder</groupId>
+                    <artifactId>helidon-builder</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.helidon.common</groupId>
+                    <artifactId>helidon-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope> <!-- needed to showcase the use of the Annotated() annotation -->
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <scope>provided</scope>
+            <artifactId>helidon-builder-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor to build processor 1st -->
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -64,11 +62,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

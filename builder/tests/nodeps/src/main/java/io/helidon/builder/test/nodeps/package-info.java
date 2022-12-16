@@ -17,4 +17,4 @@
 /**
  * Test subjects for the Builder.
  */
-package io.helidon.builder.test.testsubjects;
+package io.helidon.builder.test.nodeps;
