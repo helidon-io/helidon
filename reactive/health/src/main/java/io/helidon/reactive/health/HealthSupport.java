@@ -370,7 +370,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private boolean details = true;
         private boolean enabled = true;
-        private Duration timeout;;
+        private Duration timeout;
 
         private Builder() {
             super(DEFAULT_WEB_CONTEXT);
