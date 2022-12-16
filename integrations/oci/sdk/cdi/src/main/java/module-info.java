@@ -30,9 +30,11 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires transitive jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.interceptor.api;
+    requires jakarta.ws.rs;
     requires microprofile.config.api;
-    requires oci.java.sdk.shaded.full;
-    
+    requires oci.java.sdk.common;
+    requires oci.java.sdk.common.httpclient;
+
     exports io.helidon.integrations.oci.sdk.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension

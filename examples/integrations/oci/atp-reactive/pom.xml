@@ -37,16 +37,6 @@
         <mainClass>io.helidon.examples.integrations.oci.atp.reactive.OciAtpMain</mainClass>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-shaded-full</artifactId>
-                <version>${version.lib.oci}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
@@ -71,11 +61,11 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-shaded-full</artifactId>
+            <artifactId>oci-java-sdk-database</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
