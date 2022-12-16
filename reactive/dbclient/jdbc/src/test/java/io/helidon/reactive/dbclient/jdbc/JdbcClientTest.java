@@ -66,6 +66,24 @@ public class JdbcClientTest {
     }
 
     @Test
+    void txExceptionHandling() {
+        String message = "BOOM IN TX!!!";
+
+        JdbcDbClient dbClient = (JdbcDbClient) JdbcDbClientProviderBuilder.create()
+                .connectionPool(POOL)
+                .build();
+        try {
+            dbClient.inTransaction(tx -> {
+                throw new RuntimeException(message);
+            });
+        } catch (RuntimeException result) {
+            assertThat("Wrong exception propagated.", result.getMessage(), is(equalTo(message)));
+            return;
+        }
+        fail("Wrong (or no) exception propagated, expected RuntimeException!");
+    }
+
+    @Test
     void txResultHandling() {
         JdbcDbClient dbClient = (JdbcDbClient) JdbcDbClientProviderBuilder.create()
                 .connectionPool(POOL)

@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Fault tolerance module for Helidon reactive implementation.
  */
+@Feature(value = "Fault Tolerance",
+        description = "Fault Tolerance",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = "Fault Tolerance"
+)
 module io.helidon.reactive.faulttolerance {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.config;
     requires io.helidon.common.configurable;
     requires transitive io.helidon.common.reactive;
