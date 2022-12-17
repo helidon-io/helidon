@@ -48,8 +48,6 @@ import java.util.concurrent.Executor;
  *
  * @see #isClosed()
  *
- * @see #isClosed()
- *
  * @see #isCloseable()
  *
  * @see #setCloseable(boolean)
@@ -97,10 +95,6 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
 
     /**
      * Whether or not the {@link #close()} method will actually close this {@link DelegatingConnection}.
-     *
-     * <p>This field is set based on the value of the {@code strictClosedChecking} argument supplied to the {@link
-     * #ConditionallyCloseableConnection(Connection, boolean, boolean)} constructor. It may end up deliberately doing
-     * nothing.</p>
      *
      * <p>This field is set based on the value of the {@code strictClosedChecking} argument supplied to the {@link
      * #ConditionallyCloseableConnection(Connection, boolean, boolean)} constructor. It may end up deliberately doing
@@ -192,8 +186,6 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      * backwards compatibility reasons only)
      *
      * @exception NullPointerException if {@code delegate} is {@code null}
-     *
-     * @see #isCloseable()
      *
      * @see #isCloseable()
      *
@@ -326,8 +318,6 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
      * ConditionallyCloseableConnection}; {@code false} in all other cases
      *
      * @exception SQLException if {@link #isClosed()} throws a {@link SQLException}
-     *
-     * @see #isClosed()
      *
      * @see #isClosed()
      *
