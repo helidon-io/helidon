@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
@@ -157,11 +158,9 @@ final class TestJtaConnection {
 
             // Up until this point, the connection should not be enlisted. (delegate() and toString() must not cause
             // enlistment.)
-            assertThat(logicalConnection.xid(), nullValue());
             assertThat(logicalConnection.enlisted(), is(false));
 
-            // (Calling xid()or enlisted() itself must not cause enlistment.)
-            assertThat(logicalConnection.xid(), nullValue());
+            // (Calling enlisted() itself must not cause enlistment.)
             assertThat(logicalConnection.enlisted(), is(false));
 
             // Since it's not enlisted, it should be closeable (but it has not yet been closed).
@@ -172,21 +171,15 @@ final class TestJtaConnection {
             logicalConnection.getHoldability();
 
             // Almost all Connection methods, including that one, will cause enlistment to happen.
-            Xid xid = logicalConnection.xid();
+            Xid xid = (Xid) this.tsr.getResource((XAResource) this.tsr.getResource(logicalConnection));
             assertThat(xid, notNullValue());
             assertThat(logicalConnection.enlisted(), is(true));
 
             // Make sure the XAResource recorded the association.
             assertThat(ASSOCIATIONS.get(xid).branchState(), is(ACTIVE));
 
-            // The tsr should be active and we should be able to get the LocalXAResource out of it.
-            assertThat(this.tsr.getResource(logicalConnection), instanceOf(LocalXAResource.class));
-
             // That means the Connection is no longer closeable.
             assertThat(logicalConnection.isCloseable(), is(false));
-
-            // Should get the same Xid back whenever we call xid() once we're enlisted.
-            assertThat(logicalConnection.xid(), sameInstance(xid));
 
             // Ensure JDBC constructs' backlinks work correctly.
             try (Statement s = logicalConnection.createStatement()) {
@@ -230,9 +223,6 @@ final class TestJtaConnection {
             // Commit (we didn't actually do any work) AND DISASSOCIATE the transaction, which can only happen with a
             // call to TransactionManager.commit(), not just Transaction.commit().
             tm.commit();
-
-            // Transaction is over; the Xid should be null.
-            assertThat(logicalConnection.xid(), nullValue());
 
             // Transaction is over; the connection should be closeable again.
             assertThat(logicalConnection.isCloseable(), is(true));
@@ -364,8 +354,14 @@ final class TestJtaConnection {
         assertThat(logicalConnection.isCloseable(), is(false)); // we're still enlisted in a suspended transaction
 
         logicalConnection.close(); // doesn't really close, but the caller thinks it did, which is what we want
+
+        // We record that a close was pending.
         assertThat(logicalConnection.isClosePending(), is(true));
+
+        // A pending close looks to the caller like a real one.
         assertThat(logicalConnection.isClosed(), is(true));
+
+        // But it's not.
         assertThat(physicalConnection.isClosed(), is(false));
 
         tm.begin();
@@ -404,6 +400,13 @@ final class TestJtaConnection {
         t = tm.getTransaction();
         assertThat(t, sameInstance(s));
         assertThat(t.getStatus(), is(Status.STATUS_ACTIVE));
+
+        // The first logical connection still looks closed.
+        assertThat(logicalConnection.isClosed(), is(true));
+
+        // But it's not.
+        assertThat(logicalConnection.isClosePending(), is(true));
+        assertThat(physicalConnection.isClosed(), is(false));
 
         tm.commit();
 

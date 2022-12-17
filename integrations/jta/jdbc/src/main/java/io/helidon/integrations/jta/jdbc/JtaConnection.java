@@ -646,9 +646,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 // getResource() and putResource() are not documented to throw RuntimeException, only
                 // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is
                 // encountered.
-                throw new SQLTransientException(e.getMessage(),
-                                                INVALID_TRANSACTION_STATE,
-                                                e);
+                throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
             }
         }
         super.close();
@@ -707,55 +705,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // that possible SystemExceptions thrown by TransactionManager#getStatus() implementations will have to be
             // dealt with in *some* way, even though the javadoc for
             // TransactionSynchronizationRegistry#getTransactionStatus() does not account for such a thing.
-            throw new SQLTransientException(e.getMessage(),
-                                            INVALID_TRANSACTION_STATE,
-                                            e);
+            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
         }
-    }
-
-    /**
-     * Returns the {@link Xid} under which this {@link JtaConnection} is associated with a non-completed JTA
-     * transaction, or {@code null} if there is no such association.
-     *
-     * <p>This method may, and often will, return {@code null}.</p>
-     *
-     * @return the {@link Xid} under which this {@link JtaConnection} is associated with a non-completed JTA
-     * transaction; {@code null} if there is no such association
-     *
-     * @exception SQLException if invoked on a closed connection or the {@link Xid} could not be acquired
-     */
-    Xid xid() throws SQLException {
-        this.failWhenClosed();
-        if (this.activeOrMarkedRollbackTransaction()) {
-            // Do what we can to avoid the potential getResource(Object)-implied map lookup and IllegalStateException
-            // construction by checking to see if the status constitutes an "active" status (but in the sense used only
-            // by TransactionSynchronizationRegistry's putResource(Object, Object) method documentation, and nowhere
-            // else). Interestingly, that includes Status.STATUS_MARKED_ROLLBACK. "Active" here, and apparently only
-            // here, really means "known and not yet prepared". Status.STATUS_ACTIVE and
-            // Status.STATUS_MARKED_FOR_ROLLBACK are the only transaction states where it is permissible to invoke
-            // TransactionSynchronizationRegistry#getReource(Object). See
-            // https://www.eclipse.org/lists/jta-dev/msg00264.html and
-            // https://github.com/jakartaee/transactions/issues/211.
-            try {
-                return (Xid) this.tsr.getResource("xid");
-            } catch (IllegalStateException e) {
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.logp(Level.FINE, this.getClass().getName(), "xid", e.getMessage(), e);
-                }
-                return null;
-            } catch (RuntimeException e) {
-                // Why do we catch RuntimeException as well here? See
-                // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-                // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
-                // getResource() and putResource() are not documented to throw RuntimeException, only
-                // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is
-                // encountered.
-                throw new SQLTransientException(e.getMessage(),
-                                                INVALID_TRANSACTION_STATE,
-                                                e);
-            }
-        }
-        return null;
     }
 
     /**
@@ -833,9 +784,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         try {
             return this.ts.getTransaction();
         } catch (RuntimeException | SystemException e) {
-            throw new SQLTransientException(e.getMessage(),
-                                            INVALID_TRANSACTION_STATE,
-                                            e);
+            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
         }
     }
 
@@ -929,8 +878,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             case Status.STATUS_UNKNOWN:
             default:
                 // Unexpected or illegal. Throw.
-                throw new SQLTransientException("Unexpected transaction status: " + transactionStatus,
-                                                INVALID_TRANSACTION_STATE);
+                throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, INVALID_TRANSACTION_STATE);
             }
         }
         assert enlistment == null;
@@ -1020,7 +968,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
         // change at any point (as a result of asynchronous rollback, for example) through certain permitted state
         // transitions, so we have to watch for exceptions.
 
-        if (!ENLISTMENT.compareAndSet(this, null, new Enlistment(t))) { // atomic volatile write
+        XAResource xar =
+            this.xaResource == null ? new LocalXAResource(this::connectionFunction, this.exceptionConverter) : this.xaResource;
+        enlistment = new Enlistment(t, xar);
+        if (!ENLISTMENT.compareAndSet(this, null, enlistment)) { // atomic volatile write
             // Setting this.enlistment could conceivably fail if another thread already enlisted this JtaConnection.
             // That would be bad.
             //
@@ -1032,8 +983,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
                                             INVALID_TRANSACTION_STATE);
         }
 
-        XAResource xar =
-            this.xaResource == null ? new LocalXAResource(this::connectionFunction, this.exceptionConverter) : this.xaResource;
         try {
             // The XAResource is placed into the TransactionSynchronizationRegistry so that it can be delisted if
             // appropriate during invocation of the close() method (q.v). We do it before the actual
@@ -1086,7 +1035,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     // (Used only by reference by LocalXAResource#start(Xid, int) as a result of calling
     // Transaction#enlistResource(XAResource) in enlist() above.)
     private Connection connectionFunction(Xid xid) {
-        this.tsr.putResource("xid", xid);
+        this.tsr.putResource(this.tsr.getResource(this), xid);
         return this.delegate();
     }
 
@@ -1107,6 +1056,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
                 // Now the global transaction is over, so blindly set our closeable status to true. (It may already be
                 // true.)  This resets the closePending status, per spec.
+
                 this.setCloseable(true);
                 assert this.isCloseable();
                 assert !this.isClosePending();
@@ -1164,14 +1114,15 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     }
 
-    private static final record Enlistment(Transaction transaction, long threadId) {
+    private static final record Enlistment(long threadId, Transaction transaction, XAResource xaResource) {
 
-        private Enlistment(Transaction transaction) {
-            this(transaction, Thread.currentThread().getId());
+        private Enlistment(Transaction transaction, XAResource xaResource) {
+            this(Thread.currentThread().getId(), transaction, xaResource);
         }
 
         private Enlistment {
             Objects.requireNonNull(transaction, "transaction");
+            Objects.requireNonNull(xaResource, "xaResource");
         }
 
     }
