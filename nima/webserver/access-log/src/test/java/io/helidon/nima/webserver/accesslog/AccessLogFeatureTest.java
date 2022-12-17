@@ -16,14 +16,18 @@
 
 package io.helidon.nima.webserver.accesslog;
 
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.security.SecurityContext;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
@@ -59,10 +63,19 @@ class AccessLogFeatureTest {
     void testHelidonFormat() {
         AccessLogFeature accessLog = AccessLogFeature.create();
 
+        Principal securityPrincipal = mock(Principal.class);
+        when(securityPrincipal.getName()).thenReturn("admin");
+        SecurityContext<Principal> securityContext = mock(SecurityContext.class);
+        when(securityContext.userPrincipal()).thenReturn(Optional.of(securityPrincipal));
+
+        Context requestContext = Context.create();
+        requestContext.register(securityContext);
+
         RoutingRequest request = mock(RoutingRequest.class);
         PeerInfo pi = mock(PeerInfo.class);
         when(pi.host()).thenReturn(REMOTE_IP);
         when(request.remotePeer()).thenReturn(pi);
+        when(request.context()).thenReturn(requestContext);
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
@@ -88,7 +101,7 @@ class AccessLogFeatureTest {
 
         //192.168.0.104 - [18/Jun/2019:23:10:44 +0200] "GET /greet/test HTTP/1.1" 200 55 2248
 
-        String expected = REMOTE_IP + " - " + expectedTimestamp + " \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
+        String expected = REMOTE_IP + " admin " + expectedTimestamp + " \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
                 STATUS_CODE + " " + CONTENT_LENGTH + " " + TIME_TAKEN_MICROS;
 
         assertThat(logRecord, is(expected));
@@ -100,10 +113,19 @@ class AccessLogFeatureTest {
                 .commonLogFormat()
                 .build();
 
+        Principal securityPrincipal = mock(Principal.class);
+        when(securityPrincipal.getName()).thenReturn("admin");
+        SecurityContext<Principal> securityContext = mock(SecurityContext.class);
+        when(securityContext.userPrincipal()).thenReturn(Optional.of(securityPrincipal));
+
+        Context requestContext = Context.create();
+        requestContext.register(securityContext);
+
         RoutingRequest request = mock(RoutingRequest.class);
         PeerInfo pi = mock(PeerInfo.class);
         when(pi.host()).thenReturn(REMOTE_IP);
         when(request.remotePeer()).thenReturn(pi);
+        when(request.context()).thenReturn(requestContext);
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
@@ -129,7 +151,7 @@ class AccessLogFeatureTest {
 
         //192.168.0.104 - [18/Jun/2019:23:10:44 +0200] "GET /greet/test HTTP/1.1" 200 55 2248
 
-        String expected = REMOTE_IP + " - - " + expectedTimestamp + " \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
+        String expected = REMOTE_IP + " - admin " + expectedTimestamp + " \"" + METHOD + " " + PATH + " " + HTTP_VERSION + "\" " +
                 STATUS_CODE + " " + CONTENT_LENGTH;
 
         assertThat(logRecord, is(expected));
