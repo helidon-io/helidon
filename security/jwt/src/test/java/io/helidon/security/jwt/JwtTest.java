@@ -18,8 +18,10 @@ package io.helidon.security.jwt;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -29,7 +31,9 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link Jwt}.
@@ -100,5 +104,54 @@ public class JwtTest {
         errors = jwt.validate(issuer, audience);
         errors.log(LOGGER);
         errors.checkValid();
+    }
+
+    @Test
+    public void testMultiIssuers() {
+        String audience = "id_of_audience";
+        String subject = "54564645646465";
+        String username = "jarda@jarda.com";
+        String issuer = "I am issuer";
+        String secondIssuer = "I am second issuer";
+        String invalidIssuer = "I am invalid issuer";
+        Instant now = Instant.now();
+
+        Jwt jwt = Jwt.builder()
+                .jwtId(UUID.randomUUID().toString())
+                .subject(subject)
+                .preferredUsername(username)
+                .algorithm(JwkRSA.ALG_RS256)
+                .addAudience(audience)
+                .addIssuer(issuer)
+                .addIssuer(secondIssuer)
+                // time info
+                .issueTime(now)
+                .build();
+
+        //and this one should be valid
+        List<Validator<Jwt>> vals = new ArrayList<>();
+        Jwt.addIssuerValidator(vals, issuer, true);
+        Jwt.addIssuerValidator(vals, secondIssuer, true);
+
+        Errors errors = jwt.validate(vals);
+
+        errors.log(LOGGER);
+        errors.checkValid();
+
+        //another try with defaults
+        errors = jwt.validate(issuer, audience);
+        errors.log(LOGGER);
+        errors.checkValid();
+
+        Errors.ErrorMessagesException exception = assertThrows(Errors.ErrorMessagesException.class, () -> {
+            List<Validator<Jwt>> validators = new ArrayList<>();
+            Jwt.addIssuerValidator(validators, invalidIssuer, true);
+            Errors errors2 = jwt.validate(validators);
+            errors2.log(LOGGER);
+            errors2.checkValid();
+        });
+        assertThat(exception.getMessage(),
+                   startsWith("FATAL: Issuer must contain issuer \"I am invalid issuer\", "
+                                      + "yet it contains: [I am issuer, I am second issuer]"));
     }
 }
