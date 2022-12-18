@@ -955,7 +955,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, INVALID_TRANSACTION_STATE);
             }
         }
-        assert enlistment == null;
 
         // We've concluded we are neither enlisted nor in an error condition. Keep going.
 
