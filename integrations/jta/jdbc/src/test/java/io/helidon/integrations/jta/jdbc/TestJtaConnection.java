@@ -148,6 +148,8 @@ final class TestJtaConnection {
                                                                  true,
                                                                  null,
                                                                  physicalConnection,
+                                                                 null,
+                                                                 x -> tsr.putResource("xid", x),
                                                                  false)) {
 
             // Make sure everything is hooked up properly.
@@ -171,11 +173,10 @@ final class TestJtaConnection {
             logicalConnection.getHoldability();
 
             // Almost all Connection methods, including that one, will cause enlistment to happen.
-            Xid xid = (Xid) this.tsr.getResource((XAResource) this.tsr.getResource(logicalConnection));
-            assertThat(xid, notNullValue());
             assertThat(logicalConnection.enlisted(), is(true));
 
             // Make sure the XAResource recorded the association.
+            Xid xid = (Xid) this.tsr.getResource("xid");
             assertThat(ASSOCIATIONS.get(xid).branchState(), is(ACTIVE));
 
             // That means the Connection is no longer closeable.

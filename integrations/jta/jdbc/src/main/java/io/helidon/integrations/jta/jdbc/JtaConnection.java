@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,8 +59,6 @@ import static javax.transaction.xa.XAResource.TMSUCCESS;
 
 /**
  * A JDBC 4.3-compliant {@link ConditionallyCloseableConnection} that can participate in a {@link Transaction}.
- *
- * @see #connection(TransactionSupplier, TransactionSynchronizationRegistry, boolean, ExceptionConverter, Connection)
  */
 class JtaConnection extends ConditionallyCloseableConnection {
 
@@ -133,6 +132,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     private final XAResource xaResource;
 
+    private final Consumer<? super Xid> xidConsumer;
+
     private volatile Enlistment enlistment;
 
 
@@ -165,6 +166,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @exception NullPointerException if any parameter is {@code null}
      *
      * @exception SQLException if transaction enlistment fails
+     *
+     * @see #JtaConnection(TransactionSupplier, TransactionSynchronizationRegistry, boolean, ExceptionConverter,
+     * Connection, XAResource, Consumer, boolean)
      */
     JtaConnection(TransactionSupplier transactionSupplier,
                   TransactionSynchronizationRegistry transactionSynchronizationRegistry,
@@ -179,15 +183,98 @@ class JtaConnection extends ConditionallyCloseableConnection {
              exceptionConverter,
              delegate,
              null,
+             null,
              immediateEnlistment);
     }
 
+    /**
+     * Creates a new {@link JtaConnection}.
+     *
+     * @param transactionSupplier a {@link TransactionSupplier}; must not be {@code null}; often {@link
+     * jakarta.transaction.TransactionManager#getTransaction() transactionManager::getTransaction}
+     *
+     * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
+     *
+     * @param interposedSynchronizations whether any {@link Synchronization}s registered by this {@link JtaConnection}
+     * should be registered as interposed synchronizations; see {@link
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
+     * Transaction#registerSynchronization(Synchronization)}
+     *
+     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
+     *
+     * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
+     * javax.sql.XAConnection#getConnection()}; must not be {@code null}
+     *
+     * @param xaResource an {@link XAResource} to represent this {@link JtaConnection}; may be {@code null} in which
+     * case a new {@link LocalXAResource} will be used instead
+     *
+     * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
+     * there is one, will be made immediately
+     *
+     * @exception NullPointerException if any parameter is {@code null}
+     *
+     * @exception SQLException if transaction enlistment fails
+     *
+     * @see #JtaConnection(TransactionSupplier, TransactionSynchronizationRegistry, boolean, ExceptionConverter,
+     * Connection, XAResource, Consumer, boolean)
+     */
     JtaConnection(TransactionSupplier transactionSupplier,
                   TransactionSynchronizationRegistry transactionSynchronizationRegistry,
                   boolean interposedSynchronizations,
                   ExceptionConverter exceptionConverter,
                   Connection delegate,
                   XAResource xaResource,
+                  boolean immediateEnlistment)
+        throws SQLException {
+        this(transactionSupplier,
+             transactionSynchronizationRegistry,
+             interposedSynchronizations,
+             exceptionConverter,
+             delegate,
+             xaResource,
+             null,
+             immediateEnlistment);
+    }
+
+    /**
+     * Creates a new {@link JtaConnection}.
+     *
+     * @param transactionSupplier a {@link TransactionSupplier}; must not be {@code null}; often {@link
+     * jakarta.transaction.TransactionManager#getTransaction() transactionManager::getTransaction}
+     *
+     * @param transactionSynchronizationRegistry a {@link TransactionSynchronizationRegistry}; must not be {@code null}
+     *
+     * @param interposedSynchronizations whether any {@link Synchronization}s registered by this {@link JtaConnection}
+     * should be registered as interposed synchronizations; see {@link
+     * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
+     * Transaction#registerSynchronization(Synchronization)}
+     *
+     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
+     *
+     * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
+     * javax.sql.XAConnection#getConnection()}; must not be {@code null}
+     *
+     * @param xaResource an {@link XAResource} to represent this {@link JtaConnection}; may be {@code null} in which
+     * case a new {@link LocalXAResource} will be used instead
+     *
+     * @param xidConsumer a {@link Consumer} of {@link Xid}s that will be invoked when {@code xaResource} is {@code
+     * null} and a new {@link LocalXAResource} has been created and enlisted; may be {@code null}; useful mainly for
+     * testing
+     *
+     * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
+     * there is one, will be made immediately
+     *
+     * @exception NullPointerException if any parameter is {@code null}
+     *
+     * @exception SQLException if transaction enlistment fails
+     */
+    JtaConnection(TransactionSupplier transactionSupplier,
+                  TransactionSynchronizationRegistry transactionSynchronizationRegistry,
+                  boolean interposedSynchronizations,
+                  ExceptionConverter exceptionConverter,
+                  Connection delegate,
+                  XAResource xaResource,
+                  Consumer<? super Xid> xidConsumer,
                   boolean immediateEnlistment)
         throws SQLException {
         super(delegate,
@@ -198,6 +285,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.interposedSynchronizations = interposedSynchronizations;
         this.exceptionConverter = exceptionConverter; // nullable
         this.xaResource = xaResource; // nullable
+        this.xidConsumer = xidConsumer == null ? JtaConnection::sink : xidConsumer;
         if (immediateEnlistment) {
             this.enlist();
         }
@@ -620,32 +708,24 @@ class JtaConnection extends ConditionallyCloseableConnection {
         // The JTA Specification, section 4.2, has a non-normative diagram illustrating that close() is expected,
         // but not required, to call Transaction#delistResource(XAResource). This is, mind you, before the
         // prepare/commit cycle has started.
-        if (this.activeOrMarkedRollbackTransaction()) {
+        Enlistment enlistment = this.enlistment; // volatile read
+        if (enlistment != null) {
             try {
-                XAResource xar = (XAResource) this.tsr.getResource(this);
-                if (xar != null) {
-                    // TMSUCCESS because it's an ordinary close() call, not a delisting due to an exception
-                    Transaction t = this.transaction();
-                    t.delistResource(xar, TMSUCCESS);
-                    if (LOGGER.isLoggable(Level.FINE)) {
-                        LOGGER.logp(Level.FINE,
-                                    this.getClass().getName(), "close",
-                                    "Delisted {0} from Transaction {1}", new Object[] {xar, t});
-                    }
+                // TMSUCCESS because it's an ordinary close() call, not a delisting due to an exception
+                boolean delisted = enlistment.transaction().delistResource(enlistment.xaResource(), TMSUCCESS);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE,
+                                this.getClass().getName(), "close",
+                                delisted ? "Delisted {0} from Transaction {1}" : "Failed to delist {0} from Transaction {1}",
+                                new Object[] {enlistment.xaResource(), enlistment.transaction()});
                 }
             } catch (IllegalStateException e) {
                 // Transaction went from active or marked for rollback to some other state; whatever; we're no longer
-                // enlisted
+                // enlisted so we didn't delist.
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.logp(Level.FINE, this.getClass().getName(), "close", e.getMessage(), e);
                 }
-            } catch (SystemException | RuntimeException e) {
-                // Why do we catch RuntimeException as well here? See
-                // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-                // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
-                // getResource() and putResource() are not documented to throw RuntimeException, only
-                // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is
-                // encountered.
+            } catch (SystemException e) {
                 throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
             }
         }
@@ -741,12 +821,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
         try {
             enlistmentTransactionStatus = enlistment.transaction().getStatus();
         } catch (RuntimeException | SystemException e) {
-            // Why do we catch RuntimeException as well here? See
-            // https://github.com/jbosstm/narayana/blob/c5f02d07edb34964b64341974ab689ea44536603/ArjunaJTA/jta/classes/com/arjuna/ats/internal/jta/transaction/arjunacore/TransactionSynchronizationRegistryImple.java#L213-L235;
-            // getTransactionImple() is called by Narayana's implementations of getResource() and putResource().
-            // getResource() and putResource() are not documented to throw RuntimeException, only
-            // IllegalStateException. Nevertheless a RuntimeException is thrown when a SystemException is
-            // encountered.
             throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
         }
 
@@ -987,7 +1061,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // The XAResource is placed into the TransactionSynchronizationRegistry so that it can be delisted if
             // appropriate during invocation of the close() method (q.v). We do it before the actual
             // Transaction#enlistResource(XAResource) call on purpose.
-            this.tsr.putResource(this, xar);
             if (this.interposedSynchronizations) {
                 this.tsr.registerInterposedSynchronization((Sync) this::transactionCompleted);
                 if (LOGGER.isLoggable(Level.FINE)) {
@@ -1021,8 +1094,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 // The enlistResource(XAResource) operation failed because the transaction was rolled back.
                 throw new SQLNonTransientException(e.getMessage(), TRANSACTION_ROLLBACK, e);
             }
-            // The t.enlistResource(XAResource) operation failed, or the tsr.putResource(Object, Object) operation
-            // failed, or the tsr.registerInterposedSynchronization(Synchronization) operation failed, or the
+            // The t.enlistResource(XAResource) operation failed, or the
+            // tsr.registerInterposedSynchronization(Synchronization) operation failed, or the
             // t.registerSynchronization(Synchronization) operation failed. In any case, no XAResource was actually
             // enlisted.
             throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
@@ -1035,7 +1108,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     // (Used only by reference by LocalXAResource#start(Xid, int) as a result of calling
     // Transaction#enlistResource(XAResource) in enlist() above.)
     private Connection connectionFunction(Xid xid) {
-        this.tsr.putResource(this.tsr.getResource(this), xid);
+        this.xidConsumer.accept(xid);
         return this.delegate();
     }
 
@@ -1085,6 +1158,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
         } catch (RuntimeException | SystemException e) {
             throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
         }
+    }
+
+    private static void sink(Object ignored) {
+
     }
 
 
