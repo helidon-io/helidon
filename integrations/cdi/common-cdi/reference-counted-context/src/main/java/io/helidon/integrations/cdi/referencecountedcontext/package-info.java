@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@
  * Provides classes and interfaces that support contextual reference
  * counting.
  *
- * @see io.helidon.integrations.cdi.referencecountedcontext.ReferenceCountedExtension
+ * @see
+ * io.helidon.integrations.cdi.referencecountedcontext.ReferenceCountedExtension
+ *
+ * @deprecated This package is slated for removal with no replacement.
  */
+@Deprecated(forRemoval = true, since = "3.0.3")
 package io.helidon.integrations.cdi.referencecountedcontext;
