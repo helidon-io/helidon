@@ -74,18 +74,6 @@ It by itself does not help your application decide _when_ reloading the config m
 useful.
 
 == Responding to Changes in Config Sources [[polling]]
-[IMPORTANT]
-.Evolving API
-====
-This section describes the `Config.changes()` method. It is marked
-as deprecated because it returns an `io.helidon.reactive.Flow.Publisher` object.
-In a future Helidon release that requires Java 11 or later this method will be un-deprecated
-and changed -- or a similar method will be added -- so that the return type is
-`java.util.concurrent.Flow.Publisher` instead.
-
-Any code you write using the existing `Config.changes()` method might need
-to change at that time.
-====
 
 Although in-memory config trees do not change once loaded, applications can respond to change
 in the underlying config sources by:
