@@ -116,6 +116,11 @@ public interface ServerResponse {
     boolean isSent();
 
     /**
+     * Return true if the underlying response buffers and headers can be reset.
+     */
+    boolean reset();
+
+    /**
      * Alternative way to send an entity, using an output stream. This should be used for entities that are big
      * and that should not be materialized into memory.
      *

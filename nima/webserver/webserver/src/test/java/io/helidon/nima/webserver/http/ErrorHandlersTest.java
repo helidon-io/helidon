@@ -148,9 +148,10 @@ class ErrorHandlersTest {
     }
 
     private void testHandler(ErrorHandlers handlers, Exception e, String message) {
+        ConnectionContext ctx = mock(ConnectionContext.class);
         ServerRequest req = mock(ServerRequest.class);
         ServerResponse res = mock(ServerResponse.class);
-        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(res.reset()).thenReturn(true);
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;

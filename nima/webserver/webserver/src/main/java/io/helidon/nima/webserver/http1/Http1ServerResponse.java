@@ -142,6 +142,17 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
+    public boolean reset() {
+        if (isSent || outputStream != null && outputStream.totalBytesWritten() > 0) {
+            return false;
+        }
+        headers.clear();
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
     public OutputStream outputStream() {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
@@ -290,6 +301,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             write(BufferData.create(b, off, len));
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (firstByte && firstBuffer != null) {
+                write(BufferData.empty());
+            }
         }
 
         @Override
