@@ -31,6 +31,7 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
+import io.helidon.nima.webserver.http1.Http1Connection;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -53,6 +54,7 @@ class ConnectionHandler implements Runnable {
     private final SocketWriter writer;
     private final DataReader reader;
     private final ConnectionContext ctx;
+    private final ServerListener.Holder holder;
 
     private ServerConnection connection;
 
@@ -67,7 +69,7 @@ class ConnectionHandler implements Runnable {
                       int writeQueueLength,
                       long maxPayloadSize,
                       DirectHandlers simpleHandlers,
-                      Context context) {
+                      Context context, ServerListener.Holder holder) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;
@@ -75,6 +77,7 @@ class ConnectionHandler implements Runnable {
         this.channelId = channelId;
         this.writer = SocketWriter.create(sharedExecutor, socket, writeQueueLength);
         this.reader = new DataReader(socket);
+        this.holder = holder;
         this.ctx = ConnectionContext.create(mediaContext,
                                             contentEncodingContext,
                                             sharedExecutor,
@@ -135,6 +138,7 @@ class ConnectionHandler implements Runnable {
         } catch (Exception e) {
             ctx.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
+            holder.remove(this);
             writer.close();
             closeChannel();
         }
@@ -217,6 +221,12 @@ class ConnectionHandler implements Runnable {
             socket.close();
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
+        }
+    }
+
+    void stopIfIdle() {
+        if (connection instanceof Http1Connection http1Connection) {
+            http1Connection.stopIfIdle();
         }
     }
 }

@@ -23,6 +23,9 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,18 +46,15 @@ class WebServerStopIdleTest {
         router.get("ok", (req, res) -> res.send("ok"));
     }
 
-    //@Timeout(value = 400, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 400, unit = TimeUnit.MILLISECONDS)
     @Test
     void stop_whenIdle_expect_timelyStop() {
         var response = client.get("/ok").request();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity().as(String.class), is("ok"));
         long startMillis = System.currentTimeMillis();
-        System.out.println("webServer.stop() requested");
         webServer.stop();
-        System.out.println("webServer.stop() completed");
         long stopExecutionTimeInMillis = System.currentTimeMillis() - startMillis;
-        System.out.println(stopExecutionTimeInMillis);
         assertThat(stopExecutionTimeInMillis < 400, is(true));
     }
 

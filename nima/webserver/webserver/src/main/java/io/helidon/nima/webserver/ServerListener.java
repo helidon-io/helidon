@@ -26,6 +26,7 @@ import java.net.SocketException;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,7 +54,7 @@ import static java.lang.System.Logger.Level.TRACE;
 class ServerListener {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
-    private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
+    private static final long EXECUTOR_SHUTDOWN_MILLIS = 10_000L;
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
@@ -70,6 +71,7 @@ class ServerListener {
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
     private final LoomServer server;
+    private final Holder connectionHolder = new Holder();
 
     private volatile boolean running;
     private volatile int connectedPort;
@@ -137,6 +139,7 @@ class ServerListener {
         }
         running = false;
         try {
+            connectionHolder.stopIdle();
             // Attempt to wait until existing channels finish execution
             shutdownExecutor(readerExecutor);
             shutdownExecutor(sharedExecutor);
@@ -258,9 +261,11 @@ class ServerListener {
                                                     listenerConfig.writeQueueLength(),
                                                     listenerConfig.maxPayloadSize(),
                                                     simpleHandlers,
-                                                    server.context());
+                                                    server.context(),
+                                                    connectionHolder);
 
                     readerExecutor.submit(handler);
+                    connectionHolder.add(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
@@ -293,6 +298,7 @@ class ServerListener {
      */
     static void shutdownExecutor(ExecutorService executor) {
         try {
+            executor.shutdown();
             boolean terminate = executor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
             if (!terminate) {
                 List<Runnable> running = executor.shutdownNow();
@@ -302,6 +308,24 @@ class ServerListener {
             }
         } catch (InterruptedException e) {
            LOGGER.log(INFO, "InterruptedException caught while shutting down channel tasks");
+        }
+    }
+
+    static final class Holder {
+        private final ConcurrentHashMap<ConnectionHandler, Boolean> set = new ConcurrentHashMap<>();
+
+        void add(ConnectionHandler handler) {
+            set.put(handler, true);
+        }
+
+        void remove(ConnectionHandler handler) {
+            set.remove(handler);
+        }
+
+        void stopIdle() {
+            for (ConnectionHandler handler : set.keySet()) {
+                handler.stopIfIdle();
+            }
         }
     }
 }
