@@ -72,7 +72,7 @@ public class Http1Connection implements ServerConnection {
     private long currentEntitySize;
     private long currentEntitySizeRead;
     private Thread thread;
-    private volatile boolean idleInterrupt;
+    private volatile boolean currentlyReadingPrologue;
 
     /**
      * Create a new connection.
@@ -108,8 +108,8 @@ public class Http1Connection implements ServerConnection {
         this.maxPayloadSize = ctx.maxPayloadSize();
     }
 
-    void stopIfIdle() {
-        if (idleInterrupt && thread.getState() == Thread.State.WAITING) {
+    public void stopIfIdle() {
+        if (currentlyReadingPrologue && thread.getState() == Thread.State.WAITING) {
             thread.interrupt();
         }
     }
@@ -121,9 +121,9 @@ public class Http1Connection implements ServerConnection {
             // handle connection until an exception (or explicit connection close)
             while (true) {
                 // prologue (first line of request)
-                idleInterrupt = true;
+                currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
-                idleInterrupt = false;
+                currentlyReadingPrologue = false;
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
