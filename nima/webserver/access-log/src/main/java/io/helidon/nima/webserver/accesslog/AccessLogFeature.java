@@ -92,7 +92,10 @@ public final class AccessLogFeature implements HttpFeature, Weighted {
 
     @Override
     public void setup(HttpRouting.Builder routing) {
-        routing.addFilter(this::filter);
+        // only add the filter if enabled, otherwise ignore
+        if (enabled) {
+            routing.addFilter(this::filter);
+        }
     }
 
     private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
@@ -102,9 +105,7 @@ public final class AccessLogFeature implements HttpFeature, Weighted {
         try {
             chain.proceed();
         } finally {
-            if (enabled) {
-                log(req, res, now, nanoNow);
-            }
+            log(req, res, now, nanoNow);
         }
     }
 

@@ -31,6 +31,7 @@ module io.helidon.nima.webserver.accesslog {
     requires java.logging;
 
     requires io.helidon.nima.webserver;
+    requires io.helidon.common.security;
 
     exports io.helidon.nima.webserver.accesslog;
 }
