@@ -37,6 +37,8 @@ public class UdpServer {
 
     private static int port = 8888;
     private static int ackPeriod = 10;
+    private static AtomicLong dgrmsSent = new AtomicLong();
+    private static AtomicLong dgrmsReceived = new AtomicLong();
 
     public static void main(String[] args) {
         try {
@@ -52,6 +54,10 @@ public class UdpServer {
         }
 
         display();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(
+                () -> System.out.println("Datagrams Sent " + dgrmsSent
+                        + "\nDatagrams Rvcd " + dgrmsReceived)));
 
         WebServer webServer = WebServer
                 .builder()
@@ -90,10 +96,16 @@ public class UdpServer {
                 while (bb.hasRemaining()) {
                     bb.get();       // consume all bytes
                 }
+                dgrmsReceived.incrementAndGet();
                 sendAckMaybe(message.udpClient());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            t.printStackTrace();
         }
 
         /**
@@ -103,9 +115,12 @@ public class UdpServer {
          * @throws IOException if an error occurs
          */
         private void sendAckMaybe(UdpClient client) throws IOException {
-            AtomicLong n = counters.computeIfAbsent(client, c -> new AtomicLong());
-            if (n.getAndIncrement() % ackPeriod == 0) {
-                client.sendMessage(ACK);
+            if (ackPeriod > 0) {
+                AtomicLong n = counters.computeIfAbsent(client, c -> new AtomicLong());
+                if (n.incrementAndGet() % ackPeriod == 0) {
+                    client.sendMessage(ACK);
+                    dgrmsSent.incrementAndGet();
+                }
             }
         }
     }

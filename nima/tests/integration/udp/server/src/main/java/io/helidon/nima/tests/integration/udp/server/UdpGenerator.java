@@ -45,7 +45,8 @@ public class UdpGenerator implements Runnable {
     private final InetSocketAddress address;
 
     private long bytesSent = 0L;
-    private long messagesSent = 0L;
+    private long dgrmsSent = 0L;
+    private long dgrmsReceived = 0L;
 
     /**
      * CLI main method.
@@ -87,10 +88,7 @@ public class UdpGenerator implements Runnable {
             usage();
         }
         this.address = new InetSocketAddress(host, port);
-        this.executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                .allowSetThreadLocals(false)
-                .inheritInheritableThreadLocals(false)
-                .factory());
+        this.executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
         display();
     }
 
@@ -120,17 +118,18 @@ public class UdpGenerator implements Runnable {
      */
     public void run() {
         try {
-            System.out.print("Starting warmup phase ... ");
+            System.out.println("Starting warmup phase ... ");
             runPhase(warmup);
-            System.out.println("DONE");
 
-            System.out.print("Starting run phase ... ");
+            System.out.println("Starting run phase ... ");
             runPhase(run);
-            System.out.println("DONE\n");
 
             double actualDuration = (endTime - startTime) / 1_000_000_000.0;
-            System.out.printf("TPS %.2f%n", messagesSent / actualDuration);
+            System.out.printf("TPS %.2f%n", dgrmsSent / actualDuration);
             System.out.printf("Mbps %.2f%n", bytesSent / 1024.0 / 1024.0 / actualDuration * 8);
+            System.out.println("Datagrams Sent " + dgrmsSent);
+            System.out.println("Datagrams Rvcd " + dgrmsReceived);
+
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
@@ -149,13 +148,14 @@ public class UdpGenerator implements Runnable {
             clients[i] = new UdpThreadClient();
             futures[i] = executor.submit(clients[i]);
         }
-        long await = (long) (duration.toNanos() * 1.2d);
+        long await = (long) (duration.toNanos() * 1.5d);
         for (int i = 0; i < threads; i++) {
             futures[i].get(await, TimeUnit.NANOSECONDS);
         }
         for (int i = 0; i < threads; i++) {
             bytesSent += clients[i].bytesSent;
-            messagesSent += clients[i].messagesSent;
+            dgrmsSent += clients[i].dgrmsSent;
+            dgrmsReceived += clients[i].dgrmsReceived;
         }
     }
 
@@ -166,7 +166,8 @@ public class UdpGenerator implements Runnable {
         private final ByteBuffer data;
 
         long bytesSent = 0L;
-        long messagesSent = 0L;
+        long dgrmsSent = 0L;
+        long dgrmsReceived = 0L;
 
         UdpThreadClient() {
             data = ByteBuffer.allocate(packetSize);
@@ -178,8 +179,11 @@ public class UdpGenerator implements Runnable {
 
         @Override
         public void run() {
+            long threadId = Thread.currentThread().threadId();
+
             try (DatagramChannel channel = DatagramChannel.open()) {
                 channel.connect(address);
+                System.out.println("  Thread " + threadId + " starting");
                 while (System.nanoTime() < endTime) {
                     // Send data over
                     data.mark();
@@ -190,18 +194,22 @@ public class UdpGenerator implements Runnable {
                     data.reset();
 
                     // Receive ACK as a form of primitive flow control
-                    if (n++ % ackPeriod == 0) {
+                    if (ackPeriod > 0 && ++n % ackPeriod == 0) {
                         ack.clear();
                         channel.receive(ack);
+                        dgrmsReceived++;
                     }
 
                     // Update stats
                     bytesSent += sent;
-                    messagesSent++;
+                    dgrmsSent++;
                 }
                 channel.disconnect();
             } catch (IOException e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
+            } finally {
+                System.out.println("  Thread " + threadId + " finished");
             }
         }
     }
