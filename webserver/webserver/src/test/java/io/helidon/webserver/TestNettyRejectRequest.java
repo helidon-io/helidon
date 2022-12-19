@@ -74,6 +74,6 @@ public class TestNettyRejectRequest {
 
         assertThat(headers, hasKey(equalToIgnoringCase("content-length")));
         assertThat(status, is(Http.Status.BAD_REQUEST_400));
-        assertThat(entity, containsString("prohibited characters"));
+        assertThat(entity, containsString("invalid character"));
     }
 }
