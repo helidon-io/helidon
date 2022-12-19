@@ -179,7 +179,7 @@
                                     <value key="readme-native-url">javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test</value>
                                     <value key="integration-artifactId">h2</value>
                                     <value key="db">H2</value>
-                                    <list key="run-comment">
+                                    <list key="readme-run-notes">
                                         <value><![CDATA[
 This example requires a database.
 Instructions for H2 can be found here: https://www.h2database.com/html/cheatSheet.html
@@ -280,7 +280,7 @@ Instructions for H2 can be found here: https://www.h2database.com/html/cheatShee
                                     <value key="readme-native-url">url: jdbc:mysql:tcp://127.0.0.1:3306/pokemon?useSSL=false</value>
                                     <value key="integration-artifactId">helidon-integrations-db-mysql</value>
                                     <value key="db">MySQL</value>
-                                    <list key="run-comment">
+                                    <list key="readme-run-notes">
                                         <value><![CDATA[
 This example requires a MySQL database, start it using docker:
 
@@ -319,7 +319,7 @@ docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_D
                                     <value key="readme-native-url">url: jdbc:oracle:thin:@localhost:1521/XE</value>
                                     <value key="integration-artifactId">ojdbc</value>
                                     <value key="db">OracleDB</value>
-                                    <list key="run-comment">
+                                    <list key="readme-run-notes">
                                         <value><![CDATA[
 This example requires a oracleDB database, start it using docker:
 
