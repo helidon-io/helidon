@@ -189,6 +189,11 @@ public final class ErrorHandlers {
                              ServerResponse response,
                              Throwable e,
                              ErrorHandler<Throwable> it) {
+        if (!response.reset()) {
+            ctx.log(LOGGER, System.Logger.Level.WARNING, "Unable to reset response for error handler.");
+            throw new CloseConnectionException(
+                    "Cannot send response of a simple handler, status and headers already written");
+        }
         try {
             it.handle(request, response, e);
         } catch (Exception ex) {

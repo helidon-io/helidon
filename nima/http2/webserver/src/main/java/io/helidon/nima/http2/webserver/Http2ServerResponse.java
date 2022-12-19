@@ -119,6 +119,17 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
+    public boolean reset() {
+        if (isSent) {
+            return false;
+        }
+        headers.clear();
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
     public OutputStream outputStream() {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
