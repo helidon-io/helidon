@@ -27,6 +27,7 @@ import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLNonTransientException;
 import java.sql.SQLTransientException;
 import java.sql.SQLXML;
@@ -46,6 +47,7 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
+import io.helidon.integrations.jdbc.SQLSupplier;
 import io.helidon.integrations.jdbc.UncheckedSQLException;
 
 import jakarta.transaction.RollbackException;
@@ -130,7 +132,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
      */
     private final ExceptionConverter exceptionConverter;
 
-    private final XAResource xaResource;
+    private final SQLSupplier<? extends XAResource> xaResourceSupplier;
 
     private final Consumer<? super Xid> xidConsumer;
 
@@ -163,12 +165,14 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
      * there is one, will be made immediately
      *
-     * @exception NullPointerException if any parameter is {@code null}
+     * @exception NullPointerException if {@code transactionSupplier} or {@code transactionSynchronizationRegistry} is
+     * {@code null}
      *
-     * @exception SQLException if transaction enlistment fails
+     * @exception SQLException if transaction enlistment fails or the supplied {@code delegate} {@linkplain
+     * Connection#isClosed() is closed}
      *
      * @see #JtaConnection(TransactionSupplier, TransactionSynchronizationRegistry, boolean, ExceptionConverter,
-     * Connection, XAResource, Consumer, boolean)
+     * Connection, Supplier, Consumer, boolean)
      */
     JtaConnection(TransactionSupplier transactionSupplier,
                   TransactionSynchronizationRegistry transactionSynchronizationRegistry,
@@ -205,25 +209,27 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
      *
-     * @param xaResource an {@link XAResource} to represent this {@link JtaConnection}; may be {@code null} in which
-     * case a new {@link LocalXAResource} will be used instead
+     * @param xaResourceSupplier a {@link SQLSupplier} of an {@link XAResource} to represent this {@link JtaConnection};
+     * may be and often is {@code null} in which case a new {@link LocalXAResource} will be used instead
      *
      * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
      * there is one, will be made immediately
      *
-     * @exception NullPointerException if any parameter is {@code null}
+     * @exception NullPointerException if {@code transactionSupplier} or {@code transactionSynchronizationRegistry} is
+     * {@code null}
      *
-     * @exception SQLException if transaction enlistment fails
+     * @exception SQLException if transaction enlistment fails or the supplied {@code delegate} {@linkplain
+     * Connection#isClosed() is closed}
      *
      * @see #JtaConnection(TransactionSupplier, TransactionSynchronizationRegistry, boolean, ExceptionConverter,
-     * Connection, XAResource, Consumer, boolean)
+     * Connection, Supplier, Consumer, boolean)
      */
     JtaConnection(TransactionSupplier transactionSupplier,
                   TransactionSynchronizationRegistry transactionSynchronizationRegistry,
                   boolean interposedSynchronizations,
                   ExceptionConverter exceptionConverter,
                   Connection delegate,
-                  XAResource xaResource,
+                  SQLSupplier<? extends XAResource> xaResourceSupplier,
                   boolean immediateEnlistment)
         throws SQLException {
         this(transactionSupplier,
@@ -231,7 +237,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
              interposedSynchronizations,
              exceptionConverter,
              delegate,
-             xaResource,
+             xaResourceSupplier,
              null,
              immediateEnlistment);
     }
@@ -254,8 +260,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
      *
-     * @param xaResource an {@link XAResource} to represent this {@link JtaConnection}; may be {@code null} in which
-     * case a new {@link LocalXAResource} will be used instead
+     * @param xaResourceSupplier a {@link SQLSupplier} of an {@link XAResource} to represent this {@link JtaConnection};
+     * may be and often is {@code null} in which case a new {@link LocalXAResource} will be used instead
      *
      * @param xidConsumer a {@link Consumer} of {@link Xid}s that will be invoked when {@code xaResource} is {@code
      * null} and a new {@link LocalXAResource} has been created and enlisted; may be {@code null}; useful mainly for
@@ -264,16 +270,18 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
      * there is one, will be made immediately
      *
-     * @exception NullPointerException if any parameter is {@code null}
+     * @exception NullPointerException if {@code transactionSupplier} or {@code transactionSynchronizationRegistry} is
+     * {@code null}
      *
-     * @exception SQLException if transaction enlistment fails
+     * @exception SQLException if transaction enlistment fails or the supplied {@code delegate} {@linkplain
+     * Connection#isClosed() is closed}
      */
     JtaConnection(TransactionSupplier transactionSupplier,
                   TransactionSynchronizationRegistry transactionSynchronizationRegistry,
                   boolean interposedSynchronizations,
                   ExceptionConverter exceptionConverter,
                   Connection delegate,
-                  XAResource xaResource,
+                  SQLSupplier<? extends XAResource> xaResourceSupplier,
                   Consumer<? super Xid> xidConsumer,
                   boolean immediateEnlistment)
         throws SQLException {
@@ -282,9 +290,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
               true); // strict isClosed checking; always a good thing
         this.ts = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
         this.tsr = Objects.requireNonNull(transactionSynchronizationRegistry, "transactionSynchronizationRegistry");
+        if (delegate.isClosed()) {
+            throw new SQLNonTransientConnectionException("delegate is closed", "08000");
+        }
         this.interposedSynchronizations = interposedSynchronizations;
         this.exceptionConverter = exceptionConverter; // nullable
-        this.xaResource = xaResource; // nullable
+        this.xaResourceSupplier = xaResourceSupplier; // nullable
         this.xidConsumer = xidConsumer == null ? JtaConnection::sink : xidConsumer;
         if (immediateEnlistment) {
             this.enlist();
@@ -311,30 +322,35 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final Statement createStatement() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createStatement();
     }
 
     @Override // ConditionallyCloseableConnection
     public final PreparedStatement prepareStatement(String sql) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareStatement(sql);
     }
 
     @Override // ConditionallyCloseableConnection
     public final CallableStatement prepareCall(String sql) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareCall(sql);
     }
 
     @Override // ConditionallyCloseableConnection
     public final String nativeSQL(String sql) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.nativeSQL(sql);
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setAutoCommit(boolean autoCommit) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (autoCommit && this.enlisted()) {
             // "SQLException...if...setAutoCommit(true) is called while participating in a distributed transaction"
@@ -345,12 +361,14 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final boolean getAutoCommit() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getAutoCommit();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void commit() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
@@ -361,6 +379,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final void rollback() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
@@ -371,90 +390,105 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final DatabaseMetaData getMetaData() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getMetaData();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setReadOnly(boolean readOnly) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setReadOnly(readOnly);
     }
 
     @Override // ConditionallyCloseableConnection
     public final boolean isReadOnly() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.isReadOnly();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setCatalog(String catalog) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setCatalog(catalog);
     }
 
     @Override // ConditionallyCloseableConnection
     public final String getCatalog() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getCatalog();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setTransactionIsolation(int level) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setTransactionIsolation(level);
     }
 
     @Override // ConditionallyCloseableConnection
     public final int getTransactionIsolation() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getTransactionIsolation();
     }
 
     @Override // ConditionallyCloseableConnection
     public final Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createStatement(resultSetType, resultSetConcurrency);
     }
 
     @Override // ConditionallyCloseableConnection
     public final PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareStatement(sql, resultSetType, resultSetConcurrency);
     }
 
     @Override // ConditionallyCloseableConnection
     public final CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareCall(sql, resultSetType, resultSetConcurrency);
     }
 
     @Override // ConditionallyCloseableConnection
     public final Map<String, Class<?>> getTypeMap() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getTypeMap();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setTypeMap(map);
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setHoldability(int holdability) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setHoldability(holdability);
     }
 
     @Override // ConditionallyCloseableConnection
     public final int getHoldability() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getHoldability();
     }
 
     @Override // ConditionallyCloseableConnection
     public final Savepoint setSavepoint() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
@@ -468,6 +502,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final Savepoint setSavepoint(String name) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
@@ -481,6 +516,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final void rollback(Savepoint savepoint) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
@@ -494,6 +530,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final void releaseSavepoint(Savepoint savepoint) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...the given Savepoint object is not a valid savepoint in the current transaction"
@@ -511,6 +548,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
         throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
     }
@@ -518,6 +556,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final PreparedStatement prepareStatement(String sql, int rsType, int rsConcurrency, int rsHoldability)
       throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareStatement(sql, rsType, rsConcurrency, rsHoldability);
     }
@@ -525,54 +564,63 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
         throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     @Override // ConditionallyCloseableConnection
     public final PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareStatement(sql, autoGeneratedKeys);
     }
 
     @Override // ConditionallyCloseableConnection
     public final PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareStatement(sql, columnIndexes);
     }
 
     @Override // ConditionallyCloseableConnection
     public final PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.prepareStatement(sql, columnNames);
     }
 
     @Override // ConditionallyCloseableConnection
     public final Clob createClob() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createClob();
     }
 
     @Override // ConditionallyCloseableConnection
     public final Blob createBlob() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createBlob();
     }
 
     @Override // ConditionallyCloseableConnection
     public final NClob createNClob() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createNClob();
     }
 
     @Override // ConditionallyCloseableConnection
     public final SQLXML createSQLXML() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createSQLXML();
     }
 
     @Override // ConditionallyCloseableConnection
     public final boolean isValid(int timeout) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.isValid(timeout);
     }
@@ -580,6 +628,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final void setClientInfo(String name, String value) throws SQLClientInfoException {
         try {
+            this.failWhenClosed();
             this.enlist();
             super.setClientInfo(name, value);
         } catch (SQLClientInfoException e) {
@@ -592,6 +641,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final void setClientInfo(Properties properties) throws SQLClientInfoException {
         try {
+            this.failWhenClosed();
             this.enlist();
             super.setClientInfo(properties);
         } catch (SQLClientInfoException e) {
@@ -603,36 +653,42 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final String getClientInfo(String name) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getClientInfo(name);
     }
 
     @Override // ConditionallyCloseableConnection
     public final Properties getClientInfo() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getClientInfo();
     }
 
     @Override // ConditionallyCloseableConnection
     public final Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createArrayOf(typeName, elements);
     }
 
     @Override // ConditionallyCloseableConnection
     public final Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.createStruct(typeName, attributes);
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setSchema(String schema) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setSchema(schema);
     }
 
     @Override // ConditionallyCloseableConnection
     public final String getSchema() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getSchema();
     }
@@ -653,24 +709,28 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     @Override // ConditionallyCloseableConnection
     public final void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setNetworkTimeout(executor, milliseconds);
     }
 
     @Override // ConditionallyCloseableConnection
     public final int getNetworkTimeout() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.getNetworkTimeout();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void beginRequest() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.beginRequest();
     }
 
     @Override // ConditionallyCloseableConnection
     public final void endRequest() throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.endRequest();
     }
@@ -678,24 +738,28 @@ class JtaConnection extends ConditionallyCloseableConnection {
     @Override // ConditionallyCloseableConnection
     public final boolean setShardingKeyIfValid(ShardingKey shardingKey, ShardingKey superShardingKey, int timeout)
         throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
     }
 
     @Override // ConditionallyCloseableConnection
     public final boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         return super.setShardingKeyIfValid(shardingKey, timeout);
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setShardingKey(shardingKey, superShardingKey);
     }
 
     @Override // ConditionallyCloseableConnection
     public final void setShardingKey(ShardingKey shardingKey) throws SQLException {
+        this.failWhenClosed();
         this.enlist();
         super.setShardingKey(shardingKey);
     }
@@ -716,8 +780,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.logp(Level.FINE,
                                 this.getClass().getName(), "close",
-                                delisted ? "Delisted {0} from Transaction {1}" : "Failed to delist {0} from Transaction {1}",
-                                new Object[] {enlistment.xaResource(), enlistment.transaction()});
+                                "{0} {1} from {2}",
+                                new Object[] {delisted ? "Delisted" : "Failed to delist",
+                                              enlistment.xaResource(),
+                                              enlistment.transaction()});
                 }
             } catch (IllegalStateException e) {
                 // Transaction went from active or marked for rollback to some other state; whatever; we're no longer
@@ -803,14 +869,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * #activeOrMarkedRollbackTransaction() JTA transaction whose status is known and not yet prepared}; {@code false}
      * in all other cases
      *
-     * @exception SQLException if invoked on a closed connection or the enlisted status could not be acquired
+     * @exception SQLException if the enlisted status could not be acquired
      */
     boolean enlisted() throws SQLException {
-        this.failWhenClosed();
-        return this.enlisted(this.enlistment); // volatile read
-    }
-
-    private boolean enlisted(Enlistment enlistment) throws SQLException {
+        Enlistment enlistment = this.enlistment; // volatile read
         if (enlistment == null) {
             return false;
         } else if (enlistment.threadId() != Thread.currentThread().getId()) {
@@ -900,14 +962,13 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * Attempts to enlist this {@link JtaConnection} in the current JTA transaction, if there is one, and its status is
      * {@link Status#STATUS_ACTIVE}, and this {@link JtaConnection} is not already {@linkplain #enlisted() enlisted}.
      *
-     * @exception SQLException if invoked on a closed connection or a transaction-related error occurs, or if the return
-     * value of an invocation of the {@link #getAutoCommit()} method returns {@code false}
+     * @exception SQLException if a transaction-related error occurs, or if the return value of an invocation of the
+     * {@link #getAutoCommit()} method returns {@code false}
      *
      * @see #enlisted()
      */
     @SuppressWarnings("checkstyle:MethodLength")
     private void enlist() throws SQLException {
-        this.failWhenClosed();
 
         if (this.enlisted()) {
             return;
@@ -950,26 +1011,15 @@ class JtaConnection extends ConditionallyCloseableConnection {
                                             INVALID_TRANSACTION_STATE);
         }
 
-        // Guaranteed not to throw RuntimeException. t is guaranteed by spec to be non-null because the status was, at
-        // one point above, Status.STATUS_ACTIVE on the current thread (by definition).
         Transaction t = this.transaction();
         int transactionStatus = statusFrom(t);
-
         switch (transactionStatus) {
         case Status.STATUS_ACTIVE:
             // No one has started or finished the transaction completion process yet. Most common. Keep going.
             break;
         case Status.STATUS_COMMITTED:
-            // Terminal. Return without enlisting.
-            //
-            // (Recall that technically commits (not just rollbacks) can occur on other threads, so it is conceivable
-            // that the status could have changed from Status.STATUS_ACTIVE to Status.STATUS_COMMITTED in between when
-            // we checked this.transactionStatus() and now.
-            return;
         case Status.STATUS_ROLLEDBACK:
             // Terminal. Return without enlisting.
-            //
-            // Rollbacks often happen on other threads as a result of timeouts.
             return;
         case Status.STATUS_COMMITTING:
         case Status.STATUS_MARKED_ROLLBACK:
@@ -991,13 +1041,23 @@ class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, INVALID_TRANSACTION_STATE);
         }
 
+        // One last check to see if we've been actually closed or requested to close asynchronously.
+        this.failWhenClosed();
+
         // Point of no return. We ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE and
         // ensured we aren't already enlisted and our autoCommit status is true. The Transaction's status can still
         // change at any point (as a result of asynchronous rollback, for example) through certain permitted state
         // transitions, so we have to watch for exceptions.
 
-        XAResource xar =
-            this.xaResource == null ? new LocalXAResource(this::connectionFunction, this.exceptionConverter) : this.xaResource;
+        XAResource xar;
+        if (this.xaResourceSupplier == null) {
+            xar = new LocalXAResource(this::connectionFunction, this.exceptionConverter);
+        } else {
+            xar = this.xaResourceSupplier.get();
+            if (xar == null) {
+                throw new SQLTransientException("xaResourceSupplier.get() == null");
+            }
+        }
         Enlistment enlistment = new Enlistment(t, xar);
         if (!ENLISTMENT.compareAndSet(this, null, enlistment)) { // atomic volatile write
             // Setting this.enlistment could conceivably fail if another thread already enlisted this JtaConnection.
