@@ -295,7 +295,10 @@ class JtaConnection extends ConditionallyCloseableConnection {
         }
         this.interposedSynchronizations = interposedSynchronizations;
         this.exceptionConverter = exceptionConverter; // nullable
-        this.xaResourceSupplier = xaResourceSupplier; // nullable
+        this.xaResourceSupplier =
+            xaResourceSupplier == null
+            ? () -> new LocalXAResource(this::connectionFunction, this.exceptionConverter)
+            : xaResourceSupplier;
         this.xidConsumer = xidConsumer == null ? JtaConnection::sink : xidConsumer;
         if (immediateEnlistment) {
             this.enlist();
@@ -1049,15 +1052,11 @@ class JtaConnection extends ConditionallyCloseableConnection {
         // change at any point (as a result of asynchronous rollback, for example) through certain permitted state
         // transitions, so we have to watch for exceptions.
 
-        XAResource xar;
-        if (this.xaResourceSupplier == null) {
-            xar = new LocalXAResource(this::connectionFunction, this.exceptionConverter);
-        } else {
-            xar = this.xaResourceSupplier.get();
-            if (xar == null) {
-                throw new SQLTransientException("xaResourceSupplier.get() == null");
-            }
+        XAResource xar = this.xaResourceSupplier.get();
+        if (xar == null) {
+            throw new SQLTransientException("xaResourceSupplier.get() == null");
         }
+
         Enlistment enlistment = new Enlistment(t, xar);
         if (!ENLISTMENT.compareAndSet(this, null, enlistment)) { // atomic volatile write
             // Setting this.enlistment could conceivably fail if another thread already enlisted this JtaConnection.
