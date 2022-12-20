@@ -44,7 +44,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
  *     string in the config source does not exactly match one of the enum value names. In such cases
  *     the mapper will be unable to choose which enum value matches an ambiguous string. A developer faced with this
  *     problem can simply provide her own explicit config mapping for that enum, for instance as a function parameter to
- *     {@code Config.as}.
+ *     {@code Config#as}.
  * </p>
  *
  */
