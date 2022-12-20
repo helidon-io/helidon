@@ -262,7 +262,7 @@ public class ConfigMappersTest {
         type = manager.map(config.get("type-special_b"), MyType.class); // <-- That's an underscore, not a hyphen.
         assertThat("Mixed-clase and no hyphen mapping", type, is(MyType.SPECIAL_B));
 
-        ConfigEnumMappingException e = assertThrows(ConfigEnumMappingException.class,
+        ConfigMappingException e = assertThrows(ConfigMappingException.class,
                                                     () -> manager.map(config.get("type-absent"), MyType.class),
                                                     "Unmatched enum value");
         assertThat("Unmapped enum value error message", e.getMessage(), containsString("no match"));
@@ -287,7 +287,7 @@ public class ConfigMappersTest {
         type = manager.map(confusingConfig.get("type-blue"), ConfusingType.class);
         assertThat("Case-insensitive match to BLUE", type, is(ConfusingType.BLUE));
 
-        ConfigEnumMappingException e = assertThrows(ConfigEnumMappingException.class,
+        ConfigMappingException e = assertThrows(ConfigMappingException.class,
                      () -> manager.map(confusingConfig.get("type-red"), ConfusingType.class),
                      "Ambiguous enum value");
         assertThat("Ambiguous value error message", e.getMessage(), containsString("ambiguous"));
@@ -321,14 +321,14 @@ public class ConfigMappersTest {
         assertThat("'as' mapping of 'blue'", cType, allOf(notNullValue(), is(ConfusingType.BLUE)));
 
 
-        ConfigEnumMappingException e = assertThrows(ConfigEnumMappingException.class,
+        ConfigMappingException e = assertThrows(ConfigMappingException.class,
                                                     () -> config.get("type-red")
                                                             .as(ConfusingType.class)
                                                             .ifPresent((ConfusingType t) -> {}),
                                                     "Ambiguous value failure using 'as'");
         assertThat("Ambiguous value error message using 'as'", e.getMessage(), containsString("ambiguous"));
 
-        e = assertThrows(ConfigEnumMappingException.class,
+        e = assertThrows(ConfigMappingException.class,
                          () -> config.get("type-absent")
                                  .as(ConfusingType.class)
                                  .ifPresent((ConfusingType t) -> {}),

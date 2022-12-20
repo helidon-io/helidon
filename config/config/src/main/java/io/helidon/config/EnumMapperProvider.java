@@ -16,6 +16,7 @@
 package io.helidon.config;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ class EnumMapperProvider implements ConfigMapperProvider {
                 throw MissingValueException.create(config.key());
             }
             if (!config.isLeaf()) {
-                throw new ConfigEnumMappingException(config.key(), "config node must be a leaf but is not", enumType, "unknown");
+                throw new ConfigMappingException(config.key(), enumType, "config node must be a leaf but is not");
             }
             String value = config.asString().get();
             String convertedValue = value.replace('-', '_');
@@ -101,7 +102,12 @@ class EnumMapperProvider implements ConfigMapperProvider {
                 problem = "ambiguous matches with " + caseInsensitiveMatches;
             }
 
-            throw new ConfigEnumMappingException(config.key(), problem, enumType, value);
+            throw new ConfigMappingException(config.key(),
+                                             enumType,
+                                             String.format("cannot map value '%s' to enum values %s: %s",
+                                                           value,
+                                                           Arrays.asList(enumType.getEnumConstants()),
+                                                           problem));
         };
     }
 }
