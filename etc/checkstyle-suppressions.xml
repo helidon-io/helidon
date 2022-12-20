@@ -79,5 +79,18 @@
     <suppress checks="HideUtilityClassConstructor"
               files="examples/openapi-tools/"/>
 
+    <suppress checks="UnusedImports"
+              files="examples/openapi-tools/"/>
+    <suppress checks="JavadocPackage"
+              files="examples/openapi-tools/"/>
+    <suppress checks="AvoidStarImport"
+              files="examples/openapi-tools/"/>
+    <suppress checks="WhitespaceAround"
+              files="examples/openapi-tools/"/>
+    <suppress checks="LineLength"
+              files="examples/openapi-tools/"/>
+    <suppress checks="MethodParamPad"
+              files="examples/openapi-tools/"/>
+
 </suppressions>
 
