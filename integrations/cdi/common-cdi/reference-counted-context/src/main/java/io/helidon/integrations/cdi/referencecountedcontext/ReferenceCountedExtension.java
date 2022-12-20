@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,10 @@ import jakarta.enterprise.inject.spi.Producer;
  * @see ReferenceCountedContext
  *
  * @see ReferenceCounted
+ *
+ * @deprecated This class is slated for removal.
  */
+@Deprecated(forRemoval = true, since = "3.0.3")
 public class ReferenceCountedExtension implements Extension {
 
 

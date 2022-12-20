@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 /**
  * Provides classes and interfaces that wrap existing CDI constructs.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.delegates {
-    requires jakarta.cdi;
+
+    requires transitive jakarta.cdi;
 
     exports io.helidon.integrations.cdi.delegates;
 }

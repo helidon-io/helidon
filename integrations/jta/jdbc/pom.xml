@@ -31,7 +31,17 @@
     <name>Helidon Integrations JTA/JDBC</name>
     <description>JTA- and JDBC-related integration classes</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
+
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>io.helidon.integrations.jdbc</groupId>
+            <artifactId>helidon-integrations-jdbc</artifactId>
+        </dependency>
 
         <!-- Provided-scoped dependencies. -->
         <dependency>
@@ -40,12 +50,64 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Compile-scoped dependencies. -->
+        <!-- Test-scoped dependencies. -->
         <dependency>
-            <groupId>io.helidon.integrations.jdbc</groupId>
-            <artifactId>helidon-integrations-jdbc</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.narayana.jta</groupId>
+            <artifactId>narayana-jta-jakarta</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
