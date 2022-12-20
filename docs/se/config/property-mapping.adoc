@@ -28,6 +28,7 @@ include::{rootdir}/includes/se.adoc[]
 
 - <<Overview, Overview>>
 - <<Converting Configuration to Simple Types, Converting Configuration to Simple Types>>
+- <<Converting Configuration to `enum` Values, Converting Configuration to `enum` Values>>
 - <<Converting Configuration to Complex Types, Converting Configuration to Complex Types>>
 - <<Advanced Conversions using Explicit Mapping Logic, Advanced Conversions using Explicit Mapping Logic>>
 - <<Conversions using JavaBean Deserialization, Conversions using JavaBean Deserialization>>
@@ -36,7 +37,7 @@ include::{rootdir}/includes/se.adoc[]
 
 Although config values are originally text, you can use the config system's
 built-in conversions or add your own to translate text
-into Java primitive types and simple objects (such as `Double`) and to
+into Java primitive types and simple objects (such as `Double`), into `enum` values, and to
 express parts of the config tree as complex types (`List`, `Map`, and
 custom types specific to your application). This section introduces how to
 use the built-in mappings and your own custom ones to convert to simple and
@@ -118,6 +119,48 @@ Your application can use `Config.as` to interpret the value as a `BigDecimal`:
 [source,java]
 BigDecimal initialId = config.get("bl.initial-id").as(BigDecimal.class);
 
+== Converting Configuration to `enum` Values
+Configuration can automatically map `Config` nodes to most `enum` types.
+
+Your application code simply passes the enum class type to `config.as(Class<? extends T> type)`.
+The built-in `enum` converter attempts to match the string in the config node to the `enum` value names declared in the Java code.
+
+As a convenience to users and developers, the converter applies the following rules as it attempts to match string values to `enum` names:
+
+1. The matcher treates hyphens (`-`) in config strings as underscores (`_`).
+2. The matcher selects a _case-sensitive_ match with an `enum` value name if there is one.
+3. In the absence of a case-sensitive match, the matcher selects a _case-insensitive_ match if there is _exactly one_ such match.
+4. If the matcher finds no match or multiple case-insensitive matches, it throws a `ConfigEnumMappingException` with a message explaining the specific problem.
+
+The following example illustrates how to use the built-in `enum` converter.
+[source,java]
+----
+class Example {
+
+    enum Color {RED, YELLOW, BLUE_GREEN};
+
+    void convert() {
+        Config config = Config.just(ConfigSources.create(Map.of("house.tint", "blue-green",
+                                                                "car.color", "Red",
+                                                                "warning", "YELLOW")));
+
+        Color house = config.get("house.tint").as(Color.class).get(); // <1>
+        Color car = config.get("car.color").as(Color.class).get();    // <2>
+        Color warning = config.get("warning").as(Color.class).get();  // <3>
+    }
+}
+----
+<1> The converter matches the lower-case string with the hyphen `blue-green` to the `BLUE_GREEN` enum value.
+<2> The converter matches the mixed-case string 'Red' to the `RED` enum value.
+<3> The converter finds the exact match to `YELLOW`.
+
+These rules impose a hardship only in the following unusual situation:
+
+* The `enum` has values which differ _only_ in their case (such as `Red` and `RED`), _and_
+* The string in the config source is not an exact match with an `enum` value name (such as `red`).
+
+In such cases, the converter--given the rules listed above--cannot unambiguously choose which `enum` value matches the string.
+If your application must deal with such an `enum`, simply pass your own mapping function (instead of the `enum` type) to the `Config.as(Class)` method. A xref:customConfigAs[later section] describes this technique which works for all types, not only `enum` types.
 
 == Converting Configuration to Complex Types
 
@@ -153,6 +196,7 @@ Here are two approaches that will always work without requiring changes
 to the target class. For both approaches, you write your own conversion function.
 The difference is in how your application triggers the use of that mapper.
 
+[[customConfigAs]]
 ==== Use Custom Mapper Explicitly: `Config.as` method
 Any time your application has a `Config` instance to map to the target class
 it invokes `Config.as` passing an instance of the corresponding conversion function:
