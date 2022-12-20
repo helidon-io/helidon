@@ -42,6 +42,7 @@ module io.helidon.microprofile.server {
     requires java.management;
     requires microprofile.config.api;
     requires static io.helidon.config.metadata;
+    requires org.crac;
 
     exports io.helidon.microprofile.server;
 

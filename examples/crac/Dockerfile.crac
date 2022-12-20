@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2022 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+FROM debian:stretch-slim as ubuntu-crac
+
+WORKDIR /usr/share
+
+ARG CHECKPOINT_DIR
+
+ENV CRAC_ARTEFACT=openjdk-17-crac+3_linux-x64
+ENV JAVA_HOME=/usr/share/$CRAC_ARTEFACT
+ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
+
+# Install CRaC
+RUN apt-get -qq update && apt-get install -y wget
+RUN wget https://github.com/CRaC/openjdk-builds/releases/download/17-crac%2B3/$CRAC_ARTEFACT.tar.gz \
+&& tar zxf $CRAC_ARTEFACT.tar.gz \
+&& ln -s $JAVA_HOME/bin/java /bin/
+
+FROM ubuntu-crac
+WORKDIR /helidon
+
+ADD target/*.jar .
+ADD target/libs libs
+ADD runtimeCRaC.sh .
+RUN chmod +x ./runtimeCRaC.sh
+
+ENTRYPOINT ["./runtimeCRaC.sh"]
+
+EXPOSE 7001
+

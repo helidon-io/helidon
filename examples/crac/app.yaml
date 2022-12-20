@@ -1,0 +1,64 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: crac-helloworld
+  labels:
+    app: crac-helloworld
+spec:
+  type: NodePort
+  selector:
+    app: crac-helloworld
+  ports:
+    - port: 7001
+      targetPort: 7001
+      name: http
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: crac-checkpoint
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /data/crac-checkpoint/
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crac-helloworld
+  labels:
+    app: crac-helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crac-helloworld
+  template:
+    metadata:
+      labels:
+        app: crac-helloworld
+    spec:
+      containers:
+        - name: crac-helloworld
+          image: crac-helloworld
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /crac-checkpoint
+              name: crac-checkpoint
+          ports:
+            - containerPort: 7001
+          securityContext:
+            # TODO: be nicer
+            privileged: true
+          readinessProbe:
+            tcpSocket:
+              port: 7001
+            initialDelaySeconds: 1
+            periodSeconds: 1
+      volumes:
+        - name: crac-checkpoint
+          hostPath:
+            path: /crac-checkpoint
