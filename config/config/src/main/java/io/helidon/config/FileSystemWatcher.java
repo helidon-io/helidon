@@ -415,8 +415,9 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
          * @param delay delay between schedules
          * @param timeUnit time unit of the delays
          * @return updated builder instance
+         * @deprecated use {@link #initialDelay(Duration)} and {@link #delay(Duration)} instead
          */
-        @Deprecated
+        @Deprecated(since = "4.0.0")
         public Builder schedule(long initialDelay, long delay, TimeUnit timeUnit) {
             this.initialDelay = initialDelay;
             this.delay = delay;

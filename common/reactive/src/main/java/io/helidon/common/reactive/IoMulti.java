@@ -446,8 +446,9 @@ public interface IoMulti {
          * @param timeout the maximum time to block
          * @param unit    the time unit of the timeout argument
          * @return this builder
+         * @deprecated use {@link #timeout(Duration)} instead
          */
-        @Deprecated
+        @Deprecated(since = "4.0.0")
         public OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
             this.timeout = Duration.of(timeout, unit.toChronoUnit());
             return this;

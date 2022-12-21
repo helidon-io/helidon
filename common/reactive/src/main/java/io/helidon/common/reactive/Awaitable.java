@@ -63,8 +63,9 @@ public interface Awaitable<T> {
      * @throws java.util.concurrent.CancellationException if this future was cancelled
      * @throws java.util.concurrent.CompletionException   if this future completed exceptionally,
      *                                                    was interrupted while waiting or the wait timed out
+     * @deprecated use {@link #await(Duration)} instead
      */
-    @Deprecated
+    @Deprecated(since = "4.0.0")
     default T await(long timeout, TimeUnit unit) {
         try {
             return this.toCompletableFuture().get(timeout, unit);

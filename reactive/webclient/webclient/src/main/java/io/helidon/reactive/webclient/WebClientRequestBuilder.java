@@ -271,8 +271,9 @@ public interface WebClientRequestBuilder {
      * @param amount amount of time
      * @param unit   time unit
      * @return updated builder instance
+     * @deprecated use {@link #connectTimeout(Duration)} instead
      */
-    @Deprecated
+    @Deprecated(since = "4.0.0")
     WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit);
 
     /**
@@ -289,8 +290,9 @@ public interface WebClientRequestBuilder {
      * @param amount amount of time
      * @param unit   time unit
      * @return updated builder instance
+     * @deprecated use {@link #readTimeout(Duration)} instead
      */
-    @Deprecated
+    @Deprecated(since = "4.0.0")
     WebClientRequestBuilder readTimeout(long amount, TimeUnit unit);
 
     /**

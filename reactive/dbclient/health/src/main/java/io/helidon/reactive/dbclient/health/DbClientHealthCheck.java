@@ -483,8 +483,9 @@ public abstract class DbClientHealthCheck implements HealthCheck {
          * @param duration the maximum time to wait for statement execution response
          * @param timeUnit    the time unit of the timeout argument
          * @return updated builder instance
+         * @deprecated use {@link #timeout(Duration)} instead
          */
-        @Deprecated
+        @Deprecated(since = "4.0.0")
         public Builder timeout(final long duration, final TimeUnit timeUnit) {
             this.timeoutDuration = duration;
             this.timeoutUnit = timeUnit;
@@ -510,12 +511,10 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             return name;
         }
 
-        @Deprecated
         long timeoutDuration() {
             return timeoutDuration;
         }
 
-        @Deprecated
         TimeUnit timeoutUnit() {
             return timeoutUnit;
         }

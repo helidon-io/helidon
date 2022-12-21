@@ -130,8 +130,9 @@ public class MicrostreamHealthCheck implements HealthCheck {
          * @param duration the maximum time to wait for statement execution response
          * @param timeUnit the time unit of the timeout argument
          * @return updated builder instance
+         * @deprecated use {@link #timeout(Duration)} instead
          */
-        @Deprecated
+        @Deprecated(since = "4.0.0")
         public Builder timeout(long duration, TimeUnit timeUnit) {
             this.timeoutDuration = duration;
             this.timeoutUnit = timeUnit;

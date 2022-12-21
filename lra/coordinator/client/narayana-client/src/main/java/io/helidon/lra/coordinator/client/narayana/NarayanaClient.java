@@ -68,11 +68,11 @@ public class NarayanaClient implements CoordinatorClient {
         this.coordinatorUriSupplier = coordinatorUriSupplier;
         this.coordinatorTimeout = timeout;
         this.retry = Retry.builder()
-                          .overallTimeout(timeout)
-                          .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                                              .calls(RETRY_ATTEMPTS)
-                                                              .build())
-                          .build();
+                .overallTimeout(timeout)
+                .retryPolicy(Retry.JitterRetryPolicy.builder()
+                        .calls(RETRY_ATTEMPTS)
+                        .build())
+                .build();
     }
 
     @Override

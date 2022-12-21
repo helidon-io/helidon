@@ -60,8 +60,9 @@ public interface CoordinatorClient {
      * @param coordinatorUriSupplier url of the coordinator
      * @param timeout                general timeout for coordinator calls
      * @param timeoutUnit            timeout unit for coordinator calls
+     * @deprecated use {@link #init(Supplier, Duration)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.0")
     default void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit){
         init(coordinatorUriSupplier, Duration.ofMillis(timeoutUnit.toMillis(timeout)));
     }
