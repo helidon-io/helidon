@@ -20,7 +20,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * HTTP/2 WebClient.
  */
-@Feature(value = "Http2Webclient",
+@Feature(value = "HTTP/2",
         description = "HTTP/2 WebClient",
         in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
         path = {"WebClient","HTTP/2"}
