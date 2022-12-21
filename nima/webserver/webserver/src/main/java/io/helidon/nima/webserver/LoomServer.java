@@ -44,11 +44,14 @@ class LoomServer implements WebServer {
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
+    private final boolean registerShutdownHook;
+    private volatile Thread shutdownHook;
 
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
+        this.registerShutdownHook = builder.shutdownHook();
         ServerContextImpl serverContext = new ServerContextImpl(builder.context(),
                                                                 builder.mediaContext(),
                                                                 builder.contentEncodingContext());
@@ -162,6 +165,7 @@ class LoomServer implements WebServer {
         running.set(false);
 
         LOGGER.log(System.Logger.Level.INFO, "Níma server stopped all channels.");
+        deregisterShutdownHook();
     }
 
     private void startIt() {
@@ -175,13 +179,9 @@ class LoomServer implements WebServer {
             }
             return;
         }
-        Runtime.getRuntime()
-                .addShutdownHook(new Thread(() -> {
-                    listeners.values().forEach(ServerListener::stop);
-                    if (startFutures != null) {
-                        startFutures.forEach(future -> future.future().cancel(true));
-                    }
-                }, "shutdown-hook"));
+        if (registerShutdownHook) {
+            registerShutdownHook();
+        }
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 
@@ -194,6 +194,24 @@ class LoomServer implements WebServer {
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             System.exit(0);
+        }
+    }
+
+    private void registerShutdownHook() {
+        this.shutdownHook = new Thread(() -> {
+                    listeners.values().forEach(ServerListener::stop);
+                    if (startFutures != null) {
+                        startFutures.forEach(future -> future.future().cancel(true));
+                    }
+                }, "shutdown-hook");
+
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
+    private void deregisterShutdownHook() {
+        if (shutdownHook != null) {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            shutdownHook = null;
         }
     }
 
