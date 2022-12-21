@@ -16,8 +16,9 @@
 package io.helidon.nima.webserver.accesslog;
 
 import java.security.Principal;
+import java.util.Optional;
 
-import io.helidon.common.GenericType;
+import io.helidon.common.security.SecurityContext;
 
 /**
  * Access log entry for security username.
@@ -25,8 +26,6 @@ import io.helidon.common.GenericType;
  * If there is no security configured, or the authentication fails, username is not available.
  */
 public final class UserLogEntry extends AbstractLogEntry {
-    private static final GenericType<Principal> PRINCIPAL_GENERIC_TYPE = GenericType.create(Principal.class);
-
     private UserLogEntry(Builder builder) {
         super(builder);
     }
@@ -35,7 +34,7 @@ public final class UserLogEntry extends AbstractLogEntry {
      * Create a new user log entry.
      *
      * @return a new access log entry for username
-     * @see AccessLogFilter.Builder#add(AccessLogEntry)
+     * @see AccessLogFeature.Builder#add(AccessLogEntry)
      */
     public static UserLogEntry create() {
         return builder().build();
@@ -50,14 +49,22 @@ public final class UserLogEntry extends AbstractLogEntry {
         return new Builder();
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     protected String doApply(AccessLogContext context) {
-        // TODO this must be resolved - either through Context, or request attributes
-        //        return context.serverRequest()
-        //                .value(PRINCIPAL_GENERIC_TYPE)
-        //                .map(Principal::getName)
-        //                .orElse(NOT_AVAILABLE);
-        return NOT_AVAILABLE;
+        Optional<SecurityContext> maybeContext = context.serverRequest()
+                .context()
+                .get(SecurityContext.class);
+
+        if (maybeContext.isEmpty()) {
+            return NOT_AVAILABLE;
+        }
+
+        SecurityContext<Principal> securityContext = maybeContext.get();
+
+        return securityContext.userPrincipal()
+                .map(Principal::getName)
+                .orElse(NOT_AVAILABLE);
     }
 
     /**

@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
+import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
@@ -66,10 +67,14 @@ public class BodyContext {
     private final String mapType;
     private final String setType;
     private final boolean hasParent;
+    private final boolean hasAnyBuilderClashingMethodNames;
+    private final boolean isExtendingAnAbstractClass;
     private final TypeName ctorBuilderAcceptTypeName;
     private final String genericBuilderClassDecl;
     private final String genericBuilderAliasDecl;
     private final String genericBuilderAcceptAliasDecl;
+    private final TypeName interceptorTypeName;
+    private final String interceptorCreateMethod;
 
     /**
      * Constructor.
@@ -96,9 +101,15 @@ public class BodyContext {
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
-        gatherAllAttributeNames(this, typeInfo);
+        try {
+            gatherAllAttributeNames(this, typeInfo);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed while processing: " + typeInfo.typeName(), e);
+        }
         assert (allTypeInfos.size() == allAttributeNames.size());
         this.hasParent = Objects.nonNull(parentTypeName.get());
+        this.hasAnyBuilderClashingMethodNames = determineIfHasAnyClashingMethodNames();
+        this.isExtendingAnAbstractClass = typeInfo.typeKind().equals("CLASS");
         this.ctorBuilderAcceptTypeName = (hasParent)
                 ? typeInfo.typeName()
                 : (Objects.nonNull(parentAnnotationType.get()) && typeInfo.elementInfo().isEmpty()
@@ -106,6 +117,13 @@ public class BodyContext {
         this.genericBuilderClassDecl = "Builder";
         this.genericBuilderAliasDecl = ("B".equals(typeInfo.typeName().className())) ? "BU" : "B";
         this.genericBuilderAcceptAliasDecl = ("T".equals(typeInfo.typeName().className())) ? "TY" : "T";
+        String interceptorType = searchForBuilderAnnotation("interceptor", builderTriggerAnnotation, typeInfo);
+        this.interceptorTypeName = (interceptorType == null || Void.class.getName().equals(interceptorType))
+                ? null : DefaultTypeName.createFromTypeName(interceptorType);
+        String interceptorCreateMethod =
+                searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
+        this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
+                ? null : interceptorCreateMethod;
     }
 
     /**
@@ -288,6 +306,24 @@ public class BodyContext {
     }
 
     /**
+     * Returns true if any getter methods from the target clash with any builder method name.
+     *
+     * @return true if there is a clash
+     */
+    public boolean hasAnyBuilderClashingMethodNames() {
+        return hasAnyBuilderClashingMethodNames;
+    }
+
+    /**
+     * Returns true if this builder is extending an abstract class as a target.
+     *
+     * @return true if the target is an abstract class
+     */
+    public boolean isExtendingAnAbstractClass() {
+        return isExtendingAnAbstractClass;
+    }
+
+    /**
      * Returns the streamable accept type of the builder and constructor.
      *
      * @return the builder accept type
@@ -321,6 +357,48 @@ public class BodyContext {
      */
     protected String genericBuilderAcceptAliasDecl() {
         return genericBuilderAcceptAliasDecl;
+    }
+
+    /**
+     * Returns the interceptor implementation type name.
+     * See {@link io.helidon.builder.Builder#interceptor()}.
+     *
+     * @return the interceptor type name
+     */
+    public Optional<TypeName> interceptorTypeName() {
+        return Optional.ofNullable(interceptorTypeName);
+    }
+
+    /**
+     * Returns the interceptor create method name.
+     * See {@link io.helidon.builder.Builder#interceptorCreateMethod()}.
+     *
+     * @return the interceptor create method name
+     */
+    public Optional<String> interceptorCreateMethod() {
+        return Optional.ofNullable(interceptorCreateMethod);
+    }
+
+    /**
+     * Checks whether there is an "other" method that matches the signature.
+     *
+     * @param name      the method name
+     * @param typeInfo  the type info to check, which will look through the parent chain
+     * @return true if there is any matches
+     */
+    public boolean hasOtherMethod(String name,
+                                  TypeInfo typeInfo) {
+        for (TypedElementName elem : typeInfo.otherElementInfo()) {
+            if (elem.elementName().equals(name)) {
+                return true;
+            }
+        }
+
+        if (typeInfo.superTypeInfo().isPresent()) {
+            return hasOtherMethod(name, typeInfo.superTypeInfo().get());
+        }
+
+        return false;
     }
 
     /**
@@ -472,7 +550,8 @@ public class BodyContext {
                 Optional<String> alternateName = alternateNames.get().orElse(Collections.emptyList()).stream()
                         .filter(it -> !it.equals(currentAttrName))
                         .findFirst();
-                if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())) {
+                if (alternateName.isPresent() && !ctx.map.containsKey(alternateName.get())
+                        && !BeanUtils.isReservedWord(alternateName.get())) {
                     beanAttributeName = alternateName.get();
                     existing = ctx.map.get(beanAttributeName);
                 }
@@ -525,6 +604,16 @@ public class BodyContext {
                 assert (Objects.isNull(prev));
             }
         }
+    }
+
+    private boolean determineIfHasAnyClashingMethodNames() {
+        return allAttributeNames().stream().anyMatch(this::isBuilderClashingMethodName);
+    }
+
+    private boolean isBuilderClashingMethodName(String beanAttributeName) {
+        return beanAttributeName.equals("identity")
+                || beanAttributeName.equals("get")
+                || beanAttributeName.equals("toStringInner");
     }
 
 }

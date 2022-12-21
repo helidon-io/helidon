@@ -15,6 +15,6 @@
  */
 
 /**
- * Test subjects for the Pico Builder.
+ * Test subjects for the Builder.
  */
 package io.helidon.builder.test.testsubjects;

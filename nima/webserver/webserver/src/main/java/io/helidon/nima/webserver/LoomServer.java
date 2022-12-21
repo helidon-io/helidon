@@ -33,9 +33,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.common.Version;
-import io.helidon.common.context.Context;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -44,17 +41,18 @@ class LoomServer implements WebServer {
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
 
     private final Map<String, ServerListener> listeners;
-
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
 
     private volatile List<ListenerFuture> startFutures;
-    private boolean alreadyStarted = false;
-
-    private final Context context;
+    private volatile boolean alreadyStarted = false;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
+        ServerContextImpl serverContext = new ServerContextImpl(builder.context(),
+                                                                builder.mediaContext(),
+                                                                builder.contentEncodingContext());
+
         List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
 
         Map<String, Router> routers = builder.routers();
@@ -70,9 +68,6 @@ class LoomServer implements WebServer {
             defaultRouter = Router.empty();
         }
 
-        MediaContext mediaContext = builder.mediaContext();
-        ContentEncodingContext contentEncodingContext = builder.contentEncodingContext();
-
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
             if (router == null) {
@@ -87,14 +82,12 @@ class LoomServer implements WebServer {
             }
 
             listeners.put(socketName,
-                          new ServerListener(this,
+                          new ServerListener(serverContext,
                                              connectionProviders,
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers,
-                                             mediaContext,
-                                             contentEncodingContext));
+                                             simpleHandlers));
         }
 
         this.listeners = Map.copyOf(listeners);
@@ -102,7 +95,6 @@ class LoomServer implements WebServer {
                                                                           .allowSetThreadLocals(true)
                                                                           .inheritInheritableThreadLocals(false)
                                                                           .factory());
-        this.context = builder.context();
     }
 
     @Override
@@ -163,11 +155,6 @@ class LoomServer implements WebServer {
     @Override
     public boolean hasTls(String socketName) {
         return false;
-    }
-
-    @Override
-    public Context context() {
-        return context;
     }
 
     private void stopIt() {

@@ -364,6 +364,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             //            }
             ContentDecoder decoder = ContentDecoder.NO_OP;
             Http2ServerRequest request = Http2ServerRequest.create(ctx,
+                                                                   routing.security(),
                                                                    prologue,
                                                                    headers,
                                                                    decoder,

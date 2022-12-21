@@ -100,21 +100,36 @@ public class BeanUtils {
             return invalidMethod(methodName, throwIfInvalid, "invalid method name (must start with get or is)");
         }
 
-        return validMethod(methodName.substring(3), attributeNameRef, throwIfInvalid);
+        return validMethod(methodName, attributeNameRef, throwIfInvalid);
+    }
+
+    /**
+     * Returns true if the word provided is considered to be a reserved word and should otherwise be avoided from generation.
+     *
+     * @param word the word
+     * @return true if it appears to be a reserved word
+     */
+    public static boolean isReservedWord(String word) {
+        word = word.toLowerCase();
+        return word.equals("class") || word.equals("interface") || word.equals("package") || word.equals("static")
+                || word.equals("final") || word.equals("public") || word.equals("protected") || word.equals("private")
+                || word.equals("abstract");
     }
 
     private static boolean validMethod(String name,
                                        AtomicReference<Optional<List<String>>> attributeNameRef,
                                        boolean throwIfInvalid) {
         assert (name.trim().equals(name));
-        char c = name.charAt(0);
+        String attrName = name.substring(3);
+        char c = attrName.charAt(0);
 
-        if (!validMethodCase(name, c, throwIfInvalid)) {
+        if (!validMethodCase(attrName, c, throwIfInvalid)) {
             return false;
         }
 
         c = Character.toLowerCase(c);
-        attributeNameRef.set(Optional.of(Collections.singletonList("" + c + name.substring(1))));
+        String altName = "" + c + attrName.substring(1);
+        attributeNameRef.set(Optional.of(Collections.singletonList(isReservedWord(altName) ? name : altName)));
 
         return true;
     }
@@ -130,7 +145,8 @@ public class BeanUtils {
         }
 
         c = Character.toLowerCase(c);
-        attributeNameRef.set(Optional.of(List.of("" + c + name.substring(3), name)));
+        String altName = "" + c + name.substring(3);
+        attributeNameRef.set(Optional.of(isReservedWord(altName) ? List.of(name) : List.of(altName, name)));
 
         return true;
     }

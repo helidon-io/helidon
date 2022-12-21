@@ -109,7 +109,8 @@ public class BuilderProcessor extends AbstractProcessor {
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations,
+                           RoundEnvironment roundEnv) {
         if (roundEnv.processingOver() || tools == null || PRODUCERS.isEmpty()) {
             elementsProcessed.clear();
             return false;
@@ -146,7 +147,8 @@ public class BuilderProcessor extends AbstractProcessor {
      * @param element  the element being processed
      * @throws IOException if unable to write the generated class
      */
-    protected void process(Class<? extends Annotation> annoType, Element element) throws IOException {
+    protected void process(Class<? extends Annotation> annoType,
+                           Element element) throws IOException {
         AnnotationMirror am = BuilderTypeTools.findAnnotationMirror(annoType.getName(),
                                                                     element.getAnnotationMirrors())
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find annotation mirror for " + annoType

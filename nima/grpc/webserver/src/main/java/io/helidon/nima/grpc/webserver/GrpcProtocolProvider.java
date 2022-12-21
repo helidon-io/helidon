@@ -33,6 +33,15 @@ import io.helidon.nima.webserver.Router;
  * {@link java.util.ServiceLoader} provider implementation of grpc sub-protocol of HTTP/2.
  */
 public class GrpcProtocolProvider implements Http2SubProtocolProvider {
+    /**
+     * Default constructor required by Java {@link java.util.ServiceLoader}.
+     *
+     * @deprecated please do not use directly outside of testing, this is reserved for Java {@link java.util.ServiceLoader}
+     */
+    @Deprecated
+    public GrpcProtocolProvider() {
+    }
+
     @Override
     public SubProtocolResult subProtocol(ConnectionContext ctx,
                                          HttpPrologue prologue,

@@ -24,6 +24,12 @@ import io.helidon.nima.webserver.http.HttpRouting;
  * {@link java.util.ServiceLoader} provider implementation for application information observe provider.
  */
 public class InfoObserveProvider implements ObserveProvider {
+    /**
+     * Required by {@link java.util.ServiceLoader}.
+     */
+    public InfoObserveProvider() {
+    }
+
     @Override
     public String configKey() {
         return "info";

@@ -13,6 +13,12 @@ The <b>Helidon Builder</b> provides compile-time code generation for fluent buil
 Supported annotation types (see [builder](./builder/src/main/java/io/helidon/builder) for further details):
 * Builder - similar to Lombok's SuperBuilder.
 * Singular - similar to Lombok's Singular.
+* NonNull - accomplished alternatively via Helidon's <i>ConfiguredOption#required</i>.
+* Default - accomplished alternatively via Helidon's <i>ConfiguredOption#value</i>.
+
+Explicitly unsupported (i.e., these are just a few of the types that do not have a counterpart from Helidon's Builder):
+* NoArgsConstructor - must instead use one of the <i>toBuilder()</i> methods
+* AllArgsConstructor - must instead use one of the <i>toBuilder()</i> methods
 
 Any and all types are supported by the Builder, with special handling for List, Map, Set, and Optional types. The target interface,
 however, should only contain getter like methods (i.e., has a non-void return and takes no arguments). All static and default methods
@@ -40,21 +46,19 @@ The result of this will create (under ./target/generated-sources/annotations):
 * Support for toBuilder().
 * Support for streams (see javadoc for [Builder](./builder/src/main/java/io/helidon/builder/Builder.java)).
 * Support for attribute visitors (see [test-builder](./tests/builder/src/main/java/io/helidon/builder/test/testsubjects/package-info.java)).
-* Support for attribute validation (see ConfiguredOption#required() and [builder](./tests/builder/src/main/java/io/helidon/builder/test/testsubjects/package-info.java)).
-
-The implementation of the processor also allows for a provider-based extensibility mechanism.
+* Support for attribute validation (see ConfiguredOption#required() and [test-builder](./tests/builder/src/main/java/io/helidon/builder/test/testsubjects/package-info.java)).
+* Support for builder interception (i.e., including decoration or mutation). (see [test-builder](./tests/builder/src/main/java/io/helidon/builder/test/testsubjects/package-info.java)).
 
 ## Modules
 * [builder](./builder) - provides the compile-time annotations, as well as optional runtime supporting types.
 * [processor-spi](./processor-spi) - defines the Builder Processor SPI runtime definitions used by builder tooling. This module is only needed at compile time.
 * [processor-tools](./processor-tools) - provides the concrete creators & code generators. This module is only needed at compile time.
 * [processor](./processor) - the annotation processor which delegates to the processor-tools module for the main processing logic. This module is only needed at compile time.
-* [tests/builder](./tests/builder) - internal tests that can also serve as examples on usage.
+* [tests/builder](./tests/builder) - tests that can also serve as examples for usage.
 
 ## Customizations
 To implement your own custom <i>Builder</i>:
-* Write an implementation of <i>BuilderCreator</i> having a higher-than-default <i>Weighted</i> value as compared to <i>DefaultBuilderCreator</i>.
-* Include your module with this creator in your annotation processing path.
+* See [pico/builder-config](../pico/builder-config) for an example.
 
 ## Usage
 See [tests/builder](./tests/builder) for usage examples.

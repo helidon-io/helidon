@@ -61,6 +61,10 @@
     <suppress files="nima/webserver/webserver/src/main/java/io/helidon/nima/webserver/ConnectionContext.java"
             checks="ParameterNumber"/>
 
+    <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
+    <suppress files="nima/webserver/webserver/src/main/java/io/helidon/nima/webserver/http1/Http1ServerRequest.java"
+            checks="ParameterNumber"/>
+
     <!-- the huffman constants are long, but this is not actual code, just a set of constants -->
     <suppress files="nima/http2/http2/src/main/java/io/helidon/nima/http2/Http2HuffmanConstants.java"
             checks="FileLength"/>

@@ -29,7 +29,7 @@ public final class SizeLogEntry extends AbstractLogEntry {
      * Create a new size log entry instance.
      *
      * @return a new access log entry for entity size
-     * @see AccessLogFilter.Builder#add(AccessLogEntry)
+     * @see AccessLogFeature.Builder#add(AccessLogEntry)
      */
     public static SizeLogEntry create() {
         return builder().build();

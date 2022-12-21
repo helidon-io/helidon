@@ -16,6 +16,9 @@
 
 package io.helidon.pico.test.testsubjects;
 
+import java.util.Objects;
+
+import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.Services;
 
@@ -23,12 +26,20 @@ import jakarta.inject.Singleton;
 
 @Singleton
 public class PicoServices2 implements PicoServices {
-    public PicoServices2() {
+    private final Bootstrap bootstrap;
+
+    public PicoServices2(Bootstrap bootstrap) {
+        this.bootstrap = Objects.requireNonNull(bootstrap);
     }
 
     @Override
     public Services services() {
         return null;
+    }
+
+    @Override
+    public Bootstrap bootstrap() {
+        return bootstrap;
     }
 
 }

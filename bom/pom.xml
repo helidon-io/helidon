@@ -672,6 +672,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
@@ -1391,6 +1396,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.observe</groupId>
+                <artifactId>helidon-nima-observe-log</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.webserver</groupId>
                 <artifactId>helidon-nima-webserver-tracing</artifactId>
                 <version>${helidon.version}</version>
@@ -1442,6 +1452,11 @@
             <dependency>
                 <groupId>io.helidon.pico</groupId>
                 <artifactId>helidon-pico-types</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-tools</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

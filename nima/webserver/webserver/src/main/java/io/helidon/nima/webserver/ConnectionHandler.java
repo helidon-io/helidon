@@ -23,13 +23,10 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -56,9 +53,8 @@ class ConnectionHandler implements Runnable {
 
     private ServerConnection connection;
 
-    ConnectionHandler(ConnectionProviders connectionProviders,
-                      MediaContext mediaContext,
-                      ContentEncodingContext contentEncodingContext,
+    ConnectionHandler(ServerContext serverContext,
+                      ConnectionProviders connectionProviders,
                       ExecutorService sharedExecutor,
                       String serverChannelId,
                       String channelId,
@@ -66,8 +62,7 @@ class ConnectionHandler implements Runnable {
                       Router router,
                       int writeQueueLength,
                       long maxPayloadSize,
-                      DirectHandlers simpleHandlers,
-                      Context context) {
+                      DirectHandlers simpleHandlers) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;
@@ -75,8 +70,7 @@ class ConnectionHandler implements Runnable {
         this.channelId = channelId;
         this.writer = SocketWriter.create(sharedExecutor, socket, writeQueueLength);
         this.reader = new DataReader(socket);
-        this.ctx = ConnectionContext.create(mediaContext,
-                                            contentEncodingContext,
+        this.ctx = ConnectionContext.create(serverContext,
                                             sharedExecutor,
                                             writer,
                                             reader,
@@ -85,8 +79,7 @@ class ConnectionHandler implements Runnable {
                                             channelId,
                                             simpleHandlers,
                                             socket,
-                                            maxPayloadSize,
-                                            context);
+                                            maxPayloadSize);
     }
 
     @Override

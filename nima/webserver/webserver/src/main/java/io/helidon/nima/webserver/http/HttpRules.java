@@ -16,6 +16,8 @@
 
 package io.helidon.nima.webserver.http;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -173,11 +175,28 @@ public interface HttpRules {
      * Add a post route.
      *
      * @param pathPattern path pattern
-     * @param handler     handler
+     * @param handlers    handlers
      * @return updated rules
      */
+    default HttpRules post(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.POST, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a post route.
+     *
+     * @param pathPattern path pattern
+     * @param handler     handler
+     * @return updated builder
+     */
     default HttpRules post(String pathPattern, Handler handler) {
-        return route(Http.Method.POST, pathPattern, handler);
+        return route(HttpRoute.builder()
+                             .methods(Http.Method.POST)
+                             .path(pathPattern)
+                             .handler(handler));
     }
 
     /**
@@ -223,6 +242,20 @@ public interface HttpRules {
     }
 
     /**
+     * Add a delete route.
+     *
+     * @param pathPattern path pattern to register the handler(s) on
+     * @param handlers    handlers
+     * @return updated rules
+     */
+    default HttpRules delete(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Http.Method.DELETE, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
      * Add a put route.
      *
      * @param handlers handlers
@@ -236,4 +269,51 @@ public interface HttpRules {
         }
         return this;
     }
+
+    /**
+     * Add a route.
+     *
+     * @param method      method to handle
+     * @param pathPattern path pattern
+     * @param handler     handler as a consumer of {@link ServerRequest}
+     * @return updated builder
+     */
+    default HttpRules route(Http.Method method, String pathPattern, Consumer<ServerRequest> handler) {
+        return route(HttpRoute.builder()
+                             .methods(method)
+                             .path(pathPattern)
+                             .handler(Handler.create(handler)));
+    }
+
+    /**
+     * Add a route.
+     *
+     * @param method      method to handle
+     * @param pathPattern path pattern
+     * @param handler     handler as a function that gets {@link ServerRequest} and returns an entity
+     * @return updated builder
+     */
+    default HttpRules route(Http.Method method, String pathPattern, Function<ServerRequest, ?> handler) {
+        return route(HttpRoute.builder()
+                             .methods(method)
+                             .path(pathPattern)
+                             .handler(Handler.create(handler)));
+    }
+
+    /**
+     * Add a route.
+     *
+     * @param method      method to handle
+     * @param pathPattern path pattern
+     * @param handler     supplier of entity
+     * @return updated builder
+     */
+    default HttpRules route(Http.Method method, String pathPattern, Supplier<?> handler) {
+        return route(HttpRoute.builder()
+                             .methods(method)
+                             .path(pathPattern)
+                             .handler(Handler.create(handler)));
+    }
+
+
 }

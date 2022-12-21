@@ -43,7 +43,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
     /**
      * Default constructor.
      */
-    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
+    // important note: this class is also code generated - please keep this in synch with generated code
     public RequiredAttributeVisitor() {
         this(Builder.DEFAULT_ALLOW_NULLS);
     }
@@ -53,13 +53,13 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
      *
      * @param allowNullsByDefault true if nulls should be allowed
      */
-    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
+    // important note: this class is also code generated - please keep this in synch with generated code
     public RequiredAttributeVisitor(boolean allowNullsByDefault) {
         this.allowNullsByDefault = allowNullsByDefault;
     }
 
     @Override
-    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
+    // important note: this class is also code generated - please keep this in synch with generated code
     public void visit(String attrName,
                       Supplier<Object> valueSupplier,
                       Map<String, Object> meta,
@@ -90,7 +90,7 @@ public class RequiredAttributeVisitor implements AttributeVisitor<Object> {
      *
      * @throws java.lang.IllegalStateException when any attributes are in violation with the validation policy
      */
-    // important note: this needs to remain public since it will be new'ed from code-generated builder processing ...
+    // important note: this class is also code generated - please keep this in synch with generated code
     public void validate() {
         if (!errors.isEmpty()) {
             throw new IllegalStateException(String.join(", ", errors));

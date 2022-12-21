@@ -277,8 +277,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         CompletableFuture<WebClientResponse> responseFuture = ctx.channel().attr(RESULT).get();
         if (responseFuture.isDone()) {
-            // we failed during entity processing
-            publisher.fail(cause);
+            // we failed during entity processing, or during connecting to the remote site
+            if (publisher != null) {
+                publisher.fail(cause);
+            }
         } else {
             // we failed before getting response
             responseFuture.completeExceptionally(cause);

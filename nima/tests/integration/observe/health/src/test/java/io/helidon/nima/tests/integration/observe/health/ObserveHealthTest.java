@@ -18,9 +18,9 @@ package io.helidon.nima.tests.integration.observe.health;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
-import io.helidon.nima.observe.ObserveSupport;
-import io.helidon.nima.observe.health.HealthObserveProvider;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -49,7 +49,7 @@ class ObserveHealthTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
         healthCheck = new MyHealthCheck();
-        routing.update(ObserveSupport.create(HealthObserveProvider.create(HealthFeature.create(healthCheck))));
+        routing.addFeature(ObserveFeature.create(HealthObserveProvider.create(HealthFeature.create(healthCheck))));
     }
 
     @BeforeEach

@@ -16,7 +16,7 @@
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
@@ -49,6 +49,26 @@
         <dependency>
             <groupId>io.helidon.nima.observe</groupId>
             <artifactId>helidon-nima-observe-info</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-nima</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-http-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>

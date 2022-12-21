@@ -16,6 +16,7 @@
 
 package io.helidon.pico.spi;
 
+import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServices;
 
 /**
@@ -24,9 +25,12 @@ import io.helidon.pico.PicoServices;
 public interface PicoServicesProvider {
 
     /**
-     * Provide services implementation.
+     * Provide the {@code Pico} Services implementation, using the provided primordial {@link io.helidon.pico.Bootstrap}
+     * configuration instance.
      *
+     * @param bootstrap the primordial bootstrap configuration
      * @return Pico services
      */
-    PicoServices services();
+    PicoServices services(Bootstrap bootstrap);
+
 }

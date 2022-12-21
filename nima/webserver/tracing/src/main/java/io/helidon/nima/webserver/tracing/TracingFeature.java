@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
@@ -47,11 +48,14 @@ import io.helidon.tracing.config.TracingConfig;
  * Tracing configuration has two components - an overall (application wide) {@link io.helidon.tracing.config.TracingConfig}
  * and a path specific {@link io.helidon.nima.webserver.tracing.PathTracingConfig}.
  */
-public class TracingFeature implements HttpFeature {
+public class TracingFeature implements HttpFeature, Weighted {
+    private static final double WEIGHT = 900;
+
     private final boolean enabled;
     private final Tracer tracer;
     private final TracingConfig envConfig;
     private final List<PathTracingConfig> pathConfigs;
+    private final double weight;
 
     /**
      * No side effects.
@@ -61,6 +65,7 @@ public class TracingFeature implements HttpFeature {
         this.tracer = builder.tracer;
         this.envConfig = builder.tracedConfig;
         this.pathConfigs = List.copyOf(builder.pathTracingConfigs);
+        this.weight = builder.weight;
     }
 
     /**
@@ -114,12 +119,18 @@ public class TracingFeature implements HttpFeature {
         }
     }
 
+    @Override
+    public double weight() {
+        return weight;
+    }
+
     /**
      * A fluent API builder for {@link TracingFeature}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, TracingFeature> {
         private final List<PathTracingConfig> pathTracingConfigs = new LinkedList<>();
 
+        private double weight = WEIGHT;
         private TracingConfig tracedConfig = TracingConfig.ENABLED;
         private Tracer tracer;
         private boolean enabled = true;
@@ -192,6 +203,22 @@ public class TracingFeature implements HttpFeature {
             Config allPaths = config.get("paths");
             allPaths.asNodeList().ifPresent(this::addPaths);
             enabled(tracedConfig.enabled());
+
+            config.get("weight").asDouble().ifPresent(this::weight);
+
+            return this;
+        }
+
+        /**
+         * Override default weight of this feature.
+         * Changing weight may cause tracing to be executed at a different time (such as after security, or even after
+         * all routes). Please understand feature weights before changing this order.
+         *
+         * @param weight new weight of tracing feature
+         * @return updated builder
+         */
+        public Builder weight(double weight) {
+            this.weight = weight;
             return this;
         }
 
