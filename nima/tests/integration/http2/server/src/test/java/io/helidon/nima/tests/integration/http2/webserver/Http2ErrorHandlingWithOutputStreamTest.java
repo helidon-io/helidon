@@ -16,6 +16,16 @@
 
 package io.helidon.nima.tests.integration.http2.webserver;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Optional;
+
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
@@ -29,39 +39,36 @@ import io.helidon.nima.webserver.http.ErrorHandler;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Optional;
-
 import static io.helidon.common.http.Http.Method.GET;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class Http2ErrorHandlingWithOutputStreamTest {
 
     private static final Http.HeaderName MAIN_HEADER_NAME = Http.Header.create("main-handler");
     private static final Http.HeaderName ERROR_HEADER_NAME = Http.Header.create("error-handler");
-
+    private static HttpClient httpClient;
     private final int plainPort;
     private final int tlsPort;
-    private static HttpClient httpClient;
-
 
     Http2ErrorHandlingWithOutputStreamTest(WebServer server) {
         this.plainPort = server.port();
         this.tlsPort = server.port("https");
+    }
+
+    public static <T> Matcher<? super Optional<T>> emptyOptional() {
+        return new EmptyOptionalMatcher<>();
     }
 
     @SetUpServer
@@ -77,7 +84,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
                 .build();
 
         serverBuilder.socket("https",
-                socketBuilder -> socketBuilder.tls(tls));
+                             socketBuilder -> socketBuilder.tls(tls));
         httpClient = http2Client();
     }
 
@@ -100,7 +107,6 @@ class Http2ErrorHandlingWithOutputStreamTest {
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeTwiceThenError", (req, res) -> {
                     res.status(Http.Status.OK_200);
-                    res.header(Http.Header.create("status"), "200");
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
@@ -115,8 +121,70 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     os.flush();
                     throw new CustomException();
                 }))
-                .route(Http2Route.route(GET, "", ((req, res) ->
-                        res.send("ok"))));
+                .get("get-outputStream-tryWithResources", (req, res) -> {
+                    res.header(MAIN_HEADER_NAME, "x");
+                    try (OutputStream os = res.outputStream()) {
+                        os.write("This should not be sent immediately".getBytes(StandardCharsets.UTF_8));
+                        throw new CustomException();
+                    }
+                })
+                .route(Http2Route.route(GET, "", (
+                        (req, res) ->
+                                res.send("ok"))));
+    }
+
+    @Test
+    void testOk() {
+        var response = request("/");
+
+        assertEquals(200, response.statusCode());
+        assertThat(response.body(), is("ok"));
+    }
+
+    @Test
+    void testGetOutputStreamThenError_expect_CustomErrorHandlerMessage() {
+        var response = request("/get-outputStream");
+
+        assertEquals(418, response.statusCode());
+        assertThat(response.body(), is("TeaPotIAm"));
+        assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
+        assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
+    }
+
+    @Test
+    void testGetOutputStreamWriteOnceThenError_expect_CustomErrorHandlerMessage() {
+        var response = request("/get-outputStream-writeOnceThenError");
+
+        assertEquals(418, response.statusCode());
+        assertThat(response.body(), is("TeaPotIAm"));
+        assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
+        assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
+    }
+
+    @Test
+    void testGetOutputStreamWriteTwiceThenError_expect_invalidResponse() {
+        RuntimeException r = assertThrows(RuntimeException.class, () -> request("/get-outputStream-writeTwiceThenError"));
+        assertThat(r.getCause(), instanceOf(IOException.class));
+        // stream should have been reset during processing
+        assertThat(r.getMessage(), containsString("RST_STREAM"));
+    }
+
+    @Test
+    void testGetOutputStreamWriteFlushThenError_expect_invalidResponse() {
+        RuntimeException r = assertThrows(RuntimeException.class, () -> request("/get-outputStream-writeFlushThenError"));
+        assertThat(r.getCause(), instanceOf(IOException.class));
+        // stream should have been reset during processing
+        assertThat(r.getMessage(), containsString("RST_STREAM"));
+    }
+
+    @Test
+    void testGetOutputStreamTryWithResourcesThenError_expect_CustomErrorHandlerMessage() {
+        var response = request("/get-outputStream-tryWithResources");
+
+        assertEquals(418, response.statusCode());
+        assertThat(response.body(), is("TeaPotIAm"));
+        assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
+        assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
     }
 
     private static HttpClient http2Client() {
@@ -142,65 +210,6 @@ class Http2ErrorHandlingWithOutputStreamTest {
                 .build();
     }
 
-    @Test
-    void testOk() {
-        var response = request("/");
-
-        assertEquals(200, response.statusCode());
-        assertThat(response.body(), is("ok"));
-    }
-
-    @Test
-    void testGetOutputStreamThenError_expect_CustomErrorHandlerMessage() {
-        var response = request("/get-outputStream");
-
-        assertEquals(418, response.statusCode());
-        assertThat(response.body(), is("TeaPotIAm"));
-        assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
-        assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
-    }
-
-
-    @Test
-    void testGetOutputStreamWriteOnceThenError_expect_CustomErrorHandlerMessage() {
-        var response = request("/get-outputStream-writeOnceThenError");
-
-        assertEquals(418, response.statusCode());
-        assertThat(response.body(), is("TeaPotIAm"));
-        assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
-        assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
-    }
-
-// ------------------
-// This test hangs
-// ------------------
-//    @Test
-//    void testGetOutputStreamWriteTwiceThenError_expect_invalidResponse() {
-//        try {
-//            var response = request("/get-outputStream-writeTwiceThenError");
-//            assertEquals(500, response.statusCode());
-//            //String body = response.body();
-//        } catch (Exception e) {
-//            System.err.println("never get here ---------------");
-//            e.printStackTrace();
-//        }
-//    }
-
-// ------------------
-// This test hangs
-// ------------------
-//    @Test
-//    void testGetOutputStreamWriteFlushThenError_expect_invalidResponse() {
-//        try {
-//            var response = request("/get-outputStream-writeFlushThenError");
-//            assertEquals(500, response.statusCode());
-//            //String body = response.body();
-//        } catch (Exception e) {
-//            System.err.println("never get here ---------------");
-//            e.printStackTrace();
-//        }
-//    }
-
     private static class CustomRoutingHandler implements ErrorHandler<CustomException> {
         @Override
         public void handle(ServerRequest req, ServerResponse res, CustomException throwable) {
@@ -212,10 +221,6 @@ class Http2ErrorHandlingWithOutputStreamTest {
 
     private static class CustomException extends RuntimeException {
 
-    }
-
-    public static <T> Matcher<? super Optional<T>> emptyOptional() {
-        return new EmptyOptionalMatcher<>();
     }
 
     static class EmptyOptionalMatcher<T> extends BaseMatcher<Optional<T>> {

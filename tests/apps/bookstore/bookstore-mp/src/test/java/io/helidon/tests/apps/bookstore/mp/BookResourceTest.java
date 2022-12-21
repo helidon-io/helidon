@@ -54,7 +54,6 @@ class BookResourceTest {
                 .request()
                 .get();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
-        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(1);
 
@@ -88,7 +87,6 @@ class BookResourceTest {
                 .request()
                 .get();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
-        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(1);
 

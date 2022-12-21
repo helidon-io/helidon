@@ -119,17 +119,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
-    public boolean reset() {
-        if (isSent) {
-            return false;
-        }
-        headers.clear();
-        streamingEntity = false;
-        outputStream = null;
-        return true;
-    }
-
-    @Override
     public OutputStream outputStream() {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
@@ -164,6 +153,24 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     @Override
     public boolean hasEntity() {
         return isSent || streamingEntity;
+    }
+
+    @Override
+    public boolean reset() {
+        if (isSent || outputStream != null && outputStream.bytesWritten > 0) {
+            return false;
+        }
+        headers.clear();
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
+    public void commit() {
+        if (outputStream != null) {
+            outputStream.commit();
+        }
     }
 
     private static class BlockingOutputStream extends OutputStream {
@@ -211,7 +218,18 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         @Override
+        public void flush() throws IOException {
+            if (firstByte && firstBuffer != null) {
+                write(BufferData.empty());
+            }
+        }
+
+        @Override
         public void close() {
+            // does nothing, we expect commit(), so we can reset response when no bytes were written to response
+        }
+
+        void commit() {
             if (closed) {
                 return;
             }
@@ -292,6 +310,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.setIfAbsent(Header.create(Header.DATE, true, false, Http.DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
+            http2Headers.status(status);
             http2Headers.validateResponse();
             int written = writer.writeHeaders(http2Headers,
                                               streamId,

@@ -412,6 +412,7 @@ public final class HttpRouting implements Routing {
             RoutingResult result = doRoute(ctx, request, response);
 
             if (result == RoutingResult.FINISH) {
+                response.commit();
                 return null;
             }
             if (result == RoutingResult.NONE) {
@@ -434,6 +435,7 @@ public final class HttpRouting implements Routing {
 
             // finished and done
             if (result == RoutingResult.FINISH) {
+                response.commit();
                 return null;
             }
             throw new NotFoundException("Endpoint not found");
