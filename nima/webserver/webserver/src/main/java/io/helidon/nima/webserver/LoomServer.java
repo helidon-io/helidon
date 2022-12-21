@@ -52,9 +52,11 @@ class LoomServer implements WebServer {
     private volatile List<ListenerFuture> startFutures;
     private boolean alreadyStarted = false;
 
+    private final boolean shutdownHook;
     private final Context context;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
+        this.shutdownHook = builder.shutdownHook();
         List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
 
         Map<String, Router> routers = builder.routers();
@@ -183,18 +185,10 @@ class LoomServer implements WebServer {
         if (!result) {
             LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");
             parallel("stop", ServerListener::stop);
-            if (startFutures != null) {
-                startFutures.forEach(future -> future.future().cancel(true));
-            }
+            cancelStartFutures();
             return;
         }
-        Runtime.getRuntime()
-                .addShutdownHook(new Thread(() -> {
-                    listeners.values().forEach(ServerListener::stop);
-                    if (startFutures != null) {
-                        startFutures.forEach(future -> future.future().cancel(true));
-                    }
-                }, "shutdown-hook"));
+        registerShutdownHook();
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 
@@ -207,6 +201,22 @@ class LoomServer implements WebServer {
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             System.exit(0);
+        }
+    }
+
+    private void registerShutdownHook() {
+        if (shutdownHook) {
+            Runtime.getRuntime()
+                    .addShutdownHook(new Thread(() -> {
+                        listeners.values().forEach(ServerListener::stop);
+                        cancelStartFutures();
+                    }, "shutdown-hook"));
+        }
+    }
+
+    private void cancelStartFutures() {
+        if (startFutures != null) {
+            startFutures.forEach(future -> future.future().cancel(true));
         }
     }
 

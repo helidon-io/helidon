@@ -151,6 +151,7 @@ public interface WebServer {
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private Context context;
+        private boolean shutdownHook = true;
 
         Builder(Config rootConfig) {
             config(rootConfig.get("server"));
@@ -194,6 +195,7 @@ public interface WebServer {
             config.get("host").asString().ifPresent(this::host);
             config.get("port").asInt().ifPresent(this::port);
             config.get("tls").as(Tls::create).ifPresent(this::tls);
+            config.get("shutdownHook").asBoolean().ifPresent(this::shutdownHook);
 
             // now let's configure the sockets
             config.get("sockets")
@@ -311,6 +313,19 @@ public interface WebServer {
         }
 
         /**
+         * When true register a shutdown hook with the Runtime.
+         * <p>
+         * Defaults to true, set to false to disable registration of the shutdown hook.
+         *
+         * @param shutdownHook When true register a shutdown hook
+         * @return updated builder
+         */
+        public Builder shutdownHook(boolean shutdownHook) {
+            this.shutdownHook = shutdownHook;
+            return this;
+        }
+
+        /**
          * Configure a simple handler.
          *
          * @param handler    handler to use
@@ -415,6 +430,10 @@ public interface WebServer {
 
         Context context() {
             return context;
+        }
+
+        boolean shutdownHook() {
+            return shutdownHook;
         }
 
         MediaContext mediaContext() {

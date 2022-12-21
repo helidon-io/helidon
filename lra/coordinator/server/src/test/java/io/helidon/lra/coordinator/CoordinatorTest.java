@@ -64,6 +64,7 @@ public class CoordinatorTest {
                 .build();
         server = WebServer.builder()
                 .host("localhost")
+                .shutdownHook(true)
                 .routing(r -> r.register(CONTEXT_PATH, () -> rules -> rules.put((req, res) -> res.send())))
                 .socket(COORDINATOR_ROUTING_NAME, (socket, routing) -> {
                     socket.port(0);
