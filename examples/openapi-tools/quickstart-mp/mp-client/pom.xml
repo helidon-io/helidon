@@ -27,7 +27,7 @@
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
         <version>3.0.1</version>
-        <relativePath/>
+        <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>openapi-mp-client</artifactId>
     <name>openapi-java-client</name>
