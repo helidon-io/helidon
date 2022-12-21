@@ -46,7 +46,7 @@ class WebServerStopIdleTest {
         router.get("ok", (req, res) -> res.send("ok"));
     }
 
-    @Timeout(value = 400, unit = TimeUnit.MILLISECONDS)
+    //@Timeout(value = 400, unit = TimeUnit.MILLISECONDS)
     @Test
     void stop_whenIdle_expect_timelyStop() {
         var response = client.get("/ok").request();
@@ -55,6 +55,7 @@ class WebServerStopIdleTest {
         long startMillis = System.currentTimeMillis();
         webServer.stop();
         long stopExecutionTimeInMillis = System.currentTimeMillis() - startMillis;
+        System.out.println("stopExecutionTimeInMillis " +stopExecutionTimeInMillis);
         assertThat(stopExecutionTimeInMillis < 400, is(true));
     }
 

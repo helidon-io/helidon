@@ -30,6 +30,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.concurrent.InterruptableTask;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http1.Http1Connection;
 import io.helidon.nima.webserver.spi.ServerConnection;
@@ -43,7 +44,7 @@ import static java.lang.System.Logger.Level.WARNING;
  * Representation of a single channel between client and server.
  * Everything in this class runs in the channel reader virtual thread
  */
-class ConnectionHandler implements Runnable {
+class ConnectionHandler implements Runnable, InterruptableTask {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
 
     private final ConnectionProviders connectionProviders;
@@ -54,7 +55,6 @@ class ConnectionHandler implements Runnable {
     private final SocketWriter writer;
     private final DataReader reader;
     private final ConnectionContext ctx;
-    private final ServerListener.Holder holder;
 
     private ServerConnection connection;
 
@@ -69,7 +69,7 @@ class ConnectionHandler implements Runnable {
                       int writeQueueLength,
                       long maxPayloadSize,
                       DirectHandlers simpleHandlers,
-                      Context context, ServerListener.Holder holder) {
+                      Context context) {
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.serverChannelId = serverChannelId;
@@ -77,7 +77,6 @@ class ConnectionHandler implements Runnable {
         this.channelId = channelId;
         this.writer = SocketWriter.create(sharedExecutor, socket, writeQueueLength);
         this.reader = new DataReader(socket);
-        this.holder = holder;
         this.ctx = ConnectionContext.create(mediaContext,
                                             contentEncodingContext,
                                             sharedExecutor,
@@ -138,7 +137,6 @@ class ConnectionHandler implements Runnable {
         } catch (Exception e) {
             ctx.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
-            holder.remove(this);
             writer.close();
             closeChannel();
         }
@@ -224,9 +222,11 @@ class ConnectionHandler implements Runnable {
         }
     }
 
-    void stopIfIdle() {
-        if (connection instanceof Http1Connection http1Connection) {
-            http1Connection.stopIfIdle();
+    @Override
+    public boolean canInterrupt() {
+        if (connection instanceof InterruptableTask task) {
+            return task.canInterrupt();
         }
+        return false;
     }
 }

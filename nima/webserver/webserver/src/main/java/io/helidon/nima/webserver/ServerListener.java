@@ -44,6 +44,7 @@ import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.concurrent.ThreadPerTaskExecutor;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -71,7 +72,6 @@ class ServerListener {
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
     private final LoomServer server;
-    private final Holder connectionHolder = new Holder();
 
     private volatile boolean running;
     private volatile int connectedPort;
@@ -99,7 +99,7 @@ class ServerListener {
                 .name("server-" + socketName + "-listener")
                 .unstarted(this::listen);
         this.simpleHandlers = simpleHandlers;
-        this.readerExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(false)
                                                                          .factory());
@@ -139,7 +139,6 @@ class ServerListener {
         }
         running = false;
         try {
-            connectionHolder.stopIdle();
             // Attempt to wait until existing channels finish execution
             shutdownExecutor(readerExecutor);
             shutdownExecutor(sharedExecutor);
@@ -261,11 +260,9 @@ class ServerListener {
                                                     listenerConfig.writeQueueLength(),
                                                     listenerConfig.maxPayloadSize(),
                                                     simpleHandlers,
-                                                    server.context(),
-                                                    connectionHolder);
+                                                    server.context());
 
-                    readerExecutor.submit(handler);
-                    connectionHolder.add(handler);
+                    readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
@@ -311,21 +308,5 @@ class ServerListener {
         }
     }
 
-    static final class Holder {
-        private final ConcurrentHashMap<ConnectionHandler, Boolean> set = new ConcurrentHashMap<>();
 
-        void add(ConnectionHandler handler) {
-            set.put(handler, true);
-        }
-
-        void remove(ConnectionHandler handler) {
-            set.remove(handler);
-        }
-
-        void stopIdle() {
-            for (ConnectionHandler handler : set.keySet()) {
-                handler.stopIfIdle();
-            }
-        }
-    }
 }
