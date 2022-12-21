@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -37,6 +38,7 @@ import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 
+    private final Lock inProgressLock;
     private final Semaphore inProgress;
     private final String name;
     private final BarrierQueue queue;
@@ -53,6 +55,7 @@ class BulkheadImpl implements Bulkhead {
         this.queue = builder.queueLength() > 0
                 ? new BlockingQueue(builder.queueLength())
                 : new ZeroCapacityQueue();
+        this.inProgressLock = new ReentrantLock(true);
     }
 
     @Override
@@ -63,7 +66,10 @@ class BulkheadImpl implements Bulkhead {
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
         // execute immediately if semaphore can be acquired
+        inProgressLock.lock();
+
         if (inProgress.tryAcquire()) {
+            inProgressLock.unlock(); // we managed to get a semaphore permit, in progress lock can be released for now
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, name + " invoke immediate " + supplier);
             }
@@ -71,13 +77,19 @@ class BulkheadImpl implements Bulkhead {
         }
 
         if (queue.isFull()) {
+            inProgressLock.unlock(); // this request will fail, release lock
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
         try {
             // block current thread until barrier is retracted
             listeners.forEach(l -> l.enqueueing(supplier));
-            queue.enqueueAndWaitOn(supplier);
+            Barrier barrier = queue.enqueue(supplier);
+            inProgressLock.unlock(); // we have enqueued, now we can wait
+            if (barrier == null) {
+                throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
+            }
+            barrier.waitOn();
 
             // unblocked so we can proceed with execution
             listeners.forEach(l -> l.dequeued(supplier));
@@ -143,10 +155,12 @@ class BulkheadImpl implements Bulkhead {
             throw toRuntimeException(throwable);
         } finally {
             concurrentExecutions.decrementAndGet();
+            inProgressLock.lock();
             boolean dequeued = queue.dequeueAndRetract();
             if (!dequeued) {
                 inProgress.release();       // nothing dequeued, one more permit
             }
+            inProgressLock.unlock();
         }
     }
 
@@ -182,11 +196,9 @@ class BulkheadImpl implements Bulkhead {
          * Enqueue supplier and block thread on barrier.
          *
          * @param supplier the supplier
-         * @return {@code true} if supplier was enqueued or {@code false} otherwise
-         * @throws ExecutionException if exception encountered while blocked
-         * @throws InterruptedException if blocking is interrupted
+         * @return barrier if supplier was enqueued or null otherwise
          */
-        boolean enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException;
+        Barrier enqueue(Supplier<?> supplier);
 
         /**
          * Dequeue supplier and retract its barrier.
@@ -220,8 +232,9 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public boolean enqueueAndWaitOn(Supplier<?> supplier) {
-            return false;
+        public Barrier enqueue(Supplier<?> supplier) {
+            // never enqueue, should always fail execution if permits are not available
+            return null;
         }
 
         @Override
@@ -273,19 +286,13 @@ class BulkheadImpl implements Bulkhead {
         }
 
         @Override
-        public boolean enqueueAndWaitOn(Supplier<?> supplier) throws ExecutionException, InterruptedException {
-            Barrier barrier;
+        public Barrier enqueue(Supplier<?> supplier) {
             lock.lock();
             try {
-                barrier = enqueue(supplier);
+                return doEnqueue(supplier);
             } finally {
                 lock.unlock();
             }
-            if (barrier != null) {
-                barrier.waitOn();
-                return true;
-            }
-            return false;
         }
 
         @Override
@@ -318,7 +325,7 @@ class BulkheadImpl implements Bulkhead {
             return supplier == null ? null : map.remove(supplier);
         }
 
-        private Barrier enqueue(Supplier<?> supplier) {
+        private Barrier doEnqueue(Supplier<?> supplier) {
             boolean added = queue.offer(supplier);
             return added ? map.computeIfAbsent(supplier, s -> new Barrier()) : null;
         }
