@@ -41,6 +41,9 @@ curl -i -H "Accept: application/json" http://localhost:7076/metrics
 # Should return ALL TESTS PASSED! after passing all webclient tests
 curl -i http://localhost:7076/wc/test
 
+# Should return 200 status and plain text RED as the response content
+curl -i http://localhost:7076/color 
+
 # Should return: Upgrade: websocket
 curl \
     --include \
