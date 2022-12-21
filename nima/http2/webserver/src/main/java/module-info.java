@@ -21,7 +21,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 /**
  * HTTP/2 WebServer.
  */
-@Feature(value = "Http2Webserver",
+@Feature(value = "HTTP/2",
         description = "HTTP/2 WebServer",
         in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
         path = {"WebServer","HTTP/2"}
