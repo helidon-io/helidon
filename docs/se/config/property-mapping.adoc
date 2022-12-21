@@ -123,20 +123,18 @@ BigDecimal initialId = config.get("bl.initial-id").as(BigDecimal.class);
 Configuration can automatically map `Config` nodes to most `enum` types.
 
 Your application code simply passes the enum class type to `config.as(Class<? extends T> type)`.
-The built-in `enum` converter attempts to match the string in the config node to the `enum` value names declared in the Java code.
+The built-in `enum` converter attempts to match the string value in the config node to the name of one of the values declared for that specific `enum` in the Java code.
 
-As a convenience to users and developers, the converter applies the following rules as it attempts to match string values to `enum` names:
+=== Matching `enum` Names
+The conversion applies the following algorithm to match config values to `enum` names, stopping as soon as it finds a match:
 
-1. The matcher treates hyphens (`-`) in config strings as underscores (`_`).
-2. The matcher selects a _case-sensitive_ match with an `enum` value name if there is one.
-3. In the absence of a case-sensitive match, the matcher selects a _case-insensitive_ match if there is _exactly one_ such match.
-4. If the matcher finds no match or multiple case-insensitive matches, it throws a `ConfigMappingException` with a message explaining the specific problem.
+1. Select an exact match if one exists.
+2. Treat hyphens (`-`) in config strings as underscores (`_`) and select an otherwise exact match if one exists.
+3. Select a _case-insensitive_ match (with or without hyphen substitution) if there is _exactly one_ such match.
+4. Finding no match or multiple case-insensitive matches, throw a `ConfigMappingException`.
 
-The following example illustrates how to use the built-in `enum` converter. Keep in mind that the code goes through three steps here:
-
-1. Use a key (such as `house.tint`) to look up a string value (`blue-green`) from the configuration using `config.get(_key_)`.
-2. Invoke the `as(_type_)` method on the resulting `Config` node passing the enum type (`Color.class)` which returns a `ConfigValue` representing the string value.
-3. Invoke the `get()` method to actually convert the `ConfigValue` to the correct `enum` value.
+=== Example
+The following example illustrates how to use the built-in `enum` conversion feature. The example code builds a simple `Config` tree itself which contains simple test data; normally your application would load the config from a file or some other location.
 
 [source,java]
 ----
@@ -149,23 +147,47 @@ class Example {
                                                                 "car.color", "Red",
                                                                 "warning", "YELLOW")));
 
-        Color house = config.get("house.tint").as(Color.class).get(); // <1>
-        Color car = config.get("car.color").as(Color.class).get();    // <2>
-        Color warning = config.get("warning").as(Color.class).get();  // <3>
+        Color house = config.get("house.tint") // <1>
+                            .as(Color.class)   // <2>
+                            .get();            // <3>
+        Color car = config.get("car.color")
+                          .as(Color.class)
+                          .get();              // <4>
+        Color warning = config.get("warning")
+                              .as(Color.class)
+                              .get();          // <5>
     }
 }
 ----
-<1> The converter matches the lower-case string with the hyphen `blue-green` to the `BLUE_GREEN` enum value.
-<2> The converter matches the mixed-case string 'Red' to the `RED` enum value.
-<3> The converter finds the exact match to `YELLOW`.
+<1> Retrieve the `Config` object corresponding to the key `house.tint`.
+<2> Indicate that, when the value in that `Config` object is converted, Helidon should convert it to a `Color` `enum` value.
+<3> Convert and retrieve the value.
++
+The conversion triggered by invoking `get()` matches the string `blue-green`--expressed in lower case and with a hyphen -- to `Color.BLUE_GREEN` using the conversion rules described earlier.
+<4> The config key `car.color` locates the mixed-case string `Red` which the converter matches to `Color.RED`.
+<5> The config key `warning` locates `YELLOW` which the  converter matches exactly to `Color.YELLOW`.
 
-These rules impose a hardship only in the following unusual situation:
+=== Why use heuristics in matching strings to `enum` values?
+Short answer: ease-of-use.
+
+Users composing config sources often adopt a style with hyphens within words to improve readability and lower-case keys and values.
+With that style in mind, users typing an `enum` value into a config source might accidentally enter a hyphen instead of an underscore or use lower case instead of upper case. Users might even _prefer_ to make these changes so they can follow their preferred config style.
+
+With the heuristics, Helidon allows users to adopt a common config style and prevents unnecessary runtime exceptions--and user frustration--from inconsequential typos.
+
+Remember:
+
+* Helidon always finds exact matches unambiguously, without relying on the heuristics.
+In our `Color` example the text `BLUE_GREEN` always maps to `Color.BLUE_GREEN`.
+* Because hyphens cannot appear in a valid Java `enum` value name, interpreting them as underscores during `enum` conversion introduces no ambiguity.
+
+Only in the following unusual sitatuation are the heuristics unable to unambiguously match a string to an `enum` value:
 
 * The `enum` has values which differ _only_ in their case (such as `Red` and `RED`), _and_
 * The string in the config source is not an exact match with an `enum` value name (such as `red`).
 
-In such cases, the converter--given the rules listed above--cannot unambiguously choose which `enum` value matches the string.
-If your application must deal with such an `enum`, simply pass your own mapping function (instead of the `enum` type) to the `Config.as()` method. A xref:customConfigAs[later section] describes this technique which works for all types, not only `enum` types.
+If your application must deal with such cases, write your own function which maps a `Config` node to the correct `enum` value, resolving the ambiguities however makes sense in your use case.
+Your code tells config to use that function instead of the built-in `enum` conversion when it converts values. A xref:customConfigAs[later section] describes this technique which works for all types, not only `enum` types.
 
 == Converting Configuration to Complex Types
 
