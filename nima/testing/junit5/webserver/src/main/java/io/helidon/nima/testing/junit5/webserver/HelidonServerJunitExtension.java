@@ -76,6 +76,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         WebServer.Builder builder = WebServer.builder()
                 .port(0)
+                .shutdownHook(false)
                 .host("localhost");
 
         setupServer(builder);
