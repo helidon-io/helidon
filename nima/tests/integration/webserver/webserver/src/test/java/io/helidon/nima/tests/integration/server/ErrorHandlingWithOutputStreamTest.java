@@ -16,8 +16,10 @@
 
 package io.helidon.nima.tests.integration.server;
 
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -27,10 +29,8 @@ import io.helidon.nima.webserver.http.ErrorHandler;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import org.junit.jupiter.api.Test;
 
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -76,35 +76,42 @@ class ErrorHandlingWithOutputStreamTest {
                     os.flush();
                     throw new CustomException();
                 })
+                .get("get-outputStream-tryWithResources", (req, res) -> {
+                    res.header(MAIN_HEADER_NAME, "x");
+                    try (OutputStream os = res.outputStream()) {
+                        os.write("This should not be sent immediately".getBytes(StandardCharsets.UTF_8));
+                        throw new CustomException();
+                    }
+                })
                 .get((req, res) -> res.send("ok"));
     }
 
     @Test
     void testOk() {
-        var response = client.get().request();
-
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.entity().as(String.class), is("ok"));
+        try (var response = client.get().request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.entity().as(String.class), is("ok"));
+        }
     }
 
     @Test
     void testGetOutputStreamThenError_expect_CustomErrorHandlerMessage() {
-        var response = client.get("/get-outputStream").request();
-
-        assertThat(response.status(), is(Http.Status.I_AM_A_TEAPOT_418));
-        assertThat(response.entity().as(String.class), is("CustomErrorContent"));
-        assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
-        assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
+        try (var response = client.get("/get-outputStream").request()) {
+            assertThat(response.status(), is(Http.Status.I_AM_A_TEAPOT_418));
+            assertThat(response.entity().as(String.class), is("CustomErrorContent"));
+            assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
+            assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
+        }
     }
 
     @Test
     void testGetOutputStreamWriteOnceThenError_expect_CustomErrorHandlerMessage() {
-        var response = client.get("/get-outputStream-writeOnceThenError").request();
-
-        assertThat(response.status(), is(Http.Status.I_AM_A_TEAPOT_418));
-        assertThat(response.entity().as(String.class), is("CustomErrorContent"));
-        assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
-        assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
+        try (var response = client.get("/get-outputStream-writeOnceThenError").request()) {
+            assertThat(response.status(), is(Http.Status.I_AM_A_TEAPOT_418));
+            assertThat(response.entity().as(String.class), is("CustomErrorContent"));
+            assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
+            assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
+        }
     }
 
     @Test
@@ -119,13 +126,25 @@ class ErrorHandlingWithOutputStreamTest {
 
     @Test
     void testGetOutputStreamWriteFlushThenError_expect_invalidResponse() {
-        Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.GET)
                 .uri("/get-outputStream-writeFlushThenError")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThrows(DataReader.InsufficientDataAvailableException.class, () -> response.entity().as(String.class));
+        }
+    }
+
+    @Test
+    void testGetOutputStreamTryWithResourcesThenError_expect_CustomErrorHandlerMessage() {
+        try (Http1ClientResponse response = client.method(Http.Method.GET)
+                .uri("/get-outputStream-tryWithResources")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.I_AM_A_TEAPOT_418));
+            assertThat(response.entity().as(String.class), is("CustomErrorContent"));
+            assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
+            assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
         }
     }
 
