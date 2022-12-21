@@ -17,7 +17,6 @@ package io.helidon.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +34,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
  *         <li>If the matcher finds a <em>case-sensitive</em> match with an enum value name, then that enum value matches.</li>
  *         <li>If the matcher finds exactly one <em>case-insensitive</em> match, that enum value matches.</li>
  *         <li>If the matcher finds no matches or multiple matches, throw a
- *         {@link io.helidon.config.ConfigEnumMappingException} with a message explaining the problem.</li>
+ *         {@link io.helidon.config.ConfigMappingException} with a message explaining the problem.</li>
  *     </ul>
  *     These conversions are intended to maximize ease-of-use for authors of config sources so the values need not be
  *     upper-cased nor punctuated with underscores rather than the more conventional (in config at least) hyphen.
@@ -51,11 +50,11 @@ import io.helidon.config.spi.ConfigMapperProvider;
  */
 class EnumMapperProvider implements ConfigMapperProvider {
 
-    private final Map<Class<?>, Function<Config, ?>> mappers = new HashMap<>();
+    static final int PRIORITY = 10000;
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return mappers;
+        return Map.of();
     }
 
     @Override
@@ -64,14 +63,11 @@ class EnumMapperProvider implements ConfigMapperProvider {
             return Optional.empty();
         }
 
-        Function<Config, T> result = (Function<Config, T>) mappers.computeIfAbsent(type, this::enumMapper);
-        return Optional.of(result);
+        return Optional.of(enumMapper((Class<Enum<?>>) type));
     }
 
-    private <T> Function<Config, T> enumMapper(Class<T> type) {
+    private <T> Function<Config, T> enumMapper(Class<Enum<?>> enumType) {
         return config -> {
-            // type.isEnum() must be true in the caller, so we know the type is Class<Enum<?>>.
-            Class<Enum<?>> enumType = (Class<Enum<?>>) type;
             if (!config.hasValue() || !config.exists()) {
                 throw MissingValueException.create(config.key());
             }
@@ -86,8 +82,7 @@ class EnumMapperProvider implements ConfigMapperProvider {
                 if (candidate.name().equals(convertedValue) || candidate.name().equals(value)) {
                     return (T) candidate;
                 }
-                if (candidate.name().compareToIgnoreCase(convertedValue) == 0
-                        || candidate.name().compareToIgnoreCase(value) == 0) {
+                if (candidate.name().equalsIgnoreCase(value) || candidate.name().equalsIgnoreCase(convertedValue)) {
                     caseInsensitiveMatches.add(candidate);
                 }
             }
