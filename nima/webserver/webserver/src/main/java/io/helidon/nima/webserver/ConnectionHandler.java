@@ -27,6 +27,7 @@ import io.helidon.common.http.HttpException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.nima.webserver.concurrent.InterruptableTask;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -39,7 +40,7 @@ import static java.lang.System.Logger.Level.WARNING;
  * Representation of a single channel between client and server.
  * Everything in this class runs in the channel reader virtual thread
  */
-class ConnectionHandler implements Runnable {
+class ConnectionHandler implements Runnable, InterruptableTask {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
 
     private final ConnectionProviders connectionProviders;
@@ -211,5 +212,13 @@ class ConnectionHandler implements Runnable {
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
         }
+    }
+
+    @Override
+    public boolean canInterrupt() {
+        if (connection instanceof InterruptableTask task) {
+            return task.canInterrupt();
+        }
+        return false;
     }
 }

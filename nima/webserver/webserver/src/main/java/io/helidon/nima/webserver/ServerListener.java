@@ -41,6 +41,7 @@ import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webserver.concurrent.ThreadPerTaskExecutor;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -51,7 +52,7 @@ import static java.lang.System.Logger.Level.TRACE;
 class ServerListener {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
-    private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
+    private static final long EXECUTOR_SHUTDOWN_MILLIS = 10_000L;
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
@@ -92,7 +93,7 @@ class ServerListener {
                 .name("server-" + socketName + "-listener")
                 .unstarted(this::listen);
         this.simpleHandlers = simpleHandlers;
-        this.readerExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(false)
                                                                          .factory());
@@ -251,7 +252,7 @@ class ServerListener {
                                                     listenerConfig.maxPayloadSize(),
                                                     simpleHandlers);
 
-                    readerExecutor.submit(handler);
+                    readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
@@ -284,6 +285,7 @@ class ServerListener {
      */
     static void shutdownExecutor(ExecutorService executor) {
         try {
+            executor.shutdown();
             boolean terminate = executor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
             if (!terminate) {
                 List<Runnable> running = executor.shutdownNow();
