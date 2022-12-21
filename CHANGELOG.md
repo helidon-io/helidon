@@ -9,6 +9,72 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.1.0]
+
+This is a minor release of Helidon and is recommended for all users of Helidon 3. In addition to bug fixes and minor enhancements, this release contains two dependency upgrades that could have a small impact on compatibility. These are:
+
+* [OCI SDK 3.0](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk3.htm). Note that if you are using Helidon MP OCI SDK integration then you will not need to specify an HTTP Client Library as the Helidon support will do that for you.
+* [GraalVM Native Image 22.3.0](https://www.graalvm.org/release-notes/22_3/).
+
+### CHANGES
+
+- Common: Add info to CharBuf exceptions [5375](https://github.com/helidon-io/helidon/pull/5375)
+- Common: Fix inconsistent status name [5642](https://github.com/helidon-io/helidon/pull/5642)
+- Common: WebServer.Builder media support methods with Supplier variants [5632](https://github.com/helidon-io/helidon/pull/5632)
+- Config: Provide MP config profile support for application.yaml (#5565) [5585](https://github.com/helidon-io/helidon/pull/5585)
+- DBClient: Handle exception on inTransaction apply [5699](https://github.com/helidon-io/helidon/pull/5699)
+- Docker: remove -Ddocker.build=true [5484](https://github.com/helidon-io/helidon/pull/5484)
+- Fault Tolerance: Additional @Retry strategies [5165](https://github.com/helidon-io/helidon/pull/5165)
+- Grpc: Grpc component Does not handle package directive in proto files. [5283](https://github.com/helidon-io/helidon/pull/5283)
+- JPA: Improves integrations/jdbc/jdbc to better support future JPA improvements [5654](https://github.com/helidon-io/helidon/pull/5654)
+- LRA: LRA false warning  [5555](https://github.com/helidon-io/helidon/pull/5555)
+- Messaging: JMS connector update [5327](https://github.com/helidon-io/helidon/pull/5327)
+- Messaging: Kafka producer nacking fix 5510 [5524](https://github.com/helidon-io/helidon/pull/5524)
+- Messaging: Message body operator matching with parameters [5574](https://github.com/helidon-io/helidon/pull/5574)
+- Metrics: Fix incorrect tags comparison when trying to match metric IDs [5544](https://github.com/helidon-io/helidon/pull/5544)
+- MicroProfile: Add null check to MP Server.Builder.config() (#5363) [5372](https://github.com/helidon-io/helidon/pull/5372)
+- Native Image: Adding feature file for MP native image. [5652](https://github.com/helidon-io/helidon/pull/5652)
+- OCI: Replace OCI Java SDK shaded jar with v3 for OCI integration [5704](https://github.com/helidon-io/helidon/pull/5704)
+- OpenAPI: Add OpenAPI U/I integration [3.x] [5568](https://github.com/helidon-io/helidon/pull/5568)
+- OpenAPI: Fix error in OpenAPI handling of `default` values' types [5289](https://github.com/helidon-io/helidon/pull/5289)
+- Reactive: Multi.forEachCS [5527](https://github.com/helidon-io/helidon/pull/5527)
+- Security: Jwt now support multiple issuers and multi issuer validation [5648](https://github.com/helidon-io/helidon/pull/5648)
+- Security: Jwt scope handling extended over array support [5521](https://github.com/helidon-io/helidon/pull/5521)
+- Security: OIDC multi-tenant and lazy loading implementation [5619](https://github.com/helidon-io/helidon/pull/5619)
+- Security: Use only public APIs to read PKCS#1 keys (#5240) [5258](https://github.com/helidon-io/helidon/pull/5258)
+- Tracing: Client tracing interceptor no longer clears exception [5601](https://github.com/helidon-io/helidon/pull/5601)
+- WebClient: Add relativeUris flag in OidcConfig to allow Oidc webclient to use relative path on the request URI [5335](https://github.com/helidon-io/helidon/pull/5335)
+- WebServer: Broad changes to handle case properly in headers and parameters [5221](https://github.com/helidon-io/helidon/pull/5221)
+- WebServer: Log an entry in warning level for a 400 or 413 response [5295](https://github.com/helidon-io/helidon/pull/5295)
+- WebServer: Log simple message for a 400 or a 413 and more under FINE [5355](https://github.com/helidon-io/helidon/pull/5355)
+- WebServer: NullPointerException when there is an illegal character in the request [5471](https://github.com/helidon-io/helidon/pull/5471)
+- Webserver: Support for requested URI for web server requests. [5330](https://github.com/helidon-io/helidon/pull/5330)
+- Dependencies: Bump-up reactive messaging/ops to 3.0 [5525](https://github.com/helidon-io/helidon/pull/5525)
+- Dependencies: Fix Guava version to match that required by the grpc-java libraries [5503](https://github.com/helidon-io/helidon/pull/5503)
+- Dependencies: Upgrade GraalVM native image to 22.3.0 [5308](https://github.com/helidon-io/helidon/pull/5308)
+- Dependencies: Upgrade Netty to 4.1.86.Final [5703](https://github.com/helidon-io/helidon/pull/5703)
+- Dependencies: Upgrade PostgreSQL JDBC driver dependency to 42.4.3 [5560](https://github.com/helidon-io/helidon/pull/5560)
+- Dependencies: Upgrade Helidon build-tools to 3.0.3 [5726](https://github.com/helidon-io/helidon/pull/5726)
+- Dependencies: Upgrade grpc-java to 1.49.2 [5348](https://github.com/helidon-io/helidon/pull/5348)
+- Dependencies: Upgrade to jackson-databind-2.13.4.2 via bom 2.13.4.20221013 [5302](https://github.com/helidon-io/helidon/pull/5302)
+- Docs: Declare `h1-prefix` as early as possible so it is used for the title prefix [5667](https://github.com/helidon-io/helidon/pull/5667)
+- Docs: Document config.require-encryption [5188](https://github.com/helidon-io/helidon/pull/5188)
+- Docs: Fix inadvertent changes in attributes.adoc [5334](https://github.com/helidon-io/helidon/pull/5334)
+- Docs: JAXRS doc updates for 3611 [5225](https://github.com/helidon-io/helidon/pull/5225)
+- Docs: Openapi generator doc 3.x [5263](https://github.com/helidon-io/helidon/pull/5263)
+- Docs: flatMapCompletionStage javadoc fix [5622](https://github.com/helidon-io/helidon/pull/5622)
+- Examples: Make JSON-B a default option for Helidon MP projects (backport) [5208](https://github.com/helidon-io/helidon/pull/5208)
+- Examples: OpenAPI generator examples [5649](https://github.com/helidon-io/helidon/pull/5649)
+- Examples: Remove license report from maven lifecycle [5244](https://github.com/helidon-io/helidon/pull/5244)
+- Examples: Use property to skip execution of eclipselink weave [5313](https://github.com/helidon-io/helidon/pull/5313)
+- Examples: database choices should be before packaging (backport) [5294](https://github.com/helidon-io/helidon/pull/5294)
+- Tests: Use Hamcrest assertions instead of JUnit (#1749) [5189](https://github.com/helidon-io/helidon/pull/5189) and others
+- Tests: Fix Intermittent TestJBatchEndpoint.runJob [5557](https://github.com/helidon-io/helidon/pull/5557)
+- Tests: Fix intermittent jBatch test [5247](https://github.com/helidon-io/helidon/pull/5247)
+- Tests: Simplify named socket WebTarget injection in Tests [5269](https://github.com/helidon-io/helidon/pull/5269)
+- Tests: Use Hamcrest assertions instead of JUnit in tests/functional/jax-rs-multiple-apps (#1749) [5634](https://github.com/helidon-io/helidon/pull/5634)
+- Tests: Various metrics test improvements to avoid intermittent failures [5621](https://github.com/helidon-io/helidon/pull/5621)
+
 ## [3.0.2]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.
@@ -490,10 +556,11 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
-[3.0.2]: https://github.com/oracle/helidon/compare/3.0.1...3.0.2
-[3.0.1]: https://github.com/oracle/helidon/compare/3.0.0...3.0.1
-[3.0.0]: https://github.com/oracle/helidon/compare/3.0.0-RC2...3.0.0
-[3.0.0-RC2]: https://github.com/oracle/helidon/compare/3.0.0-RC1...3.0.0-RC2
-[3.0.0-RC1]: https://github.com/oracle/helidon/compare/3.0.0-M2...3.0.0-RC1
-[3.0.0-M2]: https://github.com/oracle/helidon/compare/3.0.0-M1...3.0.0-M2
-[3.0.0-M1]: https://github.com/oracle/helidon/compare/2.4.0...3.0.0-M1
+[3.1.0]: https://github.com/helidon-io/helidon/compare/3.0.2...3.1.0
+[3.0.2]: https://github.com/helidon-io/helidon/compare/3.0.1...3.0.2
+[3.0.1]: https://github.com/helidon-io/helidon/compare/3.0.0...3.0.1
+[3.0.0]: https://github.com/helidon-io/helidon/compare/3.0.0-RC2...3.0.0
+[3.0.0-RC2]: https://github.com/helidon-io/helidon/compare/3.0.0-RC1...3.0.0-RC2
+[3.0.0-RC1]: https://github.com/helidon-io/helidon/compare/3.0.0-M2...3.0.0-RC1
+[3.0.0-M2]: https://github.com/helidon-io/helidon/compare/3.0.0-M1...3.0.0-M2
+[3.0.0-M1]: https://github.com/helidon-io/helidon/compare/2.4.0...3.0.0-M1
