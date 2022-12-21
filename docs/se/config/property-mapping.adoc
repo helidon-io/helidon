@@ -130,9 +130,14 @@ As a convenience to users and developers, the converter applies the following ru
 1. The matcher treates hyphens (`-`) in config strings as underscores (`_`).
 2. The matcher selects a _case-sensitive_ match with an `enum` value name if there is one.
 3. In the absence of a case-sensitive match, the matcher selects a _case-insensitive_ match if there is _exactly one_ such match.
-4. If the matcher finds no match or multiple case-insensitive matches, it throws a `ConfigEnumMappingException` with a message explaining the specific problem.
+4. If the matcher finds no match or multiple case-insensitive matches, it throws a `ConfigMappingException` with a message explaining the specific problem.
 
-The following example illustrates how to use the built-in `enum` converter.
+The following example illustrates how to use the built-in `enum` converter. Keep in mind that the code goes through three steps here:
+
+1. Use a key (such as `house.tint`) to look up a string value (`blue-green`) from the configuration using `config.get(_key_)`.
+2. Invoke the `as(_type_)` method on the resulting `Config` node passing the enum type (`Color.class)` which returns a `ConfigValue` representing the string value.
+3. Invoke the `get()` method to actually convert the `ConfigValue` to the correct `enum` value.
+
 [source,java]
 ----
 class Example {
@@ -160,7 +165,7 @@ These rules impose a hardship only in the following unusual situation:
 * The string in the config source is not an exact match with an `enum` value name (such as `red`).
 
 In such cases, the converter--given the rules listed above--cannot unambiguously choose which `enum` value matches the string.
-If your application must deal with such an `enum`, simply pass your own mapping function (instead of the `enum` type) to the `Config.as(Class)` method. A xref:customConfigAs[later section] describes this technique which works for all types, not only `enum` types.
+If your application must deal with such an `enum`, simply pass your own mapping function (instead of the `enum` type) to the `Config.as()` method. A xref:customConfigAs[later section] describes this technique which works for all types, not only `enum` types.
 
 == Converting Configuration to Complex Types
 
