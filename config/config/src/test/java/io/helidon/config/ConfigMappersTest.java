@@ -248,7 +248,7 @@ public class ConfigMappersTest {
 
     @Test
     void testBuiltinEnumMapper() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create(), true);
         Config config = createEnumConfig();
         MyType type = manager.map(config.get("type-a"), MyType.class);
         assertThat("Lower-case mapping", type, is(MyType.A));
@@ -274,7 +274,7 @@ public class ConfigMappersTest {
 
     @Test
     void testBuiltInEnumMapperWithConfusingEnum() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create(), true);
 
         Config confusingConfig = createConfusingEnumConfig();
 

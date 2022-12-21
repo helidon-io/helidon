@@ -50,6 +50,9 @@ import io.helidon.config.spi.ConfigMapperProvider;
  */
 class EnumMapperProvider implements ConfigMapperProvider {
 
+    /**
+     * Priority with which the enum mapper provider is added to the collection of providers (user- and Helidon-provided).
+     */
     static final int PRIORITY = 10000;
 
     @Override
