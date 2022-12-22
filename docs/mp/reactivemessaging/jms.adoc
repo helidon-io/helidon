@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = JMS Connector
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging support for JMS in Helidon MP
 :keywords: helidon, mp, messaging, jms
 :feature-name: JMS Connector
@@ -26,6 +24,20 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+
+
+== Overview
+
+Connecting streams to JMS with Reactive Messaging couldn't be easier.
+
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -36,11 +48,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Reactive JMS Connector
-
-Connecting streams to JMS with Reactive Messaging couldn't be easier.
-
-=== Config
+== Configuration
 
 Connector name: `helidon-jms`
 
@@ -142,6 +150,8 @@ mp:
       destination: TESTQUEUE
       type: queue
 ----
+
+== Usage
 
 === Consuming
 

@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI
-:toc:
-:toc-placement: preamble
 :description: Helidon MP OpenAPI Support
 :keywords: helidon, mp, microprofile, openapi
 :feature-name: MicroProfile OpenAPI

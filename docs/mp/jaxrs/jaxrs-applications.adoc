@@ -16,8 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:toc:
-:toc-placement: preamble
 = JAX-RS Applications
 :description: Helidon MicroProfile JAX-RS applications
 :keywords: helidon, microprofile, micro-profile, jax-rs, applications, jakarta, rest
@@ -32,11 +30,10 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Configuration, Configuration>>
 
 == Overview
+
 NOTE: In this section, we shall distinguish the notion of a JAX-RS `Application` subclass
 from a Helidon application. As we shall learn shortly, the latter may include zero or more
-  =======
-NOTE: In this section we will distinguish the notion of a JAX-RS `Application` subclass
-from a Helidon application. The latter may include zero or more of the former.
+of the former.
 
 The JAX-RS specification defines the notion of an `Application` subclass whose methods return
 resource and provider classes, singletons and properties. This is the mechanism developers
@@ -129,7 +126,7 @@ Your application can use the MicroProfile Config or
  Helidon Config (or both). MicroProfile Config offers portability to other
  MicroProfile servers. Helidon Config supports a full tree structure, including repeating
  elements.
- 
+
 You can inject values that the application can access from both MicroProfile Config and from
 Helidon Config.
 

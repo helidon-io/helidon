@@ -17,9 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Reactive Messaging
-:h1Prefix: SE
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging support in Helidon SE
 :keywords: helidon, se, messaging
 :feature-name: Reactive Messaging
@@ -136,7 +133,7 @@ acknowledgement due to _no magic_ philosophy of Helidon SE.
 
 The only exception to this are the variants of the methods `Messaging.Builder#listener` and
 `Messaging.Builder#processor` configured with consumer or function parameters which will  conveniently unwrap the payload
-for you. Once the payload is automatically unwrapped, it is not possible to do a manual acknowledgement, therefore 
+for you. Once the payload is automatically unwrapped, it is not possible to do a manual acknowledgement, therefore
 an implicit acknowledgement is executed before the callback.
 
 === Connectors

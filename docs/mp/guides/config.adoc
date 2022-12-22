@@ -19,7 +19,6 @@
 = Helidon MP Config Guide
 :description: Helidon configuration
 :keywords: helidon, configuration, microprofile, guide
-:toc:
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]

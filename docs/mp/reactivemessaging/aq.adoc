@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Oracle AQ Connector
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging support for Oracle AQ in Helidon MP
 :keywords: helidon, mp, messaging, jms, aq
 :feature-name: AQ Connector
@@ -26,6 +24,19 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+
+== Overview
+
+Connecting streams to Oracle AQ with Reactive Messaging couldn't be easier.
+This connector extends Helidon's JMS connector with Oracle's AQ-specific API.
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -36,12 +47,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Reactive Oracle Advanced Queueing Connector
-
-Connecting streams to Oracle AQ with Reactive Messaging couldn't be easier.
-This connector extends Helidon's JMS connector with Oracle's AQ-specific API.
-
-=== Configuration
+== Configuration
 
 Connector name: `helidon-aq`
 
@@ -74,7 +80,7 @@ they share same JMS session and same JDBC connection as well.
 
 === Configured JMS Factory
 
-The simplest possible usage is leaving construction of AQjmsConnectionFactory to the connector.
+The simplest possible usage is leaving construction of `AQjmsConnectionFactory` to the connector.
 
 [source,yaml]
 .Example of connector config:
@@ -178,6 +184,8 @@ mp:
       destination: TESTQUEUE
       type: queue
 ----
+
+== Usage
 
 === Consuming
 

@@ -22,7 +22,7 @@
 :gen-inc: {incdir}/openapi-generator.adoc
 
 include::{rootdir}/includes/se.adoc[]
-include::{rootdir}/includes/pages.adoc[]
+
 :helidon-client-xref: {webclient-page}
 include::{gen-inc}[tag=preamble]
 

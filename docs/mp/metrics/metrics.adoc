@@ -17,9 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Metrics in Helidon MP
-:toc:
-:toclevels: 2
-:toc-placement: preamble
 :description: Helidon MP Metrics Support
 :keywords: helidon, java, metrics, mp, configuration, services
 :feature-name: metrics

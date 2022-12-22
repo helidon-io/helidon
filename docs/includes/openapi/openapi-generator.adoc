@@ -16,8 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // tag::preamble[]
-:toc:
-:toc-placement: preamble
 :description: Helidon {flavor-uc} OpenAPI Generator
 :keywords: helidon, {flavor-lc}, openapi, generator
 :feature-name: Helidon {flavor-uc} OpenAPI Generator

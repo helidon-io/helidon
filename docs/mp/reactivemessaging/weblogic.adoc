@@ -16,16 +16,33 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Weblogic JMS Connector
-:toc:
-:toc-placement: preamble
-:description: Reactive Messaging support for Weblogic JMS in Helidon MP
-:keywords: helidon, mp, messaging, jms, weblogic, wls, thin
-:feature-name: Weblogic JMS connector
+= WebLogic JMS Connector
+:description: Reactive Messaging support for WebLogic JMS in Helidon MP
+:keywords: helidon, mp, messaging, jms, WebLogic, wls, thin
+:feature-name: WebLogic JMS connector
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+
+== Overview
+
+Connecting streams to WebLogic JMS with Reactive Messaging couldn't be easier.
+This connector extends Helidon JMS connector with special handling for WebLogic T3 thin client.
+
+Connecting to WebLogic JMS connection factories requires proprietary T3 thin client library which can be obtained from
+WebLogic installation.
+
+WARNING: Avoid placing `wlthint3client.jar` on Helidon classpath, client library location needs to be
+configured and loaded by Helidon messaging connector.
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -36,29 +53,18 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Reactive Weblogic JMS Connector
-
-Connecting streams to Weblogic JMS with Reactive Messaging couldn't be easier.
-This connector extends Helidon JMS connector with special handling for Weblogic T3 thin client.
-
-Connecting to Weblogic JMS connection factories requires proprietary T3 thin client library which can be obtained from
-Weblogic installation.
-
-WARNING: Avoid placing `wlthint3client.jar` on Helidon classpath, client library location needs to be
-configured and loaded by Helidon messaging connector.
-
-=== Configuration
+== Configuration
 
 Connector name: `helidon-weblogic-jms`
 
 .Attributes
 |===
-|`jms-factory` | JNDI name of the JMS factory configured in Weblogic
-|`url` | t3, t3s or http address of Weblogic server
-|`thin-jar` | Filepath to the Weblogic thin T3 client jar(wlthint3client.jar), can be usually found within Weblogic installation
+|`jms-factory` | JNDI name of the JMS factory configured in WebLogic
+|`url` | t3, t3s or http address of WebLogic server
+|`thin-jar` | Filepath to the WebLogic thin T3 client jar (`wlthint3client.jar`), can be usually found within WebLogic installation
 `WL_HOME/server/lib/wlthint3client.jar`
-|`principal` | Weblogic initial context principal(user)
-|`credential` | Weblogic initial context credential(password)
+|`principal` | WebLogic initial context principal(user)
+|`credential` | WebLogic initial context credential(password)
 |`type` | Possible values are: `queue`, `topic`. Default value is: `topic`
 |`destination` | Queue or topic name in WebLogic CDI Syntax(CDI stands for Create Destination Identifier)
 |`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client’s receipt of a message,
@@ -82,7 +88,7 @@ will not be added to the durable subscription. Default value: `false`
 |===
 
 Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory
-from Weblogic. Notice the destination property which is used to define queue with
+from WebLogic. Notice the destination property which is used to define queue with
 https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915[WebLogic CDI Syntax](CDI stands for Create Destination Identifier).
 
 [source,yaml]
@@ -92,7 +98,7 @@ mp:
   messaging:
     connector:
       helidon-weblogic-jms:
-        # JMS factory configured in Weblogic
+        # JMS factory configured in WebLogic
         jms-factory: jms/TestConnectionFactory
         # Path to the WLS Thin T3 client jar
         thin-jar: wlthint3client.jar
@@ -120,6 +126,8 @@ In our example we are replacing jms-server-name with `.` as we don’t have to l
 
 Destination for UDD doesn't have `./` prefix, because distributed destinations can be served by multiple servers within a cluster.
 
+== Usage
+
 === Consuming
 
 [source,java]
@@ -127,7 +135,7 @@ Destination for UDD doesn't have `./` prefix, because distributed destinations c
 ----
 @Incoming("from-wls")
 public void consumeWls(String msg) {
-    System.out.println("Weblogic says: " + msg);
+    System.out.println("WebLogic says: " + msg);
 }
 ----
 
@@ -137,7 +145,7 @@ public void consumeWls(String msg) {
 @Incoming("from-wls")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<?> consumewls(JmsMessage<String> msg) {
-    System.out.println("Weblogic says: " + msg.getPayload());
+    System.out.println("WebLogic says: " + msg.getPayload());
     return msg.ack();
 }
 ----
@@ -145,7 +153,7 @@ public CompletionStage<?> consumewls(JmsMessage<String> msg) {
 === Producing
 
 [source,java]
-.Producing to Weblogic JMS:
+.Producing to WebLogic JMS:
 ----
 @Outgoing("to-wls")
 public PublisherBuilder<String> produceToWls() {
@@ -154,7 +162,7 @@ public PublisherBuilder<String> produceToWls() {
 ----
 
 [source,java]
-.Example of more advanced producing to Weblogic JMS:
+.Example of more advanced producing to WebLogic JMS:
 ----
 @Outgoing("to-wls")
 public PublisherBuilder<String> produceToJms() {
@@ -169,7 +177,7 @@ public PublisherBuilder<String> produceToJms() {
 }
 ----
 [source,java]
-.Example of even more advanced producing to Weblogic JMS with custom mapper:
+.Example of even more advanced producing to WebLogic JMS with custom mapper:
 ----
 @Outgoing("to-wls")
 public PublisherBuilder<String> produceToJms() {

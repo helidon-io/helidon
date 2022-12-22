@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
-:toc:
-:toc-placement: preamble
 :description: Scheduling in Helidon SE
 :keywords: helidon, se, scheduling
 :h1Prefix: SE

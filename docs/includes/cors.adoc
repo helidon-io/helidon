@@ -251,8 +251,6 @@ matches an incoming request's path pattern and HTTP method.
 // tag::understanding-cors-support-in-services[]
 === Using CORS Support in Built-in Helidon Services
 
-include::{rootdir}/includes/pages.adoc[]
-
 Several built-in Helidon services--xref:{health-page}[health], xref:{metrics-page}[metrics], and
 xref:{openapi-page}[OpenAPI]--have integrated CORS support.
 You can include these services in your application and control how those resources can be  shared across origins.
@@ -284,8 +282,6 @@ to your own endpoints.
 
 // tag::builtin-getting-started[]
 ==== Built-in Services with CORS
-
-include::{rootdir}/includes/pages.adoc[]
 
 To use built-in services with CORS support and customize the
 CORS behavior:

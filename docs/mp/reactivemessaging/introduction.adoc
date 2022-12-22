@@ -40,10 +40,10 @@ include::{rootdir}/includes/mp.adoc[]
 Reactive messaging offers a new way of processing messages that is different from the older method of using message-driven beans. One significant difference is that blocking is no longer the only way to apply backpressure to the message source.
 
 Reactive messaging uses reactive streams as message channels so you can construct very effective pipelines for working
-with the messages or, if you prefer, you can continue to use older messaging methods. Like the message-driven beans, 
+with the messages or, if you prefer, you can continue to use older messaging methods. Like the message-driven beans,
 link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging]
 uses CDI beans to produce, consume or process messages over Reactive Streams.
-These essaging beans are expected to be either  `ApplicationScoped` or `Dependent` scoped.
+These messaging beans are expected to be either  `ApplicationScoped` or `Dependent` scoped.
 Messages are managed by methods annotated by `@Incoming` and `@Outgoing`
 and the invocation is always driven by message core - either at assembly time, or for every message coming from the stream.
 

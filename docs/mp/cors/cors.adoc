@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CORS in Helidon MP
-:toc:
-:toc-placement: preamble
 :description: Helidon MP CORS Support
 :keywords: helidon, java, cors, mp, configuration, services
 :feature-name: CORS

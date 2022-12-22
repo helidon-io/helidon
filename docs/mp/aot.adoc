@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = GraalVM Native Image
-:toc:
-:toc-placement: preamble
 :description: Helidon AOT using GraalVM native-image
 :keywords: helidon, aot, native, native-image, image, executable, mp
 :rootdir: {docdir}/..

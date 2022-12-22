@@ -17,16 +17,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI UI
-:toc:
-:toc-placement: preamble
 :description: Helidon SE OpenAPI UI Support
 :keywords: helidon, se, openapi ui
 :rootdir: {docdir}/../..
-:incdir: {rootdir}/includes/openapi
-:ui-inc: {incdir}/openapi-ui.adoc
+:ui-inc: {rootdir}/includes/openapi/openapi-ui.adoc
 
 include::{rootdir}/includes/se.adoc[]
-include::{rootdir}/includes/pages.adoc[]
+
 :javadoc-path: {openapi-ui-javadoc-base-url}/io/helidon/integrations/openapi/ui
 :openapi-javadoc-path: {openapi-javadoc-base-url}/io/helidon/openapi
 
@@ -38,7 +35,7 @@ include::{ui-inc}[tag=dependencies]
 
 Also, make sure your project has the following dependency.
 
-include::{openapi-page}[tag=depc]
+include::{docdir}/openapi.adoc[tag=depc]
 
 This dependency allows your application to create, configure, and register the `OpenAPISupport` service.
 

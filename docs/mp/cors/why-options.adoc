@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Why `@OPTIONS`?
-:toc:
-:toc-placement: preamble
 :description: Exploration of why Helidon MP associates the `@CrossOrigin` annotation with `@OPTIONS` methods.
 :keywords: helidon, java, cors, mp, microprofile, jax-rs cross-origin resource sharing
 :rootdir: {docdir}/../..
