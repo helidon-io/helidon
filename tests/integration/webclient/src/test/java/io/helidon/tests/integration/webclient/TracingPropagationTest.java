@@ -36,7 +36,7 @@ import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -50,7 +50,7 @@ import static org.hamcrest.Matchers.hasSize;
 class TracingPropagationTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
-    @RepeatedTest(100)
+    @Test
     void testTracingSuccess() throws ExecutionException, InterruptedException {
         MockTracer mockTracer = new MockTracer();
 
