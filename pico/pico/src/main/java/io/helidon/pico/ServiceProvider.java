@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import jakarta.inject.Singleton;
 public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted {
 
     /**
-     * Describe the service provider physically and (globally) uniquely.
+     * Identifies the service provider physically and (globally) uniquely.
      *
-     * @return the unique identity description
+     * @return the unique identity
      */
-    String identity();
+    String id();
 
     /**
      * Describe the service provider conceptually.
@@ -89,7 +89,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      *
      * @return the activation phase
      */
-    ActivationPhase currentActivationPhase();
+    Phase currentActivationPhase();
 
     /**
      * The agent responsible for activation - this will be non-null for build-time activators. If not present then
@@ -97,7 +97,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      *
      * @return the activator
      */
-    Activator<T> activator();
+    Optional<Activator<T>> activator();
 
     /**
      * The agent responsible for deactivation - this will be non-null for build-time activators. If not present then
@@ -105,7 +105,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      *
      * @return the deactivator to use or null if the service is not interested in deactivation
      */
-    DeActivator<T> deActivator();
+    Optional<DeActivator<T>> deActivator();
 
     /**
      * The optional method handling PreDestroy.
@@ -122,7 +122,7 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
     Optional<PreDestroyMethod> preDestroyMethod();
 
     /**
-     * The agent/instance to be used for binding this service provider to the pico application that is class code generated.
+     * The agent/instance to be used for binding this service provider to the pico application that was code generated.
      *
      * @return the service provider that should be used for binding
      * @see Module
@@ -130,4 +130,5 @@ public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted 
      * @see ServiceProviderBindable
      */
     ServiceProvider<T> serviceProviderBindable();
+
 }

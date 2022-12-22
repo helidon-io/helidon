@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,17 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Request to {@link io.helidon.pico.DeActivator#deactivate(DeActivationRequest)}.
- *
- * @param <T> type to deactivate
  */
 @Builder
-public interface DeActivationRequest<T> {
+public interface DeActivationRequest {
 
     /**
      * Create a request with defaults.
      *
      * @param provider service provider responsible for invoking deactivate
      * @return a new request
-     * @param <T> type to deactivate
      */
-    @SuppressWarnings("unchecked")
-    static <T> DeActivationRequest<T> create(ServiceProvider<T> provider) {
+    static DeActivationRequest create(ServiceProvider<?> provider) {
         return DefaultDeActivationRequest.builder().serviceProvider(provider).build();
     }
 
@@ -44,7 +40,7 @@ public interface DeActivationRequest<T> {
      *
      * @return service provider
      */
-    ServiceProvider<T> serviceProvider();
+    ServiceProvider<?> serviceProvider();
 
     /**
      * Whether to throw an exception on failure, or return it as part of the result.

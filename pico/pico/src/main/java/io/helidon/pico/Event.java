@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.spi;
+package io.helidon.pico;
 
 /**
- * Implementors of this contract are capable of resetting the state of itself (i.e., clears cache, log entries, etc.).
+ * A lifecycle activation event.
  */
-@FunctionalInterface
-public interface Resetable {
+public enum Event {
 
     /**
-     * Resets the state of this object.
-     *
-     * @param deep true to iterate over any contained objects, to reflect the reset into the retained object
-     * @return returns true if the state was changed
+     * Starting.
      */
-    boolean reset(boolean deep);
+    STARTING,
+
+    /**
+     * Finished.
+     */
+    FINISHED
 
 }

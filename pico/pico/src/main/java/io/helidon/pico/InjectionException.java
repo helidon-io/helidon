@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.pico;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -27,7 +28,7 @@ public class InjectionException extends PicoServiceProviderException {
     /**
      * The optional activation log (configure to enabled).
      *
-     * @see io.helidon.pico.PicoServicesConfig
+     * @see PicoServicesConfig#activationLogs()
      */
     private final ActivationLog activationLog;
 
@@ -48,7 +49,9 @@ public class InjectionException extends PicoServiceProviderException {
      * @param cause             the root cause
      * @param serviceProvider   the service provider
      */
-    public InjectionException(String msg, Throwable cause, ServiceProvider<?> serviceProvider) {
+    public InjectionException(String msg,
+                              Throwable cause,
+                              ServiceProvider<?> serviceProvider) {
         super(msg, cause, serviceProvider);
         this.activationLog = null;
     }
@@ -57,15 +60,31 @@ public class InjectionException extends PicoServiceProviderException {
      * Injection, or a required service lookup related exception.
      *
      * @param msg               the message
+     * @param serviceProvider   the service provider
+     * @param log               the activity log
+     */
+    public InjectionException(String msg,
+                              ServiceProvider<?> serviceProvider,
+                              ActivationLog log) {
+        super(msg, serviceProvider);
+        Objects.requireNonNull(log);
+        this.activationLog = log;
+    }
+
+    /**
+     * Injection, or a required service lookup related exception.
+     *
+     * @param msg               the message
      * @param cause             the root cause
      * @param serviceProvider   the service provider
-     * @param log               the optional activity log
+     * @param log               the activity log
      */
     public InjectionException(String msg,
                               Throwable cause,
                               ServiceProvider<?> serviceProvider,
                               ActivationLog log) {
         super(msg, cause, serviceProvider);
+        Objects.requireNonNull(log);
         this.activationLog = log;
     }
 

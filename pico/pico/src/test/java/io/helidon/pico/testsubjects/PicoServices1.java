@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.pico.testsubjects;
 import java.util.Objects;
 
 import io.helidon.pico.Bootstrap;
+import io.helidon.pico.PicoServicesConfig;
 
 public class PicoServices1 extends AbstractPicoServices {
     private final Bootstrap bootstrap;
@@ -30,6 +31,11 @@ public class PicoServices1 extends AbstractPicoServices {
     @Override
     public Bootstrap bootstrap() {
         return bootstrap;
+    }
+
+    @Override
+    public PicoServicesConfig config() {
+        return null;
     }
 
 }

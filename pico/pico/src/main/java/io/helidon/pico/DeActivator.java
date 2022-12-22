@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package io.helidon.pico;
 
 /**
  * DeActivators are responsible for lifecycle, transitioning a {@link ServiceProvider} through its
- * {@link io.helidon.pico.ActivationPhase}'s, notably including any
+ * {@link Phase}'s, notably including any
  * {@link jakarta.annotation.PreDestroy} method invocations, and finally into the terminal
- * {@link ActivationPhase#DESTROYED} phase. These phase transitions are the inverse of {@link Activator}.
+ * {@link Phase#DESTROYED} phase. These phase transitions are the inverse of {@link Activator}.
  *
- * @param <T> the type to deactivate
+ * @param <T> the managed service type being deactivated
  * @see Activator
  */
 public interface DeActivator<T> {
@@ -34,5 +34,6 @@ public interface DeActivator<T> {
      * @param request deactivation request
      * @return the result
      */
-    ActivationResult<T> deactivate(DeActivationRequest<T> request);
+    ActivationResult deactivate(DeActivationRequest request);
+
 }

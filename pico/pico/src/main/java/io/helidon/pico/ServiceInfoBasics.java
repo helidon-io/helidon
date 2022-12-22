@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import jakarta.inject.Singleton;
 
 /**
  * Basic service info that describes a service provider type.
+ *
+ * @see ServiceInfo
  */
 public interface ServiceInfoBasics extends Weighted {
 
@@ -93,13 +95,4 @@ public interface ServiceInfoBasics extends Weighted {
         return declaredWeight().orElse(weight());
     }
 
-    /**
-     * Determines whether this matches the given contract.
-     *
-     * @param contract the contract
-     * @return true if the service type name or the set of contracts implemented equals the provided contract
-     */
-    default boolean matchesContract(String contract) {
-        return contract.equals(serviceTypeName()) || contractsImplemented().contains(contract);
-    }
 }

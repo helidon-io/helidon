@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,16 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Request to activate a service.
- *
- * @param <T> service type
  */
 @Builder
-public interface ActivationRequest<T> {
+public interface ActivationRequest {
 
     /**
      * Target service provider.
      *
      * @return service provider
      */
-    ServiceProvider<T> serviceProvider();
+    ServiceProvider<?> serviceProvider();
 
     /**
      * Injection point context information.
@@ -48,7 +46,8 @@ public interface ActivationRequest<T> {
      *
      * @return phase to target
      */
-    ActivationPhase targetPhase();
+    @ConfiguredOption("ACTIVE")
+    Phase targetPhase();
 
     /**
      * Whether to throw an exception on failure to activate, or return an error activation result on activation.
@@ -57,5 +56,20 @@ public interface ActivationRequest<T> {
      */
     @ConfiguredOption("true")
     boolean throwOnFailure();
+
+    /**
+     * Creates a new activation request.
+     *
+     * @param serviceProvider   the service provider
+     * @param targetPhase       the target phase
+     * @return the activation request
+     */
+    static ActivationRequest create(ServiceProvider serviceProvider,
+                                    Phase targetPhase) {
+        return DefaultActivationRequest.builder()
+                .serviceProvider(serviceProvider)
+                .targetPhase(targetPhase)
+                .build();
+    }
 
 }

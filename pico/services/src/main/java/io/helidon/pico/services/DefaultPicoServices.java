@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,12 @@ import io.helidon.pico.ActivationLog;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.Application;
 import io.helidon.pico.Bootstrap;
-import io.helidon.pico.EventReceiver;
+import io.helidon.pico.ActivationPhaseReceiver;
+import io.helidon.pico.Event;
 import io.helidon.pico.Injector;
 import io.helidon.pico.Metrics;
 import io.helidon.pico.Module;
+import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
@@ -65,15 +67,15 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private CountDownLatch initializedServices = new CountDownLatch(1);
     private Thread initializingThread;
 
-
     /**
      * Constructor taking the bootstrap.
      *
      * @param bootstrap the bootstrap configuration
      * @param global    flag indicating whether this is the global con
      */
-    DefaultPicoServices(Bootstrap bootstrap,
-                        boolean global) {
+    DefaultPicoServices(
+            Bootstrap bootstrap,
+            boolean global) {
         this(bootstrap, BasicPicoServicesConfig.create(), global);
     }
 
@@ -84,9 +86,10 @@ class DefaultPicoServices implements PicoServices, Resetable {
      * @param cfg       the config
      * @param global    flag indicating if this is the global singleton
      */
-    DefaultPicoServices(Bootstrap bootstrap,
-                                  PicoServicesConfig cfg,
-                                  boolean global) {
+    DefaultPicoServices(
+            Bootstrap bootstrap,
+            PicoServicesConfig cfg,
+            boolean global) {
         this.bootstrap = Objects.requireNonNull(bootstrap);
         this.cfg = Objects.requireNonNull(cfg);
         this.isGlobal = global;
@@ -103,8 +106,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public Optional<PicoServicesConfig> config() {
-        return Optional.of(cfg);
+    public PicoServicesConfig config() {
+        return cfg;
     }
 
     @Override
@@ -137,7 +140,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public Optional<ServiceBinder> createServiceBinder(Module module) {
+    public Optional<ServiceBinder> createServiceBinder(
+            Module module) {
         return Optional.empty();
     }
 
@@ -148,7 +152,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public Optional<Map<String, ActivationResult<?>>> shutdown() {
+    public Optional<Map<String, ActivationResult>> shutdown() {
         // TODO:
         return Optional.empty();
     }
@@ -389,29 +393,28 @@ class DefaultPicoServices implements PicoServices, Resetable {
         }
 
         if (isGlobal) {
-            services.get().allServiceProviders(false).forEach(sp -> {
-                if (sp instanceof EventReceiver) {
-                    ((EventReceiver) sp).onEvent(EventReceiver.Event.POST_BIND_ALL_MODULES);
-                }
-            });
+            services.get().allServiceProviders(false).stream()
+                    .filter(sp -> sp instanceof ActivationPhaseReceiver)
+                    .map(sp -> (ActivationPhaseReceiver) sp)
+                    .forEach(sp -> sp.onPhaseEvent(Event.STARTING, Phase.POST_BIND_ALL_MODULES));
         }
 
         if (isGlobal || cfg.supportsCompileTime()) {
-            services.get().allServiceProviders(false).forEach(sp -> {
-                if (sp instanceof EventReceiver) {
-                    ((EventReceiver) sp).onEvent(EventReceiver.Event.FINAL_RESOLVE);
-                }
-            });
+            services.get().allServiceProviders(false).stream()
+                    .filter(sp -> sp instanceof ActivationPhaseReceiver)
+                    .map(sp -> (ActivationPhaseReceiver) sp)
+                    .forEach(sp -> sp.onPhaseEvent(Event.STARTING, Phase.FINAL_RESOLVE));
         }
 
         // notify interested service providers of "readiness"...
         services.get().allServiceProviders(false).stream()
-                .filter(sp -> sp instanceof EventReceiver)
-                .forEach(sp -> ((EventReceiver) sp)
-                        .onEvent(EventReceiver.Event.SERVICES_READY));
+                .filter(sp -> sp instanceof ActivationPhaseReceiver)
+                .map(sp -> (ActivationPhaseReceiver) sp)
+                .forEach(sp -> sp.onPhaseEvent(Event.STARTING, Phase.SERVICES_READY));
     }
 
-    private List<Application> findApplications(boolean load) {
+    private List<Application> findApplications(
+            boolean load) {
         if (applicationList.get() != null) {
             return applicationList.get();
         }
@@ -438,7 +441,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
         }
     }
 
-    private List<Module> findModules(boolean load) {
+    private List<Module> findModules(
+            boolean load) {
         if (moduleList.get() != null) {
             return moduleList.get();
         }
@@ -465,8 +469,9 @@ class DefaultPicoServices implements PicoServices, Resetable {
         }
     }
 
-    protected void bindApplications(DefaultServices services,
-                                    Collection<Application> apps) {
+    protected void bindApplications(
+            DefaultServices services,
+            Collection<Application> apps) {
         if (!cfg.usesCompileTime()) {
             LOGGER.log(System.Logger.Level.DEBUG, "application binding is disabled");
             return;
@@ -487,8 +492,9 @@ class DefaultPicoServices implements PicoServices, Resetable {
         });
     }
 
-    private void bindModules(DefaultServices services,
-                             Collection<Module> modules) {
+    private void bindModules(
+            DefaultServices services,
+            Collection<Module> modules) {
         if (modules.isEmpty()) {
             LOGGER.log(System.Logger.Level.WARNING, "no " + Module.class.getName() + " was found.");
         } else {
@@ -502,7 +508,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
      * @param sp the service provider of the target
      * @return true if the target qualifies for injection
      */
-    static boolean isQualifiedInjectionTarget(ServiceProvider<?> sp) {
+    static boolean isQualifiedInjectionTarget(
+            ServiceProvider<?> sp) {
         ServiceInfo serviceInfo = sp.serviceInfo();
         Set<String> contractsImplemented = serviceInfo.contractsImplemented();
         return !contractsImplemented.isEmpty()

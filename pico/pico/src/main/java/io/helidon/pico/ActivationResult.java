@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,30 @@
 
 package io.helidon.pico;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
 import io.helidon.builder.Builder;
+import io.helidon.pico.spi.BasicInjectionPlan;
 
 /**
  * Represents the result of a service activation or deactivation.
  *
  * @see Activator
  * @see DeActivator
- *
- * @param <T> The type of the associated activator
- */
+ **/
+// TODO: review the similarities with ActivationLogEntry
 @Builder
-public interface ActivationResult<T> {
+public interface ActivationResult {
 
     /**
      * The service provider undergoing activation or deactivation.
      *
      * @return the service provider generating the result
      */
-    ServiceProvider<T> serviceProvider();
+    ServiceProvider<?> serviceProvider();
 
     /**
      * Optionally, given by the implementation provider to indicate the future completion when the provider's
@@ -46,68 +47,63 @@ public interface ActivationResult<T> {
      *
      * @return the future result, assuming how activation can be async in nature
      */
-    Optional<Future<ActivationResult<T>>> finishedActivationResult();
+    Optional<Future<ActivationResult>> finishedActivationResult();
 
     /**
      * The activation phase that was found at onset of the phase transition.
      *
      * @return the starting phase
      */
-    ActivationPhase startingActivationPhase();
+    Phase startingActivationPhase();
 
     /**
      * The activation phase that was requested at the onset of the phase transition.
      *
      * @return the target, desired, ultimate phase requested
      */
-    ActivationPhase ultimateTargetActivationPhase();
+    Phase ultimateTargetActivationPhase();
 
     /**
-     * The activation phase we finished successfully on.
+     * The activation phase we finished successfully on, or are otherwise currently in if not yet finished.
      *
-     * @return the actual finishing phase
+     * @return the finishing phase
      */
-    ActivationPhase finishingActivationPhase();
+    Phase finishingActivationPhase();
 
     /**
      * How did the activation finish.
+     * Will only be populated if the lifecycle event has completed - see {@link #finishedActivationResult()}.
      *
      * @return the finishing status
      */
-    ActivationStatus finishingStatus();
+    Optional<ActivationStatus> finishingStatus();
 
     /**
-     * The containing activation log that tracked this result.
+     * The injection plan that was found or determined, key'ed by each element's {@link ServiceProvider#id()}.
      *
-     * @return the activation log
+     * @return the resolved injection plan map
      */
-    Optional<ActivationLog> activationLog();
+    Map<String, ? extends BasicInjectionPlan> injectionPlans();
 
     /**
-     * The services registry that was used.
+     * The dependencies that were resolved or loaded, key'ed by each element's {@link ServiceProvider#id()}.
      *
-     * @return the services registry
+     * @return the resolved dependency map
      */
-    Optional<Services> services();
+    Map<String, Object> resolvedDependencies();
 
     /**
-     * Any vendor/provider implementation specific codes.
+     * Set to true if the injection plan in {@link #resolvedDependencies()} has been resolved and can be "trusted" as being
+     * complete and accurate.
      *
-     * @return the status code, 0 being the normal/default value
+     * @return true if was resolved
      */
-    int statusCode();
-
-    /**
-     * Any vendor/provider implementation specific description.
-     *
-     * @return a developer friendly description (useful if an error occurs)
-     */
-    Optional<String> statusDescription();
+    boolean wasResolved();
 
     /**
      * Any throwable/exceptions that were observed during activation.
      *
-     * @return the captured error
+     * @return any captured error
      */
     Optional<Throwable> error();
 
@@ -117,17 +113,43 @@ public interface ActivationResult<T> {
      * @return true if finished
      */
     default boolean finished() {
-        Future<ActivationResult<T>> f = finishedActivationResult().orElse(null);
+        Future<ActivationResult> f = finishedActivationResult().orElse(null);
         return (Objects.isNull(f) || f.isDone());
     }
 
     /**
-     * Returns true if this result is successful.
+     * Returns true if this result was successful.
      *
      * @return true if successful
      */
     default boolean success() {
-        return finishingStatus() != ActivationStatus.FAILURE;
+        return finishingStatus().orElse(null) != ActivationStatus.FAILURE;
+    }
+
+    /**
+     * Returns true if this result was unsuccessful.
+     *
+     * @return true if unsuccessful
+     */
+    default boolean failure() {
+        return !success();
+    }
+
+    /**
+     * Creates a successful result.
+     *
+     * @param serviceProvider the service provider
+     * @return the result
+     */
+    static ActivationResult createSuccess(ServiceProvider<?> serviceProvider) {
+        Phase phase = serviceProvider.currentActivationPhase();
+        return DefaultActivationResult.builder()
+                .serviceProvider(serviceProvider)
+                .startingActivationPhase(phase)
+                .finishingActivationPhase(phase)
+                .ultimateTargetActivationPhase(phase)
+                .finishingStatus(ActivationStatus.SUCCESS)
+                .build();
     }
 
 }

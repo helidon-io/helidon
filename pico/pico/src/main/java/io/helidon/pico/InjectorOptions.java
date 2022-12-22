@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,15 @@ public interface InjectorOptions {
      *
      * @return the optional target finish phase
      */
-    Optional<ActivationPhase> startAtPhase();
+    Optional<Phase> startAtPhase();
 
     /**
      * The optional target finishing phase for the {@link Activator} behind the {@link Injector}.
-     * The default is {@link ActivationPhase#ACTIVE}.
+     * The default is {@link Phase#ACTIVE}.
      *
      * @return the optional target finish phase
      */
-    Optional<ActivationPhase> finishAtPhase();
+    Optional<Phase> finishAtPhase();
 
     /**
      * The optional recipient target, describing who and what is being injected.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ import io.helidon.common.config.Config;
  * This is the bootstrap needed to provide to {@code Pico} initialization.
  *
  * @see io.helidon.pico.spi.PicoServicesProvider
- * @see io.helidon.pico.PicoServices#globalBootstrap();
+ * @see io.helidon.pico.PicoServices#globalBootstrap()
  */
 @Builder
 public interface Bootstrap {
 
     /**
      * Provides the base primordial bootstrap configuration to the {@link io.helidon.pico.spi.PicoServicesProvider}.
-     * The provider will then bootstrap its {@link io.helidon.pico.PicoServicesConfig} to any provided bootstrap
+     * The provider will then bootstrap its {@link PicoServicesConfig} to any provided bootstrap
      * configuration instance provided, etc.
      *
      * @return the bootstrap configuration

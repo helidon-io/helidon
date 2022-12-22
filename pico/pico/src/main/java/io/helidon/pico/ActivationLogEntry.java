@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,21 +33,6 @@ import io.helidon.builder.BuilderInterceptor;
 public interface ActivationLogEntry {
 
     /**
-     * The activation event.
-     */
-    enum Event {
-        /**
-         * Starting.
-         */
-        STARTING,
-
-        /**
-         * Finished.
-         */
-        FINISHED
-    }
-
-    /**
      * The managing service provider the event pertains to.
      *
      * @return the managing service provider
@@ -66,28 +51,28 @@ public interface ActivationLogEntry {
      *
      * @return the starting activation phase
      */
-    ActivationPhase startingActivationPhase();
+    Optional<Phase> startingActivationPhase();
 
     /**
      * The eventual/desired/target activation phase.
      *
      * @return the eventual/desired/target activation phase
      */
-    ActivationPhase targetActivationPhase();
+    Optional<Phase> targetActivationPhase();
 
     /**
      * The finishing phase at the time of this event's log entry.
      *
      * @return the actual finishing phase
      */
-    ActivationPhase finishingActivationPhase();
+    Optional<Phase> finishedActivationPhase();
 
     /**
      * The finishing activation status at the time of this event's log entry.
      *
      * @return the activation status
      */
-    ActivationStatus finishingStatus();
+    Optional<ActivationStatus> finishedStatus();
 
     /**
      * The time this event was generated.
@@ -115,6 +100,14 @@ public interface ActivationLogEntry {
      * Ensures that the non-nullable fields are populated with default values.
      */
     class Interceptor implements BuilderInterceptor<DefaultActivationLogEntry.Builder> {
+
+        /**
+         * Default Constructor.
+         * @deprecated
+         */
+        Interceptor() {
+        }
+
         @Override
         public DefaultActivationLogEntry.Builder intercept(DefaultActivationLogEntry.Builder b) {
             if (b.time() == null) {
@@ -125,20 +118,20 @@ public interface ActivationLogEntry {
                 b.threadId(Thread.currentThread().getId());
             }
 
-            if (b.startingActivationPhase() == null) {
-                b.startingActivationPhase(ActivationPhase.INIT);
+            if (b.finishedActivationPhase() == null) {
+                b.finishedActivationPhase(b.startingActivationPhase());
             }
 
-            if (b.finishingStatus() == null) {
-                b.finishingActivationPhase(b.startingActivationPhase());
+            if (b.targetActivationPhase() == null) {
+                b.targetActivationPhase(b.finishedActivationPhase());
             }
 
             if (b.event() == null) {
-                b.event(Event.STARTING);
+                b.event(Event.FINISHED);
             }
 
-            if (b.finishingStatus() == null) {
-                b.finishingStatus(ActivationStatus.SUCCESS);
+            if (b.finishedStatus() == null) {
+                b.finishedStatus(ActivationStatus.SUCCESS);
             }
 
             return b;

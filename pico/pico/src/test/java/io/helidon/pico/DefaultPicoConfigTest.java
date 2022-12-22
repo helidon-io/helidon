@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ class DefaultPicoConfigTest {
         assertThat(cfg.usesJsr330(), equalTo(Boolean.FALSE));
         assertThat(cfg.supportsCompileTime(), equalTo(Boolean.TRUE));
         assertThat(cfg.usesCompileTime(), equalTo(Boolean.TRUE));
+        assertThat(cfg.supportsContextualLookup(), equalTo(Boolean.FALSE));
         assertThat(cfg.providerName(), isEmptyOrNullString());
         assertThat(cfg.providerVersion(), isEmptyOrNullString());
     }
@@ -100,6 +101,7 @@ class DefaultPicoConfigTest {
         assertThat(cfg.usesJsr330(), equalTo(Boolean.TRUE));
         assertThat(cfg.supportsCompileTime(), equalTo(Boolean.TRUE));
         assertThat(cfg.usesCompileTime(), equalTo(Boolean.FALSE));
+        assertThat(cfg.supportsContextualLookup(), equalTo(Boolean.FALSE));
         assertThat(cfg.providerName(), isEmptyOrNullString());
         assertThat(cfg.providerVersion(), isEmptyOrNullString());
     }

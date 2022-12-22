@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,16 +31,18 @@ class DefaultServiceBinder implements ServiceBinder {
     private final DefaultServices serviceRegistry;
     private final String moduleName;
 
-    DefaultServiceBinder(PicoServices picoServices,
-                         DefaultServices serviceRegistry,
-                         String moduleName) {
+    DefaultServiceBinder(
+            PicoServices picoServices,
+            DefaultServices serviceRegistry,
+            String moduleName) {
         this.picoServices = picoServices;
         this.serviceRegistry = serviceRegistry;
         this.moduleName = moduleName;
     }
 
     @Override
-    public void bind(ServiceProvider<?> sp) {
+    public void bind(
+            ServiceProvider<?> sp) {
         Optional<ServiceProviderBindable<?>> bindableSp = toBindableProvider(sp);
 
         if (moduleName != null) {
@@ -48,12 +50,35 @@ class DefaultServiceBinder implements ServiceBinder {
         }
 
         serviceRegistry.bind(picoServices, sp);
-
-        bindableSp.ifPresent(it -> it.picoServices(picoServices));
+        bindableSp.ifPresent(it -> it.picoServices(Optional.ofNullable(picoServices)));
     }
 
-    static Optional<ServiceProviderBindable<?>> toBindableProvider(ServiceProvider<?> sp) {
+    /**
+     * Returns the bindable service provider for what is passed if available.
+     *
+     * @param sp the service provider
+     * @return the bindable service provider if available, otherwise empty
+     */
+    static Optional<ServiceProviderBindable<?>> toBindableProvider(
+            ServiceProvider<?> sp) {
         return Optional.ofNullable((sp instanceof ServiceProviderBindable) ? (ServiceProviderBindable<?>) sp : null);
     }
 
+    /**
+     * Returns the root provider of the service provider passed.
+     *
+     * @param sp the service provider
+     * @return the root provider of the service provider, falling back to the service provider passed
+     */
+    @SuppressWarnings("unchecked")
+    static ServiceProvider<?> toRootProvider(
+            ServiceProvider<?> sp) {
+        Optional<ServiceProviderBindable<?>> bindable = toBindableProvider(sp);
+        if (bindable.isPresent()) {
+            sp = bindable.get();
+        }
+
+        ServiceProvider<?> rootProvider = ((ServiceProviderBindable<?>) sp).rootProvider().orElse(null);
+        return (rootProvider != null) ? rootProvider : sp;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import io.helidon.builder.Builder;
 public interface InjectionPointInfo extends ElementInfo {
 
     /**
-     * The identifying name for this injection point. The identity should be unique for the service type it is contained within.
+     * The identity (aka id) for this injection point. The id should be unique for the service type it is contained within.
      * <p>
      * This method will return the {@link #baseIdentity()} when {@link #elementOffset()} is null.  If not null
      * then the elemOffset is part of the returned identity.
      *
      * @return the unique identity
      */
-    String identity();
+    String id();
 
     /**
      * The base identifying name for this injection point. If the element represents a function, then the function arguments
@@ -47,7 +47,7 @@ public interface InjectionPointInfo extends ElementInfo {
     /**
      * The qualifiers on this element.
      *
-     * @return The qualifiers on this element.
+     * @return The qualifiers on this element
      */
     Set<QualifierAndValue> qualifiers();
 
@@ -73,9 +73,9 @@ public interface InjectionPointInfo extends ElementInfo {
     boolean providerWrapped();
 
     /**
-     * The dependency this is dependent upon.
+     * The service info dependency this is dependent upon.
      *
-     * @return The service info we are dependent upon.
+     * @return The service info we are dependent upon
      */
     ServiceInfo dependencyToServiceInfo();
 

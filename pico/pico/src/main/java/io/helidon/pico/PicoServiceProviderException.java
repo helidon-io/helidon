@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +49,24 @@ public class PicoServiceProviderException extends PicoException {
                                         Throwable cause) {
         super(msg, cause);
 
-       if (cause instanceof PicoServiceProviderException) {
+        if (cause instanceof PicoServiceProviderException) {
            this.serviceProvider = ((PicoServiceProviderException) cause).serviceProvider().orElse(null);
-       } else {
+        } else {
            this.serviceProvider = null;
-       }
+        }
+    }
+
+    /**
+     * A general purpose exception from Pico.
+     *
+     * @param msg               the message
+     * @param serviceProvider   the service provider
+     */
+    public PicoServiceProviderException(String msg,
+                                        ServiceProvider<?> serviceProvider) {
+        super(msg);
+        Objects.requireNonNull(serviceProvider);
+        this.serviceProvider = serviceProvider;
     }
 
     /**

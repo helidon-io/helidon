@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,11 @@
 package io.helidon.pico;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import io.helidon.pico.types.AnnotationAndValue;
 
 /**
  * The default/reference implementation for {@link ServiceInfo}.
@@ -49,44 +45,14 @@ public class DefaultServiceInfo implements ServiceInfo {
      */
     protected DefaultServiceInfo(ServiceInfo src) {
         this.serviceTypeName = src.serviceTypeName();
-        this.contractsImplemented = new TreeSet<>(src.contractsImplemented());
-        this.externalContractsImplemented = new LinkedHashSet<>(src.externalContractsImplemented());
-        this.scopeTypeNames = new LinkedHashSet<>(src.scopeTypeNames());
-        this.qualifiers = new LinkedHashSet<>(src.qualifiers());
+        this.contractsImplemented = Set.copyOf(new TreeSet<>(src.contractsImplemented()));
+        this.externalContractsImplemented = Set.copyOf(src.externalContractsImplemented());
+        this.scopeTypeNames = Set.copyOf(src.scopeTypeNames());
+        this.qualifiers = Set.copyOf(src.qualifiers());
         this.activatorTypeName = src.activatorTypeName();
         this.runLevel = src.runLevel();
         this.moduleName = src.moduleName().orElse(null);
         this.weight = src.declaredWeight().orElse(null);
-    }
-
-    /**
-     * Constructor using the builder result.
-     *
-     * @param b the builder
-     * @see #builder()
-     */
-    @SuppressWarnings("unchecked")
-    protected DefaultServiceInfo(Builder b) {
-        this.serviceTypeName = b.serviceTypeName;
-        this.contractsImplemented = Collections.unmodifiableSet(new TreeSet<String>(b.contractsImplemented));
-        this.externalContractsImplemented = Collections.unmodifiableSet(b.externalContractsImplemented);
-        this.scopeTypeNames = Collections.unmodifiableSet(b.scopeTypeNames);
-        this.qualifiers = Collections.unmodifiableSet(b.qualifiers);
-        this.activatorTypeName = b.activatorTypeName;
-        this.runLevel = b.runLevel;
-        this.moduleName = b.moduleName;
-        this.weight = b.weight;
-    }
-
-    /**
-     * Provides a facade over {@link java.util.Objects#equals(Object, Object)}.
-     *
-     * @param o1 an object
-     * @param o2 an object to compare with a1 for equality
-     * @return true if a1 equals a2
-     */
-    public static boolean equals(Object o1, Object o2) {
-        return Objects.equals(o1, o2);
     }
 
     /**
@@ -114,32 +80,24 @@ public class DefaultServiceInfo implements ServiceInfo {
         return Optional.ofNullable(moduleName);
     }
 
-    /**
-     * Matches is a looser form of equality check than {@link #equals(Object, Object)}. If a service matches criteria
-     * it is generally assumed to be viable for assignability.
-     *
-     * @param criteria the criteria to compare against
-     * @return true if the criteria provided matches this instance
-     * @see Services#lookup(ServiceInfo)
-     */
     @Override
-    public boolean matches(ServiceInfoCriteria criteria) {
-        if (criteria == PicoServices.EMPTY_CRITERIA) {
-            return true;
+    public int hashCode() {
+        return Objects.hash(serviceTypeName(), contractsImplemented());
+    }
+
+    @Override
+    public boolean equals(Object another) {
+        if (!(another instanceof ServiceInfo)) {
+            return false;
         }
 
-        boolean matches = matches(this.serviceTypeName(), criteria.serviceTypeName());
-        if (matches && criteria.serviceTypeName().isEmpty()) {
-            matches = this.contractsImplemented().containsAll(criteria.contractsImplemented())
-                    || criteria.contractsImplemented().contains(this.serviceTypeName());
-        }
-        return matches
-                && this.scopeTypeNames().containsAll(criteria.scopeTypeNames())
-                && matchesQualifiers(this.qualifiers(), criteria.qualifiers())
-                && matches(this.activatorTypeName(), criteria.activatorTypeName())
-                && matches(this.runLevel(), criteria.runLevel())
-                && matchesWeight(this, criteria)
-                && matches(this.moduleName(), criteria.moduleName());
+        return Objects.equals(serviceTypeName(), ((ServiceInfo) another).serviceTypeName())
+                && Objects.equals(contractsImplemented(), ((ServiceInfo) another).contractsImplemented())
+                && Objects.equals(qualifiers(), ((ServiceInfo) another).qualifiers())
+                && Objects.equals(activatorTypeName(), ((ServiceInfo) another).activatorTypeName())
+                && Objects.equals(runLevel(), ((ServiceInfo) another).runLevel())
+                && Objects.equals(realizedWeight(), ((ServiceInfo) another).realizedWeight())
+                && Objects.equals(moduleName(), ((ServiceInfo) another).moduleName());
     }
 
     @Override
@@ -172,26 +130,6 @@ public class DefaultServiceInfo implements ServiceInfo {
         return Optional.ofNullable(weight);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(serviceTypeName(), contractsImplemented());
-    }
-
-    @Override
-    public boolean equals(Object another) {
-        if (!(another instanceof ServiceInfo)) {
-            return false;
-        }
-
-        return equals(serviceTypeName(), ((ServiceInfo) another).serviceTypeName())
-                && equals(contractsImplemented(), ((ServiceInfo) another).contractsImplemented())
-                && equals(qualifiers(), ((ServiceInfo) another).qualifiers())
-                && equals(activatorTypeName(), ((ServiceInfo) another).activatorTypeName())
-                && equals(runLevel(), ((ServiceInfo) another).runLevel())
-                && equals(realizedWeight(), ((ServiceInfo) another).realizedWeight())
-                && equals(moduleName(), ((ServiceInfo) another).moduleName());
-    }
-
     /**
      * Creates a fluent builder initialized with the current values of this instance.
      *
@@ -203,80 +141,16 @@ public class DefaultServiceInfo implements ServiceInfo {
     }
 
     /**
-     * Weight matching is always less or equal to criteria specified.
+     * Creates a fluent builder initialized with the current values of the provided instance.
      *
-     * @param src      the item being considered
-     * @param criteria the criteria
-     * @return true if there is a match
+     * @param serviceInfo the service info value to initialize from
+     * @return A builder initialized with the current attributes.
      */
-    protected static boolean matchesWeight(ServiceInfoBasics src, ServiceInfoCriteria criteria) {
-        if (criteria.weight().isEmpty()) {
-            return true;
-        }
-
-        Double srcWeight = src.realizedWeight();
-        return (srcWeight.compareTo(criteria.weight().get()) <= 0);
+    @SuppressWarnings("unchecked")
+    public static Builder<? extends DefaultServiceInfo, ? extends Builder<?, ?>> toBuilder(ServiceInfo serviceInfo) {
+        return new Builder(serviceInfo);
     }
 
-    /**
-     * Matches qualifier collections.
-     *
-     * @param src      the target service info to evaluate
-     * @param criteria the criteria to compare against
-     * @return true if the criteria provided matches this instance
-     */
-    private static boolean matchesQualifiers(Set<QualifierAndValue> src, Set<QualifierAndValue> criteria) {
-        if (criteria.isEmpty()) {
-            return true;
-        }
-
-        if (src.isEmpty()) {
-            return false;
-        }
-
-        if (src.contains(DefaultQualifierAndValue.WILDCARD_NAMED)) {
-            return true;
-        }
-
-        for (QualifierAndValue criteriaQualifier : criteria) {
-            if (src.contains(criteriaQualifier)) {
-                // NOP;
-                continue;
-            } else if (criteriaQualifier.typeName().equals(DefaultQualifierAndValue.NAMED)) {
-                if (criteriaQualifier.equals(DefaultQualifierAndValue.WILDCARD_NAMED)
-                        || criteriaQualifier.value().isEmpty()) {
-                    // any Named qualifier will match ...
-                    boolean hasSameTypeAsCriteria = src.stream()
-                            .anyMatch(q -> q.typeName().equals(criteriaQualifier.typeName()));
-                    if (hasSameTypeAsCriteria) {
-                        continue;
-                    }
-                } else if (src.contains(DefaultQualifierAndValue.WILDCARD_NAMED)) {
-                    continue;
-                }
-                return false;
-            } else if (criteriaQualifier.value().isEmpty()) {
-                Set<AnnotationAndValue> sameTypeAsCriteriaSet = src.stream()
-                        .filter(q -> q.typeName().equals(criteriaQualifier.typeName()))
-                        .collect(Collectors.toSet());
-                if (sameTypeAsCriteriaSet.isEmpty()) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean matches(Object src, Optional<?> criteria) {
-        if (criteria.isEmpty()) {
-            return true;
-        }
-
-        return equals(src, criteria.get());
-    }
 
     /**
      * The fluent builder for {@link ServiceInfo}.
@@ -285,7 +159,8 @@ public class DefaultServiceInfo implements ServiceInfo {
      * @param <C> the concrete type being build
      */
     public static class Builder<C extends DefaultServiceInfo, B extends Builder<C, B>>
-            implements io.helidon.common.Builder<B, C> {
+            implements io.helidon.common.Builder<B, C>,
+                       ServiceInfo {
         private final Set<String> contractsImplemented = new LinkedHashSet<>();
         private final Set<String> externalContractsImplemented = new LinkedHashSet<>();
         private final Set<String> scopeTypeNames = new LinkedHashSet<>();
@@ -293,7 +168,7 @@ public class DefaultServiceInfo implements ServiceInfo {
 
         private String serviceTypeName;
         private String activatorTypeName;
-        private Integer runLevel;
+        private Integer runLevel = RunLevel.NORMAL;
         private String moduleName;
         private Double weight;
 
@@ -311,7 +186,7 @@ public class DefaultServiceInfo implements ServiceInfo {
          * @param c the existing value object
          * @see #toBuilder()
          */
-        protected Builder(C c) {
+        protected Builder(ServiceInfo c) {
             this.serviceTypeName = c.serviceTypeName();
             this.contractsImplemented.addAll(c.contractsImplemented());
             this.externalContractsImplemented.addAll(c.externalContractsImplemented());
@@ -548,6 +423,36 @@ public class DefaultServiceInfo implements ServiceInfo {
         public B weight(Double weight) {
             this.weight = weight;
             return identity();
+        }
+
+        @Override
+        public Set<String> externalContractsImplemented() {
+            return Set.copyOf(externalContractsImplemented);
+        }
+
+        @Override
+        public String activatorTypeName() {
+            return activatorTypeName;
+        }
+
+        @Override
+        public Optional<String> moduleName() {
+            return Optional.ofNullable(moduleName);
+        }
+
+        @Override
+        public String serviceTypeName() {
+            return serviceTypeName;
+        }
+
+        @Override
+        public int runLevel() {
+            return (runLevel == null) ? RunLevel.NORMAL : runLevel;
+        }
+
+        @Override
+        public Optional<Double> declaredWeight() {
+            return Optional.ofNullable(weight);
         }
     }
 

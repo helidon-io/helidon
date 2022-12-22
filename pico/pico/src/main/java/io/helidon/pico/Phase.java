@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.pico;
 /**
  * Forms a progression of full activation and deactivation.
  */
-public enum ActivationPhase {
+public enum Phase {
 
     /**
      * Starting state before anything happens activation-wise.
@@ -67,6 +67,21 @@ public enum ActivationPhase {
     ACTIVE(true),
 
     /**
+     * Called after all modules and services loaded into the service registry.
+     */
+    POST_BIND_ALL_MODULES(true),
+
+    /**
+     * Called after {@link #POST_BIND_ALL_MODULES} to resolve any latent bindings, prior to {@link #SERVICES_READY}.
+     */
+    FINAL_RESOLVE(true),
+
+    /**
+     * The service registry is fully populated and ready.
+     */
+    SERVICES_READY(true),
+
+    /**
      * About to call pre-destroy.
      */
     PRE_DESTROYING(false),
@@ -92,7 +107,9 @@ public enum ActivationPhase {
         return eligibleForDeactivation;
     }
 
-    ActivationPhase(boolean eligibleForDeactivation) {
+    Phase(
+            boolean eligibleForDeactivation) {
         this.eligibleForDeactivation = eligibleForDeactivation;
     }
+
 }

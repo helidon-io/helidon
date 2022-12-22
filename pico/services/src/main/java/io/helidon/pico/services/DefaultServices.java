@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,6 +117,15 @@ class DefaultServices implements Services, Resetable {
         cacheHitCount.set(0);
     }
 
+    Metrics metrics() {
+        return DefaultMetrics.builder()
+                .services(size())
+                .lookupCount(lookupCount.get())
+                .cacheLookupCount(cacheLookupCount.get())
+                .cacheHitCount(cacheHitCount.get())
+                .build();
+    }
+
     @Override
     public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
                                                         String name,
@@ -131,42 +140,38 @@ class DefaultServices implements Services, Resetable {
     }
 
     @Override
-    public <T> Optional<ServiceProvider<T>> lookupFirst(ServiceInfoCriteria criteria,
-                                                        boolean expected) {
+    public <T> Optional<ServiceProvider<T>> lookupFirst(
+            ServiceInfoCriteria criteria,
+            boolean expected) {
         List<ServiceProvider<T>> result = lookup(criteria, expected, 1);
         assert (!expected || !result.isEmpty());
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     @Override
-    public <T> List<ServiceProvider<T>> lookupAll(Class<T> type) {
+    public <T> List<ServiceProvider<T>> lookupAll(
+            Class<T> type) {
         DefaultServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .build();
-        return lookupAll(serviceInfo);
+        return lookup(serviceInfo, false, Integer.MAX_VALUE);
     }
 
     @Override
-    public <T> List<ServiceProvider<T>> lookupAll(ServiceInfoCriteria criteria,
-                                                  boolean expected) {
-        List<ServiceProvider<T>> result = lookup(criteria, expected, Integer.MAX_VALUE);
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public List<ServiceProvider<?>> lookupAll(
+            ServiceInfoCriteria criteria,
+            boolean expected) {
+        List<ServiceProvider<?>> result = (List) lookup(criteria, expected, Integer.MAX_VALUE);
         assert (!expected || !result.isEmpty());
         return result;
     }
 
-    Metrics metrics() {
-        return DefaultMetrics.builder()
-                .services(size())
-                .lookupCount(lookupCount.get())
-                .cacheLookupCount(cacheLookupCount.get())
-                .cacheHitCount(cacheHitCount.get())
-                .build();
-    }
-
     @SuppressWarnings({"unchecked", "rawtypes"})
-    <T> List<ServiceProvider<T>> lookup(ServiceInfoCriteria criteria,
-                                                boolean expected,
-                                                int limit) {
+    <T> List<ServiceProvider<T>> lookup(
+            ServiceInfoCriteria criteria,
+            boolean expected,
+            int limit) {
         List<ServiceProvider<?>> result;
 
         lookupCount.incrementAndGet();
@@ -377,25 +382,32 @@ class DefaultServices implements Services, Resetable {
         return COMPARATOR;
     }
 
-    static ServiceProvider<?> createServiceProvider(io.helidon.pico.Module module,
-                                                    String moduleName) {
-//        return new BasicModule(module, moduleName);
-        // TODO:
-        return null;
+    static ServiceProvider<?> createServiceProvider(
+            io.helidon.pico.Module module,
+            String moduleName) {
+        return new BasicModule(module, moduleName);
     }
 
-    protected static ServiceInfo toValidatedServiceInfo(ServiceProvider<?> serviceProvider) {
+    protected static ServiceInfo toValidatedServiceInfo(
+            ServiceProvider<?> serviceProvider) {
         ServiceInfo info = serviceProvider.serviceInfo();
         Objects.requireNonNull(info.serviceTypeName(), () -> "service type name is required for " + serviceProvider);
         return info;
     }
 
-    static InjectionException serviceProviderAlreadyBoundInjectionError(ServiceProvider<?> previous,
-                                                                        ServiceProvider<?> sp) {
+    static InjectionException serviceProviderAlreadyBoundInjectionError(
+            ServiceProvider<?> previous,
+            ServiceProvider<?> sp) {
         return new InjectionException("service provider already bound to " + previous, null, sp);
     }
 
-    static InjectionException resolutionBasedInjectionError(ServiceInfoCriteria ctx) {
+    static InjectionException resolutionBasedInjectionError(
+            ServiceInfoCriteria ctx) {
+        return new InjectionException("expected to resolve a service instance matching " + ctx);
+    }
+
+    static InjectionException resolutionBasedInjectionError(
+            ServiceInfo ctx) {
         return new InjectionException("expected to resolve a service instance matching " + ctx);
     }
 

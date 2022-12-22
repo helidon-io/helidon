@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package io.helidon.pico;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
 
 /**
- * Combines the {@link io.helidon.pico.ServiceInfo} criteria along with the {@link io.helidon.pico.InjectionPointInfo} context
+ * Combines the {@link ServiceInfo} criteria along with the {@link InjectionPointInfo} context
  * that the query applies to.
  *
- * @see io.helidon.pico.InjectionPointProvider
+ * @see InjectionPointProvider
  */
 @Builder
 public interface ContextualServiceQuery {
@@ -34,14 +35,14 @@ public interface ContextualServiceQuery {
      *
      * @return the service info criteria
      */
-    ServiceInfoCriteria serviceInfo();
+    ServiceInfoCriteria serviceInfoCriteria();
 
     /**
-     * The injection point context this search applies to.
+     * Optionally, the injection point context this search applies to.
      *
-     * @return the injection point context info
+     * @return the optional injection point context info
      */
-    Optional<InjectionPointInfo> ipInfo();
+    Optional<InjectionPointInfo> injectionPointInfo();
 
     /**
      * Set to true if there is an expectation that there is at least one match result from the search.
@@ -49,5 +50,23 @@ public interface ContextualServiceQuery {
      * @return true if it is expected there is at least a single match result
      */
     boolean expected();
+
+    /**
+     * Creates a contextual service query given the injection point info.
+     *
+     * @param ipInfo    the injection point info
+     * @param expected  true if the query is expected to at least have a single match
+     * @return the query
+     */
+    static ContextualServiceQuery create(
+            InjectionPointInfo ipInfo,
+            boolean expected) {
+        Objects.requireNonNull(ipInfo);
+        return DefaultContextualServiceQuery.builder()
+                .expected(expected)
+                .injectionPointInfo(ipInfo)
+                .serviceInfoCriteria(ipInfo.dependencyToServiceInfo().toCriteria(false))
+                .build();
+    }
 
 }

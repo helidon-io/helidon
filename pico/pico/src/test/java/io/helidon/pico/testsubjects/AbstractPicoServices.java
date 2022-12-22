@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,11 @@ import io.helidon.pico.Services;
 abstract class AbstractPicoServices implements PicoServices {
 
     @Override
+    public PicoServicesConfig config() {
+        return null;
+    }
+
+    @Override
     public Services services() {
         return null;
     }
@@ -47,12 +52,7 @@ abstract class AbstractPicoServices implements PicoServices {
     }
 
     @Override
-    public Optional<PicoServicesConfig> config() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Map<String, ActivationResult<?>>> shutdown() {
+    public Optional<Map<String, ActivationResult>> shutdown() {
         return Optional.empty();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,11 @@ public class PicoServicesHolder {
     private static final AtomicReference<Bootstrap> BOOTSTRAP = new AtomicReference<>();
     private static final LazyValue<Optional<PicoServices>> INSTANCE = LazyValue.create(PicoServicesHolder::load);
 
+    /**
+     * Default Constructor.
+     * @deprecated
+     */
+    // properly exposed in the testing module
     protected PicoServicesHolder() {
     }
 
@@ -62,6 +67,10 @@ public class PicoServicesHolder {
         return Optional.ofNullable(BOOTSTRAP.get());
     }
 
+    /**
+     * Resets the bootstrap state.
+     * @deprecated
+     */
     protected static void reset() {
         BOOTSTRAP.set(null);
     }

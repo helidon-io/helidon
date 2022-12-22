@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,8 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @param interceptor the interceptor for this provider
      */
-    default void interceptor(ServiceProvider<?> interceptor) {
+    default void interceptor(
+            ServiceProvider<?> interceptor) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
     }
@@ -94,20 +95,20 @@ public interface ServiceProviderBindable<T> extends ServiceProvider<T> {
      *
      * @param rootProvider  sets the root provider
      */
-    default void rootProvider(ServiceProvider<T> rootProvider) {
+    default void rootProvider(
+            ServiceProvider<T> rootProvider) {
         // NOP; intended to be overridden if applicable
         throw new UnsupportedOperationException();
     }
 
     /**
-     * The instance of services this provider is bound to.  A service provider can be associated with 0..1 services instance.
+     * Assigns the services instance this provider is bound to. A service provider can be associated with 0..1 services instance.
      * If not set, the service provider should use {@link PicoServices#picoServices()} to ascertain the instance.
      *
-     * @param picoServices the pico services instance
+     * @param picoServices the pico services instance, or empty to clear any active binding
      */
-    default void picoServices(PicoServices picoServices) {
-        // NOP; intended to be overridden if applicable
-    }
+    void picoServices(
+            Optional<PicoServices> picoServices);
 
     /**
      * The binder can be provided by the service provider to deterministically set the injection plan at compile-time, and

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,12 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 @Builder
 public abstract class PicoServicesConfig {
+
+    /**
+     * Default Constructor.
+     */
+    protected PicoServicesConfig() {
+    }
 
     /**
      * The short name for pico.
@@ -75,7 +81,7 @@ public abstract class PicoServicesConfig {
     /**
      * Applicable during activation, this is the key that controls the timeout before deadlock detection exceptions are thrown.
      * <p>
-     * Deadlock can occur in situations where there are cyclic, non-Provider<> type dependencies between two services, e.g.,
+     * Deadlock can occur in situations where there are cyclic, non-{@code Provider<>} type dependencies between two services, e.g.,
      * A -> B and B -> A. Obviously this example is the simplest of cases. More often cyclic dependencies are nested N levels deep.
      * <p>
      * Pico may attempt to resolve cyclic dependencies, but this timeout will govern how long Pico will wait before giving up
@@ -83,8 +89,8 @@ public abstract class PicoServicesConfig {
      * <p>
      * There are two best practices recommended:
      * <ol>
-     *     <li>Use Provider<> as often as possible. If a service activation does not a dependency during {@code PostConstruct} then
-     *     there is really no need to have a direct dependency to that service.
+     *     <li>Use {@code Provider<>} as often as possible. If a service activation does not a dependency during
+     *     {@code PostConstruct} then there is really no need to have a direct dependency to that service.
      *     <li>Use compile-time {@link Application} generation. See the Pico <i>maven-plugin</i> module for details. Use of this
      *     feature will detect all cyclic dependencies at compile-time and will result in faster startup times.
      * </ol>
@@ -102,7 +108,8 @@ public abstract class PicoServicesConfig {
      */
     @ConfiguredOption(key = KEY_ACTIVATION_DEADLOCK_TIMEOUT_IN_MILLIS, value = DEFAULT_ACTIVATION_DEADLOCK_TIMEOUT_IN_MILLIS)
     public long activationDeadlockDetectionTimeoutMillis() {
-        return asLong(KEY_ACTIVATION_DEADLOCK_TIMEOUT_IN_MILLIS, () -> Long.valueOf(DEFAULT_ACTIVATION_DEADLOCK_TIMEOUT_IN_MILLIS));
+        return asLong(KEY_ACTIVATION_DEADLOCK_TIMEOUT_IN_MILLIS,
+                      () -> Long.valueOf(DEFAULT_ACTIVATION_DEADLOCK_TIMEOUT_IN_MILLIS));
     }
 
 
@@ -358,14 +365,33 @@ public abstract class PicoServicesConfig {
 
 
     /**
+     * Key indicating support for contextual lookup via {@link Services#contextualServices(InjectionPointInfo)}.
+     */
+    public static final String KEY_SUPPORTS_CONTEXTUAL_LOOKUP = "supports-contextual-lookup";
+    /**
+     * The default value is false, meaning that contextual lookup is not supported.
+     */
+    public static final String DEFAULT_SUPPORTS_CONTEXTUAL_LOOKUP = "false";
+
+    /**
+     * Flag indicating whether contextual lookup is supported via {@link Services#contextualServices(InjectionPointInfo)}.
+     *
+     * @return the flag indicating whether the provider supports contextual lookup
+     */
+    @ConfiguredOption(key = KEY_SUPPORTS_CONTEXTUAL_LOOKUP, value = DEFAULT_SUPPORTS_CONTEXTUAL_LOOKUP)
+    public abstract boolean supportsContextualLookup();
+
+
+    /**
      * Shortcut method to obtain a String with a default value supplier.
      *
      * @param key configuration key
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    protected String asString(String key,
-                              Supplier<String> defaultValueSupplier) {
+    protected String asString(
+            String key,
+            Supplier<String> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
         if (cfg.isEmpty()
                 || !cfg.get().hasValue()) {
@@ -381,8 +407,9 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    protected Boolean asBoolean(String key,
-                                Supplier<Boolean> defaultValueSupplier) {
+    protected Boolean asBoolean(
+            String key,
+            Supplier<Boolean> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
         if (cfg.isEmpty()
                 || !cfg.get().hasValue()) {
@@ -398,8 +425,9 @@ public abstract class PicoServicesConfig {
      * @param defaultValueSupplier supplier of default value
      * @return value
      */
-    protected Long asLong(String key,
-                          Supplier<Long> defaultValueSupplier) {
+    protected Long asLong(
+            String key,
+            Supplier<Long> defaultValueSupplier) {
         Optional<Config> cfg = get(key);
         if (cfg.isEmpty()
                 || !cfg.get().hasValue()) {
@@ -416,7 +444,8 @@ public abstract class PicoServicesConfig {
      * @param key the config key relative to the parent global bootstrap configuration
      * @return the configuration for the key
      */
-    protected Optional<Config> get(String key) {
+    protected Optional<Config> get(
+            String key) {
         Optional<Bootstrap> bootstrap = PicoServicesHolder.bootstrap(false);
         if (bootstrap.isEmpty()
                 || bootstrap.get().config().isEmpty()) {

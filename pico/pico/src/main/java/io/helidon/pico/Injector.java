@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ package io.helidon.pico;
  * implementations to extend the model to perform other types of injection point resolution.
  */
 public interface Injector {
+
     /**
      * Empty options is the same as passing no options, taking all the default values.
      */
@@ -55,7 +56,7 @@ public interface Injector {
 
     /**
      * Called to activate and inject a manage service instance or service provider, putting it into
-     * {@link ActivationPhase#ACTIVE}.
+     * {@link Phase#ACTIVE}.
      * <p>
      * Note that if a {@link ServiceProvider} is passed in then the {@link Activator}
      * will be used instead.  In this case, then any {@link InjectorOptions#startAtPhase()} and
@@ -68,11 +69,12 @@ public interface Injector {
      * @throws io.helidon.pico.PicoServiceProviderException if an injection or activation problem occurs
      * @see Activator
      */
-    <T> ActivationResult<T> activateInject(T serviceOrServiceProvider,
-                                           InjectorOptions opts) throws PicoServiceProviderException;
+    <T> ActivationResult activateInject(
+            T serviceOrServiceProvider,
+            InjectorOptions opts) throws PicoServiceProviderException;
 
     /**
-     * Called to deactivate a managed service or service provider, putting it into {@link ActivationPhase#DESTROYED}.
+     * Called to deactivate a managed service or service provider, putting it into {@link Phase#DESTROYED}.
      * If a managed service has a {@link jakarta.annotation.PreDestroy} annotated method then it will be called during
      * this lifecycle event.
      * <p>
@@ -87,7 +89,8 @@ public interface Injector {
      * @throws io.helidon.pico.PicoServiceProviderException if a problem occurs
      * @see DeActivator
      */
-    <T> ActivationResult<T> deactivate(T serviceOrServiceProvider,
-                                       InjectorOptions opts) throws PicoServiceProviderException;
+    <T> ActivationResult deactivate(
+            T serviceOrServiceProvider,
+            InjectorOptions opts) throws PicoServiceProviderException;
 
 }

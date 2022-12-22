@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.pico.services;
 
-import io.helidon.pico.ActivationPhase;
+import io.helidon.pico.Phase;
 import io.helidon.pico.DefaultActivationLogEntry;
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class DefaultActivationLogTest {
     void testRetainedLog() {
         DefaultActivationLog log = DefaultActivationLog.createRetainedLog(LOGGER);
         log.level(System.Logger.Level.INFO);
-        log.record(DefaultActivationLogEntry.builder().targetActivationPhase(ActivationPhase.ACTIVE).build());
+        log.record(DefaultActivationLogEntry.builder().targetActivationPhase(Phase.ACTIVE).build());
 
         assertThat(log.toQuery(), optionalPresent());
         assertThat(log.toQuery().get().fullActivationLog().size(), equalTo(1));
@@ -46,7 +46,7 @@ class DefaultActivationLogTest {
     void unretainedLog() {
         DefaultActivationLog log = DefaultActivationLog.createUnretainedLog(LOGGER);
         log.level(System.Logger.Level.INFO);
-        log.record(DefaultActivationLogEntry.builder().targetActivationPhase(ActivationPhase.ACTIVE).build());
+        log.record(DefaultActivationLogEntry.builder().targetActivationPhase(Phase.ACTIVE).build());
 
         assertThat(log.toQuery(), optionalEmpty());
     }

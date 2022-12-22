@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,42 +17,23 @@
 package io.helidon.pico;
 
 /**
- * A receiver of events from the {@link Services} registry.
+ * A receiver of events from the {@link Services} registry and providers held by the service registry.
  * <p>
  * Note that only {@link ServiceProvider}'s implement this contract that are also bound to the global
  * {@link io.helidon.pico.Services} registry are currently capable of receiving events.
  *
  * @see ServiceProviderBindable
  */
-public interface EventReceiver {
+public interface ActivationPhaseReceiver {
 
     /**
-     * Events issued from the framework.
-     */
-    enum Event {
-
-        /**
-         * Called after all modules and services from those modules are initially loaded into the service registry.
-         */
-        POST_BIND_ALL_MODULES,
-
-        /**
-         * Called after {@link #POST_BIND_ALL_MODULES} to resolve any latent bindings, prior to {@link #SERVICES_READY}.
-         */
-        FINAL_RESOLVE,
-
-        /**
-         * The service registry is fully populated and ready.
-         */
-        SERVICES_READY
-
-    }
-
-    /**
-     * Called at the end of module and service bindings, when all the services in the service registry have been populated.
+     * Called when there is an event transition within the service registry.
      *
      * @param event the event
+     * @param phase the phase
      */
-    void onEvent(Event event);
+    void onPhaseEvent(
+            Event event,
+            Phase phase);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public interface PicoServices {
      * Denotes a match to any (default) service, but required to be matched to at least one.
      */
     ContextualServiceQuery SERVICE_QUERY_REQUIRED = DefaultContextualServiceQuery.builder()
-            .serviceInfo(EMPTY_CRITERIA)
+            .serviceInfoCriteria(EMPTY_CRITERIA)
             .expected(true)
             .build();
 
@@ -51,8 +51,7 @@ public interface PicoServices {
     Bootstrap bootstrap();
 
     /**
-     * Retrieves any primordial bootstrap configuration that was already assigned via
-     * {@link #globalBootstrap()} (Bootstrap)}.
+     * Retrieves any primordial bootstrap configuration that previously set.
      *
      * @return the bootstrap primordial configuration already assigned
      */
@@ -89,6 +88,13 @@ public interface PicoServices {
     Services services();
 
     /**
+     * The governing configuration.
+     *
+     * @return the config
+     */
+    PicoServicesConfig config();
+
+    /**
      * Creates a service binder instance for a specified module.
      *
      * @param module the module to offer binding to dynamically, and typically only at early startup initialization
@@ -103,13 +109,6 @@ public interface PicoServices {
      * @return the injector, or empty if not available
      */
     Optional<Injector> injector();
-
-    /**
-     * Optionally, the service providers' configuration.
-     *
-     * @return the config, or empty if not available
-     */
-    Optional<PicoServicesConfig> config();
 
     /**
      * Attempts to perform a graceful {@link Injector#deactivate(Object, InjectorOptions)} on all managed
@@ -131,7 +130,7 @@ public interface PicoServices {
      *
      * @return a map of all managed service types deactivated to results of deactivation
      */
-    Optional<Map<String, ActivationResult<?>>> shutdown();
+    Optional<Map<String, ActivationResult>> shutdown();
 
     /**
      * Optionally, the service provider activation log.

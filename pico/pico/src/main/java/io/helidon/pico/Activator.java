@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package io.helidon.pico;
 
 /**
  * Activators are responsible for lifecycle creation and lazy activation of service providers. They are responsible for taking the
- * {@link ServiceProvider}'s manage service instance from {@link ActivationPhase#PENDING}
- * through {@link ActivationPhase#POST_CONSTRUCTING} (i.e., including any
+ * {@link ServiceProvider}'s manage service instance from {@link Phase#PENDING}
+ * through {@link Phase#POST_CONSTRUCTING} (i.e., including any
  * {@link PostConstructMethod} invocations, etc.), and finally into the
- * {@link ActivationPhase#ACTIVE} phase.
+ * {@link Phase#ACTIVE} phase.
  * <p>
  * Assumption:
  * <ol>
@@ -32,7 +32,7 @@ package io.helidon.pico;
  * </ol>
  * Activation includes:
  * <ol>
- *  <li>Management of the service's {@link ActivationPhase}.</li>
+ *  <li>Management of the service's {@link Phase}.</li>
  *  <li>Control over creation (i.e., invoke the constructor non-reflectively).</li>
  *  <li>Control over gathering the service requisite dependencies (ctor, field, setters) and optional activation of those.</li>
  *  <li>Invocation of any {@link PostConstructMethod}.</li>
@@ -50,5 +50,6 @@ public interface Activator<T> {
      * @param activationRequest activation request
      * @return the result of the activation
      */
-    ActivationResult<T> activate(ActivationRequest<T> activationRequest);
+    ActivationResult activate(ActivationRequest activationRequest);
+
 }

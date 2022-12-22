@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,16 @@ import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 
 /**
- * A criteria to discover service.
+ * Criteria to discover services.
  *
+ * @see Services
  * @see ServiceInfo
  */
 @Builder
 public interface ServiceInfoCriteria {
 
     /**
-     * The managed service implementation {@link Class}.
+     * The managed service implementation type name.
      *
      * @return the service type name
      */
