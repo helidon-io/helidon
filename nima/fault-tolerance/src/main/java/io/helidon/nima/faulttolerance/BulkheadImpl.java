@@ -65,10 +65,19 @@ class BulkheadImpl implements Bulkhead {
 
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
-        // execute immediately if semaphore can be acquired
+        // we need to hold the lock until we decide what to do with this request
+        // cannot release it in between attempts, as that would give window for another thread to change the state
         inProgressLock.lock();
 
-        if (inProgress.tryAcquire()) {
+        // execute immediately if semaphore can be acquired
+        boolean acquired;
+        try {
+            acquired = inProgress.tryAcquire();
+        } catch (Throwable t) {
+            inProgressLock.unlock();
+            throw t;
+        }
+        if (acquired) {
             inProgressLock.unlock(); // we managed to get a semaphore permit, in progress lock can be released for now
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, name + " invoke immediate " + supplier);
@@ -76,16 +85,29 @@ class BulkheadImpl implements Bulkhead {
             return execute(supplier);
         }
 
-        if (queue.isFull()) {
+        boolean full;
+        try {
+            full = queue.isFull();
+        } catch (Throwable t) {
+            inProgressLock.unlock();
+            throw t;
+        }
+        if (full) {
             inProgressLock.unlock(); // this request will fail, release lock
             callsRejected.incrementAndGet();
             throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
         }
+
         try {
             // block current thread until barrier is retracted
-            listeners.forEach(l -> l.enqueueing(supplier));
-            Barrier barrier = queue.enqueue(supplier);
-            inProgressLock.unlock(); // we have enqueued, now we can wait
+            Barrier barrier;
+            try {
+                listeners.forEach(l -> l.enqueueing(supplier));
+                barrier = queue.enqueue(supplier);
+            } finally {
+                inProgressLock.unlock(); // we have enqueued, now we can wait
+            }
+
             if (barrier == null) {
                 throw new BulkheadException("Bulkhead queue \"" + name + "\" is full");
             }
@@ -156,11 +178,14 @@ class BulkheadImpl implements Bulkhead {
         } finally {
             concurrentExecutions.decrementAndGet();
             inProgressLock.lock();
-            boolean dequeued = queue.dequeueAndRetract();
-            if (!dequeued) {
-                inProgress.release();       // nothing dequeued, one more permit
+            try {
+                boolean dequeued = queue.dequeueAndRetract();
+                if (!dequeued) {
+                    inProgress.release();       // nothing dequeued, one more permit
+                }
+            } finally {
+                inProgressLock.unlock();
             }
-            inProgressLock.unlock();
         }
     }
 
