@@ -121,10 +121,10 @@
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
-        <version.lib.neo4j>4.4.3</version.lib.neo4j>
-        <version.lib.netty>4.1.77.Final</version.lib.netty>
+        <version.lib.neo4j>4.4.11</version.lib.neo4j>
+        <version.lib.netty>4.1.86.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
-        <version.lib.oci>2.45.0</version.lib.oci>
+        <version.lib.oci>3.0.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
@@ -1491,6 +1491,12 @@
             <dependency>
               <groupId>com.oracle.oci.sdk</groupId>
               <artifactId>oci-java-sdk-common</artifactId>
+              <version>${version.lib.oci}</version>
+              <optional>false</optional>
+            </dependency>
+            <dependency>
+              <groupId>com.oracle.oci.sdk</groupId>
+              <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
               <version>${version.lib.oci}</version>
               <optional>false</optional>
             </dependency>

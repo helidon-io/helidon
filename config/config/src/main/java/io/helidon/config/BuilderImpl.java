@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,7 +463,12 @@ class BuilderImpl implements Config.Builder {
 
     // this is a unit test method
     static ConfigMapperManager buildMappers(MapperProviders userDefinedProviders) {
-        return buildMappers(new ArrayList<>(), userDefinedProviders, false);
+        return buildMappers(userDefinedProviders, false);
+    }
+
+    // unit test method
+    static ConfigMapperManager buildMappers(MapperProviders userDefinedProviders, boolean mapperServicesEnabled) {
+        return buildMappers(new ArrayList<>(), userDefinedProviders, mapperServicesEnabled);
     }
 
     static ConfigMapperManager buildMappers(List<PrioritizedMapperProvider> prioritizedMappers,
@@ -493,6 +498,7 @@ class BuilderImpl implements Config.Builder {
     private static void loadMapperServices(List<PrioritizedMapperProvider> providers) {
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
                 .defaultPriority(ConfigMapperProvider.PRIORITY)
+                .addService(new EnumMapperProvider(), EnumMapperProvider.PRIORITY)
                 .build()
                 .forEach(mapper -> providers.add(new HelidonMapperWrapper(mapper, Priorities.find(mapper, 100))));
     }

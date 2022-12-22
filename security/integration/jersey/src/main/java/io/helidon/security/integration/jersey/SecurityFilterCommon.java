@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.HashParameters;
+import io.helidon.common.http.Parameters;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -95,6 +97,7 @@ abstract class SecurityFilterCommon {
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())
+                .queryParams(filterContext.getQueryParams())
                 .headers(allHeaders)
                 .addAttribute("resourceType", filterContext.getResourceName());
 
@@ -379,6 +382,7 @@ abstract class SecurityFilterCommon {
         context.setHeaders(requestContext.getHeaders());
         context.setTargetUri(requestContext.getUriInfo().getRequestUri());
         context.setResourcePath(context.getTargetUri().getPath());
+        context.setQueryParams(HashParameters.create(uriInfo.getQueryParameters()));
 
         context.setJerseyRequest((ContainerRequest) requestContext);
 
@@ -419,6 +423,7 @@ abstract class SecurityFilterCommon {
         private boolean traceSuccess = true;
         private String traceDescription;
         private Throwable traceThrowable;
+        private Parameters queryParams;
 
         String getResourceName() {
             return resourceName;
@@ -514,6 +519,13 @@ abstract class SecurityFilterCommon {
 
         void setTraceThrowable(Throwable traceThrowable) {
             this.traceThrowable = traceThrowable;
+        }
+
+        Parameters getQueryParams() {
+            return queryParams;
+        }
+        void setQueryParams(Parameters queryParams) {
+            this.queryParams = queryParams;
         }
 
         void clearTrace() {

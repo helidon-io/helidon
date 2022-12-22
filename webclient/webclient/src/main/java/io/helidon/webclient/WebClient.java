@@ -146,7 +146,10 @@ public interface WebClient {
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 
-        private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.derive();
+        private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.derive()
+                //We need to clear cookie store when new WebClient is created
+                //to prevent cookie propagation across the multiple clients
+                .cookieStore(null);
         private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(WebClientServiceProvider.class));
         private final List<WebClientService> webClientServices = new ArrayList<>();
@@ -426,6 +429,16 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Set whether cookies should be automatically saved to the store.
+         *
+         * @param enableAutomaticCookieStore whether to save cookies, default is false
+         * @return updated builder instance
+         */
+        public Builder enableAutomaticCookieStore(boolean enableAutomaticCookieStore) {
+            configuration.enableAutomaticCookieStore(enableAutomaticCookieStore);
+            return this;
+        }
 
         WebClientConfiguration configuration() {
             configuration.clientServices(services());

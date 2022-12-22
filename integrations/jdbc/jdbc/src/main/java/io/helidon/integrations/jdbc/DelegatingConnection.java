@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,334 +37,399 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
- * A {@link Connection} that delegates to another {@link Connection}.
+ * A <a href="https://download.oracle.com/otn-pub/jcp/jdbc-4_3-mrel3-spec/jdbc4.3-fr-spec.pdf" target="_parent">JDBC
+ * 4.3</a>-compliant {@link Connection} that delegates to another JDBC 4.3-compliant {@link Connection}.
  */
 public class DelegatingConnection implements Connection {
 
     private final Connection delegate;
 
-    protected DelegatingConnection(final Connection delegate) {
+    /**
+     * Creates a new {@link DelegatingConnection}.
+     *
+     * @param delegate the {@link Connection} to which all operations will be delegated; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code delegate} is {@code null}
+     */
+    public DelegatingConnection(Connection delegate) {
         super();
-        this.delegate = Objects.requireNonNull(delegate);
+        this.delegate = Objects.requireNonNull(delegate, "delegate");
+    }
+
+    /**
+     * Returns this {@link DelegatingConnection}'s underlying {@link Connection}.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return this {@link DelegatingConnection}'s underlying {@link Connection}; never {@code null}
+     */
+    public final Connection delegate() {
+        return this.delegate;
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return this.delegate.createStatement();
+        return
+            new DelegatingStatement<>(this, // NOTE
+                                      this.delegate().createStatement(),
+                                      true,
+                                      true);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql) throws SQLException {
-        return this.delegate.prepareStatement(sql);
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        return
+            new DelegatingPreparedStatement<>(this, // NOTE
+                                              this.delegate().prepareStatement(sql),
+                                              true,
+                                              true);
     }
 
     @Override
-    public CallableStatement prepareCall(final String sql) throws SQLException {
-        return this.delegate.prepareCall(sql);
+    public CallableStatement prepareCall(String sql) throws SQLException {
+        return new DelegatingCallableStatement(this, // NOTE
+                                               this.delegate().prepareCall(sql),
+                                               true,
+                                               true);
     }
 
     @Override
-    public String nativeSQL(final String sql) throws SQLException {
-        return this.delegate.nativeSQL(sql);
+    public String nativeSQL(String sql) throws SQLException {
+        return this.delegate().nativeSQL(sql);
     }
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-        this.delegate.setAutoCommit(autoCommit);
+        this.delegate().setAutoCommit(autoCommit);
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        return this.delegate.getAutoCommit();
+        return this.delegate().getAutoCommit();
     }
 
     @Override
     public void commit() throws SQLException {
-        this.delegate.commit();
+        this.delegate().commit();
     }
 
     @Override
     public void rollback() throws SQLException {
-        this.delegate.rollback();
+        this.delegate().rollback();
     }
 
     @Override
     public void close() throws SQLException {
-        this.delegate.close();
+        // (No need to check isClosed().)
+        this.delegate().close();
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return this.delegate.isClosed();
+        return this.delegate().isClosed();
     }
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        return this.delegate.getMetaData();
+        return
+            new DelegatingDatabaseMetaData(this, // NOTE
+                                           this.delegate().getMetaData());
     }
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        this.delegate.setReadOnly(readOnly);
+        this.delegate().setReadOnly(readOnly);
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
-        return this.delegate.isReadOnly();
+        return this.delegate().isReadOnly();
     }
 
     @Override
     public void setCatalog(String catalog) throws SQLException {
-        this.delegate.setCatalog(catalog);
+        this.delegate().setCatalog(catalog);
     }
 
     @Override
     public String getCatalog() throws SQLException {
-        return this.delegate.getCatalog();
+        return this.delegate().getCatalog();
     }
 
     @Override
-    public void setTransactionIsolation(final int level) throws SQLException {
-        this.delegate.setTransactionIsolation(level);
+    public void setTransactionIsolation(int level) throws SQLException {
+        this.delegate().setTransactionIsolation(level);
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        return this.delegate.getTransactionIsolation();
+        return this.delegate().getTransactionIsolation();
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        return this.delegate.getWarnings();
+        return this.delegate().getWarnings();
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        this.delegate.clearWarnings();
+        this.delegate().clearWarnings();
     }
 
     @Override
-    public Statement createStatement(final int resultSetType, final int resultSetConcurrency) throws SQLException {
-        return this.delegate.createStatement(resultSetType, resultSetConcurrency);
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+        return
+            new DelegatingStatement<>(this, // NOTE
+                                      this.delegate().createStatement(resultSetType, resultSetConcurrency),
+                                      true,
+                                      true);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql,
-                                              final int resultSetType,
-                                              final int resultSetConcurrency)
-      throws SQLException {
-        return this.delegate.prepareStatement(sql, resultSetType, resultSetConcurrency);
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        return
+            new DelegatingPreparedStatement<>(this, // NOTE
+                                              this.delegate().prepareStatement(sql, resultSetType, resultSetConcurrency),
+                                              true,
+                                              true);
     }
 
     @Override
-    public CallableStatement prepareCall(final String sql,
-                                         final int resultSetType,
-                                         final int resultSetConcurrency)
-      throws SQLException {
-        return this.delegate.prepareCall(sql, resultSetType, resultSetConcurrency);
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        return
+            new DelegatingCallableStatement(this, // NOTE
+                                            this.delegate().prepareCall(sql, resultSetType, resultSetConcurrency),
+                                            true,
+                                            true);
     }
 
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
-        return this.delegate.getTypeMap();
+        return this.delegate().getTypeMap();
     }
 
     @Override
     public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-        this.delegate.setTypeMap(map);
+        this.delegate().setTypeMap(map);
     }
 
     @Override
-    public void setHoldability(final int holdability) throws SQLException {
-        this.delegate.setHoldability(holdability);
+    public void setHoldability(int holdability) throws SQLException {
+        this.delegate().setHoldability(holdability);
     }
 
     @Override
     public int getHoldability() throws SQLException {
-        return this.delegate.getHoldability();
+        return this.delegate().getHoldability();
     }
 
     @Override
     public Savepoint setSavepoint() throws SQLException {
-        return this.delegate.setSavepoint();
+        return this.delegate().setSavepoint();
     }
 
     @Override
-    public Savepoint setSavepoint(final String name) throws SQLException {
-        return this.delegate.setSavepoint(name);
+    public Savepoint setSavepoint(String name) throws SQLException {
+        return this.delegate().setSavepoint(name);
     }
 
     @Override
-    public void rollback(final Savepoint savepoint) throws SQLException {
-        this.delegate.rollback(savepoint);
+    public void rollback(Savepoint savepoint) throws SQLException {
+        this.delegate().rollback(savepoint);
     }
 
     @Override
-    public void releaseSavepoint(final Savepoint savepoint) throws SQLException {
-        this.delegate.releaseSavepoint(savepoint);
+    public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+        this.delegate().releaseSavepoint(savepoint);
     }
 
     @Override
-    public Statement createStatement(final int resultSetType,
-                                     final int resultSetConcurrency,
-                                     final int resultSetHoldability)
-      throws SQLException {
-        return this.delegate.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        return
+            new DelegatingStatement<>(this, // NOTE
+                                      this.delegate().createStatement(resultSetType,
+                                                                      resultSetConcurrency,
+                                                                      resultSetHoldability),
+                                      true,
+                                      true);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int resultSetType,
-                                              final int resultSetConcurrency,
-                                              final int resultSetHoldability)
-      throws SQLException {
-        return this.delegate.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+        throws SQLException {
+        return
+            new DelegatingPreparedStatement<>(this, // NOTE
+                                              this.delegate().prepareStatement(sql,
+                                                                               resultSetType,
+                                                                               resultSetConcurrency,
+                                                                               resultSetHoldability),
+                                              true,
+                                              true);
     }
 
     @Override
-    public CallableStatement prepareCall(final String sql,
-                                         final int resultSetType,
-                                         final int resultSetConcurrency,
-                                         final int resultSetHoldability)
-      throws SQLException {
-        return this.delegate.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+        throws SQLException {
+        return
+            new DelegatingCallableStatement(this, // NOTE
+                                            this.delegate().prepareCall(sql,
+                                                                        resultSetType,
+                                                                        resultSetConcurrency,
+                                                                        resultSetHoldability),
+                                            true,
+                                            true);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int autoGeneratedKeys) throws SQLException {
-        return this.delegate.prepareStatement(sql, autoGeneratedKeys);
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+        return
+            new DelegatingPreparedStatement<>(this, // NOTE
+                                              this.delegate().prepareStatement(sql, autoGeneratedKeys),
+                                              true,
+                                              true);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final int[] columnIndexes) throws SQLException {
-        return this.delegate.prepareStatement(sql, columnIndexes);
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+        return
+            new DelegatingPreparedStatement<>(this, // NOTE
+                                              this.delegate().prepareStatement(sql, columnIndexes),
+                                              true,
+                                              true);
     }
 
     @Override
-    public PreparedStatement prepareStatement(final String sql, final String[] columnNames) throws SQLException {
-        return this.delegate.prepareStatement(sql, columnNames);
+    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+        return
+            new DelegatingPreparedStatement<>(this, // NOTE
+                                              this.delegate().prepareStatement(sql, columnNames),
+                                              true,
+                                              true);
     }
 
     @Override
     public Clob createClob() throws SQLException {
-        return this.delegate.createClob();
+        return this.delegate().createClob();
     }
 
     @Override
     public Blob createBlob() throws SQLException {
-        return this.delegate.createBlob();
+        return this.delegate().createBlob();
     }
 
     @Override
     public NClob createNClob() throws SQLException {
-        return this.delegate.createNClob();
+        return this.delegate().createNClob();
     }
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
-        return this.delegate.createSQLXML();
+        return this.delegate().createSQLXML();
     }
 
     @Override
-    public boolean isValid(final int timeout) throws SQLException {
-        return this.delegate.isValid(timeout);
+    public boolean isValid(int timeout) throws SQLException {
+        // (No need to check isClosed().)
+        return this.delegate().isValid(timeout);
     }
 
     @Override
-    public void setClientInfo(final String name, final String value) throws SQLClientInfoException {
-        this.delegate.setClientInfo(name, value);
+    public void setClientInfo(String name, String value) throws SQLClientInfoException {
+        this.delegate().setClientInfo(name, value);
     }
 
     @Override
-    public void setClientInfo(final Properties properties) throws SQLClientInfoException {
-        this.delegate.setClientInfo(properties);
+    public void setClientInfo(Properties properties) throws SQLClientInfoException {
+        this.delegate().setClientInfo(properties);
     }
 
     @Override
-    public String getClientInfo(final String name) throws SQLException {
-        return this.delegate.getClientInfo(name);
+    public String getClientInfo(String name) throws SQLException {
+        return this.delegate().getClientInfo(name);
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
-        return this.delegate.getClientInfo();
+        return this.delegate().getClientInfo();
     }
 
     @Override
-    public Array createArrayOf(final String typeName, final Object[] elements) throws SQLException {
-        return this.delegate.createArrayOf(typeName, elements);
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        return this.delegate().createArrayOf(typeName, elements);
     }
 
     @Override
-    public Struct createStruct(final String typeName, final Object[] attributes) throws SQLException {
-        return this.delegate.createStruct(typeName, attributes);
+    public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+        return this.delegate().createStruct(typeName, attributes);
     }
 
     @Override
-    public void setSchema(final String schema) throws SQLException {
-        this.delegate.setSchema(schema);
+    public void setSchema(String schema) throws SQLException {
+        this.delegate().setSchema(schema);
     }
 
     @Override
     public String getSchema() throws SQLException {
-        return this.delegate.getSchema();
+        return this.delegate().getSchema();
     }
 
     @Override
-    public void abort(final Executor executor) throws SQLException {
-        this.delegate.abort(executor);
+    public void abort(Executor executor) throws SQLException {
+        // (No need to check isClosed().)
+        this.delegate().abort(executor);
     }
 
     @Override
-    public void setNetworkTimeout(final Executor executor, final int milliseconds) throws SQLException {
-        this.delegate.setNetworkTimeout(executor, milliseconds);
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        this.delegate().setNetworkTimeout(executor, milliseconds);
     }
 
     @Override
     public int getNetworkTimeout() throws SQLException {
-        return this.delegate.getNetworkTimeout();
+        return this.delegate().getNetworkTimeout();
     }
 
     @Override
     public void beginRequest() throws SQLException {
-        this.delegate.beginRequest();
+        // (No need to check isClosed().)
+        this.delegate().beginRequest();
     }
 
     @Override
     public void endRequest() throws SQLException {
-        this.delegate.endRequest();
+        // (No need to check isClosed().)
+        this.delegate().endRequest();
     }
 
     @Override
-    public boolean setShardingKeyIfValid(final ShardingKey shardingKey,
-                                         final ShardingKey superShardingKey,
-                                         final int timeout)
-      throws SQLException {
-        return this.delegate.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
+    public boolean setShardingKeyIfValid(ShardingKey shardingKey, ShardingKey superShardingKey, int timeout)
+        throws SQLException {
+        return this.delegate().setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
     }
 
     @Override
-    public boolean setShardingKeyIfValid(final ShardingKey shardingKey, final int timeout) throws SQLException {
-        return this.delegate.setShardingKeyIfValid(shardingKey, timeout);
+    public boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout) throws SQLException {
+        return this.delegate().setShardingKeyIfValid(shardingKey, timeout);
     }
 
     @Override
-    public void setShardingKey(final ShardingKey shardingKey, final ShardingKey superShardingKey) throws SQLException {
-        this.delegate.setShardingKey(shardingKey, superShardingKey);
+    public void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey) throws SQLException {
+        this.delegate().setShardingKey(shardingKey, superShardingKey);
     }
 
     @Override
-    public void setShardingKey(final ShardingKey shardingKey) throws SQLException {
-        this.delegate.setShardingKey(shardingKey);
+    public void setShardingKey(ShardingKey shardingKey) throws SQLException {
+        this.delegate().setShardingKey(shardingKey);
     }
 
     @Override
-    public <T> T unwrap(final Class<T> iface) throws SQLException {
-        return this.delegate.unwrap(iface);
+    public <T> T unwrap(Class<T> iface) throws SQLException {
+        return iface.isInstance(this) ? iface.cast(this) : this.delegate().unwrap(iface);
     }
 
     @Override
-    public boolean isWrapperFor(final Class<?> iface) throws SQLException {
-        return this.delegate.isWrapperFor(iface);
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        return iface.isInstance(this) || this.delegate().isWrapperFor(iface);
     }
 
 }

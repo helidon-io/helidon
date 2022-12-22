@@ -16,9 +16,13 @@
 
 package io.helidon.tests.integration.nativeimage.se1;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
@@ -106,6 +110,19 @@ class Se1MainTest {
 
         conn = getURLConnection("GET", "/metrics");
         assertThat("HTTP response2", conn.getResponseCode(), is(200));
+    }
+
+    @Test
+    void testEnumMapping() throws Exception {
+        HttpURLConnection conn = getURLConnection("GET", "/color");
+        int status = conn.getResponseCode();
+        ColorService.Color tint;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            String colorName = reader.readLine(); // Makes sure the color name was sent.
+            tint = ColorService.Color.valueOf(colorName); // Makes sure the color name maps to a Color.
+        }
+        assertThat("/color GET status", status, is(200));
+        assertThat("reported tint", tint, is(ColorService.Color.RED)); // Makes sure the mapped color is RED.
     }
 
     private HttpURLConnection getURLConnection(String method, String path) throws Exception {

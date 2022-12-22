@@ -57,13 +57,15 @@
         <version.lib.arquillian>1.7.0.Alpha10</version.lib.arquillian>
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
+        <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
+        <version.lib.jsoup>1.15.3</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
-        <version.lib.netty.tcnative>2.0.52.Final</version.lib.netty.tcnative>
+        <version.lib.netty.tcnative>2.0.54.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
@@ -73,6 +75,8 @@
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
+        <version.lib.test.containers>1.17.5</version.lib.test.containers>
+        <version.lib.test.containers.keycloak>2.3.0</version.lib.test.containers.keycloak>
         <version.lib.testng>7.5</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
@@ -99,7 +103,7 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>3.0.0</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>3.0.3</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
@@ -116,7 +120,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.4.2.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>7.2.1</version.plugin.dependency-check>
+        <version.plugin.dependency-check>7.4.1</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -1165,6 +1169,32 @@
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
                 <version>${version.lib.classgraph}</version>
+            </dependency>
+            <!-- Used for OIDC integration tests -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${version.lib.test.containers}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${version.lib.test.containers}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.dasniko</groupId>
+                <artifactId>testcontainers-keycloak</artifactId>
+                <version>${version.lib.test.containers.keycloak}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${version.lib.jsoup}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

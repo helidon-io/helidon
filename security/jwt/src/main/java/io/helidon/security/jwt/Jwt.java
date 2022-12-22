@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,7 +69,7 @@ public class Jwt {
 
     // iss
     // "iss":"accounts.google.com",
-    private final Optional<String> issuer;
+    private final Optional<List<String>> issuers;
     // exp
     // "exp":1495734457,
     /*
@@ -226,7 +227,11 @@ public class Jwt {
         this.payloadClaims = getClaims(payloadJson);
 
         // known payload
-        this.issuer = JwtUtil.getString(payloadJson, "iss");
+        if (payloadJson.get("iss") instanceof JsonString) {
+            this.issuers = JwtUtil.getString(payloadJson, "iss").map(List::of);
+        } else {
+            this.issuers = JwtUtil.getStrings(payloadJson, "iss");
+        }
         this.expirationTime = JwtUtil.toInstant(payloadJson, "exp");
         this.issueTime = JwtUtil.toInstant(payloadJson, "iat");
         this.notBefore = JwtUtil.toInstant(payloadJson, "nbf");
@@ -284,12 +289,12 @@ public class Jwt {
         this.headers = builder.headerBuilder.build();
 
         // known payload
-        this.issuer = builder.issuer;
+        this.issuers = Optional.ofNullable(builder.issuers).map(List::copyOf);
         this.expirationTime = builder.expirationTime;
         this.issueTime = builder.issueTime;
         this.notBefore = builder.notBefore;
         this.subject = builder.subject.or(() -> toOptionalString(builder.payloadClaims, "sub"));
-        this.audience = Optional.ofNullable(builder.audience);
+        this.audience = Optional.ofNullable(builder.audience).map(List::copyOf);
         this.jwtId = builder.jwtId;
         this.email = builder.email.or(() -> toOptionalString(builder.payloadClaims, "email"));
         this.emailVerified = builder.emailVerified.or(() -> getClaim(builder.payloadClaims, "email_verified"));
@@ -388,7 +393,20 @@ public class Jwt {
      * @param mandatory  whether issuer field is mandatory in the token (true - mandatory, false - optional)
      */
     public static void addIssuerValidator(Collection<Validator<Jwt>> validators, String issuer, boolean mandatory) {
-        validators.add(FieldValidator.create(Jwt::issuer, "Issuer", issuer, mandatory));
+        validators.add((jwt, collector) -> {
+            Optional<List<String>> maybeJwtIssuers = jwt.issuers();
+            if (maybeJwtIssuers.isPresent()) {
+                List<String> jwtIssuers = maybeJwtIssuers.get();
+                if (jwtIssuers.contains(issuer)) {
+                    return;
+                }
+                collector.fatal(jwt, "Issuer must contain issuer \"" + issuer + "\", yet it contains: " + jwtIssuers);
+            } else {
+                if (mandatory) {
+                    collector.fatal(jwt, "Issuer is expected to contain: " + issuer + ", yet no issuer is in JWT");
+                }
+            }
+        });
     }
 
     /**
@@ -545,7 +563,16 @@ public class Jwt {
      * @return Issuer or empty if claim is not defined
      */
     public Optional<String> issuer() {
-        return issuer;
+        return issuers.filter(it -> !it.isEmpty()).map(it -> it.get(0));
+    }
+
+    /**
+     * All the issuer claim values.
+     *
+     * @return Issuer values or empty if claim is not defined
+     */
+    public Optional<List<String>> issuers() {
+        return issuers;
     }
 
     /**
@@ -837,7 +864,15 @@ public class Jwt {
         payloadClaims.forEach(objectBuilder::add);
 
         // known payload
-        this.issuer.ifPresent(it -> objectBuilder.add("iss", it));
+        issuers.ifPresent(values -> {
+            if (values.size() == 1) {
+                objectBuilder.add("iss", values.get(0));
+            } else if (values.size() > 1) {
+                JsonArrayBuilder jab = JSON.createArrayBuilder();
+                values.forEach(jab::add);
+                objectBuilder.add("iss", jab);
+            }
+        });
         this.expirationTime.ifPresent(it -> objectBuilder.add("exp", it.getEpochSecond()));
         this.issueTime.ifPresent(it -> objectBuilder.add("iat", it.getEpochSecond()));
         this.notBefore.ifPresent(it -> objectBuilder.add("nbf", it.getEpochSecond()));
@@ -1326,7 +1361,6 @@ public class Jwt {
     public static final class Builder implements io.helidon.common.Builder<Builder, Jwt> {
         private final JwtHeaders.Builder headerBuilder = JwtHeaders.builder();
         private final Map<String, Object> payloadClaims = new HashMap<>();
-        private Optional<String> issuer = Optional.empty();
         private Optional<Instant> expirationTime = Optional.empty();
         private Optional<Instant> issueTime = Optional.empty();
         private Optional<Instant> notBefore = Optional.empty();
@@ -1334,6 +1368,7 @@ public class Jwt {
         private Optional<String> userPrincipal = Optional.empty();
         private Optional<List<String>> userGroups = Optional.empty();
         private List<String> audience;
+        private List<String> issuers;
         private Optional<String> jwtId = Optional.empty();
         private Optional<String> email = Optional.empty();
         private Optional<Boolean> emailVerified = Optional.empty();
@@ -1476,6 +1511,7 @@ public class Jwt {
 
         /**
          * The issuer claim identifies the principal that issued the JWT.
+         * Replaces all previously configured issuers.
          *
          * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.1">RFC 7519, section 4.1.1</a>.
          *
@@ -1483,7 +1519,36 @@ public class Jwt {
          * @return updated builder instance
          */
         public Builder issuer(String issuer) {
-            this.issuer = Optional.ofNullable(issuer);
+            return issuers(List.of(issuer));
+        }
+
+        /**
+         * The issuer claim identifies the principal that issued the JWT.
+         *
+         * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.1">RFC 7519, section 4.1.1</a>.
+         *
+         * @param issuer issuer of this JWT
+         * @return updated builder instance
+         */
+        public Builder addIssuer(String issuer) {
+            if (this.issuers == null) {
+                this.issuers = new ArrayList<>();
+            }
+            this.issuers.add(issuer);
+            return this;
+        }
+
+        /**
+         * The issuer claim identifies the principal that issued the JWT.
+         * Replaces existing configured issuers.
+         *
+         * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.1">RFC 7519, section 4.1.1</a>.
+         *
+         * @param issuers issuers of this JWT
+         * @return updated builder instance
+         */
+        public Builder issuers(List<String> issuers) {
+            this.issuers = new ArrayList<>(issuers);
             return this;
         }
 

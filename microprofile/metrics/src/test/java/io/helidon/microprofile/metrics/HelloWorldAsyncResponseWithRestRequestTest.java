@@ -88,28 +88,23 @@ public class HelloWorldAsyncResponseWithRestRequestTest {
 
         AtomicReference<JsonObject> nextRestRequest = new AtomicReference<>();
 
-        try {
-            // With async endpoints, metrics updates can occur after the server sends the response.
-            // Retry as needed (including fetching the metrics again) for a little while for the count to change.
-            assertThatWithRetry("getAsync count value after invocation",
-                                () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(
-                                                // Set the reference using fresh metrics and get that newly-set JSON object, then
-                                                // extract the 'count' field cast as a number.
-                                                nextRestRequest.updateAndGet(old -> getRESTRequestJSON()),
-                                                "count",
-                                                false))
-                                        .longValue(),
-                                is(1L));
+        // With async endpoints, metrics updates can occur after the server sends the response.
+        // Retry as needed (including fetching the metrics again) for a little while for the count to change.
+        assertThatWithRetry("getAsync count value after invocation",
+                            () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(
+                                            // Set the reference using fresh metrics and get that newly-set JSON object, then
+                                            // extract the 'count' field cast as a number.
+                                            nextRestRequest.updateAndGet(old -> getRESTRequestJSON()),
+                                            "count",
+                                            false))
+                                    .longValue(),
+                            is(1L));
 
-            // Reuse (no need to update the atomic reference again) the freshly-fetched metrics JSON.
-             getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest.get(),
-                                                                                      "elapsedTime",
-                                                                                      false));
-            assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
-        } catch (Exception e) {
-            throw new RuntimeException("Dump of REST.request metrics due to following assertion failure\n"
-                                               + restRequest, e);
-        }
+        // Reuse (no need to update the atomic reference again) the freshly-fetched metrics JSON.
+         getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest.get(),
+                                                                                  "elapsedTime",
+                                                                                  false));
+        assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
     }
 
     private JsonObject getRESTRequestJSON() {

@@ -273,9 +273,18 @@ testApp(){
     if [ "${archetype_name}" = "quickstart-se" -o  "${archetype_name}" = "quickstart-mp" ]; then
         testGET http://localhost:8080/greet
         testGET http://localhost:8080/greet/Joe
+        testGET http://localhost:8080/health
+        testGET http://localhost:8080/metrics
     fi
-    testGET http://localhost:8080/health
-    testGET http://localhost:8080/metrics
+
+    if [ "${archetype_name}" = "bare-se" -o  "${archetype_name}" = "bare-mp" ]; then
+        testGET http://localhost:8080/simple-greet
+    fi
+
+    if [ "${archetype_name}" = "database-se" -o  "${archetype_name}" = "database-mp" ]; then
+        testGET http://localhost:8080/pokemon
+        testGET http://localhost:8080/health
+    fi
 }
 
 quick(){

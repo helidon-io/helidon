@@ -48,6 +48,7 @@
         <module>microprofile</module>
         <module>media</module>
         <module>openapi</module>
+        <module>openapi-tools</module>
         <module>security</module>
         <module>todo-app</module>
         <module>translator-app</module>

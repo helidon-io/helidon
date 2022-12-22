@@ -35,8 +35,6 @@ include::{rootdir}/includes/se.adoc[]
 
 Helidon SE OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
 
-NOTE: OCI SDK uses JAX-RS Client 2.1.6 (javax package names), which makes it incompatible with Helidon 3 applications and any application that uses JAX-RS 3 (jakarta package naming). See <<oci-compatibility, Resolving compatibility issue with OCI SDK>> for detailed information on how to work around this issue.
-
 == Usage
 
 It is recommended that you use the OCI Java SDK directly, in particular the Async clients. All you need to do is configure and create an OCI SDK Client object. The configuration primarily
@@ -64,7 +62,8 @@ You also need to add the following dependency to your application for this
 ----
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-common</artifactId>
+    <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+    <scope>runtime</scope>
 </dependency>
 ----
 
@@ -107,9 +106,6 @@ Once you have created an ObjectStorage client you can use it as described in:
 
 * link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
 * link:{oci-objstore-url}[OCI Object Storage Overview]
-
-
-include::{rootdir}/includes/oci.adoc[leveloffset=+1]
 
 == References
 

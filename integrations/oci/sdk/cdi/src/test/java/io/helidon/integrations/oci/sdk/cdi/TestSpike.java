@@ -190,7 +190,7 @@ class TestSpike {
                             // isn't; see the comments in the
                             // constructor body below.  It should be
                             // unsatisfied.
-                            Instance<com.oracle.bmc.circuitbreaker.JaxRsCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
+                            Instance<com.oracle.bmc.circuitbreaker.OciCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
                             // Streaming turns out to be the only
                             // convention-violating service in the
                             // entire portfolio, and the violation is

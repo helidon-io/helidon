@@ -37,24 +37,28 @@
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
-    <dependencyManagement>
-      <dependencies>
-        <dependency>
-          <groupId>com.oracle.oci.sdk</groupId>
-          <artifactId>oci-java-sdk-shaded-full</artifactId>
-          <version>${version.lib.oci}</version>
-        </dependency>
-      </dependencies>
-    </dependencyManagement>
-
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->
-
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-shaded-full</artifactId>
+            <artifactId>oci-java-sdk-common</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -84,19 +88,21 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <!--
-            This is a transitive dependency of the manually-installed
-            oci-java-sdk-shaded-full artifact and so must be
-            explicitly mentioned here.
-        -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <scope>runtime</scope>
-        </dependency>
 
         <!-- Test-scoped dependencies. -->
 
+        <!-- Arbitrarily-selected OCI library used for testing universal applicability. -->
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-ailanguage</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Streaming OCI library because it is the only OCI service that doesn't quite match the other OCI services' design patterns. -->
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-streaming</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

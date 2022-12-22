@@ -35,9 +35,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
-
-NOTE: OCI SDK uses JAX-RS Client 2.1.6 (javax package names), which makes it incompatible with Helidon 3 applications and any application that uses JAX-RS 3 (jakarta package naming). See <<oci-compatibility, Resolving compatibility issue with OCI SDK>> for detailed information on how to work around this issue.
+Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.`
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -136,8 +134,6 @@ Once you have injected an ObjectStorage client you can use it as described in:
 
 * link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
 * link:{oci-objstore-url}[OCI Object Storage Overview]
-
-include::{rootdir}/includes/oci.adoc[leveloffset=+1]
 
 == References
 
