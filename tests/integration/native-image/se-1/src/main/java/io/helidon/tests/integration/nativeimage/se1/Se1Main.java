@@ -125,6 +125,7 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
+        ColorService colorService = new ColorService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
@@ -143,6 +144,7 @@ public final class Se1Main {
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
+                .register("/color", colorService)
                 .register("/wc", webClientService)
                 .register("/zipkin", zipkinService)
                 .build();

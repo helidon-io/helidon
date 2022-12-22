@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,10 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItems;
@@ -242,6 +246,96 @@ public class ConfigMappersTest {
         assertThat(key2Properties, hasEntry("key2.key23", "value23"));
     }
 
+    @Test
+    void testBuiltinEnumMapper() {
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create(), true);
+        Config config = createEnumConfig();
+        MyType type = manager.map(config.get("type-a"), MyType.class);
+        assertThat("Lower-case mapping", type, is(MyType.A));
+
+        type = manager.map(config.get("type-A"), MyType.class);
+        assertThat("Upper-case mapping", type, is(MyType.A));
+
+        type = manager.map(config.get("type-special-b"), MyType.class);
+        assertThat("Mixed-clase and hyphen mapping", type, is(MyType.SPECIAL_B));
+
+        type = manager.map(config.get("type-special_b"), MyType.class); // <-- That's an underscore, not a hyphen.
+        assertThat("Mixed-clase and no hyphen mapping", type, is(MyType.SPECIAL_B));
+
+        ConfigMappingException e = assertThrows(ConfigMappingException.class,
+                                                    () -> manager.map(config.get("type-absent"), MyType.class),
+                                                    "Unmatched enum value");
+        assertThat("Unmapped enum value error message", e.getMessage(), containsString("no match"));
+
+        assertThrows(MissingValueException.class,
+                     () -> manager.map(config.get("missing-value"), MyType.class),
+                     "Missing value in config");
+    }
+
+    @Test
+    void testBuiltInEnumMapperWithConfusingEnum() {
+        ConfigMapperManager manager = BuilderImpl.buildMappers(ConfigMapperManager.MapperProviders.create(), true);
+
+        Config confusingConfig = createConfusingEnumConfig();
+
+        ConfusingType type = manager.map(confusingConfig.get("type-RED"), ConfusingType.class);
+        assertThat("Exact match to RED", type, is(ConfusingType.RED));
+
+        type = manager.map(confusingConfig.get("type-Red"), ConfusingType.class);
+        assertThat("Exact match to Red", type, is(ConfusingType.Red));
+
+        type = manager.map(confusingConfig.get("type-blue"), ConfusingType.class);
+        assertThat("Case-insensitive match to BLUE", type, is(ConfusingType.BLUE));
+
+        ConfigMappingException e = assertThrows(ConfigMappingException.class,
+                     () -> manager.map(confusingConfig.get("type-red"), ConfusingType.class),
+                     "Ambiguous enum value");
+        assertThat("Ambiguous value error message", e.getMessage(), containsString("ambiguous"));
+    }
+
+    @Test
+    void testEnumUsingAs() {
+        Config config = createEnumConfig();
+        MyType myType = config.get("type-a").as(MyType.class).orElse(null);
+        assertThat("'as' mapping of 'a'", myType, allOf(notNullValue(), is(MyType.A)));
+
+        myType = config.get("type-A").as(MyType.class).orElse(null);
+        assertThat("'as' mapping of 'A'", myType, allOf(notNullValue(), is(MyType.A)));
+
+        assertThrows(MissingValueException.class,
+                     () -> Config.empty().as(MyType.class).get(),
+                     "Missing value in config");
+    }
+
+    @Test
+    void testEnumUsingAsWithConfusingEnum() {
+        Config config = createConfusingEnumConfig();
+
+        ConfusingType cType = config.get("type-Red").as(ConfusingType.class).orElse(null);
+        assertThat("'as' mapping of 'Red'", cType, allOf(notNullValue(), is(ConfusingType.Red)));
+
+        cType = config.get("type-RED").as(ConfusingType.class).orElse(null);
+        assertThat("'as' mapping of 'RED'", cType, allOf(notNullValue(), is(ConfusingType.RED)));
+
+        cType = config.get("type-blue").as(ConfusingType.class).orElse(null);
+        assertThat("'as' mapping of 'blue'", cType, allOf(notNullValue(), is(ConfusingType.BLUE)));
+
+
+        ConfigMappingException e = assertThrows(ConfigMappingException.class,
+                                                    () -> config.get("type-red")
+                                                            .as(ConfusingType.class)
+                                                            .ifPresent((ConfusingType t) -> {}),
+                                                    "Ambiguous value failure using 'as'");
+        assertThat("Ambiguous value error message using 'as'", e.getMessage(), containsString("ambiguous"));
+
+        e = assertThrows(ConfigMappingException.class,
+                         () -> config.get("type-absent")
+                                 .as(ConfusingType.class)
+                                 .ifPresent((ConfusingType t) -> {}),
+                         "Unmatched value failure using 'as'");
+        assertThat("Unmatched value error message using 'as'", e.getMessage(), containsString("no match"));
+    }
+
     private Config createConfig() {
         return Config.builder()
                 .sources(ConfigSources.create(Map.of(
@@ -256,4 +350,26 @@ public class ConfigMappersTest {
                 .build();
     }
 
+    public enum MyType {A, B, SPECIAL_B};
+
+    public enum ConfusingType {RED, Red, BLUE};
+
+    private Config createEnumConfig() {
+        return Config.just(ConfigSources.create(Map.of(
+                "type-a", "a",
+                "type-A", "A",
+                "type-special-b", "Special-b",
+                "type-special_b", "Special_b",
+                "type-absent", "absent"
+        )));
+    }
+
+    private Config createConfusingEnumConfig() {
+        return Config.just(ConfigSources.create(Map.of(
+                "type-RED", "RED",
+                "type-Red", "Red",
+                "type-red", "red",
+                "type-blue", "blue",
+                "type-absent", "not-there")));
+    }
 }

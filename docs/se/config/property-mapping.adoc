@@ -28,6 +28,7 @@ include::{rootdir}/includes/se.adoc[]
 
 - <<Overview, Overview>>
 - <<Converting Configuration to Simple Types, Converting Configuration to Simple Types>>
+- <<Converting Configuration to `enum` Values, Converting Configuration to `enum` Values>>
 - <<Converting Configuration to Complex Types, Converting Configuration to Complex Types>>
 - <<Advanced Conversions using Explicit Mapping Logic, Advanced Conversions using Explicit Mapping Logic>>
 - <<Conversions using JavaBean Deserialization, Conversions using JavaBean Deserialization>>
@@ -36,7 +37,7 @@ include::{rootdir}/includes/se.adoc[]
 
 Although config values are originally text, you can use the config system's
 built-in conversions or add your own to translate text
-into Java primitive types and simple objects (such as `Double`) and to
+into Java primitive types and simple objects (such as `Double`), into `enum` values, and to
 express parts of the config tree as complex types (`List`, `Map`, and
 custom types specific to your application). This section introduces how to
 use the built-in mappings and your own custom ones to convert to simple and
@@ -118,6 +119,75 @@ Your application can use `Config.as` to interpret the value as a `BigDecimal`:
 [source,java]
 BigDecimal initialId = config.get("bl.initial-id").as(BigDecimal.class);
 
+== Converting Configuration to `enum` Values
+Configuration can automatically map `Config` nodes to most `enum` types.
+
+Your application code simply passes the enum class type to `config.as(Class<? extends T> type)`.
+The built-in `enum` converter attempts to match the string value in the config node to the name of one of the values declared for that specific `enum` in the Java code.
+
+=== Matching `enum` Names
+The conversion applies the following algorithm to match config values to `enum` names, stopping as soon as it finds a match:
+
+1. Select an exact match if one exists.
+2. Treat hyphens (`-`) in config strings as underscores (`_`) and select an otherwise exact match if one exists.
+3. Select a _case-insensitive_ match (with or without hyphen substitution) if there is _exactly one_ such match.
+4. Finding no match or multiple case-insensitive matches, throw a `ConfigMappingException`.
+
+=== Example
+The following example illustrates how to use the built-in `enum` conversion feature. The example code builds a simple `Config` tree itself which contains simple test data; normally your application would load the config from a file or some other location.
+
+[source,java]
+----
+class Example {
+
+    enum Color {RED, YELLOW, BLUE_GREEN};
+
+    void convert() {
+        Config config = Config.just(ConfigSources.create(Map.of("house.tint", "blue-green",
+                                                                "car.color", "Red",
+                                                                "warning", "YELLOW")));
+
+        Color house = config.get("house.tint") // <1>
+                            .as(Color.class)   // <2>
+                            .get();            // <3>
+        Color car = config.get("car.color")
+                          .as(Color.class)
+                          .get();              // <4>
+        Color warning = config.get("warning")
+                              .as(Color.class)
+                              .get();          // <5>
+    }
+}
+----
+<1> Retrieve the `Config` object corresponding to the key `house.tint`.
+<2> Indicate that, when the value in that `Config` object is converted, Helidon should convert it to a `Color` `enum` value.
+<3> Convert and retrieve the value.
++
+The conversion triggered by invoking `get()` matches the string `blue-green`--expressed in lower case and with a hyphen -- to `Color.BLUE_GREEN` using the conversion rules described earlier.
+<4> The config key `car.color` locates the mixed-case string `Red` which the converter matches to `Color.RED`.
+<5> The config key `warning` locates `YELLOW` which the  converter matches exactly to `Color.YELLOW`.
+
+=== Why use heuristics in matching strings to `enum` values?
+Short answer: ease-of-use.
+
+Users composing config sources often adopt a style with hyphens within words to improve readability and lower-case keys and values.
+With that style in mind, users typing an `enum` value into a config source might accidentally enter a hyphen instead of an underscore or use lower case instead of upper case. Users might even _prefer_ to make these changes so they can follow their preferred config style.
+
+With the heuristics, Helidon allows users to adopt a common config style and prevents unnecessary runtime exceptions--and user frustration--from inconsequential typos.
+
+Remember:
+
+* Helidon always finds exact matches unambiguously, without relying on the heuristics.
+In our `Color` example the text `BLUE_GREEN` always maps to `Color.BLUE_GREEN`.
+* Because hyphens cannot appear in a valid Java `enum` value name, interpreting them as underscores during `enum` conversion introduces no ambiguity.
+
+Only in the following unusual sitatuation are the heuristics unable to unambiguously match a string to an `enum` value:
+
+* The `enum` has values which differ _only_ in their case (such as `Red` and `RED`), _and_
+* The string in the config source is not an exact match with an `enum` value name (such as `red`).
+
+If your application must deal with such cases, write your own function which maps a `Config` node to the correct `enum` value, resolving the ambiguities however makes sense in your use case.
+Your code tells config to use that function instead of the built-in `enum` conversion when it converts values. A xref:customConfigAs[later section] describes this technique which works for all types, not only `enum` types.
 
 == Converting Configuration to Complex Types
 
@@ -153,6 +223,7 @@ Here are two approaches that will always work without requiring changes
 to the target class. For both approaches, you write your own conversion function.
 The difference is in how your application triggers the use of that mapper.
 
+[[customConfigAs]]
 ==== Use Custom Mapper Explicitly: `Config.as` method
 Any time your application has a `Config` instance to map to the target class
 it invokes `Config.as` passing an instance of the corresponding conversion function:
