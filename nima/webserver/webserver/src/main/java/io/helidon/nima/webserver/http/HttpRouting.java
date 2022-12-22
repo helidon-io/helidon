@@ -39,6 +39,9 @@ import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Routing;
 import io.helidon.nima.webserver.ServerLifecycle;
 
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * HTTP routing.
  * This routing is capable of handling any HTTP version.
@@ -426,9 +429,7 @@ public final class HttpRouting implements Routing {
             while (result == RoutingResult.ROUTE) {
                 counter++;
                 if (counter == maxReRouteCount) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
-                            + " times. Will not attempt further routing");
-
+                    LOGGER.log(ERROR, "Rerouted more than {0} times. Will not attempt further routing", maxReRouteCount);
                     throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
                 }
 
@@ -455,9 +456,8 @@ public final class HttpRouting implements Routing {
                 next.handler().handle(request, response);
                 if (response.shouldReroute()) {
                     if (response.isSent()) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
-                                + " in inconsistent state. Request to re-route, but response was already sent. Ignoring "
-                                + "reroute.");
+                        LOGGER.log(WARNING, "Request to {0} in inconsistent state. Request to re-route, "
+                                + "but response was already sent. Ignoring reroute.", request.prologue());
                         return RoutingResult.FINISH;
                     }
                     HttpPrologue newPrologue = response.reroutePrologue(prologue);
@@ -467,9 +467,8 @@ public final class HttpRouting implements Routing {
                 }
                 if (response.isNexted()) {
                     if (response.isSent()) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Request to " + request.prologue()
-                                + " in inconsistent state. Request to next, but response was already sent. "
-                                + "Ignoring next().");
+                        LOGGER.log(WARNING, "Request to {0} in inconsistent state. Request to next, "
+                                + "but response was already sent. Ignoring next().", request.prologue());
                         return RoutingResult.FINISH;
                     }
                     continue;

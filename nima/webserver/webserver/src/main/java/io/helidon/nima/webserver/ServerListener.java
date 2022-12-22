@@ -166,23 +166,19 @@ class ServerListener {
         this.connectedPort = serverSocket.getLocalPort();
 
         if (LOGGER.isLoggable(INFO)) {
-            String format;
-            if (listenerConfig.hasTls()) {
-                format = "[%s] https://%s:%s bound for socket '%s'";
-            } else {
-                format = "[%s] http://%s:%s bound for socket '%s'";
-            }
-            LOGGER.log(INFO, String.format(format,
-                                           serverChannelId,
-                                           inetAddress.getHostAddress(),
-                                           connectedPort,
-                                           socketName));
+            String protocol = listenerConfig.hasTls() ? "https" : "http";
+            LOGGER.log(INFO, "[{0}] {1}://{2}:{3,number,#} bound for socket ''{4}''",
+                    serverChannelId,
+                    protocol,
+                    inetAddress.getHostAddress(),
+                    connectedPort,
+                    socketName);
 
             if (listenerConfig.writeQueueLength() <= 1) {
-                LOGGER.log(System.Logger.Level.INFO, "[" + serverChannelId + "] direct writes");
+                LOGGER.log(INFO, "[{0}] direct writes", serverChannelId);
             } else {
-                LOGGER.log(System.Logger.Level.INFO,
-                           "[" + serverChannelId + "] async writes, queue length: " + listenerConfig.writeQueueLength());
+                LOGGER.log(INFO, "[{0}] async writes, queue length: {1}",
+                        serverChannelId, listenerConfig.writeQueueLength());
             }
 
             if (LOGGER.isLoggable(TRACE)) {
@@ -274,7 +270,7 @@ class ServerListener {
             }
         }
 
-        LOGGER.log(INFO, String.format("[%s] %s socket closed.", serverChannelId, socketName));
+        LOGGER.log(INFO, "[{0}] {1} socket closed.", serverChannelId, socketName);
         closeFuture.complete(null);
     }
 
@@ -289,7 +285,7 @@ class ServerListener {
             if (!terminate) {
                 List<Runnable> running = executor.shutdownNow();
                 if (!running.isEmpty()) {
-                    LOGGER.log(INFO, running.size() + " channel tasks did not terminate gracefully");
+                    LOGGER.log(INFO, "{0} channel tasks did not terminate gracefully", running.size());
                 }
             }
         } catch (InterruptedException e) {

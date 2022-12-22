@@ -41,8 +41,7 @@ class DefaultServerSecurity implements HttpSecurity {
     public boolean authorize(ServerRequest request, ServerResponse response, String... roleHint) throws ForbiddenException {
         if (roleHint.length != 0) {
             if (LOGGER.isLoggable(DEBUG)) {
-                LOGGER.log(DEBUG,
-                           "Requested: " + request.prologue() + ", but roles required: " + Arrays.toString(roleHint));
+                LOGGER.log(DEBUG, "Requested: {0}, but roles required: {1}", request.prologue(), Arrays.toString(roleHint));
             }
             throw new ForbiddenException("This endpoint is restricted");
         }
