@@ -50,10 +50,6 @@ public class ColorService implements Service {
     }
 
     private void reportColor(ServerRequest request, ServerResponse response) {
-        if (configuredColor == null) {
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("configuredColor was null");
-        } else {
-            response.send(configuredColor.name());
-        }
+        response.send(configuredColor.name());
     }
 }
