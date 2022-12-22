@@ -128,7 +128,7 @@ public class Http1Connection implements ServerConnection {
                             // upgrader may decide not to upgrade this connection
                             if (upgradeConnection != null) {
                                 if (LOGGER.isLoggable(TRACE)) {
-                                    LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
+                                    LOGGER.log(TRACE, "Connection upgrade using {0}", upgradeConnection);
                                 }
                                 // this will block until the connection terminates
                                 upgradeConnection.handle();

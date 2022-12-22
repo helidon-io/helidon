@@ -19,6 +19,8 @@ package io.helidon.nima.webserver;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 class RouterImpl implements Router {
     private static final RouterImpl EMPTY = RouterImpl.builder().build();
 
@@ -73,8 +75,8 @@ class RouterImpl implements Router {
         public Builder addRouting(Routing routing) {
             Routing previous = this.routings.put(routing.getClass(), routing);
             if (previous != null) {
-                LOGGER.log(System.Logger.Level.WARNING, "Second routing of the same type is registered. "
-                        + "The first instance will be ignored. Type: " + routing.getClass().getName());
+                LOGGER.log(WARNING, "Second routing of the same type is registered. "
+                        + "The first instance will be ignored. Type: {0}", routing.getClass().getName());
             }
             return this;
         }

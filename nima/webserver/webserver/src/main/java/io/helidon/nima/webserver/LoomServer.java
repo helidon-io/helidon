@@ -36,6 +36,9 @@ import io.helidon.common.Version;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.INFO;
+
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
@@ -164,7 +167,7 @@ class LoomServer implements WebServer {
         parallel("stop", ServerListener::stop);
         running.set(false);
 
-        LOGGER.log(System.Logger.Level.INFO, "Níma server stopped all channels.");
+        LOGGER.log(INFO, "Níma server stopped all channels.");
         deregisterShutdownHook();
     }
 
@@ -172,7 +175,7 @@ class LoomServer implements WebServer {
         long now = System.currentTimeMillis();
         boolean result = parallel("start", ServerListener::start);
         if (!result) {
-            LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");
+            LOGGER.log(ERROR, "Níma server failed to start, shutting down");
             parallel("stop", ServerListener::stop);
             if (startFutures != null) {
                 startFutures.forEach(future -> future.future().cancel(true));
@@ -185,14 +188,12 @@ class LoomServer implements WebServer {
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-        LOGGER.log(System.Logger.Level.INFO, "Helidon Níma " + Version.VERSION);
-        LOGGER.log(System.Logger.Level.INFO, "Started all channels in "
-                + now + " milliseconds. "
-                + uptime + " milliseconds since JVM startup. "
-                + "Java " + Runtime.version());
+        LOGGER.log(INFO, "Helidon Níma {0}", Version.VERSION);
+        LOGGER.log(INFO, "Started all channels in {0} milliseconds. {1} milliseconds since JVM startup. Java {2}",
+                now, uptime, Runtime.version());
 
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
-            LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
+            LOGGER.log(INFO, "Exiting, -D{0} set.", EXIT_ON_STARTED_KEY);
             System.exit(0);
         }
     }
@@ -231,11 +232,11 @@ class LoomServer implements WebServer {
             try {
                 listenerFuture.future().get();
             } catch (InterruptedException e) {
-                LOGGER.log(System.Logger.Level.ERROR, "Failed to start listener, interrupted: "
+                LOGGER.log(ERROR, "Failed to start listener, interrupted: "
                         + listenerFuture.listener.configuredAddress(), e);
                 result = false;
             } catch (ExecutionException e) {
-                LOGGER.log(System.Logger.Level.ERROR, "Failed to start listener: "
+                LOGGER.log(ERROR, "Failed to start listener: "
                         + listenerFuture.listener.configuredAddress(), e);
                 result = false;
             }
