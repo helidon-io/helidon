@@ -35,7 +35,7 @@ import java.util.Optional;
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.DefaultBootstrap;
+import io.helidon.pico.DefaultPicoServicesConfig;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
@@ -368,8 +368,7 @@ public interface ModuleInfoDescriptor {
      * @return The contents (source code body) for this descriptor.
      */
     default String contents(boolean wantAnnotation) {
-        // note to self: this will change later to be a better resolution --jtrent
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create(DefaultPicoServicesConfig.builder().build());
 
         Map<String, Object> subst = new HashMap<>();
         subst.put("name", name());

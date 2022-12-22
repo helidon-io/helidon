@@ -467,7 +467,7 @@ public class DefaultServiceInfo implements ServiceInfo {
          * @param scopeTypeName the scope type name
          * @return this fluent builder
          */
-        public B addScopeTypeName(String scopeTypeName) {
+        public B scopeTypeName(String scopeTypeName) {
             Objects.requireNonNull(scopeTypeName);
             this.scopeTypeNames.add(scopeTypeName);
             return identity();
@@ -480,7 +480,7 @@ public class DefaultServiceInfo implements ServiceInfo {
          * @return this fluent builder
          */
         public B scopeType(Class<?> scopeType) {
-            return addScopeTypeName(scopeType.getName());
+            return scopeTypeName(scopeType.getName());
         }
 
         /**

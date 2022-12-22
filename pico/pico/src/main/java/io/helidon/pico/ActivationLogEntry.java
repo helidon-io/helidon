@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.BuilderInterceptor;
 
 /**
  * Log entry for lifecycle related events (i.e., activation startup and deactivation shutdown).
@@ -27,10 +28,9 @@ import io.helidon.builder.Builder;
  * @see ActivationLog
  * @see Activator
  * @see DeActivator
- * @param <T> the service type
  */
-@Builder
-public interface ActivationLogEntry<T> {
+@Builder(interceptor = ActivationLogEntry.Interceptor.class)
+public interface ActivationLogEntry {
 
     /**
      * The activation event.
@@ -48,11 +48,11 @@ public interface ActivationLogEntry<T> {
     }
 
     /**
-     * The managing service provider.
+     * The managing service provider the event pertains to.
      *
      * @return the managing service provider
      */
-    ServiceProvider<T> serviceProvider();
+    Optional<ServiceProvider<?>> serviceProvider();
 
     /**
      * The event.
@@ -109,5 +109,40 @@ public interface ActivationLogEntry<T> {
      * @return the thread id
      */
     long threadId();
+
+
+    /**
+     * Ensures that the non-nullable fields are populated with default values.
+     */
+    class Interceptor implements BuilderInterceptor<DefaultActivationLogEntry.Builder> {
+        @Override
+        public DefaultActivationLogEntry.Builder intercept(DefaultActivationLogEntry.Builder b) {
+            if (b.time() == null) {
+                b.time(Instant.now());
+            }
+
+            if (b.threadId() == 0) {
+                b.threadId(Thread.currentThread().getId());
+            }
+
+            if (b.startingActivationPhase() == null) {
+                b.startingActivationPhase(ActivationPhase.INIT);
+            }
+
+            if (b.finishingStatus() == null) {
+                b.finishingActivationPhase(b.startingActivationPhase());
+            }
+
+            if (b.event() == null) {
+                b.event(Event.STARTING);
+            }
+
+            if (b.finishingStatus() == null) {
+                b.finishingStatus(ActivationStatus.SUCCESS);
+            }
+
+            return b;
+        }
+    }
 
 }

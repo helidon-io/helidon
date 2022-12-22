@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.pico.DefaultBootstrap;
+import io.helidon.pico.DefaultPicoServicesConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,7 @@ class TemplateHelperTest {
 
     @Test
     void bogusTemplateName() {
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create(DefaultPicoServicesConfig.builder().build());
         ToolsException e = assertThrows(ToolsException.class,
                                               () -> helper.safeLoadTemplate("bogus.hbs"));
         assertThat(e.getMessage(), equalTo("failed to load: templates/pico/default/bogus.hbs"));
@@ -46,7 +46,7 @@ class TemplateHelperTest {
 
     @Test
     void requiredArguments() {
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create(DefaultPicoServicesConfig.builder().build());
         Set<String> args = helper.requiredArguments("this is {a} little {test}", Optional.of("{"), Optional.of("}"));
         assertThat(args, contains("a", "test"));
 
@@ -59,7 +59,7 @@ class TemplateHelperTest {
 
     @Test
     public void applyMustacheSubstitutions() {
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create(DefaultPicoServicesConfig.builder().build());
         Map<String, Object> props = Collections.singletonMap("little", "big");
 
         String val = helper.applySubstitutions("", props, true);
@@ -72,7 +72,7 @@ class TemplateHelperTest {
     @Test
     public void moduleInfoTemplate() {
         Map<String, Object> subst = new HashMap<>();
-        TemplateHelper helper = TemplateHelper.create(DefaultBootstrap.builder().build());
+        TemplateHelper helper = TemplateHelper.create(DefaultPicoServicesConfig.builder().build());
         String template = helper.safeLoadTemplate("module-info.hbs");
 
         Set<String> args = helper.requiredArguments(template);

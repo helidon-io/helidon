@@ -33,7 +33,7 @@ public interface ActivationLog {
      * @param entry the log entry to record
      * @return the (perhaps decorated) activation log entry
      */
-    ActivationLogEntry<?> recordActivationEvent(ActivationLogEntry<?> entry);
+    ActivationLogEntry record(ActivationLogEntry entry);
 
     /**
      * Optionally provide a means to query the activation log, if query is possible. If query is not possible then an empty

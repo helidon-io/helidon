@@ -15,6 +15,6 @@
  */
 
 /**
- * SPI for Pico, to load the implementation.
+ * Pico SPI.
  */
 package io.helidon.pico.spi;

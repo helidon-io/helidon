@@ -29,11 +29,11 @@ import io.helidon.pico.spi.PicoServicesProvider;
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
  * {@link io.helidon.pico.Bootstrap} primordial configuration.
  */
-class PicoServicesHolder {
+public class PicoServicesHolder {
     private static final AtomicReference<Bootstrap> BOOTSTRAP = new AtomicReference<>();
     private static final LazyValue<Optional<PicoServices>> INSTANCE = LazyValue.create(PicoServicesHolder::load);
 
-    private PicoServicesHolder() {
+    protected PicoServicesHolder() {
     }
 
     static Optional<PicoServices> picoServices() {
@@ -60,6 +60,10 @@ class PicoServicesHolder {
         }
 
         return Optional.ofNullable(BOOTSTRAP.get());
+    }
+
+    protected static void reset() {
+        BOOTSTRAP.set(null);
     }
 
 }

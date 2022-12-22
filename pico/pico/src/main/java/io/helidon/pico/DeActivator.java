@@ -25,7 +25,6 @@ package io.helidon.pico;
  * @param <T> the type to deactivate
  * @see Activator
  */
-@Contract
 public interface DeActivator<T> {
 
     /**

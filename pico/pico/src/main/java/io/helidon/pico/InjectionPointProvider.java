@@ -33,6 +33,7 @@ import jakarta.inject.Provider;
  * @param <T> the type that the provider produces
  */
 public interface InjectionPointProvider<T> extends Provider<T> {
+
     /**
      * Get (or create) an instance of this service type using default/empty criteria and context.
      *

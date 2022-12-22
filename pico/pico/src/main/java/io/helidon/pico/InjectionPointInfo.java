@@ -78,4 +78,5 @@ public interface InjectionPointInfo extends ElementInfo {
      * @return The service info we are dependent upon.
      */
     ServiceInfo dependencyToServiceInfo();
+
 }

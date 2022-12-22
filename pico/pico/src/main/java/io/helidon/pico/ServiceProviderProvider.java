@@ -33,15 +33,17 @@ public interface ServiceProviderProvider {
      *                              matched using the standard service info matching checks
      * @return the list of service providers matching
      */
-    List<? extends ServiceProvider<?>> serviceProviders(ServiceInfo criteria, boolean wantThis, boolean thisAlreadyMatches);
+    List<? extends ServiceProvider<?>> serviceProviders(ServiceInfoCriteria criteria,
+                                                        boolean wantThis,
+                                                        boolean thisAlreadyMatches);
 
     /**
      * This method will only apply to the managed/slave instances being provided, not to itself as in the case for
-     * {@link #serviceProviders(ServiceInfo, boolean, boolean)}.
+     * {@link #serviceProviders(ServiceInfoCriteria, boolean, boolean)}.
      *
      * @param criteria              the injection point criteria that must match
      * @return the map of managed service providers matching the criteria, identified by its key/context
      */
-    Map<String, ? extends ServiceProvider<?>> managedServiceProviders(ServiceInfo criteria);
+    Map<String, ? extends ServiceProvider<?>> managedServiceProviders(ServiceInfoCriteria criteria);
 
 }

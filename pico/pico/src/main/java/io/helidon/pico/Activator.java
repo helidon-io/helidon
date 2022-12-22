@@ -42,7 +42,6 @@ package io.helidon.pico;
  * @param <T> the managed service type being activated
  * @see DeActivator
  */
-@Contract
 public interface Activator<T> {
 
     /**

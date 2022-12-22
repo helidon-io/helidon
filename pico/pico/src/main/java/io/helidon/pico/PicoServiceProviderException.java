@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A general purpose exception from Pico.
+ * An exception relative to a {@link io.helidon.pico.ServiceProvider}.
  */
 public class PicoServiceProviderException extends PicoException {
 

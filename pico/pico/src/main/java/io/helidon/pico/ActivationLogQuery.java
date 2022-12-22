@@ -18,47 +18,29 @@ package io.helidon.pico;
 
 import java.util.List;
 
+import io.helidon.pico.spi.Resetable;
+
 /**
  * Provide a means to query the activation log.
  *
  * @see ActivationLog
  */
-public interface ActivationLogQuery {
+public interface ActivationLogQuery extends Resetable {
 
     /**
      * Clears the activation log.
+     *
+     * @param deep ignored
+     * @return true if the log was cleared, false if the log was previously empty
      */
-    void clear();
+    @Override
+    boolean reset(boolean deep);
 
     /**
      * The full transcript of all services phase transitions being managed.
      *
      * @return the activation log if log capture is enabled
      */
-    List<ActivationLogEntry<?>> fullActivationLog();
-
-    /**
-     * A filtered list only including service providers.
-     *
-     * @param serviceProviders the filter
-     * @return the filtered activation log if log capture is enabled
-     */
-    List<ActivationLogEntry<?>> serviceProviderActivationLog(ServiceProvider<?>... serviceProviders);
-
-    /**
-     * A filtered list only including service providers.
-     *
-     * @param serviceTypeNames the filter
-     * @return the filtered activation log if log capture is enabled
-     */
-    List<ActivationLogEntry<?>> serviceProviderActivationLog(String... serviceTypeNames);
-
-    /**
-     * A filtered list only including service providers.
-     *
-     * @param instances the filter
-     * @return the filtered activation log if log capture is enabled
-     */
-    List<ActivationLogEntry<?>> managedServiceActivationLog(Object... instances);
+    List<ActivationLogEntry> fullActivationLog();
 
 }

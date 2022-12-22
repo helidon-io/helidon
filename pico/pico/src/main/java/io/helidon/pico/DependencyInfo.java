@@ -16,6 +16,7 @@
 
 package io.helidon.pico;
 
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
@@ -40,5 +41,13 @@ public interface DependencyInfo {
      * @return the set of dependencies
      */
     Set<? extends InjectionPointInfo> injectionPointDependencies();
+
+    /**
+     * The {@link io.helidon.pico.ServiceProvider} that this dependency is optional resolved and bound to. All dependencies
+     * from {@link #injectionPointDependencies()} will be bound to this resolution.
+     *
+     * @return the optional resolved and bounded service provider
+     */
+    Optional<ServiceProvider<?>> resolvedTo();
 
 }

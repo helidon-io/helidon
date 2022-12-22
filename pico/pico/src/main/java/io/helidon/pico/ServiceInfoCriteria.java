@@ -24,6 +24,8 @@ import io.helidon.builder.Singular;
 
 /**
  * A criteria to discover service.
+ *
+ * @see ServiceInfo
  */
 @Builder
 public interface ServiceInfoCriteria {
@@ -57,7 +59,7 @@ public interface ServiceInfoCriteria {
      * @see io.helidon.pico.ExternalContracts
      * @return the service contracts implemented
      */
-    @Singular
+    @Singular("contractImplemented")
     Set<String> contractsImplemented();
 
     /**
@@ -82,7 +84,7 @@ public interface ServiceInfoCriteria {
      * @see io.helidon.pico.ExternalContracts
      * @return the service external contracts implemented
      */
-    @Singular
+    @Singular("externalContractImplemented")
     Set<String> externalContractsImplemented();
 
     /**

@@ -50,24 +50,22 @@ class TemplateHelper {
 
     private static final System.Logger LOGGER = System.getLogger(TemplateHelper.class.getName());
 
-    private final Bootstrap bootstrap;
     private final String providerName;
     private final String versionId;
 
-    private TemplateHelper(Bootstrap bootstrap) {
-        this.bootstrap = bootstrap;
-        this.providerName = toString(bootstrap, PicoServicesConfig.KEY_PROVIDER);
-        this.versionId = toString(bootstrap, PicoServicesConfig.KEY_VERSION);
+    private TemplateHelper(PicoServicesConfig cfg) {
+        this.providerName = cfg.providerName();
+        this.versionId = cfg.providerVersion();
     }
 
     /**
-     * Creates a template helper utility using the provided {@link io.helidon.pico.Bootstrap} configuration.
+     * Creates a template helper utility using the provided {@link io.helidon.pico.PicoServicesConfig}.
      *
-     * @param bootstrap the bootstrap configuration
+     * @param cfg the Pico configuration
      * @return the template helper initialized with the bootstrap configuration
      */
-    static TemplateHelper create(Bootstrap bootstrap) {
-        return new TemplateHelper(bootstrap);
+    static TemplateHelper create(PicoServicesConfig cfg) {
+        return new TemplateHelper(cfg);
     }
 
     /**

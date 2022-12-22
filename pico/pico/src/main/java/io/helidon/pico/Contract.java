@@ -22,11 +22,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The {@code Contract} annotation is used to relay significance to the type. While remaining optional in its use, it is typically
- * placed on an interface definition to signify that the given type can be used for lookup in the {@link io.helidon.pico.Services}
- * registry, and be eligible for injection via standard {@code @Inject}. While normally places on interface types, it can also be
- * placed on other types (e.g., abstract class) as well. The main point is that a contract is the focal point for service lookup
- * and injection.
+ * The {@code Contract} annotation is used to relay significance to the type that it annotates. While remaining optional in its
+ * use, it is typically placed on an interface definition to signify that the given type can be used for lookup in the
+ * {@link io.helidon.pico.Services} registry, and be eligible for injection via standard {@code @Inject}.
+ * While normally placed on interface types, it can also be placed on abstract and concrete class as well. The main point is that
+ * a {@code Contract} is the focal point for service lookup and injection.
  * <p>
  * If the developer does not have access to the source to place this annotation on the interface definition directly then consider
  * using {@link ExternalContracts} instead - this annotation can be placed on the implementation class implementing the given

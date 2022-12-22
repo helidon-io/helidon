@@ -16,9 +16,11 @@
 
 package io.helidon.pico;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+
+import io.helidon.pico.types.TypeName;
 
 /**
  * Represents a per {@link ServiceInfo} mapping of {@link DependencyInfo}'s.
@@ -30,13 +32,20 @@ public interface DependenciesInfo {
      *
      * @return map from the service info to its dependencies
      */
-    Map<ServiceInfo, Set<? extends DependencyInfo>> serviceInfoDependencies();
+    Map<ServiceInfo, Set<DependencyInfo>> serviceInfoDependencies();
 
     /**
-     * Represents a flattened list of all dependencies.
+     * Represents a flattened set of all dependencies.
      *
-     * @return the flattened list of all dependencies
+     * @return the flattened set of all dependencies
      */
-    List<? extends DependencyInfo> allDependencies();
+    Set<DependencyInfo> allDependencies();
+
+    /**
+     * Optionally, the service type name aggregating {@link #allDependencies()}.
+     *
+     * @return the optional service type name for which these dependencies belong
+     */
+    Optional<TypeName> fromServiceTypeName();
 
 }

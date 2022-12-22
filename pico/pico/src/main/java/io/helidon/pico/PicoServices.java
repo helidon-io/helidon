@@ -72,7 +72,7 @@ public interface PicoServices {
 
     /**
      * Get {@link PicoServices} instance if available. The highest {@link io.helidon.common.Weighted} service will be loaded
-     * and returned. Remember to optionally configure any primordial {@link #bootstrap()} configuration prior to the
+     * and returned. Remember to optionally configure any primordial {@link Bootstrap} configuration prior to the
      * first call to get {@code PicoServices}.
      *
      * @return the Pico services instance
@@ -95,27 +95,21 @@ public interface PicoServices {
      *
      * @return the service binder capable of binding, or empty if not permitted/available
      */
-    default Optional<ServiceBinder> createServiceBinder(Module module) {
-        return Optional.empty();
-    }
+    Optional<ServiceBinder> createServiceBinder(Module module);
 
     /**
      * Optionally, the injector.
      *
      * @return the injector, or empty if not available
      */
-    default Optional<Injector> injector() {
-        return Optional.empty();
-    }
+    Optional<Injector> injector();
 
     /**
      * Optionally, the service providers' configuration.
      *
      * @return the config, or empty if not available
      */
-    default Optional<PicoServicesConfig> config() {
-        return Optional.empty();
-    }
+    Optional<PicoServicesConfig> config();
 
     /**
      * Attempts to perform a graceful {@link Injector#deactivate(Object, InjectorOptions)} on all managed
@@ -137,17 +131,20 @@ public interface PicoServices {
      *
      * @return a map of all managed service types deactivated to results of deactivation
      */
-    default Optional<Map<String, ActivationResult<?>>> shutdown() {
-        return Optional.empty();
-    }
+    Optional<Map<String, ActivationResult<?>>> shutdown();
 
     /**
      * Optionally, the service provider activation log.
      *
      * @return the injector, or empty if not available
      */
-    default Optional<ActivationLog> activationLog() {
-        return Optional.empty();
-    }
+    Optional<ActivationLog> activationLog();
+
+    /**
+     * Optionally, the metrics that are exposed by the provider implementation.
+     *
+     * @return the metrics, or empty if not available
+     */
+    Optional<Metrics> metrics();
 
 }
