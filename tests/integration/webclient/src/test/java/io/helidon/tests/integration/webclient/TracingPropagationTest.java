@@ -33,6 +33,7 @@ import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -47,6 +48,7 @@ class TracingPropagationTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     @Test
+    @Disabled // intermittently failing on pipeline, issue 5754
     void testTracingSuccess() throws ExecutionException, InterruptedException {
         MockTracer mockTracer = new MockTracer();
 
