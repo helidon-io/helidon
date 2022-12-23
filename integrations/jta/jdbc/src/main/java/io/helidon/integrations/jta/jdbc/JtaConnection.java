@@ -65,6 +65,11 @@ import static javax.transaction.xa.XAResource.TMSUCCESS;
 class JtaConnection extends ConditionallyCloseableConnection {
 
 
+    /*
+     * Static fields.
+     */
+
+
     private static final Logger LOGGER = Logger.getLogger(JtaConnection.class.getName());
 
     private static final String INVALID_TRANSACTION_STATE = "25000";
@@ -121,17 +126,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
      */
     private final boolean interposedSynchronizations;
 
-    /**
-     * An {@link ExceptionConverter}.
-     *
-     * <p>This field may be {@code null}.</p>
-     *
-     * @see ExceptionConverter
-     *
-     * @see LocalXAResource#LocalXAResource(Function, ExceptionConverter)
-     */
-    private final ExceptionConverter exceptionConverter;
-
     private final SQLSupplier<? extends XAResource> xaResourceSupplier;
 
     private final Consumer<? super Xid> xidConsumer;
@@ -165,8 +159,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @param immediateEnlistment whether an attempt to enlist the new {@link JtaConnection} in a global transaction, if
      * there is one, will be made immediately
      *
-     * @exception NullPointerException if {@code transactionSupplier} or {@code transactionSynchronizationRegistry} is
-     * {@code null}
+     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
      *
      * @exception SQLException if transaction enlistment fails or the supplied {@code delegate} {@linkplain
      * Connection#isClosed() is closed}
@@ -204,7 +197,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
      * Transaction#registerSynchronization(Synchronization)}
      *
-     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
+     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}; ignored if {@code
+     * xaResourceSupplier} is non-{@code null}
      *
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
@@ -255,7 +249,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * TransactionSynchronizationRegistry#registerInterposedSynchronization(Synchronization)} and {@link
      * Transaction#registerSynchronization(Synchronization)}
      *
-     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}
+     * @param exceptionConverter an {@link ExceptionConverter}; may be {@code null}; ignored if {@code
+     * xaResourceSupplier} is non-{@code null}
      *
      * @param delegate a {@link Connection} that was not sourced from an invocation of {@link
      * javax.sql.XAConnection#getConnection()}; must not be {@code null}
@@ -294,10 +289,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLNonTransientConnectionException("delegate is closed", "08000");
         }
         this.interposedSynchronizations = interposedSynchronizations;
-        this.exceptionConverter = exceptionConverter; // nullable
         this.xaResourceSupplier =
             xaResourceSupplier == null
-            ? () -> new LocalXAResource(this::connectionFunction, this.exceptionConverter)
+            ? () -> new LocalXAResource(this::connectionFunction, exceptionConverter)
             : xaResourceSupplier;
         this.xidConsumer = xidConsumer == null ? JtaConnection::sink : xidConsumer;
         if (immediateEnlistment) {
@@ -774,7 +768,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         }
         // The JTA Specification, section 4.2, has a non-normative diagram illustrating that close() is expected,
         // but not required, to call Transaction#delistResource(XAResource). This is, mind you, before the
-        // prepare/commit cycle has started.
+        // prepare/commit completion cycle has started.
         Enlistment enlistment = this.enlistment; // volatile read
         if (enlistment != null) {
             try {
@@ -1087,7 +1081,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
                                 "Registered synchronization (transactionCompleted(int)) for {0}", t);
                 }
             }
-            // Don't let our caller close us "for real". close() invocations will be recorded as pending. See #close().
+            // Don't let our caller close us "for real". close() invocations will be recorded as pending. See
+            // #close(). (Note that this is "undone" after transaction completion in #transactionCompleted(int), which
+            // was just registered as a synchronization immediately above.)
             this.setCloseable(false);
             // (Guaranteed to call xar.start(Xid, int) on this thread.)
             t.enlistResource(xar);
