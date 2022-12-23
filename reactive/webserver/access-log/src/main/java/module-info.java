@@ -21,9 +21,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Reactive web server.
  */
 @Feature(value = "Access Log",
-        in = HelidonFlavor.SE,
         description = "Access log support",
-        path = {"WebServer", "AccessLog"})
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "AccessLog"}
+)
 module io.helidon.reactive.webserver.accesslog {
     requires static io.helidon.common.features.api;
 

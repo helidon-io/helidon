@@ -22,7 +22,8 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Media",
         description = "Media Support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
         path = "Media"
 )
 module io.helidon.nima.http.media {

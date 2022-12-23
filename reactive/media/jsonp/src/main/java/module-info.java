@@ -27,8 +27,9 @@ import io.helidon.reactive.media.jsonp.JsonpSupport;
  */
 @Feature(value = "JSON-P",
         description = "Media support for Jakarta JSON Processing",
-        path = {"Media", "Jsonp"},
-        in = HelidonFlavor.SE)
+        in = HelidonFlavor.SE,
+        path = {"Media", "Jsonp"}
+)
 module io.helidon.reactive.media.jsonp {
     requires static io.helidon.common.features.api;
 

@@ -25,7 +25,8 @@ import io.helidon.common.features.api.Preview;
 @Feature(value = "Micrometer",
         description = "Micrometer integration",
         in = HelidonFlavor.SE,
-        path = "Micrometer")
+        path = "Micrometer"
+)
 module io.helidon.integrations.micrometer {
     requires static io.helidon.common.features.api;
 

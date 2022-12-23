@@ -26,7 +26,9 @@ import io.helidon.common.features.api.Preview;
 @Feature(value = "GraphQL",
          description = "GraphQL Support",
          since = "2.2.0",
-         in = HelidonFlavor.SE, invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA})
+         in = HelidonFlavor.SE,
+         invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA}
+)
 @Aot(description = "Incubating support, tested on limited use cases")
 module io.helidon.reactive.graphql.server {
     requires java.logging;

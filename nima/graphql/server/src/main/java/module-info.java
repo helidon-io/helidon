@@ -25,7 +25,9 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "GraphQL",
         description = "GraphQL Support",
-        in = HelidonFlavor.NIMA, invalidIn = {HelidonFlavor.SE, HelidonFlavor.MP})
+        in = HelidonFlavor.NIMA,
+        invalidIn = {HelidonFlavor.SE, HelidonFlavor.MP}
+)
 module io.helidon.nima.graphql.server {
     requires static io.helidon.common.features.api;
 

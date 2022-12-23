@@ -23,8 +23,9 @@ import io.helidon.nima.http.encoding.gzip.GzipEncodingProvider;
  */
 @Feature(value = "GZip",
         description = "GZip content encoding support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
-        path = {"Encoding","GZip"}
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Encoding", "GZip"}
 )
 module io.helidon.nima.http.encoding.gzip {
     requires static io.helidon.common.features.api;

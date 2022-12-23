@@ -24,7 +24,8 @@ import io.helidon.common.features.api.HelidonFlavor;
         description = "CORS support for WebServer",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
-        path = {"WebServer", "CORS"})
+        path = {"WebServer", "CORS"}
+)
 module io.helidon.nima.webserver.cors {
     requires static io.helidon.common.features.api;
 

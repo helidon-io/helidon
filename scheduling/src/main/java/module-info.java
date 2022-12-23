@@ -23,7 +23,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Feature(value = "Scheduling",
         description = "Scheduling of periodical tasks",
         in = HelidonFlavor.SE,
-        path = "Scheduling")
+        path = "Scheduling"
+)
 module io.helidon.scheduling {
     requires static io.helidon.common.features.api;
 

@@ -25,8 +25,9 @@ import io.helidon.nima.grpc.webserver.GrpcProtocolProvider;
 @Preview
 @Feature(value = "GRPC",
         description = "gRPC Support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
-        path = {"GRPC","WebServer"}
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"GRPC", "WebServer"}
 )
 module io.helidon.nima.grpc.server {
     requires static io.helidon.common.features.api;

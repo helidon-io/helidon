@@ -25,9 +25,10 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
  * Jersey integration.
  */
 @Feature(value = "Jersey",
-        in = HelidonFlavor.SE,
         description = "WebServer integration with Jersey",
-        path = {"WebServer", "Jersey"})
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "Jersey"}
+)
 module io.helidon.reactive.webserver.jersey {
     requires static io.helidon.common.features.api;
 

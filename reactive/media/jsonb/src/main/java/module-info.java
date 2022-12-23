@@ -27,8 +27,9 @@ import io.helidon.reactive.media.jsonb.JsonbSupport;
  */
 @Feature(value = "JSON-B",
         description = "Media support for Jakarta JSON Binding",
-        path = {"Media", "Jsonb"},
-        in = HelidonFlavor.SE)
+        in = HelidonFlavor.SE,
+        path = {"Media", "Jsonb"}
+)
 module io.helidon.reactive.media.jsonb {
     requires static io.helidon.common.features.api;
 

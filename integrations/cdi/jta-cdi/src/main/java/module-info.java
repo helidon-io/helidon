@@ -28,8 +28,8 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "JTA",
         description = "Jakarta transaction API support for Helidon MP",
-        path = "JTA",
-        in = HelidonFlavor.MP
+        in = HelidonFlavor.MP,
+        path = "JTA"
 )
 @Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.integrations.jta.cdi {

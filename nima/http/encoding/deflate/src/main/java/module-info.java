@@ -23,8 +23,9 @@ import io.helidon.nima.http.encoding.deflate.DeflateEncodingProvider;
  */
 @Feature(value = "Deflate",
         description = "Deflate content encoding support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
-        path = {"Encoding","Deflate"}
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Encoding", "Deflate"}
 )
 module io.helidon.nima.http.encoding.deflate {
     requires static io.helidon.common.features.api;
