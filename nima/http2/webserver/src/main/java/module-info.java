@@ -25,7 +25,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionProvider;
         description = "HTTP/2 WebServer",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
-        path = {"WebServer","HTTP/2"}
+        path = {"WebServer", "HTTP/2"}
 )
 module io.helidon.nima.http2.webserver {
     requires static io.helidon.common.features.api;
