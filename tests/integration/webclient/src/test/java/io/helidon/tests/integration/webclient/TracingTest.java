@@ -45,7 +45,7 @@ class TracingTest extends TestParent {
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     @Test
-    void testTracingNoServerSuccess() throws ExecutionException, InterruptedException {
+    void testTracingNoServerSuccess() {
         MockTracer mockTracer = new MockTracer();
         String uri = "http://localhost:" + webServer.port() + "/greet";
         Context context = Context.builder().id("tracing-unit-test").build();
