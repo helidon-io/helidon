@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Kafka Connector
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging support for Kafka in Helidon MP
 :keywords: helidon, mp, messaging, kafka
 :feature-name: Reactive Kafka Connector
@@ -31,8 +29,14 @@ include::{rootdir}/includes/mp.adoc[]
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
+- <<Config Example, Config Example>>
 - <<NACK Strategy, NACK Strategy>>
 - <<Examples, Examples>>
+
+== Overview
+Connecting streams to Kafka with Reactive Messaging is easy to do.
+There is a standard Kafka client behind the scenes, all the link:{kafka-client-base-url}#producerconfigs[producer] and link:{kafka-client-base-url}#consumerconfigs[consumer] configs can
+be propagated through messaging config.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -44,10 +48,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Overview
-Connecting streams to Kafka with Reactive Messaging is easy to do.
-There is a standard Kafka client behind the scenes, all the link:{kafka-client-base-url}#producerconfigs[producer] and link:{kafka-client-base-url}#consumerconfigs[consumer] configs can
-be propagated through messaging config.
+== Config Example
 
 [source,yaml]
 .Example of connector config:

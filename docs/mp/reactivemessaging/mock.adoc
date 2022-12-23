@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Mock Connector
-:toc:
-:toc-placement: preamble
 :description: Reactive Messaging Mock connector for testing
 :keywords: helidon, mp, messaging, test, mock
 :feature-name: Mock Connector
@@ -30,6 +28,7 @@ include::{rootdir}/includes/mp.adoc[]
 == Contents
 
 - <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
 - <<Helidon Test with Mock Connector, Helidon Test>>
@@ -38,7 +37,6 @@ include::{rootdir}/includes/mp.adoc[]
 Mock connector is a simple application scoped bean that can be used for emitting to a channel
 or asserting received data in a test environment. All data received are kept in memory only.
 
-include::{rootdir}/includes/mp.adoc[]
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
@@ -49,6 +47,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+== Usage
+
 WARNING: Mock connector should be used in the test environment only!
 
 For injecting Mock Connector use `@TestConnector` qualifier:
@@ -58,10 +58,6 @@ For injecting Mock Connector use `@TestConnector` qualifier:
 @TestConnector
 MockConnector mockConnector;
 ----
-
-== Usage
-- <<Emitting Data, Emitting Data>>
-- <<Asserting Data, Asserting Data>>
 
 === Emitting Data
 
@@ -86,7 +82,7 @@ mockConnector
 <1> Get outgoing channel of given name and payload type
 <2> Request number of expected items and block the thread until items arrive then assert the payloads
 
-=== Configuration
+== Configuration
 |===
 |Key            |Default value   | Description
 |mock-data      |                | Initial data emitted to the channel immediately after subscription

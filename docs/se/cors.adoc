@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CORS in Helidon SE
-:toc:
-:toc-placement: preamble
 :description: Helidon SE CORS Support
 :keywords: helidon, java, cors, se, configuration, services
 :feature-name: CORS

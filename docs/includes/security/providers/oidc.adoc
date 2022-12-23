@@ -82,7 +82,7 @@ introspection endpoint depending on configuration
 6. Handling is returned to security to process other security providers
 
 [[cors]]
-== CORS Settings
+=== CORS Settings
 As an experimental feature, you can set up cross-origin handling for the redirect and logout endpoints in an optional `cors` block inside the `oidc` configuration.
 
 include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config-no-heading-or-intro]

@@ -22,11 +22,10 @@
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/mp.adoc[]
-include::{rootdir}/includes/pages.adoc[]
 
 == Introduction
 
-Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It designed for ease of use and provides Spring Boot like development experience with heavily usage of dependency injection and annotations. 
+Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime that allows the Jakarta EE community to run microservices in a portable way. It designed for ease of use and provides Spring Boot like development experience with heavily usage of dependency injection and annotations.
 
 == Supported Jakarta EE Specifications
 
@@ -129,7 +128,7 @@ Helidon MP is an Eclipse MicroProfile {version-lib-microprofile-api} runtime tha
 | Component | Description
 
 | xref:{rootdir}/mp/cors/cors.adoc[CORS]
-| Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins 
+| Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins
 
 | xref:{rootdir}/mp/grpc/server.adoc[gRPC]
 | gRPC server and client

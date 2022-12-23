@@ -23,10 +23,16 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== JAX-RS Applications
+== Contents
 
-NOTE: In this section we will distinguish the notion of a JAX-RS `Application` subclass
-from a Helidon application. The latter may include zero or more
+- <<Overview, Overview>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+
+== Overview
+
+NOTE: In this section, we shall distinguish the notion of a JAX-RS `Application` subclass
+from a Helidon application. As we shall learn shortly, the latter may include zero or more
 of the former.
 
 The JAX-RS specification defines the notion of an `Application` subclass whose methods return
@@ -41,7 +47,7 @@ created automatically. This _synthetic_ subclass shall include all resource and 
 classes discovered by Helidon. Most Helidon applications should simply rely on this mechanism
 in accordance to convention over configuration practices.
 
-== Discovery of JAX-RS Beans
+=== Discovery of JAX-RS Beans
 
 CDI scanning is controlled by the `bean-discovery-mode` attribute in `beans.xml` files &mdash;
 the default value for this attribute is `annotated`. In the default mode, CDI scans for beans
@@ -73,7 +79,7 @@ both return empty sets.
 NOTE: As noted above, the JAX-RS `Application` class exposes the `getSingletons` method which returns instances of resources, providers, or features. Currently Helidon can invoke this method multiple times. You should expect multiple invocations of the `getSingletons` method. If you want to return the same instances on all calls, then cache the values yourself.
 
 
-== Access to Application Instances
+== Usage
 
 JAX-RS provides access to the `Application` subclass instance via injection using `@Context`. This form
 of access is still supported in Helidon but is insufficient if two or more subclasses are present.
@@ -98,7 +104,7 @@ This approach effectively moves the scope of `Application` subclass instances to
 request scope in order to access the correct subclass for the resource method being
 executed.
 
-== Injection Managers in Helidon
+=== Injection Managers in Helidon
 
 Jersey does not currently provide support for multiple `Application` subclasses.
 As a result, it creates a single internal _injection manager_ for your entire application,
@@ -113,3 +119,34 @@ registered in the parent manager for proper registration and initialization. Thu
 providers of this type will be shared and accessible by all `Application` subclasses,
 even if your code tries to limit their access. This is likely to change in future
 versions of Jersey/Helidon and does not typically impact how your application runs.
+
+== Configuration
+
+Your application can use the MicroProfile Config or
+ Helidon Config (or both). MicroProfile Config offers portability to other
+ MicroProfile servers. Helidon Config supports a full tree structure, including repeating
+ elements.
+
+You can inject values that the application can access from both MicroProfile Config and from
+Helidon Config.
+
+[source,java]
+.JAX-RS - inject a single config property
+----
+@Inject
+public MyResource(@ConfigProperty(name="app.name") String appName) {
+    this.applicationName = appName;
+}
+----
+
+You can also inject the whole configuration instance,
+either `io.helidon.config.Config` or
+ `org.eclipse.microprofile.config.Config`.
+[source,java]
+.JAX-RS - inject config
+----
+@Inject
+public MyResource(Config config) {
+    this.config = config;
+}
+----

@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Fault Tolerance in Helidon SE
-:toc:
-:toc-placement: preamble
 :description: Fault Tolerance in Helidon SE
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
 :feature-name: Fault Tolerance

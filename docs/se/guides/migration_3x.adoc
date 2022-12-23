@@ -21,6 +21,8 @@
 :keywords: helidon, porting, migration, upgrade, incompatibilities
 :rootdir: {docdir}/../..
 
+include::{rootdir}/includes/se.adoc[]
+
 In Helidon 3 we have made some changes to APIs and runtime behavior. This guide
 will help you upgrade a Helidon SE 2.x application to 3.x.
 

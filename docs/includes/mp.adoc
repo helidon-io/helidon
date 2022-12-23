@@ -28,4 +28,6 @@ include::{rootdir}/includes/attributes.adoc[]
 :flavor-lc: mp
 :mp-flavor: true
 
+include::{rootdir}/includes/pages.adoc[]
+
 endif::flavor-included[]

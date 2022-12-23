@@ -19,7 +19,6 @@
 = Helidon MP Tracing Guide
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
-:toc:
 :rootdir: {docdir}/../..
 :imagesdir: {rootdir}/images
 

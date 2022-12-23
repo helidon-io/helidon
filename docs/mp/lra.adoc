@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = LRA
-:toc:
-:toc-placement: preamble
 :description: Long Running Actions
 :keywords: helidon, mp, lra
 :h1Prefix: MP
@@ -27,6 +25,8 @@
 :spec-name: MicroProfile {feature-name} specification
 :javadoc-link: https://download.eclipse.org/microprofile/microprofile-lra-{spec-version}/apidocs/org/eclipse/microprofile/lra/annotation/
 :rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 

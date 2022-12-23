@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI in Helidon
-:toc:
-:toc-placement: preamble
 :description: Helidon SE OpenAPI Support
 :keywords: helidon, se, openapi
 :feature-name: OpenAPI

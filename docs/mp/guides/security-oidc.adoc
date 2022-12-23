@@ -20,7 +20,6 @@
 :description: Helidon OIDC Security Provider guide
 :keywords: helidon, security, guide, oidc, provider
 :rootdir: {docdir}/../..
-:toc-placement: preamble
 
 include::{rootdir}/includes/mp.adoc[]
 

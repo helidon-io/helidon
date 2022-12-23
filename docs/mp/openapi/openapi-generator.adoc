@@ -18,20 +18,17 @@
 
 = OpenAPI-based Code Generation
 
-:toc:
-:toc-placement: preamble
 :description: Helidon MP OpenAPI Generator
 :keywords: helidon, mp, microprofile, openapi, generator
 :feature-name: MicroProfile OpenAPI Generator
 :rootdir: {docdir}/../..
 :incdir: {rootdir}/includes/openapi
 :gen-inc: {incdir}/openapi-generator.adoc
-include::{rootdir}/includes/pages.adoc[]
+
+include::{rootdir}/includes/mp.adoc[]
 :helidon-client-xref: {restclient-page}
 
 include::{gen-inc}[tag=preamble]
-
-include::{rootdir}/includes/mp.adoc[]
 
 include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server;using-generated-code-client-intro]
 

@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = JWT Authentication
-:toc:
-:toc-placement: preamble
 :spec-name: MicroProfile JWT Auth
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, security, jwt

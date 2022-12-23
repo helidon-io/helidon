@@ -16,12 +16,19 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= GraalVM native image
+= GraalVM Native Image
 :description: Helidon AOT using GraalVM native-image
 :keywords: helidon, aot, native, native-image, image, executable, se
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<AOT Supported Modules, AOT Supported Modules>>
+
+== Overview
 
 Helidon applications can be compiled into a native executable using GraalVM
 native image.
@@ -35,7 +42,7 @@ build a native image from your application:
 2. Run Maven command `mvn clean package -Pnative-image`
 3. Execute the native executable created in `target` directory of your project
 
-== AOT supported modules
+== AOT Supported Modules
 
 Some Helidon components are not (yet) supported in native image, some have
 restrictions. The following table lists all Helidon features and their support
