@@ -23,7 +23,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Feature(value = "Tracing",
         description = "Tracing",
         in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE)
+        invalidIn = HelidonFlavor.SE
+)
 module io.helidon.nima.webserver.tracing {
     requires static io.helidon.common.features.api;
 

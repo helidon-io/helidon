@@ -26,7 +26,8 @@ import io.helidon.reactive.webserver.websocket.WebsocketUpgradeCodecProvider;
 @Feature(value = "Websocket",
         description = "Jakarta Websocket implementation",
         in = HelidonFlavor.SE,
-        path = {"WebServer", "Websocket"})
+        path = {"WebServer", "Websocket"}
+)
 @Aot(description = "Server only")
 module io.helidon.reactive.webserver.websocket {
     requires static io.helidon.common.features.api;

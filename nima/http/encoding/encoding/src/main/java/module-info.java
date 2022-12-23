@@ -22,7 +22,8 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Encoding",
         description = "Content encoding support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
         path = "Encoding"
 )
 module io.helidon.nima.http.encoding {

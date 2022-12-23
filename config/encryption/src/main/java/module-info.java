@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Encryption",
         description = "Support for secret encryption in config",
-        in = {HelidonFlavor.MP,HelidonFlavor.SE},
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Config", "Encryption"}
 )
 module io.helidon.config.encryption {

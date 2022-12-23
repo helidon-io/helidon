@@ -20,7 +20,10 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * Microprofile configuration module.
  */
-@Feature(value = "Health", description = "Health check support", in = HelidonFlavor.SE)
+@Feature(value = "Health",
+        description = "Health check support",
+        in = HelidonFlavor.SE
+)
 module io.helidon.reactive.health {
     requires java.logging;
 

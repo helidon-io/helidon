@@ -24,8 +24,9 @@ import io.helidon.nima.http.media.spi.MediaSupportProvider;
  */
 @Feature(value = "Multipart",
         description = "Multipart media support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
-        path = {"Media","Multipart"}
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Media", "Multipart"}
 )
 module io.helidon.nima.http.media.multipart {
     requires static io.helidon.common.features.api;

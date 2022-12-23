@@ -22,8 +22,9 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Multi-part",
         description = "Media support for Multi-part entities",
-        path = {"Media", "Multipart"},
-        in = HelidonFlavor.SE)
+        in = HelidonFlavor.SE,
+        path = {"Media", "Multipart"}
+)
 module io.helidon.reactive.media.multipart {
     requires static io.helidon.common.features.api;
 

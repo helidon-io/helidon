@@ -21,9 +21,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 /**
  * gRPC Client Module.
  */
-@Feature(value = "gRPC Client", description = "Client for gRPC services",
+@Feature(value = "gRPC Client",
+        description = "Client for gRPC services",
         in = HelidonFlavor.SE,
-        path = "grpcClient")
+        path = "grpcClient"
+)
 @Aot(description = "Experimental support in native image")
 module io.helidon.grpc.client {
     requires static io.helidon.common.features.api;

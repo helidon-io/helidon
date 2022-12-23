@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         description = "WebSocket server support",
         in = HelidonFlavor.NIMA,
         invalidIn = HelidonFlavor.SE,
-        path = {"WebSocket","WebServer"}
+        path = {"WebSocket", "WebServer"}
 )
 module io.helidon.nima.websocket.webserver {
     requires static io.helidon.common.features.api;
