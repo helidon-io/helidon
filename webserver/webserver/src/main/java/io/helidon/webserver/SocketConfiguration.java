@@ -25,10 +25,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.configurable.Whitelist;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
@@ -261,11 +263,11 @@ public interface SocketConfiguration {
     List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes();
 
     /**
-     * Return the whitelist for trusted proxies.
+     * The allow list for trusted proxies.
      *
-     * @return whitelist for trusted proxies
+     * @return allow list for trusted proxies
      */
-    Whitelist trustedProxies();
+    AllowList trustedProxies();
 
     /**
      * Maximum length of the content of an upgrade request.
@@ -311,6 +313,12 @@ public interface SocketConfiguration {
      */
     @Configured
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
+
+        /**
+         * Config key prefix for requested URI discovery settings.
+         */
+        String REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX = "requested-uri-discovery.";
+
         /**
          * Configures a server port to listen on with the server socket. If port is
          * {@code 0} then any available ephemeral port will be used.
@@ -508,7 +516,8 @@ public interface SocketConfiguration {
          * @param type type to add
          * @return updated builder
          */
-        @ConfiguredOption(key = "requested-uri-discovery.types", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types", kind = ConfiguredOption.Kind.LIST)
+
         B addRequestedUriDiscoveryType(RequestedUriDiscoveryType type);
 
         /**
@@ -523,7 +532,8 @@ public interface SocketConfiguration {
          * @param enabled whether to enable discovery
          * @return updated builder
          */
-        @ConfiguredOption(key = "requested-uri-discovery.enabled")
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "enabled",
+                          value = "true if 'types' or 'trusted-proxies' is set; false otherwise")
         B requestedUriDiscoveryEnabled(boolean enabled);
 
         /**
@@ -532,8 +542,8 @@ public interface SocketConfiguration {
          * @param trustedProxies to apply to forwarded headers
          * @return updated builder
          */
-        @ConfiguredOption(key = "requested-uri-discovery.trusted-proxies")
-        B trustedProxies(Whitelist trustedProxies);
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "trusted-proxies")
+        B trustedProxies(AllowList trustedProxies);
 
         /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
@@ -583,7 +593,8 @@ public interface SocketConfiguration {
             config.get("requested-uri-discovery.enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
             config.get("requested-uri-discovery.types").asList(RequestedUriDiscoveryType.class)
                     .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
-            config.get("requested-uri-discovery.trusted-proxies").as(Whitelist.class).ifPresent(this::trustedProxies);
+            config.get("requested-uri-discovery.trusted-proxies").as(AllowList::create)
+                    .ifPresent(this::trustedProxies);
 
             return (B) this;
         }
@@ -600,6 +611,8 @@ public interface SocketConfiguration {
         @Deprecated
         static final String UNCONFIGURED_NAME = "io.helidon.webserver.SocketConfiguration.UNCONFIGURED";
         private final WebServerTls.Builder tlsConfigBuilder = WebServerTls.builder();
+
+        private static final Logger LOGGER = Logger.getLogger(SocketConfiguration.class.getName());
 
         private int port = 0;
         private InetAddress bindAddress = null;
@@ -623,9 +636,9 @@ public interface SocketConfiguration {
         private BackpressureStrategy backpressureStrategy = BackpressureStrategy.LINEAR;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
-        private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
+        private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
         private Boolean requestedUriDiscoveryEnabled;
-        private Whitelist trustedProxies;
+        private AllowList trustedProxies;
 
         private Builder() {
         }
@@ -639,16 +652,7 @@ public interface SocketConfiguration {
             if (null == name) {
                 throw new ConfigException("Socket name must be configured for each socket");
             }
-            if (requestedUriDiscoveryEnabled == null) {
-                requestedUriDiscoveryEnabled = false;
-            }
-
-            if (requestedUriDiscoveryEnabled) {
-                // configure default type if enabled and no explicit types cconfigured
-                if (this.requestedUriDiscoveryTypes.isEmpty()) {
-                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
-                }
-            }
+            prepareAndCheckRequestedUriSettings();
 
             return new ServerBasicConfig.SocketConfig(this);
         }
@@ -903,7 +907,7 @@ public interface SocketConfiguration {
          * @param trustedProxies prescribing proxies to be trusted
          * @return updated builder instance
          */
-        public Builder trustedProxies(Whitelist trustedProxies) {
+        public Builder trustedProxies(AllowList trustedProxies) {
             this.trustedProxies = trustedProxies;
             return this;
         }
@@ -920,7 +924,6 @@ public interface SocketConfiguration {
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
-            config.get("trusted-proxies").as(Whitelist.class).ifPresent(this::trustedProxies);
 
             return this;
         }
@@ -935,11 +938,6 @@ public interface SocketConfiguration {
         @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             this.requestedUriDiscoveryEnabled = enabled;
-            if (enabled) {
-                if (this.requestedUriDiscoveryTypes.isEmpty()) {
-                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
-                }
-            }
             return this;
         }
 
@@ -1022,8 +1020,46 @@ public interface SocketConfiguration {
             return List.of(RequestedUriDiscoveryType.HOST);
         }
 
-        Whitelist trustedProxies() {
+        AllowList trustedProxies() {
             return trustedProxies;
+        }
+
+        private void prepareAndCheckRequestedUriSettings() {
+            if (requestedUriDiscoveryEnabled == null) {
+                requestedUriDiscoveryEnabled = !requestedUriDiscoveryTypes.isEmpty() || trustedProxies != null;
+            }
+
+            boolean areDiscoveryTypesDefaulted = false;
+
+            if (requestedUriDiscoveryEnabled) {
+                // Configure default type if enabled and no explicit types configured.
+                if (this.requestedUriDiscoveryTypes.isEmpty()) {
+                    areDiscoveryTypesDefaulted = true;
+                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
+                }
+
+                // Require _some_ settings for trusted proxies (except for HOST discovery) so the socket does not start unsafely
+                // by accident. The user _can_ set allow.all to run the socket unsafely but at least that way it was
+                // an explicit choice.
+                if (trustedProxies == null && !isDiscoveryTypesOnlyHost()) {
+                    throw new UnsafeRequestedUriSettings(this, areDiscoveryTypesDefaulted);
+                }
+            } else {
+                // If discovery is disabled ignore any explicit settings of discovery type and use HOST discovery.
+                if (!requestedUriDiscoveryTypes.isEmpty()) {
+                    LOGGER.log(Level.INFO, """
+                            Ignoring explicit settings of requested-uri-discovery-types because
+                            requested-uri-discovery-enabled is false
+                            """);
+                }
+                requestedUriDiscoveryTypes.clear();
+                requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.HOST);
+            }
+        }
+
+        private boolean isDiscoveryTypesOnlyHost() {
+            return requestedUriDiscoveryTypes.size() == 1
+                    && requestedUriDiscoveryTypes.contains(RequestedUriDiscoveryType.HOST);
         }
     }
 }

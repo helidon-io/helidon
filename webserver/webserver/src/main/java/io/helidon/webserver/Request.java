@@ -29,7 +29,7 @@ import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.LazyValue;
-import io.helidon.common.configurable.Whitelist;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Forwarded;
@@ -219,80 +219,39 @@ abstract class Request implements ServerRequest {
         String path = null;
         String query = query();
 
-        boolean discovered = false;
-        Whitelist trustedProxies = bareRequest.socketConfiguration().trustedProxies();
-        if (trustedProxies != null && trustedProxies.test(remoteAddress())) {
+        AllowList trustedProxies = bareRequest.socketConfiguration().trustedProxies();
+        if (trustedProxies != null && trustedProxies.test(hostPart(remoteAddress()))) {
+            // Once we discover trusted information we can using one of the discovery types, we do not mix in
+            // information from other types.
+
+            nextDiscoveryType:
             for (var type : bareRequest.socketConfiguration().requestedUriDiscoveryTypes()) {
                 switch (type) {
                 case FORWARDED -> {
-                    List<Forwarded> forwardedList = Forwarded.create(headers);
-                    if (!forwardedList.isEmpty()) {
-                        for (int i = forwardedList.size() - 1; i >= 0; i--) {
-                            Forwarded f = forwardedList.get(i);
+                    ForwardedDiscovery discovery = discoverUsingForwarded(headers(), trustedProxies);
+                    if (discovery != null) {
+                        authority = discovery.authority();
+                        scheme = discovery.scheme();
 
-                            // Because we remained in the loop, the Forwarded entry we are looking at is trustworthy.
-                            if (scheme == null && f.proto().isPresent()) {
-                                scheme = f.proto().get();
-                            }
-                            if (authority == null && f.host().isPresent()) {
-                                authority = f.host().get();
-                            }
-                            if (f.forClient().isPresent() && !trustedProxies.test(f.forClient().get())
-                                    || scheme != null && authority != null) {
-                                // This is the first Forwarded entry we've found for which the "for" value is untrusted (and
-                                // therefore the proxy which created this Forwarded entry is the most remote trusted one)
-                                //   OR
-                                // we have already harvested the values we need from trusted proxies.
-                                // Either way, we do not need to look at further Forwarded entries.
-                                break;
-                            }
-                        }
-                        discovered = authority != null;
-                    }
-                    if (!discovered) {
-                        // We found no trustworthy Forwarded setting in the headers we could use or we didn't harvest the
-                        // information we need.
-                        authority = headers.first(Http.Header.HOST).orElse(null);
-                        discovered = authority != null;
+                        break nextDiscoveryType;
                     }
                 }
                 case X_FORWARDED -> {
-                    // With X-Forwarded-* headers, the X-Forwarded-Host and X-Forwarded-Proto headers appear only once, indicating
-                    // the host and protocol supposedly requested by the original client as seen by the proxy which received the
-                    // original request. To trust those single values, we need to trust all the X-Forwarded-For instances except
-                    // the very first one (the original client itself).
-                    List<String> xForwardedFors = headers.all(Http.Header.X_FORWARDED_FOR);
-                    boolean areProxiesTrusted = true;
-                    if (xForwardedFors.size() > 0) {
-                        // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
-                        // is not a proxy and we do not need to check its trustworthiness.
-                        for (int i = 1; i < xForwardedFors.size(); i++) {
-                            areProxiesTrusted &= trustedProxies.test(xForwardedFors.get(i));
-                        }
-                    }
-                    if (areProxiesTrusted) {
-                        scheme = headers.first(Http.Header.X_FORWARDED_PROTO).orElse(null);
-                        host = headers.first(Http.Header.X_FORWARDED_HOST).orElse(null);
-                        port = headers.first(Http.Header.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
-                        path = headers.first(Http.Header.X_FORWARDED_PREFIX)
-                                .map(prefix -> {
-                                    String absolute = path().absolute().toString();
-                                    return prefix + (absolute.startsWith("/") ? "" : "/") + absolute;
-                                })
-                                .orElse(null);
-                        // at least one header was present
-                    discovered = scheme != null || host != null || port != -1 || path != null;
+                    XForwardedDiscovery discovery = discoverUsingXForwarded(headers, trustedProxies);
+                    if (discovery != null) {
+                        scheme = discovery.scheme();
+                        host = discovery.host();
+                        port = discovery.port();
+                        path = discovery.path();
+
+                        break nextDiscoveryType;
                     }
                 }
                 default -> {
                     authority = headers.first(Http.Header.HOST).orElse(null);
-                    discovered = authority != null;
-                }
-                }
 
-                if (discovered) {
-                    // do not look at the next header, we have already discovered the configured header
-                    break;
+                    break nextDiscoveryType;
+                }
                 }
             }
         }
@@ -353,6 +312,71 @@ abstract class Request implements ServerRequest {
         return new UriInfo(scheme, host, port, path, Optional.ofNullable(query));
     }
 
+    private ForwardedDiscovery discoverUsingForwarded(RequestHeaders headers, AllowList trustedProxies) {
+        String scheme = null;
+        String authority = null;
+        List<Forwarded> forwardedList = Forwarded.create(headers);
+        if (!forwardedList.isEmpty()) {
+            for (int i = forwardedList.size() - 1; i >= 0; i--) {
+                Forwarded f = forwardedList.get(i);
+
+                // Because we remained in the loop, the Forwarded entry we are looking at is trustworthy.
+                if (scheme == null && f.proto().isPresent()) {
+                    scheme = f.proto().get();
+                }
+                if (authority == null && f.host().isPresent()) {
+                    authority = f.host().get();
+                }
+                if (f.forClient().isPresent() && !trustedProxies.test(f.forClient().get())
+                        || scheme != null && authority != null) {
+                    // This is the first Forwarded entry we've found for which the "for" value is untrusted (and
+                    // therefore the proxy which created this Forwarded entry is the most remote trusted one)
+                    //   OR
+                    // we have already harvested the values we need from trusted proxies.
+                    // Either way, we do not need to look at further Forwarded entries.
+                    break;
+                }
+            }
+        }
+        return authority != null ? new ForwardedDiscovery(authority, scheme) : null;
+    }
+
+    private XForwardedDiscovery discoverUsingXForwarded(RequestHeaders headers, AllowList trustedProxies) {
+        // With X-Forwarded-* headers, the X-Forwarded-Host and X-Forwarded-Proto headers appear only once, indicating
+        // the host and protocol supposedly requested by the original client as seen by the proxy which received the
+        // original request. To trust those single values, we need to trust all the X-Forwarded-For instances except
+        // the very first one (the original client itself).
+        boolean discovered = false;
+        String scheme = null;
+        String host = null;
+        int port = -1;
+        String path = null;
+
+        List<String> xForwardedFors = headers.all(Http.Header.X_FORWARDED_FOR);
+        boolean areProxiesTrusted = true;
+        if (xForwardedFors.size() > 0) {
+            // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
+            // is not a proxy and we do not need to check its trustworthiness.
+            for (int i = 1; i < xForwardedFors.size(); i++) {
+                areProxiesTrusted &= trustedProxies.test(xForwardedFors.get(i));
+            }
+        }
+        if (areProxiesTrusted) {
+            scheme = headers.first(Http.Header.X_FORWARDED_PROTO).orElse(null);
+            host = headers.first(Http.Header.X_FORWARDED_HOST).orElse(null);
+            port = headers.first(Http.Header.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
+            path = headers.first(Http.Header.X_FORWARDED_PREFIX)
+                    .map(prefix -> {
+                        String absolute = path().absolute().toString();
+                        return prefix + (absolute.startsWith("/") ? "" : "/") + absolute;
+                    })
+                    .orElse(null);
+            // at least one header was present
+            discovered = scheme != null || host != null || port != -1 || path != null;
+        }
+        return discovered ? new XForwardedDiscovery(scheme, host, port, path) : null;
+    }
+
     private record Authority(String host, int port) {
         static Authority create(String hostHeader) {
             int colon = hostHeader.indexOf(':');
@@ -374,6 +398,14 @@ abstract class Request implements ServerRequest {
             String portString = hostHeader.substring(colon + 1);
             return new Authority(hostString, Integer.parseInt(portString));
         }
+    }
+
+    private record ForwardedDiscovery(String authority, String scheme) {}
+    private record XForwardedDiscovery(String scheme, String host, int port, String path) {}
+
+    private static String hostPart(String address) {
+        int colon = address.indexOf(':');
+        return colon == -1 ? address : address.substring(0, colon);
     }
 
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {

@@ -17,6 +17,7 @@ package io.helidon.common.configurable;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -24,86 +25,109 @@ import java.util.stream.Stream;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-class WhitelistTest {
+class AllowListTest {
+
+    private static AllowList allowListForConfigTest;
+
+    @BeforeAll
+    static void prepareAllowListForConfigTest() {
+        var config = Config.just(
+                ConfigSources.create(
+                        Map.of("allow.exact", "ex1,ex2",
+                               "allow.prefix", "pre1,pre2",
+                               "allow.suffix", "post1,post2",
+                               "allow.pattern", ".+mid.+,.*thisalso.*,as.*well.*",
+                               "deny.exact", "ex2,ex3",
+                               "deny.prefix", "pre2",
+                               "deny.suffix", "post1",
+                               "deny.pattern", ".*also.*"
+                        )));
+
+        allowListForConfigTest = AllowList.builder().config(config).build();
+    }
+
     static Stream<TestData> data() {
-        Config config = Config.create(ConfigSources.classpath("whitelist/whitelist.yaml"));
+        Config config = Config.create(ConfigSources.classpath("allowlist/allowlist.yaml"));
 
         return Stream.of(
-                new TestData(Whitelist.builder().build(),
+                new TestData(AllowList.builder().build(),
                              "By default all should be denied",
                              List.of(false, false, false, false, false)),
-                new TestData(Whitelist.builder().allowAll().build(),
+                new TestData(AllowList.builder().allowAll().build(),
                              "All should be allowed",
                              List.of(true, true, true, true, true)),
-                new TestData(Whitelist.builder().addAllowed("first").build(),
+                new TestData(AllowList.builder().addAllowed("first").build(),
                              "Allow exact",
                              List.of(true, false, false, false, false)),
-                new TestData(Whitelist.builder().allowed(List.of("first", "www.helidon.io")).build(),
+                new TestData(AllowList.builder().allowed(List.of("first", "www.helidon.io")).build(),
                              "Allow exact",
                              List.of(true, false, false, false, true)),
-                new TestData(Whitelist.builder().addAllowedPrefix("www.helidon.").build(),
+                new TestData(AllowList.builder().addAllowedPrefix("www.helidon.").build(),
                              "Allow prefix",
                              List.of(false, false, false, false, true)),
-                new TestData(Whitelist.builder().addAllowedSuffix(".helidon.io").build(),
+                new TestData(AllowList.builder().addAllowedSuffix(".helidon.io").build(),
                              "Allow suffix",
                              List.of(false, false, false, false, true)),
-                new TestData(Whitelist.builder().addAllowed(new EmptyStringPredicate()).build(),
+                new TestData(AllowList.builder().addAllowed(new EmptyStringPredicate()).build(),
                              "Allow predicate",
                              List.of(false, false, true, false, false)),
-                new TestData(Whitelist.builder().addAllowedPattern(Pattern.compile("f.*t")).build(),
+                new TestData(AllowList.builder().addAllowedPattern(Pattern.compile("f.*t")).build(),
                              "Allow pattern",
                              List.of(true, false, false, false, false)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .addAllowedPattern(Pattern.compile("f.*t"))
                                      .addAllowedSuffix(".helidon.io")
                                      .build(),
                              "Allow combined",
                              List.of(true, false, false, false, true)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .allowAll()
                                      .addDenied("first")
                                      .build(),
                              "Deny exact",
                              List.of(false, true, true, true, true)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .allowAll()
                                      .addDeniedPrefix("www.helidon.")
                                      .build(),
                              "Deny prefix",
                              List.of(true, true, true, true, false)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .allowAll()
                                      .addDeniedSuffix(".helidon.io")
                                      .build(),
                              "Deny suffix",
                              List.of(true, true, true, true, false)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .allowAll()
                                      .addDenied(new EmptyStringPredicate())
                                      .build(),
                              "Deny exact",
                              List.of(true, true, false, true, true)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .allowAll()
                                      .addDeniedPattern(Pattern.compile("f.*t"))
                                      .build(),
                              "Deny pattern",
                              List.of(false, true, true, true, true)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .allowAll()
                                      .addDenied("first")
                                      .addDeniedSuffix(".helidon.io")
                                      .build(),
                              "Deny combined",
                              List.of(false, true, true, true, false)),
-                new TestData(Whitelist.builder()
+                new TestData(AllowList.builder()
                                      .addAllowedPrefix("f")
                                      .addAllowedSuffix("helidon.io")
                                      .addAllowed(new EmptyStringPredicate())
@@ -112,46 +136,46 @@ class WhitelistTest {
                                      .build(),
                              "Deny and Allow combined",
                              List.of(false, false, true, false, false)),
-                new TestData(Whitelist.create(config.get("test-allow-1")),
+                new TestData(AllowList.create(config.get("test-allow-1")),
                              "Config: By default all should be denied",
                              List.of(false, false, false, false, false)),
-                new TestData(Whitelist.create(config.get("test-allow-2")),
+                new TestData(AllowList.create(config.get("test-allow-2")),
                              "Config: All should be allowed",
                              List.of(true, true, true, true, true)),
-                new TestData(Whitelist.create(config.get("test-allow-3")),
+                new TestData(AllowList.create(config.get("test-allow-3")),
                              "Config: Allow exact",
                              List.of(true, false, false, false, false)),
-                new TestData(Whitelist.create(config.get("test-allow-4")),
+                new TestData(AllowList.create(config.get("test-allow-4")),
                              "Config: Allow exact",
                              List.of(true, false, false, false, true)),
-                new TestData(Whitelist.create(config.get("test-allow-5")),
+                new TestData(AllowList.create(config.get("test-allow-5")),
                              "Config: Allow prefix",
                              List.of(false, false, false, false, true)),
-                new TestData(Whitelist.create(config.get("test-allow-6")),
+                new TestData(AllowList.create(config.get("test-allow-6")),
                              "Config: Allow suffix",
                              List.of(false, false, false, false, true)),
-                new TestData(Whitelist.create(config.get("test-allow-7")),
+                new TestData(AllowList.create(config.get("test-allow-7")),
                              "Config: Allow pattern",
                              List.of(true, false, false, false, false)),
-                new TestData(Whitelist.create(config.get("test-deny-1")),
+                new TestData(AllowList.create(config.get("test-deny-1")),
                              "Config: Deny exact",
                              List.of(false, true, true, true, true)),
-                new TestData(Whitelist.create(config.get("test-deny-2")),
+                new TestData(AllowList.create(config.get("test-deny-2")),
                              "Config: Deny exact list",
                              List.of(false, true, true, true, false)),
-                new TestData(Whitelist.create(config.get("test-deny-3")),
+                new TestData(AllowList.create(config.get("test-deny-3")),
                              "Config: Deny prefix",
                              List.of(true, true, true, true, false)),
-                new TestData(Whitelist.create(config.get("test-deny-4")),
+                new TestData(AllowList.create(config.get("test-deny-4")),
                              "Config: Deny suffix",
                              List.of(true, true, true, true, false)),
-                new TestData(Whitelist.create(config.get("test-deny-5")),
+                new TestData(AllowList.create(config.get("test-deny-5")),
                              "Config: Deny pattern",
                              List.of(false, true, true, true, true)),
-                new TestData(Whitelist.create(config.get("test-deny-6")),
+                new TestData(AllowList.create(config.get("test-deny-6")),
                              "Config: Deny combined",
                              List.of(false, true, true, true, false)),
-                new TestData(Whitelist.create(config.get("test-combined-1")),
+                new TestData(AllowList.create(config.get("test-combined-1")),
                              "Config: Deny and Allow combined",
                              List.of(false, false, true, false, false))
         );
@@ -162,18 +186,62 @@ class WhitelistTest {
     void testDefaultIsDenied(TestData data) {
         Iterator<Boolean> expected = data.expected.iterator();
         assertAll(
-                () -> assertThat(data.message(), data.whitelist().test("first"), is(expected.next())),
-                () -> assertThat(data.message(), data.whitelist().test("*"), is(expected.next())),
-                () -> assertThat(data.message(), data.whitelist().test(""), is(expected.next())),
-                () -> assertThat(data.message(), data.whitelist().test("\r\n"), is(expected.next())),
-                () -> assertThat(data.message(), data.whitelist().test("www.helidon.io"), is(expected.next()))
+                () -> assertThat(data.message(), data.allowList().test("first"), is(expected.next())),
+                () -> assertThat(data.message(), data.allowList().test("*"), is(expected.next())),
+                () -> assertThat(data.message(), data.allowList().test(""), is(expected.next())),
+                () -> assertThat(data.message(), data.allowList().test("\r\n"), is(expected.next())),
+                () -> assertThat(data.message(), data.allowList().test("www.helidon.io"), is(expected.next()))
         );
     }
 
-    private record TestData(Whitelist whitelist, String message, List<Boolean> expected) {
+    @ParameterizedTest
+    @MethodSource("configTestData")
+    void testConfig(Map.Entry<String, String> entry) {
+
+        assertThat("Test of " + entry.getKey() + " with various settings",
+                   allowListForConfigTest.test(entry.getKey()),
+                   is(entry.getValue()));
+    }
+
+    @Test
+    void testAllowAllConfig() {
+
+        var config = Config.just(ConfigSources.create(Map.of("allow.all", "true")));
+        AllowList allowList = AllowList.builder().config(config).build();
+
+        for (String s : List.of("a", "b", "anything")) {
+            assertThat("Test of " + s + " with allow.all", allowList.test(s), is(true));
+        }
+    }
+
+    static Stream<Map.Entry<String, Boolean>> configTestData() {
+        return Map.ofEntries(entry("ex1", true),
+                                  entry("ex2", false),
+                                  entry("ex3", false),
+                                  entry("ex4", false),
+                                  entry("ex", false),
+                                  entry("pre1A", true),
+                                  entry("Apre1", false),
+                                  entry("pre1", true),
+                                  entry("pre2A", false),
+                                  entry("Bpost1", false),
+                                  entry("Bpost2", true),
+                                  entry("Bpost", false),
+                                  entry("Bpost3", false),
+                                  entry("mid", false),
+                                  entry("xmid", false),
+                                  entry("midy", false),
+                                  entry("xmidx", true),
+                                  entry("longmidlong", true),
+                                  entry("thisalso", false),
+                                  entry("aswellasthisone", true))
+                .entrySet().stream();
+    }
+
+    private record TestData(AllowList allowList, String message, List<Boolean> expected) {
         @Override
         public String toString() {
-            return message + " (" + whitelist + ")";
+            return message + " (" + allowList + ")";
         }
     }
 

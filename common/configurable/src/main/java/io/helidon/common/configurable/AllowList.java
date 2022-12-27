@@ -25,16 +25,17 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Whitelist provides a way to define a list of allowed values and to test if a value is within the bounds of the configuration.
+ * {@code AllowList} provides a way to define a list of allowed and/or denied values and to test if a value conforms to
+ * the restrictions.
  * <p>
  * The algorithm of testing that a value is allowed:
  * <ol>
- * <li>Iterate through all whitelist patterns, if none matches, value is not permitted</li>
- * <li>Iterate through all blacklist patterns, if any matches, value is not permitted</li>
+ * <li>Iterate through all allowed patterns, if none matches, value is not permitted</li>
+ * <li>Iterate through all denied patterns, if any matches, value is not permitted</li>
  * <li>Value is permitted</li>
  * </ol>
  */
-public interface Whitelist extends Predicate<String> {
+public interface AllowList extends Predicate<String> {
     /**
      * Create a fluent API builder to configure an instance.
      *
@@ -45,12 +46,12 @@ public interface Whitelist extends Predicate<String> {
     }
 
     /**
-     * Create whitelist from configurtion.
+     * Create {@code AllowList} from configurtion.
      *
      * @param config configuration
-     * @return a new configured whitelist
+     * @return a new configured {@code AllowList}
      */
-    static Whitelist create(Config config) {
+    static AllowList create(Config config) {
         return builder().config(config).build();
     }
 
@@ -58,15 +59,15 @@ public interface Whitelist extends Predicate<String> {
      * Test whether a value can be permitted.
      *
      * @param value value to test against
-     * @return {@code true} if the value is whitelisted, {@code false} if it is not whitelisted, or it is explicitly blacklisted
+     * @return {@code true} if the value is allowed, {@code false} if it is not allowed or it is explicitly denied
      */
     boolean test(String value);
 
     /**
-     * Fluent API builder for {@code Whitelist}.
+     * Fluent API builder for {@code AllowList}.
      */
     @Configured
-    final class Builder implements io.helidon.common.Builder<Builder, Whitelist> {
+    final class Builder implements io.helidon.common.Builder<Builder, AllowList> {
         private final List<Predicate<String>> allowedPredicates = new ArrayList<>();
         private final List<Predicate<String>> deniedPredicates = new ArrayList<>();
 
@@ -74,8 +75,8 @@ public interface Whitelist extends Predicate<String> {
         }
 
         @Override
-        public Whitelist build() {
-            return new WhiteListImpl(this);
+        public AllowList build() {
+            return new AllowListImpl(this);
         }
 
         /**
@@ -309,12 +310,12 @@ public interface Whitelist extends Predicate<String> {
             return this;
         }
 
-        private static final class WhiteListImpl implements Whitelist {
+        private static final class AllowListImpl implements AllowList {
 
             private final List<Predicate<String>> allowedPredicates;
             private final List<Predicate<String>> deniedPredicates;
 
-            private WhiteListImpl(Builder builder) {
+            private AllowListImpl(Builder builder) {
                 this.allowedPredicates = List.copyOf(builder.allowedPredicates);
                 this.deniedPredicates = List.copyOf(builder.deniedPredicates);
             }

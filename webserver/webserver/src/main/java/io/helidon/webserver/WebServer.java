@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.configurable.Whitelist;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -621,7 +621,7 @@ public interface WebServer {
         }
 
         @Override
-        public Builder trustedProxies(Whitelist trustedProxies) {
+        public Builder trustedProxies(AllowList trustedProxies) {
             this.configurationBuilder.trustedProxies(trustedProxies);
             return this;
         }

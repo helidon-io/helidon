@@ -27,7 +27,7 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
-import io.helidon.common.configurable.Whitelist;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 import io.helidon.tracing.Tracer;
 
@@ -44,7 +44,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Optional<Transport> transport;
     private final Context context;
     private final boolean printFeatureDetails;
-    private final Whitelist trustedProxies;
+    private final AllowList trustedProxies;
 
     /**
      * Creates new instance.
@@ -193,7 +193,7 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
-    public Whitelist trustedProxies() {
+    public AllowList trustedProxies() {
         return trustedProxies;
     }
 
@@ -218,7 +218,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final BackpressureStrategy backpressureStrategy;
         private final int maxUpgradeContentLength;
         private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
-        private Whitelist trustedProxies;
+        private AllowList trustedProxies;
 
         /**
          * Creates new instance.
@@ -363,7 +363,7 @@ class ServerBasicConfig implements ServerConfiguration {
         }
 
         @Override
-        public Whitelist trustedProxies() {
+        public AllowList trustedProxies() {
             return trustedProxies;
         }
     }

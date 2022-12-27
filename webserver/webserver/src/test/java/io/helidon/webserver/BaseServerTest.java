@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.time.Duration;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
@@ -47,16 +48,22 @@ class BaseServerTest {
     }
 
     protected static void startServer(int port, Routing routing) throws Exception {
-        webServer = WebServer.builder()
+        startServer(port, routing, null);
+    }
+
+    protected static void startServer(int port, Routing routing, Config serverConfig) {
+        WebServer.Builder builder = WebServer.builder()
                 .defaultSocket(s -> s
                         .host("localhost")
                         .port(port)
                 )
-                .addRouting(routing)
-                .build()
+                .addRouting(routing);
+        if (serverConfig != null) {
+            builder.config(serverConfig);
+        }
+        webServer = builder.build()
                 .start()
                 .await(TIMEOUT);
-
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
                 .validateHeaders(false)
@@ -65,4 +72,6 @@ class BaseServerTest {
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
+
+
 }

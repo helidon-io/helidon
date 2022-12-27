@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import io.helidon.common.configurable.Whitelist;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.UriInfo;
@@ -69,7 +69,7 @@ class RequestedUriTest {
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(FORWARDED),
-                             Whitelist.builder()
+                             AllowList.builder()
                                      .addAllowed("myLB")
                                      .build(),
                              Map.of(
@@ -87,7 +87,7 @@ class RequestedUriTest {
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(FORWARDED),
-                             Whitelist.builder()
+                             AllowList.builder()
                                      .addAllowed("myLB")
                                      .build(),
                              Map.of(
@@ -104,7 +104,7 @@ class RequestedUriTest {
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(X_FORWARDED),
-                             Whitelist.builder()
+                             AllowList.builder()
                                      .addAllowed("myLB")
                                      .build(),
                              Map.of(
@@ -122,7 +122,7 @@ class RequestedUriTest {
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(X_FORWARDED),
-                             Whitelist.builder()
+                             AllowList.builder()
                                      .addAllowed("myLB")
                                      .build(),
                              Map.of(
@@ -139,7 +139,7 @@ class RequestedUriTest {
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(X_FORWARDED),
-                             Whitelist.builder()
+                             AllowList.builder()
                                      .addAllowed("myLB")
                                      .build(),
                              Map.of(
@@ -153,7 +153,7 @@ class RequestedUriTest {
                              false,
                              URI.create("http://localhost:9090/path"),
                              List.of(HOST),
-                             Whitelist.builder() // whitelist should be ignored; this data uses HOST
+                             AllowList.builder() // allow list should be ignored; this data uses HOST
                                      .addAllowed("myLB")
                                      .build(),
                              Map.of(
@@ -179,7 +179,7 @@ class RequestedUriTest {
                             boolean isSecure,
                             URI uri,
                             List<SocketConfiguration.RequestedUriDiscoveryType> discoveryTypes,
-                            Whitelist trustedProxies,
+                            AllowList trustedProxies,
                             Map<String, List<String>> headers,
                             HttpRequest.Path path,
                             UriInfo expectedUriInfo) {
