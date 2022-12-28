@@ -590,6 +590,7 @@ public interface SocketConfiguration {
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
 
+            // URI discovery support
             config.get("requested-uri-discovery.enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
             config.get("requested-uri-discovery.types").asList(RequestedUriDiscoveryType.class)
                     .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
@@ -1024,15 +1025,35 @@ public interface SocketConfiguration {
             return trustedProxies;
         }
 
+        /**
+         * Checks validity of requested URI settings and supplies defaults for omitted settings.
+         * <p>The behavior of `requested-uri-discovery` settings can be summarized as follows:
+         *     <ul>
+         *     <li>The `requested-uri-discovery` settings are optional.</li>
+         *     <li>If `requested-uri-discovery` is absent or is present with `enabled` explicitly set to `false`, Helidon
+         *     ignores any {@code Forwarded} or {@code X-Forwarded-*} headers and adopts the
+         *     {@code HOST} discovery type. That is, Helidon uses the {@code Host} header for the host
+         *     and the request's scheme and port.</li>
+         *     <li>If `requested-uri-discovery` is present and enabled, either because {@code enabled} is set to {@code true}
+         *     or {@code types} or {@code trusted-proxies} has been set, then Helidon performs a simple validity
+         *     check before adopting the selected discovery behavior: If {@code types} is specified and includes
+         *     either {@code FORWARDED} or {@code X_FORWARDED} then {@code trusted-proxies} must also be set to at least
+         *     one value. Put another way, if requested URI discovery is enabled then {@code trusted-proxies} can be unspecified
+         *     only if {@code types} contains only {@code HOST}.</li>
+         *     </ul>
+         * </p>
+         */
         private void prepareAndCheckRequestedUriSettings() {
+            boolean isDiscoveryEnabledDefaulted = false;
             if (requestedUriDiscoveryEnabled == null) {
                 requestedUriDiscoveryEnabled = !requestedUriDiscoveryTypes.isEmpty() || trustedProxies != null;
+                isDiscoveryEnabledDefaulted = true;
             }
 
             boolean areDiscoveryTypesDefaulted = false;
 
             if (requestedUriDiscoveryEnabled) {
-                // Configure default type if enabled and no explicit types configured.
+                // Configure a default type if discovery is enabled and no explicit types are configured.
                 if (this.requestedUriDiscoveryTypes.isEmpty()) {
                     areDiscoveryTypesDefaulted = true;
                     this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
@@ -1045,12 +1066,12 @@ public interface SocketConfiguration {
                     throw new UnsafeRequestedUriSettings(this, areDiscoveryTypesDefaulted);
                 }
             } else {
-                // If discovery is disabled ignore any explicit settings of discovery type and use HOST discovery.
+                // Discovery is disabled so ignore any explicit settings of discovery type and use HOST discovery.
                 if (!requestedUriDiscoveryTypes.isEmpty()) {
                     LOGGER.log(Level.INFO, """
-                            Ignoring explicit settings of requested-uri-discovery-types because
-                            requested-uri-discovery-enabled is false
-                            """);
+                            Ignoring explicit settings of requested-uri-discovery types and trusted-proxies because
+                            requested-uri-discovery.enabled {0} to false
+                            """, isDiscoveryEnabledDefaulted ? " defaulted" : "was set");
                 }
                 requestedUriDiscoveryTypes.clear();
                 requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.HOST);

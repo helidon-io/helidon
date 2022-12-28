@@ -220,8 +220,8 @@ abstract class Request implements ServerRequest {
         String query = query();
 
         AllowList trustedProxies = bareRequest.socketConfiguration().trustedProxies();
-        if (trustedProxies != null && trustedProxies.test(hostPart(remoteAddress()))) {
-            // Once we discover trusted information we can using one of the discovery types, we do not mix in
+        if (trustedProxies.test(hostPart(remoteAddress()))) {
+            // Once we discover trusted information using one of the discovery types, we do not mix in
             // information from other types.
 
             nextDiscoveryType:
