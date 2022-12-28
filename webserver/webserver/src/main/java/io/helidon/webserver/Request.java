@@ -219,8 +219,9 @@ abstract class Request implements ServerRequest {
         String path = null;
         String query = query();
 
+        // Trusted proxies could be null if the discovery type is Host, either explicitly or by default.
         AllowList trustedProxies = bareRequest.socketConfiguration().trustedProxies();
-        if (trustedProxies.test(hostPart(remoteAddress()))) {
+        if (trustedProxies != null && trustedProxies.test(hostPart(remoteAddress()))) {
             // Once we discover trusted information using one of the discovery types, we do not mix in
             // information from other types.
 
