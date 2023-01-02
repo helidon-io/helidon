@@ -35,7 +35,7 @@ import io.micrometer.core.instrument.MeterRegistry;
  * data in an HTTP response.
  * </p>
  * <p>Alternatively, developers can enroll any of the built-in registries represented by
- * the {@link io.helidon.integrations.micrometer.MeterRegistryFactory.BuiltInRegistryType} enum.</p>
+ * the {@link io.helidon.integrations.micrometer.NimaMeterRegistryFactory.BuiltInRegistryType} enum.</p>
  * <p>
  * Having enrolled Micrometer meter registries with {@code MicrometerSupport.Builder} and built the
  * {@code MicrometerSupport} object, developers can invoke the {@link #registry()} method and use the returned {@code

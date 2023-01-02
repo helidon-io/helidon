@@ -40,7 +40,7 @@ class NimaMicrometerPrometheusRegistrySupport extends MicrometerPrometheusRegist
         /*
          * Deal with a request if the MediaType is text/plain or the query parameter "type" specifies "prometheus".
          */
-        return (io.helidon.nima.webserver.http.ServerRequest req) -> {
+        return (ServerRequest req) -> {
             if (req.headers()
                     .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
                     || req.query()
