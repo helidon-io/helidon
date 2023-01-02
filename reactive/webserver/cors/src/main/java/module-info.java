@@ -23,7 +23,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Feature(value = "CORS",
         description = "CORS support for WebServer",
         in = HelidonFlavor.SE,
-        path = {"WebServer", "CORS"})
+        path = {"WebServer", "CORS"}
+)
 module io.helidon.reactive.webserver.cors {
     requires static io.helidon.common.features.api;
 

@@ -29,9 +29,9 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
+import io.helidon.security.integration.jersey.JerseySecurityFeature;
 import io.helidon.security.integration.jersey.SecurityDisabledFeature;
-import io.helidon.security.integration.jersey.SecurityFeature;
-import io.helidon.security.integration.nima.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
@@ -62,6 +62,27 @@ public class SecurityCdiExtension implements Extension {
      * Public constructor required by service loader.
      */
     public SecurityCdiExtension() {
+    }
+
+    /**
+     * Other extensions may update security builder.
+     *
+     * @return security builder
+     */
+    public Security.Builder securityBuilder() {
+        if (null == securityBuilder) {
+            throw new IllegalStateException("Security is already built, you cannot update the builder");
+        }
+        return securityBuilder;
+    }
+
+    /**
+     * Access to security instance once it is created from {@link #securityBuilder()}.
+     *
+     * @return a security instance, or empty if not yet created
+     */
+    public Optional<Security> security() {
+        return Optional.ofNullable(security.get());
     }
 
     private void registerBean(@Observes BeforeBeanDiscovery abd) {
@@ -123,7 +144,7 @@ public class SecurityCdiExtension implements Extension {
 
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean().orElse(true)) {
-            SecurityFeature feature = SecurityFeature.builder(security)
+            JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                     .config(jerseyConfig)
                     .build();
 
@@ -137,7 +158,7 @@ public class SecurityCdiExtension implements Extension {
         Config webServerConfig = config.get("security.web-server");
         if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
             server.serverRoutingBuilder()
-                    .register(WebSecurity.create(security, config.get("security")));
+                    .addFeature(SecurityFeature.create(security, config.get("security")));
         }
         this.security.set(security);
     }
@@ -145,26 +166,5 @@ public class SecurityCdiExtension implements Extension {
     private CompletionStage<AuthenticationResponse> failingAtnProvider(ProviderRequest request) {
         return CompletableFuture
                 .completedFuture(AuthenticationResponse.failed("No provider configured"));
-    }
-
-    /**
-     * Other extensions may update security builder.
-     *
-     * @return security builder
-     */
-    public Security.Builder securityBuilder() {
-        if (null == securityBuilder) {
-            throw new IllegalStateException("Security is already built, you cannot update the builder");
-        }
-        return securityBuilder;
-    }
-
-    /**
-     * Access to security instance once it is created from {@link #securityBuilder()}.
-     *
-     * @return a security instance, or empty if not yet created
-     */
-    public Optional<Security> security() {
-        return Optional.ofNullable(security.get());
     }
 }

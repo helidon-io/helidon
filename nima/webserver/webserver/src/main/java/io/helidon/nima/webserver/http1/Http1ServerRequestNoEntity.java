@@ -21,13 +21,14 @@ import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.http.HttpSecurity;
 
 class Http1ServerRequestNoEntity extends Http1ServerRequest {
     Http1ServerRequestNoEntity(ConnectionContext ctx,
-                               HttpPrologue prologue,
+                               HttpSecurity security, HttpPrologue prologue,
                                Headers headers,
                                int requestId) {
-        super(ctx, prologue, headers, requestId);
+        super(ctx, security, prologue, headers, requestId);
     }
 
     @Override

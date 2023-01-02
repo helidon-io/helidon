@@ -22,7 +22,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see io.helidon.config
  */
-@Feature(value = "Config", description = "Configuration module", in = {HelidonFlavor.NIMA, HelidonFlavor.SE})
+@Feature(value = "Config",
+        description = "Configuration module",
+        in = {HelidonFlavor.NIMA, HelidonFlavor.SE}
+)
 module io.helidon.config {
 
     requires java.logging;

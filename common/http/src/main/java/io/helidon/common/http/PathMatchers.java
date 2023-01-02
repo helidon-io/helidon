@@ -329,15 +329,26 @@ public final class PathMatchers {
 
     static final class PrefixPathMatcher implements PathMatcher {
         private final String prefix;
+        private final String exactMatch;
 
         PrefixPathMatcher(String prefix) {
             this.prefix = prefix;
+            if (prefix.endsWith("/")) {
+                exactMatch = prefix.substring(0, prefix.length() - 1);
+            } else {
+                exactMatch = prefix;
+            }
         }
 
         @Override
         public MatchResult match(UriPath uriPath) {
             String decodedPath = uriPath.path();
             if (decodedPath.startsWith(prefix)) {
+                // start with the prefix
+                return new MatchResult(true, new NoParamRoutedPath(uriPath));
+            }
+            if (exactMatch.equals(decodedPath)) {
+                // exact match (no trailing /)
                 return new MatchResult(true, new NoParamRoutedPath(uriPath));
             }
             return MatchResult.notAccepted();

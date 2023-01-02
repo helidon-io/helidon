@@ -343,8 +343,20 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder connectTimeout(Duration connectTimeout) {
+        this.connectTimeout = connectTimeout;
+        return this;
+    }
+
+    @Override
     public WebClientRequestBuilder readTimeout(long amount, TimeUnit unit) {
         this.readTimeout = Duration.of(amount, unit.toChronoUnit());
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder readTimeout(Duration readTimeout) {
+        this.readTimeout = readTimeout;
         return this;
     }
 

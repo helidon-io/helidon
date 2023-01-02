@@ -483,10 +483,25 @@ public abstract class DbClientHealthCheck implements HealthCheck {
          * @param duration the maximum time to wait for statement execution response
          * @param timeUnit    the time unit of the timeout argument
          * @return updated builder instance
+         * @deprecated use {@link #timeout(Duration)} instead
          */
+        @Deprecated(since = "4.0.0")
         public Builder timeout(final long duration, final TimeUnit timeUnit) {
             this.timeoutDuration = duration;
             this.timeoutUnit = timeUnit;
+            return this;
+        }
+
+        /**
+         * Set custom timeout to wait for statement execution response.
+         * Default value is {@code 10} seconds.
+         *
+         * @param timeout the maximum time to wait for statement execution response
+         * @return updated builder instance
+         */
+        public Builder timeout(final Duration timeout) {
+            this.timeoutDuration = timeout.toNanos();
+            this.timeoutUnit = TimeUnit.NANOSECONDS;
             return this;
         }
 

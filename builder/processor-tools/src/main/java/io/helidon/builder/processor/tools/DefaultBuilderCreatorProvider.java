@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import io.helidon.builder.Annotated;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
+import io.helidon.builder.BuilderInterceptor;
 import io.helidon.builder.RequiredAttributeVisitor;
 import io.helidon.builder.Singular;
 import io.helidon.builder.processor.spi.BuilderCreatorProvider;
@@ -85,25 +86,18 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     @Override
     public List<TypeAndBody> create(TypeInfo typeInfo, AnnotationAndValue builderAnnotation) {
         try {
-            Optional<TypeName> abstractImplTypeName = toAbstractImplTypeName(typeInfo.typeName(), builderAnnotation);
-            Optional<TypeName> implTypeName = toImplTypeName(typeInfo.typeName(), builderAnnotation);
-            if (implTypeName.isEmpty()) {
-                return Collections.emptyList();
-            }
-            preValidate(implTypeName.get(), typeInfo, builderAnnotation);
+            TypeName abstractImplTypeName = toAbstractImplTypeName(typeInfo.typeName(), builderAnnotation);
+            TypeName implTypeName = toImplTypeName(typeInfo.typeName(), builderAnnotation);
+            preValidate(implTypeName, typeInfo, builderAnnotation);
 
             LinkedList<TypeAndBody> builds = new LinkedList<>();
-            if (abstractImplTypeName.isPresent()) {
-                TypeName typeName = abstractImplTypeName.get();
-                builds.add(DefaultTypeAndBody.builder()
-                                   .typeName(typeName)
-                                   .body(toBody(createBodyContext(false, typeName, typeInfo, builderAnnotation)))
-                                   .build());
-            }
-            TypeName typeName = implTypeName.get();
             builds.add(DefaultTypeAndBody.builder()
-                               .typeName(typeName)
-                               .body(toBody(createBodyContext(true, typeName, typeInfo, builderAnnotation)))
+                               .typeName(abstractImplTypeName)
+                               .body(toBody(createBodyContext(false, abstractImplTypeName, typeInfo, builderAnnotation)))
+                               .build());
+            builds.add(DefaultTypeAndBody.builder()
+                               .typeName(implTypeName)
+                               .body(toBody(createBodyContext(true, implTypeName, typeInfo, builderAnnotation)))
                                .build());
 
             return postValidate(builds);
@@ -139,14 +133,14 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      *
      * @param typeName          the target interface that the builder applies to
      * @param builderAnnotation the builder annotation triggering the build
-     * @return the abstract type name of the implementation, or empty if this should not be code generated
+     * @return the abstract type name of the implementation
      */
-    protected Optional<TypeName> toAbstractImplTypeName(TypeName typeName,
-                                                        AnnotationAndValue builderAnnotation) {
+    protected TypeName toAbstractImplTypeName(TypeName typeName,
+                                              AnnotationAndValue builderAnnotation) {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toAbstractImplTypePrefix(builderAnnotation);
         String suffix = toImplTypeSuffix(builderAnnotation);
-        return Optional.of(DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix));
+        return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
     /**
@@ -154,14 +148,14 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      *
      * @param typeName          the target interface that the builder applies to
      * @param builderAnnotation the builder annotation triggering the build
-     * @return the type name of the implementation, or empty if this should not be code generated
+     * @return the type name of the implementation
      */
-    protected Optional<TypeName> toImplTypeName(TypeName typeName,
-                                                AnnotationAndValue builderAnnotation) {
+    protected TypeName toImplTypeName(TypeName typeName,
+                                      AnnotationAndValue builderAnnotation) {
         String toPackageName = toPackageName(typeName.packageName(), builderAnnotation);
         String prefix = toImplTypePrefix(builderAnnotation);
         String suffix = toImplTypeSuffix(builderAnnotation);
-        return Optional.of(DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix));
+        return DefaultTypeName.create(toPackageName, prefix + typeName.className() + suffix);
     }
 
     /**
@@ -193,7 +187,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         appendFields(builder, ctx);
         appendCtor(builder, ctx);
         appendExtraPostCtorCode(builder, ctx);
-        appendInterfaceBasedGetters(builder, ctx);
+        appendInterfaceBasedGetters(builder, ctx, "", false);
         appendBasicGetters(builder, ctx);
         appendMetaAttributes(builder, ctx);
         appendToStringMethod(builder, ctx);
@@ -220,17 +214,45 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
+     * Appends any interceptor on the builder.
+     *
+     * @param builder       the builder
+     * @param ctx           the context
+     * @param builderTag    the tag (variable name) used for the builder arg
+     */
+    protected void maybeAppendInterceptor(StringBuilder builder,
+                                          BodyContext ctx,
+                                          String builderTag) {
+        assert (!builderTag.equals("interceptor"));
+        if (ctx.interceptorTypeName().isPresent()) {
+            String impl = ctx.interceptorTypeName().get().name();
+            builder.append("\t\t\t").append(impl).append(" interceptor = ");
+            if (ctx.interceptorCreateMethod().isEmpty()) {
+                builder.append("new ").append(impl).append("();\n");
+            } else {
+                builder.append(ctx.interceptorTypeName().get())
+                        .append(".").append(ctx.interceptorCreateMethod().get()).append("();\n");
+            }
+            builder.append("\t\t\t").append(builderTag)
+                    .append(" = (Builder) interceptor.intercept(").append(builderTag).append(");\n");
+        }
+    }
+
+    /**
      * Appends the simple {@link io.helidon.config.metadata.ConfiguredOption#required()} validation inside the build() method.
      *
-     * @param builder the builder
-     * @param ctx     the context
+     * @param builder       the builder
+     * @param ctx           the context
+     * @param builderTag    the tag (variable name) used for the builder arg
      */
-    protected void appendRequiredValidator(StringBuilder builder,
-                                           BodyContext ctx) {
+    protected void appendRequiredVisitor(StringBuilder builder,
+                                         BodyContext ctx,
+                                         String builderTag) {
+        assert (!builderTag.equals("visitor"));
         if (ctx.includeMetaAttributes()) {
             builder.append("\t\t\tRequiredAttributeVisitor visitor = new RequiredAttributeVisitor(")
                     .append(ctx.allowNulls()).append(");\n"
-                                   + "\t\t\tvisitAttributes(visitor, null);\n"
+                                   + "\t\t\t").append(builderTag).append(".visitAttributes(visitor, null);\n"
                                    + "\t\t\tvisitor.validate();\n");
         }
     }
@@ -245,13 +267,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                       BodyContext ctx) {
         if (ctx.doingConcreteType()) {
             return;
-        }
-
-        if (Objects.nonNull(ctx.parentAnnotationType().get())) {
-            builder.append("\t@Override\n");
-            builder.append("\tpublic Class<? extends java.lang.annotation.Annotation> annotationType() {\n");
-            builder.append("\t\treturn ").append(ctx.typeInfo().superTypeInfo().get().typeName()).append(".class;\n");
-            builder.append("\t}\n\n");
         }
 
         if (!ctx.hasParent() && ctx.hasStreamSupportOnImpl()) {
@@ -340,34 +355,36 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
         builder.append("class ").append(ctx.implTypeName().className());
 
-        if (ctx.hasParent() || ctx.doingConcreteType()) {
+        Optional<TypeName> baseExtendsTypeName = baseExtendsTypeName(ctx);
+        if (baseExtendsTypeName.isEmpty() && ctx.isExtendingAnAbstractClass()) {
+            baseExtendsTypeName = Optional.of(ctx.typeInfo().typeName());
+        }
+        if (ctx.hasParent() || ctx.doingConcreteType() || baseExtendsTypeName.isPresent()) {
             builder.append(" extends ");
         }
 
         if (ctx.doingConcreteType()) {
-            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()).get());
+            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()));
         } else {
             if (ctx.hasParent()) {
-                builder.append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()).get());
-            } else {
-                Optional<TypeName> baseExtendsTypeName = baseExtendsTypeName(ctx);
-                if (baseExtendsTypeName.isPresent()) {
-                    builder.append(" extends ").append(baseExtendsTypeName.get().fqName()).append("\n\t\t\t\t\t\t\t\t\t\t");
-                }
+                builder.append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()));
+            } else if (baseExtendsTypeName.isPresent()) {
+                builder.append(baseExtendsTypeName.get().fqName());
             }
 
+            LinkedList<String> impls = new LinkedList<>();
+            if (!ctx.isExtendingAnAbstractClass()) {
+                impls.add(ctx.typeInfo().typeName().fqName());
+            }
             if (!ctx.hasParent() && ctx.hasStreamSupportOnImpl()) {
-                builder.append("<").append(ctx.genericBuilderAcceptAliasDecl()).append(" extends ")
-                        .append(ctx.implTypeName().className()).append(">");
+                impls.add("Supplier<" + ctx.genericBuilderAcceptAliasDecl() + ">");
             }
-
-            builder.append(" implements ").append(ctx.typeInfo().typeName());
-            if (!ctx.hasParent() && ctx.hasStreamSupportOnImpl()) {
-                builder.append(", Supplier<").append(ctx.genericBuilderAcceptAliasDecl()).append(">");
-            }
-
             List<TypeName> extraImplementContracts = extraImplementedTypeNames(ctx);
-            extraImplementContracts.forEach(t -> builder.append(",\n\t\t\t\t\t\t\t\t\t\t\t").append(t.fqName()));
+            extraImplementContracts.forEach(t -> impls.add(t.fqName()));
+
+            if (!impls.isEmpty()) {
+                builder.append(" implements ").append(String.join(", ", impls));
+            }
         }
 
         builder.append(" {\n");
@@ -432,6 +449,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             if (ctx.doingConcreteType()) {
                 builder.append("import ").append(RequiredAttributeVisitor.class.getName()).append(";\n");
             }
+            builder.append("import ").append(BuilderInterceptor.class.getName()).append(";\n");
             builder.append("\n");
         }
     }
@@ -448,17 +466,19 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             return;
         }
 
-        builder.append("\t@Override\n");
-        builder.append("\tpublic String toString() {\n");
-        builder.append("\t\treturn ").append(ctx.typeInfo().typeName());
-        builder.append(".class.getSimpleName() + ");
+        if (!ctx.hasOtherMethod("toString", ctx.typeInfo())) {
+            builder.append("\t@Override\n");
+            builder.append("\tpublic String toString() {\n");
+            builder.append("\t\treturn ").append(ctx.typeInfo().typeName());
+            builder.append(".class.getSimpleName() + ");
 
-        String instanceIdRef = instanceIdRef(ctx);
-        if (!instanceIdRef.isBlank()) {
-            builder.append("\"{\" + ").append(instanceIdRef).append(" + \"}\" + ");
+            String instanceIdRef = instanceIdRef(ctx);
+            if (!instanceIdRef.isBlank()) {
+                builder.append("\"{\" + ").append(instanceIdRef).append(" + \"}\" + ");
+            }
+            builder.append("\"(\" + toStringInner() + \")\";\n");
+            builder.append("\t}\n\n");
         }
-        builder.append("\"(\" + toStringInner() + \")\";\n");
-        builder.append("\t}\n\n");
     }
 
     /**
@@ -486,8 +506,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
-     * Adds extra inner classes to write on the builder. This default implementation will write the AttributeVisitor inner class
-     * if this is the root interface (i.e., hasParent is false), as well as the RequiredAttributeVisitor.
+     * Adds extra inner classes to write on the builder. This default implementation will write the {@code AttributeVisitor} and
+     * {@code RequiredAttributeVisitor} inner classes on the base abstract parent (ie, hasParent is false).
      *
      * @param builder the builder
      * @param ctx     the context
@@ -631,13 +651,17 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
-     * Adds extra builder pre-steps.
+     * Adds extra builder build() method pre-steps prior to the builder being built into the target.
      *
      * @param builder the builder
      * @param ctx     the context
+     * @param builderTag        the tag (variable name) used for the builder arg
      */
     protected void appendBuilderBuildPreSteps(StringBuilder builder,
-                                              BodyContext ctx) {
+                                              BodyContext ctx,
+                                              String builderTag) {
+        maybeAppendInterceptor(builder, ctx, builderTag);
+        appendRequiredVisitor(builder, ctx, builderTag);
     }
 
     /**
@@ -1025,7 +1049,12 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         appendExtraBuilderFields(builder, ctx);
         appendBuilderBody(builder, ctx);
 
-//        appendExtraBuilderMethods(builder, ctx);
+        if (ctx.hasAnyBuilderClashingMethodNames()) {
+            builder.append("\t\t// *** IMPORTANT NOTE: There are getter methods that clash with the base Builder methods ***\n");
+            appendInterfaceBasedGetters(builder, ctx, "\t//", true);
+        } else {
+            appendInterfaceBasedGetters(builder, ctx, "\t", true);
+        }
 
         if (ctx.doingConcreteType()) {
             if (ctx.hasParent()) {
@@ -1034,9 +1063,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 GenerateJavadoc.buildMethod(builder);
             }
             builder.append("\t\tpublic ").append(ctx.implTypeName()).append(" build() {\n");
-            appendRequiredValidator(builder, ctx);
-            appendBuilderBuildPreSteps(builder, ctx);
-            builder.append("\t\t\treturn new ").append(ctx.implTypeName().className()).append("(this);\n");
+            builder.append("\t\t\tBuilder b = this;\n");
+            appendBuilderBuildPreSteps(builder, ctx, "b");
+            builder.append("\t\t\treturn new ").append(ctx.implTypeName().className()).append("(b);\n");
             builder.append("\t\t}\n");
         } else {
             int i = 0;
@@ -1055,7 +1084,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                         String basicAttributeName = ""
                                 + Character.toLowerCase(beanAttributeName.charAt(2))
                                 + beanAttributeName.substring(3);
-                        if (!ctx.allAttributeNames().contains(basicAttributeName)) {
+                        if (!BeanUtils.isReservedWord(basicAttributeName)
+                                && !ctx.allAttributeNames().contains(basicAttributeName)) {
                             appendSetter(builder, ctx, beanAttributeName, basicAttributeName, method);
                         }
                     }
@@ -1173,7 +1203,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 if (typeName.isList() || typeName.isMap() || typeName.isSet()) {
                     continue;
                 }
-                addField(builder, method, typeName, beanAttributeName);
+                addBuilderField(builder, ctx, method, typeName, beanAttributeName);
             }
             builder.append("\n");
         }
@@ -1192,13 +1222,14 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         builder.append("\t\t}\n\n");
     }
 
-    private void addField(StringBuilder builder,
-                          TypedElementName method,
-                          TypeName type,
-                          String beanAttributeName) {
-
+    private void addBuilderField(StringBuilder builder,
+                                 BodyContext ctx,
+                                 TypedElementName method,
+                                 TypeName type,
+                                 String beanAttributeName) {
         GenerateJavadoc.builderField(builder, method);
-        builder.append("\t\tprotected ").append(type.array() ? type.fqName() : type.name()).append(" ")
+        builder.append("\t\tprivate ");
+        builder.append(type.array() ? type.fqName() : type.name()).append(" ")
                 .append(beanAttributeName);
         Optional<String> defaultVal = toConfiguredOptionValue(method, true, true);
         if (defaultVal.isPresent()) {
@@ -1252,7 +1283,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         if (ctx.doingConcreteType()) {
             builder.append(" extends ");
-            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()).get());
+            builder.append(toAbstractImplTypeName(ctx.typeInfo().typeName(), ctx.builderTriggerAnnotation()));
             builder.append(".").append(ctx.genericBuilderClassDecl());
             builder.append("<").append(ctx.genericBuilderClassDecl()).append(", ").append(ctx.ctorBuilderAcceptTypeName())
                     .append("> {\n");
@@ -1261,40 +1292,46 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append("<").append(ctx.genericBuilderAliasDecl()).append(", ");
             builder.append(ctx.genericBuilderAcceptAliasDecl()).append(">, ").append(ctx.genericBuilderAcceptAliasDecl())
                     .append(" extends ");
-            builder.append(ctx.ctorBuilderAcceptTypeName()).append("> ");
+            builder.append(ctx.ctorBuilderAcceptTypeName()).append(">");
             if (ctx.hasParent()) {
-                builder.append("extends ")
-                        .append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()).get())
+                builder.append(" extends ")
+                        .append(toAbstractImplTypeName(ctx.parentTypeName().get(), ctx.builderTriggerAnnotation()))
                         .append(".").append(ctx.genericBuilderClassDecl());
                 builder.append("<").append(ctx.genericBuilderAliasDecl())
                         .append(", ").append(ctx.genericBuilderAcceptAliasDecl());
                 builder.append(">");
             } else {
                 Optional<TypeName> baseExtendsTypeName = baseExtendsBuilderTypeName(ctx);
+                if (baseExtendsTypeName.isEmpty() && ctx.isExtendingAnAbstractClass()) {
+                    baseExtendsTypeName = Optional.of(ctx.typeInfo().typeName());
+                }
                 if (baseExtendsTypeName.isPresent()) {
-                    builder.append("\n\t\t\t\t\t\t\t\t\t\t"
-                                           + "extends ")
-                            .append(baseExtendsTypeName.get().fqName())
-                            .append("\n\t\t\t\t\t\t\t\t\t\t");
+                    builder.append("\n\t\t\t\t\t\t\t\t\t\textends ")
+                            .append(baseExtendsTypeName.get().fqName());
                 }
             }
 
-            if (ctx.hasStreamSupportOnBuilder()) {
-                builder.append("implements Supplier<").append(ctx.genericBuilderAcceptAliasDecl()).append(">");
+            LinkedList<String> impls = new LinkedList<>();
+            if (!ctx.isExtendingAnAbstractClass() && !ctx.hasAnyBuilderClashingMethodNames()) {
+                impls.add(ctx.typeInfo().typeName().name());
             }
-
             if (!ctx.hasParent()) {
-                if (ctx.requireLibraryDependencies()) {
-                    builder.append(", io.helidon.common.Builder<").append(ctx.genericBuilderAliasDecl())
-                            .append(", ").append(ctx.genericBuilderAcceptAliasDecl()).append(">");
-                } else {
-                    builder.append("/*, io.helidon.common.Builder<").append(ctx.genericBuilderAliasDecl())
-                            .append(", ").append(ctx.genericBuilderAcceptAliasDecl()).append("> */");
+                if (ctx.hasStreamSupportOnBuilder() && !ctx.requireLibraryDependencies()) {
+                    impls.add("Supplier<" + ctx.genericBuilderAcceptAliasDecl() + ">");
                 }
+
+                if (ctx.requireLibraryDependencies()) {
+                    impls.add(io.helidon.common.Builder.class.getName()
+                                      + "<" + ctx.genericBuilderAliasDecl() + ", " + ctx.genericBuilderAcceptAliasDecl() + ">");
+                }
+
+                List<TypeName> extraImplementBuilderContracts = extraImplementedBuilderContracts(ctx);
+                extraImplementBuilderContracts.forEach(t -> impls.add(t.fqName()));
             }
 
-            List<TypeName> extraImplementBuilderContracts = extraImplementedBuilderContracts(ctx);
-            extraImplementBuilderContracts.forEach(t -> builder.append(",\n\t\t\t\t\t\t\t\t\t\t\t").append(t.fqName()));
+            if (!impls.isEmpty()) {
+                builder.append(" implements ").append(String.join(", ", impls));
+            }
 
             builder.append(" {\n");
         }
@@ -1311,7 +1348,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     private void appendInterfaceBasedGetters(StringBuilder builder,
-                                             BodyContext ctx) {
+                                             BodyContext ctx,
+                                             String prefix,
+                                             boolean isBuilder) {
         if (ctx.doingConcreteType()) {
             return;
         }
@@ -1319,13 +1358,29 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames()) {
             TypedElementName method = ctx.allTypeInfos().get(i);
-            appendAnnotations(builder, method.annotations(), "\t");
-            builder.append("\t@Override\n");
-            builder.append("\tpublic ").append(toGenerics(method, false)).append(" ").append(method.elementName())
+            String extraPrefix = prefix + "\t";
+            appendAnnotations(builder, method.annotations(), extraPrefix);
+            builder.append(extraPrefix)
+                    .append("@Override\n");
+            builder.append(extraPrefix)
+                    .append("public ").append(toGenerics(method, false)).append(" ").append(method.elementName())
                     .append("() {\n");
-            builder.append("\t\treturn ").append(beanAttributeName).append(";\n");
-            builder.append("\t}\n\n");
+            builder.append(extraPrefix)
+                    .append("\treturn ").append(beanAttributeName).append(";\n");
+            builder.append(extraPrefix)
+                    .append("}\n\n");
             i++;
+        }
+
+        if (Objects.nonNull(ctx.parentAnnotationType().get())) {
+            builder.append(prefix)
+                    .append("\t@Override\n");
+            builder.append(prefix)
+                    .append("\tpublic Class<? extends java.lang.annotation.Annotation> annotationType() {\n");
+            builder.append(prefix)
+                    .append("\t\treturn ").append(ctx.typeInfo().superTypeInfo().get().typeName()).append(".class;\n");
+            builder.append(prefix)
+                    .append("\t}\n\n");
         }
     }
 
@@ -1345,7 +1400,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             builder.append(" b) {\n");
             appendExtraCtorCode(builder, ctx, "b");
             appendCtorCodeBody(builder, ctx, "b");
-//            builder.append("\t}\n");
         }
 
         builder.append("\t}\n\n");
@@ -1356,13 +1410,13 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      *
      * @param builder           the builder
      * @param ctx               the context
-     * @param builderTag        the builder tag
+     * @param builderTag        the tag (variable name) used for the builder arg
      */
     protected void appendCtorCodeBody(StringBuilder builder,
                                       BodyContext ctx,
                                       String builderTag) {
         if (ctx.hasParent()) {
-            builder.append("\t\tsuper(b);\n");
+            builder.append("\t\tsuper(").append(builderTag).append(");\n");
         }
         int i = 0;
         for (String beanAttributeName : ctx.allAttributeNames()) {
@@ -1371,15 +1425,18 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
             if (method.typeName().isList()) {
                 builder.append("Collections.unmodifiableList(new ")
-                        .append(ctx.listType()).append("<>(b.").append(beanAttributeName).append("));\n");
+                        .append(ctx.listType()).append("<>(").append(builderTag).append(".")
+                        .append(beanAttributeName).append("));\n");
             } else if (method.typeName().isMap()) {
                 builder.append("Collections.unmodifiableMap(new ")
-                        .append(ctx.mapType()).append("<>(b.").append(beanAttributeName).append("));\n");
+                        .append(ctx.mapType()).append("<>(").append(builderTag).append(".")
+                        .append(beanAttributeName).append("));\n");
             } else if (method.typeName().isSet()) {
                 builder.append("Collections.unmodifiableSet(new ")
-                        .append(ctx.setType()).append("<>(b.").append(beanAttributeName).append("));\n");
+                        .append(ctx.setType()).append("<>(").append(builderTag).append(".")
+                        .append(beanAttributeName).append("));\n");
             } else {
-                builder.append("b.").append(beanAttributeName).append(";\n");
+                builder.append(builderTag).append(".").append(beanAttributeName).append(";\n");
             }
         }
     }
@@ -1390,40 +1447,44 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
             return;
         }
 
-        builder.append("\t@Override\n");
-        builder.append("\tpublic int hashCode() {\n");
-        if (ctx.hasParent()) {
-            builder.append("\t\tint hashCode = super.hashCode();\n");
-        } else {
-            builder.append("\t\tint hashCode = 1;\n");
+        if (!ctx.hasOtherMethod("hashCode", ctx.typeInfo())) {
+            builder.append("\t@Override\n");
+            builder.append("\tpublic int hashCode() {\n");
+            if (ctx.hasParent()) {
+                builder.append("\t\tint hashCode = super.hashCode();\n");
+            } else {
+                builder.append("\t\tint hashCode = 1;\n");
+            }
+            List<String> methods = new ArrayList<>();
+            for (TypedElementName method : ctx.allTypeInfos()) {
+                methods.add(method.elementName() + "()");
+            }
+            builder.append("\t\thashCode = 31 * hashCode + Objects.hash(").append(String.join(", ", methods)).append(");\n");
+            builder.append("\t\treturn hashCode;\n");
+            builder.append("\t}\n\n");
         }
-        List<String> methods = new ArrayList<>();
-        for (TypedElementName method : ctx.allTypeInfos()) {
-            methods.add(method.elementName() + "()");
-        }
-        builder.append("\t\thashCode = 31 * hashCode + Objects.hash(").append(String.join(", ", methods)).append(");\n");
-        builder.append("\t\treturn hashCode;\n");
-        builder.append("\t}\n\n");
 
-        builder.append("\t@Override\n");
-        builder.append("\tpublic boolean equals(Object another) {\n");
-        builder.append("\t\tif (this == another) {\n\t\t\treturn true;\n\t\t}\n");
-        builder.append("\t\tif (!(another instanceof ").append(ctx.typeInfo().typeName()).append(")) {\n");
-        builder.append("\t\t\treturn false;\n");
-        builder.append("\t\t}\n");
-        builder.append("\t\t").append(ctx.typeInfo().typeName()).append(" other = (")
-                .append(ctx.typeInfo().typeName()).append(") another;\n");
-        if (ctx.hasParent()) {
-            builder.append("\t\tboolean equals = super.equals(other);\n");
-        } else {
-            builder.append("\t\tboolean equals = true;\n");
+        if (!ctx.hasOtherMethod("equals", ctx.typeInfo())) {
+            builder.append("\t@Override\n");
+            builder.append("\tpublic boolean equals(Object another) {\n");
+            builder.append("\t\tif (this == another) {\n\t\t\treturn true;\n\t\t}\n");
+            builder.append("\t\tif (!(another instanceof ").append(ctx.typeInfo().typeName()).append(")) {\n");
+            builder.append("\t\t\treturn false;\n");
+            builder.append("\t\t}\n");
+            builder.append("\t\t").append(ctx.typeInfo().typeName()).append(" other = (")
+                    .append(ctx.typeInfo().typeName()).append(") another;\n");
+            if (ctx.hasParent()) {
+                builder.append("\t\tboolean equals = super.equals(other);\n");
+            } else {
+                builder.append("\t\tboolean equals = true;\n");
+            }
+            for (TypedElementName method : ctx.allTypeInfos()) {
+                builder.append("\t\tequals &= Objects.equals(").append(method.elementName()).append("(), other.")
+                        .append(method.elementName()).append("());\n");
+            }
+            builder.append("\t\treturn equals;\n");
+            builder.append("\t}\n\n");
         }
-        for (TypedElementName method : ctx.allTypeInfos()) {
-            builder.append("\t\tequals &= Objects.equals(").append(method.elementName()).append("(), other.")
-                    .append(method.elementName()).append("());\n");
-        }
-        builder.append("\t\treturn equals;\n");
-        builder.append("\t}\n\n");
     }
 
     private void appendInnerToStringMethod(StringBuilder builder,
@@ -1527,7 +1588,6 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
     private void appendOverridesOfDefaultValues(StringBuilder builder,
                                                 BodyContext ctx) {
-        boolean first = true;
         for (TypedElementName method : ctx.typeInfo().elementInfo()) {
             String beanAttributeName = toBeanAttributeName(method, ctx.beanStyleRequired());
             if (!ctx.allAttributeNames().contains(beanAttributeName)) {

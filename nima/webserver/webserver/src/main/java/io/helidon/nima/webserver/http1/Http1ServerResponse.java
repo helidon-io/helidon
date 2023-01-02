@@ -195,6 +195,24 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         return isSent || streamingEntity;
     }
 
+    @Override
+    public boolean reset() {
+        if (isSent || outputStream != null && outputStream.totalBytesWritten() > 0) {
+            return false;
+        }
+        headers.clear();
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
+    public void commit() {
+        if (outputStream != null) {
+            outputStream.commit();
+        }
+    }
+
     private static void writeHeaders(Headers headers, BufferData buffer) {
         for (HeaderValue header : headers) {
             header.writeHttp1Header(buffer);
@@ -242,6 +260,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private final Http1ServerRequest request;
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
+        private final boolean forcedChunked;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -249,7 +268,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private long contentLength;
         private boolean isChunked;
         private boolean firstByte = true;
-        private boolean forcedChunked;
         private long responseBytesTotal;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
@@ -293,7 +311,18 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         @Override
+        public void flush() throws IOException {
+            if (firstByte && firstBuffer != null) {
+                write(BufferData.empty());
+            }
+        }
+
+        @Override
         public void close() {
+            // this is a noop, even when user closes the output stream, we wait for commit
+        }
+
+        void commit() {
             if (closed) {
                 return;
             }

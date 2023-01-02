@@ -21,9 +21,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Helidon SE OpenAPI Support.
  */
 @Feature(value = "OpenAPI",
-        in = HelidonFlavor.SE,
         description = "Open API support",
-        path = "OpenAPI")
+        in = HelidonFlavor.SE,
+        path = "OpenAPI"
+)
 module io.helidon.openapi {
     requires static io.helidon.common.features.api;
 

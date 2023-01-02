@@ -19,6 +19,7 @@ package io.helidon.nima.webserver.http;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.RoutedPath;
 import io.helidon.nima.http.media.ReadableEntity;
+import io.helidon.nima.webserver.ServerContext;
 
 /**
  * HTTP server request.
@@ -69,4 +70,19 @@ public interface ServerRequest extends HttpRequest {
      * @return request context
      */
     Context context();
+
+    /**
+     * Server context with elements that are shared across all listeners and connections.
+     *
+     * @return server context
+     */
+    ServerContext serverContext();
+
+    /**
+     * HTTP security associated with this listener, configured on routing.
+     *
+     * @return security
+     * @see io.helidon.nima.webserver.http.HttpRouting.Builder#security(HttpSecurity)
+     */
+    HttpSecurity security();
 }

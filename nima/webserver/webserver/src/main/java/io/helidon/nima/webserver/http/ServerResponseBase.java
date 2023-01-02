@@ -61,8 +61,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @param request server request
      */
     protected ServerResponseBase(ConnectionContext ctx, ServerRequest request) {
-        this.contentEncodingContext = ctx.contentEncodingContext();
-        this.mediaContext = ctx.mediaContext();
+        this.contentEncodingContext = ctx.serverContext().contentEncodingContext();
+        this.mediaContext = ctx.serverContext().mediaContext();
         this.requestPrologue = request.prologue();
         this.requestHeaders = request.headers();
     }

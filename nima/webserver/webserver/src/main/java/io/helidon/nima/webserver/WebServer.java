@@ -123,13 +123,6 @@ public interface WebServer {
     boolean hasTls(String socketName);
 
     /**
-     * Context associated with the {@code WebServer}, used as a parent for request contexts.
-     *
-     * @return a server context
-     */
-    Context context();
-
-    /**
      * Fluent API builder for {@link WebServer}.
      */
     class Builder implements io.helidon.common.Builder<Builder, WebServer>, Router.RouterBuilder<Builder> {
@@ -150,6 +143,7 @@ public interface WebServer {
         private MediaContext mediaContext = MediaContext.create();
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
+        private boolean shutdownHook = true;
         private Context context;
 
         Builder(Config rootConfig) {
@@ -409,12 +403,30 @@ public interface WebServer {
          * @return an updated builder
          */
         public Builder context(Context context) {
+            Objects.requireNonNull(context);
             this.context = context;
+            return this;
+        }
+
+        /**
+         * When true the webserver registers a shutdown hook with the JVM Runtime.
+         * <p>
+         * Defaults to true. Set this to false such that a shutdown hook is not registered.
+         *
+         * @param shutdownHook When true register a shutdown hook
+         * @return updated builder
+         */
+        public Builder shutdownHook(boolean shutdownHook) {
+            this.shutdownHook = shutdownHook;
             return this;
         }
 
         Context context() {
             return context;
+        }
+
+        boolean shutdownHook() {
+            return shutdownHook;
         }
 
         MediaContext mediaContext() {

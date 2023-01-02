@@ -31,6 +31,7 @@ public abstract class ConfigBeanBase implements ConfigBeanCommon {
 
     /**
      * Protected constructor for initializing the generated config bean instance variables.
+     *
      * @param b             the builder
      * @param instanceId    the instance id
      */

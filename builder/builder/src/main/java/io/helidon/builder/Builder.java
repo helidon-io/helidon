@@ -181,6 +181,52 @@ public @interface Builder {
     boolean allowNulls() default DEFAULT_ALLOW_NULLS;
 
     /**
+     * The interceptor implementation type. See {@link BuilderInterceptor} for further details. Any interceptor applied will be called
+     * prior to validation. The interceptor implementation can be any lambda-like implementation for the {@link BuilderInterceptor}
+     * functional interface. This means that the implementation should declare a public method that matches the following:
+     * <pre>{@code
+     *    Builder intercept(Builder builder);
+     * }
+     * </pre>
+     * Note that the method name must be named <i>intercept</i>.
+     *
+     * @return the interceptor implementation class
+     */
+    Class<?> interceptor() default Void.class;
+
+    /**
+     * The (static) interceptor method to call on the {@link #interceptor()} implementation type in order to create the interceptor.
+     * If left undefined then the {@code new} operator will be called on the type. If provided then the method must be public
+     * and take no arguments. Example (see the create() method):
+     * <pre>{@code
+     *  public class CustomBuilderInterceptor { // implements BuilderInterceptor
+     *      public CustomBuilderInterceptor() {
+     *      }
+     *
+     *      public static CustomBuilderInterceptor create() {
+     *          ...
+     *      }
+     *
+     *      public Builder intercept(Builder builder) {
+     *          ...
+     *      }
+     *  }
+     * }
+     * </pre>
+     * <p>
+     * This attribute is ignored if the {@link #interceptor()} class type is left undefined.
+     * Note that the method must return an instance of the Builder, and there must be a public method that matches the following:
+     * <pre>{@code
+     *    public Builder intercept(Builder builder);
+     * }
+     * </pre>
+     * Note that the method name must be named <i>intercept</i>.
+     *
+     * @return the interceptor create method
+     */
+    String interceptorCreateMethod() default "";
+
+    /**
      * The list implementation type to apply, defaulting to {@link #DEFAULT_LIST_TYPE}.
      *
      * @return the list type to apply

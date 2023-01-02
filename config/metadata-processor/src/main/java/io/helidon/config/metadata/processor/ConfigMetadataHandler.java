@@ -109,7 +109,10 @@ class ConfigMetadataHandler {
 
         // get the types
         configuredElement = elementUtils.getTypeElement(CONFIGURED_CLASS);
-        builderType = elementUtils.getTypeElement("io.helidon.common.Builder").asType();
+        TypeElement builderTypeElement = elementUtils.getTypeElement("io.helidon.common.Builder");
+        if (builderTypeElement != null) {
+            builderType = builderTypeElement.asType();
+        }
         TypeElement configTypeElement = elementUtils.getTypeElement("io.helidon.config.Config");
         if (configTypeElement != null) {
             configType = configTypeElement.asType();

@@ -25,9 +25,10 @@ import java.util.function.Supplier;
 import io.helidon.logging.common.LogConfig;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
-import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.TRACE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -169,7 +170,7 @@ class BulkheadTest {
         }
     }
 
-    @Test
+    @RepeatedTest(100)
     void testBulkheadWithError() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
         // Create bulkhead of 1 with a queue of 1
         Bulkhead bulkhead = Bulkhead.builder()
@@ -185,13 +186,16 @@ class BulkheadTest {
         Task inProgress = new Task(0);
         CompletableFuture<?> inProgressFuture = Async.invokeStatic(
                 () -> bulkhead.invoke(inProgress::run));
-        CompletableFuture<?> failedFuture = Async.invokeStatic(
-                () -> bulkhead.invoke(() -> { throw new IllegalStateException(); }));
 
         // Verify completion of inProgress task
         if (!inProgress.waitUntilStarted(WAIT_TIMEOUT_MILLIS)) {
             fail("Task inProgress never started");
         }
+
+        // as we use an async to submit to bulkhead, we should wait until the first task is submitted
+        CompletableFuture<?> failedFuture = Async.invokeStatic(
+                () -> bulkhead.invoke(() -> { throw new IllegalStateException(); }));
+
         inProgress.unblock();
         inProgressFuture.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
 
@@ -219,7 +223,7 @@ class BulkheadTest {
         }
 
         int run() {
-            LOGGER.log(INFO, "Task " + index + " running on thread " + Thread.currentThread().getName());
+            LOGGER.log(TRACE, "Task " + index + " running on thread " + Thread.currentThread().getName());
 
             started.countDown();
             try {

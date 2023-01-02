@@ -24,7 +24,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Feature(value = "Messaging",
         description = "Reactive messaging support",
         in = HelidonFlavor.SE,
-        path = "Messaging")
+        path = "Messaging"
+)
 @Aot(description = "Experimental support in native image")
 module io.helidon.messaging {
     requires static io.helidon.common.features.api;

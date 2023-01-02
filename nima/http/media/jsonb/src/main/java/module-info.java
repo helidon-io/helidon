@@ -24,8 +24,9 @@ import io.helidon.nima.http.media.spi.MediaSupportProvider;
  */
 @Feature(value = "JSONB",
         description = "JSON-B media support",
-        in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
-        path = {"Media","JSON-B"}
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Media", "JSON-B"}
 )
 module io.helidon.nima.http.media.jsonb {
     requires static io.helidon.common.features.api;

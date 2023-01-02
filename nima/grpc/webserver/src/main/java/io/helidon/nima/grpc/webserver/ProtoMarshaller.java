@@ -36,7 +36,6 @@ final class ProtoMarshaller {
             return result;
         }
         // i may create it twice, but that should not really matter
-        // todo this is using reflection, should not be done
         try {
             java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
             MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
@@ -45,10 +44,11 @@ final class ProtoMarshaller {
             MethodDescriptor.Marshaller<T> current = (MethodDescriptor.Marshaller<T>) CACHE.putIfAbsent(clazz, result);
             return current == null ? result : current;
         } catch (ReflectiveOperationException e) {
-            String msg = String.format(
-                    "Attempting to use class %s, which is not a valid Protocol buffer message, with a default marshaller",
-                    clazz.getName());
-            throw new IllegalArgumentException(msg);
+            String msg = "Attempting to use class \""
+                    + clazz.getName()
+                    + "\", which is not a valid Protocol buffer message, with a default marshaller";
+
+            throw new IllegalArgumentException(msg, e);
         }
     }
 }

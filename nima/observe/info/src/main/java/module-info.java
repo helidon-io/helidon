@@ -18,7 +18,9 @@ import io.helidon.nima.observe.info.InfoObserveProvider;
 import io.helidon.nima.observe.spi.ObserveProvider;
 
 /**
- * Observability features.
+ * Observe info module.
+ * Info allows configuration of custom properties to be available to users.
+ * Info endpoint is unprotected by default and is available at {@code /observe/info} (configurable).
  */
 module io.helidon.nima.observe.info {
     requires io.helidon.config;

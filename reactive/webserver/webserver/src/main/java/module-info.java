@@ -24,7 +24,8 @@ import io.helidon.reactive.webserver.spi.UpgradeCodecProvider;
 @Feature(value = "WebServer",
          description = "Reactive Web Server",
          in = HelidonFlavor.SE,
-         invalidIn = {HelidonFlavor.NIMA, HelidonFlavor.MP})
+         invalidIn = {HelidonFlavor.NIMA, HelidonFlavor.MP}
+)
 module io.helidon.reactive.webserver {
     requires io.helidon.common;
     requires transitive io.helidon.reactive.media.common;
