@@ -1258,6 +1258,22 @@
             	<artifactId>helidon-integrations-microstream-cache</artifactId>
             	<version>${helidon.version}</version>
             </dependency>
+            <!-- Kotlin -->
+            <dependency>
+                <groupId>io.helidon.integrations.kotlin.support.extensions</groupId>
+                <artifactId>helidon-integrations-kotlin-support-extensions</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.kotlin.support.nima</groupId>
+                <artifactId>helidon-integrations-kotlin-support-nima</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.kotlin.support.reactive</groupId>
+                <artifactId>helidon-integrations-kotlin-support-reactive</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Níma -->
             <dependency>
