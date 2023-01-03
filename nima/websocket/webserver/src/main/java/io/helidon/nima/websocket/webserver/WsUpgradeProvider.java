@@ -200,7 +200,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
         }
 
-        return new WsConnection(ctx, prologue, headers, wsKey, route);
+        return new WsConnection(ctx, prologue, headers, upgradeHeaders.orElse(null), wsKey, route);
     }
 
     protected boolean anyOrigin() {

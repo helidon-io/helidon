@@ -31,6 +31,16 @@ import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
 class EchoService implements WsListener {
     private final AtomicReference<CloseInfo> closed = new AtomicReference<>();
 
+    private volatile String subProtocol;
+
+    @Override
+    public void onOpen(WsSession session) {
+        String p = session.subProtocol().orElse(null);
+        if (subProtocol != null && !subProtocol.equals(p)) {
+            throw new InternalError("Invalid sub-protocol in session");
+        }
+    }
+
     @Override
     public void receive(WsSession session, String text, boolean last) {
         session.send(text, last);
@@ -48,9 +58,12 @@ class EchoService implements WsListener {
             List<String> subProtocols = headers.get(WsUpgradeProvider.PROTOCOL).allValues(true);
             if (subProtocols.contains("chat")) {
                 upgradeHeaders.set(WsUpgradeProvider.PROTOCOL, "chat");
+                subProtocol = "chat";
             } else {
                 throw new WsUpgradeException("Unable to negotiate WS sub-protocol");
             }
+        } else {
+            subProtocol = null;
         }
         if (headers.contains(WsUpgradeProvider.EXTENSIONS)) {
             List<String> extensions = headers.get(WsUpgradeProvider.EXTENSIONS).allValues(true);

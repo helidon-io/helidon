@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package io.helidon.nima.websocket.webserver;
 
 import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.CloseConnectionException;
@@ -30,12 +32,15 @@ import io.helidon.nima.websocket.CloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
+import static io.helidon.nima.websocket.webserver.WsUpgradeProvider.PROTOCOL;
+
 class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
     private final WritableHeaders<?> headers;
+    private final Headers upgradeHeaders;
     private final String wsKey;
     private final WsListener listener;
 
@@ -49,11 +54,13 @@ class WsConnection implements ServerConnection, WsSession {
     WsConnection(ConnectionContext ctx,
                  HttpPrologue prologue,
                  WritableHeaders<?> headers,
+                 Headers upgradeHeaders,
                  String wsKey,
                  WebSocket wsRoute) {
         this.ctx = ctx;
         this.prologue = prologue;
         this.headers = headers;
+        this.upgradeHeaders = upgradeHeaders;
         this.wsKey = wsKey;
         this.listener = wsRoute.listener();
         this.dataReader = ctx.dataReader();
@@ -111,6 +118,14 @@ class WsConnection implements ServerConnection, WsSession {
     public WsSession abort() {
         close(CloseCodes.NORMAL_CLOSE, "Abort");
         throw new CloseConnectionException("Aborting from WebSocket");
+    }
+
+    @Override
+    public Optional<String> subProtocol() {
+        if (upgradeHeaders != null) {
+            return Optional.of(upgradeHeaders.get(PROTOCOL).values());
+        }
+        return Optional.empty();
     }
 
     private boolean processFrame(ClientFrame frame) {
