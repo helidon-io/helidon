@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.micrometer.reactive;
 
+import java.util.function.Supplier;
+import java.util.logging.Logger;
+
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.reactive.servicecommon.HelidonRestServiceSupport;
@@ -22,9 +25,8 @@ import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
+
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 /**
  * Implements simple Micrometer support.
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
  * data in an HTTP response.
  * </p>
  * <p>Alternatively, developers can enroll any of the built-in registries represented by
- * the {@link MeterRegistryFactory.BuiltInRegistryType} enum.</p>
+ * the {@link io.helidon.integrations.micrometer.BuiltInRegistryType} enum.</p>
  * <p>
  * Having enrolled Micrometer meter registries with {@code MicrometerSupport.Builder} and built the
  * {@code MicrometerSupport} object, developers can invoke the {@link #registry()} method and use the returned {@code

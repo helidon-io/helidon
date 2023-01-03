@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.integrations.micrometer.reactive;
 
+import java.util.Optional;
+import java.util.function.Function;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -23,11 +26,10 @@ import io.helidon.integrations.micrometer.BuiltInRegistryType;
 import io.helidon.integrations.micrometer.MicrometerPrometheusRegistrySupport;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.ServerRequest;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
 import io.micrometer.prometheus.PrometheusConfig;
-import java.util.Optional;
-import java.util.function.Function;
 
 class ReactiveMicrometerPrometheusRegistrySupport extends MicrometerPrometheusRegistrySupport<ServerRequest, Handler> {
 
@@ -53,7 +55,7 @@ class ReactiveMicrometerPrometheusRegistrySupport extends MicrometerPrometheusRe
             }
         };
     }
-    
+
     static ReactiveMicrometerPrometheusRegistrySupport create(BuiltInRegistryType type,
             ConfigValue<Config> node) {
         switch (type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,21 @@
  */
 package io.helidon.integrations.micrometer;
 
-import io.helidon.config.Config;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.config.MeterRegistryConfig;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.config.Config;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterRegistryConfig;
+
 /**
  * Framework for supporting Micrometer registry types.
+ *
  */
-public abstract class MicrometerBuiltInRegistrySupport<REQ, HAND> {
+abstract class MicrometerBuiltInRegistrySupport<REQ, HAND> {
     abstract static class AbstractMeterRegistryConfig implements MeterRegistryConfig {
         private final Map<String, String> settings;
 

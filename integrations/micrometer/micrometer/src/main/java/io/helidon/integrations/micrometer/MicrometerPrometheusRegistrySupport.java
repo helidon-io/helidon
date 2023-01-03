@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,37 @@
  */
 package io.helidon.integrations.micrometer;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.micrometer.core.instrument.config.MeterRegistryConfig;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.Collector;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Enumeration;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+
+import io.micrometer.core.instrument.config.MeterRegistryConfig;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.Collector;
+
 /**
  * Support for built-in Prometheus meter registry type.
+ *
+ * @param <REQ> HTTP request type
+ * @param <HAND> The request and response handler.
  */
 public abstract class MicrometerPrometheusRegistrySupport<REQ, HAND> extends MicrometerBuiltInRegistrySupport<REQ, HAND> {
 
+    /**
+     * Prometheus configuration.
+     *
+     */
     public static class PrometheusConfigImpl extends AbstractMeterRegistryConfig implements PrometheusConfig {
 
+        /**
+         * Obtain a PrometheusConfig from the configuration.
+         * @param node with the configuration
+         * @return an instance of configured PrometheusConfig
+         */
         public static PrometheusConfig registryConfig(ConfigValue<Config> node) {
             return node
                     .filter(Config::exists)
@@ -39,6 +53,11 @@ public abstract class MicrometerPrometheusRegistrySupport<REQ, HAND> extends Mic
                     .orElse(PrometheusConfig.DEFAULT);
         }
 
+        /**
+         * Obtain a PrometheusConfig from the configuration.
+         * @param config with the configuration
+         * @return an instance of configured PrometheusConfig
+         */
         public static PrometheusConfig registryConfig(Config config) {
             return new PrometheusConfigImpl(config);
         }
@@ -57,6 +76,12 @@ public abstract class MicrometerPrometheusRegistrySupport<REQ, HAND> extends Mic
         return new PrometheusMeterRegistry(PrometheusConfig.class.cast(meterRegistryConfig));
     }
 
+    /**
+     * Utility method to write the PrometheusMeterRegistry in a writer.
+     * @param writer any subclass of Writer
+     * @param registry the PrometheusMeterRegistry
+     * @throws IOException if an I/O error occurs
+     */
     public static void metadata(Writer writer, PrometheusMeterRegistry registry) throws IOException {
         Enumeration<Collector.MetricFamilySamples> mfs = registry.getPrometheusRegistry()
                 .metricFamilySamples();

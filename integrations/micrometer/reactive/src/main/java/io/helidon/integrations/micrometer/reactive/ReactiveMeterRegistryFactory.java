@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,6 @@
 
 package io.helidon.integrations.micrometer.reactive;
 
-import io.helidon.common.http.Http;
-import io.helidon.config.Config;
-import io.helidon.integrations.micrometer.BuiltInRegistryType;
-import io.helidon.reactive.webserver.Handler;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.config.MeterRegistryConfig;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +26,17 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.integrations.micrometer.BuiltInRegistryType;
+import io.helidon.reactive.webserver.Handler;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterRegistryConfig;
 
 /**
  * Provides access to the {@link MeterRegistry} Helidon SE uses to collect meters and report their metrics.
@@ -188,9 +190,13 @@ public final class ReactiveMeterRegistryFactory {
 
         private final List<Enrollment> explicitRegistryEnrollments = new ArrayList<>();
 
-        private final Map<BuiltInRegistryType, ReactiveMicrometerPrometheusRegistrySupport> builtInRegistriesRequested = new HashMap<>();
+        private final Map<BuiltInRegistryType, ReactiveMicrometerPrometheusRegistrySupport> builtInRegistriesRequested
+            = new HashMap<>();
 
         private final List<LogRecord> logRecords = new ArrayList<>();
+
+        private Builder() {
+        }
 
         @Override
         public ReactiveMeterRegistryFactory build() {
@@ -223,8 +229,8 @@ public final class ReactiveMeterRegistryFactory {
          * @return updated builder instance
          */
         public Builder enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType, MeterRegistryConfig meterRegistryConfig) {
-            ReactiveMicrometerPrometheusRegistrySupport builtInRegistrySupport = ReactiveMicrometerPrometheusRegistrySupport.create(builtInRegistryType,
-                    meterRegistryConfig);
+            ReactiveMicrometerPrometheusRegistrySupport builtInRegistrySupport =
+                    ReactiveMicrometerPrometheusRegistrySupport.create(builtInRegistryType, meterRegistryConfig);
             builtInRegistriesRequested.put(builtInRegistryType, builtInRegistrySupport);
             return this;
         }
