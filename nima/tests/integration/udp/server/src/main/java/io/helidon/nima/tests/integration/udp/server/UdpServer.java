@@ -37,8 +37,8 @@ public class UdpServer {
 
     private static int port = 8888;
     private static int ackPeriod = 10;
-    private static AtomicLong dgrmsSent = new AtomicLong();
-    private static AtomicLong dgrmsReceived = new AtomicLong();
+    private static final AtomicLong dgrmsSent = new AtomicLong();
+    private static final AtomicLong dgrmsReceived = new AtomicLong();
 
     public static void main(String[] args) {
         try {
