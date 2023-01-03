@@ -1106,6 +1106,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
             // our application
             config.get("redirect-uri").asString().ifPresent(this::redirectUri);
+            config.get("logout-uri").asString().ifPresent(this::logoutUri);
 
             config.get("post-logout-uri").as(URI.class).ifPresent(this::postLogoutUri);
             config.get("logout-enabled").asBoolean().ifPresent(this::logoutEnabled);
