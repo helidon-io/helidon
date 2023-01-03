@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.integrations.kotlin.support
 
 import io.helidon.common.config.Config
@@ -24,8 +23,6 @@ import io.helidon.reactive.dbclient.DbColumn
 import io.helidon.reactive.dbclient.DbRow
 import io.helidon.reactive.media.common.MessageBodyReadableContent
 import io.helidon.reactive.media.multipart.ReadableBodyPart
-
-//import io.helidon.reactive.media.multipart.ReadableBodyPart
 
 /**
  * Extension function to hide keyword `as`.
@@ -50,8 +47,3 @@ inline fun <reified T> DbColumn.to(): T {
 inline fun <reified T> ReadableBodyPart.to(): T {
     return this.`as`(T::class.java)
 }
-
-
-//fun <T> Config.toType(type: Function<Config, T>): ConfigValue<T> {
-//    return this.`as`(type);
-//}

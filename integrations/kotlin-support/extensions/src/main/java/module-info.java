@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.kotlin.support.reative
-
-import io.helidon.reactive.dbclient.DbClient
-
 /**
- * DSL for the builder for DBClient.
+ * Helidon Reactive Kotlin Support
  */
-fun dbClient(block: DbClient.Builder.() -> Unit = {}): DbClient = DbClient.builder().apply(block).build()
+module io.helidon.integrations.kotlin.support {
+
+    requires io.helidon.common.config;
+    requires io.helidon.reactive.dbclient;
+    requires io.helidon.reactive.media.common;
+    requires io.helidon.reactive.media.multipart;
+
+    requires java.logging;
+
+    requires kotlin.stdlib;
+
+    exports io.helidon.integrations.kotlin.support;
+}

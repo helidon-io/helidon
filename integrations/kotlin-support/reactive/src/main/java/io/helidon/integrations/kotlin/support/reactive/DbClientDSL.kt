@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.integrations.kotlin.support.reactive
 
-package io.helidon.integrations.kotlin.support.nima
-
-import io.helidon.nima.webserver.Router
-import io.helidon.nima.webserver.WebServer
+import io.helidon.reactive.dbclient.DbClient
 
 /**
- * DSL for the builder for WebServer and support objects.
+ * DSL for the builder for DBClient.
  */
-fun webServer(block: WebServer.Builder.() -> Unit = {}): WebServer = WebServer.builder().apply(block).build()
-
-fun routing(block: Router.Builder.() -> Unit = {}): Router = Router.builder().apply(block).build()
+fun dbClient(block: DbClient.Builder.() -> Unit = {}): DbClient = DbClient.builder().apply(block).build()

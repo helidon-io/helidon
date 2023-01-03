@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.integrations.kotlin.support.reative
+package io.helidon.integrations.kotlin.support.reactive
 
 import io.helidon.common.pki.KeyConfig
 import io.helidon.reactive.health.HealthSupport
@@ -26,6 +25,7 @@ import io.helidon.reactive.webserver.RequestPredicate
 import io.helidon.reactive.webserver.ServerConfiguration
 import io.helidon.reactive.webserver.SocketConfiguration
 import io.helidon.reactive.webserver.WebServer
+import io.helidon.reactive.webserver.WebServer.builder
 import io.helidon.reactive.webserver.WebServerTls
 import io.helidon.security.providers.oidc.common.OidcConfig
 
@@ -33,7 +33,7 @@ import io.helidon.security.providers.oidc.common.OidcConfig
 /**
  * DSL for the builder for WebServer and support objects.
  */
-fun webServer(block: WebServer.Builder.() -> Unit = {}): WebServer = WebServer.builder().apply(block).build()
+fun webServer(block: WebServer.Builder.() -> Unit = {}): WebServer = builder().apply(block).build()
 
 fun webServerTls(block: WebServerTls.Builder.() -> Unit = {}): WebServerTls = WebServerTls.builder().apply(block).build()
 

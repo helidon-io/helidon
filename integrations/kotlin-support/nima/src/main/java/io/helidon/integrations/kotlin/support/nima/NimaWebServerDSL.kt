@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.integrations.kotlin.support.nima
 
-package io.helidon.integrations.kotlin.support.reative
-
-import io.helidon.reactive.media.jsonp.JsonpSupport
-import io.helidon.reactive.webclient.WebClient
+import io.helidon.nima.webserver.Router
+import io.helidon.nima.webserver.WebServer
+import io.helidon.nima.webserver.WebServer.builder
 
 /**
- * DSL for the builder for WebClient.
+ * DSL for the builder for WebServer and support objects.
  */
-fun webClient(block: WebClient.Builder.() -> Unit = {}): WebClient = WebClient.builder().apply(block).build()
+fun webServer(block: WebServer.Builder.() -> Unit = {}): WebServer = builder().apply(block).build()
 
-fun jsonpSupport(block: JsonpSupport.Builder.() ->
-                                        Unit = {}): JsonpSupport = JsonpSupport.builder().apply(block).build();
+fun routing(block: Router.Builder.() -> Unit = {}): Router = Router.builder().apply(block).build()

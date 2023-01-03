@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Helidon Kotlin Support
+ * Helidon Kotlin Extensions Support
  */
-module io.helidon.integrations.kotlin.support {
+module io.helidon.integrations.kotlin.support.reactive {
+
+    requires io.helidon.reactive.dbclient;
+    requires io.helidon.reactive.health;
+    requires io.helidon.reactive.media.jsonp;
+    requires io.helidon.reactive.servicecommon;
+    requires io.helidon.reactive.webserver.cors;
+    requires io.helidon.reactive.webserver.jersey;
+    requires io.helidon.reactive.webserver;
+    requires io.helidon.security.providers.oidc.common;
 
     requires java.logging;
 
-    requires io.helidon.common.http;
-    requires io.helidon.reactive.servicecommon;
-    requires io.helidon.config;
-    requires io.helidon.reactive.webserver.cors;
-    requires io.helidon.reactive.dbclient;
-    requires io.helidon.reactive.media.multipart;
-    requires io.helidon.reactive.media.jsonp;
-    requires io.helidon.reactive.webclient;
-    requires io.helidon.reactive.health;
-    requires io.helidon.reactive.webserver.jersey;
-    requires io.helidon.security.providers.oidc.common;
-
     requires kotlin.stdlib;
-    requires io.helidon.nima.webserver;
 
-    exports io.helidon.integrations.kotlin.support;
+    exports io.helidon.integrations.kotlin.support.reactive;
 }

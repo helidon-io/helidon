@@ -95,6 +95,7 @@
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>2.8.1</version.lib.kafka>
+        <version.lib.kotlin>1.8.0</version.lib.kotlin>
         <version.lib.log4j>2.18.0</version.lib.log4j>
         <version.lib.logback>1.4.0</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
@@ -964,6 +965,17 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
+            </dependency>
+            <!-- Kotlin support -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-test</artifactId>
+                <version>${version.lib.kotlin}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
