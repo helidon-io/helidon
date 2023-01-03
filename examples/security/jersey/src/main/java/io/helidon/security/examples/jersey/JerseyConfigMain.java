@@ -21,7 +21,7 @@ import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.jersey.JerseySupport;
 import io.helidon.security.Security;
-import io.helidon.security.integration.jersey.SecurityFeature;
+import io.helidon.security.integration.jersey.JerseySecurityFeature;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -36,12 +36,12 @@ public class JerseyConfigMain {
     private JerseyConfigMain() {
     }
 
-    private static SecurityFeature buildSecurity() {
+    private static JerseySecurityFeature buildSecurity() {
         Config config = Config.create().get("security");
 
         Security security = Security.create(config);
 
-        return SecurityFeature.builder(security)
+        return JerseySecurityFeature.builder(security)
                 .config(config.get("jersey"))
                 .build();
     }

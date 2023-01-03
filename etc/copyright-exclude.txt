@@ -66,3 +66,4 @@ persistence_3_0.xjb
 persistence_3_0.xsd
 # excluded as this is a test file and we need to validate its content
 src/test/resources/static/classpath/index.html
+._java_

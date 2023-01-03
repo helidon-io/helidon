@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Support for Micrometer in Helidon SE.
  */
+@Preview
+@Feature(value = "Micrometer",
+        description = "Micrometer integration",
+        in = HelidonFlavor.SE,
+        path = "Micrometer"
+)
 module io.helidon.integrations.micrometer {
+    requires static io.helidon.common.features.api;
 
     requires java.logging;
 

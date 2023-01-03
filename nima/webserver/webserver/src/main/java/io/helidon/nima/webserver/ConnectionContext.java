@@ -22,8 +22,6 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 
 /**
@@ -31,10 +29,9 @@ import io.helidon.nima.webserver.http.DirectHandlers;
  */
 public interface ConnectionContext extends SocketContext {
     /**
-     * Create a new context.
+     * Create a new connection context.
      *
-     * @param mediaContext           media context to read and write typed entities
-     * @param contentEncodingContext content encoding to support various entity content encodings
+     * @param serverContext          context of the server
      * @param sharedExecutor         executor service to use to handle asynchronous tasks
      * @param dataWriter             data writer to write response
      * @param dataReader             data reader to read request
@@ -46,8 +43,7 @@ public interface ConnectionContext extends SocketContext {
      * @param maxPayloadSize         maximal size of a payload entity
      * @return a new context
      */
-    static ConnectionContext create(MediaContext mediaContext,
-                                    ContentEncodingContext contentEncodingContext,
+    static ConnectionContext create(ServerContext serverContext,
                                     ExecutorService sharedExecutor,
                                     DataWriter dataWriter,
                                     DataReader dataReader,
@@ -57,8 +53,8 @@ public interface ConnectionContext extends SocketContext {
                                     DirectHandlers simpleHandlers,
                                     HelidonSocket socket,
                                     long maxPayloadSize) {
-        return new ConnectionContextImpl(mediaContext,
-                                         contentEncodingContext,
+
+        return new ConnectionContextImpl(serverContext,
                                          sharedExecutor,
                                          dataWriter,
                                          dataReader,
@@ -71,18 +67,11 @@ public interface ConnectionContext extends SocketContext {
     }
 
     /**
-     * Media context to read and write typed entities.
+     * Context of the server. Configuration shared by all listeners and connections.
      *
-     * @return media context
+     * @return server context
      */
-    MediaContext mediaContext();
-
-    /**
-     * Content encoding support, to handle entity encoding (such as gzip, deflate).
-     *
-     * @return content encoding support
-     */
-    ContentEncodingContext contentEncodingContext();
+    ServerContext serverContext();
 
     /**
      * Executor service to submit asynchronous tasks.

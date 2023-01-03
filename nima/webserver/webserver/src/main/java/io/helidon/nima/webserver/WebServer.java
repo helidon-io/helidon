@@ -22,10 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
@@ -124,6 +126,9 @@ public interface WebServer {
      * Fluent API builder for {@link WebServer}.
      */
     class Builder implements io.helidon.common.Builder<Builder, WebServer>, Router.RouterBuilder<Builder> {
+
+        private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
+
         static {
             LogConfig.initClass();
         }
@@ -138,6 +143,9 @@ public interface WebServer {
         private MediaContext mediaContext = MediaContext.create();
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
+        private boolean shutdownHook = true;
+        private Context context;
+
         Builder(Config rootConfig) {
             config(rootConfig.get("server"));
         }
@@ -149,6 +157,15 @@ public interface WebServer {
 
         @Override
         public WebServer build() {
+
+            if (context == null) {
+                // In case somebody spins a huge number up, the counter will cycle to negative numbers once
+                // Integer.MAX_VALUE is reached.
+                context = Context.builder()
+                        .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .build();
+            }
+
             return new LoomServer(this, simpleHandlers.build());
         }
 
@@ -380,6 +397,38 @@ public interface WebServer {
             return this;
         }
 
+        /**
+         * Configure the application scoped context to be used as a parent for webserver request contexts.
+         * @param context top level context
+         * @return an updated builder
+         */
+        public Builder context(Context context) {
+            Objects.requireNonNull(context);
+            this.context = context;
+            return this;
+        }
+
+        /**
+         * When true the webserver registers a shutdown hook with the JVM Runtime.
+         * <p>
+         * Defaults to true. Set this to false such that a shutdown hook is not registered.
+         *
+         * @param shutdownHook When true register a shutdown hook
+         * @return updated builder
+         */
+        public Builder shutdownHook(boolean shutdownHook) {
+            this.shutdownHook = shutdownHook;
+            return this;
+        }
+
+        Context context() {
+            return context;
+        }
+
+        boolean shutdownHook() {
+            return shutdownHook;
+        }
+
         MediaContext mediaContext() {
             return this.mediaContext;
         }
@@ -391,7 +440,6 @@ public interface WebServer {
         Map<String, ListenerConfiguration.Builder> socketBuilders() {
             return socketBuilder;
         }
-
         /**
          * Map of socket name to router.
          *

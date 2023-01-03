@@ -269,7 +269,9 @@ public interface WebClient {
          * @param amount amount of time
          * @param unit   time unit
          * @return updated builder instance
+         * @deprecated use {@link #connectTimeout(Duration)} instead
          */
+        @Deprecated(since = "4.0.0")
         public Builder connectTimeout(long amount, TimeUnit unit) {
             return connectTimeout(Duration.of(amount, unit.toChronoUnit()));
         }
@@ -291,7 +293,9 @@ public interface WebClient {
          * @param amount amount of time
          * @param unit   time unit
          * @return updated builder instance
+         * @deprecated use {@link #readTimeout(Duration)} instead
          */
+        @Deprecated(since = "4.0.0")
         public Builder readTimeout(long amount, TimeUnit unit) {
             return readTimeout(Duration.of(amount, unit.toChronoUnit()));
         }

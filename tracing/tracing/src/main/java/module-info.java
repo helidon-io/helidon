@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
+ *
  * @see io.helidon.tracing.spi.TracerProvider
  * @see io.helidon.tracing.TracerBuilder
  */
+@Feature(value = "Tracing",
+        description = "Tracing support",
+        in = {HelidonFlavor.SE, HelidonFlavor.NIMA}
+)
 module io.helidon.tracing {
     requires io.helidon.common;
     requires io.helidon.config;
 
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     exports io.helidon.tracing;

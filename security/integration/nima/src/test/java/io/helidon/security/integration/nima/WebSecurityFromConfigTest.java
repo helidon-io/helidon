@@ -22,14 +22,14 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.context.ContextFilter;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 
 import org.junit.jupiter.api.BeforeAll;
 
 /**
- * Unit test for {@link WebSecurity}.
+ * Unit test for {@link SecurityFeature}.
  */
 public class WebSecurityFromConfigTest extends WebSecurityTests {
     private static String baseUri;
@@ -45,8 +45,8 @@ public class WebSecurityFromConfigTest extends WebSecurityTests {
                 .addAuditProvider(myAuditProvider).build();
 
         server = WebServer.builder()
-                .routing(routing -> routing.addFilter(ContextFilter.create())
-                        .register(WebSecurity.create(security, securityConfig))
+                .routing(routing -> routing.addFeature(ContextFeature.create())
+                        .addFeature(SecurityFeature.create(security, securityConfig))
                         .get("/*", (req, res) -> {
                             Optional<SecurityContext> securityContext = Contexts.context()
                                     .flatMap(ctx -> ctx.get(SecurityContext.class));

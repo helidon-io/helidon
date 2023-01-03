@@ -14,11 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Static content support for Helidon WebServer.
  * Supports both classpath and file system based static content.
  */
+@Feature(value = "Static Content",
+        description = "Static content support for webserver",
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "Static Content"}
+)
 module io.helidon.reactive.webserver.staticcontent {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.common.http;

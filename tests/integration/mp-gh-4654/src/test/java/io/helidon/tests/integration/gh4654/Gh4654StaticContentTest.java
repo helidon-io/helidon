@@ -100,9 +100,9 @@ class Gh4654StaticContentTest {
             "/index.html,Root Index HTML,path should serve index.html",
             "/foo.txt,Foo TXT,path should serve foo.txt",
             "/css/a.css,A CSS,path should serve css/a.css",
-            "/other,Other Index,path should serve other/index.html",
+            "/other/,Other Index,path should serve other/index.html",
             "/other/index.html,Other Index,path should serve other/index.html",
-            "/classpath,classpath index,classpath should serve index.html",
+            "/classpath/,classpath index,classpath should serve index.html",
             "/classpath/index.html,classpath index,classpath should serve index.html"
     })
     void testExists(String path, String expectedContent, String name) {

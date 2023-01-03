@@ -24,12 +24,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class HttpPrologueTest {
     @Test
     void testPrologueWithAll() {
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     Http.Method.GET,
                                                     "/admin;a=b/list;c=d;e=f?first=second#fragment",
                                                     true);
 
+        assertThat(prologue.rawProtocol(), is("HTTP/1.1"));
         assertThat(prologue.protocol(), is("HTTP"));
         assertThat(prologue.protocolVersion(), is("1.1"));
         assertThat(prologue.method(), is(Http.Method.GET));
@@ -43,12 +45,14 @@ class HttpPrologueTest {
     void testPrologueEncodedPath() {
         String path = "/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment";
 
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     Http.Method.GET,
                                                     path,
                                                     true);
 
+        assertThat(prologue.rawProtocol(), is("HTTP/1.1"));
         assertThat(prologue.protocol(), is("HTTP"));
         assertThat(prologue.protocolVersion(), is("1.1"));
         assertThat(prologue.method(), is(Http.Method.GET));

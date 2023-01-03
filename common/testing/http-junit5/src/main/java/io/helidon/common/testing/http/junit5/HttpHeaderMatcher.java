@@ -191,7 +191,7 @@ public final class HttpHeaderMatcher {
                 mismatchDescription.appendValue(name.defaultCase()).appendText(" header is present with wrong values ");
                 valuesMatcher.describeMismatch(all, mismatchDescription);
             } else {
-                mismatchDescription.appendValue(name.defaultCase()).appendText("header is not present");
+                mismatchDescription.appendValue(name.defaultCase()).appendText(" header is not present");
             }
         }
     }

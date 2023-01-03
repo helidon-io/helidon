@@ -24,12 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
+import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
@@ -142,8 +144,9 @@ class DirectClientConnection implements ClientConnection {
         ExecutorService executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("direct-test-server", 1)
                                                                                      .factory());
         ConnectionContext ctx = ConnectionContext.create(
-                MediaContext.create(),
-                ContentEncodingContext.create(),
+                ServerContext.create(Context.create(),
+                                     MediaContext.create(),
+                                     ContentEncodingContext.create()),
                 executorService,
                 serverWriter,
                 serverReader,

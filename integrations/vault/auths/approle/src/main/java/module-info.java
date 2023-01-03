@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * AppRole authentication method for Vault.
  */
+@Feature(value = "AppRole",
+        description = "AppRole Authentication Method",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Auth", "AppRole"}
+)
 module io.helidon.integrations.vault.auths.approle {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.integrations.vault;

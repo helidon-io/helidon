@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.webserver.spi.UpgradeCodecProvider;
 import io.helidon.reactive.webserver.websocket.WebsocketUpgradeCodecProvider;
 
 /**
  * WebSocket support for Helidon webserver.
  */
+@Feature(value = "Websocket",
+        description = "Jakarta Websocket implementation",
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "Websocket"}
+)
+@Aot(description = "Server only")
 module io.helidon.reactive.webserver.websocket {
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.reactive.webserver.websocket;
 

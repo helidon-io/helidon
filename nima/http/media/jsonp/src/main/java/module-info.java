@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.http.media.jsonp.JsonpMediaSupportProvider;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
  * JSON-P media support.
  */
+@Feature(value = "JSONP",
+        description = "JSON-P media support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Media", "JSON-P"}
+)
 module io.helidon.nima.http.media.jsonp {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.nima.http.media;
     requires transitive jakarta.json;
 

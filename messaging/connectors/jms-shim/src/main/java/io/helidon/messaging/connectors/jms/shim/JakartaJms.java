@@ -15,6 +15,10 @@
  */
 package io.helidon.messaging.connectors.jms.shim;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
 import jakarta.jms.BytesMessage;
 import jakarta.jms.CompletionListener;
 import jakarta.jms.Connection;
@@ -57,6 +61,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static BytesMessage create(javax.jms.BytesMessage delegate) {
+        if (delegate == null) return null;
         return new JakartaByteMessage(delegate);
     }
     /**
@@ -65,6 +70,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static CompletionListener create(javax.jms.CompletionListener delegate) {
+        if (delegate == null) return null;
         return new JakartaCompletionListener(delegate);
     }
     /**
@@ -73,6 +79,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static Connection create(javax.jms.Connection delegate) {
+        if (delegate == null) return null;
         return new JakartaConnection(delegate);
     }
     /**
@@ -81,6 +88,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ConnectionConsumer create(javax.jms.ConnectionConsumer delegate) {
+        if (delegate == null) return null;
         return new JakartaConnectionConsumer(delegate);
     }
     /**
@@ -89,6 +97,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ConnectionFactory create(javax.jms.ConnectionFactory delegate) {
+        if (delegate == null) return null;
         return new JakartaConnectionFactory(delegate);
     }
     /**
@@ -97,6 +106,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ConnectionMetaData create(javax.jms.ConnectionMetaData delegate) {
+        if (delegate == null) return null;
         return new JakartaConnectionMetaData(delegate);
     }
     /**
@@ -105,6 +115,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static JMSConsumer create(javax.jms.JMSConsumer delegate) {
+        if (delegate == null) return null;
         return new JakartaConsumer(delegate);
     }
     /**
@@ -113,6 +124,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static JMSContext create(javax.jms.JMSContext delegate) {
+        if (delegate == null) return null;
         return new JakartaContext(delegate);
     }
     /**
@@ -121,6 +133,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static Destination create(javax.jms.Destination delegate) {
+        if (delegate == null) return null;
         return new JakartaDestination<>(delegate);
     }
     /**
@@ -129,6 +142,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ExceptionListener create(javax.jms.ExceptionListener delegate) {
+        if (delegate == null) return null;
         return new JakartaExceptionListener(delegate);
     }
     /**
@@ -137,8 +151,32 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static MapMessage create(javax.jms.MapMessage delegate) {
+        if (delegate == null) return null;
         return new JakartaMapMessage(delegate);
     }
+
+    /**
+     * Convenience method for shimming various javax JMS classes.
+     *
+     * @param obj to be shimmed or just typed
+     * @param expectedType expected type to shim to
+     * @return typed or shimmed object
+     * @param <T> expected type to shim to
+     */
+    public static <T> T resolve(Object obj, Class<T> expectedType) {
+        if (expectedType.isAssignableFrom(obj.getClass())) {
+            return (T) obj;
+        }
+        Map<Class<?>, Function<Object, T>> conversionMap = Map.of(
+                ConnectionFactory.class, o -> (T) JakartaJms.create((javax.jms.ConnectionFactory) o),
+                Destination.class, o -> (T) JakartaJms.create((javax.jms.Destination) o)
+        );
+        return Optional.ofNullable(conversionMap.get(expectedType))
+                .map(r -> r.apply(obj))
+                .orElseThrow(() -> new IllegalStateException("Unexpected type of connection factory: " + obj.getClass()));
+    }
+
+
     /**
      * Create a jakarta wrapper for the provided javax instance.
      * @param delegate javax namespace instance
@@ -171,6 +209,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static MessageConsumer create(javax.jms.MessageConsumer delegate) {
+        if (delegate == null) return null;
         return new JakartaMessageConsumer(delegate);
     }
     /**
@@ -179,6 +218,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static MessageListener create(javax.jms.MessageListener delegate) {
+        if (delegate == null) return null;
         return new JakartaMessageListener(delegate);
     }
     /**
@@ -187,6 +227,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static MessageProducer create(javax.jms.MessageProducer delegate) {
+        if (delegate == null) return null;
         return new JakartaMessageProducer(delegate);
     }
     /**
@@ -195,6 +236,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ObjectMessage create(javax.jms.ObjectMessage delegate) {
+        if (delegate == null) return null;
         return new JakartaObjectMessage(delegate);
     }
     /**
@@ -203,6 +245,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static JMSProducer create(javax.jms.JMSProducer delegate) {
+        if (delegate == null) return null;
         return new JakartaProducer(delegate);
     }
     /**
@@ -211,6 +254,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static Queue create(javax.jms.Queue delegate) {
+        if (delegate == null) return null;
         return new JakartaQueue(delegate);
     }
     /**
@@ -219,6 +263,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static QueueBrowser create(javax.jms.QueueBrowser delegate) {
+        if (delegate == null) return null;
         return new JakartaQueueBrowser(delegate);
     }
     /**
@@ -227,6 +272,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static Session create(javax.jms.Session delegate) {
+        if (delegate == null) return null;
         return new JakartaSession(delegate);
     }
     /**
@@ -235,6 +281,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ServerSessionPool create(javax.jms.ServerSessionPool delegate) {
+        if (delegate == null) return null;
         return new JakartaSessionPool(delegate);
     }
     /**
@@ -243,6 +290,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static ServerSession create(javax.jms.ServerSession delegate) {
+        if (delegate == null) return null;
         return new JakartaServerSession(delegate);
     }
     /**
@@ -251,6 +299,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static StreamMessage create(javax.jms.StreamMessage delegate) {
+        if (delegate == null) return null;
         return new JakartaStreamMessage(delegate);
     }
     /**
@@ -259,6 +308,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static TemporaryQueue create(javax.jms.TemporaryQueue delegate) {
+        if (delegate == null) return null;
         return new JakartaTemporaryQueue(delegate);
     }
     /**
@@ -267,6 +317,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static TemporaryTopic create(javax.jms.TemporaryTopic delegate) {
+        if (delegate == null) return null;
         return new JakartaTemporaryTopic(delegate);
     }
     /**
@@ -275,6 +326,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static TextMessage create(javax.jms.TextMessage delegate) {
+        if (delegate == null) return null;
         return new JakartaTextMessage(delegate);
     }
     /**
@@ -283,6 +335,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static Topic create(javax.jms.Topic delegate) {
+        if (delegate == null) return null;
         return new JakartaTopic(delegate);
     }
     /**
@@ -291,6 +344,7 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static TopicSubscriber create(javax.jms.TopicSubscriber delegate) {
+        if (delegate == null) return null;
         return new JakartaTopicSubscriber(delegate);
     }
 }

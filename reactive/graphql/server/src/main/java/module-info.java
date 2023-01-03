@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * GraphQL server integration with Helidon Reactive WebServer.
  */
+@Preview
+@Feature(value = "GraphQL",
+         description = "GraphQL Support",
+         since = "2.2.0",
+         in = HelidonFlavor.SE,
+         invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA}
+)
+@Aot(description = "Incubating support, tested on limited use cases")
 module io.helidon.reactive.graphql.server {
     requires java.logging;
 
@@ -30,6 +43,7 @@ module io.helidon.reactive.graphql.server {
     requires io.helidon.reactive.media.jsonb;
     requires io.helidon.reactive.webserver;
     requires io.helidon.reactive.webserver.cors;
+    requires static io.helidon.common.features.api;
 
     requires com.graphqljava;
     requires org.eclipse.yasson;

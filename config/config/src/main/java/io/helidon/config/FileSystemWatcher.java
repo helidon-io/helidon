@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -413,12 +414,38 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
          * @param initialDelay initial delay before regular scheduling starts
          * @param delay delay between schedules
          * @param timeUnit time unit of the delays
-         * @return updated builer instance
+         * @return updated builder instance
+         * @deprecated use {@link #initialDelay(Duration)} and {@link #delay(Duration)} instead
          */
+        @Deprecated(since = "4.0.0")
         public Builder schedule(long initialDelay, long delay, TimeUnit timeUnit) {
             this.initialDelay = initialDelay;
             this.delay = delay;
             this.timeUnit = timeUnit;
+            return this;
+        }
+
+        /**
+         * Configure an initial delay before regular scheduling starts.
+         *
+         * @param initialDelay initial delay
+         * @return updated builder instance
+         */
+        public Builder initialDelay(Duration initialDelay) {
+            this.initialDelay = initialDelay.toMillis();
+            this.timeUnit = TimeUnit.MILLISECONDS;
+            return this;
+        }
+
+        /**
+         * Configure a delay between schedules.
+         *
+         * @param delay delay between schedules
+         * @return updated builder instance
+         */
+        public Builder delay(Duration delay) {
+            this.delay = delay.toMillis();
+            this.timeUnit = TimeUnit.MILLISECONDS;
             return this;
         }
 

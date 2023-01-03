@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.concurrent.Executor;
 
 import io.helidon.messaging.MessagingException;
+import io.helidon.messaging.NackHandler;
 
 import jakarta.jms.BytesMessage;
 import jakarta.jms.JMSException;
@@ -33,8 +34,11 @@ public class JmsBytesMessage extends AbstractJmsMessage<byte[]> {
 
     private final jakarta.jms.BytesMessage msg;
 
-    JmsBytesMessage(jakarta.jms.BytesMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
-        super(executor, sharedSessionEntry);
+    JmsBytesMessage(NackHandler nackHandler,
+                    jakarta.jms.BytesMessage msg,
+                    Executor executor,
+                    SessionMetadata sharedSessionEntry) {
+        super(nackHandler, executor, sharedSessionEntry);
         this.msg = msg;
     }
 

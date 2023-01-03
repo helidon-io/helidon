@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * The Helidon SE CORS module
  */
+@Feature(value = "CORS",
+        description = "CORS support for WebServer",
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "CORS"}
+)
 module io.helidon.reactive.webserver.cors {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.common;

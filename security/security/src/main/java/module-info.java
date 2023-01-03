@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Java for cloud security module.
  *
  * @see io.helidon.security.Security
  * @see io.helidon.security.SecurityContext
  */
+@Feature(value = "Security",
+        description = "Security support",
+        in = {HelidonFlavor.SE, HelidonFlavor.NIMA}
+)
 module io.helidon.security {
     requires java.logging;
 
     requires transitive io.helidon.common;
+    requires transitive io.helidon.common.security;
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
+
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.tracing;

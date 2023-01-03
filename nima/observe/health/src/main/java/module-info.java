@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.health.spi.HealthCheckProvider;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.observe.spi.ObserveProvider;
@@ -21,6 +23,7 @@ import io.helidon.nima.observe.spi.ObserveProvider;
 /**
  * Health checks for Níma observability.
  */
+@Feature(value = "Health", description = "Health check support", in = HelidonFlavor.NIMA)
 module io.helidon.nima.observe.health {
     requires java.management;
 
@@ -29,6 +32,7 @@ module io.helidon.nima.observe.health {
     requires io.helidon.nima.webserver;
     requires io.helidon.nima.http.media.jsonp;
     requires io.helidon.nima.servicecommon;
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.nima.observe.health;
 

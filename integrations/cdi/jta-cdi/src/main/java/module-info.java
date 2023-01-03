@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Provides classes and interfaces that integrate <a
  * href="https://jcp.org/en/jsr/detail?id=907">JTA</a> version 1.2
@@ -22,7 +26,15 @@
  * version 2.0 using <a href="http://narayana.io/">Narayana</a> as the
  * underlying implementation.
  */
+@Feature(value = "JTA",
+        description = "Jakarta transaction API support for Helidon MP",
+        in = HelidonFlavor.MP,
+        path = "JTA"
+)
+@Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.integrations.jta.cdi {
+    requires static io.helidon.common.features.api;
+
     requires jakarta.transaction;
     requires jakarta.annotation;
     requires java.sql;

@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Jaeger tracing support.
  */
+@Feature(value = "Jaeger",
+        description = "Jaeger tracer integration",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Tracing", "Jaeger"}
+)
 module io.helidon.tracing.jaeger {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
     requires io.helidon.tracing;

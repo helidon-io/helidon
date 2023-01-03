@@ -14,13 +14,25 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * WebServer Access log.
  */
+@Feature(value = "Access Log",
+        description = "Access log support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"WebServer", "AccessLog"}
+)
 module io.helidon.nima.webserver.accesslog {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.nima.webserver;
+    requires io.helidon.common.security;
 
     exports io.helidon.nima.webserver.accesslog;
 }

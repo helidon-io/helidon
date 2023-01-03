@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon SE OpenAPI Support.
  */
+@Feature(value = "OpenAPI",
+        description = "Open API support",
+        in = HelidonFlavor.SE,
+        path = "OpenAPI"
+)
 module io.helidon.openapi {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.common;

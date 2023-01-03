@@ -33,8 +33,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.common.Version;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -43,15 +41,21 @@ class LoomServer implements WebServer {
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
 
     private final Map<String, ServerListener> listeners;
-
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
+    private final boolean registerShutdownHook;
+    private volatile Thread shutdownHook;
 
     private volatile List<ListenerFuture> startFutures;
-    private boolean alreadyStarted = false;
+    private volatile boolean alreadyStarted = false;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
+        this.registerShutdownHook = builder.shutdownHook();
+        ServerContextImpl serverContext = new ServerContextImpl(builder.context(),
+                                                                builder.mediaContext(),
+                                                                builder.contentEncodingContext());
+
         List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
 
         Map<String, Router> routers = builder.routers();
@@ -67,9 +71,6 @@ class LoomServer implements WebServer {
             defaultRouter = Router.empty();
         }
 
-        MediaContext mediaContext = builder.mediaContext();
-        ContentEncodingContext contentEncodingContext = builder.contentEncodingContext();
-
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
             if (router == null) {
@@ -84,14 +85,12 @@ class LoomServer implements WebServer {
             }
 
             listeners.put(socketName,
-                          new ServerListener(this,
+                          new ServerListener(serverContext,
                                              connectionProviders,
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers,
-                                             mediaContext,
-                                             contentEncodingContext));
+                                             simpleHandlers));
         }
 
         this.listeners = Map.copyOf(listeners);
@@ -166,6 +165,7 @@ class LoomServer implements WebServer {
         running.set(false);
 
         LOGGER.log(System.Logger.Level.INFO, "Níma server stopped all channels.");
+        deregisterShutdownHook();
     }
 
     private void startIt() {
@@ -179,13 +179,9 @@ class LoomServer implements WebServer {
             }
             return;
         }
-        Runtime.getRuntime()
-                .addShutdownHook(new Thread(() -> {
-                    listeners.values().forEach(ServerListener::stop);
-                    if (startFutures != null) {
-                        startFutures.forEach(future -> future.future().cancel(true));
-                    }
-                }, "shutdown-hook"));
+        if (registerShutdownHook) {
+            registerShutdownHook();
+        }
         now = System.currentTimeMillis() - now;
         long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 
@@ -198,6 +194,24 @@ class LoomServer implements WebServer {
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             System.exit(0);
+        }
+    }
+
+    private void registerShutdownHook() {
+        this.shutdownHook = new Thread(() -> {
+                    listeners.values().forEach(ServerListener::stop);
+                    if (startFutures != null) {
+                        startFutures.forEach(future -> future.future().cancel(true));
+                    }
+                }, "shutdown-hook");
+
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
+    private void deregisterShutdownHook() {
+        if (shutdownHook != null) {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            shutdownHook = null;
         }
     }
 

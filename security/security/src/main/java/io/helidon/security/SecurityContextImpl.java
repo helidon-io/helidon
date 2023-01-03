@@ -280,7 +280,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public boolean atzChecked() {
+    public boolean isAuthorized() {
         return atzChecked.get();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
@@ -38,8 +41,12 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.jms.JMSException;
 import jakarta.jms.TextMessage;
-import org.junit.jupiter.api.Disabled;
+
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @DisableDiscovery
@@ -48,6 +55,8 @@ import org.junit.jupiter.api.Test;
         @AddBean(AbstractSampleBean.Channel1.class),
         @AddBean(AbstractSampleBean.Channel4.class),
         @AddBean(AbstractSampleBean.Channel5.class),
+        @AddBean(AbstractSampleBean.Channel6.class),
+        @AddBean(AbstractSampleBean.Channel7.class),
         @AddBean(AbstractSampleBean.ChannelSelector.class),
         @AddBean(AbstractSampleBean.ChannelError.class),
         @AddBean(AbstractSampleBean.ChannelProcessor.class),
@@ -62,7 +71,7 @@ import org.junit.jupiter.api.Test;
 })
 @AddConfigs({
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.provider.url",
-                value = "vm://localhost?broker.persistent=false"),
+                value = AbstractJmsTest.BROKER_URL),
         @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.factory.initial",
                 value = "org.apache.activemq.jndi.ActiveMQInitialContextFactory"),
 
@@ -78,9 +87,9 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.outgoing.test-channel-3.type", value = "topic"),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-3.destination", value = JmsMpTest.TEST_TOPIC_3),
 
-        @AddConfig(key = "mp.messaging.incoming.test-channel-7.connector", value = JmsConnector.CONNECTOR_NAME),
-        @AddConfig(key = "mp.messaging.incoming.test-channel-7.type", value = "topic"),
-        @AddConfig(key = "mp.messaging.incoming.test-channel-7.destination", value = JmsMpTest.TEST_TOPIC_3),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-31.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-31.type", value = "topic"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-31.destination", value = JmsMpTest.TEST_TOPIC_3),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-error.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.incoming.test-channel-error.type", value = "topic"),
@@ -91,14 +100,24 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.incoming.test-channel-4.destination", value = JmsMpTest.TEST_TOPIC_4),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-5.connector", value = JmsConnector.CONNECTOR_NAME),
-        @AddConfig(key = "mp.messaging.incoming.test-channel-5.type", value = "topic"),
-        @AddConfig(key = "mp.messaging.incoming.test-channel-5.destination", value = JmsMpTest.TEST_TOPIC_5),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-5.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-5.destination", value = JmsMpTest.TEST_QUEUE_5),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-5.nack-dlq", value = JmsMpTest.DLQ_QUEUE),
+
+        @AddConfig(key = "mp.messaging.incoming.test-channel-6.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-6.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-6.destination", value = JmsMpTest.TEST_QUEUE_6),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-6.nack-log-only", value = "true"),
+
+        @AddConfig(key = "mp.messaging.incoming.test-channel-7.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-7.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-7.destination", value = JmsMpTest.TEST_QUEUE_7),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-selector.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.incoming.test-channel-selector.message-selector",
                 value = "source IN ('helidon','voyager')"),
         @AddConfig(key = "mp.messaging.incoming.test-channel-selector.type", value = "topic"),
-        @AddConfig(key = "mp.messaging.incoming.test-channel-selector.destination", value = JmsMpTest.TEST_TOPIC_6),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-selector.destination", value = JmsMpTest.TEST_TOPIC_SELECTOR),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-bytes-fromJms.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.incoming.test-channel-bytes-fromJms.type", value = "queue"),
@@ -140,21 +159,23 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.type", value = "queue"),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.destination", value = JmsMpTest.TEST_TOPIC_DERIVED_2),
 })
-@Disabled("3.0.0-JAKARTA")
 class JmsMpTest extends AbstractMPTest {
 
     static final String TEST_TOPIC_1 = "topic-1";
     static final String TEST_TOPIC_2 = "topic-2";
     static final String TEST_TOPIC_3 = "topic-3";
     static final String TEST_TOPIC_4 = "topic-4";
-    static final String TEST_TOPIC_5 = "topic-5";
-    static final String TEST_TOPIC_6 = "topic-6";
+    static final String TEST_QUEUE_5 = "queue-5";
+    static final String TEST_QUEUE_6 = "queue-6";
+    static final String TEST_TOPIC_SELECTOR = "topic-selector";
+    static final String TEST_QUEUE_7 = "queue-7";
     static final String TEST_TOPIC_BYTES = "topic-bytes";
     static final String TEST_TOPIC_PROPS = "topic-properties";
     static final String TEST_TOPIC_CUST_MAPPER = "topic-cust-mapper";
     static final String TEST_TOPIC_DERIVED_1 = "topic-derived-1";
     static final String TEST_TOPIC_DERIVED_2 = "topic-derived-2";
     static final String TEST_TOPIC_ERROR = "topic-error";
+    static final String DLQ_QUEUE = "DLQ_TOPIC";
 
     @Test
     void messageSelector() {
@@ -166,7 +187,7 @@ class JmsMpTest extends AbstractMPTest {
                 "reliant");
         //configured selector: source IN ('helidon','voyager')
         AbstractSampleBean bean = CDI.current().select(AbstractSampleBean.ChannelSelector.class).get();
-        produceAndCheck(bean, testData, TEST_TOPIC_6, List.of("helidon", "voyager"), this::setSourceProperty);
+        produceAndCheck(bean, testData, TEST_TOPIC_SELECTOR, List.of("helidon", "voyager"), this::setSourceProperty);
     }
 
     private void setSourceProperty(TextMessage m) {
@@ -217,13 +238,60 @@ class JmsMpTest extends AbstractMPTest {
     }
 
     @Test
-    void withBackPressureAndError() {
+    void withBackPressureAndNackKillChannel() {
         List<String> testData = Arrays.asList("2222", "2222");
-        AbstractSampleBean bean = CDI.current().select(AbstractSampleBean.Channel5.class).get();
-        produceAndCheck(bean, testData, TEST_TOPIC_5, testData);
+        AbstractSampleBean bean = CDI.current().select(AbstractSampleBean.Channel7.class).get();
+        produceAndCheck(bean, testData, TEST_QUEUE_7, testData);
         bean.restart();
-        testData = Collections.singletonList("not a number");
-        produceAndCheck(bean, testData, TEST_TOPIC_5, Collections.singletonList("error"));
+        produceAndCheck(bean, List.of("not a number"), TEST_QUEUE_7, Collections.singletonList("error"));
+    }
+
+    @Test
+    void noAckDQL() throws JMSException {
+        List<String> expected = List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        List<String> testData = List.of("0", "1", "2", "3", "4", "5", "not a number!", "6", "7", "8", "9", "10");
+
+
+        AbstractSampleBean.Channel5 channel5 = CDI.current().select(AbstractSampleBean.Channel5.class).get();
+        produceAndCheck(channel5, testData, TEST_QUEUE_5, expected);
+
+        List<TextMessage> dlq = consumeAllCurrent(DLQ_QUEUE)
+                .map(TextMessage.class::cast)
+                .toList();
+
+        assertThat(dlq.stream()
+                .map(tm -> {
+                    try {
+                        return tm.getText();
+                    } catch (JMSException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList(), Matchers.contains("not a number!"));
+        TextMessage textMessage = dlq.get(0);
+        assertThat(textMessage.getStringProperty("dlq-error"), is("java.lang.NumberFormatException"));
+        assertThat(textMessage.getStringProperty("dlq-error-msg"), is("For input string: \"not a number!\""));
+        assertThat(textMessage.getStringProperty("dlq-orig-destination"), is(JmsMpTest.TEST_QUEUE_5));
+    }
+
+    @Test
+    void noAckLogOnly() throws JMSException {
+        Logger nackHandlerLogger = LogManager.getLogManager().getLogger(JmsNackHandler.class.getName());
+        AssertingHandler assertingHandler = new AssertingHandler();
+        nackHandlerLogger.addHandler(assertingHandler);
+        try {
+            List<String> expected = List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+            List<String> testData = expected.stream()
+                    .flatMap(s -> "5".equals(s) ? Stream.of(s, "not a number!") : Stream.of(s))
+                    .toList();
+
+
+            AbstractSampleBean.Channel6 channel6 = CDI.current().select(AbstractSampleBean.Channel6.class).get();
+            produceAndCheck(channel6, testData, TEST_QUEUE_6, expected);
+            assertingHandler.assertLogMessageLogged("NACKED Message ignored\nchannel: test-channel-6\n");
+        } finally {
+            nackHandlerLogger.removeHandler(assertingHandler);
+        }
     }
 
     @Test

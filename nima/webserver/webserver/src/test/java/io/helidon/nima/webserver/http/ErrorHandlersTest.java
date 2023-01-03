@@ -96,7 +96,7 @@ class ErrorHandlersTest {
 
     @ParameterizedTest
     @MethodSource("testData")
-    void testHandleFound(TestData testData) {
+    void testHandlerFound(TestData testData) {
         ErrorHandlers handlers = testData.handlers();
 
         assertAll(
@@ -120,11 +120,13 @@ class ErrorHandlersTest {
     }
 
     private void testNoHandler(ErrorHandlers handlers, Exception e, String message) {
-        ServerRequest req = mock(ServerRequest.class);
-        ServerResponse res = mock(ServerResponse.class);
         ConnectionContext ctx = mock(ConnectionContext.class);
+        RoutingRequest req = mock(RoutingRequest.class);
+        RoutingResponse res = mock(RoutingResponse.class);
+        when(res.reset()).thenReturn(true);
 
-        when(req.prologue()).thenReturn(HttpPrologue.create("http",
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
+                                                            "http",
                                                             "1.0",
                                                             Http.Method.GET,
                                                             UriPath.create("/"),
@@ -147,9 +149,10 @@ class ErrorHandlersTest {
     }
 
     private void testHandler(ErrorHandlers handlers, Exception e, String message) {
-        ServerRequest req = mock(ServerRequest.class);
-        ServerResponse res = mock(ServerResponse.class);
         ConnectionContext ctx = mock(ConnectionContext.class);
+        RoutingRequest req = mock(RoutingRequest.class);
+        RoutingResponse res = mock(RoutingResponse.class);
+        when(res.reset()).thenReturn(true);
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;

@@ -27,6 +27,8 @@ package io.helidon.nima.webserver.http;
 public interface ErrorHandler<T extends Throwable> {
     /**
      * Error handling consumer.
+     * Do not throw an exception from an error handler, it would make this error handler invalid and the exception would be
+     * ignored.
      *
      * @param req the server request
      * @param res the server response

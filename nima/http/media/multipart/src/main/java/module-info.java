@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.http.media.multipart.MultiPartSupportProvider;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
  * Multipart media support.
  */
+@Feature(value = "Multipart",
+        description = "Multipart media support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Media", "Multipart"}
+)
 module io.helidon.nima.http.media.multipart {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common.http;
     requires io.helidon.nima.http.media;
     requires io.helidon.common.buffers;

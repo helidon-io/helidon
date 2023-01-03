@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Media MultiPart support classes.
  */
+@Feature(value = "Multi-part",
+        description = "Media support for Multi-part entities",
+        in = HelidonFlavor.SE,
+        path = {"Media", "Multipart"}
+)
 module io.helidon.reactive.media.multipart {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;

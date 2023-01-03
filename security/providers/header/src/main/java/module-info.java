@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Header based authentication provider.
  */
+@Feature(value = "Header",
+        description = "Security provider for header based authentication",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "Header"}
+)
 module io.helidon.security.providers.header {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.security;

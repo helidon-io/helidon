@@ -22,11 +22,11 @@
  * // Web server routing builder - this is our integration point
  * {@link io.helidon.nima.webserver.http.HttpRouting} routing = HttpRouting.builder()
  * // register the WebSecurity to create context (shared by all routes)
- * .register({@link io.helidon.security.integration.nima.WebSecurity}.{@link
- * io.helidon.security.integration.nima.WebSecurity#create(io.helidon.security.Security) from(security)})
+ * .register({@link io.helidon.security.integration.nima.SecurityFeature}.{@link
+ * io.helidon.security.integration.nima.SecurityFeature#create(io.helidon.security.Security) from(security)})
  * // authenticate all paths under /user and require role "user"
- * .get("/user[/{*}]", WebSecurity.{@link io.helidon.security.integration.nima.WebSecurity#authenticate() authenticate()}
- * .{@link io.helidon.security.integration.nima.WebSecurity#rolesAllowed(java.lang.String...) rolesAllowed("user")})
+ * .get("/user[/{*}]", WebSecurity.{@link io.helidon.security.integration.nima.SecurityFeature#authenticate() authenticate()}
+ * .{@link io.helidon.security.integration.nima.SecurityFeature#rolesAllowed(java.lang.String...) rolesAllowed("user")})
  * // authenticate "/admin" path and require role "admin"
  * .get("/admin", WebSecurity.rolesAllowed("admin")
  * .authenticate()
@@ -36,13 +36,13 @@
  * </pre>
  *
  * <p>
- * The main security methods are duplicate - first as static methods on {@link io.helidon.security.integration.nima.WebSecurity} and
+ * The main security methods are duplicate - first as static methods on {@link io.helidon.security.integration.nima.SecurityFeature} and
  * then as instance methods on {@link io.helidon.security.integration.nima.SecurityHandler} that is returned by the static methods
- * above. This is to provide a single starting point for security integration ({@link io.helidon.security.integration.nima.WebSecurity})
+ * above. This is to provide a single starting point for security integration ({@link io.helidon.security.integration.nima.SecurityFeature})
  * and fluent API to build the "gate" to each route that is protected.
  *
- * @see io.helidon.security.integration.nima.WebSecurity#create(io.helidon.security.Security)
- * @see io.helidon.security.integration.nima.WebSecurity#create(io.helidon.config.Config)
- * @see io.helidon.security.integration.nima.WebSecurity#create(io.helidon.security.Security, io.helidon.config.Config)
+ * @see io.helidon.security.integration.nima.SecurityFeature#create(io.helidon.security.Security)
+ * @see io.helidon.security.integration.nima.SecurityFeature#create(io.helidon.config.Config)
+ * @see io.helidon.security.integration.nima.SecurityFeature#create(io.helidon.security.Security, io.helidon.config.Config)
  */
 package io.helidon.security.integration.nima;

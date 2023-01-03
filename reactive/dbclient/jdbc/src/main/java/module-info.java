@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.dbclient.jdbc.JdbcDbClientProvider;
 import io.helidon.reactive.dbclient.jdbc.spi.HikariCpExtensionProvider;
 import io.helidon.reactive.dbclient.spi.DbClientProvider;
@@ -21,7 +24,15 @@ import io.helidon.reactive.dbclient.spi.DbClientProvider;
 /**
  * Helidon Common Mapper.
  */
+@Feature(value = "JDBC",
+        description = "Reactive database client over JDBC",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "JDBC"}
+)
+@Aot(description = "Tested with Helidon Oracle and H2 drivers (see examples)")
 module io.helidon.reactive.dbclient.jdbc {
+    requires static io.helidon.common.features.api;
+
     uses HikariCpExtensionProvider;
     requires java.logging;
     requires java.sql;

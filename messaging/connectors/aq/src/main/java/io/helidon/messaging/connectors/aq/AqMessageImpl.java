@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class AqMessageImpl<T> implements AqMessage<T> {
         if (jakartaSession == null) {
             this.session = null;
         } else {
-            this.session = ((JakartaSession) jakartaSession).unwrap(AQjmsSession.class);
+            this.session = ((JakartaSession<AQjmsSession>) jakartaSession).unwrap();
         }
     }
 

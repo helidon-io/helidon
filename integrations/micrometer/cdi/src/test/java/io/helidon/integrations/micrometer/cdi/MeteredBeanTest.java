@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,22 +43,26 @@ public class MeteredBeanTest {
     public void testSimpleCounted() {
         int exp = 3;
         IntStream.range(0, exp).forEach(i -> meteredBean.count());
-        assertThat("Value from simple counted meter", registry.counter(MeteredBean.COUNTED).count(), is((double) exp));
+        assertThatWithRetry("Value from simple counted meter", () -> registry.counter(MeteredBean.COUNTED).count(),
+                            is((double) exp));
     }
 
     @Test
     public void testSinglyTimed() {
         int exp = 4;
         IntStream.range(0, exp).forEach(i -> meteredBean.timed());
-        assertThat("Count from singly-timed meter", registry.timer(MeteredBean.TIMED_1).count(), is((long) exp));
+        assertThatWithRetry("Count from singly-timed meter", () -> registry.timer(MeteredBean.TIMED_1).count(),
+                            is((long) exp));
     }
 
     @Test
     public void testDoublyTimed() {
         int exp = 5;
         IntStream.range(0, exp).forEach(i -> meteredBean.timedA());
-        assertThat("Count from doubly-timed meter (A)", registry.timer(MeteredBean.TIMED_A).count(), is((long) exp));
-        assertThat("Count from doubly-timed meter (B)", registry.timer(MeteredBean.TIMED_B).count(), is((long) exp));
+        assertThatWithRetry("Count from doubly-timed meter (A)", () -> registry.timer(MeteredBean.TIMED_A).count(),
+                            is((long) exp));
+        assertThatWithRetry("Count from doubly-timed meter (B)", () -> registry.timer(MeteredBean.TIMED_B).count(),
+                            is((long) exp));
     }
 
     @Test
@@ -67,7 +72,8 @@ public class MeteredBeanTest {
         IntStream.range(0, OKCalls).forEach(i -> meteredBean.failable(false));
         IntStream.range(0, expFailed).forEach(i -> assertThrows(RuntimeException.class,
                 () -> meteredBean.failable(true)));
-        assertThat("Count from failed calls", registry.counter(MeteredBean.COUNTED_ONLY_FOR_FAILURE).count(),
-                is((double) expFailed));
+        assertThatWithRetry("Count from failed calls",
+                            () -> registry.counter(MeteredBean.COUNTED_ONLY_FOR_FAILURE).count(),
+                            is((double) expFailed));
     }
 }

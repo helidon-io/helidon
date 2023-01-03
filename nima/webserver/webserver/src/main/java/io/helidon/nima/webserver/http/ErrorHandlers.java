@@ -66,9 +66,15 @@ public final class ErrorHandlers {
      * @param response HTTP server response
      * @param task     task to execute
      */
-    public void runWithErrorHandling(ConnectionContext ctx, ServerRequest request, ServerResponse response, Callable<Void> task) {
+    public void runWithErrorHandling(ConnectionContext ctx,
+                                     RoutingRequest request,
+                                     RoutingResponse response,
+                                     Callable<Void> task) {
         try {
             task.call();
+            if (response.hasEntity()) {
+                response.commit();
+            }
         } catch (CloseConnectionException | UncheckedIOException e) {
             // these errors must "bubble up"
             throw e;
@@ -107,8 +113,6 @@ public final class ErrorHandlers {
             } else {
                 handleError(ctx, request, response, exception, errorHandler);
             }
-        } catch (HttpException e) {
-            handleError(ctx, request, response, e);
         } catch (RuntimeException e) {
             handleError(ctx, request, response, e);
         } catch (Exception e) {
@@ -141,11 +145,13 @@ public final class ErrorHandlers {
 
     private void handleRequestException(ConnectionContext ctx,
                                         ServerRequest request,
-                                        ServerResponse response,
+                                        RoutingResponse response,
                                         RequestException e) {
-        if (response.isSent()) {
+        if (!response.reset()) {
             ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed: " + request.prologue()
                     + ", cannot send error response, as response already sent", e);
+            throw new CloseConnectionException(
+                    "Cannot send response of an error handler, status and headers already written");
         }
         boolean keepAlive = e.keepAlive();
         if (keepAlive && !request.content().consumed()) {
@@ -157,43 +163,49 @@ public final class ErrorHandlers {
             }
         }
         ctx.directHandlers().handle(e, response, keepAlive);
+        response.commit();
     }
 
-    private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
+    private void handleError(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Throwable e) {
         errorHandler(e.getClass())
                 .ifPresentOrElse(it -> handleError(ctx, request, response, e, (ErrorHandler<Throwable>) it),
                                  () -> unhandledError(ctx, request, response, e));
     }
 
-    private void unhandledError(ConnectionContext ctx, ServerRequest request, ServerResponse response, Throwable e) {
-        // to be handled by error handler
-        handleRequestException(ctx, request, response, RequestException.builder()
-                .cause(e)
-                .type(DirectHandler.EventType.INTERNAL_ERROR)
-                .message(e.getMessage())
-                .request(DirectTransportRequest.create(request.prologue(), request.headers()))
-                .build());
-    }
-
-    private void handleError(ConnectionContext ctx, ServerRequest request, ServerResponse response, HttpException e) {
-        // to be handled by error handler
-        handleRequestException(ctx, request, response, RequestException.builder()
-                .cause(e)
-                .type(DirectHandler.EventType.OTHER)
-                .message(e.getMessage())
-                .status(e.status())
-                .setKeepAlive(e.keepAlive())
-                .request(DirectTransportRequest.create(request.prologue(), request.headers()))
-                .build());
+    private void unhandledError(ConnectionContext ctx, ServerRequest request, RoutingResponse response, Throwable e) {
+        if (e instanceof HttpException httpException) {
+            handleRequestException(ctx, request, response, RequestException.builder()
+                    .cause(e)
+                    .type(DirectHandler.EventType.OTHER)
+                    .message(e.getMessage())
+                    .status(httpException.status())
+                    .setKeepAlive(httpException.keepAlive())
+                    .request(DirectTransportRequest.create(request.prologue(), request.headers()))
+                    .build());
+        } else {
+            // to be handled by error handler
+            handleRequestException(ctx, request, response, RequestException.builder()
+                    .cause(e)
+                    .type(DirectHandler.EventType.INTERNAL_ERROR)
+                    .message(e.getMessage())
+                    .request(DirectTransportRequest.create(request.prologue(), request.headers()))
+                    .build());
+        }
     }
 
     private void handleError(ConnectionContext ctx,
-                             ServerRequest request,
-                             ServerResponse response,
+                             RoutingRequest request,
+                             RoutingResponse response,
                              Throwable e,
                              ErrorHandler<Throwable> it) {
+        if (!response.reset()) {
+            ctx.log(LOGGER, System.Logger.Level.WARNING, "Unable to reset response for error handler.");
+            throw new CloseConnectionException(
+                    "Cannot send response of a simple handler, status and headers already written");
+        }
         try {
             it.handle(request, response, e);
+            response.commit();
         } catch (Exception ex) {
             ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to handle exception.", ex);
             unhandledError(ctx, request, response, e);

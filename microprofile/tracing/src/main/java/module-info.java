@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Eclipse Microprofile Tracing implementation for helidon microprofile.
  *
  * @see org.eclipse.microprofile.opentracing
  */
+@Feature(value = "Tracing",
+        description = "MicroProfile tracing spec implementation",
+        in = HelidonFlavor.MP,
+        path = "Tracing"
+)
 module io.helidon.microprofile.tracing {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.annotation;
 
@@ -36,6 +46,7 @@ module io.helidon.microprofile.tracing {
     requires io.helidon.common;
     requires io.helidon.nima.webserver;
     requires io.helidon.jersey.common;
+    requires io.helidon.nima.webserver.tracing;
     requires transitive io.helidon.tracing;
     requires transitive io.helidon.tracing.jersey;
     requires io.helidon.tracing.tracerresolver;

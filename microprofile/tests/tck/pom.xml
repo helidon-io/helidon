@@ -33,8 +33,7 @@
     <modules>
         <module>tck-config</module>
         <module>tck-health</module>
-        <!-- TODO:Níma - fails for now, requires analysis -->
-<!--        <module>tck-metrics</module>-->
+        <module>tck-metrics</module>
         <module>tck-messaging</module>
         <module>tck-graphql</module>
         <!-- TODO:Java19 - fails
@@ -43,9 +42,7 @@
         <module>tck-jwt-auth</module>
         -->
         <module>tck-openapi</module>
-        <!-- TODO:Níma - fails for now, requires analysis (duplicate request scope in Jersey, probably related)
-        to injection managers -->
-<!--        <module>tck-opentracing</module>-->
+        <module>tck-opentracing</module>
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
         <!-- TODO:Níma - fails for now, requires analysis -->

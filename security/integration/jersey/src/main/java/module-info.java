@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Security integration with Jersey.
  */
+@Feature(value = "Jersey",
+        description = "Security integration with Jersey (JAX-RS implementation)",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
+        path = {"Security", "Integration", "Jersey"}
+)
 module io.helidon.security.integration.jersey {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.annotation;
 

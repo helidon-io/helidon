@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * WebSocket server support.
  */
+@Feature(value = "WebSocket",
+        description = "WebSocket server support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"WebSocket", "WebServer"}
+)
 module io.helidon.nima.websocket.webserver {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.socket;

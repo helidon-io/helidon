@@ -67,7 +67,7 @@ public class PreMatchingBindingTest {
         server = WebServer.create(Routing.builder()
                 .register(JerseySupport.builder()
                                   .register(MyResource.class)
-                                  .register(new SecurityFeature(Security.create(config.get("security"))))
+                                  .register(new JerseySecurityFeature(Security.create(config.get("security"))))
                                   .register(new ExceptionMapper<Exception>() {
                                       @Override
                                       public Response toResponse(Exception exception) {

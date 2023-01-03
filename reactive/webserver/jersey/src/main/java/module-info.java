@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.webserver.jersey.HelidonHK2InjectionManagerFactory;
 
 import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
@@ -21,7 +24,14 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
 /**
  * Jersey integration.
  */
+@Feature(value = "Jersey",
+        description = "WebServer integration with Jersey",
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "Jersey"}
+)
 module io.helidon.reactive.webserver.jersey {
+    requires static io.helidon.common.features.api;
+
     requires transitive jakarta.annotation;
     requires transitive io.helidon.reactive.webserver;
     requires transitive jakarta.ws.rs;

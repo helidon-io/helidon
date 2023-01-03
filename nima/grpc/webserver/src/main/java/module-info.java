@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
 import io.helidon.nima.grpc.webserver.GrpcProtocolProvider;
 
 /**
  * Helidon Níma gRPC server.
  */
+@Preview
+@Feature(value = "GRPC",
+        description = "gRPC Support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"GRPC", "WebServer"}
+)
 module io.helidon.nima.grpc.server {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.nima.http2.webserver;

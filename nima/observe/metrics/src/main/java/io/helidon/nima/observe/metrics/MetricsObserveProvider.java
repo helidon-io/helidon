@@ -52,7 +52,7 @@ public class MetricsObserveProvider implements ObserveProvider {
 
     /**
      * Create using a configured observer.
-     * In this case configuration provided by the {@link io.helidon.nima.observe.ObserveSupport} is ignored except for
+     * In this case configuration provided by the {@link io.helidon.nima.observe.ObserveFeature} is ignored except for
      * the reserved option {@code endpoint}).
      *
      * @param service service to use

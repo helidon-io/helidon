@@ -18,7 +18,7 @@ package io.helidon.pico;
 
 import java.util.Set;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Aggregates the set of {@link InjectionPointInfo}'s that are dependent upon a specific and common

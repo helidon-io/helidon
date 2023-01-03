@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon health checks.
  */
+@Feature(value = "Built-ins",
+        description = "Built in health checks",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"Health", "Builtins"}
+)
 module io.helidon.health.checks {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires java.management;
 

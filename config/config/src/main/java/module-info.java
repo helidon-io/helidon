@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.config.PropertiesConfigParser;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon SE Config module.
  *
  * @see io.helidon.config
  */
+@Feature(value = "Config",
+        description = "Configuration module",
+        in = {HelidonFlavor.NIMA, HelidonFlavor.SE}
+)
 module io.helidon.config {
 
     requires java.logging;
@@ -30,6 +35,9 @@ module io.helidon.config {
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.media.type;
+
+    requires static io.helidon.common.features.api;
+
 
     exports io.helidon.config;
     exports io.helidon.config.spi;
@@ -43,7 +51,8 @@ module io.helidon.config {
     uses io.helidon.config.spi.PollingStrategyProvider;
     uses io.helidon.config.spi.ChangeWatcherProvider;
 
-    provides io.helidon.config.spi.ConfigParser with PropertiesConfigParser;
+    provides io.helidon.config.spi.ConfigParser
+            with io.helidon.config.PropertiesConfigParser;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;

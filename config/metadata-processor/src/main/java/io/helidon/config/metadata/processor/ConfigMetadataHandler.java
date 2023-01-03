@@ -109,7 +109,10 @@ class ConfigMetadataHandler {
 
         // get the types
         configuredElement = elementUtils.getTypeElement(CONFIGURED_CLASS);
-        builderType = elementUtils.getTypeElement("io.helidon.common.Builder").asType();
+        TypeElement builderTypeElement = elementUtils.getTypeElement("io.helidon.common.Builder");
+        if (builderTypeElement != null) {
+            builderType = builderTypeElement.asType();
+        }
         TypeElement configTypeElement = elementUtils.getTypeElement("io.helidon.config.Config");
         if (configTypeElement != null) {
             configType = configTypeElement.asType();
@@ -728,7 +731,9 @@ class ConfigMetadataHandler {
 
     /*
     Method name is camel case (such as maxInitialLineLength)
-    result is dash separated and lower cased (such as max-initial-line-length)
+    result is dash separated and lower cased (such as max-initial-line-length).
+    Note that this same method was created in ConfigUtils in common-config, but since this
+    module should not have any dependencies in it a copy was left here as well.
      */
     String toConfigKey(String methodName) {
         StringBuilder result = new StringBuilder(methodName.length() + 5);

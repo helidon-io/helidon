@@ -62,6 +62,13 @@ public interface ReadableEntity {
     <T> T as(GenericType<T> type);
 
     /**
+     * Whether an entity actually exists.
+     *
+     * @return {@code true} if an entity exists and can be read
+     */
+    boolean hasEntity();
+
+    /**
      * Whether this entity has been consumed already.
      *
      * @return {@code true} if the entity is already consumed; a consumed entity cannot be consumed again

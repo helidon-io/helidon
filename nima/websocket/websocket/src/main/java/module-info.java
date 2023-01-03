@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * WebSocket APIs.
  */
+@Feature(value = "WebSocket",
+        description = "WebSocket APIs",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = "WebSocket"
+)
 module io.helidon.nima.websocket {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.http;
 

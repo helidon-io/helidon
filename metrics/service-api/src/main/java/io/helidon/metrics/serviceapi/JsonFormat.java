@@ -160,7 +160,13 @@ public final class JsonFormat {
         return toJson(JsonFormat::jsonMeta, registries);
     }
 
-    private static JsonObject jsonMeta(Registry registry) {
+    /**
+     * Create JSON metric metadata response for a single registry.
+     *
+     * @param registry registry to use
+     * @return JSON with all metadata for metrics in the specified registry
+     */
+    public static JsonObject jsonMeta(Registry registry) {
         return toJson((builder, entry) -> {
             MetricID metricID = entry.id();
             HelidonMetric metric = entry.metric();

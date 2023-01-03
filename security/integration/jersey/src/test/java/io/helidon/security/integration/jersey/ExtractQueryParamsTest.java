@@ -53,7 +53,7 @@ public class ExtractQueryParamsTest {
     public static void initClass() throws Throwable {
         Config config = Config.create();
         Security security = Security.create(config.get("security"));
-        SecurityFeature feature = SecurityFeature.builder(security)
+        JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                 .config(config.get("security.jersey"))
                 .build();
 

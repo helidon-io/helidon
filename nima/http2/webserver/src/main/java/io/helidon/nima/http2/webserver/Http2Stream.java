@@ -217,14 +217,11 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()), flowControl);
             return;
         }
-        expectedLength -= header.length();
+        if (expectedLength != -1) {
+            expectedLength -= header.length();
+        }
         try {
             inboundData.put(new DataFrame(header, data));
-            // TODO this is a race condition
-            //            if (Http2FrameTypes.DATA.flags(header.flags())
-            //                    .endOfStream()) {
-            //                state = Http2StreamState.HALF_CLOSED_REMOTE;
-            //            }
         } catch (InterruptedException e) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
         }
@@ -261,10 +258,10 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                  + ctx.childSocketId() + " ] - " + streamId);
         try {
             handle();
-        } catch (SocketWriterException e) {
-            throw new CloseConnectionException(e.getMessage(), e);
-        } catch (CloseConnectionException | UncheckedIOException e) {
-            throw e;
+        } catch (SocketWriterException | CloseConnectionException | UncheckedIOException e) {
+            Http2RstStream rst = new Http2RstStream(Http2ErrorCode.STREAM_CLOSED);
+            writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()), flowControl);
+            // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
             DirectHandler handler = ctx.directHandlers().handler(e.eventType());
             DirectHandler.TransportResponse response = handler.handle(e.request(),
@@ -367,6 +364,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             //            }
             ContentDecoder decoder = ContentDecoder.NO_OP;
             Http2ServerRequest request = Http2ServerRequest.create(ctx,
+                                                                   routing.security(),
                                                                    prologue,
                                                                    headers,
                                                                    decoder,

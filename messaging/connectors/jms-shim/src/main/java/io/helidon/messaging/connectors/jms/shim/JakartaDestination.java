@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,20 @@ import jakarta.jms.Destination;
 /**
  * Exposes Jakarta API, delegates to javax API.
  */
-class JakartaDestination<T extends javax.jms.Destination> implements Destination {
+class JakartaDestination<T extends javax.jms.Destination> implements Destination, JakartaWrapper<T> {
     private final T delegate;
 
     JakartaDestination(T delegate) {
         this.delegate = delegate;
     }
 
-    T unwrap() {
+    @Override
+    public T unwrap() {
         return delegate;
+    }
+
+    @Override
+    public String toString() {
+        return delegate.toString();
     }
 }

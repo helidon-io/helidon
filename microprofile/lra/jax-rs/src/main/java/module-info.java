@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Helidon implementation of MicroProfile Long Running Actions.
  *
  * @see org.eclipse.microprofile.lra
  */
+@Preview
+@Feature(value = "Long Running Actions",
+        description = "MicroProfile Long Running Actions",
+        in = HelidonFlavor.MP,
+        path = "LRA"
+)
 module io.helidon.microprofile.lra {
+    requires static io.helidon.common.features.api;
+
     requires jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.ws.rs;

@@ -65,7 +65,6 @@
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
-        <version.lib.netty.tcnative>2.0.52.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
@@ -101,7 +100,7 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>3.0.0</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>3.0.3</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.1.0</version.plugin.jandex>
@@ -118,7 +117,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>7.2.1</version.plugin.dependency-check>
+        <version.plugin.dependency-check>7.4.1</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -200,8 +199,8 @@
         <module>reactive</module>
         <module>cors</module>
         <module>pico</module>
+        <module>builder</module>
     </modules>
-
 
 
     <build>
@@ -955,11 +954,6 @@
                 <groupId>com.xebialabs.restito</groupId>
                 <artifactId>restito</artifactId>
                 <version>${version.lib.restito}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative-boringssl-static</artifactId>
-                <version>${version.lib.netty.tcnative}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>

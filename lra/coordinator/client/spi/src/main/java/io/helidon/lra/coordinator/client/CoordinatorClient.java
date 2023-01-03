@@ -17,6 +17,7 @@
 package io.helidon.lra.coordinator.client;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -59,8 +60,20 @@ public interface CoordinatorClient {
      * @param coordinatorUriSupplier url of the coordinator
      * @param timeout                general timeout for coordinator calls
      * @param timeoutUnit            timeout unit for coordinator calls
+     * @deprecated use {@link #init(Supplier, Duration)} instead
      */
-    void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit);
+    @Deprecated(forRemoval = true, since = "4.0.0")
+    default void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit){
+        init(coordinatorUriSupplier, Duration.ofMillis(timeoutUnit.toMillis(timeout)));
+    }
+
+    /**
+     * Initialization of the properties provided by LRA client.
+     *
+     * @param coordinatorUriSupplier url of the coordinator
+     * @param timeout                general timeout for coordinator calls
+     */
+    void init(Supplier<URI> coordinatorUriSupplier, Duration timeout);
 
     /**
      * Ask coordinator to start new LRA and return its id.

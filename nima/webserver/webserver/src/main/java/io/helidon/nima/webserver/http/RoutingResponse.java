@@ -55,4 +55,19 @@ public interface RoutingResponse extends ServerResponse {
      * @return whether has entity
      */
     boolean hasEntity();
+
+    /**
+     * Return true if the underlying response buffers and headers can be reset and a new response can be sent.
+     *
+     * @return {@code true} if reset was successful and a new response can be created instead of the existing one,
+     *      {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
+     */
+    boolean reset();
+
+    /**
+     * Commit the response. This is mostly useful for output stream based responses, where we may want to delay
+     * closing the output stream to handle errors, when route uses try with resources.
+     * After this method is called, response cannot be {@link #reset()}.
+     */
+    void commit();
 }

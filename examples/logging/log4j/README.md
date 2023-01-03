@@ -26,7 +26,7 @@ Expected output should be similar to the following:
 15:44:48.596 INFO  [main] io.helidon.examples.logging.log4j.Main - Starting up "startup"
 15:44:48.598 INFO  [main] io.helidon.examples.logging.log4j.Main - Using JUL logger "startup"
 15:44:48.600 INFO  [pool-2-thread-1] io.helidon.examples.logging.log4j.Main - Running on another thread "propagated"
-15:44:48.704 INFO  [features-thread] io.helidon.common.HelidonFeatures - Helidon SE 2.2.0 features: [Config, WebServer] ""
+15:44:48.704 INFO  [features-thread] io.helidon.common.features.HelidonFeatures - Helidon SE 2.2.0 features: [Config, WebServer] ""
 15:44:48.801 INFO  [nioEventLoopGroup-2-1] io.helidon.reactive.webserver.NettyWebServer - Channel '@default' started: [id: 0xa215c23d, L:/0:0:0:0:0:0:0:0:8080] ""
 ```
 

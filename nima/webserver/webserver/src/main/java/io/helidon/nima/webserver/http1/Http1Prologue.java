@@ -144,7 +144,8 @@ public final class Http1Prologue {
         }
 
         try {
-            return HttpPrologue.create("HTTP",
+            return HttpPrologue.create(protocol,
+                                       "HTTP",
                                        "1.1",
                                        method,
                                        path,

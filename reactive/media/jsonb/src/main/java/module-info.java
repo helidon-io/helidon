@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.media.common.spi.MediaSupportProvider;
 import io.helidon.reactive.media.jsonb.JsonbProvider;
 import io.helidon.reactive.media.jsonb.JsonbSupport;
@@ -23,7 +25,13 @@ import io.helidon.reactive.media.jsonb.JsonbSupport;
  *
  * @see JsonbSupport
  */
+@Feature(value = "JSON-B",
+        description = "Media support for Jakarta JSON Binding",
+        in = HelidonFlavor.SE,
+        path = {"Media", "Jsonb"}
+)
 module io.helidon.reactive.media.jsonb {
+    requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
     requires io.helidon.common.http;

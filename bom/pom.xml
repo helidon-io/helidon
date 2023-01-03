@@ -672,6 +672,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
@@ -684,6 +689,21 @@
             <dependency>
                 <groupId>io.helidon.reactive.service-common</groupId>
                 <artifactId>helidon-reactive-service-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -1137,6 +1157,11 @@
                 <artifactId>helidon-messaging-aq</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.wls-jms</groupId>
+                <artifactId>helidon-messaging-wls-jms</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>
@@ -1371,6 +1396,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.observe</groupId>
+                <artifactId>helidon-nima-observe-log</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.webserver</groupId>
                 <artifactId>helidon-nima-webserver-tracing</artifactId>
                 <version>${helidon.version}</version>
@@ -1391,7 +1421,29 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Pico -->
+            <!-- Builder -->
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-processor-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-processor-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Pico Core -->
             <dependency>
                 <groupId>io.helidon.pico</groupId>
                 <artifactId>helidon-pico</artifactId>
@@ -1402,28 +1454,24 @@
                 <artifactId>helidon-pico-types</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-tools</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
-            <!-- Pico Builder -->
+            <!-- Pico Config Builder -->
             <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder</artifactId>
+                <groupId>io.helidon.pico.builder.config</groupId>
+                <artifactId>helidon-pico-builder-config</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-processor-spi</artifactId>
+                <groupId>io.helidon.pico.builder.config</groupId>
+                <artifactId>helidon-pico-builder-config-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-processor-tools</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.pico.builder</groupId>
-                <artifactId>helidon-pico-builder-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
+
 
         </dependencies>
     </dependencyManagement>

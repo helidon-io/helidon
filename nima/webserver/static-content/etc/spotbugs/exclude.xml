@@ -33,4 +33,10 @@
         <Class name="io.helidon.nima.webserver.staticcontent.ClassPathContentHandler"/>
         <Bug pattern="URLCONNECTION_SSRF_FD"/>
     </Match>
+
+    <Match>
+        <!-- URL is obtained from classloader for a resource on classpath and then used to read it -->
+        <Class name="io.helidon.nima.webserver.staticcontent.CachedHandlerUrlStream"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
 </FindBugsFilter>

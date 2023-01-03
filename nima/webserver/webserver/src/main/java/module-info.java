@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
@@ -21,6 +23,10 @@ import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 /**
  * Loom based WebServer.
  */
+@Feature(value = "WebServer",
+        description = "Nima Web Server",
+        invalidIn = HelidonFlavor.SE
+)
 module io.helidon.nima.webserver {
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.socket;
@@ -29,12 +35,14 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.nima.common.tls;
     requires transitive io.helidon.config;
     requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
 
     requires java.management;
 
     requires jakarta.annotation;
     requires io.helidon.common.uri;
+    requires static io.helidon.common.features.api;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use

@@ -136,10 +136,6 @@ class JaxRsService implements HttpService {
         rules.any(this::handle);
     }
 
-    private void handle(ServerRequest req, ServerResponse res) {
-        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
-    }
-
     @Override
     public void beforeStart() {
         appHandler.onStartup(container);
@@ -187,14 +183,20 @@ class JaxRsService implements HttpService {
         return URI.create(uri);
     }
 
+    private void handle(ServerRequest req, ServerResponse res) {
+        Contexts.runInContext(req.context(), () -> doHandle(req.context(), req, res));
+    }
+
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
         URI baseUri = baseUri(req);
         URI requestUri;
 
+        String rawPath = req.path().rawPath();
+        rawPath = rawPath.startsWith("/") ? rawPath.substring(1) : rawPath;
         if (req.query().isEmpty()) {
-            requestUri = baseUri.resolve(req.path().rawPath());
+            requestUri = baseUri.resolve(rawPath);
         } else {
-            requestUri = baseUri.resolve(req.path().rawPath() + "?" + req.query().rawValue());
+            requestUri = baseUri.resolve(rawPath + "?" + req.query().rawValue());
         }
 
         ContainerRequest requestContext = new ContainerRequest(baseUri,
@@ -328,7 +330,7 @@ class JaxRsService implements HttpService {
             if (contentLength > 0) {
                 res.header(Header.create(Header.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
-            this.outputStream = res.outputStream();
+            this.outputStream = new NoFlushOutputStream(res.outputStream());
             return outputStream;
         }
 
@@ -347,14 +349,16 @@ class JaxRsService implements HttpService {
 
         @Override
         public void commit() {
-            if (outputStream != null) {
-                try {
+            try {
+                if (outputStream == null) {
+                    res.outputStream().close();
+                } else {
                     outputStream.close();
-                    cdl.countDown();
-                } catch (IOException e) {
-                    cdl.countDown();
-                    throw new UncheckedIOException(e);
                 }
+                cdl.countDown();
+            } catch (IOException e) {
+                cdl.countDown();
+                throw new UncheckedIOException(e);
             }
         }
 
@@ -380,6 +384,39 @@ class JaxRsService implements HttpService {
             } catch (InterruptedException e) {
                 throw new RuntimeException("Failed to wait for Jersey to write response");
             }
+        }
+    }
+
+    private static class NoFlushOutputStream extends OutputStream {
+        private final OutputStream delegate;
+
+        private NoFlushOutputStream(OutputStream delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            delegate.write(b, off, len);
+        }
+
+        @Override
+        public void flush() {
+            // intentional no-op, flush did not work nicely with Jersey
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            delegate.write(b);
         }
     }
 }

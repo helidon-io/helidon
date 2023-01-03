@@ -26,7 +26,7 @@ import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 import io.helidon.reactive.webserver.jersey.JerseySupport;
 import io.helidon.security.Security;
-import io.helidon.security.integration.jersey.SecurityFeature;
+import io.helidon.security.integration.jersey.JerseySecurityFeature;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -74,7 +74,7 @@ public class HttpAuthProviderConfigTest {
         server = WebServer.create(Routing.builder()
                 .register(JerseySupport.builder()
                                   .register(TestResource.class)
-                                  .register(SecurityFeature.builder(security).authorizeAnnotatedOnly(true).build())
+                                  .register(JerseySecurityFeature.builder(security).authorizeAnnotatedOnly(true).build())
                                   .register(new ExceptionMapper<Exception>() {
                                       @Override
                                       public Response toResponse(Exception exception) {

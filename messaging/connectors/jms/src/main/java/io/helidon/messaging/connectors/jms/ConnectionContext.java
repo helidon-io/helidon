@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import javax.naming.NamingException;
 
 import io.helidon.config.Config;
 import io.helidon.messaging.MessagingException;
+import io.helidon.messaging.connectors.jms.shim.JakartaJms;
 
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
@@ -87,11 +88,13 @@ public class ConnectionContext {
     }
 
     Optional<? extends ConnectionFactory> lookupFactory(String jndi) {
-        return Optional.ofNullable((ConnectionFactory) lookup(jndi));
+        return Optional.ofNullable(lookup(jndi))
+                .map(o -> JakartaJms.resolve(o, ConnectionFactory.class));
     }
 
     Optional<? extends Destination> lookupDestination(String jndi) {
-        return Optional.ofNullable((Destination) lookup(jndi));
+        return Optional.ofNullable((Destination) lookup(jndi))
+                .map(o -> JakartaJms.resolve(o, Destination.class));
     }
 
 

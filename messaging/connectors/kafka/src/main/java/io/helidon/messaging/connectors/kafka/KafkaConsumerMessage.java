@@ -37,7 +37,7 @@ import org.apache.kafka.common.header.Headers;
 class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
 
     private final CompletableFuture<Void> ack;
-    private final NackHandler<K, V> nack;
+    private final KafkaNackHandler<K, V> nack;
     private final long millisWaitingTimeout;
     private final AtomicBoolean acked = new AtomicBoolean();
     private final ConsumerRecord<K, V> consumerRecord;
@@ -52,7 +52,7 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
      */
     KafkaConsumerMessage(ConsumerRecord<K, V> consumerRecord,
                          CompletableFuture<Void> ack,
-                         NackHandler<K, V> nack,
+                         KafkaNackHandler<K, V> nack,
                          long millisWaitingTimeout) {
         Objects.requireNonNull(consumerRecord);
         this.consumerRecord = consumerRecord;

@@ -16,13 +16,16 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.function.Consumer;
+import java.util.Map;
 
 import io.helidon.logging.common.LogConfig;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpRules;
 
@@ -44,7 +47,8 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                                               BeforeEachCallback,
                                               ParameterResolver {
 
-    private static DirectClient client;
+    private final Map<String, DirectClient> clients = new HashMap<>();
+
     private Class<?> testClass;
 
     @Override
@@ -58,22 +62,23 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                                                     + RoutingTest.class.getName() + " annotation");
         }
 
-        withRoutingMethod(routing -> client = new DirectClient(routing));
+        initRoutings();
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
-        client.close();
+        clients.values().forEach(DirectClient::close);
     }
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) {
-        client.clientTlsPrincipal(null)
+        clients.values().forEach(client -> client.clientTlsPrincipal(null)
                 .clientTlsCertificates(null)
                 .clientHost("helidon-unit")
                 .clientPort(65000)
                 .serverHost("helidon-unit-server")
-                .serverPort(8080);
+                .serverPort(8080)
+        );
     }
 
     @Override
@@ -96,7 +101,25 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
 
         Class<?> paramType = parameterContext.getParameter().getType();
         if (paramType.equals(DirectClient.class)) {
-            return client;
+            Socket socketAnnot = parameterContext.getParameter().getAnnotation(Socket.class);
+            String socketName = socketAnnot != null ? socketAnnot.value() : WebServer.DEFAULT_SOCKET_NAME;
+
+            DirectClient directClient = clients.get(socketName);
+
+            if (directClient == null) {
+                if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+                    throw new IllegalStateException("There is no default routing specified. Please add static method "
+                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
+                                                            + " or HttpRules");
+                } else {
+                    throw new IllegalStateException("There is no default routing specified for socket \"" + socketName + "\"."
+                                                            + " Please add static method "
+                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
+                                                            + " or HttpRules, and add @Socket(\"" + socketName + "\") "
+                                                            + "annotation to the parameter");
+                }
+            }
+            return directClient;
         }
 
         // todo shall we use context?
@@ -104,7 +127,7 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
         return false;
     }
 
-    private void withRoutingMethod(Consumer<HttpRouting> handler) {
+    private void initRoutings() {
         LinkedList<Class<?>> hierarchy = new LinkedList<>();
         Class<?> analyzedClass = testClass;
         while (analyzedClass != null && !analyzedClass.equals(Object.class)) {
@@ -112,19 +135,24 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
             analyzedClass = analyzedClass.getSuperclass();
         }
 
-        Method found = null;
         for (Class<?> aClass : hierarchy) {
             for (Method method : aClass.getDeclaredMethods()) {
                 SetUpRoute annotation = method.getDeclaredAnnotation(SetUpRoute.class);
                 if (annotation != null) {
                     // maybe our method
                     if (Modifier.isStatic(method.getModifiers())) {
-                        if (found == null) {
-                            found = method;
-                        } else {
-                            throw new IllegalStateException("There is more than one method annotated with "
-                                                                    + SetUpRoute.class.getSimpleName()
-                                                                    + " in class " + aClass.getName());
+                        HttpRouting.Builder router = HttpRouting.builder();
+                        String routingSocketName = routingMethod(method, router);
+                        HttpRouting resultingRouting = router.build();
+                        if (clients.putIfAbsent(routingSocketName, new DirectClient(resultingRouting)) != null) {
+                            throw new IllegalStateException("Method "
+                                                                    + method
+                                                                    + " defines routing for socket \""
+                                                                    + routingSocketName
+                                                                    + "\""
+                                                                    + " that is already defined for class \""
+                                                                    + aClass.getName()
+                                                                    + "\".");
                         }
                     } else {
                         throw new IllegalStateException("Method " + method + " is annotated with "
@@ -135,14 +163,9 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                 }
             }
         }
-        HttpRouting.Builder router = HttpRouting.builder();
-        if (found != null) {
-            routingMethod(found, router);
-        }
-        handler.accept(router.build());
     }
 
-    private void routingMethod(Method method, HttpRules router) {
+    private String routingMethod(Method method, HttpRules router) {
         Class<?>[] parameterTypes = method.getParameterTypes();
         int parameterCount = parameterTypes.length;
         if (parameterCount != 1) {
@@ -150,6 +173,13 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
                                                        + HttpRules.class.getName());
         }
         Class<?> parameterType = parameterTypes[0];
+        Annotation[] annotations = method.getParameterAnnotations()[0];
+        String result = WebServer.DEFAULT_SOCKET_NAME;
+        for (Annotation annotation : annotations) {
+            if (annotation.annotationType().equals(Socket.class)) {
+                result = ((Socket) annotation).value();
+            }
+        }
         if (HttpRules.class.isAssignableFrom(parameterType)) {
             try {
                 method.setAccessible(true);
@@ -161,6 +191,7 @@ class HelidonRoutingJunitExtension implements BeforeAllCallback,
             throw new IllegalArgumentException("Method " + method + " must have parameter of "
                                                        + HttpRules.class.getName());
         }
+        return result;
     }
 
 }

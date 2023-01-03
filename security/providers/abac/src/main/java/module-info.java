@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Attribute based access control provider.
  */
+@Feature(value = "ABAC",
+        description = "Security provider for attribute based access control",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "Provider", "ABAC"}
+)
 module io.helidon.security.providers.abac {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.security;

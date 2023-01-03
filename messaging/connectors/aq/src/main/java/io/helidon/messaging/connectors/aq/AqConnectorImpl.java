@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.messaging.MessagingException;
+import io.helidon.messaging.NackHandler;
 import io.helidon.messaging.connectors.jms.ConnectionContext;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.JmsMessage;
@@ -167,15 +168,19 @@ public class AqConnectorImpl extends JmsConnector implements AqConnector {
 
 
     @Override
-    protected JmsMessage<?> createMessage(jakarta.jms.Message message,
+    protected JmsMessage<?> createMessage(NackHandler nackHandler,
+                                          jakarta.jms.Message message,
                                           Executor executor,
                                           SessionMetadata sessionMetadata) {
-        return new AqMessageImpl<>(super.createMessage(message, executor, sessionMetadata), sessionMetadata);
+        return new AqMessageImpl<>(
+                super.createMessage(nackHandler, message, executor, sessionMetadata),
+                sessionMetadata);
     }
 
     @Override
     protected BiConsumer<Message<?>, JMSException> sendingErrorHandler(Config config) {
         return (m, e) -> {
+            m.nack(e);
             throw new MessagingException("Error during sending Oracle AQ JMS message.", e);
         };
     }

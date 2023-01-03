@@ -24,7 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.context.ContextFilter;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.util.TokenHandler;
@@ -32,7 +32,7 @@ import io.helidon.security.util.TokenHandler;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
- * Unit test for {@link WebSecurity}.
+ * Unit test for {@link SecurityFeature}.
  */
 public class WebSecurityProgrammaticTest extends WebSecurityTests {
     private static String baseUri;
@@ -48,8 +48,8 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                 .addAuditProvider(myAuditProvider).build();
 
         server = WebServer.builder()
-                .routing(routing -> routing.addFilter(ContextFilter.create())
-                         .register(WebSecurity.create(security)
+                .routing(routing -> routing.addFeature(ContextFeature.create())
+                         .addFeature(SecurityFeature.create(security)
                                                              .securityDefaults(
                                                                      SecurityHandler.create()
                                                                              .queryParam(
@@ -64,14 +64,14 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                                                                                      TokenHandler.builder()
                                                                                              .tokenHeader("NAME_FROM_REQUEST")
                                                                                              .build())))
-                        .get("/noRoles", WebSecurity.secure())
-                        .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
-                        .get("/admin", WebSecurity.rolesAllowed("admin"))
-                        .get("/deny", WebSecurity.rolesAllowed("deny"), (req, res) -> {
+                        .get("/noRoles", SecurityFeature.secure())
+                        .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                        .get("/admin", SecurityFeature.rolesAllowed("admin"))
+                        .get("/deny", SecurityFeature.rolesAllowed("deny"), (req, res) -> {
                             res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                             res.send("Should not get here, this role doesn't exist");
                         })
-                        .get("/auditOnly", WebSecurity
+                        .get("/auditOnly", SecurityFeature
                                 .audit()
                                 .auditEventType("unit_test")
                                 .auditMessageFormat(AUDIT_MESSAGE_FORMAT)

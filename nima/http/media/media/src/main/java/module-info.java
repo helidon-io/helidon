@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Common classes for Media Support (reading/writing entity as a specific type).
  */
+@Feature(value = "Media",
+        description = "Media Support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = "Media"
+)
 module io.helidon.nima.http.media {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.common.media.type;

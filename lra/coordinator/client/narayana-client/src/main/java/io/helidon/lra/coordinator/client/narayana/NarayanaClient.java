@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -61,17 +60,15 @@ public class NarayanaClient implements CoordinatorClient {
     private static final Pattern LRA_ID_PATTERN = Pattern.compile("(.*)/([^/?]+).*");
 
     private Supplier<URI> coordinatorUriSupplier;
-    private Long coordinatorTimeout;
-    private TimeUnit coordinatorTimeoutUnit;
+    private Duration coordinatorTimeout;
     private Retry retry;
 
     @Override
-    public void init(Supplier<URI> coordinatorUriSupplier, long timeout, TimeUnit timeoutUnit) {
+    public void init(Supplier<URI> coordinatorUriSupplier, Duration timeout) {
         this.coordinatorUriSupplier = coordinatorUriSupplier;
         this.coordinatorTimeout = timeout;
-        this.coordinatorTimeoutUnit = timeoutUnit;
         this.retry = Retry.builder()
-                .overallTimeout(Duration.ofMillis(timeoutUnit.toMillis(timeout)))
+                .overallTimeout(timeout)
                 .retryPolicy(Retry.JitterRetryPolicy.builder()
                         .calls(RETRY_ATTEMPTS)
                         .build())
@@ -289,8 +286,8 @@ public class NarayanaClient implements CoordinatorClient {
                 .baseUri(uri)
                 // Workaround for #3242
                 .keepAlive(false)
-                .connectTimeout(coordinatorTimeout, coordinatorTimeoutUnit)
-                .readTimeout(coordinatorTimeout, coordinatorTimeoutUnit)
+                .connectTimeout(coordinatorTimeout)
+                .readTimeout(coordinatorTimeout)
                 .addReader(new LraStatusReader())
                 .build();
     }

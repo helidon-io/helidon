@@ -409,6 +409,7 @@ backend:
                   - "kafka.adoc"
                   - "jms.adoc"
                   - "aq.adoc"
+                  - "weblogic.adoc"
                   - "mock.adoc"
               - type: "PAGE"
                 title: "REST Client"

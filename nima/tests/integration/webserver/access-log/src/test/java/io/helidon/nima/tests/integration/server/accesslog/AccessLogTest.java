@@ -31,19 +31,20 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.accesslog.AccessLogFilter;
+import io.helidon.nima.webserver.accesslog.AccessLogFeature;
 import io.helidon.nima.webserver.accesslog.HostLogEntry;
 import io.helidon.nima.webserver.accesslog.RequestLineLogEntry;
 import io.helidon.nima.webserver.accesslog.StatusLogEntry;
 import io.helidon.nima.webserver.accesslog.TimestampLogEntry;
 import io.helidon.nima.webserver.accesslog.UserLogEntry;
 import io.helidon.nima.webserver.http.HttpRouting;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
 
 @ServerTest
 class AccessLogTest {
@@ -58,7 +59,7 @@ class AccessLogTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         // we cannot use the "time taken" entry, as that is changing between invocations
-        router.addFilter(AccessLogFilter.builder()
+        router.addFeature(AccessLogFeature.builder()
                                  .clock(Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), ZoneId.of("UTC")))
                                  .add(HostLogEntry.create())
                                  .add(UserLogEntry.create())
@@ -74,7 +75,7 @@ class AccessLogTest {
     // no need for try with resources when we get as an actual type
     @SuppressWarnings("resource")
     @Test
-    void testRequestsAndValidateAccessLog() throws InterruptedException {
+    void testRequestsAndValidateAccessLog() {
         Http1ClientResponse response = client.get("/access").request();
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity().as(String.class), is("Hello World!"));

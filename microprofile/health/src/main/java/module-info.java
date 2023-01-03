@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Microprofile health module.
  *
  * @see org.eclipse.microprofile.health
  */
+@Feature(value = "Health",
+        description = "MicroProfile Health spec implementation",
+        in = HelidonFlavor.MP,
+        path = "Health"
+)
 module io.helidon.microprofile.health {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires java.management;
 

@@ -26,7 +26,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.context.ContextFilter;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.reactive.webclient.security.WebClientSecurity;
@@ -47,7 +47,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link WebSecurity}.
+ * Unit test for {@link SecurityFeature}.
  */
 class WebSecurityBuilderGateDefaultsTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -82,17 +82,17 @@ class WebSecurityBuilderGateDefaultsTest {
                 .addAuditProvider(myAuditProvider).build();
 
         server = WebServer.builder()
-                .routing(builder -> builder.addFilter(ContextFilter.create())
-                        .register(WebSecurity.create(security)
-                                          .securityDefaults(WebSecurity.rolesAllowed("admin").audit()))
+                .routing(builder -> builder.addFeature(ContextFeature.create())
+                        .addFeature(SecurityFeature.create(security)
+                                          .securityDefaults(SecurityFeature.rolesAllowed("admin").audit()))
                         // will only accept admin (due to gate defaults)
-                        .get("/noRoles", WebSecurity.enforce())
-                        .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
-                        .get("/admin", WebSecurity.rolesAllowed("admin"))
+                        .get("/noRoles", SecurityFeature.authenticate())
+                        .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                        .get("/admin", SecurityFeature.rolesAllowed("admin"))
                         // will also accept admin (due to gate defaults)
-                        .get("/deny", WebSecurity.rolesAllowed("deny"))
+                        .get("/deny", SecurityFeature.rolesAllowed("deny"))
                         // audit is on from gate defaults
-                        .get("/auditOnly", WebSecurity
+                        .get("/auditOnly", SecurityFeature
                                 .enforce()
                                 .skipAuthentication()
                                 .skipAuthorization()

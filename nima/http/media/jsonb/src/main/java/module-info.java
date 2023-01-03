@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.http.media.jsonb.JsonbMediaSupportProvider;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
 /**
  * JSON-B media support.
  */
+@Feature(value = "JSONB",
+        description = "JSON-B media support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Media", "JSON-B"}
+)
 module io.helidon.nima.http.media.jsonb {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.nima.http.media;
     requires jakarta.json;
     requires jakarta.json.bind;

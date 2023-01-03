@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
 import io.helidon.reactive.dbclient.spi.DbClientProvider;
 import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
 import io.helidon.reactive.dbclient.spi.DbMapperProvider;
@@ -23,7 +26,15 @@ import io.helidon.reactive.dbclient.spi.DbMapperProvider;
  *
  * @see io.helidon.reactive.dbclient.DbClient
  */
+@Preview
+@Feature(value = "Db Client",
+        description = "Reactive database client",
+        in = HelidonFlavor.SE,
+        path = "DbClient"
+)
 module io.helidon.reactive.dbclient {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;

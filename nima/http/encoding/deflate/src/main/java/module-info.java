@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.nima.http.encoding.deflate.DeflateEncodingProvider;
 
 /**
  * Deflate content encoding support.
  */
+@Feature(value = "Deflate",
+        description = "Deflate content encoding support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = {"Encoding", "Deflate"}
+)
 module io.helidon.nima.http.encoding.deflate {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common;
     requires io.helidon.nima.http.encoding;
 

@@ -211,7 +211,7 @@ public interface ServerConfiguration extends SocketConfiguration {
     }
 
     /**
-     * Whether to print details of {@link io.helidon.common.HelidonFeatures}.
+     * Whether to print details of {@link io.helidon.common.features.HelidonFeatures}.
      *
      * @return whether to print details
      */
@@ -606,7 +606,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          *
          * @param print whether to print details or not
          * @return updated builder instance
-         * @see io.helidon.common.HelidonFeatures
+         * @see io.helidon.common.features.HelidonFeatures
          */
         public Builder printFeatureDetails(boolean print) {
             this.printFeatureDetails = print;

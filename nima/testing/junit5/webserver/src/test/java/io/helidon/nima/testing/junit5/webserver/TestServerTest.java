@@ -24,8 +24,7 @@ import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -64,6 +63,23 @@ class TestServerTest {
     }
 
     @Test
+    void testSocketClientNamedInjectedParameter(@Socket("socket") SocketHttpClient socketClient) {
+        assertThat(socketClient, notNullValue());
+    }
+
+    @Test
+    void testSocketClientMixedInjectedParameter(@Socket("socket") SocketHttpClient socketClient1,
+                                                SocketHttpClient socketClient2,
+                                                @Socket("@default") SocketHttpClient socketClient3,
+                                                @Socket("socket") SocketHttpClient socketClient4) {
+        assertThat(socketClient1, notNullValue());
+        assertThat(socketClient2, notNullValue());
+        assertThat(socketClient1, not(sameInstance(socketClient2)));
+        assertThat(socketClient2, sameInstance(socketClient3));
+        assertThat(socketClient1, sameInstance(socketClient4));
+    }
+
+    @Test
     void testHttpClientInjected() {
         assertThat(httpClient, notNullValue());
     }
@@ -71,6 +87,23 @@ class TestServerTest {
     @Test
     void testHttpClientInjectedParameter(Http1Client httpClient) {
         assertThat(httpClient, notNullValue());
+    }
+
+    @Test
+    void testHttpClientNamedInjectedParameter(@Socket("socket") Http1Client httpClient) {
+        assertThat(httpClient, notNullValue());
+    }
+
+    @Test
+    void testHttpClientMixedInjectedParameter(@Socket("socket") Http1Client httpClient1,
+                                              Http1Client httpClient2,
+                                              @Socket("@default") Http1Client httpClient3,
+                                              @Socket("socket") Http1Client httpClient4) {
+        assertThat(httpClient1, notNullValue());
+        assertThat(httpClient2, notNullValue());
+        assertThat(httpClient1, not(sameInstance(httpClient2)));
+        assertThat(httpClient2, sameInstance(httpClient3));
+        assertThat(httpClient1, sameInstance(httpClient4));
     }
 
     @Test

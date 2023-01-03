@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import jakarta.jms.MessageProducer;
 import static io.helidon.messaging.connectors.jms.shim.ShimUtil.call;
 import static io.helidon.messaging.connectors.jms.shim.ShimUtil.run;
 
-class JakartaMessageProducer implements MessageProducer {
-    private final javax.jms.MessageProducer delegate;
+class JakartaMessageProducer<T extends javax.jms.MessageProducer> implements MessageProducer, JakartaWrapper<T> {
+    private final T delegate;
 
-    JakartaMessageProducer(javax.jms.MessageProducer delegate) {
+    JakartaMessageProducer(T delegate) {
         this.delegate = delegate;
     }
 
@@ -161,5 +161,10 @@ class JakartaMessageProducer implements MessageProducer {
                                 priority,
                                 timeToLive,
                                 JavaxJms.create(completionListener)));
+    }
+
+    @Override
+    public T unwrap() {
+        return delegate;
     }
 }

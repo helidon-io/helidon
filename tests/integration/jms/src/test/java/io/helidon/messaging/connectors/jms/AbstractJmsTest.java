@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,17 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
 public class AbstractJmsTest {
+
+    static final String BROKER_URL = "vm://localhost?broker.persistent=false";
+//    static final String BROKER_URL = "tcp://localhost:61616";
     static Session session;
     static ConnectionFactory connectionFactory;
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        connectionFactory = JakartaJms.create(new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false"));
+        connectionFactory = JakartaJms.create(new ActiveMQConnectionFactory(BROKER_URL));
         Connection connection = connectionFactory.createConnection();
+        connection.start();
         session = connection.createSession(false, AcknowledgeMode.AUTO_ACKNOWLEDGE.getAckMode());
     }
 

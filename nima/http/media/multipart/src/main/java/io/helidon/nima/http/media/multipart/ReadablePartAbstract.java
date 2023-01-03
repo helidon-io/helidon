@@ -70,6 +70,11 @@ abstract class ReadablePartAbstract implements ReadablePart {
         throw new UnsupportedOperationException("Cannot copy a multi-part content.");
     }
 
+    @Override
+    public boolean hasEntity() {
+        return true;
+    }
+
     protected abstract void finish();
 
     private void contentDisposition() {

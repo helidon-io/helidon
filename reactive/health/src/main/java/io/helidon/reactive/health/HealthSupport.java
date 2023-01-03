@@ -113,7 +113,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         }
 
         // Lazy values to prevent early init of maybe-not-yet-configured FT thread pools
-        this.timeout = LazyValue.create(() -> Timeout.create(Duration.ofMillis(builder.timeoutMillis)));
+        this.timeout = LazyValue.create(() -> Timeout.create(builder.timeout));
         this.async = LazyValue.create(Async::create);
     }
 
@@ -369,7 +369,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         private final Set<String> excludedHealthChecks = new HashSet<>();
         private boolean details = true;
         private boolean enabled = true;
-        private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+        private Duration timeout = Duration.ofMillis(DEFAULT_TIMEOUT_MILLIS);
 
         private Builder() {
             super(DEFAULT_WEB_CONTEXT);
@@ -454,7 +454,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
         }
 
         private void timeoutMillis(long aLong) {
-            this.timeoutMillis = aLong;
+            this.timeout = Duration.ofMillis(aLong);
         }
 
         /**
@@ -463,13 +463,26 @@ public final class HealthSupport extends HelidonRestServiceSupport {
          * @param timeout timeout value
          * @param unit timeout time unit
          * @return updated builder instance
+         * @deprecated use {@link #timeout(Duration)} instead
          */
         @ConfiguredOption(key = TIMEOUT_CONFIG_KEY,
                           description = "health endpoint timeout (ms)",
                           type = Long.class,
                           value = "10000")
+        @Deprecated(since = "4.0.0")
         public Builder timeout(long timeout, TimeUnit unit) {
             timeoutMillis(unit.toMillis(timeout));
+            return this;
+        }
+
+        /**
+         * Configure overall timeout of health check call.
+         *
+         * @param timeout timeout value
+         * @return updated builder instance
+         */
+        public Builder timeout(Duration timeout) {
+            this.timeout = timeout;
             return this;
         }
 

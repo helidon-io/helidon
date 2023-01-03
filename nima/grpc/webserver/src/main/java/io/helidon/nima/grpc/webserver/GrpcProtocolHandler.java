@@ -116,7 +116,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolProvider.SubProto
         try {
             while (data.available() > 0) {
                 // todo compression support
-                // todo one message could span multiple frames
                 boolean isCompressed = (data.read() == 1);
                 long length = data.readUnsignedInt32(); // if the result is > than data length, wait for next data?
                 byte[] bytes = new byte[(int) length];

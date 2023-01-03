@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * OIDC authentication and security propagation provider.
  */
+@Feature(value = "OIDC",
+        description = "Security provider for Open ID Connect authentication",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"Security", "OIDC"}
+)
 module io.helidon.security.providers.oidc {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.common.crypto;

@@ -22,8 +22,14 @@ import java.util.Optional;
 /**
  * Abstract factory for all services provided by a single Helidon Pico provider implementation.
  * An implementation of this interface must minimally supply a "services registry" - see {@link #services()}.
+ * <p>
+ * The global singleton instance is accessed via {@link #picoServices()}. Note that optionally one can provide a
+ * primordial bootstrap configuration to the {@code Pico} services provider. One must establish any bootstrap instance
+ * prior to the first call to {@link #picoServices()} as it will use a default configuration if not explicitly set. Once
+ * the bootstrap has been set it cannot be changed for the lifespan of the JVM.
  */
 public interface PicoServices {
+
     /**
      * Empty criteria will match anything and everything.
      */
@@ -38,8 +44,36 @@ public interface PicoServices {
             .build();
 
     /**
+     * Returns the {@link io.helidon.pico.Bootstrap} configuration instance that was used to initialize this instance.
+     *
+     * @return the bootstrap configuration instance
+     */
+    Bootstrap bootstrap();
+
+    /**
+     * Retrieves any primordial bootstrap configuration that was already assigned via
+     * {@link #globalBootstrap()} (Bootstrap)}.
+     *
+     * @return the bootstrap primordial configuration already assigned
+     */
+    static Optional<Bootstrap> globalBootstrap() {
+        return PicoServicesHolder.bootstrap(false);
+    }
+
+    /**
+     * Sets the primordial bootstrap configuration that will supply {@link #picoServices()} during global
+     * singleton initialization.
+     *
+     * @param bootstrap the primordial global bootstrap configuration
+     */
+    static void globalBootstrap(Bootstrap bootstrap) {
+        PicoServicesHolder.bootstrap(bootstrap);
+    }
+
+    /**
      * Get {@link PicoServices} instance if available. The highest {@link io.helidon.common.Weighted} service will be loaded
-     * and returned.
+     * and returned. Remember to optionally configure any primordial {@link #bootstrap()} configuration prior to the
+     * first call to get {@code PicoServices}.
      *
      * @return the Pico services instance
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,18 @@ import jakarta.jms.Message;
 /**
  * Exposes Jakarta API, delegates to javax API.
  */
-class JakartaProducer implements JMSProducer {
-    private final javax.jms.JMSProducer delegate;
+class JakartaProducer<T extends javax.jms.JMSProducer> implements JMSProducer, JakartaWrapper<T> {
+    private final T delegate;
     private CompletionListener completionListener;
     private javax.jms.CompletionListener javaxCompletionListener;
 
-    JakartaProducer(javax.jms.JMSProducer delegate) {
+    JakartaProducer(T delegate) {
         this.delegate = delegate;
+    }
+
+    @Override
+    public T unwrap() {
+        return delegate;
     }
 
     @Override

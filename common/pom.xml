@@ -45,6 +45,8 @@
         <module>buffers</module>
         <module>socket</module>
         <module>uri</module>
+        <module>security</module>
         <module>testing</module>
+        <module>features</module>
     </modules>
 </project>

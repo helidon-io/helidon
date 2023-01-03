@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,30 +21,46 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.config.ConfigException;
+import io.helidon.config.mp.spi.MpConfigSourceProvider;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
 /**
  * YAML config source provider for MicroProfile config that supports file {@code application.yaml}.
  * This class should not be used directly - it is loaded automatically by Java service loader.
  */
-public class YamlConfigSourceProvider implements ConfigSourceProvider {
+public class YamlConfigSourceProvider implements MpConfigSourceProvider {
+    private static final String RESOURCE_NAME = "application.yaml";
+
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader) {
-        Enumeration<URL> resources;
-        try {
-            resources = classLoader.getResources("application.yaml");
-        } catch (IOException e) {
-            throw new ConfigException("Failed to read resources from classpath", e);
-        }
+        return configSources(classLoader, null);
+    }
 
+    @Override
+    public Iterable<ConfigSource> getConfigSources(ClassLoader classLoader, String profile) {
+        Objects.requireNonNull(profile, "Profile must not be null");
+        return configSources(classLoader, profile);
+    }
+
+    private Iterable<ConfigSource> configSources(ClassLoader classLoader, String profile) {
         List<ConfigSource> result = new LinkedList<>();
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-            result.add(YamlMpConfigSource.create(url));
+        if (profile == null) {
+            Enumeration<URL> resources;
+            try {
+                resources = classLoader.getResources(RESOURCE_NAME);
+            } catch (IOException e) {
+                throw new ConfigException("Failed to read resources from classpath", e);
+            }
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                result.add(YamlMpConfigSource.create(url));
+            }
+        } else {
+            result.addAll(YamlMpConfigSource.classPath(RESOURCE_NAME, profile, classLoader));
         }
 
         return result;

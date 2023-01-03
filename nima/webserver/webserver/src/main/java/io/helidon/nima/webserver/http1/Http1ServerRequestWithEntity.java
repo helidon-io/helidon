@@ -26,25 +26,26 @@ import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.http.HttpSecurity;
 import io.helidon.nima.webserver.http.ServerRequestEntity;
 
 final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private final LazyValue<ReadableEntity> entity;
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
-                                 HttpPrologue prologue,
+                                 HttpSecurity security, HttpPrologue prologue,
                                  ServerRequestHeaders headers,
                                  ContentDecoder decoder,
                                  int requestId,
                                  CountDownLatch entityReadLatch,
                                  Supplier<BufferData> readEntityFromPipeline) {
-        super(ctx, prologue, headers, requestId);
+        super(ctx, security, prologue, headers, requestId);
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(decoder,
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
                                                                         headers,
-                                                                        ctx.mediaContext()));
+                                                                        ctx.serverContext().mediaContext()));
     }
 
     @Override

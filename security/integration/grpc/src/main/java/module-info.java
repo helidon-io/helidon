@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Security integration with Helidon gRPC.
  */
+@Feature(value = "gRPC",
+        description = "Security integration with gRPC",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
+        path = {"Security", "Integration", "gRPC"}
+)
 module io.helidon.security.integration.grpc {
+    requires static io.helidon.common.features.api;
+
     exports io.helidon.security.integration.grpc;
 
     requires io.helidon.common;

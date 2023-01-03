@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.util.Map;
 
 import jakarta.jms.BytesMessage;
 import jakarta.jms.JMSException;
-import jakarta.jms.Message;
-import jakarta.jms.Session;
 
 class MessageMappers {
 
@@ -57,8 +55,4 @@ class MessageMappers {
                         });
     }
 
-    @FunctionalInterface
-    interface MessageMapper {
-        Message apply(Session s, org.eclipse.microprofile.reactive.messaging.Message<?> m) throws JMSException;
-    }
 }

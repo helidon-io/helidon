@@ -66,7 +66,8 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
                        it -> http2Headers.authority(it.value()));
         http2Headers.scheme("http"); // TODO need to get if https (ctx)?
 
-        HttpPrologue newPrologue = HttpPrologue.create(prologue.protocol(),
+        HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
+                                                       prologue.protocol(),
                                                        Http2Connection.PROTOCOL_VERSION,
                                                        prologue.method(),
                                                        prologue.uriPath(),

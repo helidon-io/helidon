@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon Reactive Messaging.
  */
+@Feature(value = "Messaging",
+        description = "Reactive messaging support",
+        in = HelidonFlavor.SE,
+        path = "Messaging"
+)
+@Aot(description = "Experimental support in native image")
 module io.helidon.messaging {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.common.context;

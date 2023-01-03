@@ -19,7 +19,7 @@ package io.helidon.pico;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 import io.helidon.pico.types.AnnotationAndValue;
 
 /**

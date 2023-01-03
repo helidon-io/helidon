@@ -35,5 +35,6 @@
         <module>config</module>
         <module>info</module>
         <module>metrics</module>
+        <module>log</module>
     </modules>
 </project>

@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Vault's PKI Secrets Engine support.
  */
+@Feature(value = "PKI",
+        description = "PKI Secrets Engine",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Secrets", "PKI"}
+)
 module io.helidon.integrations.vault.secrets.pki {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.integrations.common.rest;

@@ -32,6 +32,8 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ServerContext;
+import io.helidon.nima.webserver.http.HttpSecurity;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
 /**
@@ -40,6 +42,7 @@ import io.helidon.nima.webserver.http.RoutingRequest;
 abstract class Http1ServerRequest implements RoutingRequest {
     private final ServerRequestHeaders headers;
     private final ConnectionContext ctx;
+    private final HttpSecurity security;
     private final HttpPrologue prologue;
     private final int requestId;
 
@@ -50,10 +53,12 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private Context context;
 
     Http1ServerRequest(ConnectionContext ctx,
+                       HttpSecurity security,
                        HttpPrologue prologue,
                        Headers headers,
                        int requestId) {
         this.ctx = ctx;
+        this.security = security;
         this.prologue = prologue;
         this.headers = ServerRequestHeaders.create(headers);
         this.requestId = requestId;
@@ -68,10 +73,11 @@ abstract class Http1ServerRequest implements RoutingRequest {
      * @return
      */
     static Http1ServerRequest create(ConnectionContext ctx,
+                                     HttpSecurity security,
                                      HttpPrologue prologue,
                                      Headers headers,
                                      int requestId) {
-        return new Http1ServerRequestNoEntity(ctx, prologue, headers, requestId);
+        return new Http1ServerRequestNoEntity(ctx, security, prologue, headers, requestId);
     }
 
     /**
@@ -84,6 +90,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
      * @return
      */
     static Http1ServerRequest create(ConnectionContext ctx,
+                                     HttpSecurity security,
                                      HttpPrologue prologue,
                                      ServerRequestHeaders headers,
                                      ContentDecoder decoder,
@@ -91,6 +98,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                                      CountDownLatch entityReadLatch,
                                      Supplier<BufferData> entitySupplier) {
         return new Http1ServerRequestWithEntity(ctx,
+                                                security,
                                                 prologue,
                                                 headers,
                                                 decoder,
@@ -117,6 +125,27 @@ abstract class Http1ServerRequest implements RoutingRequest {
     @Override
     public String serverSocketId() {
         return ctx.socketId();
+    }
+
+    @Override
+    public Context context() {
+        if (context == null) {
+            context = Contexts.context().orElseGet(() -> Context.builder()
+                    .parent(ctx.serverContext().context())
+                    .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
+                    .build());
+        }
+        return context;
+    }
+
+    @Override
+    public ServerContext serverContext() {
+        return ctx.serverContext();
+    }
+
+    @Override
+    public HttpSecurity security() {
+        return security;
     }
 
     @Override
@@ -172,15 +201,5 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Http1ServerRequest prologue(HttpPrologue newPrologue) {
         this.newPrologue = newPrologue;
         return this;
-    }
-
-    @Override
-    public Context context() {
-        if (context == null) {
-            context = Contexts.context().orElseGet(() -> Context.builder()
-                    .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
-                    .build());
-        }
-        return context;
     }
 }

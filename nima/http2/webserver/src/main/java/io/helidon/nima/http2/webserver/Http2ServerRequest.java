@@ -33,6 +33,8 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ServerContext;
+import io.helidon.nima.webserver.http.HttpSecurity;
 import io.helidon.nima.webserver.http.RoutingRequest;
 
 /**
@@ -48,6 +50,7 @@ class Http2ServerRequest implements RoutingRequest {
     private final int requestId;
     private final String authority;
     private final LazyValue<Http2ServerRequestEntity> entity;
+    private final HttpSecurity security;
 
     private HttpPrologue prologue;
     private RoutedPath path;
@@ -55,12 +58,14 @@ class Http2ServerRequest implements RoutingRequest {
     private Context context;
 
     Http2ServerRequest(ConnectionContext ctx,
+                       HttpSecurity security,
                        HttpPrologue prologue,
                        Http2Headers headers,
                        ContentDecoder decoder,
                        int requestId,
                        Supplier<BufferData> entitySupplier) {
         this.ctx = ctx;
+        this.security = security;
         this.originalPrologue = prologue;
         this.http2Headers = headers;
         this.headers = ServerRequestHeaders.create(headers.httpHeaders());
@@ -71,16 +76,17 @@ class Http2ServerRequest implements RoutingRequest {
                                                                              it -> entitySupplier.get(),
                                                                              NO_OP_RUNNABLE,
                                                                              this.headers,
-                                                                             ctx.mediaContext()));
+                                                                             ctx.serverContext().mediaContext()));
     }
 
     static Http2ServerRequest create(ConnectionContext ctx,
+                                     HttpSecurity security,
                                      HttpPrologue httpPrologue,
                                      Http2Headers headers,
                                      ContentDecoder decoder,
                                      int streamId,
                                      Supplier<BufferData> entitySupplier) {
-        return new Http2ServerRequest(ctx, httpPrologue, headers, decoder, streamId, entitySupplier);
+        return new Http2ServerRequest(ctx, security, httpPrologue, headers, decoder, streamId, entitySupplier);
     }
 
     @Override
@@ -164,12 +170,23 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
+    public ServerContext serverContext() {
+        return ctx.serverContext();
+    }
+
+    @Override
     public Context context() {
         if (context == null) {
             context = Contexts.context().orElseGet(() -> Context.builder()
-                    .id("[" + serverSocketId() + " " + socketId() + "] http/2: " + requestId)
+                    .parent(ctx.serverContext().context())
+                    .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
         }
         return context;
+    }
+
+    @Override
+    public HttpSecurity security() {
+        return security;
     }
 }

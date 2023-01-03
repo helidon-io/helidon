@@ -26,6 +26,7 @@ import io.helidon.common.uri.UriQuery;
  * A prologue of an HTTP protocol.
  */
 public class HttpPrologue {
+    private final String rawProtocol;
     private final String protocol;
     private final String protocolVersion;
     private final Http.Method method;
@@ -45,12 +46,14 @@ public class HttpPrologue {
      * @param rawFragment     fragment as received over the network; may be {@code null} when the prologue does not contain a
      *                        fragment
      */
-    private HttpPrologue(String protocol,
+    private HttpPrologue(String rawProtocol,
+                         String protocol,
                          String protocolVersion,
                          Http.Method method,
                          UriPath path,
                          String rawQuery,
                          String rawFragment) {
+        this.rawProtocol = rawProtocol;
         this.protocol = protocol;
         this.protocolVersion = protocolVersion;
         this.method = method;
@@ -59,12 +62,14 @@ public class HttpPrologue {
         this.rawFragment = rawFragment;
     }
 
-    private HttpPrologue(String protocol,
+    private HttpPrologue(String rawProtocol,
+                         String protocol,
                          String protocolVersion,
                          Http.Method httpMethod,
                          UriPath uriPath,
                          UriQuery uriQuery,
                          UriFragment uriFragment) {
+        this.rawProtocol = rawProtocol;
         this.protocol = protocol;
         this.protocolVersion = protocolVersion;
         this.method = httpMethod;
@@ -79,6 +84,7 @@ public class HttpPrologue {
     /**
      * Create a new prologue.
      *
+     * @param rawProtocol     raw protocol string (full HTTP/1.1 or similar)
      * @param protocol        protocol
      * @param protocolVersion protocol version
      * @param httpMethod      HTTP Method
@@ -86,7 +92,8 @@ public class HttpPrologue {
      * @param validatePath    whether to validate path (that it contains only allowed characters)
      * @return a new prologue
      */
-    public static HttpPrologue create(String protocol,
+    public static HttpPrologue create(String rawProtocol,
+                                      String protocol,
                                       String protocolVersion,
                                       Http.Method httpMethod,
                                       String unresolvedPath,
@@ -117,7 +124,8 @@ public class HttpPrologue {
             uriPath.validate();
         }
 
-        return new HttpPrologue(protocol,
+        return new HttpPrologue(rawProtocol,
+                                protocol,
                                 protocolVersion,
                                 httpMethod,
                                 uriPath,
@@ -128,6 +136,7 @@ public class HttpPrologue {
     /**
      * Create a new prologue with decoded values.
      *
+     * @param rawProtocol     raw protocol string (full HTTP/1.1 or similar)
      * @param protocol        protocol
      * @param protocolVersion protocol version
      * @param httpMethod      HTTP Method
@@ -136,13 +145,23 @@ public class HttpPrologue {
      * @param uriFragment     resolved fragment
      * @return a new prologue
      */
-    public static HttpPrologue create(String protocol,
+    public static HttpPrologue create(String rawProtocol,
+                                      String protocol,
                                       String protocolVersion,
                                       Http.Method httpMethod,
                                       UriPath uriPath,
                                       UriQuery uriQuery,
                                       UriFragment uriFragment) {
-        return new HttpPrologue(protocol, protocolVersion, httpMethod, uriPath, uriQuery, uriFragment);
+        return new HttpPrologue(rawProtocol, protocol, protocolVersion, httpMethod, uriPath, uriQuery, uriFragment);
+    }
+
+    /**
+     * Raw protocol, should be {@code HTTP/1.1} or {@code HTTP/2} in most cases.
+     *
+     * @return protocol
+     */
+    public String rawProtocol() {
+        return rawProtocol;
     }
 
     /**

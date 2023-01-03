@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
 import io.helidon.reactive.dbclient.tracing.DbClientTracingProvider;
 
 /**
  * Helidon reactive DB Client Tracing.
  */
+@Feature(value = "Tracing",
+        description = "Reactive database client tracing support",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "Tracing"}
+)
 module io.helidon.reactive.dbclient.tracing {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.reactive.dbclient;

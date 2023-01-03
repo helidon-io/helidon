@@ -16,11 +16,10 @@
 
 package io.helidon.nima.faulttolerance;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -31,6 +30,8 @@ import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
  */
 class AsyncImpl implements Async {
+    private static final System.Logger LOGGER = System.getLogger(AsyncImpl.class.getName());
+
     private final LazyValue<? extends ExecutorService> executor;
     private final CompletableFuture<Async> onStart;
 
@@ -45,12 +46,19 @@ class AsyncImpl implements Async {
 
     @Override
     public <T> CompletableFuture<T> invoke(Supplier<T> supplier) {
-        AtomicBoolean mayInterrupt = new AtomicBoolean(false);
+        AtomicReference<Future<?>> ourFuture = new AtomicReference<>();
         CompletableFuture<T> result = new CompletableFuture<>() {
             @Override
             public boolean cancel(boolean mayInterruptIfRunning) {
-                mayInterrupt.set(mayInterruptIfRunning);
-                return super.cancel(mayInterruptIfRunning);
+                Future<?> toCancel = ourFuture.get();
+                if (toCancel == null) {
+                    // cancelled before the future was assigned - this should not happen, as we do
+                    // not escape this method before that
+                    LOGGER.log(System.Logger.Level.WARNING, "Failed to cancel future, it is not yet available.");
+                    return false;
+                } else {
+                    return toCancel.cancel(mayInterruptIfRunning);
+                }
             }
         };
         Future<?> future = executor.get().submit(() -> {
@@ -67,12 +75,8 @@ class AsyncImpl implements Async {
                 result.completeExceptionally(throwable);
             }
         });
-        result.exceptionally(t -> {
-            if (t instanceof CancellationException) {
-                future.cancel(mayInterrupt.get());
-            }
-            return null;
-        });
+        ourFuture.set(future);
+
         return result;
     }
 

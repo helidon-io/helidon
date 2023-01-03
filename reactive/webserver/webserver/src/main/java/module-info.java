@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.webserver.spi.UpgradeCodecProvider;
 
 /**
  * Reactive web server.
  */
+@Feature(value = "WebServer",
+         description = "Reactive Web Server",
+         in = HelidonFlavor.SE,
+         invalidIn = {HelidonFlavor.NIMA, HelidonFlavor.MP}
+)
 module io.helidon.reactive.webserver {
     requires io.helidon.common;
     requires transitive io.helidon.reactive.media.common;
@@ -31,7 +38,10 @@ module io.helidon.reactive.webserver {
     requires transitive io.helidon.tracing.config;
     requires transitive io.helidon.tracing;
     requires io.helidon.logging.common;
+    requires io.helidon.common.features;
+    requires io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
 
     requires java.logging;
     requires io.netty.handler;

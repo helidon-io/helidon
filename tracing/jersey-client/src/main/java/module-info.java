@@ -14,12 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
  * Tracing integration with jersey (JAX-RS) client.
  */
+@Feature(value = "Jersey Client",
+        description = "Tracing integration with Jersey client",
+        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        path = {"Tracing", "Integration", "JerseyClient"}
+)
 module io.helidon.tracing.jersey.client {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires jakarta.annotation;
 

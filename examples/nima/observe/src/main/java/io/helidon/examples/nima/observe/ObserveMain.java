@@ -16,10 +16,13 @@
 
 package io.helidon.examples.nima.observe;
 
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveSupport;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.security.integration.nima.SecurityFeature;
 
 /**
  * Register observe support with all available observers and NO security.
@@ -31,14 +34,18 @@ public class ObserveMain {
 
     /**
      * Main method.
+     *
      * @param args ignored
      */
     public static void main(String[] args) {
         // load logging
         LogConfig.configureRuntime();
 
+        Config config = Config.create();
+
         WebServer server = WebServer.builder()
-                .routing(ObserveMain::routing)
+                .config(config.get("server"))
+                .routing(it -> routing(config, it))
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
@@ -50,8 +57,10 @@ public class ObserveMain {
      *
      * @param router HTTP routing builder
      */
-    static void routing(HttpRouting.Builder router) {
-        router.update(ObserveSupport.create())
+    static void routing(Config config, HttpRouting.Builder router) {
+        router.addFeature(SecurityFeature.create(config.get("security")))
+                .addFeature(ContextFeature.create(config.get("context")))
+                .addFeature(ObserveFeature.create(config.get("observe")))
                 .get("/", (req, res) -> res.send("Níma Works!"));
     }
 }

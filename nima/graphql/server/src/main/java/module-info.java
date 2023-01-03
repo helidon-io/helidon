@@ -14,10 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
+
 /**
  * GraphQL server integration with Helidon Níma WebServer.
  */
+@Preview
+@Feature(value = "GraphQL",
+        description = "GraphQL Support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = {HelidonFlavor.SE, HelidonFlavor.MP}
+)
 module io.helidon.nima.graphql.server {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires io.helidon.common;
     requires io.helidon.common.uri;

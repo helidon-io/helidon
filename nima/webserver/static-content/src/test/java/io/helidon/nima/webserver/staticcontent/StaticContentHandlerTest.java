@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpException;
@@ -32,6 +33,7 @@ import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -145,15 +147,17 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void redirect() {
+    void redirect() throws IOException {
         ServerResponseHeaders resh = mock(ServerResponseHeaders.class);
         ServerResponse res = mock(ServerResponse.class);
         ServerRequest req = mock(ServerRequest.class);
         when(res.headers()).thenReturn(resh);
         when(req.query()).thenReturn(UriQuery.empty());
-        StaticContentHandler.redirect(req, res, "/foo/");
+
+        CachedHandlerRedirect redirectHandler = new CachedHandlerRedirect("/foo/");
+        redirectHandler.handle(LruCache.create(), Http.Method.GET, req, res, "/foo");
         verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
-        verify(res).header(LOCATION, "/foo/");
+        verify(resh).set(LOCATION, "/foo/");
         verify(res).send();
     }
 
@@ -173,6 +177,7 @@ class StaticContentHandlerTest {
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
+        // the file is valid, but it does not exist
         verify(response, never()).next();
         assertThat(handler.path, is(Paths.get("foo/some.txt").toAbsolutePath().normalize()));
     }
@@ -221,7 +226,8 @@ class StaticContentHandlerTest {
 
     private ServerRequest mockRequestWithPath(Http.Method method, String path) {
         UriPath uriPath = UriPath.create(path);
-        HttpPrologue prologue = HttpPrologue.create("HTTP",
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
                                                     "1.1",
                                                     method,
                                                     uriPath,
@@ -283,7 +289,13 @@ class StaticContentHandlerTest {
         }
 
         @Override
-        boolean doHandle(Http.Method method, Path path, ServerRequest request, ServerResponse response) {
+        boolean doHandle(Http.Method method,
+                         String requestedResource,
+                         ServerRequest req,
+                         ServerResponse res,
+                         String rawPath,
+                         Path path) {
+
             this.counter.incrementAndGet();
             this.path = path;
             return returnValue;

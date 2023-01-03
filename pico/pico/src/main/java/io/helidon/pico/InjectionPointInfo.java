@@ -18,7 +18,7 @@ package io.helidon.pico;
 
 import java.util.Set;
 
-import io.helidon.pico.builder.Builder;
+import io.helidon.builder.Builder;
 
 /**
  * Describes a receiver for injection - identifies who/what is requesting an injection that needs to be satisfied.

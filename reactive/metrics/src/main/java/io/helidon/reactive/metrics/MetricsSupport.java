@@ -29,6 +29,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.serviceapi.JsonFormat;
 import io.helidon.metrics.serviceapi.PrometheusFormat;
 import io.helidon.reactive.media.common.MessageBodyWriter;
@@ -93,6 +94,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
 
         this.registryFactory = builder.registryFactory();
         this.metricsSettings = builder.metricsSettings();
+        SystemTagsManager.create(metricsSettings);
     }
 
     /**

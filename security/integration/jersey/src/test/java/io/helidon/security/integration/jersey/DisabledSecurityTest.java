@@ -65,7 +65,7 @@ public class DisabledSecurityTest {
         server = WebServer.builder(Routing.builder()
                 .register(JerseySupport.builder()
                                   .register(MyResource.class)
-                                  .register(new SecurityFeature(Security.create(config.get("security"))))
+                                  .register(new JerseySecurityFeature(Security.create(config.get("security"))))
                                   .register((ExceptionMapper<Exception>) exception -> {
                                       exception.printStackTrace();
                                       return Response.serverError().build();

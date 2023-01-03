@@ -51,7 +51,7 @@ class FeatureConfig {
         this.failOnFailureIfOptional = DEFAULT_ATN_FAIL_ON_FAILURE_IF_OPT;
     }
 
-    FeatureConfig(SecurityFeature.Builder builder) {
+    FeatureConfig(JerseySecurityFeature.Builder builder) {
         this.debug = builder.isDebug();
         this.authorizeAnnotatedOnly = builder.isAuthorizeAnnotatedOnly();
         this.authenticateAnnotatedOnly = builder.isAuthenticateAnnotatedOnly();

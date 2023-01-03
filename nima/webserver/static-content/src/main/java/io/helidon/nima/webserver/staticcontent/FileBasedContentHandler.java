@@ -32,12 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.http.ForbiddenException;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValues;
-import io.helidon.common.http.HttpException;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaType;
@@ -46,8 +41,6 @@ import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
 abstract class FileBasedContentHandler extends StaticContentHandler {
-    private static final System.Logger LOGGER = System.getLogger(FileBasedContentHandler.class.getName());
-
     private final Map<String, MediaType> customMediaTypes;
 
     FileBasedContentHandler(StaticContentSupport.FileBasedBuilder<?> builder) {
@@ -66,88 +59,11 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return fileName.toString();
     }
 
-    /**
-     * Determines and set a Content-Type header based on filename extension.
-     *
-     * @param filename        a filename
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     */
-    void processContentType(String filename,
-                            ServerRequestHeaders requestHeaders,
-                            ServerResponseHeaders responseHeaders) {
-        // Try to get Content-Type
-        responseHeaders.contentType(detectType(filename, requestHeaders));
-    }
-
-    Optional<MediaType> findCustomMediaType(String fileName) {
-        int ind = fileName.lastIndexOf('.');
-
-        if (ind < 0) {
-            return Optional.empty();
-        }
-
-        String fileSuffix = fileName.substring(ind + 1);
-
-        return Optional.ofNullable(customMediaTypes.get(fileSuffix));
-    }
-
-    void sendFile(Http.Method method,
-                  Path pathParam,
-                  ServerRequest request,
-                  ServerResponse response,
-                  String welcomePage)
-            throws IOException {
-
-        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-            LOGGER.log(System.Logger.Level.TRACE, "Sending static content from file: " + pathParam);
-        }
-
-        Path path = pathParam;
-        // we know the file exists, though it may be a directory
-        //First doHandle a directory case
-        if (Files.isDirectory(path)) {
-            String rawFullPath = request.prologue().uriPath().rawPath();
-            if (rawFullPath.endsWith("/")) {
-                // Try to found welcome file
-                path = resolveWelcomeFile(path, welcomePage);
-            } else {
-                // Or redirect to slash ended
-                redirect(request, response, rawFullPath + "/");
-                return;
-            }
-        }
-
-        // now it exists and is a file
-        if (!Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
-            throw new ForbiddenException("File is not accessible");
-        }
-
-        // Caching headers support
-        try {
-            Instant lastMod = Files.getLastModifiedTime(path).toInstant();
-            processEtag(String.valueOf(lastMod.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastMod, request.headers(), response.headers());
-        } catch (IOException | SecurityException e) {
-            // Cannot get mod time or size - well, we cannot tell if it was modified or not. Don't support cache headers
-        }
-
-        processContentType(fileName(path), request.headers(), response.headers());
-
-        if (method == Http.Method.HEAD) {
-            processContentLength(path, response.headers());
-            response.header(HeaderValues.ACCEPT_RANGES_BYTES)
-                    .send();
-        } else {
-            send(request, response, path);
-        }
-    }
-
-    void processContentLength(Path path, ServerResponseHeaders headers) {
+    static void processContentLength(Path path, ServerResponseHeaders headers) {
         headers.set(Header.create(Header.CONTENT_LENGTH, contentLength(path)));
     }
 
-    long contentLength(Path path) {
+    static long contentLength(Path path) {
         try {
             return Files.size(path);
         } catch (IOException e) {
@@ -155,7 +71,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
-    void send(ServerRequest request, ServerResponse response, Path path) throws IOException {
+    static void send(ServerRequest request, ServerResponse response, Path path) throws IOException {
         ServerRequestHeaders headers = request.headers();
         if (headers.contains(Header.RANGE)) {
             long contentLength = contentLength(path);
@@ -201,6 +117,53 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
+    Optional<MediaType> findCustomMediaType(String fileName) {
+        int ind = fileName.lastIndexOf('.');
+
+        if (ind < 0) {
+            return Optional.empty();
+        }
+
+        String fileSuffix = fileName.substring(ind + 1);
+
+        return Optional.ofNullable(customMediaTypes.get(fileSuffix));
+    }
+
+    Optional<CachedHandler> fileHandler(Path path) {
+        // we know the file exists and is a file
+        return Optional.of(new CachedHandlerPath(path,
+                                                 detectType(fileName(path)),
+                                                 FileBasedContentHandler::lastModified,
+                                                 ServerResponseHeaders::lastModified));
+    }
+
+    MediaType detectType(String fileName) {
+        Objects.requireNonNull(fileName);
+
+        // first try to see if we have an override
+        // then find if we have a detected type
+        /*
+        From HTTP/1.1 specification of status codes:
+              Note: HTTP/1.1 servers are allowed to return responses which are
+              not acceptable according to the accept headers sent in the
+              request. In some cases, this may even be preferable to sending a
+              406 response. User agents are encouraged to inspect the headers of
+              an incoming response to determine if it is acceptable.
+         The 415 we used before is for the case when request entity does not match the method, so wrong here
+         If we cannot identify a media type, just use octet stream (just bytes....)
+         */
+        return findCustomMediaType(fileName)
+                .or(() -> MediaTypes.detectType(fileName))
+                .orElse(MediaTypes.APPLICATION_OCTET_STREAM);
+    }
+
+    static Optional<Instant> lastModified(Path path) throws IOException {
+        if (Files.exists(path) && Files.isRegularFile(path)) {
+            return Optional.of(Files.getLastModifiedTime(path).toInstant());
+        }
+        return Optional.empty();
+    }
+
     /**
      * Find welcome file in provided directory or throw not found {@link io.helidon.common.http.RequestException}.
      *
@@ -209,38 +172,11 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
      * @return a path of the welcome file
      * @throws io.helidon.common.http.RequestException if welcome file doesn't exists
      */
-    private static Path resolveWelcomeFile(Path directory, String name) {
+    static Path resolveWelcomeFile(Path directory, String name) {
         throwNotFoundIf(name == null || name.isEmpty());
         Path result = directory.resolve(name);
         throwNotFoundIf(!Files.exists(result));
         return result;
-    }
-
-    private MediaType detectType(String fileName, ServerRequestHeaders requestHeaders) {
-        Objects.requireNonNull(fileName);
-        Objects.requireNonNull(requestHeaders);
-
-        // first try to see if we have an override
-        // then find if we have a detected type
-        // then check the type is accepted by the request
-        return findCustomMediaType(fileName)
-                .or(() -> MediaTypes.detectType(fileName))
-                .map(it -> {
-                    if (requestHeaders.isAccepted(it)) {
-                        return it;
-                    }
-                    throw new HttpException("Media type " + it + " is not accepted by request",
-                                            Http.Status.UNSUPPORTED_MEDIA_TYPE_415,
-                                            true);
-                })
-                .orElseGet(() -> {
-                    List<HttpMediaType> acceptedTypes = requestHeaders.acceptedTypes();
-                    if (acceptedTypes.isEmpty()) {
-                        return MediaTypes.APPLICATION_OCTET_STREAM;
-                    } else {
-                        return acceptedTypes.iterator().next().mediaType();
-                    }
-                });
     }
 
 }

@@ -195,6 +195,24 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         return isSent || streamingEntity;
     }
 
+    @Override
+    public boolean reset() {
+        if (isSent || outputStream != null && outputStream.totalBytesWritten() > 0) {
+            return false;
+        }
+        headers.clear();
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
+    public void commit() {
+        if (outputStream != null) {
+            outputStream.commit();
+        }
+    }
+
     private static void writeHeaders(Headers headers, BufferData buffer) {
         for (HeaderValue header : headers) {
             header.writeHttp1Header(buffer);
@@ -242,6 +260,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private final Http1ServerRequest request;
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
+        private final boolean forcedChunked;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -249,7 +268,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private long contentLength;
         private boolean isChunked;
         private boolean firstByte = true;
-        private boolean forcedChunked;
         private long responseBytesTotal;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
@@ -293,7 +311,18 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         @Override
+        public void flush() throws IOException {
+            if (firstByte && firstBuffer != null) {
+                write(BufferData.empty());
+            }
+        }
+
+        @Override
         public void close() {
+            // this is a noop, even when user closes the output stream, we wait for commit
+        }
+
+        void commit() {
             if (closed) {
                 return;
             }
@@ -312,14 +341,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (isChunked || forcedChunked) {
-                // not optimized, we need to write trailers
-                trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
-                trailers.set(STREAM_RESULT_NAME, streamResult.get());
-                BufferData buffer = BufferData.growing(128);
-                writeHeaders(trailers, buffer);
-                buffer.write('\r');        // "\r\n" - empty line after headers
-                buffer.write('\n');
-                dataWriter.write(buffer);
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                    // not optimized, trailers enabled: we need to write trailers
+                    trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
+                    trailers.set(STREAM_RESULT_NAME, streamResult.get());
+                    BufferData buffer = BufferData.growing(128);
+                    writeHeaders(trailers, buffer);
+                    buffer.write('\r');        // "\r\n" - empty line after headers
+                    buffer.write('\n');
+                    dataWriter.write(buffer);
+                }
             }
 
             responseCloseRunnable.run();
@@ -365,8 +396,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                // proper stream with multiple buffers, write status amd headers
-                headers.add(STREAM_TRAILERS);
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                    // proper stream with multiple buffers, write status amd headers
+                    headers.add(STREAM_TRAILERS);
+                }
                 sendHeadersAndPrepare();
                 firstByte = false;
                 BufferData combined = BufferData.create(firstBuffer, buffer);
@@ -409,9 +442,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 isChunked = false;
             } else {
                 contentLength = -1;
+                // Add chunked encoding, if there is no other transfer-encoding headers
                 if (!headers.contains(Http.Header.TRANSFER_ENCODING)) {
-                    // todo check if contains other transfer encoding to combine them together
                     headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                } else {
+                    // Add chunked encoding, if it's not part of existing transfer-encoding headers
+                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    }
                 }
             }
 

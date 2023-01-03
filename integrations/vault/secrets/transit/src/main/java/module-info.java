@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Vault transit secrets.
  *
  * @see io.helidon.integrations.vault.secrets.transit.TransitSecretsRx
  * @see io.helidon.integrations.vault.secrets.transit.TransitSecrets
  */
+@Feature(value = "Transit",
+        description = "Transit Secrets Engine",
+        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        path = {"HCP Vault", "Secrets", "Transit"}
+)
 module io.helidon.integrations.vault.secrets.transit {
+    requires static io.helidon.common.features.api;
+
     requires jakarta.json;
 
     requires io.helidon.integrations.common.rest;

@@ -20,11 +20,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.net.URI;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webclient.WebClient;
@@ -53,14 +55,10 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
                                              InvocationInterceptor,
                                              ParameterResolver {
 
+    private final Map<String, SocketHttpClient> socketHttpClients = new ConcurrentHashMap<>();
+    private final Map<String, Http1Client> httpClients = new ConcurrentHashMap<>();
     private Class<?> testClass;
     private WebServer server;
-    private final LazyValue<SocketHttpClient> socketHttpClient =
-            LazyValue.create(() -> SocketHttpClient.create(server.port()));
-    private final LazyValue<Http1Client> httpClient =
-            LazyValue.create(() -> WebClient.builder()
-                    .baseUri("http://localhost:" + server.port())
-                    .build());
     private URI uri;
 
     HelidonServerJunitExtension() {
@@ -78,6 +76,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         WebServer.Builder builder = WebServer.builder()
                 .port(0)
+                .shutdownHook(false)
                 .host("localhost");
 
         setupServer(builder);
@@ -96,9 +95,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
     @Override
     public void afterEach(ExtensionContext extensionContext) {
-        if (socketHttpClient.isLoaded()) {
-            socketHttpClient.get().disconnect();
-        }
+        socketHttpClients.values().forEach(SocketHttpClient::disconnect);
     }
 
     @Override
@@ -129,10 +126,10 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         Class<?> paramType = parameterContext.getParameter().getType();
         if (paramType.equals(SocketHttpClient.class)) {
-            return socketHttpClient.get();
+            return socketHttpClients.computeIfAbsent(socketName(parameterContext.getParameter()), this::socketHttpClient);
         }
         if (paramType.equals(Http1Client.class)) {
-            return httpClient.get();
+            return httpClients.computeIfAbsent(socketName(parameterContext.getParameter()), this::httpClient);
         }
         if (paramType.equals(WebServer.class)) {
             return server;
@@ -143,6 +140,26 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         // todo maybe use context
         //return Context.singletonContext().value(GenericType.create(paramType)).orElse(null);
         return false;
+    }
+
+    private Http1Client httpClient(String socketName) {
+        return WebClient.builder()
+                .baseUri("http://localhost:" + server.port(socketName))
+                .build();
+    }
+
+    private SocketHttpClient socketHttpClient(String socketName) {
+        return SocketHttpClient.create(server.port(socketName));
+    }
+
+    private String socketName(Parameter parameter) {
+        Socket socketAnnot = parameter.getAnnotation(Socket.class);
+
+        if (socketAnnot == null) {
+            return WebServer.DEFAULT_SOCKET_NAME;
+        }
+
+        return socketAnnot.value();
     }
 
     private void setupServer(WebServer.Builder builder) {

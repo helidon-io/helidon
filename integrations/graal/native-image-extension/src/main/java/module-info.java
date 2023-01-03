@@ -24,6 +24,8 @@ module io.helidon.graal.nativeimage {
     requires io.helidon.config.mp;
     requires org.graalvm.sdk;
     requires jakarta.json;
+    requires io.helidon.common.features.api;
+    requires io.helidon.common.features;
 
     exports io.helidon.integrations.graal.nativeimage.extension;
 }

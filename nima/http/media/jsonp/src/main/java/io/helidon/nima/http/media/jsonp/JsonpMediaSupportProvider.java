@@ -64,6 +64,16 @@ public class JsonpMediaSupportProvider implements MediaSupportProvider {
         return new JsonpWriter<>(WRITER_FACTORY);
     }
 
+    /**
+     * Server request reader direct access.
+     *
+     * @param <T> type to read
+     * @return a reader to read JSON-P objects
+     */
+    public static <T extends JsonStructure> EntityReader<T> serverRequestReader() {
+        return new JsonpReader<>(READER_FACTORY);
+    }
+
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
         if (isSupportedType(type)) {

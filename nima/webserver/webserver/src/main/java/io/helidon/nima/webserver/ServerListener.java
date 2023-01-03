@@ -41,8 +41,6 @@ import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -67,23 +65,20 @@ class ServerListener {
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
 
-    private final MediaContext mediaContext;
-    private final ContentEncodingContext contentEncodingContext;
-    private final LoomServer server;
+    private final ServerContext serverContext;
 
     private volatile boolean running;
     private volatile int connectedPort;
     private volatile ServerSocket serverSocket;
 
-    ServerListener(LoomServer loomServer,
+    ServerListener(ServerContext serverContext,
                    List<ServerConnectionProvider> connectionProviders,
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
-                   DirectHandlers simpleHandlers,
-                   MediaContext mediaContext,
-                   ContentEncodingContext contentEncodingContext) {
-        this.server = loomServer;
+                   DirectHandlers simpleHandlers) {
+
+        this.serverContext = serverContext;
         this.connectionProviders = ConnectionProviders.create(connectionProviders);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
@@ -114,8 +109,6 @@ class ServerListener {
             port = 0;
         }
         this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
-        this.mediaContext = mediaContext;
-        this.contentEncodingContext = contentEncodingContext;
     }
 
     @Override
@@ -247,9 +240,8 @@ class ServerListener {
                         helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
                     }
 
-                    handler = new ConnectionHandler(connectionProviders,
-                                                    mediaContext,
-                                                    contentEncodingContext,
+                    handler = new ConnectionHandler(serverContext,
+                                                    connectionProviders,
                                                     sharedExecutor,
                                                     serverChannelId,
                                                     channelId,

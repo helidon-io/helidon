@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon reactive DB Client Health Check.
  */
+@Feature(value = "Health Check",
+        description = "Reactive database client health check support",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "Health"}
+)
 module io.helidon.reactive.dbclient.health {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires io.helidon.reactive.dbclient;
     requires io.helidon.health;

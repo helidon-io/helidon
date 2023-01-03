@@ -23,6 +23,7 @@ open module io.helidon.pico.spi.test {
     requires jakarta.inject;
     requires io.helidon.common;
     requires transitive io.helidon.pico;
+    requires transitive io.helidon.common.testing.junit5;
 
     uses io.helidon.pico.PicoServices;
 

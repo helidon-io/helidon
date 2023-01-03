@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.webclient.security.WebClientSecurityProvider;
 import io.helidon.reactive.webclient.spi.WebClientServiceProvider;
 
 /**
  * Helidon WebClient Security.
  */
+@Feature(value = "Security",
+        description = "Reactive web client support for security",
+        in = HelidonFlavor.SE,
+        path = {"WebClient", "Security"}
+)
 module io.helidon.reactive.webclient.security {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
 
     requires io.helidon.security;

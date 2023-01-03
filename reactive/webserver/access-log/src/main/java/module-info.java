@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Reactive web server.
  */
+@Feature(value = "Access Log",
+        description = "Access log support",
+        in = HelidonFlavor.SE,
+        path = {"WebServer", "AccessLog"}
+)
 module io.helidon.reactive.webserver.accesslog {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires io.helidon.reactive.webserver;
 

@@ -23,7 +23,7 @@ import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http1.Http1Route;
-import io.helidon.nima.webserver.tracing.TracingSupport;
+import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -51,7 +51,7 @@ public class TracingMain {
                 .port(8080)
                 .host("127.0.0.1")
                 .routing(router -> router
-                        .update(TracingSupport.create(tracer)::register)
+                        .addFeature(TracingFeature.create(tracer))
                         .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
                         .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))
                 )

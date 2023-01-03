@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
- * Content encoding support..
+ * Content encoding support.
  */
+@Feature(value = "Encoding",
+        description = "Content encoding support",
+        in = HelidonFlavor.NIMA,
+        invalidIn = HelidonFlavor.SE,
+        path = "Encoding"
+)
 module io.helidon.nima.http.encoding {
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.common;
     requires transitive io.helidon.common.http;
 

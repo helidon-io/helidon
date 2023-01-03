@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,9 @@ public interface Awaitable<T> {
      * @throws java.util.concurrent.CancellationException if this future was cancelled
      * @throws java.util.concurrent.CompletionException   if this future completed exceptionally,
      *                                                    was interrupted while waiting or the wait timed out
+     * @deprecated use {@link #await(Duration)} instead
      */
+    @Deprecated(since = "4.0.0")
     default T await(long timeout, TimeUnit unit) {
         try {
             return this.toCompletableFuture().get(timeout, unit);

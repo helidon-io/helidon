@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.media.common.spi.MediaSupportProvider;
 import io.helidon.reactive.media.jsonp.JsonpProvider;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
@@ -23,7 +25,13 @@ import io.helidon.reactive.media.jsonp.JsonpSupport;
  *
  * @see JsonpSupport
  */
+@Feature(value = "JSON-P",
+        description = "Media support for Jakarta JSON Processing",
+        in = HelidonFlavor.SE,
+        path = {"Media", "Jsonp"}
+)
 module io.helidon.reactive.media.jsonp {
+    requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
     requires io.helidon.common.http;

@@ -30,33 +30,7 @@ import io.helidon.common.buffers.BufferData;
  * Base for readable entities.
  */
 public abstract class ReadableEntityBase implements ReadableEntity {
-    private static final ReadableEntity EMPTY = new ReadableEntity() {
-        @Override
-        public InputStream inputStream() {
-            return new ByteArrayInputStream(BufferData.EMPTY_BYTES);
-        }
-
-        @Override
-        public <T> T as(Class<T> type) {
-            throw new IllegalStateException("No entity");
-        }
-
-        @Override
-        public <T> T as(GenericType<T> type) {
-            throw new IllegalStateException("No entity");
-        }
-
-        @Override
-        public boolean consumed() {
-            return true;
-        }
-
-        @Override
-        public ReadableEntity copy(Runnable entityProcessedRunnable) {
-            entityProcessedRunnable.run();
-            return this;
-        }
-    };
+    private static final ReadableEntity EMPTY = new EmptyReadableEntity();
 
     private final AtomicBoolean consumed = new AtomicBoolean();
     private final Function<InputStream, InputStream> decoder;
@@ -150,11 +124,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         }
     }
 
-    /**
-     * Is there an entity.
-     *
-     * @return whether the entity has bytes
-     */
+    @Override
     public boolean hasEntity() {
         return true;
     }
@@ -272,6 +242,39 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                     finished = true;
                 }
             }
+        }
+    }
+
+    private static final class EmptyReadableEntity implements ReadableEntity {
+        @Override
+        public InputStream inputStream() {
+            return new ByteArrayInputStream(BufferData.EMPTY_BYTES);
+        }
+
+        @Override
+        public <T> T as(Class<T> type) {
+            throw new IllegalStateException("No entity");
+        }
+
+        @Override
+        public <T> T as(GenericType<T> type) {
+            throw new IllegalStateException("No entity");
+        }
+
+        @Override
+        public boolean consumed() {
+            return true;
+        }
+
+        @Override
+        public ReadableEntity copy(Runnable entityProcessedRunnable) {
+            entityProcessedRunnable.run();
+            return this;
+        }
+
+        @Override
+        public boolean hasEntity() {
+            return false;
         }
     }
 }

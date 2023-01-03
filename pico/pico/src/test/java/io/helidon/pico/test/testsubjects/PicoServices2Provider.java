@@ -17,13 +17,16 @@
 package io.helidon.pico.test.testsubjects;
 
 import io.helidon.common.Weight;
+import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.spi.PicoServicesProvider;
 
 @Weight(20)
 public class PicoServices2Provider implements PicoServicesProvider {
+
     @Override
-    public PicoServices services() {
-        return new PicoServices2();
+    public PicoServices services(Bootstrap bootstrap) {
+        return new PicoServices2(bootstrap);
     }
+
 }

@@ -61,19 +61,24 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico.builder</groupId>
-            <artifactId>helidon-pico-builder</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico.builder</groupId>
-            <artifactId>helidon-pico-builder-processor</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-processor</artifactId>
             <scope>provided</scope> <!-- to force reactor ordering -->
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -95,8 +100,8 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.pico.builder</groupId>
-                            <artifactId>helidon-pico-builder-processor</artifactId>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

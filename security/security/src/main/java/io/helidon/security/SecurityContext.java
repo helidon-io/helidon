@@ -27,7 +27,7 @@ import io.helidon.tracing.Tracer;
  * Security context to retrieve security information about current user, either injected or obtained from {@link
  * Security#contextBuilder(String)} and to handle programmatic security.
  */
-public interface SecurityContext {
+public interface SecurityContext extends io.helidon.common.security.SecurityContext<Principal> {
     /**
      * Anonymous user principal.
      * This is the user principal used when no user is authenticated (e.g. when a service is authenticated or when
@@ -314,8 +314,12 @@ public interface SecurityContext {
      * for evaluation.
      *
      * @return true if authorization was checked, false otherwise
+     * @deprecated use {@link #isAuthorized()} instead
      */
-    boolean atzChecked();
+    @Deprecated(since = "4.0.0")
+    default boolean atzChecked() {
+        return isAuthorized();
+    }
 
     /**
      * Fluent API builder for {@link SecurityContext}.

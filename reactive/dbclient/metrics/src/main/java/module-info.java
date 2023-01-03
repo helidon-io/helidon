@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.reactive.dbclient.metrics.DbClientMetricsProvider;
 import io.helidon.reactive.dbclient.spi.DbClientServiceProvider;
 
 /**
  * Helidon reactive DB Client Metrics.
  */
+@Feature(value = "Metrics",
+        description = "Reactive database client metrics support",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "Metrics"}
+)
 module io.helidon.reactive.dbclient.metrics {
+    requires static io.helidon.common.features.api;
+
     requires java.logging;
     requires io.helidon.reactive.dbclient;
     requires io.helidon.metrics.api;

@@ -67,6 +67,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * A single connection serves multiple streams.
  */
 public class Http2Connection implements ServerConnection {
+    static final String FULL_PROTOCOL = "HTTP/2.0";
     static final String PROTOCOL = "HTTP";
     static final String PROTOCOL_VERSION = "2.0";
 
@@ -494,7 +495,8 @@ public class Http2Connection implements ServerConnection {
         // todo configure path validation
         String path = headers.path();
         Http.Method method = headers.method();
-        HttpPrologue httpPrologue = HttpPrologue.create(PROTOCOL,
+        HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
+                                                        PROTOCOL,
                                                         PROTOCOL_VERSION,
                                                         method,
                                                         path,
