@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,9 +80,9 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     protected static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
 
     /**
-     * Header line separator.
+     * Separator for headers and payload.
      */
-    protected static final BufferData HEADER_LINE_SEPARATOR = BufferData.create("\r\n".getBytes(US_ASCII));
+    protected static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
 
     /**
      * Supported version.
@@ -187,13 +187,14 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
         DataWriter dataWriter = ctx.dataWriter();
         String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey);
         dataWriter.write(BufferData.create(switchingProtocols.getBytes(US_ASCII)));
-        dataWriter.write(HEADER_LINE_SEPARATOR.rewind());
-        upgradeHeaders.ifPresent(hs -> hs.forEach(h -> {
-            String headerLine = h.name() + ": " + h.values();
-            dataWriter.write(BufferData.create(headerLine.getBytes(US_ASCII)));
-            dataWriter.write(HEADER_LINE_SEPARATOR.rewind());
-        }));
-        dataWriter.write(HEADER_LINE_SEPARATOR.rewind());
+        BufferData separator = BufferData.create(HEADERS_SEPARATOR);
+        dataWriter.write(separator);
+        upgradeHeaders.ifPresent(hs -> {
+            BufferData headerData = BufferData.growing(128);
+            hs.forEach(h -> h.writeHttp1Header(headerData));
+            dataWriter.write(headerData);
+        });
+        dataWriter.write(separator.rewind());
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
