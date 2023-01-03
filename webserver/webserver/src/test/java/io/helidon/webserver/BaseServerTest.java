@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class BaseServerTest {
     }
 
     protected static void startServer(int port, Routing routing) throws Exception {
-        startServer(port, routing, null);
+        startServer(port, routing, Config.empty());
     }
 
     protected static void startServer(int port, Routing routing, Config serverConfig) {
@@ -57,10 +57,8 @@ class BaseServerTest {
                         .host("localhost")
                         .port(port)
                 )
-                .addRouting(routing);
-        if (serverConfig != null) {
-            builder.config(serverConfig);
-        }
+                .addRouting(routing)
+                .config(serverConfig);
         webServer = builder.build()
                 .start()
                 .await(TIMEOUT);

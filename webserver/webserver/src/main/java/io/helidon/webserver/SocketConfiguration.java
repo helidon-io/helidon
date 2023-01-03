@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1063,7 +1063,7 @@ public interface SocketConfiguration {
                 // by accident. The user _can_ set allow.all to run the socket unsafely but at least that way it was
                 // an explicit choice.
                 if (trustedProxies == null && !isDiscoveryTypesOnlyHost()) {
-                    throw new UnsafeRequestedUriSettings(this, areDiscoveryTypesDefaulted);
+                    throw new UnsafeRequestedUriSettingsException(this, areDiscoveryTypesDefaulted);
                 }
             } else {
                 // Discovery is disabled so ignore any explicit settings of discovery type and use HOST discovery.
@@ -1075,6 +1075,11 @@ public interface SocketConfiguration {
                 }
                 requestedUriDiscoveryTypes.clear();
                 requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.HOST);
+            }
+            if (trustedProxies == null) {
+                trustedProxies = AllowList.builder()
+                        .addDenied(s -> true)
+                        .build();
             }
         }
 

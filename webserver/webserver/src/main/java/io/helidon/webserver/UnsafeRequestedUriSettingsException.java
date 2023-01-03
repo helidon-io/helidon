@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ package io.helidon.webserver;
  *     but has not assigned the trusted proxy {@link io.helidon.common.configurable.AllowList}.
  * </p>
  */
-public class UnsafeRequestedUriSettings extends RuntimeException {
+public class UnsafeRequestedUriSettingsException extends RuntimeException {
 
     /**
      * Creates a new exception instance.
@@ -30,8 +30,8 @@ public class UnsafeRequestedUriSettings extends RuntimeException {
      * @param socketConfigurationBuilder builder for the socket config
      * @param areDiscoveryTypesDefaulted whether discovery types were defaulted (as opposed to set explicitly)
      */
-    public UnsafeRequestedUriSettings(SocketConfiguration.Builder socketConfigurationBuilder,
-                                      boolean areDiscoveryTypesDefaulted) {
+    public UnsafeRequestedUriSettingsException(SocketConfiguration.Builder socketConfigurationBuilder,
+                                               boolean areDiscoveryTypesDefaulted) {
 
         super(String.format("""
             Settings which control requested URI discovery for socket %s are unsafe:

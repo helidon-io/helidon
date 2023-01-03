@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ class RequestedUriConfigTest extends BaseServerTest {
     @Test
     void checkUnsafeDetectionOnEnable() {
         Config c = config.get("test-enabled-no-details.server");
-        assertThrows(UnsafeRequestedUriSettings.class, () ->
+        assertThrows(UnsafeRequestedUriSettingsException.class, () ->
                 WebServer.builder()
                         .config(c)
                         .build(),
@@ -79,7 +79,7 @@ class RequestedUriConfigTest extends BaseServerTest {
     @Test
     void checkExplicitTypesNoDetails() {
         Config c = config.get("test-explicit-types-no-details.server");
-        assertThrows(UnsafeRequestedUriSettings.class, () ->
+        assertThrows(UnsafeRequestedUriSettingsException.class, () ->
                 WebServer.builder()
                         .config(c)
                         .build(),
