@@ -80,11 +80,6 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     protected static final String SWITCHING_PROTOCOLS_SUFFIX = "\r\n\r\n";
 
     /**
-     * Separator for headers and payload.
-     */
-    protected static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
-
-    /**
      * Supported version.
      */
     protected static final String SUPPORTED_VERSION = "13";
@@ -99,6 +94,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
+    private static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
 
     private final Set<String> origins;
     private final boolean anyOrigin;
