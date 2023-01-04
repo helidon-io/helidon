@@ -526,6 +526,7 @@ public interface SocketConfiguration {
          * @param types {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType} values to assign
          * @return updated builder
          * @see #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)
+         * @see #requestedUriDiscoveryEnabled(boolean)
          * @see io.helidon.webserver.ServerRequest#requestedUri()
          */
         @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types",
@@ -541,7 +542,8 @@ public interface SocketConfiguration {
          * @see io.helidon.webserver.ServerRequest#requestedUri()
          */
         @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "enabled",
-                          value = "true if 'types' or 'trusted-proxies' is set; false otherwise")
+                          value = "true if '" + REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types' or '"
+                          + REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "trusted-proxies' is set; false otherwise")
         B requestedUriDiscoveryEnabled(boolean enabled);
 
         /**
