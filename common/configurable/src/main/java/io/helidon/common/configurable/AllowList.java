@@ -18,6 +18,8 @@ package io.helidon.common.configurable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
@@ -25,8 +27,8 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * {@code AllowList} provides a way to define a list of allowed and/or denied values and to test if a value conforms to
- * the restrictions.
+ * {@code AllowList} defines a list of allowed and/or denied matches and tests if a particular value conforms to
+ * the conditions.
  * <p>
  * The algorithm of testing that a value is allowed:
  * <ol>
@@ -36,6 +38,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * </ol>
  */
 public interface AllowList extends Predicate<String> {
+
     /**
      * Create a fluent API builder to configure an instance.
      *
@@ -69,14 +72,20 @@ public interface AllowList extends Predicate<String> {
      */
     @Configured
     final class Builder implements io.helidon.common.Builder<Builder, AllowList> {
+
+        private static final Logger LOGGER = Logger.getLogger(AllowList.class.getName());
+
         private final List<Predicate<String>> allowedPredicates = new ArrayList<>();
         private final List<Predicate<String>> deniedPredicates = new ArrayList<>();
+
+        private boolean allowAllSetting = false;
 
         private Builder() {
         }
 
         @Override
         public AllowList build() {
+            checkAndAddAllowAllPredicate();
             return new AllowListImpl(this);
         }
 
@@ -92,7 +101,7 @@ public interface AllowList extends Predicate<String> {
             allowed.get("prefix").asList(String.class).ifPresent(this::allowedPrefixes);
             allowed.get("suffix").asList(String.class).ifPresent(this::allowedSuffixes);
             allowed.get("pattern").asList(Pattern.class).ifPresent(this::allowedPatterns);
-            allowed.get("all").asBoolean().filter(it -> it).ifPresent(it -> this.allowAll());
+            allowed.get("all").asBoolean().ifPresent(this::allowAll);
 
             Config denied = config.get("deny");
             denied.get("exact").asList(String.class).ifPresent(this::denied);
@@ -104,13 +113,17 @@ public interface AllowList extends Predicate<String> {
         }
 
         /**
-         * Allows all strings to match (subject to other, deny, matchers).
+         * Allows all strings to match (subject to "deny" conditions). An {@code allow.all} setting of {@code false} does
+         * not deny all strings but rather represents the absence of a universal match, meaning that other allow and deny settings
+         * determine the matching outcomes.
          *
+         * @param value whether to allow all strings to match (subject to "deny" conditions)
          * @return updated builder
          */
-        @ConfiguredOption(key = "allow.all", type = Boolean.class)
-        public Builder allowAll() {
-            return addAllowed(new AllowAllPredicate());
+        @ConfiguredOption(key = "allow.all", type = Boolean.class, value = "false")
+        public Builder allowAll(boolean value) {
+            allowAllSetting = value;
+            return this;
         }
 
         /**
@@ -311,7 +324,21 @@ public interface AllowList extends Predicate<String> {
             return this;
         }
 
+        private void checkAndAddAllowAllPredicate() {
+            // Specifying allowAll(true) with any other allow is odd. Accept it but warn the user.
+            if (allowAllSetting) {
+                if (!allowedPredicates.isEmpty()) {
+                    LOGGER.log(Level.INFO, getClass().getSimpleName()
+                            + " allowAll=true overrides the other, more specific, allow predicates");
+                }
+                allowedPredicates.add(new AllowAllPredicate());
+            }
+        }
+
         private static final class AllowListImpl implements AllowList {
+
+            private static final String ALLOWED_MATCHED_LOG_FORMAT = "Value '%s' is allowed by %s";
+            private static final String DENIED_MATCHED_LOG_FORMAT = " but is denied by %s";
 
             private final List<Predicate<String>> allowedPredicates;
             private final List<Predicate<String>> deniedPredicates;
@@ -326,11 +353,28 @@ public interface AllowList extends Predicate<String> {
                 for (Predicate<String> allowedPredicate : allowedPredicates) {
                     if (allowedPredicate.test(value)) {
                         // value is allowed, let's check it is not explicitly denied
-                        return testNotDenied(value);
+                        Predicate<String> deniedPredicate = testNotDenied(value);
+                        if (deniedPredicate == null) {
+                            if (LOGGER.isLoggable(Level.FINE)) {
+                                LOGGER.log(Level.FINE, String.format(ALLOWED_MATCHED_LOG_FORMAT, value, allowedPredicate));
+                            }
+                            return true;
+                        } else {
+                            if (LOGGER.isLoggable(Level.FINE)) {
+                                LOGGER.log(Level.FINE, String.format(ALLOWED_MATCHED_LOG_FORMAT + DENIED_MATCHED_LOG_FORMAT,
+                                                                     value,
+                                                                     allowedPredicate,
+                                                                     deniedPredicate));
+                            }
+                            return false;
+                        }
                     }
                 }
 
                 // no allowed predicate, deny
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, "Denying value '" + value + "'; no matching allow predicates are defined");
+                }
                 return false;
             }
 
@@ -339,13 +383,13 @@ public interface AllowList extends Predicate<String> {
                 return "Allowed: " + allowedPredicates + ", Denied: " + deniedPredicates;
             }
 
-            private boolean testNotDenied(String value) {
+            private Predicate<String> testNotDenied(String value) {
                 for (Predicate<String> deniedPredicate : deniedPredicates) {
                     if (deniedPredicate.test(value)) {
-                        return false;
+                        return deniedPredicate;
                     }
                 }
-                return true;
+                return null;
             }
         }
 

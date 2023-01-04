@@ -63,7 +63,7 @@ class AllowListTest {
                 new TestData(AllowList.builder().build(),
                              "By default all should be denied",
                              List.of(false, false, false, false, false)),
-                new TestData(AllowList.builder().allowAll().build(),
+                new TestData(AllowList.builder().allowAll(true).build(),
                              "All should be allowed",
                              List.of(true, true, true, true, true)),
                 new TestData(AllowList.builder().addAllowed("first").build(),
@@ -91,37 +91,37 @@ class AllowListTest {
                              "Allow combined",
                              List.of(true, false, false, false, true)),
                 new TestData(AllowList.builder()
-                                     .allowAll()
+                                     .allowAll(true)
                                      .addDenied("first")
                                      .build(),
                              "Deny exact",
                              List.of(false, true, true, true, true)),
                 new TestData(AllowList.builder()
-                                     .allowAll()
+                                     .allowAll(true)
                                      .addDeniedPrefix("www.helidon.")
                                      .build(),
                              "Deny prefix",
                              List.of(true, true, true, true, false)),
                 new TestData(AllowList.builder()
-                                     .allowAll()
+                                     .allowAll(true)
                                      .addDeniedSuffix(".helidon.io")
                                      .build(),
                              "Deny suffix",
                              List.of(true, true, true, true, false)),
                 new TestData(AllowList.builder()
-                                     .allowAll()
+                                     .allowAll(true)
                                      .addDenied(new EmptyStringPredicate())
                                      .build(),
                              "Deny exact",
                              List.of(true, true, false, true, true)),
                 new TestData(AllowList.builder()
-                                     .allowAll()
+                                     .allowAll(true)
                                      .addDeniedPattern(Pattern.compile("f.*t"))
                                      .build(),
                              "Deny pattern",
                              List.of(false, true, true, true, true)),
                 new TestData(AllowList.builder()
-                                     .allowAll()
+                                     .allowAll(true)
                                      .addDenied("first")
                                      .addDeniedSuffix(".helidon.io")
                                      .build(),

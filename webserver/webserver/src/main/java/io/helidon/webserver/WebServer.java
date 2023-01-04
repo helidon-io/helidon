@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -615,6 +616,12 @@ public interface WebServer {
         }
 
         @Override
+        public Builder requestedUriDiscoveryTypes(List<SocketConfiguration.RequestedUriDiscoveryType> types) {
+            defaultSocket(it -> it.requestedUriDiscoveryTypes(types));
+            return this;
+        }
+
+        @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             defaultSocket(it -> it.requestedUriDiscoveryEnabled(enabled));
             return this;
@@ -622,7 +629,7 @@ public interface WebServer {
 
         @Override
         public Builder trustedProxies(AllowList trustedProxies) {
-            this.configurationBuilder.trustedProxies(trustedProxies);
+            defaultSocket(it -> it.trustedProxies(trustedProxies));
             return this;
         }
 

@@ -511,36 +511,46 @@ public interface SocketConfiguration {
         B maxUpgradeContentLength(int size);
 
         /**
-         * Add a type of frontend uri discovery to be used. If discovery is disabled, ti will be enabled by this method.
+         * Adds a type of front-end URI discovery Helidon should use for this socket. Adding a discovery type automatically
+         * enables discovery for the socket.
          *
          * @param type type to add
          * @return updated builder
          */
-        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types", kind = ConfiguredOption.Kind.LIST)
-
         B addRequestedUriDiscoveryType(RequestedUriDiscoveryType type);
 
         /**
-         * When set to {@code true}, unless you configure custom
-         * {@link #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)},
-         * {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType#FORWARDED} will be
-         * used to discover client requested uri, available through {@link ServerRequest#requestedUri()}.
-         * Discovery types can be configured explicitly.
-         * This method does not modify requested uri discovery types if already customized by
-         * {@link #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)}.
+         * Assigns the front-end URI discovery type(s) this socket should use. This setting automatically enables
+         * discovery for the socket.
+         *
+         * @param types {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType} values to assign
+         * @return updated builder
+         * @see #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)
+         * @see io.helidon.webserver.ServerRequest#requestedUri()
+         */
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types",
+                          kind = ConfiguredOption.Kind.LIST,
+                          value = "FORWARDED if discovery is enabled; none otherwise")
+        B requestedUriDiscoveryTypes(List<RequestedUriDiscoveryType> types);
+
+        /**
+         * Sets whether requested URI discovery is enabled for the socket.
          *
          * @param enabled whether to enable discovery
          * @return updated builder
+         * @see io.helidon.webserver.ServerRequest#requestedUri()
          */
         @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "enabled",
                           value = "true if 'types' or 'trusted-proxies' is set; false otherwise")
         B requestedUriDiscoveryEnabled(boolean enabled);
 
         /**
-         * Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests.
+         * Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
+         * This setting automatically enables discovery for the socket.
          *
          * @param trustedProxies to apply to forwarded headers
          * @return updated builder
+         * @see io.helidon.webserver.ServerRequest#requestedUri()
          */
         @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "trusted-proxies")
         B trustedProxies(AllowList trustedProxies);
@@ -593,7 +603,7 @@ public interface SocketConfiguration {
             // URI discovery support
             config.get("requested-uri-discovery.enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
             config.get("requested-uri-discovery.types").asList(RequestedUriDiscoveryType.class)
-                    .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
+                    .ifPresent(this::requestedUriDiscoveryTypes);
             config.get("requested-uri-discovery.trusted-proxies").as(AllowList::create)
                     .ifPresent(this::trustedProxies);
 
@@ -897,6 +907,7 @@ public interface SocketConfiguration {
          * @param value compression flag
          * @return updated builder instance
          */
+        @Override
         public Builder enableCompression(boolean value) {
             this.enableCompression = value;
             return this;
@@ -908,6 +919,7 @@ public interface SocketConfiguration {
          * @param trustedProxies prescribing proxies to be trusted
          * @return updated builder instance
          */
+        @Override
         public Builder trustedProxies(AllowList trustedProxies) {
             this.trustedProxies = trustedProxies;
             return this;
@@ -933,6 +945,13 @@ public interface SocketConfiguration {
         public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
             this.requestedUriDiscoveryTypes.add(type);
             this.requestedUriDiscoveryEnabled = true;
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryTypes(List<RequestedUriDiscoveryType> types) {
+            requestedUriDiscoveryTypes.clear();
+            requestedUriDiscoveryTypes.addAll(types);
             return this;
         }
 

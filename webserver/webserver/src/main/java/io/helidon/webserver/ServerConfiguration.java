@@ -574,6 +574,12 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         @Override
+        public Builder requestedUriDiscoveryTypes(List<RequestedUriDiscoveryType> types) {
+            defaultSocketBuilder().requestedUriDiscoveryTypes(types);
+            return this;
+        }
+
+        @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             defaultSocketBuilder().requestedUriDiscoveryEnabled(enabled);
             return this;
