@@ -362,6 +362,25 @@ server:
         exact: "lbtest.mycorp.com""
 ----
 
+=== Obtaining the Requested URI Information
+Your code obtains the requested URI information from the Helidon server request object:
+
+[source,java]
+.Retrieving Requested URI Information
+----
+import io.helidon.common.http.UriInfo;
+
+public class MyHandler implements Handler {
+
+    @Override
+    public void accept(ServerRequest req, ServerResponse res) {
+        UriInfo uriInfo = req.requestedUri();
+        // ...
+    }
+}
+----
+See the link:{common-http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
+
 == Error Handling
 
 === Error Routing

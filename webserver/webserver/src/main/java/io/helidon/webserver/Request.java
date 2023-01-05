@@ -219,40 +219,43 @@ abstract class Request implements ServerRequest {
         String path = null;
         String query = query();
 
-        // Trusted proxies could be null if the discovery type is Host, either explicitly or by default.
-        AllowList trustedProxies = bareRequest.socketConfiguration().trustedProxies();
-        if (trustedProxies != null && trustedProxies.test(hostPart(remoteAddress()))) {
-            // Once we discover trusted information using one of the discovery types, we do not mix in
-            // information from other types.
+        // Note: requestedUriDiscoveryEnabled() returns true if discovery is explicitly enabled or if either
+        // requestedUriDiscoveryTypes or trustedProxies is set.
+        if (bareRequest.socketConfiguration().requestedUriDiscoveryEnabled()) {
+            AllowList trustedProxies = bareRequest.socketConfiguration().trustedProxies();
+            if (trustedProxies.test(hostPart(remoteAddress()))) {
+                // Once we discover trusted information using one of the discovery types, we do not mix in
+                // information from other types.
 
-            nextDiscoveryType:
-            for (var type : bareRequest.socketConfiguration().requestedUriDiscoveryTypes()) {
-                switch (type) {
-                case FORWARDED -> {
-                    ForwardedDiscovery discovery = discoverUsingForwarded(headers(), trustedProxies);
-                    if (discovery != null) {
-                        authority = discovery.authority();
-                        scheme = discovery.scheme();
+                nextDiscoveryType:
+                for (var type : bareRequest.socketConfiguration().requestedUriDiscoveryTypes()) {
+                    switch (type) {
+                    case FORWARDED -> {
+                        ForwardedDiscovery discovery = discoverUsingForwarded(headers(), trustedProxies);
+                        if (discovery != null) {
+                            authority = discovery.authority();
+                            scheme = discovery.scheme();
+
+                            break nextDiscoveryType;
+                        }
+                    }
+                    case X_FORWARDED -> {
+                        XForwardedDiscovery discovery = discoverUsingXForwarded(headers, trustedProxies);
+                        if (discovery != null) {
+                            scheme = discovery.scheme();
+                            host = discovery.host();
+                            port = discovery.port();
+                            path = discovery.path();
+
+                            break nextDiscoveryType;
+                        }
+                    }
+                    default -> {
+                        authority = headers.first(Http.Header.HOST).orElse(null);
 
                         break nextDiscoveryType;
                     }
-                }
-                case X_FORWARDED -> {
-                    XForwardedDiscovery discovery = discoverUsingXForwarded(headers, trustedProxies);
-                    if (discovery != null) {
-                        scheme = discovery.scheme();
-                        host = discovery.host();
-                        port = discovery.port();
-                        path = discovery.path();
-
-                        break nextDiscoveryType;
                     }
-                }
-                default -> {
-                    authority = headers.first(Http.Header.HOST).orElse(null);
-
-                    break nextDiscoveryType;
-                }
                 }
             }
         }

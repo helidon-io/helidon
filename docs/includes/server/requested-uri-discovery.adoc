@@ -35,10 +35,7 @@ Fortunately, many of these intermediary network nodes set or update either the l
 
 Helidon's requested URI discovery feature allows your application--and Helidon itself--to reconstruct information about the original request using the `Forwarded` header and the `X-Forwarded-*` family of headers.
 
-Use
-ifdef::se-flavor[a builder, configuration, or both]
-ifdef::mp-flavor[configuration]
-to prepare sockets in your server with the following optional requested URI discovery settings:
+When you prepare the sockets in your server you can include the following optional requested URI discovery settings:
 
 * enabled or disabled
 * which type or types of requested URI discovery to use:
@@ -55,6 +52,14 @@ If the request does not have the corresponding header(s), or your settings do no
 Helidon uses the `HOST` discovery type if you do not set up discovery yourself or if, for a particular request, it cannot assemble the request information using any discovery type you did set up for the socket.
 
 // end::intro[]
+
+// tag::obtaining-uriinfo[]
+To obtain the requested URI information, your
+ifdef::se-flavor[handler or service]
+ifdef::mp-flavor[code]
+invokes `ServerRequest.requestedUri()` which returns a `UriInfo` record
+
+// end::obtaining-uriinfo[]
 
 // tag::config-example-intro[]
 You can

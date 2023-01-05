@@ -263,6 +263,12 @@ public interface SocketConfiguration {
     List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes();
 
     /**
+     *
+     * @return whether requested URI discovery is enabled.
+     */
+    boolean requestedUriDiscoveryEnabled();
+
+    /**
      * The allow list for trusted proxies.
      *
      * @return allow list for trusted proxies
@@ -924,6 +930,7 @@ public interface SocketConfiguration {
         @Override
         public Builder trustedProxies(AllowList trustedProxies) {
             this.trustedProxies = trustedProxies;
+            this.requestedUriDiscoveryEnabled = true;
             return this;
         }
 
@@ -946,7 +953,6 @@ public interface SocketConfiguration {
         @Override
         public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
             this.requestedUriDiscoveryTypes.add(type);
-            this.requestedUriDiscoveryEnabled = true;
             return this;
         }
 
@@ -1044,6 +1050,10 @@ public interface SocketConfiguration {
 
         AllowList trustedProxies() {
             return trustedProxies;
+        }
+
+        boolean requestedUriDiscoveryEnabled() {
+            return requestedUriDiscoveryEnabled;
         }
 
         /**

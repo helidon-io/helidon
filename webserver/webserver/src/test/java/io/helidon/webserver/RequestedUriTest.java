@@ -55,6 +55,7 @@ class RequestedUriTest {
         when(bareRequest.remoteAddress()).thenReturn(testData.remoteAddress());
         when(bareRequest.uri()).thenReturn(testData.uri());
         when(bareRequest.isSecure()).thenReturn(testData.isSecure());
+        when(sc.requestedUriDiscoveryEnabled()).thenReturn(testData.requestedUriDiscoveryEnabled());
         when(sc.trustedProxies()).thenReturn(testData.trustedProxies());
         when(sc.requestedUriDiscoveryTypes()).thenReturn(testData.discoveryTypes());
         Request request = new TestRequest(bareRequest, webServer, new HashRequestHeaders(testData.headers()), testData.path());
@@ -187,6 +188,13 @@ class RequestedUriTest {
         @Override
         public String toString() {
             return testDescription();
+        }
+
+        /*
+         * Basically copied from a part ofSocketConfiguration#requestedUriDiscoveryEnabled() to mimic that behavior.
+         */
+        private boolean requestedUriDiscoveryEnabled() {
+            return discoveryTypes.isEmpty() || trustedProxies != null;
         }
     }
 

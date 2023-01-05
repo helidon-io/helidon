@@ -45,6 +45,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Context context;
     private final boolean printFeatureDetails;
     private final AllowList trustedProxies;
+    private final boolean isRequestedUriDiscoveryEnabled;
 
     /**
      * Creates new instance.
@@ -61,6 +62,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.context = builder.context();
         this.printFeatureDetails = builder.printFeatureDetails();
         this.trustedProxies = builder.defaultSocketBuilder().trustedProxies();
+        this.isRequestedUriDiscoveryEnabled = builder.defaultSocketBuilder().requestedUriDiscoveryEnabled();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(WebServer.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -197,6 +199,11 @@ class ServerBasicConfig implements ServerConfiguration {
         return trustedProxies;
     }
 
+    @Override
+    public boolean requestedUriDiscoveryEnabled() {
+        return isRequestedUriDiscoveryEnabled;
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -217,8 +224,9 @@ class ServerBasicConfig implements ServerConfiguration {
         private final long backpressureBufferSize;
         private final BackpressureStrategy backpressureStrategy;
         private final int maxUpgradeContentLength;
-        private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
-        private AllowList trustedProxies;
+        private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
+        private final AllowList trustedProxies;
+        private final boolean isRequestedUriDiscoveryEnabled;
 
         /**
          * Creates new instance.
@@ -245,6 +253,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
             this.requestedUriDiscoveryTypes = builder.requestedUriDiscoveryTypes();
             this.trustedProxies = builder.trustedProxies();
+            this.isRequestedUriDiscoveryEnabled = builder.requestedUriDiscoveryEnabled();
         }
 
         @Override
@@ -365,6 +374,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public AllowList trustedProxies() {
             return trustedProxies;
+        }
+
+        @Override
+        public boolean requestedUriDiscoveryEnabled() {
+            return isRequestedUriDiscoveryEnabled;
         }
     }
 }
