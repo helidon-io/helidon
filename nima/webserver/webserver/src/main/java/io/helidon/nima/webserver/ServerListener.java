@@ -76,7 +76,8 @@ class ServerListener {
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
-                   DirectHandlers simpleHandlers) {
+                   DirectHandlers simpleHandlers,
+                   boolean inheritThreadLocals) {
 
         this.serverContext = serverContext;
         this.connectionProviders = ConnectionProviders.create(connectionProviders);
@@ -94,12 +95,12 @@ class ServerListener {
         this.simpleHandlers = simpleHandlers;
         this.readerExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
-                                                                         .inheritInheritableThreadLocals(true)
+                                                                         .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
         this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
-                                                                         .inheritInheritableThreadLocals(true)
+                                                                         .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
         this.closeFuture = new CompletableFuture<>();

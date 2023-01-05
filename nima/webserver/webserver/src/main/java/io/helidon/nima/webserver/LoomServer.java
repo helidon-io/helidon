@@ -71,6 +71,8 @@ class LoomServer implements WebServer {
             defaultRouter = Router.empty();
         }
 
+       boolean inheritThreadLocals = builder.inheritThreadLocals();
+
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
             if (router == null) {
@@ -90,7 +92,8 @@ class LoomServer implements WebServer {
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers));
+                                             simpleHandlers,
+                                             inheritThreadLocals));
         }
 
         this.listeners = Map.copyOf(listeners);
