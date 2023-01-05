@@ -123,7 +123,7 @@ class WsConnection implements ServerConnection, WsSession {
     @Override
     public Optional<String> subProtocol() {
         if (upgradeHeaders != null) {
-            return Optional.of(upgradeHeaders.get(PROTOCOL).values());
+            return upgradeHeaders.first(PROTOCOL);
         }
         return Optional.empty();
     }
