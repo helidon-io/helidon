@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,6 +117,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         public void shutdown() {
             shared.shutdown();
             forApplication.shutdown();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return shared.isShutdown() && forApplication.isShutdown();
         }
 
         /**
@@ -363,6 +368,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public void shutdown() {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public boolean isShutdown() {
             throw new UnsupportedOperationException("Not supported");
         }
 
