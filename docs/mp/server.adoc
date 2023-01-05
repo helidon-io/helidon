@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@
 :feature-name: MicroProfile Server
 :microprofile-bundle: true
 :rootdir: {docdir}/..
+:requested-uri-discovery-inc: {rootdir}/includes/server/requested-uri-discovery.adoc
+
 
 include::{rootdir}/includes/mp.adoc[]
 
@@ -356,6 +358,21 @@ io.helidon.examples.AdminApplication:
   routing-path:
     path: "/management"
 ----
+
+=== Setting Up Request URI Discovery
+include::{requested-uri-discovery-inc}[tag=intro]
+
+include::{requested-uri-discovery-inc}[tag=config-example-intro]
+
+[source,properties]
+.Configuring Request URI Discovery (properties format)
+----
+server.port=8080
+server.requested-uri-discovery.types=FORWARDED,X_FORWARDED
+server.requested-uri-discovery.trusted-proxies.allow.pattern=lb.*\\.mycorp\\.com
+server.requested-uri-discovery.trusted-proxies.deny.exact=lbtest.mycorp.com
+----
+This example might apply if `mycorp.com` had trusted load balancers named `lbxxx.mycorp.com` except for an untrusted test load balancer `lbtest.mycorp.com`.
 
 == Reference
 

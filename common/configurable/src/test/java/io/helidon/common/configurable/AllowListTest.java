@@ -157,6 +157,9 @@ class AllowListTest {
                 new TestData(AllowList.create(config.get("test-allow-7")),
                              "Config: Allow pattern",
                              List.of(true, false, false, false, false)),
+                new TestData(AllowList.create(config.get("test-allow-8")),
+                             "Config: Allow pattern with quoted dot",
+                             List.of(false, false, false, false, true)),
                 new TestData(AllowList.create(config.get("test-deny-1")),
                              "Config: Deny exact",
                              List.of(false, true, true, true, true)),
@@ -179,6 +182,29 @@ class AllowListTest {
                              "Config: Deny and Allow combined",
                              List.of(false, false, true, false, false))
         );
+    }
+
+    @Test
+
+    void testPatternQuoting() {
+        AllowList trustedProxies = AllowList.builder()
+                .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
+                .addDenied("lbtest.mycorp.com")
+                .build();
+
+        assertThat("Good LB", trustedProxies.test("lb13.mycorp.com"), is(true));
+        assertThat("Bad LB", trustedProxies.test("lbtest.mycorp.com"), is(false));
+        assertThat("Other LB", trustedProxies.test("other.com"), is(false));
+    }
+
+    @Test
+    void testPropertiesConfig() {
+        Config config = Config.just(ConfigSources.classpath("allowlist/test.properties"));
+        AllowList trustedProxies = AllowList.create(config.get("server").get("requested-uri-discovery").get("trusted-proxies"));
+
+        assertThat("Good LB", trustedProxies.test("lb13.mycorp.com"), is(true));
+        assertThat("Bad LB", trustedProxies.test("lbtest.mycorp.com"), is(false));
+        assertThat("Other LB", trustedProxies.test("other.com"), is(false));
     }
 
     @ParameterizedTest
