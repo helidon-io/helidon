@@ -19,6 +19,7 @@ package io.helidon.pico;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
 
 /**
  * Describes a receiver for injection - identifies who/what is requesting an injection that needs to be satisfied.
@@ -49,6 +50,7 @@ public interface InjectionPointInfo extends ElementInfo {
      *
      * @return The qualifiers on this element
      */
+    @Singular
     Set<QualifierAndValue> qualifiers();
 
     /**
@@ -73,10 +75,10 @@ public interface InjectionPointInfo extends ElementInfo {
     boolean providerWrapped();
 
     /**
-     * The service info dependency this is dependent upon.
+     * The service info criteria/dependency this is dependent upon.
      *
-     * @return The service info we are dependent upon
+     * @return the service info criteria we are dependent upon
      */
-    ServiceInfo dependencyToServiceInfo();
+    ServiceInfoCriteria dependencyToServiceInfo();
 
 }

@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-/**
- * Pico Testing Support Module.
- */
-module io.helidon.pico.testing {
-    requires transitive io.helidon.pico.services;
+package io.helidon.pico.services;
 
-    exports io.helidon.pico.testing;
+import io.helidon.pico.PicoServicesConfig;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+
+class DefaultPicoServicesConfigTest {
+
+    @Test
+    void testIt() {
+        PicoServicesConfig cfg = DefaultPicoServicesConfig.createDefaultConfigBuilder();
+        assertThat(cfg.providerName(), equalTo("oracle"));
+        assertThat(cfg.providerVersion(), equalTo("1"));
+    }
+
 }

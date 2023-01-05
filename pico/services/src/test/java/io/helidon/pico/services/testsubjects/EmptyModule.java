@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,21 @@
  * limitations under the License.
  */
 
-/**
- * Pico Testing Support Module.
- */
-module io.helidon.pico.testing {
-    requires transitive io.helidon.pico.services;
+package io.helidon.pico.services.testsubjects;
 
-    exports io.helidon.pico.testing;
+import io.helidon.pico.ServiceBinder;
+
+import jakarta.inject.Singleton;
+
+/**
+ * For testing.
+ */
+@Singleton
+public class EmptyModule implements io.helidon.pico.Module {
+
+    @Override
+    public void configure(ServiceBinder binder) {
+
+    }
+
 }

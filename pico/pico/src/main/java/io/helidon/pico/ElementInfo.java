@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,13 @@ public interface ElementInfo {
      * @return the offset argument, 0 based, or empty if field type
      */
     Optional<Integer> elementOffset();
+
+    /**
+     * If the element is a method or constructor then this is the total argument count for that method.
+     *
+     * @return total argument count
+     */
+    Optional<Integer> elementArgs();
 
     /**
      * True if the injection point is static.

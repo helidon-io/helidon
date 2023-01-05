@@ -16,6 +16,7 @@
 
 package io.helidon.pico;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -101,5 +102,46 @@ public interface ServiceInfoCriteria {
      * @return the module name
      */
     Optional<String> moduleName();
+
+    /**
+     * Determines whether this service info matches the criteria for injection.
+     * Matches is a looser form of equality check than {@code equals()}. If a service matches criteria
+     * it is generally assumed to be viable for assignability.
+     *
+     * @param criteria the criteria to compare against
+     * @return true if the criteria provided matches this instance
+     */
+    // internal note: it is unfortunate that we have a matches() here as well as in ServiceInfo. This is what happened
+    // when we split ServiceInfo into ServiceInfoCriteria.  Sometimes we need ServiceInfo.matches(criteria), and other times
+    // ServiceInfoCriteria.matches(criteria).
+    default boolean matches(
+            ServiceInfoCriteria criteria) {
+        if (criteria == PicoServices.EMPTY_CRITERIA) {
+            return true;
+        }
+
+        boolean matches = matches(serviceTypeName(), criteria.serviceTypeName());
+        if (matches && criteria.serviceTypeName().isEmpty()) {
+            matches = contractsImplemented().containsAll(criteria.contractsImplemented())
+                    || criteria.contractsImplemented().contains(serviceTypeName());
+        }
+        return matches
+                && scopeTypeNames().containsAll(criteria.scopeTypeNames())
+                && ServiceInfo.matchesQualifiers(qualifiers(), criteria.qualifiers())
+                && matches(activatorTypeName(), criteria.activatorTypeName())
+                && matches(runLevel(), criteria.runLevel())
+//                && matchesWeight(this, criteria)
+                && matches(moduleName(), criteria.moduleName());
+    }
+
+    private static boolean matches(
+            Object src,
+            Optional<?> criteria) {
+        if (criteria.isEmpty()) {
+            return true;
+        }
+
+        return Objects.equals(src, criteria.get());
+    }
 
 }

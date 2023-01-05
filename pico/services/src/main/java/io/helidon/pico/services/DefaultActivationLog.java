@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,10 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
     private final Logger logger;
     private Logger.Level level;
 
-    private DefaultActivationLog(List<ActivationLogEntry> log,
-                                 Logger logger,
-                                 Logger.Level level) {
+    private DefaultActivationLog(
+            List<ActivationLogEntry> log,
+            Logger logger,
+            Logger.Level level) {
         this.log = log;
         this.logger = logger;
         this.level = level;
@@ -49,7 +50,8 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
      * @param logger the logger to use
      * @return the created activity log
      */
-    static DefaultActivationLog createRetainedLog(Logger logger) {
+    static DefaultActivationLog createRetainedLog(
+            Logger logger) {
         return new DefaultActivationLog(new CopyOnWriteArrayList<>(), logger, Logger.Level.INFO);
     }
 
@@ -60,7 +62,8 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
      * @param logger the logger to use
      * @return the created activity log
      */
-    static DefaultActivationLog createUnretainedLog(Logger logger) {
+    static DefaultActivationLog createUnretainedLog(
+            Logger logger) {
         return new DefaultActivationLog(null, logger, Logger.Level.DEBUG);
     }
 
@@ -69,12 +72,14 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
      *
      * @param level the level
      */
-    public void level(Logger.Level level) {
+    public void level(
+            Logger.Level level) {
         this.level = level;
     }
 
     @Override
-    public ActivationLogEntry record(ActivationLogEntry entry) {
+    public ActivationLogEntry record(
+            ActivationLogEntry entry) {
         if (log != null) {
             log.add(Objects.requireNonNull(entry));
         }
@@ -92,11 +97,12 @@ class DefaultActivationLog implements ActivationLog, ActivationLogQuery {
     }
 
     @Override
-    public boolean reset(boolean ignored) {
+    public boolean reset(
+            boolean ignored) {
         if (null != log) {
-            boolean changed = !log.isEmpty();
+            boolean affected = !log.isEmpty();
             log.clear();
-            return changed;
+            return affected;
         }
 
         return false;

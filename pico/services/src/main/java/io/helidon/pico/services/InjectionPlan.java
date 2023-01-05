@@ -165,9 +165,11 @@ public interface InjectionPlan extends BasicInjectionPlan {
                                 InjectionPlan plan = DefaultInjectionPlan.builder()
                                         .injectionPointInfo(ipInfo)
                                         .injectionPointQualifiedServiceProviders(serviceProviders)
+                                        .serviceProvider(self)
                                         .wasResolved(resolveIps)
                                         .resolved((resolved instanceof Optional<?>
-                                                && ((Optional<?>) resolved).isEmpty()) ? null : resolved)
+                                                && ((Optional<?>) resolved).isEmpty())
+                                                          ? Optional.empty() : Optional.ofNullable(resolved))
                                         .build();
                                 Object prev = result.put(id, plan);
                                 assert (Objects.isNull(prev)) : ipInfo;
@@ -231,7 +233,7 @@ public interface InjectionPlan extends BasicInjectionPlan {
 
     static boolean allowNullableInjectionPoint(
             InjectionPointInfo ipInfo) {
-        ServiceInfo missingServiceInfo = ipInfo.dependencyToServiceInfo();
+        ServiceInfoCriteria missingServiceInfo = ipInfo.dependencyToServiceInfo();
         Set<String> contractsNeeded = missingServiceInfo.contractsImplemented();
         return (1 == contractsNeeded.size() && contractsNeeded.contains(Interceptor.class.getName()));
     }
@@ -262,7 +264,7 @@ public interface InjectionPlan extends BasicInjectionPlan {
 
                 if (serviceProviders.isEmpty()) {
                     if (!allowNullableInjectionPoint(ipInfo)) {
-                        throw new InjectionException("expected to resolve a service instance appropriate for "
+                        throw new InjectionException("expected to resolve a service appropriate for "
                                                              + ipInfo.serviceTypeName() + "." + ipInfo.elementName(),
                                                      DefaultServices
                                                              .resolutionBasedInjectionError(
@@ -284,7 +286,7 @@ public interface InjectionPlan extends BasicInjectionPlan {
                 if (ipInfo.optionalWrapped()) {
                     return Optional.empty();
                 } else {
-                    throw new InjectionException("expected to resolve a service instance appropriate for "
+                    throw new InjectionException("expected to resolve a service appropriate for "
                             + ipInfo.serviceTypeName() + "." + ipInfo.elementName(),
                                  DefaultServices.resolutionBasedInjectionError(ipInfo.dependencyToServiceInfo()), self);
                 }
@@ -297,7 +299,7 @@ public interface InjectionPlan extends BasicInjectionPlan {
                         && serviceProviderBindable.get() instanceof ServiceProviderProvider) {
                     serviceProvider = serviceProviderBindable.get();
                     serviceProviders = (List<ServiceProvider<?>>) ((ServiceProviderProvider) serviceProvider)
-                            .serviceProviders(ipInfo.dependencyToServiceInfo().toCriteria(false), true, false);
+                            .serviceProviders(ipInfo.dependencyToServiceInfo(), true, false);
                     if (!serviceProviders.isEmpty()) {
                         serviceProvider = serviceProviders.get(0);
                     }
@@ -343,7 +345,7 @@ public interface InjectionPlan extends BasicInjectionPlan {
 
         ContextualServiceQuery query = DefaultContextualServiceQuery.builder()
                 .injectionPointInfo(ipInfo)
-                .serviceInfoCriteria(ipInfo.dependencyToServiceInfo().toCriteria(false))
+                .serviceInfoCriteria(ipInfo.dependencyToServiceInfo())
                 .expected(expected);
         for (ServiceProvider<?> sp : list) {
             Collection instances = sp.list(query);

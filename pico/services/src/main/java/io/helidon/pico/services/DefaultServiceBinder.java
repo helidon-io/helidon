@@ -49,7 +49,7 @@ class DefaultServiceBinder implements ServiceBinder {
             bindableSp.ifPresent(it -> it.moduleName(moduleName));
         }
 
-        serviceRegistry.bind(picoServices, sp);
+        serviceRegistry.bind(sp);
         bindableSp.ifPresent(it -> it.picoServices(Optional.ofNullable(picoServices)));
     }
 

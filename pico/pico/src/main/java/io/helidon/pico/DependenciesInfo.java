@@ -16,15 +16,17 @@
 
 package io.helidon.pico;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.types.TypeName;
+import io.helidon.builder.Singular;
 
 /**
- * Represents a per {@link ServiceInfo} mapping of {@link DependencyInfo}'s.
+ * Represents a per {@link ServiceInfo} mapping of {@link DependencyInfo}'s. These are typically assigned to a
+ * {@link ServiceProvider} via compile-time code generation within the Pico framework.
  */
 @Builder
 public interface DependenciesInfo {
@@ -34,20 +36,26 @@ public interface DependenciesInfo {
      *
      * @return map from the service info to its dependencies
      */
-    Map<ServiceInfo, Set<DependencyInfo>> serviceInfoDependencies();
-
-    /**
-     * Represents a flattened set of all dependencies.
-     *
-     * @return the flattened set of all dependencies
-     */
-    Set<DependencyInfo> allDependencies();
+    @Singular("serviceInfoDependency")
+    Map<ServiceInfoCriteria, Set<DependencyInfo>> serviceInfoDependencies();
 
     /**
      * Optionally, the service type name aggregating {@link #allDependencies()}.
      *
      * @return the optional service type name for which these dependencies belong
      */
-    Optional<TypeName> fromServiceTypeName();
+    Optional<String> fromServiceTypeName();
+
+    /**
+     * Represents a flattened set of all dependencies.
+     *
+     * @return the flattened set of all dependencies
+     */
+    default Set<DependencyInfo> allDependencies() {
+        Set<DependencyInfo> all = new LinkedHashSet<>();
+        serviceInfoDependencies().values()
+                .forEach(all::addAll);
+        return all;
+    }
 
 }

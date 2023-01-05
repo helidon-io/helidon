@@ -88,11 +88,9 @@ public interface Services {
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
      * @throws io.helidon.pico.PicoException if expected=true and resolution fails to resolve a match
      */
-    default <T> Optional<ServiceProvider<T>> lookupFirst(
+    <T> Optional<ServiceProvider<T>> lookupFirst(
             Class<T> type,
-            boolean expected) {
-        return lookupFirst(type, null, expected);
-    }
+            boolean expected);
 
     /**
      * Retrieve the "first" service that implements a given contract type with no expectation that there is a match available

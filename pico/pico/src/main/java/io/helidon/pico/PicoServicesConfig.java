@@ -447,8 +447,7 @@ public abstract class PicoServicesConfig {
     protected Optional<Config> get(
             String key) {
         Optional<Bootstrap> bootstrap = PicoServicesHolder.bootstrap(false);
-        if (bootstrap.isEmpty()
-                || bootstrap.get().config().isEmpty()) {
+        if (bootstrap.isEmpty() || bootstrap.get().config().isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(bootstrap.get().config().get().get(NAME).get(key));

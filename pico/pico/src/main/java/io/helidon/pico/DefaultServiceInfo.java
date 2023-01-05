@@ -27,14 +27,13 @@ import java.util.TreeSet;
  * The default/reference implementation for {@link ServiceInfo}.
  */
 public class DefaultServiceInfo implements ServiceInfo {
-
     private final String serviceTypeName;
     private final Set<String> contractsImplemented;
     private final Set<String> externalContractsImplemented;
     private final Set<String> scopeTypeNames;
     private final Set<QualifierAndValue> qualifiers;
     private final String activatorTypeName;
-    private final int runLevel;
+    private final Integer runLevel;
     private final Double weight;
     private final String moduleName;
 
@@ -50,7 +49,7 @@ public class DefaultServiceInfo implements ServiceInfo {
         this.scopeTypeNames = Set.copyOf(src.scopeTypeNames());
         this.qualifiers = Set.copyOf(src.qualifiers());
         this.activatorTypeName = src.activatorTypeName();
-        this.runLevel = src.runLevel();
+        this.runLevel = src.declaredRunLevel().orElse(null);
         this.moduleName = src.moduleName().orElse(null);
         this.weight = src.declaredWeight().orElse(null);
     }
@@ -95,7 +94,7 @@ public class DefaultServiceInfo implements ServiceInfo {
                 && Objects.equals(contractsImplemented(), ((ServiceInfo) another).contractsImplemented())
                 && Objects.equals(qualifiers(), ((ServiceInfo) another).qualifiers())
                 && Objects.equals(activatorTypeName(), ((ServiceInfo) another).activatorTypeName())
-                && Objects.equals(runLevel(), ((ServiceInfo) another).runLevel())
+                && Objects.equals(realizedRunLevel(), ((ServiceInfo) another).realizedRunLevel())
                 && Objects.equals(realizedWeight(), ((ServiceInfo) another).realizedWeight())
                 && Objects.equals(moduleName(), ((ServiceInfo) another).moduleName());
     }
@@ -121,8 +120,8 @@ public class DefaultServiceInfo implements ServiceInfo {
     }
 
     @Override
-    public int runLevel() {
-        return runLevel;
+    public Optional<Integer> declaredRunLevel() {
+        return Optional.ofNullable(runLevel);
     }
 
     @Override
@@ -193,7 +192,7 @@ public class DefaultServiceInfo implements ServiceInfo {
             this.scopeTypeNames.addAll(c.scopeTypeNames());
             this.qualifiers.addAll(c.qualifiers());
             this.activatorTypeName = c.activatorTypeName();
-            this.runLevel = c.runLevel();
+            this.runLevel = c.declaredRunLevel().orElse(null);
             this.moduleName = c.moduleName().orElse(null);
             this.weight = c.declaredWeight().orElse(null);
         }
@@ -207,7 +206,7 @@ public class DefaultServiceInfo implements ServiceInfo {
         public C build() {
             Objects.requireNonNull(serviceTypeName);
 
-            return (C) new DefaultServiceInfo(this);
+            return (C) new DefaultServiceInfo(Builder.this);
         }
 
         /**
@@ -272,7 +271,7 @@ public class DefaultServiceInfo implements ServiceInfo {
          * @param contractImplemented the contract implemented
          * @return this fluent builder
          */
-        public B contractImplemented(String contractImplemented) {
+        public B addContractImplemented(String contractImplemented) {
             Objects.requireNonNull(contractImplemented);
             contractsImplemented.add(contractImplemented);
             return identity();
@@ -284,8 +283,8 @@ public class DefaultServiceInfo implements ServiceInfo {
          * @param contract the contract type
          * @return this fluent builder
          */
-        public B contractTypeImplemented(Class<?> contract) {
-            return contractImplemented(contract.getName());
+        public B addContractTypeImplemented(Class<?> contract) {
+            return addContractImplemented(contract.getName());
         }
 
         /**
@@ -310,7 +309,7 @@ public class DefaultServiceInfo implements ServiceInfo {
         public B addExternalContractImplemented(String contractImplemented) {
             Objects.requireNonNull(contractImplemented);
             this.externalContractsImplemented.add(contractImplemented);
-            return contractImplemented(contractImplemented);
+            return addContractImplemented(contractImplemented);
         }
 
         /**
@@ -446,14 +445,30 @@ public class DefaultServiceInfo implements ServiceInfo {
         }
 
         @Override
-        public int runLevel() {
-            return (runLevel == null) ? RunLevel.NORMAL : runLevel;
+        public Set<String> scopeTypeNames() {
+            return scopeTypeNames;
+        }
+
+        @Override
+        public Set<QualifierAndValue> qualifiers() {
+            return qualifiers;
+        }
+
+        @Override
+        public Set<String> contractsImplemented() {
+            return contractsImplemented;
+        }
+
+        @Override
+        public Optional<Integer> declaredRunLevel() {
+            return Optional.of(runLevel);
         }
 
         @Override
         public Optional<Double> declaredWeight() {
             return Optional.ofNullable(weight);
         }
+
     }
 
 }

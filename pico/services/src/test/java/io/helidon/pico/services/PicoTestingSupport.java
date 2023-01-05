@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-/**
- * Pico Testing Support Module.
- */
-module io.helidon.pico.testing {
-    requires transitive io.helidon.pico.services;
+package io.helidon.pico.services;
 
-    exports io.helidon.pico.testing;
+import io.helidon.pico.PicoServicesHolder;
+
+/**
+ * Supporting helper utilities unit-testing Pico services.
+ */
+class PicoTestingSupport {
+
+    /**
+     * Resets all internal Pico configuration instances, JVM global singletons, service registries, etc.
+     */
+    static void resetAll() {
+        Holder.reset();
+    }
+
+
+    private static class Holder extends PicoServicesHolder {
+        public static void reset() {
+            PicoServicesHolder.reset();
+        }
+    }
+
 }

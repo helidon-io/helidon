@@ -20,7 +20,7 @@ import io.helidon.builder.Builder;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Request to {@link io.helidon.pico.DeActivator#deactivate(DeActivationRequest)}.
+ * Request to deactivate a {@link io.helidon.pico.ServiceProvider}.
  */
 @Builder
 public interface DeActivationRequest {

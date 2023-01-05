@@ -118,20 +118,8 @@ public interface ActivationLogEntry {
                 b.threadId(Thread.currentThread().getId());
             }
 
-            if (b.finishedActivationPhase() == null) {
-                b.finishedActivationPhase(b.startingActivationPhase());
-            }
-
-            if (b.targetActivationPhase() == null) {
-                b.targetActivationPhase(b.finishedActivationPhase());
-            }
-
             if (b.event() == null) {
                 b.event(Event.FINISHED);
-            }
-
-            if (b.finishedStatus() == null) {
-                b.finishedStatus(ActivationStatus.SUCCESS);
             }
 
             return b;

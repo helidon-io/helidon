@@ -54,6 +54,7 @@ public interface PicoServices {
      * Retrieves any primordial bootstrap configuration that previously set.
      *
      * @return the bootstrap primordial configuration already assigned
+     * @see #globalBootstrap(Bootstrap)
      */
     static Optional<Bootstrap> globalBootstrap() {
         return PicoServicesHolder.bootstrap(false);
@@ -64,6 +65,7 @@ public interface PicoServices {
      * singleton initialization.
      *
      * @param bootstrap the primordial global bootstrap configuration
+     * @see #globalBootstrap()
      */
     static void globalBootstrap(Bootstrap bootstrap) {
         PicoServicesHolder.bootstrap(bootstrap);

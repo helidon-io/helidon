@@ -30,7 +30,7 @@ public class InjectionException extends PicoServiceProviderException {
      *
      * @see PicoServicesConfig#activationLogs()
      */
-    private final ActivationLog activationLog;
+    private ActivationLog activationLog;
 
     /**
      * Injection, or a required service lookup related exception.
@@ -39,7 +39,6 @@ public class InjectionException extends PicoServiceProviderException {
      */
     public InjectionException(String msg) {
         super(msg);
-        this.activationLog = null;
     }
 
     /**
@@ -53,7 +52,6 @@ public class InjectionException extends PicoServiceProviderException {
                               Throwable cause,
                               ServiceProvider<?> serviceProvider) {
         super(msg, cause, serviceProvider);
-        this.activationLog = null;
     }
 
     /**
@@ -61,31 +59,10 @@ public class InjectionException extends PicoServiceProviderException {
      *
      * @param msg               the message
      * @param serviceProvider   the service provider
-     * @param log               the activity log
      */
     public InjectionException(String msg,
-                              ServiceProvider<?> serviceProvider,
-                              ActivationLog log) {
+                              ServiceProvider<?> serviceProvider) {
         super(msg, serviceProvider);
-        Objects.requireNonNull(log);
-        this.activationLog = log;
-    }
-
-    /**
-     * Injection, or a required service lookup related exception.
-     *
-     * @param msg               the message
-     * @param cause             the root cause
-     * @param serviceProvider   the service provider
-     * @param log               the activity log
-     */
-    public InjectionException(String msg,
-                              Throwable cause,
-                              ServiceProvider<?> serviceProvider,
-                              ActivationLog log) {
-        super(msg, cause, serviceProvider);
-        Objects.requireNonNull(log);
-        this.activationLog = log;
     }
 
     /**
@@ -95,6 +72,18 @@ public class InjectionException extends PicoServiceProviderException {
      */
     public Optional<ActivationLog> activationLog() {
         return Optional.ofNullable(activationLog);
+    }
+
+    /**
+     * Sets the activation log on the exception.
+     *
+     * @param log the activation log
+     * @return this exception instance
+     */
+    public InjectionException activationLog(
+            ActivationLog log) {
+        this.activationLog = Objects.requireNonNull(log);
+        return this;
     }
 
 }

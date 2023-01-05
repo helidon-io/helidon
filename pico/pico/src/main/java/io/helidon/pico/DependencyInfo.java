@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
 
 /**
  * Aggregates the set of {@link InjectionPointInfo}'s that are dependent upon a specific and common
@@ -40,6 +41,7 @@ public interface DependencyInfo {
      *
      * @return the set of dependencies
      */
+    @Singular("injectionPointDependency")
     Set<? extends InjectionPointInfo> injectionPointDependencies();
 
     /**

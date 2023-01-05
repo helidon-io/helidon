@@ -65,7 +65,7 @@ public interface ContextualServiceQuery {
         return DefaultContextualServiceQuery.builder()
                 .expected(expected)
                 .injectionPointInfo(ipInfo)
-                .serviceInfoCriteria(ipInfo.dependencyToServiceInfo().toCriteria(false))
+                .serviceInfoCriteria(ipInfo.dependencyToServiceInfo())
                 .build();
     }
 

@@ -16,43 +16,35 @@
 
 package io.helidon.pico.services;
 
-/**
- * Models all dependencies on a particular {@link io.helidon.pico.ServiceInfo}.
- */
-class Dependencies {
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
-//    /**
-//     * Combine the dependency info from the two sources to create a merged set of dependencies.
-//     *
-//     * @param parentDeps    the parent set of dependencies
-//     * @param deps          the child set of dependencies
-//     * @return              the combined set
-//     */
-//    public static DependenciesInfo combine(DependenciesInfo parentDeps,
-//                                           DependenciesInfo deps) {
-//        Map<ServiceInfo, Set<DependencyInfo>> serviceInfoDependencies =
-//                new LinkedHashMap<>(parentDeps.serviceInfoDependencies());
-//        Set<DependencyInfo> allDeps =
-//                new LinkedHashSet<>(parentDeps.allDependencies());
-//        deps.serviceInfoDependencies().forEach((depTo, depSet) -> {
-//            Set<DependencyInfo> set = serviceInfoDependencies.get(depTo);
-//            if (Objects.isNull(set)) {
-//                Object prev = serviceInfoDependencies.put(depTo, depSet);
-//                assert (Objects.isNull(prev) || prev.equals(depSet));
-//                set = depSet;
-//            } else {
-//                set.addAll(depSet);
-//            }
-//
-//            allDeps.addAll(set);
-//        });
-//
-//        Dependencies newDeps = new Dependencies(deps.getForServiceTypeName(), serviceInfoDependencies,
-//                new LinkedList<>(allDeps));
-////        assert (newDeps.getDependencies().size() == deps.getDependencies().size() + parentDeps.getDependencies().size());
-//        return newDeps;
-//    }
-//
+import io.helidon.pico.DefaultDependenciesInfo;
+import io.helidon.pico.DefaultDependencyInfo;
+import io.helidon.pico.DefaultInjectionPointInfo;
+import io.helidon.pico.DefaultQualifierAndValue;
+import io.helidon.pico.DefaultServiceInfoCriteria;
+import io.helidon.pico.DependenciesInfo;
+import io.helidon.pico.DependencyInfo;
+import io.helidon.pico.ElementInfo;
+import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.ServiceInfoCriteria;
+import io.helidon.pico.types.DefaultTypeName;
+import io.helidon.pico.types.TypeName;
+
+/**
+ * This is the class the code-generator will target that will be used at runtime for a service provider to build up its
+ * dependencies expressed as {@link io.helidon.pico.DependenciesInfo}.
+ */
+public class Dependencies {
+
+    private Dependencies() {
+    }
+
 //    /**
 //     * Remove a dependency from the list.
 //     *
@@ -83,9 +75,6 @@ class Dependencies {
 //                                                new LinkedList<>(dependencies));
 //    }
 //
-//    /**
-//     * {@inheritDoc}
-//     */
 //    @Override
 //    public String toString() {
 //        return getForServiceTypeName() + " : " + getServiceInfoDependencies();
@@ -110,16 +99,18 @@ class Dependencies {
 //    public List<DependencyInfo> getAllDependencies() {
 //        return (List) getDependencies();
 //    }
-//
-//    /**
-//     * Creates a builder.
-//     *
-//     * @return the fluent builder
-//     */
-//    public static Builder builder() {
-//        return new Builder();
-//    }
-//
+
+    /**
+     * Creates a builder.
+     *
+     * @return the fluent builder
+     */
+    public static BuilderContinuation builder(
+            String serviceTypeName) {
+        Objects.requireNonNull(serviceTypeName);
+        return new BuilderContinuation(serviceTypeName);
+    }
+
 //    @Override
 //    public Map<ServiceInfo, Set<DependencyInfo>> serviceInfoDependencies() {
 //        return null;
@@ -177,329 +168,490 @@ class Dependencies {
 //        }
 //    }
 //
-//    /**
-//     * The continuation builder.
-//     */
-//    @SuppressWarnings("unchecked")
-//    public static class BuilderContinuation {
-//        private Builder builder;
-//        private DefaultInjectionPointInfo.DefaultInjectionPointInfoBuilder ipInfoBuilder;
-//
-//        private BuilderContinuation(Builder builder) {
-//            assert (Objects.nonNull(builder));
-//            this.builder = builder;
-//        }
-//
-//        /**
-//         * Adds a new item.
-//         *
-//         * @param elemName the element name
-//         * @param elemType the element type
-//         * @param kind the element kind
-//         * @param access the element access
-//         * @return the builder
-//         */
-//        public BuilderContinuation add(String elemName,
-//                                       Class<?> elemType,
-//                                       InjectionPointInfo.ElementKind kind,
-//                                       InjectionPointInfo.Access access) {
-//            if (InjectionPointInfo.ElementKind.FIELD != kind && Void.class != elemType) {
-//                throw new AssertionError("should not use this method for method types");
-//            }
-//            return add(builder.forServiceTypeName, elemName, elemType.getName(), kind, 0, access);
-//        }
-//
-//        /**
-//         * Adds a new item.
-//         *
-//         * @param elemName the element name
-//         * @param elemType the element type
-//         * @param kind the element kind
-//         * @param elemArgs for methods, the number of arguments the method takes
-//         * @param access the element access
-//         * @return the builder
-//         */
-//        public BuilderContinuation add(String elemName,
-//                                       Class<?> elemType,
-//                                       InjectionPointInfo.ElementKind kind,
-//                                       int elemArgs,
-//                                       InjectionPointInfo.Access access) {
-//            if (InjectionPointInfo.ElementKind.FIELD == kind && 0 != elemArgs) {
-//                throw new AssertionError("should not have args for field: " + elemName);
-//            }
-//            return add(builder.forServiceTypeName, elemName, elemType.getName(), kind, elemArgs, access);
-//        }
-//
-//        /**
-//         * Adds a new item.
-//         *
-//         * @param serviceType the service type
-//         * @param elemName the element name
-//         * @param elemType the element type
-//         * @param kind the element kind
-//         * @param access the element access
-//         * @return the builder
-//         */
-//        public BuilderContinuation add(Class<?> serviceType,
-//                                       String elemName,
-//                                       Class<?> elemType,
-//                                       InjectionPointInfo.ElementKind kind,
-//                                       InjectionPointInfo.Access access) {
-//            if (InjectionPointInfo.ElementKind.FIELD != kind) {
-//                throw new AssertionError("should not use this method for method types");
-//            }
-//            return add(serviceType.getName(), elemName, elemType.getName(), kind, 0, access);
-//        }
-//
-//        /**
-//         * Adds a new item.
-//         *
-//         * @param serviceType the service type
-//         * @param elemName the element name
-//         * @param elemType the element type
-//         * @param kind the element kind
-//         * @param elemArgs for methods, the number of arguments the method accepts
-//         * @param access the element access
-//         * @return the builder
-//         */
-//        public BuilderContinuation add(Class<?> serviceType,
-//                                       String elemName,
-//                                       Class<?> elemType,
-//                                       InjectionPointInfo.ElementKind kind,
-//                                       int elemArgs,
-//                                       InjectionPointInfo.Access access) {
-//            return add(serviceType.getName(), elemName, elemType.getName(), kind, elemArgs, access);
-//        }
-//
-//        /**
-//         * Adds a new item.
-//         *
-//         * @param serviceTypeName the service type
-//         * @param elemName the element name
-//         * @param elemTypeName the element type
-//         * @param kind the element kind
-//         * @param elemArgs for methods, this is the number of arguments the method accepts
-//         * @param access the element access
-//         * @return the builder
-//         */
-//        public BuilderContinuation add(String serviceTypeName,
-//                                       String elemName,
-//                                       String elemTypeName,
-//                                       InjectionPointInfo.ElementKind kind,
-//                                       int elemArgs,
-//                                       InjectionPointInfo.Access access) {
-//            commitLastDependency();
-//
-//            ipInfoBuilder = DefaultInjectionPointInfo.builder()
-//                    .serviceTypeName(serviceTypeName)
-//                    .access(access)
-//                    .elementKind(kind)
-//                    .elementTypeName(elemTypeName)
-//                    .elementName(elemName)
-//                    .elementArgs(elemArgs);
-//
-//            return this;
-//        }
-//
-//        /**
-//         * Adds a new item.
-//         *
-//         * @param ipInfo the injection point info already built
-//         * @return the builder
-//         */
-//        public BuilderContinuation add(DefaultInjectionPointInfo ipInfo) {
-//            commitLastDependency();
-//
-//            ipInfoBuilder = ipInfo.toBuilder();
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the element offset.
-//         *
-//         * @param offset the offset
-//         * @return the builder
-//         */
-//        public BuilderContinuation elemOffset(Integer offset) {
-//            ipInfoBuilder.elementOffset(offset);
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the flag indicating the injection point is a list.
-//         *
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsListWrapped() {
-//            return setIsListWrapped(true);
-//        }
-//
-//        /**
-//         * Sets the flag indicating the injection point is a list.
-//         *
-//         * @param val true if list type
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsListWrapped(boolean val) {
-//            ipInfoBuilder.listWrapped(val);
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the flag indicating the injection point is a provider.
-//         *
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsProviderWrapped() {
-//            return setIsProviderWrapped(true);
-//        }
-//
-//        /**
-//         * Sets the flag indicating the injection point is a provider.
-//         *
-//         * @param val true if provider type
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsProviderWrapped(boolean val) {
-//            ipInfoBuilder.providerWrapped(val);
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the flag indicating the injection point is an {@link java.util.Optional} type.
-//         *
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsOptionalWrapped() {
-//            return setIsOptionalWrapped(true);
-//        }
-//
-//        /**
-//         * Sets the flag indicating the injection point is an {@link java.util.Optional} type.
-//         *
-//         * @param val true if list type
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsOptionalWrapped(boolean val) {
-//            ipInfoBuilder.optionalWrapped(val);
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the optional qualified name of the injection point.
-//         *
-//         * @param val the name
-//         * @return the builder
-//         */
-//        public BuilderContinuation named(String val) {
-//            ipInfoBuilder.qualifier(DefaultQualifierAndValue.createNamed(val));
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the optional qualifier of the injection point.
-//         *
-//         * @param val the qualifier
-//         * @return the builder
-//         */
-//        public BuilderContinuation qualifier(Class<? extends Annotation> val) {
-//            ipInfoBuilder.qualifier(DefaultQualifierAndValue.create(val));
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the optional qualifier of the injection point.
-//         *
-//         * @param val the qualifier
-//         * @return the builder
-//         */
-//        public BuilderContinuation qualifier(QualifierAndValue val) {
-//            ipInfoBuilder.qualifier(val);
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the optional qualifier of the injection point.
-//         *
-//         * @param val the qualifier
-//         * @return the builder
-//         */
-//        public BuilderContinuation qualifiers(Collection<QualifierAndValue> val) {
-//            if (Objects.nonNull(val)) {
-//                ipInfoBuilder.qualifiers(val);
-//            }
-//            return this;
-//        }
-//
-//        /**
-//         * Sets the flag indicating that the injection point is static.
-//         *
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsStatic() {
-//            return setIsStatic(true);
-//        }
-//
-//        /**
-//         * Sets the flag indicating that the injection point is static.
-//         *
-//         * @param val flag indicating if static
-//         * @return the builder
-//         */
-//        public BuilderContinuation setIsStatic(boolean val) {
-//            ipInfoBuilder.staticDecl(val);
-//            return this;
-//        }
-//
-//        /**
-//         * Commits the last dependency item to complete the builder.
-//         *
-//         * @return the built dependencies
-//         */
-//        public io.helidon.pico.spi.ext.Dependency<?> commitLastDependency() {
-//            assert (Objects.nonNull(builder));
-//
-//            if (Objects.isNull(ipInfoBuilder)) {
-//                return null;
-//            }
-//
-//            final DefaultInjectionPointInfo ipInfo = ipInfoBuilder.build();
-//            ipInfoBuilder = null;
-//
-//            AtomicReference<io.helidon.pico.spi.ext.Dependency<Object>> depRef = new AtomicReference<>();
-//            ServiceInfo depServiceInfo = ipInfo.toDependencyToServiceInfo();
-//            builder.serviceInfoDependencies.compute(depServiceInfo, (key, val) -> {
-//                if (Objects.isNull(val)) {
-//                    val = new LinkedHashSet<>();
-//                    depRef.set(new io.helidon.pico.spi.ext.Dependency<>(key, ipInfo));
-//                } else {
-//                    io.helidon.pico.spi.ext.Dependency<Object> firstDep = val.iterator().next();
-//
-//                    // needed to avoid heap proliferation of serviceInfo's - we pick the 1st created serviceInfo...
-//                    key = firstDep.getDependencyTo();
-//                    ipInfo.setDependencyToServiceInfo(key);
-//                    depRef.set(new io.helidon.pico.spi.ext.Dependency<>(key, ipInfo));
-//                }
-//
-//                val.add(depRef.get());
-//
-//                return val;
-//            });
-//            builder.allDependencies.add(depRef.get());
-//            return depRef.get();
-//        }
-//
-//        /**
-//         * Creates a builder.
-//         *
-//         * @return the builder
-//         */
-//        public Builder build() {
-//            commitLastDependency();
-//            Builder last = Objects.requireNonNull(builder);
-//            builder = null;
-//            return last;
-//        }
-//    }
-//
+    /**
+     * The continuation builder. This is a specialized builder used within the generated Pico {@link io.helidon.pico.Activator}.
+     * It is specialized in that it validates and decorates over the normal builder, and provides a more streamlined interface.
+     */
+    public static class BuilderContinuation {
+        private DefaultDependenciesInfo.Builder builder;
+        private DefaultInjectionPointInfo.Builder ipInfoBuilder;
+
+        private BuilderContinuation(String serviceTypeName) {
+            this.builder = DefaultDependenciesInfo.builder()
+                    .fromServiceTypeName(serviceTypeName);
+        }
+
+        /**
+         * Adds a new dependency item.
+         *
+         * @param elemName  the element name
+         * @param elemType  the element type
+         * @param kind      the element kind
+         * @param access    the element access
+         * @return the builder
+         */
+        public BuilderContinuation add(
+                String elemName,
+                Class<?> elemType,
+                InjectionPointInfo.ElementKind kind,
+                InjectionPointInfo.Access access) {
+            if (InjectionPointInfo.ElementKind.FIELD != kind && Void.class != elemType) {
+                throw new IllegalStateException("should not use this method for method types");
+            }
+            return add(builder.fromServiceTypeName().orElseThrow(), elemName, elemType.getName(), kind, 0, access);
+        }
+
+        /**
+         * Adds a new dependency item.
+         *
+         * @param elemName the element name
+         * @param elemType the element type
+         * @param kind the element kind
+         * @param elemArgs for methods, the number of arguments the method takes
+         * @param access the element access
+         * @return the builder
+         */
+        public BuilderContinuation add(String elemName,
+                                       Class<?> elemType,
+                                       InjectionPointInfo.ElementKind kind,
+                                       int elemArgs,
+                                       InjectionPointInfo.Access access) {
+            if (InjectionPointInfo.ElementKind.FIELD == kind && 0 != elemArgs) {
+                throw new IllegalStateException("should not have args for field: " + elemName);
+            }
+            return add(builder.fromServiceTypeName().orElseThrow(), elemName, elemType.getName(), kind, elemArgs, access);
+        }
+
+        /**
+         * Adds a new dependency item.
+         *
+         * @param serviceType   the service type
+         * @param elemName      the element name
+         * @param elemType      the element type
+         * @param kind          the element kind
+         * @param access        the element access
+         * @return the builder
+         */
+        public BuilderContinuation add(
+                Class<?> serviceType,
+                String elemName,
+                Class<?> elemType,
+                InjectionPointInfo.ElementKind kind,
+                InjectionPointInfo.Access access) {
+            if (InjectionPointInfo.ElementKind.FIELD != kind) {
+                throw new IllegalStateException("should not use this method for method types");
+            }
+            return add(serviceType.getName(), elemName, elemType.getName(), kind, 0, access);
+        }
+
+        /**
+         * Adds a new dependency item.
+         *
+         * @param serviceType   the service type
+         * @param elemName      the element name
+         * @param elemType      the element type
+         * @param kind          the element kind
+         * @param elemArgs      used for methods only; the number of arguments the method accepts
+         * @param access        the element access
+         * @return the builder
+         */
+        public BuilderContinuation add(
+                Class<?> serviceType,
+                String elemName,
+                Class<?> elemType,
+                InjectionPointInfo.ElementKind kind,
+                int elemArgs,
+                InjectionPointInfo.Access access) {
+            return add(serviceType.getName(), elemName, elemType.getName(), kind, elemArgs, access);
+        }
+
+        /**
+         * Adds a new dependency item.
+         *
+         * @param ipInfo the injection point info already built
+         * @return the builder
+         */
+        public BuilderContinuation add(
+                InjectionPointInfo ipInfo) {
+            commitLastDependency();
+
+            ipInfoBuilder = DefaultInjectionPointInfo.toBuilder(ipInfo);
+            return this;
+        }
+
+        /**
+         * Sets the element offset.
+         *
+         * @param offset the offset
+         * @return the builder
+         */
+        public BuilderContinuation elemOffset(
+                Integer offset) {
+            ipInfoBuilder.elementOffset(offset);
+            return this;
+        }
+
+        /**
+         * Sets the flag indicating the injection point is a list.
+         *
+         * @return the builder
+         */
+        public BuilderContinuation listWrapped() {
+            return listWrapped(true);
+        }
+
+        /**
+         * Sets the flag indicating the injection point is a list.
+         *
+         * @param val true if list type
+         * @return the builder
+         */
+        public BuilderContinuation listWrapped(
+                boolean val) {
+            ipInfoBuilder.listWrapped(val);
+            return this;
+        }
+
+        /**
+         * Sets the flag indicating the injection point is a provider.
+         *
+         * @return the builder
+         */
+        public BuilderContinuation providerWrapped() {
+            return providerWrapped(true);
+        }
+
+        /**
+         * Sets the flag indicating the injection point is a provider.
+         *
+         * @param val true if provider type
+         * @return the builder
+         */
+        public BuilderContinuation providerWrapped(
+                boolean val) {
+            ipInfoBuilder.providerWrapped(val);
+            return this;
+        }
+
+        /**
+         * Sets the flag indicating the injection point is an {@link java.util.Optional} type.
+         *
+         * @return the builder
+         */
+        public BuilderContinuation optionalWrapped() {
+            return optionalWrapped(true);
+        }
+
+        /**
+         * Sets the flag indicating the injection point is an {@link java.util.Optional} type.
+         *
+         * @param val true if list type
+         * @return the builder
+         */
+        public BuilderContinuation optionalWrapped(
+                boolean val) {
+            ipInfoBuilder.optionalWrapped(val);
+            return this;
+        }
+
+        /**
+         * Sets the optional qualified name of the injection point.
+         *
+         * @param val the name
+         * @return the builder
+         */
+        public BuilderContinuation named(
+                String val) {
+            ipInfoBuilder.addQualifier(DefaultQualifierAndValue.createNamed(val));
+            return this;
+        }
+
+        /**
+         * Sets the optional qualifier of the injection point.
+         *
+         * @param val the qualifier
+         * @return the builder
+         */
+        public BuilderContinuation qualifier(
+                Class<? extends Annotation> val) {
+            ipInfoBuilder.addQualifier(DefaultQualifierAndValue.create(val));
+            return this;
+        }
+
+        /**
+         * Sets the optional qualifier of the injection point.
+         *
+         * @param val the qualifier
+         * @return the builder
+         */
+        public BuilderContinuation qualifier(
+                QualifierAndValue val) {
+            ipInfoBuilder.addQualifier(val);
+            return this;
+        }
+
+        /**
+         * Sets the optional qualifier of the injection point.
+         *
+         * @param val the qualifier
+         * @return the builder
+         */
+        public BuilderContinuation qualifiers(
+                Collection<QualifierAndValue> val) {
+            ipInfoBuilder.qualifiers(val);
+            return this;
+        }
+
+        /**
+         * Sets the flag indicating that the injection point is static.
+         *
+         * @return the builder
+         */
+        public BuilderContinuation staticDeclaration() {
+            return staticDeclaration(true);
+        }
+
+        /**
+         * Sets the flag indicating that the injection point is static.
+         *
+         * @param val flag indicating if static
+         * @return the builder
+         */
+        public BuilderContinuation staticDeclaration(
+                boolean val) {
+            ipInfoBuilder.staticDeclaration(val);
+            return this;
+        }
+
+        /**
+         * Commits the last dependency item, and prepares for the next.
+         *
+         * @return the builder
+         */
+        public DependenciesInfo build() {
+            assert (builder != null);
+
+            commitLastDependency();
+            DependenciesInfo deps = builder.build();
+            builder = null;
+            return deps;
+        }
+
+        /**
+         * Adds a new dependency item.
+         *
+         * @param serviceTypeName   the service type
+         * @param elemName          the element name
+         * @param elemTypeName      the element type
+         * @param kind              the element kind
+         * @param elemArgs          used for methods only; this is the number of arguments the method accepts
+         * @param access            the element access
+         * @return the builder
+         */
+        public BuilderContinuation add(
+                String serviceTypeName,
+                String elemName,
+                String elemTypeName,
+                InjectionPointInfo.ElementKind kind,
+                int elemArgs,
+                InjectionPointInfo.Access access) {
+            commitLastDependency();
+
+            ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+                    .addContractImplemented(elemTypeName)
+                    .build();
+            ipInfoBuilder = DefaultInjectionPointInfo.builder()
+                    .serviceTypeName(serviceTypeName)
+                    .access(access)
+                    .elementKind(kind)
+                    .elementTypeName(elemTypeName)
+                    .elementName(elemName)
+                    .elementArgs(elemArgs)
+                    .dependencyToServiceInfo(criteria);
+            return this;
+        }
+
+        /**
+         * Commits the last dependency item to complete the last builder continuation.
+         *
+         * @return any built dependencies info realized from this last commit
+         */
+        public Optional<DependencyInfo> commitLastDependency() {
+            assert (builder != null);
+
+            if (ipInfoBuilder != null) {
+                ipInfoBuilder.baseIdentity(toBaseIdentity(ipInfoBuilder));
+                ipInfoBuilder.id(toId(ipInfoBuilder));
+                InjectionPointInfo ipInfo = ipInfoBuilder
+                        .build();
+                ipInfoBuilder = null;
+
+                DependencyInfo dep = DefaultDependencyInfo.builder()
+                        .addInjectionPointDependency(ipInfo)
+                        .dependencyTo(ipInfo.dependencyToServiceInfo())
+                        .build();
+                builder.addServiceInfoDependency(ipInfo.dependencyToServiceInfo(), dep);
+                return Optional.of(dep);
+            }
+
+            return Optional.empty();
+        }
+    }
+
+
+    /**
+     * Combine the dependency info from the two sources to create a merged set of dependencies.
+     *
+     * @param parentDeps    the parent set of dependencies
+     * @param deps          the child set of dependencies
+     * @return              the combined set
+     */
+    public static DependenciesInfo combine(
+            DependenciesInfo parentDeps,
+            DependenciesInfo deps) {
+        Objects.requireNonNull(parentDeps);
+        Objects.requireNonNull(deps);
+
+        DefaultDependenciesInfo.Builder builder = (deps instanceof DefaultDependenciesInfo.Builder)
+                ? (DefaultDependenciesInfo.Builder) deps
+                : DefaultDependenciesInfo.toBuilder(deps);
+        parentDeps.serviceInfoDependencies().forEach(builder::addServiceInfoDependency);
+        // note to self: consider deferring this step
+        return forceBuild(builder);
+    }
+
+    /**
+     * Returns the non-builder version of the passed dependencies.
+     *
+     * @param deps the dependencies, but might be actually in builder form
+     * @return will always be the built version of the dependencies
+     */
+    private static DependenciesInfo forceBuild(
+            DependenciesInfo deps) {
+        Objects.requireNonNull(deps);
+
+        if (deps instanceof DefaultDependenciesInfo.Builder) {
+            deps = ((DefaultDependenciesInfo.Builder) deps).build();
+        }
+
+        return deps;
+    }
+
+    private static String toBaseIdentity(
+            InjectionPointInfo dep) {
+        ElementInfo.ElementKind kind = Objects.requireNonNull(dep.elementKind());
+        String elemName = Objects.requireNonNull(dep.elementName());
+        ElementInfo.Access access = Objects.requireNonNull(dep.access());
+        Supplier<String> packageName = toPackageName(dep.serviceTypeName());
+
+        String baseId;
+        if (ElementInfo.ElementKind.FIELD == kind) {
+            baseId = toFieldIdentity(elemName, access, packageName);
+        } else {
+            baseId = toMethodBaseIdentity(elemName,
+                                          dep.elementArgs().orElseThrow(),
+                                          access, packageName);
+        }
+        return baseId;
+    }
+
+    private static String toId(
+            InjectionPointInfo dep) {
+        ElementInfo.ElementKind kind = Objects.requireNonNull(dep.elementKind());
+        String elemName = Objects.requireNonNull(dep.elementName());
+        ElementInfo.Access access = Objects.requireNonNull(dep.access());
+        Supplier<String> packageName = toPackageName(dep.serviceTypeName());
+
+        String id;
+        if (ElementInfo.ElementKind.FIELD == kind) {
+            id = toFieldIdentity(elemName, access, packageName);
+        } else {
+            id = toMethodIdentity(elemName,
+                                  dep.elementArgs().orElseThrow(),
+                                  dep.elementOffset().orElseThrow(),
+                                  access, packageName);
+        }
+        return id;
+    }
+
+    private static Supplier<String> toPackageName(String serviceTypeName) {
+        return () -> toPackageName(DefaultTypeName.createFromTypeName(serviceTypeName));
+    }
+
+    private static String toPackageName(
+            TypeName typeName) {
+        return Objects.nonNull(typeName) ? typeName.packageName() : null;
+    }
+
+    /**
+     * The field's identity and its base identity are one in the same since there is no arguments to handle.
+     *
+     * @param elemName      the non-null field name
+     * @param ignoredAccess the access for the field
+     * @param packageName   the package name of the owning service type containing the field
+     * @return the field identity (relative to the owning service type)
+     */
+    private static String toFieldIdentity(
+            String elemName,
+            ElementInfo.Access ignoredAccess,
+            Supplier<String> packageName) {
+        String id = Objects.requireNonNull(elemName);
+        String pName = (packageName == null) ? null : packageName.get();
+        if (pName != null) {
+            id = pName + "." + id;
+        }
+        return id;
+    }
+
+    /**
+     * Computes the base identity given the method name and the number of arguments to the method.
+     *
+     * @param elemName      the method name
+     * @param methodArgCount the number of arguments to the method
+     * @param access        the method's access
+     * @param packageName   the method's enclosing package name
+     * @return the base identity (relative to the owning service type)
+     */
+    private static String toMethodBaseIdentity(
+            String elemName,
+            int methodArgCount,
+            ElementInfo.Access access,
+            Supplier<String> packageName) {
+        String id = Objects.requireNonNull(elemName) + "|" + methodArgCount;
+        if (ElementInfo.Access.PACKAGE_PRIVATE == access || elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
+            String pName = (packageName == null) ? null : packageName.get();
+            if (pName != null) {
+                id = pName + "." + id;
+            }
+        }
+        return id;
+    }
+
+    /**
+     * Computes the method's unique identity, taking into consideration the number of args it accepts
+     * plus any optionally provided specific argument offset position.
+     *
+     * @param elemName      the method name
+     * @param methodArgCount the number of arguments to the method
+     * @param elemOffset    the optional parameter offset
+     * @param access        the access for the method
+     * @param packageName   the package name of the owning service type containing the method
+     * @return the unique identity (relative to the owning service type)
+     */
+    private static String toMethodIdentity(
+            String elemName,
+            int methodArgCount,
+            Integer elemOffset,
+            ElementInfo.Access access,
+            Supplier<String> packageName) {
+        String result = toMethodBaseIdentity(elemName, methodArgCount, access, packageName);
+
+        if (elemOffset == null) {
+            return result;
+        }
+
+        assert (elemOffset <= methodArgCount) : result;
+        return result + "(" + elemOffset + ")";
+    }
+
 }

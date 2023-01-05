@@ -68,7 +68,8 @@ class DefaultServices implements Services, Resetable {
      *
      * @param cfg the config
      */
-    public DefaultServices(PicoServicesConfig cfg) {
+    public DefaultServices(
+            PicoServicesConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
     }
 
@@ -88,29 +89,31 @@ class DefaultServices implements Services, Resetable {
      * @return true if reset had any affect
      */
     @Override
-    public boolean reset(boolean deep) {
-        if (!cfg.permitsDynamic()) {
-            throw new IllegalStateException("Not dynamic");
-        }
+    public boolean reset(
+            boolean deep) {
+        assertPermitsDynamic(cfg);
 
-        boolean changed = !servicesByTypeName.isEmpty() || lookupCount.get() > 0 || cacheLookupCount.get() > 0;
+        boolean changed = (deep || !servicesByTypeName.isEmpty() || lookupCount.get() > 0 || cacheLookupCount.get() > 0);
+
         if (deep) {
             servicesByTypeName.values().forEach((sp) -> {
                 if (sp instanceof Resetable) {
                     ((Resetable) sp).reset(true);
                 }
             });
+            servicesByTypeName.clear();
+            servicesByContract.clear();
         }
+
         clear();
+
         return changed;
     }
 
     /**
-     * Clear the registry and cache, without attempting to deactivate anything.
+     * Clear the cache and metrics.
      */
     void clear() {
-        servicesByTypeName.clear();
-        servicesByContract.clear();
         cache.clear();
         lookupCount.set(0);
         cacheLookupCount.set(0);
@@ -127,16 +130,25 @@ class DefaultServices implements Services, Resetable {
     }
 
     @Override
-    public <T> Optional<ServiceProvider<T>> lookupFirst(Class<T> type,
-                                                        String name,
-                                                        boolean expected) {
-        DefaultServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+    public <T> Optional<ServiceProvider<T>> lookupFirst(
+            Class<T> type,
+            boolean expected) {
+        DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+                .addContractImplemented(type.getName())
+                .build();
+        return lookupFirst(criteria, expected);
+    }
+
+    @Override
+    public <T> Optional<ServiceProvider<T>> lookupFirst(
+            Class<T> type,
+            String name,
+            boolean expected) {
+        DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(type.getName())
                 .addQualifier(DefaultQualifierAndValue.createNamed(name))
                 .build();
-        List<ServiceProvider<T>> result = lookup(serviceInfo, expected, 1);
-        assert (!expected || !result.isEmpty());
-        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+        return lookupFirst(criteria, expected);
     }
 
     @Override
@@ -145,7 +157,7 @@ class DefaultServices implements Services, Resetable {
             boolean expected) {
         List<ServiceProvider<T>> result = lookup(criteria, expected, 1);
         assert (!expected || !result.isEmpty());
-        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+        return (result.isEmpty()) ? Optional.empty() : Optional.of(result.get(0));
     }
 
     @Override
@@ -236,7 +248,8 @@ class DefaultServices implements Services, Resetable {
         return (List) result;
     }
 
-    List<ServiceProvider<?>> allServiceProviders(boolean explode) {
+    List<ServiceProvider<?>> allServiceProviders(
+            boolean explode) {
         if (explode) {
             return explodeAndSort(servicesByTypeName.values(), null, false);
         }
@@ -245,9 +258,10 @@ class DefaultServices implements Services, Resetable {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static <T> List<T> explodeAndSort(Collection<?> coll,
-                                       ServiceInfoCriteria criteria,
-                                       boolean expected) {
+    static <T> List<T> explodeAndSort(
+            Collection<?> coll,
+            ServiceInfoCriteria criteria,
+            boolean expected) {
         List result;
 
         if ((coll.size() > 1)
@@ -282,11 +296,13 @@ class DefaultServices implements Services, Resetable {
         return result;
     }
 
-    static boolean hasContracts(ServiceInfoCriteria criteria) {
+    static boolean hasContracts(
+            ServiceInfoCriteria criteria) {
         return !criteria.contractsImplemented().isEmpty();
     }
 
-    static boolean isIntercepted(ServiceProvider<?> sp) {
+    static boolean isIntercepted(
+            ServiceProvider<?> sp) {
         return (sp instanceof ServiceProviderBindable &&
                         ((ServiceProviderBindable<?>) sp).isIntercepted());
     }
@@ -307,22 +323,24 @@ class DefaultServices implements Services, Resetable {
 //        return module.getName().orElse(null);
 //    }
 
-    ServiceBinder createServiceBinder(PicoServices picoServices,
-                                      DefaultServices services,
-                                      String moduleName) {
+    ServiceBinder createServiceBinder(
+            PicoServices picoServices,
+            DefaultServices services,
+            String moduleName) {
         return new DefaultServiceBinder(picoServices, services, moduleName);
     }
 
-    void bind(PicoServices picoServices,
-              io.helidon.pico.Module module) {
+    void bind(
+            PicoServices picoServices,
+            io.helidon.pico.Module module) {
         String moduleName = module.name().orElse(null);
         ServiceBinder moduleServiceBinder = createServiceBinder(picoServices, this, moduleName);
         module.configure(moduleServiceBinder);
-        bind(picoServices, createServiceProvider(module, moduleName));
+        bind(createServiceProvider(module, moduleName, picoServices));
     }
 
-    void bind(PicoServices picoServices,
-              ServiceProvider<?> serviceProvider) {
+    void bind(
+            ServiceProvider<?> serviceProvider) {
         ServiceInfo serviceInfo = toValidatedServiceInfo(serviceProvider);
         String serviceTypeName = serviceInfo.serviceTypeName();
 
@@ -382,10 +400,17 @@ class DefaultServices implements Services, Resetable {
         return COMPARATOR;
     }
 
-    static ServiceProvider<?> createServiceProvider(
+    static void assertPermitsDynamic(PicoServicesConfig cfg) {
+        if (!cfg.permitsDynamic()) {
+            throw new IllegalStateException("services are configured to not permit dynamic");
+        }
+    }
+
+    ServiceProvider<?> createServiceProvider(
             io.helidon.pico.Module module,
-            String moduleName) {
-        return new BasicModule(module, moduleName);
+            String moduleName,
+            PicoServices picoServices) {
+        return new BasicModule(module, moduleName, picoServices);
     }
 
     protected static ServiceInfo toValidatedServiceInfo(
@@ -403,12 +428,24 @@ class DefaultServices implements Services, Resetable {
 
     static InjectionException resolutionBasedInjectionError(
             ServiceInfoCriteria ctx) {
-        return new InjectionException("expected to resolve a service instance matching " + ctx);
+        return new InjectionException("expected to resolve a service matching " + ctx);
     }
 
-    static InjectionException resolutionBasedInjectionError(
-            ServiceInfo ctx) {
-        return new InjectionException("expected to resolve a service instance matching " + ctx);
+    static String toDescription(
+            Object provider) {
+        if (provider instanceof Optional) {
+            provider = ((Optional<?>) provider).orElse(null);
+        }
+
+        if (provider instanceof ServiceProvider) {
+            return ((ServiceProvider<?>) provider).description();
+        }
+        return String.valueOf(provider);
+    }
+
+    static List<String> toDescriptions(
+            Collection<?> coll) {
+        return coll.stream().map(DefaultServices::toDescription).collect(Collectors.toList());
     }
 
 }

@@ -16,13 +16,10 @@
 
 package io.helidon.pico;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.Weighted;
-
-import jakarta.inject.Singleton;
 
 /**
  * Basic service info that describes a service provider type.
@@ -43,18 +40,14 @@ public interface ServiceInfoBasics extends Weighted {
      *
      * @return the service scope type name
      */
-    default Set<String> scopeTypeNames() {
-        return Collections.singleton(Singleton.class.getName());
-    }
+    Set<String> scopeTypeNames();
 
     /**
      * The managed service assigned Qualifier's.
      *
      * @return the service qualifiers
      */
-    default Set<QualifierAndValue> qualifiers() {
-        return Set.of();
-    }
+    Set<QualifierAndValue> qualifiers();
 
     /**
      * The managed services advertised types (i.e., typically its interfaces).
@@ -62,17 +55,24 @@ public interface ServiceInfoBasics extends Weighted {
      * @see io.helidon.pico.ExternalContracts
      * @return the service contracts implemented
      */
-    default Set<String> contractsImplemented() {
-        return Set.of();
-    }
+    Set<String> contractsImplemented();
 
     /**
      * The optional {@link RunLevel} ascribed to the service.
      *
      * @return the service's run level
+     * @see #realizedRunLevel()
      */
-    default int runLevel() {
-        return RunLevel.NORMAL;
+    Optional<Integer> declaredRunLevel();
+
+    /**
+     * The realized run level will use the default run level if no run level was specified directly.
+     *
+     * @return the realized run level
+     * @see #declaredRunLevel()
+     */
+    default int realizedRunLevel() {
+        return declaredRunLevel().orElse(RunLevel.NORMAL);
     }
 
     /**
@@ -81,15 +81,13 @@ public interface ServiceInfoBasics extends Weighted {
      * @return the declared weight
      * @see #realizedWeight()
      */
-    default Optional<Double> declaredWeight() {
-        return Optional.of(weight());
-    }
+    Optional<Double> declaredWeight();
 
     /**
      * The realized weight will use the default weight if no weight was specified directly.
      *
      * @return the realized weight
-     * @see #weight()
+     * @see #declaredWeight()
      */
     default double realizedWeight() {
         return declaredWeight().orElse(weight());

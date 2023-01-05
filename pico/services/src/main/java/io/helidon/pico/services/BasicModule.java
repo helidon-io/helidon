@@ -18,29 +18,35 @@ package io.helidon.pico.services;
 
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.Phase;
+import io.helidon.pico.PicoServices;
+import io.helidon.pico.ServiceInfo;
 
 /**
  * Basic {@link io.helidon.pico.Module} implementation. A Pico module is-a service provider also.
  */
 class BasicModule extends AbstractServiceProvider<io.helidon.pico.Module> {
 
-    /**
-     * Ctor.
-     *
-     * @param module the module instance
-     * @param moduleName the optional module name
-     */
     BasicModule(
             io.helidon.pico.Module module,
-            String moduleName) {
-        super(module, Phase.ACTIVE, DefaultServiceInfo.builder()
-                .moduleName(moduleName)
-                .named(moduleName)
-                .serviceTypeName(module.getClass().getName())
-                .contractImplemented(Module.class.getName())
-                .build(),
-              null);
+            String moduleName,
+            PicoServices picoServices) {
+        super(module, Phase.ACTIVE, createServiceInfo(module, moduleName),
+              picoServices);
         serviceRef(module);
+    }
+
+    @SuppressWarnings("rawtypes")
+    static ServiceInfo createServiceInfo(
+            io.helidon.pico.Module module,
+            String moduleName) {
+        DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
+                .serviceType(module.getClass())
+                .addContractImplemented(io.helidon.pico.Module.class.getName());
+        if (moduleName != null) {
+            builder.moduleName(moduleName)
+                    .named(moduleName);
+        }
+        return builder.build();
     }
 
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.pico;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -63,6 +64,9 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param criteria the criteria to compare against
      * @return true if the criteria provided matches this instance
      */
+    // internal note: it is unfortunate that we have a matches() here as well as in ServiceInfo. This is what happened
+    // when we split ServiceInfo into ServiceInfoCriteria.  Sometimes we need ServiceInfo.matches(criteria), and other times
+    // ServiceInfoCriteria.matches(criteria).
     default boolean matches(
             ServiceInfoCriteria criteria) {
         if (criteria == PicoServices.EMPTY_CRITERIA) {
@@ -78,38 +82,9 @@ public interface ServiceInfo extends ServiceInfoBasics {
                 && scopeTypeNames().containsAll(criteria.scopeTypeNames())
                 && matchesQualifiers(qualifiers(), criteria.qualifiers())
                 && matches(activatorTypeName(), criteria.activatorTypeName())
-                && matches(runLevel(), criteria.runLevel())
                 && matchesWeight(this, criteria)
+                && matches(realizedRunLevel(), criteria.runLevel())
                 && matches(moduleName(), criteria.moduleName());
-    }
-
-    /**
-     * Determines whether this matches the given contract.
-     *
-     * @param contract the contract
-     * @return true if the service type name or the set of contracts implemented equals the provided contract
-     */
-    default boolean matchesContract(
-            String contract) {
-        return contract.equals(serviceTypeName()) || contractsImplemented().contains(contract);
-    }
-
-    /**
-     * Weight matching is always less or equal to criteria specified.
-     *
-     * @param src      the item being considered
-     * @param criteria the criteria
-     * @return true if there is a match
-     */
-    private static boolean matchesWeight(
-            ServiceInfoBasics src,
-            ServiceInfoCriteria criteria) {
-        if (criteria.weight().isEmpty()) {
-            return true;
-        }
-
-        Double srcWeight = src.realizedWeight();
-        return (srcWeight.compareTo(criteria.weight().get()) <= 0);
     }
 
     /**
@@ -119,9 +94,9 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @param criteria the criteria to compare against
      * @return true if the criteria provided matches this instance
      */
-    private static boolean matchesQualifiers(
-            Set<QualifierAndValue> src,
-            Set<QualifierAndValue> criteria) {
+    static boolean matchesQualifiers(
+            Collection<QualifierAndValue> src,
+            Collection<QualifierAndValue> criteria) {
         if (criteria.isEmpty()) {
             return true;
         }
@@ -177,59 +152,88 @@ public interface ServiceInfo extends ServiceInfoBasics {
     }
 
     /**
-     * Converts this service info into search criteria.
+     * Weight matching is always less or equal to criteria specified.
      *
-     * @param includeServiceTypeName true if the specific service type name should be given as criteria,
-     *                               thereby requiring an exact match on the implementation type
-     * @return search criteria based upon the current service info.
+     * @param src      the item being considered
+     * @param criteria the criteria
+     * @return true if there is a match
      */
-    default ServiceInfoCriteria toCriteria(
-            boolean includeServiceTypeName) {
-        DefaultServiceInfoCriteria.Builder builder = DefaultServiceInfoCriteria.builder()
-                .contractsImplemented(contractsImplemented())
-                .qualifiers(qualifiers())
-                .runLevel(runLevel())
-                .weight(weight())
-                .scopeTypeNames(scopeTypeNames());
-        if (includeServiceTypeName) {
-            builder.serviceTypeName(serviceTypeName());
+    private static boolean matchesWeight(
+            ServiceInfoBasics src,
+            ServiceInfoCriteria criteria) {
+        if (criteria.weight().isEmpty()) {
+            return true;
         }
-        moduleName().ifPresent(builder::moduleName);
-        // technically the builder IS-A the same return type, so we can avoid the build() step here
-        return builder;
+
+        Double srcWeight = src.realizedWeight();
+        return (srcWeight.compareTo(criteria.weight().get()) <= 0);
     }
 
-    /**
-     * Constructs an instance of {@link ServiceInfo} given a service type class and some
-     * basic information that describes the service type.
-     *
-     * @param serviceType   the service type
-     * @param optSiBasics   optionally, the basic information that describes the service type
-     * @return an instance of {@link ServiceInfo}
-     */
-    static ServiceInfo create(
-            Class<?> serviceType,
-            Optional<ServiceInfoBasics> optSiBasics) {
-        ServiceInfoBasics siBasics = optSiBasics.orElse(null);
-        if (siBasics instanceof DefaultServiceInfo) {
-            assert (serviceType.getName().equals(siBasics.serviceTypeName()));
-            return (DefaultServiceInfo) siBasics;
-        }
+//    /**
+//     * Determines whether this matches the given contract.
+//     *
+//     * @param contract the contract
+//     * @return true if the service type name or the set of contracts implemented equals the provided contract
+//     */
+//    default boolean matchesContract(
+//            String contract) {
+//        return contract.equals(serviceTypeName()) || contractsImplemented().contains(contract);
+//    }
 
-        if (siBasics == null) {
-            return DefaultServiceInfo.builder()
-                    .serviceTypeName(serviceType.getName())
-                    .build();
-        }
+//    /**
+//     * Converts this service info into search criteria.
+//     *
+//     * @param includeServiceTypeName true if the specific service type name should be given as criteria,
+//     *                               thereby requiring an exact match on the implementation type
+//     * @return search criteria based upon the current service info.
+//     */
+//    default ServiceInfoCriteria toCriteria(
+//            boolean includeServiceTypeName) {
+//        DefaultServiceInfoCriteria.Builder builder = DefaultServiceInfoCriteria.builder()
+//                .contractsImplemented(contractsImplemented())
+//                .qualifiers(qualifiers())
+//                .runLevel(runLevel())
+//                .weight(weight())
+//                .scopeTypeNames(scopeTypeNames());
+//        if (includeServiceTypeName) {
+//            builder.serviceTypeName(serviceTypeName());
+//        }
+//        moduleName().ifPresent(builder::moduleName);
+//        // technically the builder IS-A the same return type, so we can avoid the build() step here
+//        return builder;
+//    }
 
-        return DefaultServiceInfo.builder()
-                .serviceTypeName(serviceType.getName())
-                .scopeTypeNames(siBasics.scopeTypeNames())
-                .contractsImplemented(siBasics.contractsImplemented())
-                .qualifiers(siBasics.qualifiers())
-                .runLevel(siBasics.runLevel())
-                .weight(siBasics.weight())
-                .build();
-    }
+//    /**
+//     * Constructs an instance of {@link ServiceInfo} given a service type class and some
+//     * basic information that describes the service type.
+//     *
+//     * @param serviceType   the service type
+//     * @param optSiBasics   optionally, the basic information that describes the service type
+//     * @return an instance of {@link ServiceInfo}
+//     */
+//    static ServiceInfo create(
+//            Class<?> serviceType,
+//            Optional<ServiceInfoBasics> optSiBasics) {
+//        ServiceInfoBasics siBasics = optSiBasics.orElse(null);
+//        if (siBasics instanceof DefaultServiceInfo) {
+//            assert (serviceType.getName().equals(siBasics.serviceTypeName()));
+//            return (DefaultServiceInfo) siBasics;
+//        }
+//
+//        if (siBasics == null) {
+//            return DefaultServiceInfo.builder()
+//                    .serviceTypeName(serviceType.getName())
+//                    .build();
+//        }
+//
+//        return DefaultServiceInfo.builder()
+//                .serviceTypeName(serviceType.getName())
+//                .scopeTypeNames(siBasics.scopeTypeNames())
+//                .contractsImplemented(siBasics.contractsImplemented())
+//                .qualifiers(siBasics.qualifiers())
+//                .runLevel(siBasics.runLevel())
+//                .weight(siBasics.weight())
+//                .build();
+//    }
 
 }

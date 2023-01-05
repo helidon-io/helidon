@@ -30,14 +30,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.pico.ActivationLog;
+import io.helidon.pico.ActivationPhaseReceiver;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.Application;
 import io.helidon.pico.Bootstrap;
-import io.helidon.pico.ActivationPhaseReceiver;
 import io.helidon.pico.Event;
 import io.helidon.pico.Injector;
 import io.helidon.pico.Metrics;
-import io.helidon.pico.Module;
 import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
@@ -48,6 +47,8 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.spi.Resetable;
 
+import static io.helidon.pico.services.DefaultPicoServicesConfig.realizedBootStrapConfig;
+
 /**
  * The default implementation for {@link io.helidon.pico.PicoServices}.
  */
@@ -57,7 +58,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private final AtomicBoolean initializingServices = new AtomicBoolean();
     private final AtomicBoolean isBinding = new AtomicBoolean();
     private final AtomicReference<DefaultServices> services = new AtomicReference<>();
-    private final AtomicReference<List<Module>> moduleList = new AtomicReference<>();
+    private final AtomicReference<List<io.helidon.pico.Module>> moduleList = new AtomicReference<>();
     private final AtomicReference<List<Application>> applicationList = new AtomicReference<>();
     //    private final AtomicReference<DefaultInjector> injector = new AtomicReference<>();
     private final Bootstrap bootstrap;
@@ -76,28 +77,12 @@ class DefaultPicoServices implements PicoServices, Resetable {
     DefaultPicoServices(
             Bootstrap bootstrap,
             boolean global) {
-        this(bootstrap, BasicPicoServicesConfig.create(), global);
-    }
-
-    /**
-     * Constructor taking a configuration.
-     *
-     * @param bootstrap the bootstrap
-     * @param cfg       the config
-     * @param global    flag indicating if this is the global singleton
-     */
-    DefaultPicoServices(
-            Bootstrap bootstrap,
-            PicoServicesConfig cfg,
-            boolean global) {
         this.bootstrap = Objects.requireNonNull(bootstrap);
-        this.cfg = Objects.requireNonNull(cfg);
+        this.cfg = realizedBootStrapConfig(Optional.empty());
         this.isGlobal = global;
         this.log = cfg.activationLogs()
                 ? DefaultActivationLog.createRetainedLog(LOGGER)
                 : DefaultActivationLog.createUnretainedLog(LOGGER);
-        this.services.set(new DefaultServices(cfg));
-        this.initializingThread = Thread.currentThread();
     }
 
     @Override
@@ -128,10 +113,11 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 initializeServices();
                 initializedServices.countDown();
             } catch (Throwable t) {
+                initializingServices.set(false);
                 if (t instanceof PicoException) {
                     throw (PicoException) t;
                 } else {
-                    throw new PicoException("Failed to initialize: " + t.getMessage(), t);
+                    throw new PicoException("failed to initialize: " + t.getMessage(), t);
                 }
             }
         }
@@ -141,7 +127,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     @Override
     public Optional<ServiceBinder> createServiceBinder(
-            Module module) {
+            io.helidon.pico.Module module) {
         return Optional.empty();
     }
 
@@ -158,22 +144,39 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
-    public boolean reset(boolean deep) {
-        synchronized (services) {
-            services.get().reset(deep);
-            services.set(null);
-            log.reset(deep);
+    public boolean reset(
+            boolean deep) {
+        boolean result = deep;
 
-            synchronized (moduleList) {
-                isBinding.set(false);
-                initializedServices = new CountDownLatch(1);
-                initializingServices.set(false);
-                moduleList.set(null);
-                applicationList.set(null);
+        DefaultServices.assertPermitsDynamic(cfg);
+
+        synchronized (services) {
+            initializingThread = Thread.currentThread();
+
+            DefaultServices prev = services.get();
+            if (prev != null) {
+                boolean affected = prev.reset(deep);
+                result |= affected;
+            }
+
+            boolean affected = log.reset(deep);
+            result |= affected;
+
+            if (deep) {
+                synchronized (moduleList) {
+                    isBinding.set(false);
+                    initializedServices = new CountDownLatch(1);
+                    moduleList.set(null);
+                    applicationList.set(null);
+                    if (prev != null) {
+                        services.set(new DefaultServices(cfg));
+                    }
+                    initializingServices.set(false);
+                }
             }
         }
 
-        return true;
+        return result;
     }
 
     //    @Override
@@ -374,9 +377,13 @@ class DefaultPicoServices implements PicoServices, Resetable {
     //    }
 
     private void initializeServices() {
+        if (services.get() == null) {
+            services.set(new DefaultServices(cfg));
+        }
+
         if (isGlobal) {
             // iterate over all modules, binding to each one's set of services, but with NO activations
-            List<Module> modules = findModules(true);
+            List<io.helidon.pico.Module> modules = findModules(true);
             try {
                 isBinding.set(true);
                 bindModules(services.get(), modules);
@@ -441,7 +448,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         }
     }
 
-    private List<Module> findModules(
+    private List<io.helidon.pico.Module> findModules(
             boolean load) {
         if (moduleList.get() != null) {
             return moduleList.get();
@@ -452,18 +459,18 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 return moduleList.get();
             }
 
-            List<Module> result = new LinkedList<>();
+            List<io.helidon.pico.Module> result = new LinkedList<>();
             if (load) {
-                ServiceLoader<Module> serviceLoader = ServiceLoader.load(Module.class);
-                for (Module module : serviceLoader) {
+                ServiceLoader<io.helidon.pico.Module> serviceLoader = ServiceLoader.load(io.helidon.pico.Module.class);
+                for (io.helidon.pico.Module module : serviceLoader) {
                     result.add(module);
                 }
             }
 
             if (!cfg.permitsDynamic()) {
                 result = Collections.unmodifiableList(result);
-                moduleList.set(result);
             }
+            moduleList.set(result);
 
             return result;
         }
@@ -486,7 +493,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         }
 
         apps.forEach((app) -> {
-            // toDO:
+            // TODO:
 //            ServiceInjectionPlanBinder injectionPlanBinder = new InjectionPlanBinder(services);
 //            app.configure(injectionPlanBinder);
         });
@@ -494,9 +501,9 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     private void bindModules(
             DefaultServices services,
-            Collection<Module> modules) {
+            Collection<io.helidon.pico.Module> modules) {
         if (modules.isEmpty()) {
-            LOGGER.log(System.Logger.Level.WARNING, "no " + Module.class.getName() + " was found.");
+            LOGGER.log(System.Logger.Level.WARNING, "no " + io.helidon.pico.Module.class.getName() + " was found.");
         } else {
             modules.forEach(module -> services.bind(this, module));
         }
@@ -513,7 +520,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         ServiceInfo serviceInfo = sp.serviceInfo();
         Set<String> contractsImplemented = serviceInfo.contractsImplemented();
         return !contractsImplemented.isEmpty()
-                && !contractsImplemented.contains(Module.class.getName())
+                && !contractsImplemented.contains(io.helidon.pico.Module.class.getName())
                 && !contractsImplemented.contains(Application.class.getName());
     }
 

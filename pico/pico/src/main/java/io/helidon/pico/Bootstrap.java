@@ -32,11 +32,33 @@ public interface Bootstrap {
 
     /**
      * Provides the base primordial bootstrap configuration to the {@link io.helidon.pico.spi.PicoServicesProvider}.
-     * The provider will then bootstrap its {@link PicoServicesConfig} to any provided bootstrap
-     * configuration instance provided, etc.
+     * The provider will then bootstrap its {@link PicoServicesConfig} with any configuration instance provided. If not supplied
+     * then default values will be used accordingly.
      *
-     * @return the bootstrap configuration
+     * @return the bootstrap helidon configuration
+     * @see #realizedPicoConfig()
      */
     Optional<Config> config();
+
+    /**
+     * Provides the pico services bootstrap configuration. This is the highest level of configuration that can be provided during
+     * bootstrapping.
+     *
+     * @return the bootstrap pico services configuration.
+     * @see #realizedPicoConfig()
+     */
+    Optional<PicoServicesConfig> picoConfig();
+
+    /**
+     * This is the realized configuration (i.e., what will be used at runtime). The implementation will attempt to use the
+     * {@link #picoConfig()} if it was provided, and if not will construct a new {@link DefaultPicoServicesConfig} using any
+     * provided {@link #config()} for the lower level config attribute getters.
+     *
+     * @return the realized configuration
+     */
+    default PicoServicesConfig realizedPicoConfig() {
+        // note that this style will still use config() above, it's just built into the impl
+        return picoConfig().orElse(DefaultPicoServicesConfig.builder().build());
+    }
 
 }

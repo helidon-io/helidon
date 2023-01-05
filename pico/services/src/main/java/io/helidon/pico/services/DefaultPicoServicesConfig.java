@@ -16,7 +16,12 @@
 
 package io.helidon.pico.services;
 
-import io.helidon.pico.DefaultPicoServicesConfig;
+import java.util.Optional;
+
+import io.helidon.common.config.Config;
+import io.helidon.pico.Bootstrap;
+import io.helidon.pico.DefaultBootstrap;
+import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 
 /**
@@ -26,18 +31,30 @@ import io.helidon.pico.PicoServicesConfig;
  * this instance, since the results will vary once any bootstrap configuration is globally set.
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-class BasicPicoServicesConfig {
+class DefaultPicoServicesConfig {
 
-    /**
-     * The provider name for this module.
-     */
     static final String PROVIDER = "oracle";
 
-    static PicoServicesConfig create() {
-        return DefaultPicoServicesConfig.builder()
+    private DefaultPicoServicesConfig() {
+    }
+
+    static PicoServicesConfig realizedBootStrapConfig(
+            Optional<Config> defaultConfig) {
+        Bootstrap bootstrap = PicoServices.globalBootstrap().orElse(null);
+        if (bootstrap == null) {
+            bootstrap = DefaultBootstrap.builder()
+                    .picoConfig(createDefaultConfigBuilder().build())
+                    .config(defaultConfig)
+                    .build();
+            PicoServices.globalBootstrap(bootstrap);
+        }
+        return bootstrap.realizedPicoConfig();
+    }
+
+    static io.helidon.pico.DefaultPicoServicesConfig.Builder createDefaultConfigBuilder() {
+        return io.helidon.pico.DefaultPicoServicesConfig.builder()
                 .providerName(PROVIDER)
-                .providerVersion(Versions.CURRENT_VERSION)
-                .build();
+                .providerVersion(Versions.CURRENT_VERSION);
     }
 
 }

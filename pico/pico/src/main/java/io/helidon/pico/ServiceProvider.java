@@ -30,16 +30,16 @@ import jakarta.inject.Singleton;
 public interface ServiceProvider<T> extends InjectionPointProvider<T>, Weighted {
 
     /**
-     * Identifies the service provider physically and (globally) uniquely.
+     * Identifies the service provider physically and uniquely.
      *
-     * @return the unique identity
+     * @return the unique identity of the service provider
      */
     String id();
 
     /**
-     * Describe the service provider conceptually.
+     * Describe the service provider. This will change based upon activation state.
      *
-     * @return the logical description
+     * @return the logical and immutable description
      */
     String description();
 
