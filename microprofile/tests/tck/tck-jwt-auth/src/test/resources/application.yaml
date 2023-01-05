@@ -20,4 +20,4 @@ mp.jwt.verify.issuer:  "https://server.example.com"
 helidon.mp.jwt.verify.publickey.location: "/publicKey.pem"
 security.jersey.fail-on-failure-if-optional: true
 security.jersey.analyzers.jwt.secure-by-default: false
-server.inherit-thread-locals: false
+server.inherit-thread-locals: true
