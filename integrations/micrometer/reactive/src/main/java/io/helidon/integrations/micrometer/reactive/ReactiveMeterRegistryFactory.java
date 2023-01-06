@@ -21,14 +21,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.LogRecord;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.integrations.micrometer.BuiltInRegistryType;
 import io.helidon.integrations.micrometer.MeterRegistryFactory;
-import io.helidon.integrations.micrometer.MeterRegistryFactory.Builder;
 import io.helidon.integrations.micrometer.MicrometerPrometheusRegistrySupport;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -38,7 +39,20 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
 
 /**
- * Reactive implementation of {@link MeterRegistryFactory}
+ * Reactive implementation of {@link MeterRegistryFactory}.
+ * <h2>Using the factory</h2>
+ * <p>
+ *     Use this factory in either of two ways:
+ *     <ol>
+ *         <li>
+ *             Access the singleton instance via {@link #getInstance()} or {@link #getInstance(Builder)}. The factory remembers
+ *             the factory instance, lazily instantiated by the most recent invocation of either method.
+ *         </li>
+ *         <li>
+ *             A custom instance via {@link #create()} or {@link #create(Config)}. Instances of the factory created this way
+ *             are independent of the singleton created by {@code getInstance()} or {@code getInstance(Builder)}.
+ *         </li>
+ *     </ol>
  *
  */
 public final class ReactiveMeterRegistryFactory extends MeterRegistryFactory<ServerRequest, ServerResponse, Handler> {
@@ -106,19 +120,28 @@ public final class ReactiveMeterRegistryFactory extends MeterRegistryFactory<Ser
     }
 
     // for testing
-    Set<MeterRegistry> registries() {
-        return compositeMeterRegistry.getRegistries();
+    protected Set<MeterRegistry> registries() {
+        return super.registries();
     }
 
     // for testing
-    Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries() {
-        return super.builtInRegistryEnrollments;
+    protected Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries() {
+        return super.enrolledBuiltInRegistries();
     }
 
     /**
      * Builder for constructing {@code MeterRegistryFactory} instances.
      */
     public static class Builder extends MeterRegistryFactory.Builder<ServerRequest, ServerResponse, Handler> {
+
+        private final Predicate<ServerRequest> handlerFilter = req -> req.headers()
+                .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
+                || req.queryParams()
+                .first("type")
+                .orElse("")
+                .equals("prometheus");
+
+        private final Function<MeterRegistry, Handler> handlerFn = registry -> ReactivePrometheusHandler.create(registry);
 
         private Builder() {
         }
@@ -155,21 +178,23 @@ public final class ReactiveMeterRegistryFactory extends MeterRegistryFactory<Ser
         protected MicrometerPrometheusRegistrySupport<ServerRequest, Handler> createPrometheus(
                 BuiltInRegistryType builtInRegistryType, Optional<MeterRegistryConfig> meterRegistryConfig) {
             if (meterRegistryConfig.isPresent()) {
-                return ReactiveMicrometerPrometheusRegistrySupport.create(builtInRegistryType, meterRegistryConfig.get());
+                return MicrometerPrometheusRegistrySupport.create(
+                        handlerFilter, handlerFn, builtInRegistryType, meterRegistryConfig.get());
             } else {
-                return ReactiveMicrometerPrometheusRegistrySupport.create(builtInRegistryType);
+                return MicrometerPrometheusRegistrySupport.create(handlerFilter, handlerFn, builtInRegistryType);
             }
         }
 
         @Override
         protected MicrometerPrometheusRegistrySupport<ServerRequest, Handler> create(BuiltInRegistryType type,
                 ConfigValue<Config> node) {
-            return ReactiveMicrometerPrometheusRegistrySupport.create(type, node);
+            return MicrometerPrometheusRegistrySupport.create(handlerFilter, handlerFn, type, node);
         }
 
         // For testing
-        List<LogRecord> logRecords() {
-            return logRecords;
+        protected List<LogRecord> logRecords() {
+            return super.logRecords();
         }
+
     }
 }

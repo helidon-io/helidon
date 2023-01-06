@@ -20,6 +20,7 @@ import java.io.StringWriter;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.integrations.micrometer.MicrometerPrometheusRegistrySupport;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
@@ -53,7 +54,7 @@ class NimaPrometheusHandler implements Handler {
         } else if (method == Http.Method.OPTIONS) {
             StringWriter writer = new StringWriter();
 
-            NimaMicrometerPrometheusRegistrySupport.metadata(writer, registry);
+            MicrometerPrometheusRegistrySupport.metadata(writer, registry);
             res.send(writer.toString());
         } else {
             res.status(Http.Status.NOT_IMPLEMENTED_501)

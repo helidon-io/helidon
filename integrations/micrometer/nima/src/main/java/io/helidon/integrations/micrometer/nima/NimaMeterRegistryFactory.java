@@ -18,8 +18,10 @@ package io.helidon.integrations.micrometer.nima;
 
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.integrations.micrometer.BuiltInRegistryType;
@@ -33,7 +35,20 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
 
 /**
- * Nima implementation of {@link MeterRegistryFactory}
+ * Nima implementation of {@link MeterRegistryFactory}.
+ * <h2>Using the factory</h2>
+ * <p>
+ *     Use this factory in either of two ways:
+ *     <ol>
+ *         <li>
+ *             Access the singleton instance via {@link #getInstance()} or {@link #getInstance(Builder)}. The factory remembers
+ *             the factory instance, lazily instantiated by the most recent invocation of either method.
+ *         </li>
+ *         <li>
+ *             A custom instance via {@link #create()} or {@link #create(Config)}. Instances of the factory created this way
+ *             are independent of the singleton created by {@code getInstance()} or {@code getInstance(Builder)}.
+ *         </li>
+ *     </ol>
  *
  */
 public final class NimaMeterRegistryFactory extends MeterRegistryFactory<ServerRequest, ServerResponse, Handler> {
@@ -105,6 +120,14 @@ public final class NimaMeterRegistryFactory extends MeterRegistryFactory<ServerR
      */
     public static class Builder extends MeterRegistryFactory.Builder<ServerRequest, ServerResponse, Handler> {
 
+        private final Predicate<ServerRequest> handlerFilter = req -> req.headers()
+                .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
+                || req.query()
+                .first("type")
+                .orElse("")
+                .equals("prometheus");
+        private final Function<MeterRegistry, Handler> handlerFn = registry -> NimaPrometheusHandler.create(registry);
+
         private Builder() {
         }
 
@@ -140,16 +163,17 @@ public final class NimaMeterRegistryFactory extends MeterRegistryFactory<ServerR
         protected MicrometerPrometheusRegistrySupport<ServerRequest, Handler> createPrometheus(
                 BuiltInRegistryType builtInRegistryType, Optional<MeterRegistryConfig> meterRegistryConfig) {
             if (meterRegistryConfig.isPresent()) {
-                return NimaMicrometerPrometheusRegistrySupport.create(builtInRegistryType, meterRegistryConfig.get());
+                return MicrometerPrometheusRegistrySupport.create(
+                        handlerFilter, handlerFn, builtInRegistryType, meterRegistryConfig.get());
             } else {
-                return NimaMicrometerPrometheusRegistrySupport.create(builtInRegistryType);
+                return MicrometerPrometheusRegistrySupport.create(handlerFilter, handlerFn, builtInRegistryType);
             }
         }
 
         @Override
         protected MicrometerPrometheusRegistrySupport<ServerRequest, Handler> create(BuiltInRegistryType type,
                 ConfigValue<Config> node) {
-            return NimaMicrometerPrometheusRegistrySupport.create(type, node);
+            return MicrometerPrometheusRegistrySupport.create(handlerFilter, handlerFn, type, node);
         }
     }
 

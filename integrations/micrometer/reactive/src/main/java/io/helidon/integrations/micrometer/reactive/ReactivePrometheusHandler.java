@@ -21,6 +21,7 @@ import java.io.StringWriter;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.integrations.micrometer.MicrometerPrometheusRegistrySupport;
 import io.helidon.reactive.webserver.Handler;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -51,7 +52,7 @@ class ReactivePrometheusHandler implements Handler {
         } else if (req.method() == Http.Method.OPTIONS) {
             StringWriter writer = new StringWriter();
             try {
-                ReactiveMicrometerPrometheusRegistrySupport.metadata(writer, registry);
+                MicrometerPrometheusRegistrySupport.metadata(writer, registry);
                 res.send(writer.toString());
             } catch (IOException e) {
                 res.status(Http.Status.INTERNAL_SERVER_ERROR_500)

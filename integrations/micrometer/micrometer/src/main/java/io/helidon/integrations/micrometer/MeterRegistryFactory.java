@@ -17,6 +17,7 @@
 package io.helidon.integrations.micrometer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,19 +42,6 @@ import io.micrometer.core.instrument.config.MeterRegistryConfig;
  *     add a {@link io.micrometer.prometheus.PrometheusMeterRegistry} and to which the developer can add,
  *     via either configuration or builder, other {@code MeterRegistry} instances.
  * </p>
- * <h2>Using the factory</h2>
- * <p>
- *     Use this factory in either of two ways:
- *     <ol>
- *         <li>
- *             Access the singleton instance via {@link #getInstance()} or {@link #getInstance(Builder)}. The factory remembers
- *             the factory instance, lazily instantiated by the most recent invocation of either method.
- *         </li>
- *         <li>
- *             A custom instance via {@link #create()} or {@link #create(Config)}. Instances of the factory created this way
- *             are independent of the singleton created by {@code getInstance()} or {@code getInstance(Builder)}.
- *         </li>
- *     </ol>
  *
  * <h2>Adding developer-requested registries</h2>
  * <p>
@@ -91,14 +79,17 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
      */
     static final String BUILTIN_REGISTRIES_CONFIG_KEY = "builtin-registries";
 
-    public static final String NO_MATCHING_REGISTRY_ERROR_MESSAGE = "No registered MeterRegistry matches the request";
+    /**
+     * Common message when the meter registry does not match the request.
+     */
+    protected static final String NO_MATCHING_REGISTRY_ERROR_MESSAGE = "No registered MeterRegistry matches the request";
     private static final Logger LOGGER = Logger.getLogger(MeterRegistryFactory.class.getName());
 
-    protected final CompositeMeterRegistry compositeMeterRegistry;
-    protected final List<Enrollment<REQ, HAND>> registryEnrollments;
+    private final CompositeMeterRegistry compositeMeterRegistry;
+    private final List<Enrollment<REQ, HAND>> registryEnrollments;
 
     // for testing
-    protected final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
+    private final Map<BuiltInRegistryType, MeterRegistry> builtInRegistryEnrollments = new HashMap<>();
 
     protected MeterRegistryFactory(Builder<REQ, RESP, HAND> builder) {
         compositeMeterRegistry = new CompositeMeterRegistry();
@@ -113,6 +104,16 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
         registryEnrollments.forEach(e -> compositeMeterRegistry.add(e.meterRegistry()));
     }
 
+    // for testing
+    protected Set<MeterRegistry> registries() {
+        return compositeMeterRegistry.getRegistries();
+    }
+
+    // for testing
+    protected Map<BuiltInRegistryType, MeterRegistry> enrolledBuiltInRegistries() {
+        return builtInRegistryEnrollments;
+    }
+
     /**
      * Returns the {@code MeterRegistry} associated with this factory instance.
      *
@@ -122,6 +123,12 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
         return compositeMeterRegistry;
     }
 
+    /**
+     * Gives the appropriate handler for the given request.
+     * @param req The server request.
+     * @param res The server response.
+     * @return The matching handler.
+     */
     public HAND matchingHandler(REQ req, RESP res) {
         return registryEnrollments.stream()
                 .map(e -> e.handlerFn().apply(req))
@@ -138,15 +145,15 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
      * @param <RESP> The server response
      * @param <HAND> The server handler
      */
-    public static abstract class Builder<REQ, RESP, HAND> implements
+    public abstract static class Builder<REQ, RESP, HAND> implements
         io.helidon.common.Builder<Builder<REQ, RESP, HAND>, MeterRegistryFactory<REQ, RESP, HAND>> {
 
         private final List<Enrollment<REQ, HAND>> explicitRegistryEnrollments = new ArrayList<>();
 
-        private final Map<BuiltInRegistryType, MicrometerPrometheusRegistrySupport<REQ, HAND>>
+        private final Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport<REQ, HAND>>
             builtInRegistriesRequested = new HashMap<>();
 
-        protected final List<LogRecord> logRecords = new ArrayList<>();
+        private final List<LogRecord> logRecords = new ArrayList<>();
 
         /**
          * Override default configuration.
@@ -166,12 +173,12 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
             return this;
         }
 
-        protected abstract MicrometerPrometheusRegistrySupport<REQ, HAND> createPrometheus(BuiltInRegistryType builtInRegistryType,
-                Optional<MeterRegistryConfig> meterRegistryConfig);
-        
-        protected abstract MicrometerPrometheusRegistrySupport<REQ, HAND> create(BuiltInRegistryType type,
-                ConfigValue<Config> node);
-        
+        protected abstract MicrometerBuiltInRegistrySupport<REQ, HAND> createPrometheus(
+                BuiltInRegistryType builtInRegistryType, Optional<MeterRegistryConfig> meterRegistryConfig);
+
+        protected abstract MicrometerBuiltInRegistrySupport<REQ, HAND> create(
+                BuiltInRegistryType type, ConfigValue<Config> node);
+
         /**
          * Enrolls a built-in registry type to support.
          *
@@ -181,7 +188,8 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
          */
         public Builder<REQ, RESP, HAND> enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType,
                 MeterRegistryConfig meterRegistryConfig) {
-            builtInRegistriesRequested.put(builtInRegistryType, createPrometheus(builtInRegistryType, Optional.of(meterRegistryConfig)));
+            builtInRegistriesRequested.put(builtInRegistryType,
+                    createPrometheus(builtInRegistryType, Optional.of(meterRegistryConfig)));
             return this;
         }
 
@@ -192,7 +200,8 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
          * @return updated builder instance
          */
         public Builder<REQ, RESP, HAND> enrollBuiltInRegistry(BuiltInRegistryType builtInRegistryType) {
-            builtInRegistriesRequested.put(builtInRegistryType, createPrometheus(builtInRegistryType, Optional.empty()));
+            builtInRegistriesRequested.put(builtInRegistryType,
+                    createPrometheus(builtInRegistryType, Optional.empty()));
             return this;
         }
 
@@ -204,7 +213,8 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
          * @param handlerFunction returns {@code Optional<Handler>}; if present, capable of responding to the specified request
          * @return updated builder instance
          */
-        public Builder<REQ, RESP, HAND> enrollRegistry(MeterRegistry meterRegistry, Function<REQ, Optional<HAND>> handlerFunction) {
+        public Builder<REQ, RESP, HAND> enrollRegistry(MeterRegistry meterRegistry,
+                Function<REQ, Optional<HAND>> handlerFunction) {
             explicitRegistryEnrollments.add(new Enrollment<REQ, HAND>(meterRegistry, handlerFunction));
             return this;
         }
@@ -235,7 +245,7 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
         private void enrollBuiltInRegistries(Config registriesConfig) {
             // in case config is created from MP config, node type is OBJECT instead of LIST
             // as MP config flattens everything
-            Map<BuiltInRegistryType, MicrometerPrometheusRegistrySupport<REQ, HAND>> candidateBuiltInRegistryTypes =
+            Map<BuiltInRegistryType, MicrometerBuiltInRegistrySupport<REQ, HAND>> candidateBuiltInRegistryTypes =
                     new HashMap<>();
             List<String> unrecognizedTypes = new ArrayList<>();
 
@@ -247,7 +257,7 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
                                 BuiltInRegistryType type =
                                         BuiltInRegistryType.valueByName(registryType);
 
-                                MicrometerPrometheusRegistrySupport<REQ, HAND> builtInRegistrySupport =
+                                MicrometerBuiltInRegistrySupport<REQ, HAND> builtInRegistrySupport =
                                         create(type, registryConfig.asNode());
 
                                 candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
@@ -273,6 +283,11 @@ public abstract class MeterRegistryFactory<REQ, RESP, HAND> {
                 LOGGER.log(Level.FINE,
                         () -> "Selecting built-in Micrometer registries " + candidateBuiltInRegistryTypes);
             }
+        }
+
+        // For testing
+        protected List<LogRecord> logRecords() {
+            return Collections.unmodifiableList(logRecords);
         }
     }
 
