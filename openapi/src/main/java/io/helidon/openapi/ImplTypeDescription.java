@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,16 +62,6 @@ class ImplTypeDescription extends TypeDescription {
     }
 
     @Override
-    public void setTag(Tag tag) {
-        delegate.setTag(tag);
-    }
-
-    @Override
-    public void setTag(String tag) {
-        delegate.setTag(tag);
-    }
-
-    @Override
     @Deprecated
     public void putListPropertyType(String property, Class<?> type) {
         delegate.putListPropertyType(property, type);
@@ -79,26 +69,8 @@ class ImplTypeDescription extends TypeDescription {
 
     @Override
     @Deprecated
-    public Class<? extends Object> getListPropertyType(String property) {
-        return delegate.getListPropertyType(property);
-    }
-
-    @Override
-    @Deprecated
     public void putMapPropertyType(String property, Class<?> key, Class<?> value) {
         delegate.putMapPropertyType(property, key, value);
-    }
-
-    @Override
-    @Deprecated
-    public Class<? extends Object> getMapKeyType(String property) {
-        return delegate.getMapKeyType(property);
-    }
-
-    @Override
-    @Deprecated
-    public Class<? extends Object> getMapValueType(String property) {
-        return delegate.getMapValueType(property);
     }
 
     @Override
