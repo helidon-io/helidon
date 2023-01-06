@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.sql.Connection;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 
 import javax.management.MBeanServer;
 import javax.sql.DataSource;
+
+import io.helidon.integrations.jdbc.DelegatingConnection;
 
 import jakarta.enterprise.inject.InjectionException;
 import jakarta.enterprise.inject.Instance;
@@ -49,9 +52,8 @@ import org.eclipse.persistence.transaction.JTATransactionController;
  *
  * <p>Most users will not use this class directly, but will supply its
  * fully-qualified name as the value of the <a
- * href="https://www.eclipse.org/eclipselink/documentation/2.7/jpa/extensions/persistenceproperties_ref.htm#target-server">{@code
- * eclipselink.target-server} Eclipselink JPA extension property</a>
- * in a <a
+ * href="https://www.eclipse.org/eclipselink/documentation/3.0/jpa/extensions/persistenceproperties_ref.htm#target-server">{@code
+ * eclipselink.target-server} Eclipselink JPA extension property</a> in a <a
  * href="https://javaee.github.io/tutorial/persistence-intro004.html#persistence-units">{@code
  * META-INF/persistence.xml} file</a>.</p>
  *
@@ -273,6 +275,28 @@ public class CDISEPlatform extends JMXServerPlatformBase {
     @Override
     public final int getJNDIConnectorLookupType() {
         return JNDIConnector.UNDEFINED_LOOKUP;
+    }
+
+    /**
+     * Overrides the {@link ServerPlatformBase#unwrapConnection(Connection)}
+     * method to consider {@link DelegatingConnection}s.
+     *
+     * <p>By design, only one level of unwrapping occurs; i.e. if the unwrapped
+     * {@link Connection} is itself a {@link DelegatingConnection} it is
+     * returned as is.</p>
+     *
+     * @param c the {@link Connection} to unwrap; must not be {@code null}
+     *
+     * @return the unwrapped {@link Connection} (which may be the supplied
+     * {@link Connection}); never {@code null}
+     *
+     * @exception NullPointerException if {@code c} is {@code null}
+     *
+     * @see ServerPlatformBase#unwrapConnection(Connection)
+     */
+    @Override // ServerPlatformBase
+    public Connection unwrapConnection(Connection c) {
+        return c instanceof DelegatingConnection dc ? super.unwrapConnection(dc.delegate()) : super.unwrapConnection(c);
     }
 
 
