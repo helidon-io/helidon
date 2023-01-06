@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -777,6 +777,35 @@ public final class Http {
          * Disclose original information of a client connecting to a web server through an HTTP proxy.
          */
         public static final String FORWARDED = "Forwarded";
+        /**
+         * The <code>{@value}</code> header name.
+         * The email address of the user making the request.
+         */
+        /**
+         * The {@code X-Forwarded-For} header name.
+         * Used to represent the original host requested by a client, when request passed through a proxy server.
+         */
+        public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+        /**
+         * The {@code X-Forwarded-Host} header name.
+         * Used to represent the original host requested by a client, when request passed through a proxy server.
+         */
+        public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
+        /**
+         * The {@code X-Forwarded-Port} header name.
+         * Used to represent the original port requested by a client, when request passed through a proxy server.
+         */
+        public static final String X_FORWARDED_PORT = "X-Forwarded-Port";
+        /**
+         * The {@code X-Forwarded-Prefix} header name.
+         * Used to represent the original path prefix requested by a client, when request passed through a proxy server.
+         */
+        public static final String X_FORWARDED_PREFIX = "X-Forwarded-Prefix";
+        /**
+         * The {@code X-Forwarded-Proto} header name.
+         * Used to represent the original protocol used by a client, when request passed through a proxy server.
+         */
+        public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
         /**
          * The <code>{@value}</code> header name.
          * The email address of the user making the request.

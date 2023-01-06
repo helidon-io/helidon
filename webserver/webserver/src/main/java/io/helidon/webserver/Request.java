@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,16 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.http.Forwarded;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.UriComponent;
+import io.helidon.common.http.UriInfo;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyContext;
 import io.helidon.media.common.MessageBodyReadableContent;
@@ -67,6 +71,7 @@ abstract class Request implements ServerRequest {
     private final HashRequestHeaders headers;
     private final MessageBodyReadableContent content;
     private final MessageBodyEventListener eventListener;
+    private final LazyValue<UriInfo> requestedUri;
 
     /**
      * Creates new instance.
@@ -84,6 +89,7 @@ abstract class Request implements ServerRequest {
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
                 .create(webServer.readerContext(), eventListener, headers, headers.contentType());
         this.content = MessageBodyReadableContent.create(req.bodyPublisher(), readerContext);
+        this.requestedUri = LazyValue.create(this::createRequestedUri);
     }
 
     /**
@@ -99,6 +105,7 @@ abstract class Request implements ServerRequest {
         this.headers = request.headers;
         this.content = request.content;
         this.eventListener = request.eventListener;
+        this.requestedUri = LazyValue.create(this::createRequestedUri);
     }
 
     /**
@@ -198,6 +205,278 @@ abstract class Request implements ServerRequest {
     @Override
     public Single<Void> closeConnection() {
         return this.bareRequest.closeConnection();
+    }
+
+    @Override
+    public UriInfo requestedUri() {
+        return requestedUri.get();
+    }
+
+    // this method is called max once per request
+    private UriInfo createRequestedUri() {
+        RequestHeaders headers = headers();
+        String scheme = null;
+        String authority = null;
+        String host = null;
+        int port = -1;
+        String path = null;
+        String query = query();
+
+        // Note: requestedUriDiscoveryEnabled() returns true if discovery is explicitly enabled or if either
+        // requestedUriDiscoveryTypes or trustedProxies is set.
+        if (bareRequest.socketConfiguration().requestedUriDiscoveryEnabled()) {
+            AllowList trustedProxies = bareRequest.socketConfiguration().trustedProxies();
+            if (trustedProxies.test(hostPart(remoteAddress()))) {
+                // Once we discover trusted information using one of the discovery types, we do not mix in
+                // information from other types.
+
+                nextDiscoveryType:
+                for (var type : bareRequest.socketConfiguration().requestedUriDiscoveryTypes()) {
+                    switch (type) {
+                    case FORWARDED:
+                        ForwardedDiscovery fDiscovery = discoverUsingForwarded(headers(), trustedProxies);
+                        if (fDiscovery != null) {
+                            authority = fDiscovery.authority();
+                            scheme = fDiscovery.scheme();
+
+                            break nextDiscoveryType;
+                        }
+                        break;
+
+                    case X_FORWARDED:
+                        XForwardedDiscovery xfDiscovery = discoverUsingXForwarded(headers, trustedProxies);
+                        if (xfDiscovery != null) {
+                            scheme = xfDiscovery.scheme();
+                            host = xfDiscovery.host();
+                            port = xfDiscovery.port();
+                            path = xfDiscovery.path();
+
+                            break nextDiscoveryType;
+                        }
+                        break;
+
+                    default:
+                        authority = headers.first(Http.Header.HOST).orElse(null);
+                        break nextDiscoveryType;
+                    }
+                }
+            }
+        }
+
+        // now we must fill values that were not discovered (to have a valid URI information)
+        if (host == null && authority == null) {
+            authority = headers.first(Http.Header.HOST).orElse(null);
+        }
+
+        if (path == null) {
+            path = path().absolute().toString();
+        }
+
+        if (host == null && authority != null) {
+            Authority a;
+            if (scheme == null) {
+                a = Authority.create(authority);
+            } else {
+                a = Authority.create(scheme, authority);
+            }
+            if (a.host() != null) {
+                host = a.host();
+            }
+            if (port == -1) {
+                port = a.port();
+            }
+        }
+
+        /*
+        Discover final values to be used
+         */
+
+        if (scheme == null) {
+            if (port == 80) {
+                scheme = "http";
+            } else if (port == 443) {
+                scheme = "https";
+            } else {
+                scheme = isSecure() ? "https" : "http";
+            }
+        }
+
+        if (host == null) {
+            host = localAddress();
+        }
+
+        // we may still have -1, if port was not explicitly defined by a header - use default port of protocol
+        if (port == -1) {
+            if ("https".equals(scheme)) {
+                port = 443;
+            } else {
+                port = 80;
+            }
+        }
+        if (query == null || query.isEmpty()) {
+            query = null;
+        }
+        return new UriInfo(scheme, host, port, path, Optional.ofNullable(query));
+    }
+
+    private ForwardedDiscovery discoverUsingForwarded(RequestHeaders headers, AllowList trustedProxies) {
+        String scheme = null;
+        String authority = null;
+        List<Forwarded> forwardedList = Forwarded.create(headers);
+        if (!forwardedList.isEmpty()) {
+            for (int i = forwardedList.size() - 1; i >= 0; i--) {
+                Forwarded f = forwardedList.get(i);
+
+                // Because we remained in the loop, the Forwarded entry we are looking at is trustworthy.
+                if (scheme == null && f.proto().isPresent()) {
+                    scheme = f.proto().get();
+                }
+                if (authority == null && f.host().isPresent()) {
+                    authority = f.host().get();
+                }
+                if (f.forClient().isPresent() && !trustedProxies.test(f.forClient().get())
+                        || scheme != null && authority != null) {
+                    // This is the first Forwarded entry we've found for which the "for" value is untrusted (and
+                    // therefore the proxy which created this Forwarded entry is the most remote trusted one)
+                    //   OR
+                    // we have already harvested the values we need from trusted proxies.
+                    // Either way, we do not need to look at further Forwarded entries.
+                    break;
+                }
+            }
+        }
+        return authority != null ? new ForwardedDiscovery(authority, scheme) : null;
+    }
+
+    private XForwardedDiscovery discoverUsingXForwarded(RequestHeaders headers, AllowList trustedProxies) {
+        // With X-Forwarded-* headers, the X-Forwarded-Host and X-Forwarded-Proto headers appear only once, indicating
+        // the host and protocol supposedly requested by the original client as seen by the proxy which received the
+        // original request. To trust those single values, we need to trust all the X-Forwarded-For instances except
+        // the very first one (the original client itself).
+        boolean discovered = false;
+        String scheme = null;
+        String host = null;
+        int port = -1;
+        String path = null;
+
+        List<String> xForwardedFors = headers.all(Http.Header.X_FORWARDED_FOR);
+        boolean areProxiesTrusted = true;
+        if (xForwardedFors.size() > 0) {
+            // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
+            // is not a proxy and we do not need to check its trustworthiness.
+            for (int i = 1; i < xForwardedFors.size(); i++) {
+                areProxiesTrusted &= trustedProxies.test(xForwardedFors.get(i));
+            }
+        }
+        if (areProxiesTrusted) {
+            scheme = headers.first(Http.Header.X_FORWARDED_PROTO).orElse(null);
+            host = headers.first(Http.Header.X_FORWARDED_HOST).orElse(null);
+            port = headers.first(Http.Header.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
+            path = headers.first(Http.Header.X_FORWARDED_PREFIX)
+                    .map(prefix -> {
+                        String absolute = path().absolute().toString();
+                        return prefix + (absolute.startsWith("/") ? "" : "/") + absolute;
+                    })
+                    .orElse(null);
+            // at least one header was present
+            discovered = scheme != null || host != null || port != -1 || path != null;
+        }
+        return discovered ? new XForwardedDiscovery(scheme, host, port, path) : null;
+    }
+
+    private static class Authority {
+
+        private final String host;
+        private final int port;
+
+        static Authority create(String hostHeader) {
+            int colon = hostHeader.indexOf(':');
+            if (colon == -1) {
+                // we do not know the protocol, and there is no port defined
+                return new Authority(hostHeader, -1);
+            }
+            String hostString = hostHeader.substring(0, colon);
+            String portString = hostHeader.substring(colon + 1);
+            return new Authority(hostString, Integer.parseInt(portString));
+        }
+        static Authority create(String scheme, String hostHeader) {
+            int colon = hostHeader.indexOf(':');
+            if (colon == -1) {
+                // define port by protocol
+                return new Authority(hostHeader, "https".equals(scheme) ? 443 : 80);
+            }
+            String hostString = hostHeader.substring(0, colon);
+            String portString = hostHeader.substring(colon + 1);
+            return new Authority(hostString, Integer.parseInt(portString));
+        }
+
+        private Authority(String host, int port) {
+            this.host = host;
+            this.port = port;
+        }
+
+        private String host() {
+            return host;
+        }
+
+        private int port() {
+            return port;
+        }
+    }
+
+    private static class ForwardedDiscovery {
+
+        private final String authority;
+        private final String scheme;
+
+        private ForwardedDiscovery(String authority, String scheme) {
+            this.authority = authority;
+            this.scheme = scheme;
+        }
+
+        private String authority() {
+            return authority;
+        }
+
+        private String scheme() {
+            return scheme;
+        }
+    }
+
+    private static class XForwardedDiscovery {
+
+        private final String scheme;
+        private final String host;
+        private final int port;
+        private final String path;
+
+        private XForwardedDiscovery(String scheme, String host, int port, String path) {
+            this.scheme = scheme;
+            this.host = host;
+            this.port = port;
+            this.path = path;
+        }
+
+        private String scheme() {
+            return scheme;
+        }
+
+        private String host() {
+            return host;
+        }
+
+        private int port() {
+            return port;
+        }
+
+        private String path() {
+            return path;
+        }
+    }
+
+    private static String hostPart(String address) {
+        int colon = address.indexOf(':');
+        return colon == -1 ? address : address.substring(0, colon);
     }
 
     private final class MessageBodyEventListener implements MessageBodyContext.EventListener {
