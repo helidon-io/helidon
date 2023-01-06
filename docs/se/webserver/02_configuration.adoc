@@ -105,7 +105,7 @@ Default is `LINEAR`
 |`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
 |`tls` |{nbsp} |Object |Configuration of TLS, please see our TLS example in repository
 |`requested-uri-discovery.enabled` |boolean |`true` if `types` or `trusted-proxies` is set; `false` otherwise` |Sets whether requested URI discovery is enabled for the socket.
-|`requested-uri-discovery.trusted-proxies` |link:{javadoc-base-url-api}/AllowList.html[`AllowList`] |{nbsp} |Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
+|`requested-uri-discovery.trusted-proxies` |link:{common-http-javadoc-base-url}/AllowList.html[`AllowList`] |{nbsp} |Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
 This setting automatically enables discovery for the socket.
 |`requested-uri-discovery.types` |`(FORWARDED, X_FORWARDED, HOST)` (See link:{javadoc-base-url-api}/SocketConfiguration.RequestedUriDiscoveryType.html[`RequestedUriDiscoveryType`]) |`FORWARDED if discovery is enabled; none otherwise` |Assigns the front-end URI discovery type(s) this socket should use. This setting automatically enables discovery for the socket.
 |===

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@
 :h1Prefix: MP
 :description: Helidon MicroProfile server configuration
 :keywords: helidon, microprofile, micro-profile
+:rootdir: {docdir}/../..
+:incdir: {rootdir}/shared/server
+:requested-uri-discovery-inc: {incdir}/requested-uri-discovery.adoc
+include::{requested-uri-discovery-inc}[tag=preamble-defs]
 
 By default, the server uses the MicroProfile Config, but you may also want to use Helidon configuration.
 
@@ -199,6 +203,19 @@ io.helidon.examples.AdminApplication:
   routing-path:
     path: "/management"
 ----
+
+== Configuring requested URI discovery
+To set up requested URI discovery for your server, add a `requested-uri-discovery` section to your configuration. You can define different behavior for each socket in your server, including the default socket.
+
+[source,properties]
+.Configuring Request URI Discovery (properties format)
+----
+server.port=8080
+server.requested-uri-discovery.types=FORWARDED,X_FORWARDED
+server.requested-uri-discovery.trusted-proxies.allow.pattern=lb.*\\.mycorp\\.com
+server.requested-uri-discovery.trusted-proxies.deny.exact=lbtest.mycorp.com
+----
+This example might apply if `mycorp.com` had trusted load balancers named `lbxxx.mycorp.com` except for an untrusted test load balancer `lbtest.mycorp.com`.
 
 == Example configuration of JAX-RS application
 
