@@ -62,7 +62,6 @@ import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceInjectionPlanBinder;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.ServiceProviderBindable;
-import io.helidon.pico.Services;
 import io.helidon.pico.spi.InjectionResolver;
 import io.helidon.pico.spi.Resetable;
 import io.helidon.pico.types.DefaultTypeName;
@@ -221,7 +220,6 @@ public abstract class AbstractServiceProvider<T>
     @Override
     public void picoServices(
             Optional<PicoServices> picoServices) {
-
         if (picoServices.isPresent()
                 || serviceRef.get() != null) {
             PicoServices current = this.picoServices;
@@ -516,6 +514,7 @@ public abstract class AbstractServiceProvider<T>
     private DefaultActivationResult.Builder preambleActivate(
             ActivationRequest req) {
         assert (req.serviceProvider() == this) : "not capable of handling service provider" + req;
+        assert (picoServices != null) : "not initialized";
 
         // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
         DefaultActivationLogEntry.Builder entry = toLogEntry(Event.STARTING, req.targetPhase());
@@ -784,7 +783,7 @@ public abstract class AbstractServiceProvider<T>
         }
 
         final Map<String, InjectionPlan> plan =
-                InjectionPlan.createInjectionPlans(picoServices(), this, dependencies, resolveIps, LOGGER);
+                DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, LOGGER);
         assert (injectionPlan == null);
         injectionPlan = Objects.requireNonNull(plan);
 
@@ -794,24 +793,28 @@ public abstract class AbstractServiceProvider<T>
     @Override
     public boolean reset(boolean deep) {
         Object service = serviceRef.get();
-        boolean result = false;
+        boolean result = (service != null);
         if (service != null) {
-            result = true;
             LOGGER.log(System.Logger.Level.INFO, "resetting " + this);
-        }
-
-        if (service instanceof Resetable) {
-            try {
-                ((Resetable) service).reset(deep);
-            } catch (Throwable t) {
-                LOGGER.log(System.Logger.Level.WARNING, "unable to reset: " + this, t);
+            if (service instanceof Resetable) {
+                try {
+                    result = ((Resetable) service).reset(deep);
+                } catch (Throwable t) {
+                    LOGGER.log(System.Logger.Level.WARNING, "unable to reset: " + this, t);
+                }
             }
         }
-        injectionPlan = null;
-        interceptor = null;
-        picoServices = null;
+
+        if (deep) {
+            injectionPlan = null;
+            interceptor = null;
+            picoServices = null;
+            result = true;
+        }
+
         serviceRef(null);
         currentActivationPhase(null, Phase.INIT);
+
         return result;
     }
 
@@ -832,7 +835,7 @@ public abstract class AbstractServiceProvider<T>
                         && !value.unqualifiedProviders().isEmpty()) {
                     resolved = Collections.emptyList(); // deferred...
                 } else {
-                    resolved = InjectionPlan.resolve(this, value.injectionPointInfo(), serviceProviders, LOGGER);
+                    resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, LOGGER);
                 }
                 result.put(key, resolved);
             }
@@ -892,7 +895,7 @@ public abstract class AbstractServiceProvider<T>
         }
     }
 
-    List<String> serviceTypeInjectionOrder() {
+    protected List<String> serviceTypeInjectionOrder() {
         return Collections.singletonList(serviceInfo.serviceTypeName());
     }
 
@@ -953,7 +956,6 @@ public abstract class AbstractServiceProvider<T>
         }
 
         PicoServices picoServices = picoServices();
-        Services services = picoServices.services();
 
         // if we are here then we are not yet at the ultimate target phase, and we either have to activate or
         // deactivate...

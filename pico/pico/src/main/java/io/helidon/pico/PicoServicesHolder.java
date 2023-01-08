@@ -22,8 +22,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.pico.spi.PicoServicesProvider;
+import io.helidon.pico.spi.Resetable;
 
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
@@ -31,35 +31,53 @@ import io.helidon.pico.spi.PicoServicesProvider;
  */
 public class PicoServicesHolder {
     private static final AtomicReference<Bootstrap> BOOTSTRAP = new AtomicReference<>();
-    private static final LazyValue<Optional<PicoServices>> INSTANCE = LazyValue.create(PicoServicesHolder::load);
+    private static final AtomicReference<ProviderAndServicesTuple> INSTANCE = new AtomicReference<>();
 
     /**
      * Default Constructor.
+     *
      * @deprecated
      */
-    // properly exposed in the testing module
+    // exposed in the testing module as non deprecated
     protected PicoServicesHolder() {
     }
 
-    static Optional<PicoServices> picoServices() {
-        return INSTANCE.get();
+    /**
+     * Returns the global Pico services instance. The returned service instance will be initialized with any bootstrap
+     * configuration that was previously established.
+     *
+     * @return the loaded global pico services instance
+     */
+    public static Optional<PicoServices> picoServices() {
+        if (INSTANCE.get() == null) {
+            INSTANCE.compareAndSet(null, new ProviderAndServicesTuple(load()));
+        }
+        return Optional.ofNullable(INSTANCE.get().picoServices);
     }
 
-    private static Optional<PicoServices> load() {
-        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class))
-                .asList()
-                .stream()
-                .findFirst()
-                .map(p -> p.services(bootstrap(true).orElseThrow()));
+    /**
+     * Resets the bootstrap state.
+     *
+     * @deprecated
+     */
+    protected static synchronized void reset() {
+        ProviderAndServicesTuple instance = INSTANCE.get();
+        if (instance != null) {
+            instance.reset();
+        }
+        INSTANCE.set(null);
+        BOOTSTRAP.set(null);
     }
 
-    static void bootstrap(Bootstrap bootstrap) {
+    static void bootstrap(
+            Bootstrap bootstrap) {
         if (!BOOTSTRAP.compareAndSet(null, Objects.requireNonNull(bootstrap))) {
             throw new IllegalStateException("bootstrap already set");
         }
     }
 
-    static Optional<Bootstrap> bootstrap(boolean assignIfNeeded) {
+    static Optional<Bootstrap> bootstrap(
+            boolean assignIfNeeded) {
         if (assignIfNeeded) {
             BOOTSTRAP.compareAndSet(null, DefaultBootstrap.builder().build());
         }
@@ -67,12 +85,32 @@ public class PicoServicesHolder {
         return Optional.ofNullable(BOOTSTRAP.get());
     }
 
-    /**
-     * Resets the bootstrap state.
-     * @deprecated
-     */
-    protected static void reset() {
-        BOOTSTRAP.set(null);
+    private static Optional<PicoServicesProvider> load() {
+        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class))
+                .asList()
+                .stream()
+                .findFirst();
+    }
+
+    // we need to keep the provider and the instance the provider creates together as one entity
+    private static class ProviderAndServicesTuple {
+        final PicoServicesProvider provider;
+        final PicoServices picoServices;
+
+        private ProviderAndServicesTuple(
+                Optional<PicoServicesProvider> provider) {
+            this.provider = provider.orElse(null);
+            this.picoServices = (provider.isPresent())
+                    ? this.provider.services(bootstrap(true).orElse(null)) : null;
+        }
+
+        private void reset() {
+            if (provider instanceof Resetable) {
+                ((Resetable) provider).reset(true);
+            } else if (picoServices instanceof Resetable) {
+                ((Resetable) picoServices).reset(true);
+            }
+        }
     }
 
 }

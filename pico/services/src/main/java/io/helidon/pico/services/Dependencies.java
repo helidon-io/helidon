@@ -457,17 +457,14 @@ public class Dependencies {
                 InjectionPointInfo.Access access) {
             commitLastDependency();
 
-            ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
-                    .addContractImplemented(elemTypeName)
-                    .build();
+            // thus begins a new builder continuation round
             ipInfoBuilder = DefaultInjectionPointInfo.builder()
                     .serviceTypeName(serviceTypeName)
                     .access(access)
                     .elementKind(kind)
                     .elementTypeName(elemTypeName)
                     .elementName(elemName)
-                    .elementArgs(elemArgs)
-                    .dependencyToServiceInfo(criteria);
+                    .elementArgs(elemArgs);
             return this;
         }
 
@@ -482,7 +479,12 @@ public class Dependencies {
             if (ipInfoBuilder != null) {
                 ipInfoBuilder.baseIdentity(toBaseIdentity(ipInfoBuilder));
                 ipInfoBuilder.id(toId(ipInfoBuilder));
+                ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+                        .addContractImplemented(ipInfoBuilder.elementTypeName())
+                        .qualifiers(ipInfoBuilder.qualifiers())
+                        .build();
                 InjectionPointInfo ipInfo = ipInfoBuilder
+                        .dependencyToServiceInfo(criteria)
                         .build();
                 ipInfoBuilder = null;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,29 +23,51 @@ import io.helidon.common.Weighted;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.spi.PicoServicesProvider;
+import io.helidon.pico.spi.Resetable;
 
 import jakarta.inject.Singleton;
 
 /**
  * The default implementation for {@link io.helidon.pico.spi.PicoServicesProvider}.
  *
+ * The first instance created (or first after calling deep {@link #reset}) will be the global services instance. The global
+ * instance will track the set of loaded modules and applications that are loaded by this JVM.
+ *
  * @see io.helidon.pico.PicoServices#picoServices()
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT)
-public class DefaultPicoServicesProvider implements PicoServicesProvider {
-
+public class DefaultPicoServicesProvider implements PicoServicesProvider, Resetable {
     private static final AtomicReference<DefaultPicoServices> INSTANCE = new AtomicReference<>();
 
     @Override
-    public PicoServices services(Bootstrap bootstrap) {
-        DefaultPicoServices services = new DefaultPicoServices(bootstrap, true);
-
-        if (!INSTANCE.compareAndSet(null, services)) {
-            services = new DefaultPicoServices(bootstrap, false);
+    public PicoServices services(
+            Bootstrap bootstrap) {
+        if (INSTANCE.get() == null) {
+            DefaultPicoServices global = new DefaultPicoServices(bootstrap, true);
+            INSTANCE.compareAndSet(null, global);
         }
 
-        return services;
+        if (INSTANCE.get().bootstrap().equals(bootstrap)) {
+            return INSTANCE.get();
+        }
+
+        // not the global one
+        return new DefaultPicoServices(bootstrap, false);
+    }
+
+    @Override
+    public synchronized boolean reset(
+            boolean deep) {
+        DefaultPicoServices services = INSTANCE.get();
+        boolean result = (services != null);
+        if (services != null) {
+            services.reset(deep);
+            if (deep) {
+                INSTANCE.set(null);
+            }
+        }
+        return result;
     }
 
 }

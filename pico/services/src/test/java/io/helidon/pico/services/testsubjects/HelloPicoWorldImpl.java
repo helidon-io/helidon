@@ -78,4 +78,12 @@ public class HelloPicoWorldImpl implements HelloPicoWorld {
         preDestroyCallCount++;
     }
 
+    public int postConstructCallCount() {
+        return postConstructCallCount;
+    }
+
+    public int preDestroyCallCount() {
+        return preDestroyCallCount;
+    }
+
 }

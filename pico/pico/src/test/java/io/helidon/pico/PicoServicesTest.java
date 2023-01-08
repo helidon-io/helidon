@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.pico;
 import io.helidon.pico.testsubjects.PicoServices2;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
@@ -34,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class PicoServicesTest {
 
+    @BeforeEach
     @AfterEach
     void reset() {
         PicoServicesHolder.reset();
@@ -47,14 +49,15 @@ class PicoServicesTest {
         assertThat(PicoServices.globalBootstrap(), optionalEmpty());
         Bootstrap bootstrap = DefaultBootstrap.builder().build();
         PicoServices.globalBootstrap(bootstrap);
+        assertThat(PicoServices.globalBootstrap().orElseThrow(), sameInstance(bootstrap));
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> PicoServices.globalBootstrap(bootstrap));
         assertThat(e.getMessage(), equalTo("bootstrap already set"));
 
-        PicoServices picoServices = PicoServices.picoServices().get();
+        PicoServices picoServices = PicoServices.picoServices().orElseThrow();
         assertThat(picoServices, notNullValue());
         assertThat(picoServices, instanceOf(PicoServices2.class));
-        assertThat(picoServices, sameInstance(PicoServices.picoServices().get()));
+        assertThat(picoServices, sameInstance(PicoServices.picoServices().orElseThrow()));
 
         assertThat(picoServices.bootstrap(), sameInstance(bootstrap));
     }

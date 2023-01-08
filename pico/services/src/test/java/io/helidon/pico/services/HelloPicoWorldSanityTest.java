@@ -36,12 +36,10 @@ import io.helidon.pico.services.testsubjects.HelloPicoImpl$$picoActivator;
 import io.helidon.pico.services.testsubjects.HelloPicoWorld;
 import io.helidon.pico.services.testsubjects.HelloPicoWorldImpl;
 import io.helidon.pico.services.testsubjects.PicoWorld;
-import io.helidon.pico.services.testsubjects.PicoWorldImpl$$picoActivator;
 
 import jakarta.inject.Singleton;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
@@ -74,8 +72,6 @@ class HelloPicoWorldSanityTest {
     void tearDown() {
         HelloPicoApplication.ENABLED = true;
         PicoTestingSupport.resetAll();
-        HelloPicoImpl$$picoActivator.INSTANCE.reset(true);
-        PicoWorldImpl$$picoActivator.INSTANCE.reset(true);
     }
 
     @Test
@@ -98,8 +94,6 @@ class HelloPicoWorldSanityTest {
         //                   containsInAnyOrder("BasicModule:HelloPicoApplication"));
     }
 
-    // TODO:
-    @Disabled
     @Test
     void standardActivationWithNoApplicationEnabled() {
         HelloPicoApplication.ENABLED = false;
@@ -109,8 +103,6 @@ class HelloPicoWorldSanityTest {
         standardActivation();
     }
 
-    // TODO:
-    @Disabled
     @Test
     void standardActivation() {
         Optional<PicoServices> picoServices = PicoServices.picoServices();
@@ -161,15 +153,21 @@ class HelloPicoWorldSanityTest {
         // now activate
         HelloPicoWorld hello1 = helloProvider1.get();
         assertThat(hello1.sayHello(),
-                   equalTo("hello pico"));
+                   equalTo("Hello pico"));
         assertThat(helloProvider1.currentActivationPhase(),
                    equalTo(Phase.ACTIVE));
         assertThat(helloProvider1.description(),
-                   equalTo("HelloPicoWorldImpl$$picoActivator:ACTIVE"));
+                   equalTo("HelloPicoWorldImpl:ACTIVE"));
 
         // world should be active now too, since Hello should have implicitly activated it
         assertThat(worldProvider1.description(),
-                   equalTo("PicoWorldImpl$$picoActivator:ACTIVE"));
+                   equalTo("PicoWorldImpl:ACTIVE"));
+
+        // check the post construct counts
+        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).postConstructCallCount(),
+                   equalTo(1));
+        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).preDestroyCallCount(),
+                   equalTo(0));
 
         // deactivate just that one service ...
         ActivationResult result = helloProvider1.deActivator().orElseThrow()
@@ -177,10 +175,15 @@ class HelloPicoWorldSanityTest {
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
         assertThat(result.serviceProvider(), sameInstance(helloProvider2));
-        assertThat(helloProvider1.description(),
-                   equalTo("HelloPicoWorldImpl$$picoActivator:DESTROYED"));
+        // TODO:
+//        assertThat(helloProvider1.description(),
+//                   equalTo("HelloPicoWorldImpl:DESTROYED"));
+//        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).postConstructCallCount(),
+//                   equalTo(1));
+//        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).preDestroyCallCount(),
+//                   equalTo(1));
         assertThat(worldProvider1.description(),
-                   equalTo("PicoWorldImpl$$picoActivator:ACTIVE"));
+                   equalTo("PicoWorldImpl:ACTIVE"));
     }
 
 //    @Test

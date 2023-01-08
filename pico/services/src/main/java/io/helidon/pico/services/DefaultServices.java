@@ -83,13 +83,16 @@ class DefaultServices implements Services, Resetable {
     }
 
     /**
-     * Performs a reset.
+     * Performs a reset. When deep is false this will only clear the cache and metrics count. When deep is true will also
+     * deeply reset each service in the registry as well as clear out the registry. Dynamic must be permitted in config for
+     * reset to occur.
      *
      * @param deep set to true will iterate through every service in the registry to attempt a reset on each service as well
      * @return true if reset had any affect
+     * @throws java.lang.IllegalStateException when dynamic is not permitted
      */
     @Override
-    public boolean reset(
+    public synchronized boolean reset(
             boolean deep) {
         assertPermitsDynamic(cfg);
 
@@ -105,7 +108,7 @@ class DefaultServices implements Services, Resetable {
             servicesByContract.clear();
         }
 
-        clear();
+        clearCacheAndMetrics();
 
         return changed;
     }
@@ -113,7 +116,7 @@ class DefaultServices implements Services, Resetable {
     /**
      * Clear the cache and metrics.
      */
-    void clear() {
+    void clearCacheAndMetrics() {
         cache.clear();
         lookupCount.set(0);
         cacheLookupCount.set(0);
@@ -198,7 +201,7 @@ class DefaultServices implements Services, Resetable {
                     && criteria.qualifiers().isEmpty()) {
                 serviceTypeName = theOnlyContractRequested;
             }
-            if (serviceTypeName == null) {
+            if (serviceTypeName != null) {
                 ServiceProvider exact = servicesByTypeName.get(serviceTypeName);
                 if (exact != null && !isIntercepted(exact)) {
                     return explodeAndSort(List.of(exact), criteria, expected);

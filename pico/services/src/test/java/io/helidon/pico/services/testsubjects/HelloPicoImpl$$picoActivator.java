@@ -94,15 +94,15 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
         super.doInjectingFields(t, deps, injections, forServiceType);
         HelloPicoWorldImpl target = (HelloPicoWorldImpl) t;
         target.world = Objects.requireNonNull(
-                (PicoWorld) deps.get("io.helidon.pico.example.world"), "world");
+                (PicoWorld) deps.get(PicoWorld.class.getPackageName() + ".world"), "world");
         target.worldRef = Objects.requireNonNull(
-                (Provider<PicoWorld>) deps.get("io.helidon.pico.example.worldRef"), "worldRef");
+                (Provider<PicoWorld>) deps.get(PicoWorld.class.getPackageName() + ".worldRef"), "worldRef");
         target.listOfWorldRefs = Objects.requireNonNull(
-                (List<Provider<PicoWorld>>) deps.get("io.helidon.pico.example.listOfWorldRefs"), "listOfWorldRefs");
+                (List<Provider<PicoWorld>>) deps.get(PicoWorld.class.getPackageName() + ".listOfWorldRefs"), "listOfWorldRefs");
         target.listOfWorlds = Objects.requireNonNull(
-                (List<PicoWorld>) deps.get("io.helidon.pico.example.listOfWorlds"), "listOfWorlds");
+                (List<PicoWorld>) deps.get(PicoWorld.class.getPackageName() + ".listOfWorlds"), "listOfWorlds");
         target.redWorld = Objects.requireNonNull(
-                (Optional<PicoWorld>) deps.get("io.helidon.pico.example.redWorld"), "redWorld");
+                (Optional<PicoWorld>) deps.get(PicoWorld.class.getPackageName() + ".redWorld"), "redWorld");
     }
 
     @Override
@@ -110,7 +110,7 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
         super.doInjectingMethods(t, deps, injections, forServiceType);
         HelloPicoWorldImpl target = (HelloPicoWorldImpl)t;
         target.world(Objects.requireNonNull(
-                (PicoWorld) deps.get("io.helidon.pico.example.world|1(1)")));
+                (PicoWorld) deps.get(PicoWorld.class.getPackageName() + ".world|1(1)")));
     }
 
     @Override
