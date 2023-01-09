@@ -16,12 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.AbstractMap;
-import java.util.Properties;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
