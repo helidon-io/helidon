@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,50 +291,47 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void recovery(ServerRequest req, ServerResponse res) {
-        Optional<String> lraId = req.query().first("lraId")
-                .or(() -> req.path().pathParameters().first("LraId"));
+        nextRecoveryCycle().await();
 
-        if (lraId.isPresent()) {
-            Lra lra = lraPersistentRegistry.get(lraId.get());
+        Optional<String> lraUUID = req.query().first("lraId")
+                .or(() -> req.path().pathParameters().first("LraId"))
+                .map(l -> {
+                    if (l.lastIndexOf("/") != -1 && l.lastIndexOf("/") + 1 < l.length()) {
+                        return l.substring(l.lastIndexOf("/") + 1);
+                    } else {
+                        return l;
+                    }
+                });
+
+        if (lraUUID.isPresent()) {
+            Lra lra = lraPersistentRegistry.get(lraUUID.get());
             if (lra != null) {
-                nextRecoveryCycle()
-                        .map(Lra.class::cast)
-                        .onCompleteResume(lra)
-                        .filter(l -> RECOVERABLE_STATUSES.contains(lra.status().get()))
-                        .map(l -> JSON.createObjectBuilder()
-                                .add("lraId", l.lraId())
-                                .add("status", l.status().get().name())
-                                .build()
-                        )
-                        .first()
-                        .onError(res::send)
-                        .defaultIfEmpty(JsonValue.EMPTY_JSON_OBJECT)
-                        .forSingle(s -> res.status(OK_200).send(s));
+                if (RECOVERABLE_STATUSES.contains(lra.status().get())) {
+                    JsonObject json = JSON.createObjectBuilder()
+                            .add("lraId", lra.lraId())
+                            .add("status", lra.status().get().name())
+                            .build();
+                    res.status(OK_200).send(json);
+                } else {
+                    res.status(OK_200).send(JsonValue.EMPTY_JSON_OBJECT);
+                }
             } else {
-                nextRecoveryCycle()
-                        .map(String::valueOf)
-                        .onError(res::send)
-                        .map(JsonObject.class::cast)
-                        .defaultIfEmpty(JsonValue.EMPTY_JSON_OBJECT)
-                        .forSingle(s -> res.status(NOT_FOUND_404).send());
+                res.status(NOT_FOUND_404).send(JsonValue.EMPTY_JSON_OBJECT);
             }
         } else {
-            nextRecoveryCycle()
-                    .map(JsonArray.class::cast)
-                    .onCompleteResumeWith(lraPersistentRegistry
-                            .stream()
-                            .filter(lra -> RECOVERABLE_STATUSES.contains(lra.status().get()))
-                            .map(l -> JSON.createObjectBuilder()
-                                    .add("lraId", l.lraId())
-                                    .add("status", l.status().get().name())
-                                    .build()
-                            )
-                            .collect(JSON::createArrayBuilder, JsonArrayBuilder::add)
-                            .map(JsonArrayBuilder::build))
-                    .first()
-                    .onError(res::send)
-                    .defaultIfEmpty(JsonArray.EMPTY_JSON_ARRAY)
-                    .forSingle(s -> res.status(OK_200).send(s));
+            JsonArray jsonValues = lraPersistentRegistry
+                    .stream()
+                    .filter(lra -> RECOVERABLE_STATUSES.contains(lra.status().get()))
+                    .map(l -> JSON.createObjectBuilder()
+                            .add("lraId", l.lraId())
+                            .add("status", l.status().get().name())
+                            .build()
+                    )
+                    .collect(JSON::createArrayBuilder, JsonArrayBuilder::add)
+                    .await()
+                    .build();
+
+            res.status(OK_200).send(jsonValues);
         }
     }
 
