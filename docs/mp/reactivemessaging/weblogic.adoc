@@ -64,7 +64,7 @@ Connector name: `helidon-weblogic-jms`
 |`thin-jar` | Filepath to the WebLogic thin T3 client jar (`wlthint3client.jar`), can be usually found within WebLogic installation
 `WL_HOME/server/lib/wlthint3client.jar`
 |`principal` | WebLogic initial context principal(user)
-|`credential` | WebLogic initial context credential(password)
+|`credentials` | WebLogic initial context credential(password)
 |`type` | Possible values are: `queue`, `topic`. Default value is: `topic`
 |`destination` | Queue or topic name in WebLogic CDI Syntax(CDI stands for Create Destination Identifier)
 |`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client’s receipt of a message,
