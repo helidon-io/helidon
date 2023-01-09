@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,12 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 public interface MetricsSettings {
 
     /**
-     * Returns default metrics settings based on default config.
+     * Returns default metrics settings based on the {@code metrics} section of the default config.
      *
-     * @return new settings reflecting the default config
+     * @return new settings reflecting the default metrics config
      */
     static MetricsSettings create() {
-        return create(Config.create());
+        return create(Config.create().get(Builder.METRICS_CONFIG_KEY));
     }
 
     /**

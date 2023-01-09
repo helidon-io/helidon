@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -92,6 +92,64 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <!-- Avoid any config pollution -->
+                                <exclude>**/TestGlobalTags.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Without the bug fix, this test fails with
+                            java.lang.IllegalArgumentException: Error(s) in global tag expression: [Missing '=': topLevel]
+                        -->
+                        <id>check-top-level-tags-only</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <testSelection>topLevel</testSelection>
+                            </systemPropertyVariables>
+                            <environmentVariables>
+                                <tags>topLevel</tags>
+                            </environmentVariables>
+                            <includes>
+                                <include>**/TestGlobalTags.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Without the bug fix, this test fails with
+                            java.lang.IllegalArgumentException: Error(s) in global tag expression: [Missing '=': topLevel]
+                        -->
+                        <id>check-top-level-and-metrics-level-tags</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <testSelection>topLevelAndMetricsLevel</testSelection>
+                                <!-- Use properties for the metrics global tag instead of env var;
+                                     dots in env names seem to not always work. -->
+                                <metrics.tags>myTag=myValue</metrics.tags>
+                            </systemPropertyVariables>
+                            <environmentVariables>
+                                <tags>topLevel</tags>
+                            </environmentVariables>
+                            <includes>
+                                <include>**/TestGlobalTags.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
