@@ -22,13 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.pico.ActivationLog;
-import io.helidon.pico.DefaultActivationLogEntry;
-import io.helidon.pico.DefaultActivationResult;
-import io.helidon.pico.Event;
 import io.helidon.pico.Phase;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
 
 /**
  * A provider that represents a non-singleton service.
@@ -47,65 +41,40 @@ class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
             AbstractServiceProvider<T> parent) {
         NonSingletonServiceProvider<T> serviceProvider = new NonSingletonServiceProvider<>(parent);
 
-        PicoServices picoServices = serviceProvider.picoServices();
-        PicoServicesConfig cfg = picoServices.config();
-        Optional<ActivationLog> log = picoServices.activationLog();
+        LogEntryAndResult logEntryAndResult = serviceProvider.createLogEntryAndResult(Phase.ACTIVE);
+        serviceProvider.startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_STARTING);
 
-        Phase ultimateTargetPhase = Phase.ACTIVE;
-        if (cfg.activationLogs()) {
-            DefaultActivationLogEntry.Builder entry = serviceProvider
-                    .toLogEntry(Event.STARTING, ultimateTargetPhase);
-            entry.finishedActivationPhase(Phase.ACTIVATION_STARTING);
-            log.ifPresent(activationLog -> activationLog.record(entry));
-        }
-
-        DefaultActivationResult.Builder res =
-                serviceProvider.createResultPlaceholder(ultimateTargetPhase);
-        if (cfg.activationLogs()) {
-            serviceProvider.recordActivationEvent(Event.STARTING,
-                    serviceProvider.currentActivationPhase(), res);
-            serviceProvider.recordActivationEvent(Event.STARTING, Phase.GATHERING_DEPENDENCIES, res);
-        }
-
+        serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
         Map<String, InjectionPlan> plans = parent.getOrCreateInjectionPlan(false);
+        logEntryAndResult.activationResult.injectionPlans(plans);
         Map<String, Object> deps = parent.resolveDependencies(plans);
-        if (cfg.activationLogs()) {
-            serviceProvider.recordActivationEvent(Event.FINISHED, Phase.GATHERING_DEPENDENCIES, res);
-            serviceProvider.recordActivationEvent(Event.STARTING, Phase.CONSTRUCTING, res);
-        }
-        T instance = parent.createServiceProvider(deps);
+        logEntryAndResult.activationResult.resolvedDependencies(deps);
+        serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 
-        if (cfg.activationLogs()) {
-            serviceProvider.recordActivationEvent(Event.FINISHED, Phase.CONSTRUCTING, res);
-        }
+        serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.CONSTRUCTING);
+        T instance = parent.createServiceProvider(deps);
+        serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 
         if (instance != null) {
-            if (cfg.activationLogs()) {
-                serviceProvider.recordActivationEvent(Event.STARTING, Phase.INJECTING, res);
-            }
-
+            serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
             List<String> serviceTypeOrdering = Objects.requireNonNull(parent.serviceTypeInjectionOrder());
             LinkedHashSet<String> injections = new LinkedHashSet<>();
             serviceTypeOrdering.forEach((forServiceType) -> {
                 parent.doInjectingFields(instance, deps, injections, forServiceType);
                 parent.doInjectingMethods(instance, deps, injections, forServiceType);
             });
+            serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 
-            if (cfg.activationLogs()) {
-                serviceProvider.recordActivationEvent(Event.FINISHED, Phase.INJECTING, res);
-            }
+            serviceProvider.startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_STARTING);
+
+            serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.POST_CONSTRUCTING);
+            serviceProvider.doPostConstructing(logEntryAndResult);
+            serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
+
+            serviceProvider.startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_FINISHING);
         }
 
-        if (cfg.activationLogs()) {
-            serviceProvider.recordActivationEvent(Event.FINISHED, Phase.POST_CONSTRUCTING, res);
-        }
-
-        serviceProvider.doPostConstructing(res, Phase.POST_CONSTRUCTING);
-
-        if (cfg.activationLogs()) {
-            serviceProvider.recordActivationEvent(Event.FINISHED, Phase.POST_CONSTRUCTING, res);
-            serviceProvider.recordActivationEvent(Event.FINISHED, Phase.ACTIVE, res);
-        }
+        serviceProvider.startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVE);
 
         return instance;
     }

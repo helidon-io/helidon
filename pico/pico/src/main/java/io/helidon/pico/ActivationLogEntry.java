@@ -33,13 +33,6 @@ import io.helidon.builder.BuilderInterceptor;
 public interface ActivationLogEntry {
 
     /**
-     * The managing service provider the event pertains to.
-     *
-     * @return the managing service provider
-     */
-    Optional<ServiceProvider<?>> serviceProvider();
-
-    /**
      * The event.
      *
      * @return the event
@@ -47,32 +40,32 @@ public interface ActivationLogEntry {
     Event event();
 
     /**
-     * The starting activation phase.
+     * Optionally, any special message being logged.
      *
-     * @return the starting activation phase
+     * @return the message
      */
-    Optional<Phase> startingActivationPhase();
+    Optional<String> message();
 
     /**
-     * The eventual/desired/target activation phase.
+     * Optionally, when this log entry pertains to a service provider activation.
      *
-     * @return the eventual/desired/target activation phase
+     * @return the activation result
      */
-    Optional<Phase> targetActivationPhase();
+    Optional<ActivationResult> activationResult();
 
     /**
-     * The finishing phase at the time of this event's log entry.
+     * Optionally, the managing service provider the event pertains to.
      *
-     * @return the actual finishing phase
+     * @return the managing service provider
      */
-    Optional<Phase> finishedActivationPhase();
+    Optional<ServiceProvider<?>> serviceProvider();
 
     /**
-     * The finishing activation status at the time of this event's log entry.
+     * Optionally, the injection point that the event pertains to.
      *
-     * @return the activation status
+     * @return the injection point
      */
-    Optional<ActivationStatus> finishedStatus();
+    Optional<InjectionPointInfo> injectionPoint();
 
     /**
      * The time this event was generated.

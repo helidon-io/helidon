@@ -30,7 +30,6 @@ import io.helidon.pico.spi.BasicInjectionPlan;
  * @see Activator
  * @see DeActivator
  **/
-// TODO: review the similarities with ActivationLogEntry
 @Builder
 public interface ActivationResult {
 
@@ -61,7 +60,7 @@ public interface ActivationResult {
      *
      * @return the target, desired, ultimate phase requested
      */
-    Phase ultimateTargetActivationPhase();
+    Phase targetActivationPhase();
 
     /**
      * The activation phase we finished successfully on, or are otherwise currently in if not yet finished.
@@ -141,13 +140,14 @@ public interface ActivationResult {
      * @param serviceProvider the service provider
      * @return the result
      */
-    static ActivationResult createSuccess(ServiceProvider<?> serviceProvider) {
+    static ActivationResult createSuccess(
+            ServiceProvider<?> serviceProvider) {
         Phase phase = serviceProvider.currentActivationPhase();
         return DefaultActivationResult.builder()
                 .serviceProvider(serviceProvider)
                 .startingActivationPhase(phase)
                 .finishingActivationPhase(phase)
-                .ultimateTargetActivationPhase(phase)
+                .targetActivationPhase(phase)
                 .finishingStatus(ActivationStatus.SUCCESS)
                 .build();
     }

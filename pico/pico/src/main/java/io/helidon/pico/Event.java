@@ -29,6 +29,11 @@ public enum Event {
     /**
      * Finished.
      */
-    FINISHED
+    FINISHED,
+
+    /**
+     * Other, informational.
+     */
+    OTHER
 
 }

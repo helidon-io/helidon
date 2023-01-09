@@ -86,12 +86,12 @@ class HelloPicoWorldSanityTest {
         assertThat(descriptions,
                    containsInAnyOrder("EmptyModule:ACTIVE", "HelloPicoModule:ACTIVE"));
 
-        // TODO:
-        //        List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
-        //        assertThat(applications.size(),
-        //                   equalTo(1));
-        //        assertThat(DefaultServices.toDescriptions(applications),
-        //                   containsInAnyOrder("BasicModule:HelloPicoApplication"));
+//        // TODO:
+//        List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
+//        assertThat(applications.size(),
+//                   equalTo(1));
+//        assertThat(DefaultServices.toDescriptions(applications),
+//                   containsInAnyOrder("BasicModule:HelloPicoApplication"));
     }
 
     @Test

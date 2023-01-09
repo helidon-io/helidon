@@ -16,7 +16,6 @@
 
 package io.helidon.pico.services;
 
-import io.helidon.pico.Phase;
 import io.helidon.pico.DefaultActivationLogEntry;
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,7 @@ class DefaultActivationLogTest {
     void testRetainedLog() {
         DefaultActivationLog log = DefaultActivationLog.createRetainedLog(LOGGER);
         log.level(System.Logger.Level.INFO);
-        log.record(DefaultActivationLogEntry.builder().targetActivationPhase(Phase.ACTIVE).build());
+        log.record(DefaultActivationLogEntry.builder().build());
 
         assertThat(log.toQuery(), optionalPresent());
         assertThat(log.toQuery().get().fullActivationLog().size(), equalTo(1));
@@ -46,7 +45,7 @@ class DefaultActivationLogTest {
     void unretainedLog() {
         DefaultActivationLog log = DefaultActivationLog.createUnretainedLog(LOGGER);
         log.level(System.Logger.Level.INFO);
-        log.record(DefaultActivationLogEntry.builder().targetActivationPhase(Phase.ACTIVE).build());
+        log.record(DefaultActivationLogEntry.builder().build());
 
         assertThat(log.toQuery(), optionalEmpty());
     }

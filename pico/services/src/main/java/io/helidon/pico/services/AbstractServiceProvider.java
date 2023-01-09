@@ -343,7 +343,7 @@ public abstract class AbstractServiceProvider<T>
      * @return the activation log
      */
     protected ActivationLog activationLog() {
-        assert(picoServices != null) : "not initialized";
+        assert (picoServices != null) : "not initialized";
         if (null == log) {
             log = picoServices.activationLog().orElse(DefaultActivationLog.createUnretainedLog(LOGGER));
         }
@@ -473,66 +473,58 @@ public abstract class AbstractServiceProvider<T>
             return ActivationResult.createSuccess(this);
         }
 
-        DefaultActivationResult.Builder res = preambleActivate(req);
+        LogEntryAndResult logEntryAndResult = preambleActivate(req);
+        DefaultActivationResult.Builder res = logEntryAndResult.activationResult;
 
         // if we get here then we own the semaphore for activation...
         try {
             if (Phase.INIT == res.finishingActivationPhase()
                     || Phase.PENDING == res.finishingActivationPhase()
                     || Phase.DESTROYED == res.finishingActivationPhase()) {
-                doActivationStarting(res, Phase.ACTIVATION_STARTING, false);
+                doStartingLifecycle(logEntryAndResult);
             }
             if (Phase.ACTIVATION_STARTING == res.finishingActivationPhase()) {
-                doGatheringDependencies(res, Phase.GATHERING_DEPENDENCIES);
+                doGatheringDependencies(logEntryAndResult);
             }
             if (Phase.GATHERING_DEPENDENCIES == res.finishingActivationPhase()) {
-                doConstructing(res, Phase.CONSTRUCTING);
+                doConstructing(logEntryAndResult);
             }
             if (Phase.CONSTRUCTING == res.finishingActivationPhase()) {
-                doInjecting(res, Phase.INJECTING);
+                doInjecting(logEntryAndResult);
             }
             if (Phase.INJECTING == res.finishingActivationPhase()) {
-                doPostConstructing(res, Phase.POST_CONSTRUCTING);
+                doPostConstructing(logEntryAndResult);
             }
             if (Phase.POST_CONSTRUCTING == res.finishingActivationPhase()) {
-                doActivationFinishing(res, Phase.ACTIVATION_FINISHING, false);
+                doActivationFinishing(logEntryAndResult);
             }
             if (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase()) {
-                doActivationActive(res, Phase.ACTIVE);
+                doActivationActive(logEntryAndResult);
             }
-            onFinished(res, res.finishingActivationPhase());
         } catch (Throwable t) {
-            return failedFinish(res, t, req.throwOnFailure());
+            failedFinish(logEntryAndResult, t, req.throwOnFailure());
         } finally {
             this.lastActivationThreadId = 0;
             activationSemaphore.release();
         }
 
-        return res.build();
+        return logEntryAndResult.activationResult.build();
     }
 
-    private DefaultActivationResult.Builder preambleActivate(
+    // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
+    private LogEntryAndResult preambleActivate(
             ActivationRequest req) {
         assert (req.serviceProvider() == this) : "not capable of handling service provider" + req;
         assert (picoServices != null) : "not initialized";
 
-        // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
-        DefaultActivationLogEntry.Builder entry = toLogEntry(Event.STARTING, req.targetPhase());
-        entry.finishedActivationPhase(Phase.PENDING);
-        if (log != null) {
-            log.record(entry);
-        }
-
-        // TODO:
-//        Services services = picoServices.services();
-//        if (req.injectionPoint().isPresent()) {
-//            services = services.contextualServices(req.injectionPoint().get());
-//        }
-        DefaultActivationResult.Builder res = createResultPlaceholder(req.targetPhase());
+        LogEntryAndResult logEntryAndResult = createLogEntryAndResult(req.targetPhase());
+        req.injectionPoint().ifPresent(logEntryAndResult.logEntry::injectionPoint);
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
 
         // fail fast if we are in a recursive situation on this thread...
-        if (entry.threadId() == lastActivationThreadId && lastActivationThreadId > 0) {
-            return failedFinish(res, recursiveActivationInjectionError(entry, log), req.throwOnFailure());
+        if (logEntryAndResult.logEntry.threadId() == lastActivationThreadId && lastActivationThreadId > 0) {
+            failedFinish(logEntryAndResult, recursiveActivationInjectionError(logEntryAndResult.logEntry), req.throwOnFailure());
+            return logEntryAndResult;
         }
 
         PicoServicesConfig cfg = picoServices.config();
@@ -541,75 +533,44 @@ public abstract class AbstractServiceProvider<T>
             // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)
             if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't get semaphore than we (or someone else) is busy activating this services, or we deadlocked
-                return failedFinish(res, timedOutActivationInjectionError(entry, log), req.throwOnFailure());
+                failedFinish(logEntryAndResult, timedOutActivationInjectionError(logEntryAndResult.logEntry), req.throwOnFailure());
+                return logEntryAndResult;
             }
             didAcquire = true;
 
             // if we made it to here then we "own" the semaphore and the subsequent activation steps...
             lastActivationThreadId = Thread.currentThread().getId();
-            entry.threadId(lastActivationThreadId);
+            logEntryAndResult.logEntry.threadId(lastActivationThreadId);
 
-            if (res.finished()) {
+            if (logEntryAndResult.activationResult.finished()) {
                 didAcquire = false;
                 activationSemaphore.release();
             }
 
-            currentActivationPhase(res, Phase.PENDING);
+            finishedTransitionCurrentActivationPhase(logEntryAndResult);
         } catch (Throwable t) {
             this.lastActivationThreadId = 0;
-
             if (didAcquire) {
                 activationSemaphore.release();
             }
 
-            return failedFinish(res, interruptedPreActivationInjectionError(entry, log, t), req.throwOnFailure());
+            InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
+            failedFinish(logEntryAndResult, e, req.throwOnFailure());
         }
 
-        return res;
-    }
-
-    protected DefaultActivationResult.Builder createResultPlaceholder(
-            Phase ultimateTargetPhase) {
-        return DefaultActivationResult.builder()
-                .serviceProvider(this)
-                .startingActivationPhase(currentActivationPhase())
-                .finishingActivationPhase(currentActivationPhase())
-                .ultimateTargetActivationPhase(ultimateTargetPhase);
+        return logEntryAndResult;
     }
 
     @Override
     public void onPhaseEvent(
             Event event,
             Phase phase) {
-        if (log != null) {
-            DefaultActivationLogEntry.Builder entry =
-                    toLogEntry(event, phase);
-            log.record(entry);
-        }
+        // NOP
     }
 
-    protected void recordActivationEvent(
-            Event event,
-            Phase phase,
-            DefaultActivationResult.Builder res) {
-        currentActivationPhase(res, phase);
-
-        if (log != null) {
-            DefaultActivationLogEntry.Builder entry =
-                    toLogEntry(event, res.ultimateTargetActivationPhase());
-            log.record(entry);
-        }
-    }
-
-    protected void doActivationStarting(
-            DefaultActivationResult.Builder res,
-            Phase phase,
-            boolean didSomething) {
-        if (didSomething) {
-            recordActivationEvent(Event.FINISHED, phase, res);
-        } else {
-            currentActivationPhase(res, phase);
-        }
+    protected void doStartingLifecycle(
+            LogEntryAndResult logEntryAndResult) {
+        startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_STARTING);
     }
 
     /**
@@ -628,10 +589,10 @@ public abstract class AbstractServiceProvider<T>
 
         if (injectionPlan != null) {
             LOGGER.log(System.Logger.Level.WARNING,
-                    "this service provider already has an injection plan (which is unusual here): " + this);
+                       "this service provider already has an injection plan (which is unusual here): " + this);
         }
 
-        final ConcurrentHashMap<String, InjectionPointInfo> idToIpInfo = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, InjectionPointInfo> idToIpInfo = new ConcurrentHashMap<>();
         dependencies.allDependencies().forEach(dep -> {
             dep.injectionPointDependencies().forEach(ipDep -> {
                 String id = ipDep.id();
@@ -749,21 +710,20 @@ public abstract class AbstractServiceProvider<T>
     }
 
     protected void doGatheringDependencies(
-            DefaultActivationResult.Builder res,
-            Phase phase) {
-        recordActivationEvent(Event.STARTING, phase, res);
+            LogEntryAndResult logEntryAndResult) {
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
 
         Map<String, InjectionPlan> plans = getOrCreateInjectionPlan(false);
         if (plans != null) {
-            res.injectionPlans(plans);
+            logEntryAndResult.activationResult.injectionPlans(plans);
         }
 
         Map<String, Object> deps = resolveDependencies(plans);
         if (deps != null) {
-            res.resolvedDependencies(deps);
+            logEntryAndResult.activationResult.resolvedDependencies(deps);
         }
 
-        recordActivationEvent(Event.FINISHED, phase, res);
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
     /**
@@ -812,10 +772,19 @@ public abstract class AbstractServiceProvider<T>
             result = true;
         }
 
-        serviceRef(null);
-        currentActivationPhase(null, Phase.INIT);
-
+        serviceRef.set(null);
+        phase = Phase.INIT;
         return result;
+    }
+
+    @Override
+    public Optional<PostConstructMethod> postConstructMethod() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PreDestroyMethod> preDestroyMethod() {
+        return Optional.empty();
     }
 
     Map<String, Object> resolveDependencies(
@@ -845,14 +814,13 @@ public abstract class AbstractServiceProvider<T>
     }
 
     protected void doConstructing(
-            DefaultActivationResult.Builder res,
-            Phase phase) {
-        recordActivationEvent(Event.STARTING, phase, res);
+            LogEntryAndResult logEntryAndResult) {
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.CONSTRUCTING);
 
-        Map<String, Object> deps = res.resolvedDependencies();
+        Map<String, Object> deps = logEntryAndResult.activationResult.resolvedDependencies();
         serviceRef(createServiceProvider(deps));
 
-        recordActivationEvent(Event.FINISHED, currentActivationPhase(), res);
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
     protected void serviceRef(
@@ -870,13 +838,12 @@ public abstract class AbstractServiceProvider<T>
     }
 
     protected void doInjecting(
-            DefaultActivationResult.Builder res,
-            Phase phase) {
-        Map<String, Object> deps = res.resolvedDependencies();
+            LogEntryAndResult logEntryAndResult) {
+        Map<String, Object> deps = logEntryAndResult.activationResult.resolvedDependencies();
         if (deps == null || deps.isEmpty()) {
-            recordActivationEvent(Event.FINISHED, phase, res);
+            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
         } else {
-            recordActivationEvent(Event.STARTING, phase, res);
+            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
 
             T target = Objects.requireNonNull(serviceRef.get());
             List<String> serviceTypeOrdering = serviceTypeInjectionOrder();
@@ -891,7 +858,7 @@ public abstract class AbstractServiceProvider<T>
                 }
             });
 
-            recordActivationEvent(Event.FINISHED, phase, res);
+            finishedTransitionCurrentActivationPhase(logEntryAndResult);
         }
     }
 
@@ -918,33 +885,25 @@ public abstract class AbstractServiceProvider<T>
     }
 
     protected void doPostConstructing(
-            DefaultActivationResult.Builder res,
-            Phase phase) {
+            LogEntryAndResult logEntryAndResult) {
         Optional<PostConstructMethod> postConstruct = postConstructMethod();
         if (postConstruct.isPresent()) {
-            recordActivationEvent(Event.STARTING, phase, res);
+            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.POST_CONSTRUCTING);
             postConstruct.get().postConstruct();
-            recordActivationEvent(Event.FINISHED, phase, res);
+            finishedTransitionCurrentActivationPhase(logEntryAndResult);
         } else {
-            currentActivationPhase(res, phase);
+            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.POST_CONSTRUCTING);
         }
     }
 
     protected void doActivationFinishing(
-            DefaultActivationResult.Builder res,
-            Phase phase,
-            boolean didSomething) {
-        if (didSomething) {
-            recordActivationEvent(Event.FINISHED, phase, res);
-        } else {
-            currentActivationPhase(res, phase);
-        }
+            LogEntryAndResult logEntryAndResult) {
+        startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_FINISHING);
     }
 
     protected void doActivationActive(
-            DefaultActivationResult.Builder res,
-            Phase phase) {
-        recordActivationEvent(Event.FINISHED, phase, res);
+            LogEntryAndResult logEntryAndResult) {
+        startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVE);
     }
 
     @Override
@@ -956,255 +915,264 @@ public abstract class AbstractServiceProvider<T>
         }
 
         PicoServices picoServices = picoServices();
+        PicoServicesConfig cfg = picoServices.config();
 
         // if we are here then we are not yet at the ultimate target phase, and we either have to activate or
         // deactivate...
-        DefaultActivationLogEntry.Builder entry = toLogEntry(Event.STARTING, Phase.DESTROYED);
-        entry.finishedActivationPhase(Phase.PRE_DESTROYING);
-        if (log != null) {
-            log.record(entry);
-        }
+        LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.DESTROYED);
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
 
-        final PicoServicesConfig cfg = picoServices.config();
         boolean didAcquire = false;
-        final DefaultActivationResult.Builder res = DefaultActivationResult.builder()
-                .serviceProvider(this)
-                .finishingStatus(ActivationStatus.SUCCESS)
-                .startingActivationPhase(currentActivationPhase())
-                .finishingActivationPhase(Phase.PRE_DESTROYING)
-                .ultimateTargetActivationPhase(Phase.DESTROYED);
         try {
             // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)...
             if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't grab the semaphore than we (or someone else) is busy activating this services, or
                 // we deadlocked.
-                return failedFinish(res, timedOutDeActivationInjectionError(entry, log), req.throwOnFailure());
+                InjectionException e = timedOutDeActivationInjectionError(logEntryAndResult.logEntry);
+                failedFinish(logEntryAndResult, e, req.throwOnFailure());
+                return logEntryAndResult.activationResult.build();
             }
             didAcquire = true;
 
             if (!isAlreadyAtTargetPhase(Phase.ACTIVE)) {
-                return res;
+                return logEntryAndResult.activationResult;
             }
 
             // if we made it to here then we "own" the semaphore and the subsequent activation steps...
             this.lastActivationThreadId = Thread.currentThread().getId();
 
-            if (!res.finished()) {
+            if (!logEntryAndResult.activationResult.finished()) {
                 // quasi-reset
-                currentActivationPhase(res, Phase.PRE_DESTROYING);
-                doPreDestroying(res);
+                startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
+                doPreDestroying(logEntryAndResult);
 
                 serviceRef(null);
 
-                res.wasResolved(false);
-                res.resolvedDependencies(Map.of());
+                logEntryAndResult.activationResult.wasResolved(false);
+                logEntryAndResult.activationResult.resolvedDependencies(Map.of());
             }
-        } catch (Throwable e) {
-            return failedFinish(res, interruptedPreActivationInjectionError(entry, log, e), req.throwOnFailure());
+        } catch (Throwable t) {
+            InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
+            failedFinish(logEntryAndResult, e, req.throwOnFailure());
         } finally {
             lastActivationThreadId = 0;
-//            res.setFinished(true);
+            //            res.setFinished(true);
             if (didAcquire) {
                 activationSemaphore.release();
             }
         }
 
-        return res;
+        return logEntryAndResult.activationResult.build();
     }
 
     protected void doPreDestroying(
-            DefaultActivationResult.Builder res) {
+            LogEntryAndResult logEntryAndResult) {
         Optional<PreDestroyMethod> preDestroyMethod = preDestroyMethod();
         if (preDestroyMethod.isEmpty()) {
-            recordActivationEvent(Event.FINISHED, Phase.DESTROYED, res);
+            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
         } else {
-            recordActivationEvent(Event.STARTING, Phase.DESTROYED, res);
+            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
             preDestroyMethod.get().preDestroy();
-            recordActivationEvent(Event.FINISHED, Phase.DESTROYED, res);
+            finishedTransitionCurrentActivationPhase(logEntryAndResult);
         }
     }
 
-    @Override
-    public Optional<PostConstructMethod> postConstructMethod() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<PreDestroyMethod> preDestroyMethod() {
-        return Optional.empty();
-    }
-
-    private DefaultActivationResult.Builder failedFinish(
-            DefaultActivationResult.Builder res,
+    private void failedFinish(
+            LogEntryAndResult logEntryAndResult,
             Throwable t,
             boolean throwOnError) {
         this.lastActivationThreadId = 0;
-        return finishFailedFinish(res, t, throwOnError, log);
+        finishFailedFinish(logEntryAndResult, t, throwOnError);
     }
 
-//    private static DefaultActivationResult failedFinish(
-//            Throwable t,
-//            boolean throwOnError) {
-//        return finishFailedFinish(new DefaultActivationResult(), t, throwOnError);
-//    }
+    //    private static DefaultActivationResult failedFinish(
+    //            Throwable t,
+    //            boolean throwOnError) {
+    //        return finishFailedFinish(new DefaultActivationResult(), t, throwOnError);
+    //    }
 
-    private static DefaultActivationResult.Builder finishFailedFinish(
-            DefaultActivationResult.Builder res,
+    private void finishFailedFinish(
+            LogEntryAndResult logEntryAndResult,
             Throwable t,
-            boolean throwOnError,
-            ActivationLog log) {
+            boolean throwOnError) {
         InjectionException e;
 
+        DefaultActivationLogEntry.Builder res = logEntryAndResult.logEntry;
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
             String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
-            e = new InjectionException(msg, t, res.serviceProvider());
-            if (log != null) {
-                e.activationLog(log);
-            }
+            e = new InjectionException(msg, t, this)
+                    .activationLog(activationLog());
         } else {
             e = (InjectionException) t;
         }
 
         res.error(e);
-        res.finishingStatus(ActivationStatus.FAILURE);
+        logEntryAndResult.activationResult.finishingStatus(ActivationStatus.FAILURE);
 
         if (throwOnError) {
             throw e;
         }
-
-        return res;
     }
 
-    private static InjectionException recursiveActivationInjectionError(
-            DefaultActivationLogEntry.Builder entry,
-            ActivationLog log) {
+    private InjectionException recursiveActivationInjectionError(
+            DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
-                                                      targetServiceProvider);
-        if (log != null) {
-            e.activationLog(log);
-        }
+                                                      targetServiceProvider)
+                .activationLog(activationLog());
         entry.error(e);
         return e;
     }
 
-    private static InjectionException timedOutActivationInjectionError(
-            DefaultActivationLogEntry.Builder entry,
-            ActivationLog log) {
+    private InjectionException timedOutActivationInjectionError(
+            DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("timed out during activation of " + targetServiceProvider,
-                                                      targetServiceProvider);
-        if (log != null) {
-            e.activationLog(log);
-        }
+                                                      targetServiceProvider)
+                .activationLog(activationLog());
         entry.error(e);
         return e;
     }
 
-    private static InjectionException timedOutDeActivationInjectionError(
-            DefaultActivationLogEntry.Builder entry,
-            ActivationLog log) {
+    private InjectionException timedOutDeActivationInjectionError(
+            DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("timed out during deactivation of " + targetServiceProvider,
-                                                      targetServiceProvider);
-        if (log != null) {
-            e.activationLog(log);
-        }
+                                                      targetServiceProvider)
+                .activationLog(activationLog());
         entry.error(e);
         return e;
     }
 
-    private static InjectionException interruptedPreActivationInjectionError(
+    private InjectionException interruptedPreActivationInjectionError(
             DefaultActivationLogEntry.Builder entry,
-            ActivationLog log,
             Throwable cause) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
-                                                      cause,
-                                                      targetServiceProvider);
-        if (log != null) {
-            e.activationLog(log);
-        }
+                                                      cause, targetServiceProvider)
+                .activationLog(activationLog());
         entry.error(e);
         return e;
+    }
+
+    private InjectionException managedServiceInstanceShouldHaveBeenSetException() {
+        InjectionException e = new InjectionException("managed service instance expected to have been set", this)
+                .activationLog(activationLog());
+        return e;
+    }
+
+    private InjectionException expectedQualifiedServiceError(
+            ContextualServiceQuery ctx) {
+        return new InjectionException("expected to return a non-null instance for: " + ctx.injectionPointInfo()
+                                              + "; with criteria matching: " + ctx.serviceInfoCriteria(), this)
+                .activationLog(activationLog());
+    }
+
+    private InjectionException activationFailed(
+            ActivationResult res) {
+        return new InjectionException("activation failed: " + res, this)
+                .activationLog(activationLog());
+    }
+
+    private PicoServiceProviderException unableToActivate(
+            Throwable cause) {
+        return new PicoServiceProviderException("unable to activate: " + description(), cause, this);
+    }
+
+    private PicoServiceProviderException alreadyInitialized() {
+        throw new PicoServiceProviderException("already initialized", this);
     }
 
     private void logMultiDefInjectionNote(
             String id,
             Object prev,
             InjectionPointInfo ipDep) {
-        LOGGER.log(System.Logger.Level.DEBUG,
-                   "there are two different services sharing the same injection point info id; first = "
-                        + prev + " and the second = " + ipDep + "; both use the id '" + id
-                        + "'; note that the second will override the first");
-    }
-
-    DefaultActivationLogEntry.Builder toLogEntry(
-            Event event,
-            Phase targetPhase) {
-        return DefaultActivationLogEntry.builder()
-                .serviceProvider(this)
-                .event(event)
-                .startingActivationPhase(currentActivationPhase())
-                .targetActivationPhase(targetPhase)
-                .finishedActivationPhase(phase);
-    }
-
-    private DefaultActivationResult.Builder currentActivationPhase(
-            DefaultActivationResult.Builder resultBuilder,
-            Phase phase) {
-        DefaultActivationLogEntry.Builder entry = null;
+        String message = "there are two different services sharing the same injection point info id; first = "
+                + prev + " and the second = " + ipDep + "; both use the id '" + id
+                + "'; note that the second will override the first";
         if (log != null) {
-            entry = DefaultActivationLogEntry.builder()
-                    .startingActivationPhase(this.phase)
-                    .targetActivationPhase(phase);
+            log.record(DefaultActivationLogEntry.builder()
+                               .serviceProvider(this)
+                               .injectionPoint(ipDep)
+                               .message(message)
+                               .build());
+        } else {
+            LOGGER.log(System.Logger.Level.DEBUG, message);
         }
+    }
 
-        this.phase = phase;
-        if (resultBuilder != null) {
-            resultBuilder.finishingActivationPhase(phase);
+//    void log(
+//            String message) {
+//        if (log != null) {
+//            log.record(DefaultActivationLogEntry.builder()
+//                               .serviceProvider(this)
+//                               .message(message)
+//                               .build());
+//        } else {
+//            LOGGER.log(System.Logger.Level.DEBUG, message);
+//        }
+//    }
+//
+    LogEntryAndResult createLogEntryAndResult(
+            Phase targetPhase) {
+        Phase currentPhase = currentActivationPhase();
+        DefaultActivationResult.Builder activationResult = DefaultActivationResult.builder()
+                .serviceProvider(this)
+                .startingActivationPhase(currentPhase)
+                .finishingActivationPhase(currentPhase)
+                .targetActivationPhase(targetPhase);
+        DefaultActivationLogEntry.Builder logEntry = DefaultActivationLogEntry.builder()
+                .serviceProvider(this)
+                .event(Event.STARTING)
+                .threadId(Thread.currentThread().getId())
+                .activationResult(activationResult);
+        return new LogEntryAndResult(logEntry, activationResult);
+    }
+
+    void startAndFinishTransitionCurrentActivationPhase(
+            LogEntryAndResult logEntryAndResult,
+            Phase newPhase) {
+        startTransitionCurrentActivationPhase(logEntryAndResult, newPhase);
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
+    }
+
+    void startTransitionCurrentActivationPhase(
+            LogEntryAndResult logEntryAndResult,
+            Phase newPhase) {
+        Objects.requireNonNull(newPhase);
+        logEntryAndResult.activationResult
+                .startingActivationPhase(Objects.requireNonNull(this.phase))
+                .finishingActivationPhase(newPhase);
+        this.phase = newPhase;
+        logEntryAndResult.logEntry
+                .event(Event.STARTING)
+                .activationResult(logEntryAndResult.activationResult.build());
+        activationLog().record(logEntryAndResult.logEntry.build());
+        onPhaseEvent(Event.STARTING, this.phase);
+    }
+
+    void finishedTransitionCurrentActivationPhase(
+            LogEntryAndResult logEntryAndResult) {
+        logEntryAndResult.logEntry
+                .event(Event.FINISHED)
+                .activationResult(logEntryAndResult.activationResult.build());
+        activationLog().record(logEntryAndResult.logEntry.build());
+        onPhaseEvent(Event.FINISHED, this.phase);
+    }
+
+
+    // note that for one result, there may be N logEntry records we will build and write to the log
+    static class LogEntryAndResult {
+        final DefaultActivationResult.Builder activationResult;
+        final DefaultActivationLogEntry.Builder logEntry;
+
+        LogEntryAndResult(
+                DefaultActivationLogEntry.Builder logEntry,
+                DefaultActivationResult.Builder activationResult) {
+            this.logEntry = logEntry;
+            this.activationResult = activationResult;
         }
-        if (entry != null) {
-            log.record(entry);
-        }
-        return resultBuilder;
-    }
-
-    private void onFinished(
-            DefaultActivationResult.Builder res,
-            Phase finishingActivationPhase) {
-        if (res.finishingActivationPhase() != finishingActivationPhase) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                LOGGER.log(System.Logger.Level.DEBUG, "short-circuiting activation into phase '"
-                        + finishingActivationPhase + "' for " + this);
-            }
-            currentActivationPhase(res, finishingActivationPhase);
-        }
-        res.finishingStatus(ActivationStatus.SUCCESS);
-    }
-
-    private InjectionException managedServiceInstanceShouldHaveBeenSetException() {
-        return new InjectionException("managed service instance expected to have been set", this)
-                .activationLog(activationLog());
-    }
-
-    private InjectionException expectedQualifiedServiceError(ContextualServiceQuery ctx) {
-        return new InjectionException("expected to return a non-null instance for: " + ctx.injectionPointInfo()
-                                              + "; with criteria matching: " + ctx.serviceInfoCriteria(), this)
-                .activationLog(activationLog());
-    }
-
-    private InjectionException activationFailed(ActivationResult res) {
-        return new InjectionException("activation failed: " + res, this).activationLog(activationLog());
-    }
-
-    private PicoServiceProviderException unableToActivate(Throwable cause) {
-        return new PicoServiceProviderException("unable to activate: " + description(), cause, this);
-    }
-
-    private PicoServiceProviderException alreadyInitialized() {
-        throw new PicoServiceProviderException("already initialized", this);
     }
 
 }
