@@ -17,7 +17,6 @@ package io.helidon.tests.integration.dbclient.appl;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -28,8 +27,6 @@ import io.helidon.tests.integration.tools.service.RemoteTestException;
  * Common web service code for testing application.
  */
 public abstract class AbstractService implements Service {
-
-    private static final Logger LOGGER = Logger.getLogger(AbstractService.class.getName());
 
     /** Query parameter for name of Pokemon, Type, etc.  */
     public static final String QUERY_NAME_PARAM = "name";
@@ -50,7 +47,7 @@ public abstract class AbstractService implements Service {
      * @param dbClient DbClient instance
      * @param statements statements from configuration file
      */
-    public AbstractService(final DbClient dbClient, final Map<String, String> statements) {
+    public AbstractService(DbClient dbClient, Map<String, String> statements) {
         this.dbClient = dbClient;
         this.statements = statements;
     }
@@ -70,7 +67,7 @@ public abstract class AbstractService implements Service {
      * @param name statement configuration property name
      * @return statement from configuration file
      */
-    public String statement(final String name) {
+    public String statement(String name) {
         return statements.get(name);
     }
 
@@ -82,7 +79,7 @@ public abstract class AbstractService implements Service {
      * @return query parameter value
      * @throws RemoteTestException when no parameter with given name exists in request
      */
-    public static final String param( final ServerRequest request, final String name) {
+    public static String param(ServerRequest request, String name) {
         Optional<String> maybeParam = request.queryParams().first(name);
         if (maybeParam.isPresent()) {
             return maybeParam.get();

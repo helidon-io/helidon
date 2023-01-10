@@ -18,13 +18,13 @@ package io.helidon.tests.integration.dbclient.common.tests.health;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;

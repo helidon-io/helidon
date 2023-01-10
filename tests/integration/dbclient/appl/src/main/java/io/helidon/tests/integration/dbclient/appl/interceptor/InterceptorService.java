@@ -16,7 +16,6 @@
 package io.helidon.tests.integration.dbclient.appl.interceptor;
 
 import java.util.Map;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -43,8 +42,6 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class InterceptorService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptorService.class.getName());
-
     private final DbClientService interceptor;
 
     /**
@@ -54,7 +51,7 @@ public class InterceptorService extends AbstractService {
      * @param statements statements from configuration file
      * @param interceptor DbClientService interceptor instance used in test
      */
-    public InterceptorService(final DbClient dbClient, final Map<String, String> statements, final DbClientService interceptor) {
+    public InterceptorService(DbClient dbClient, Map<String, String> statements, DbClientService interceptor) {
         super(dbClient, statements);
         this.interceptor = interceptor;
     }
@@ -90,8 +87,7 @@ public class InterceptorService extends AbstractService {
     }
 
     // Check that statement interceptor was called before statement execution.
-    private void testStatementInterceptor(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running Interceptor.testStatementInterceptor on server");
+    private void testStatementInterceptor(ServerRequest request, ServerResponse response) {
         Multi<DbRow> rows = dbClient().execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")
                 .addParam("name", Pokemon.POKEMONS.get(6).getName())

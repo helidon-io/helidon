@@ -15,12 +15,12 @@
  */
 package io.helidon.tests.integration.dbclient.appl.statement;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbClient;
@@ -44,11 +44,11 @@ import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
  */
 public class QueryStatementService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(GetStatementService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GetStatementService.class.getName());
 
     private interface TestFunction extends BiFunction<Integer, Integer, Multi<DbRow>> {}
 
-    public QueryStatementService(final DbClient dbClient, final Map<String, String> statements) {
+    public QueryStatementService(DbClient dbClient, Map<String, String> statements) {
         super(dbClient, statements);
     }
 
@@ -65,13 +65,12 @@ public class QueryStatementService extends AbstractService {
     }
 
     // Common test execution code
-    private JsonObject executeTest(
-            final ServerRequest request,
-            final ServerResponse response,
-            final String testName,
-            final TestFunction test
+    private void executeTest(
+            ServerRequest request,
+            ServerResponse response,
+            String testName,
+            TestFunction test
     ) {
-        LOGGER.fine(() -> String.format("Running SimpleQueryService.%s on server", testName));
         try {
             String fromIdStr = param(request, QUERY_FROM_ID_PARAM);
             int fromId = Integer.parseInt(fromIdStr);
@@ -86,105 +85,104 @@ public class QueryStatementService extends AbstractService {
                         return null;
                     });
         } catch (NumberFormatException | RemoteTestException ex) {
-            LOGGER.fine(() -> String.format("Error in SimpleQueryService.%s on server", testName));
+            LOGGER.log(Level.WARNING, String.format("Error in SimpleQueryService.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
         }
-        return null;
     }
 
     // Verify {@code params(Object... parameters)} parameters setting method.
-    private JsonObject testQueryArrayParams(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> exec
-                                .createNamedQuery("select-pokemons-idrng-order-arg")
-                                .params(fromId, toId)
-                                .execute()
-                ));
+    private void testQueryArrayParams(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryArrayParams",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> exec
+                                    .createNamedQuery("select-pokemons-idrng-order-arg")
+                                    .params(fromId, toId)
+                                    .execute()
+                    ));
     }
 
     // Verify {@code params(List<?>)} parameters setting method.
-    private JsonObject testQueryListParams(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> {
-                            List<Integer> params = new ArrayList<>(2);
-                            params.add(fromId);
-                            params.add(toId);
-                            return exec
-                                    .createNamedQuery("select-pokemons-idrng-order-arg")
-                                    .params(params)
-                                    .execute();
-                        }
-                ));
+    private void testQueryListParams(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryListParams",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> {
+                                List<Integer> params = new ArrayList<>(2);
+                                params.add(fromId);
+                                params.add(toId);
+                                return exec
+                                        .createNamedQuery("select-pokemons-idrng-order-arg")
+                                        .params(params)
+                                        .execute();
+                            }
+                    ));
     }
 
     // Verify {@code params(Map<?>)} parameters setting method.
-    private JsonObject testQueryMapParams(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> {
-                            Map<String, Integer> params = new HashMap<>(2);
-                            params.put("idmin", fromId);
-                            params.put("idmax", toId);
-                            return exec
-                                    .createNamedQuery("select-pokemons-idrng-named-arg")
-                                    .params(params)
-                                    .execute();
-                        }
-                ));
+    private void testQueryMapParams(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryMapParams",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> {
+                                Map<String, Integer> params = new HashMap<>(2);
+                                params.put("idmin", fromId);
+                                params.put("idmax", toId);
+                                return exec
+                                        .createNamedQuery("select-pokemons-idrng-named-arg")
+                                        .params(params)
+                                        .execute();
+                            }
+                    ));
     }
 
     // Verify {@code addParam(Object parameter)} parameters setting method.
-    private JsonObject testQueryOrderParam(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> exec
-                                .createNamedQuery("select-pokemons-idrng-order-arg")
-                                .addParam(fromId)
-                                .addParam(toId)
-                                .execute()
-                ));
+    private void testQueryOrderParam(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryOrderParam",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> exec
+                                    .createNamedQuery("select-pokemons-idrng-order-arg")
+                                    .addParam(fromId)
+                                    .addParam(toId)
+                                    .execute()
+                    ));
     }
 
     // Verify {@code addParam(String name, Object parameter)} parameters setting method.
-    private JsonObject testQueryNamedParam(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> exec
-                                .createNamedQuery("select-pokemons-idrng-named-arg")
-                                .addParam("idmin", fromId)
-                                .addParam("idmax", toId)
-                                .execute()
-                ));
+    private void testQueryNamedParam(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryNamedParam",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> exec
+                                    .createNamedQuery("select-pokemons-idrng-named-arg")
+                                    .addParam("idmin", fromId)
+                                    .addParam("idmax", toId)
+                                    .execute()
+                    ));
     }
 
     // Verify {@code namedParam(Object parameters)} mapped parameters setting method.
-    private JsonObject testQueryMappedNamedParam(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> {
-                            RangePoJo range = new RangePoJo(fromId, toId);
-                            return exec
-                                    .createNamedQuery("select-pokemons-idrng-named-arg")
-                                    .namedParam(range)
-                                    .execute();
-                        }
-                ));
+    private void testQueryMappedNamedParam(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryMappedNamedParam",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> {
+                                RangePoJo range = new RangePoJo(fromId, toId);
+                                return exec
+                                        .createNamedQuery("select-pokemons-idrng-named-arg")
+                                        .namedParam(range)
+                                        .execute();
+                            }
+                    ));
     }
 
     // Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
-    private JsonObject testQueryMappedOrderParam(final ServerRequest request, final ServerResponse response) {
-        return executeTest(request, response, "testCreateNamedGetStrStrNamedArgs",
-                (fromId, toId) -> dbClient().execute(
-                        exec -> {
-                            RangePoJo range = new RangePoJo(fromId, toId);
-                            return exec
-                                    .createNamedQuery("select-pokemons-idrng-order-arg")
-                                    .indexedParam(range)
-                                    .execute();
-                        }
-                ));
+    private void testQueryMappedOrderParam(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testQueryMappedOrderParam",
+                    (fromId, toId) -> dbClient().execute(
+                            exec -> {
+                                RangePoJo range = new RangePoJo(fromId, toId);
+                                return exec
+                                        .createNamedQuery("select-pokemons-idrng-order-arg")
+                                        .indexedParam(range)
+                                        .execute();
+                            }
+                    ));
     }
 
 }

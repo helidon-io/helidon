@@ -15,8 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.appl.tools;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.reactive.webserver.WebServer;
 
@@ -25,20 +24,20 @@ import io.helidon.reactive.webserver.WebServer;
  */
 public class ExitThread implements Runnable {
 
-    private static final Logger LOGGER = Logger.getLogger(ExitThread.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ExitThread.class.getName());
 
     /**
      * Starts application exit thread.
      *
      * @param server web server instance to shut down
      */
-    public static final void start(final WebServer server) {
+    public static void start(WebServer server) {
         new Thread(new ExitThread(server)).start();
     }
 
     private final WebServer server;
 
-    private ExitThread(final WebServer server) {
+    private ExitThread(WebServer server) {
         this.server = server;
     }
 
@@ -50,7 +49,7 @@ public class ExitThread implements Runnable {
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ie) {
-            LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+            LOGGER.log(Level.WARNING, String.format("Thread was interrupted: %s", ie.getMessage()), ie);
         } finally {
             server.shutdown();
         }

@@ -162,7 +162,7 @@ public class Pokemon {
         // IDs reserved for mapping tests with insert are 103 - 104
     }
 
-    public static final List<Type> typesList(Type... types) {
+    public static List<Type> typesList(Type... types) {
         if (types == null) {
             return null;
         }

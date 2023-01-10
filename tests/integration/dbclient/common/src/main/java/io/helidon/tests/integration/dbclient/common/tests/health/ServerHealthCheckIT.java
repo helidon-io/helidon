@@ -26,16 +26,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonStructure;
-import jakarta.json.stream.JsonParsingException;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import io.helidon.common.reactive.Multi;
 import io.helidon.health.HealthCheck;
 import io.helidon.reactive.dbclient.DbRow;
@@ -43,6 +33,15 @@ import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonStructure;
+import jakarta.json.stream.JsonParsingException;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;

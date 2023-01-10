@@ -23,8 +23,6 @@ import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
 
 /**

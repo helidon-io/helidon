@@ -25,10 +25,6 @@ import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DELETE_POKEMON_ORDER_ARG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyDeletePokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 

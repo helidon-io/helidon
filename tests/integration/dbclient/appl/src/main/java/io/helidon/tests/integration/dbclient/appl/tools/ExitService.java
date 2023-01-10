@@ -15,22 +15,17 @@
  */
 package io.helidon.tests.integration.dbclient.appl.tools;
 
-import java.util.logging.Logger;
-
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
 import io.helidon.reactive.webserver.WebServer;
-import io.helidon.tests.integration.dbclient.appl.InitService;
 
 /**
  * Web resource to terminate web server.
  */
 public class ExitService implements Service {
-
-    private static final Logger LOGGER = Logger.getLogger(InitService.class.getName());
 
     private WebServer server;
 
@@ -40,7 +35,7 @@ public class ExitService implements Service {
                 .get("/", this::exit);
     }
 
-    public void setServer(final WebServer server) {
+    public void setServer(WebServer server) {
         this.server = server;
     }
 
@@ -50,7 +45,7 @@ public class ExitService implements Service {
      * @param response where to send server termination message.
      * @return {@code null} value
      */
-    public String exit(final ServerRequest request, final ServerResponse response) {
+    public String exit(ServerRequest request, ServerResponse response) {
         response.headers().contentType(HttpMediaType.TEXT_PLAIN);
         response.send("Testing web application shutting down.");
         ExitThread.start(server);

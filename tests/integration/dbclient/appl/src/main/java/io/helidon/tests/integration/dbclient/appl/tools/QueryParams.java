@@ -39,7 +39,7 @@ public class QueryParams extends HashMap<String, String> {
      * @param value value of parameter
      * @return query parameters {@code Map} with provided single value
      */
-    public static final QueryParams single(final String name, final String value) {
+    public static QueryParams single(String name, String value) {
         return  QueryParams.builder().add(name, value).build();
     }
 
@@ -48,7 +48,7 @@ public class QueryParams extends HashMap<String, String> {
      *
      * @return new query parameters builder instance
      */
-    public static final Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -70,7 +70,7 @@ public class QueryParams extends HashMap<String, String> {
          * @param value value of parameter
          * @return updated query parameter builder
          */
-        public Builder add(final String name, final String value) {
+        public Builder add(String name, String value) {
             params.put(name, value);
             return this;
         }

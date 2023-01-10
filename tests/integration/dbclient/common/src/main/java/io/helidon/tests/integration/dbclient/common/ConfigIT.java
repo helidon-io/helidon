@@ -15,7 +15,6 @@
  */
 package io.helidon.tests.integration.dbclient.common;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

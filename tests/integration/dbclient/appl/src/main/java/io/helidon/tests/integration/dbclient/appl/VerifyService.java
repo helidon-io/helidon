@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.appl;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.config.Config;
 import io.helidon.reactive.dbclient.DbClient;
@@ -38,12 +38,12 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class VerifyService  implements Service {
 
-    private static final Logger LOGGER = Logger.getLogger(VerifyService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(VerifyService.class.getName());
 
     private final DbClient dbClient;
     private final Config config;
 
-    VerifyService(final DbClient dbClient, final Config config) {
+    VerifyService(DbClient dbClient, Config config) {
         this.dbClient = dbClient;
         this.config = config;
     }
@@ -57,18 +57,18 @@ public class VerifyService  implements Service {
     }
 
     // Get Pokemon by ID and return its data.
-    private void getPokemonById(final ServerRequest request, final ServerResponse response) {
+    private void getPokemonById(ServerRequest request, ServerResponse response) {
         try {
-            final String idStr = AbstractService.param(request, QUERY_ID_PARAM);
-            final int id = Integer.parseInt(idStr);
-            final JsonObjectBuilder pokemonBuilder = Json.createObjectBuilder();
+            String idStr = AbstractService.param(request, QUERY_ID_PARAM);
+            int id = Integer.parseInt(idStr);
+            JsonObjectBuilder pokemonBuilder = Json.createObjectBuilder();
             dbClient.execute(
                     exec -> exec
                             .namedGet("get-pokemon-by-id", id))
                     .thenAccept(
                             data -> data.ifPresentOrElse(
                                     row -> {
-                                        final JsonArrayBuilder typesBuilder = Json.createArrayBuilder();
+                                        JsonArrayBuilder typesBuilder = Json.createArrayBuilder();
                                         pokemonBuilder.add("name", row.column("name").as(String.class));
                                         pokemonBuilder.add("id", row.column("id").as(Integer.class));
                                         dbClient.execute(
@@ -97,21 +97,23 @@ public class VerifyService  implements Service {
     }
 
     // Get database type.
-    private void getDatabaseType(final ServerRequest request, final ServerResponse response) {
+    private void getDatabaseType(ServerRequest request, ServerResponse response) {
         JsonObjectBuilder job = Json.createObjectBuilder();
         job.add("type", dbClient.dbType());
         response.send(AppResponse.okStatus(job.build()));
     }
 
     // Get server configuration parameter.
-    private void getConfigParam(final ServerRequest request, final ServerResponse response) {
-        final String name;
+    private void getConfigParam(ServerRequest request, ServerResponse response) {
+        String name;
         try {
             name = AbstractService.param(request, AbstractService.QUERY_NAME_PARAM);
         } catch (RemoteTestException ex) {
-            LOGGER.fine(() -> String.format(
-                    "Error in VerifyService.getConfigParam on server: %s",
-                    ex.getMessage()));
+            LOGGER.log(Level.WARNING,
+                       String.format(
+                               "Error in VerifyService.getConfigParam on server: %s",
+                               ex.getMessage()),
+                       ex);
             response.send(exceptionStatus(ex));
             return;
         }

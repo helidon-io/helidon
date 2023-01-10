@@ -15,12 +15,12 @@
  */
 package io.helidon.tests.integration.dbclient.appl.mapping;
 
+import java.lang.System.Logger.Level;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -47,7 +47,7 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class MapperService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(MapperService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MapperService.class.getName());
 
     private interface TestDMLFunction extends Function<Pokemon, Single<Long>> {}
 
@@ -57,7 +57,7 @@ public class MapperService extends AbstractService {
      * @param dbClient DbClient instance
      * @param statements statements from configuration file
      */
-    public MapperService(final DbClient dbClient, final Map<String, String> statements) {
+    public MapperService(DbClient dbClient, Map<String, String> statements) {
         super(dbClient, statements);
     }
 
@@ -75,13 +75,12 @@ public class MapperService extends AbstractService {
     }
 
     private void executeInsertTest(
-            final ServerRequest request,
-            final ServerResponse response,
-            final String testName,
-            final String pokemonName,
-            final List<Type> pokemonTypes,
-            final TestDMLFunction test) {
-        LOGGER.fine(() -> String.format("Running Mapper.%s on server", testName));
+            ServerRequest request,
+            ServerResponse response,
+            String testName,
+            String pokemonName,
+            List<Type> pokemonTypes,
+            TestDMLFunction test) {
         try {
             String idStr = param(request, QUERY_ID_PARAM);
             int id = Integer.parseInt(idStr);
@@ -95,17 +94,16 @@ public class MapperService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException | NumberFormatException ex) {
-            LOGGER.fine(() -> String.format("Error in Mapper.%s on server", testName));
+            LOGGER.log(Level.WARNING, String.format("Error in Mapper.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
         }
     }
 
     private void executeUpdateTest(
-            final ServerRequest request,
-            final ServerResponse response,
-            final String testName,
-            final TestDMLFunction test) {
-        LOGGER.fine(() -> String.format("Running Mapper.%s on server", testName));
+            ServerRequest request,
+            ServerResponse response,
+            String testName,
+            TestDMLFunction test) {
         try {
             String name = param(request, QUERY_NAME_PARAM);
             String idStr = param(request, QUERY_ID_PARAM);
@@ -121,17 +119,16 @@ public class MapperService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException | NumberFormatException ex) {
-            LOGGER.fine(() -> String.format("Error in Mapper.%s on server", testName));
+            LOGGER.log(Level.WARNING, String.format("Error in Mapper.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
         }
     }
 
     private void executeDeleteTest(
-            final ServerRequest request,
-            final ServerResponse response,
-            final String testName,
-            final TestDMLFunction test) {
-        LOGGER.fine(() -> String.format("Running Mapper.%s on server", testName));
+            ServerRequest request,
+            ServerResponse response,
+            String testName,
+            TestDMLFunction test) {
         try {
             String idStr = param(request, QUERY_ID_PARAM);
             int id = Integer.parseInt(idStr);
@@ -145,13 +142,13 @@ public class MapperService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException | NumberFormatException ex) {
-            LOGGER.fine(() -> String.format("Error in Mapper.%s on server", testName));
+            LOGGER.log(Level.WARNING, String.format("Error in Mapper.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
         }
     }
 
     // Verify insertion of PoJo instance using indexed mapping.
-    private void testInsertWithOrderMapping(final ServerRequest request, final ServerResponse response) {
+    private void testInsertWithOrderMapping(ServerRequest request, ServerResponse response) {
         executeInsertTest(
                 request,
                 response,
@@ -167,7 +164,7 @@ public class MapperService extends AbstractService {
     }
 
     // Verify insertion of PoJo instance using named mapping.
-    private void testInsertWithNamedMapping(final ServerRequest request, final ServerResponse response) {
+    private void testInsertWithNamedMapping(ServerRequest request, ServerResponse response) {
         executeInsertTest(
                 request,
                 response,
@@ -183,7 +180,7 @@ public class MapperService extends AbstractService {
     }
 
     // Verify update of PoJo instance using indexed mapping.
-    private void testUpdateWithOrderMapping(final ServerRequest request, final ServerResponse response) {
+    private void testUpdateWithOrderMapping(ServerRequest request, ServerResponse response) {
         executeUpdateTest(request, response, "testUpdateWithOrderMapping",
                 (pokemon) -> dbClient().execute(
                         exec -> exec
@@ -194,7 +191,7 @@ public class MapperService extends AbstractService {
     }
 
     // Verify update of PoJo instance using named mapping.
-    private void testUpdateWithNamedMapping(final ServerRequest request, final ServerResponse response) {
+    private void testUpdateWithNamedMapping(ServerRequest request, ServerResponse response) {
         executeUpdateTest(request, response, "testUpdateWithNamedMapping",
                 (pokemon) -> dbClient().execute(
                         exec -> exec
@@ -205,7 +202,7 @@ public class MapperService extends AbstractService {
     }
 
     // Verify delete of PoJo instance using indexed mapping.
-    private void testDeleteWithOrderMapping(final ServerRequest request, final ServerResponse response) {
+    private void testDeleteWithOrderMapping(ServerRequest request, ServerResponse response) {
         executeDeleteTest(request, response, "testDeleteWithOrderMapping",
                 (pokemon) -> dbClient().execute(
                         exec -> exec
@@ -216,7 +213,7 @@ public class MapperService extends AbstractService {
     }
 
     // Verify delete of PoJo instance using named mapping.
-    private void testDeleteWithNamedMapping(final ServerRequest request, final ServerResponse response) {
+    private void testDeleteWithNamedMapping(ServerRequest request, ServerResponse response) {
         executeDeleteTest(request, response, "testDeleteWithNamedMapping",
                 (pokemon) -> dbClient().execute(
                         exec -> exec
@@ -229,8 +226,7 @@ public class MapperService extends AbstractService {
     // Query and Get calls are here just once so no common executor code is needed.
 
     // Verify query of PoJo instance as a result using mapping.
-    private void testQueryWithMapping(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running Mapper.testQueryWithMapping on server");
+    private void testQueryWithMapping(ServerRequest request, ServerResponse response) {
         try {
             String name = param(request, QUERY_NAME_PARAM);
             Multi<DbRow> rows = dbClient().execute(exec -> exec
@@ -252,14 +248,13 @@ public class MapperService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException ex) {
-            LOGGER.fine(() -> "Error in Mapper.testQueryWithMapping on server");
+            LOGGER.log(Level.WARNING, "Error in Mapper.testQueryWithMapping on server", ex);
             response.send(exceptionStatus(ex));
         }
     }
 
     // Verify get of PoJo instance as a result using mapping.
-    private void testGetWithMapping(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running Mapper.testGetWithMapping on server");
+    private void testGetWithMapping(ServerRequest request, ServerResponse response) {
         try {
             String name = param(request, QUERY_NAME_PARAM);
             Single<Optional<DbRow>> future = dbClient().execute(exec -> exec
@@ -277,7 +272,7 @@ public class MapperService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException ex) {
-            LOGGER.fine(() -> "Error in Mapper.testGetWithMapping on server");
+            LOGGER.log(Level.WARNING, "Error in Mapper.testGetWithMapping on server", ex);
             response.send(exceptionStatus(ex));
         }
     }

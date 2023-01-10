@@ -62,7 +62,7 @@ public class ApplMain {
 
     private static final String DEFAULT_CONFIG_FILE="test.yaml";
 
-    private static WebServer startServer(final String configFile) {
+    private static void startServer(String configFile) {
 
         final Config config = Config.create(ConfigSources.classpath(configFile));
         final Config dbConfig = config.get("db");
@@ -134,16 +134,13 @@ public class ApplMain {
         exitResource.setServer(server);
 
         // Start the server and print some info.
-        server.start().thenAccept(ws -> {
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/");
-        });
+        server.start()
+                .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
 
         // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(
-                () -> System.out.println("WEB server is DOWN. Good bye!"));
+        server.whenShutdown()
+                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
-        return server;
     }
 
     /**
