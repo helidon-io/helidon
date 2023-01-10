@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ module io.helidon.microprofile.server {
     requires io.helidon.microprofile.config;
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
-    requires jakarta.interceptor.api;
     requires transitive jakarta.json;
     requires io.helidon.jersey.media.jsonp;
 

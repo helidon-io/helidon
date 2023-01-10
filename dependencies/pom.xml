@@ -68,11 +68,11 @@
         <!-- This is the BOM version for Jackson Databind 2.13.4.2 -->
         <version.lib.jackson>2.13.4.20221013</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
-        <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
-        <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
+        <version.lib.jakarta.annotation-api>2.1.0</version.lib.jakarta.annotation-api>
+        <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
-        <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
-        <version.lib.jakarta.interceptor-api>2.0.0</version.lib.jakarta.interceptor-api>
+        <version.lib.jakarta.inject>2.0.1</version.lib.jakarta.inject>
+        <version.lib.jakarta.interceptor-api>2.1.0</version.lib.jakarta.interceptor-api>
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
@@ -144,8 +144,8 @@
         <version.lib.snakeyaml>1.32</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>
-        <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
-        <version.lib.weld>4.0.2.Final</version.lib.weld>
+        <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
+        <version.lib.weld>5.1.0.Final</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
@@ -898,6 +898,17 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-spi</artifactId>
                 <version>${version.lib.weld-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-lite-extension-translator</artifactId>
+                <version>${version.lib.weld}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.weld</groupId>
+                        <artifactId>weld-core-impl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.module</groupId>
