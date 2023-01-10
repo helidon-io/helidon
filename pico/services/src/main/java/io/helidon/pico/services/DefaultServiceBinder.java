@@ -43,6 +43,8 @@ class DefaultServiceBinder implements ServiceBinder {
     @Override
     public void bind(
             ServiceProvider<?> sp) {
+        DefaultServices.assertPermitsDynamic(picoServices.config());
+
         Optional<ServiceProviderBindable<?>> bindableSp = toBindableProvider(sp);
 
         if (moduleName != null) {
@@ -70,7 +72,6 @@ class DefaultServiceBinder implements ServiceBinder {
      * @param sp the service provider
      * @return the root provider of the service provider, falling back to the service provider passed
      */
-    @SuppressWarnings("unchecked")
     static ServiceProvider<?> toRootProvider(
             ServiceProvider<?> sp) {
         Optional<ServiceProviderBindable<?>> bindable = toBindableProvider(sp);
@@ -81,4 +82,5 @@ class DefaultServiceBinder implements ServiceBinder {
         ServiceProvider<?> rootProvider = ((ServiceProviderBindable<?>) sp).rootProvider().orElse(null);
         return (rootProvider != null) ? rootProvider : sp;
     }
+
 }

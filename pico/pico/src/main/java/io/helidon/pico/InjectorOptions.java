@@ -16,9 +16,8 @@
 
 package io.helidon.pico;
 
-import java.util.Optional;
-
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Provides optional, contextual tunings to the {@link Injector}.
@@ -29,47 +28,28 @@ import io.helidon.builder.Builder;
 public interface InjectorOptions {
 
     /**
-     * The optional starting phase for the {@link Activator} behind the {@link Injector}.
-     * The default is the current phase that the managed {@link ServiceProvider} is currently in.
-     *
-     * @return the optional target finish phase
-     */
-    Optional<Phase> startAtPhase();
-
-    /**
-     * The optional target finishing phase for the {@link Activator} behind the {@link Injector}.
+     * The target finishing phase for the {@link Activator} behind the {@link Injector}.
      * The default is {@link Phase#ACTIVE}.
      *
-     * @return the optional target finish phase
+     * @return the target finish phase
      */
-    Optional<Phase> finishAtPhase();
+    @ConfiguredOption("ACTIVE")
+    Phase targetPhase();
 
     /**
-     * The optional recipient target, describing who and what is being injected.
+     * The strategy the injector should apply. The default is {@link Injector.Strategy#ANY}.
      *
-     * @return the optional target injection point info
+     * @return the injector strategy to use
      */
-    Optional<InjectionPointInfo> ipInfo();
+    @ConfiguredOption("ANY")
+    Injector.Strategy strategy();
 
     /**
-     * The optional services registry to use, defaulting to {@link PicoServices#services()}.
+     * Whether to throw an exception on failure to activate, or return an error activation result on activation.
      *
-     * @return the optional services registry to use
+     * @return whether to throw on failure
      */
-    Optional<Services> services();
-
-    /**
-     * The optional activation log that the injection should record its activity on.
-     *
-     * @return the optional activation log to use
-     */
-    Optional<ActivationLog> log();
-
-    /**
-     * The optional injection strategy the injector should apply. The default is {@link Injector.Strategy#ANY}.
-     *
-     * @return the optional injector strategy to use
-     */
-    Optional<Injector.Strategy> strategy();
+    @ConfiguredOption("true")
+    boolean throwOnFailure();
 
 }

@@ -57,14 +57,10 @@ public interface Injector {
     /**
      * Called to activate and inject a manage service instance or service provider, putting it into
      * {@link Phase#ACTIVE}.
-     * <p>
-     * Note that if a {@link ServiceProvider} is passed in then the {@link Activator}
-     * will be used instead.  In this case, then any {@link InjectorOptions#startAtPhase()} and
-     * {@link InjectorOptions#finishAtPhase()} arguments will be ignored.
      *
      * @param serviceOrServiceProvider the target instance or service provider being activated and injected
      * @param opts                     the injector options, or use {@link #EMPTY_OPTIONS}
-     * @param <T>                      the managed service instance type
+     * @param <T>                      the managed service type
      * @return the result of the activation
      * @throws io.helidon.pico.PicoServiceProviderException if an injection or activation problem occurs
      * @see Activator
@@ -77,14 +73,10 @@ public interface Injector {
      * Called to deactivate a managed service or service provider, putting it into {@link Phase#DESTROYED}.
      * If a managed service has a {@link jakarta.annotation.PreDestroy} annotated method then it will be called during
      * this lifecycle event.
-     * <p>
-     * Note that if a {@link ServiceProvider} is passed in then the {@link DeActivator}
-     * will be used instead. In this case, then any {@link InjectorOptions#startAtPhase()} and
-     * {@link InjectorOptions#finishAtPhase()} arguments will be ignored.
      *
      * @param serviceOrServiceProvider the service provider or instance registered and being managed
      * @param opts                     the injector options, or use {@link #EMPTY_OPTIONS}
-     * @param <T>                      the managed service instance type
+     * @param <T>                      the managed service type
      * @return the result of the deactivation
      * @throws io.helidon.pico.PicoServiceProviderException if a problem occurs
      * @see DeActivator

@@ -169,6 +169,8 @@ public interface ServiceInfo extends ServiceInfoBasics {
         return (srcWeight.compareTo(criteria.weight().get()) <= 0);
     }
 
+    // TODO:
+
 //    /**
 //     * Determines whether this matches the given contract.
 //     *
@@ -235,5 +237,21 @@ public interface ServiceInfo extends ServiceInfoBasics {
 //                .weight(siBasics.weight())
 //                .build();
 //    }
+
+//    /**
+//     * Converts the array of contract types to their respective contract names.
+//     *
+//     * @param contractTypes the class types to convert
+//     *
+//     * @return the set of contract names
+//     */
+//    default Set<String> toContractNames(Class<?>... contractTypes) {
+//        Set<String> result = new LinkedHashSet<>();
+//        for (Class<?> clazz : contractTypes) {
+//            result.add(clazz.getName());
+//        }
+//        return result;
+//    }
+
 
 }

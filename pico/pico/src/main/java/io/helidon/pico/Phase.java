@@ -84,7 +84,7 @@ public enum Phase {
     /**
      * About to call pre-destroy.
      */
-    PRE_DESTROYING(false),
+    PRE_DESTROYING(true),
 
     /**
      * Destroyed (after calling any pre-destroy).

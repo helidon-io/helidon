@@ -52,12 +52,12 @@ public class HelloPicoApplication implements Application {
         }
 
         binder.bindTo(HelloPicoImpl$$picoActivator.INSTANCE)
-                .bind("io.helidon.pico.example.world", PicoWorldImpl$$picoActivator.INSTANCE)
-                .bind("io.helidon.pico.example.worldRef", PicoWorldImpl$$picoActivator.INSTANCE)
-                .bindMany("io.helidon.pico.example.listOfWorldRefs", PicoWorldImpl$$picoActivator.INSTANCE)
-                .bindMany("io.helidon.pico.example.listOfWorlds", PicoWorldImpl$$picoActivator.INSTANCE)
-                .bindVoid("io.helidon.pico.example.redWorld")
-                .bind("io.helidon.pico.example.world|1(1)", PicoWorldImpl$$picoActivator.INSTANCE)
+                .bind(HelloPicoWorld.class.getPackageName() + ".world", PicoWorldImpl$$picoActivator.INSTANCE)
+                .bind(HelloPicoWorld.class.getPackageName() + ".worldRef", PicoWorldImpl$$picoActivator.INSTANCE)
+                .bindMany(HelloPicoWorld.class.getPackageName() + ".listOfWorldRefs", PicoWorldImpl$$picoActivator.INSTANCE)
+                .bindMany(HelloPicoWorld.class.getPackageName() + ".listOfWorlds", PicoWorldImpl$$picoActivator.INSTANCE)
+                .bindVoid(HelloPicoWorld.class.getPackageName() + ".redWorld")
+                .bind(HelloPicoWorld.class.getPackageName() + ".world|1(1)", PicoWorldImpl$$picoActivator.INSTANCE)
                 .commit();
 
         binder.bindTo(PicoWorldImpl$$picoActivator.INSTANCE)

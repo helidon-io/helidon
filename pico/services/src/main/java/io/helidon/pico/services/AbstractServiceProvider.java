@@ -37,6 +37,7 @@ import io.helidon.pico.ActivationRequest;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.ActivationStatus;
 import io.helidon.pico.Activator;
+import io.helidon.pico.Application;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DeActivationRequest;
 import io.helidon.pico.DeActivator;
@@ -150,15 +151,15 @@ public abstract class AbstractServiceProvider<T>
         return false;
     }
 
-    /**
-     * Identifies whether the implementation was custom written and not code generated. We assume by default this is part
-     * of code-generation, and the return defaulting to false.
-     *
-     * @return true if a custom, user-supplied implementation (rare)
-     */
-    protected boolean isCustom() {
-        return false;
-    }
+//    /**
+//     * Identifies whether the implementation was custom written and not code generated. We assume by default this is part
+//     * of code-generation, and the return defaulting to false.
+//     *
+//     * @return true if a custom, user-supplied implementation (rare)
+//     */
+//    protected boolean isCustom() {
+//        return false;
+//    }
 
     @Override
     public ServiceInfo serviceInfo() {
@@ -201,10 +202,6 @@ public abstract class AbstractServiceProvider<T>
     @Override
     public Phase currentActivationPhase() {
         return phase;
-    }
-
-    protected boolean isActive() {
-        return isAlreadyAtTargetPhase(Phase.ACTIVE);
     }
 
     protected boolean isAlreadyAtTargetPhase(
@@ -344,7 +341,7 @@ public abstract class AbstractServiceProvider<T>
      */
     protected ActivationLog activationLog() {
         assert (picoServices != null) : "not initialized";
-        if (null == log) {
+        if (log == null) {
             log = picoServices.activationLog().orElse(DefaultActivationLog.createUnretainedLog(LOGGER));
         }
         return log;
@@ -421,12 +418,6 @@ public abstract class AbstractServiceProvider<T>
 
         return (serviceProvider != null) ? List.of(serviceProvider) : List.of();
     }
-
-//    protected <T> T get(Map<String, T> deps,
-//                        String id) {
-//        T val = Objects.requireNonNull(deps.get(id), "'" + id + "' expected to have been found in: " + deps.keySet());
-//        return val;
-//    }
 
     /**
      * Will trigger an activation if the managed service is not yet active.
@@ -568,7 +559,7 @@ public abstract class AbstractServiceProvider<T>
         // NOP
     }
 
-    protected void doStartingLifecycle(
+    private void doStartingLifecycle(
             LogEntryAndResult logEntryAndResult) {
         startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_STARTING);
     }
@@ -593,7 +584,7 @@ public abstract class AbstractServiceProvider<T>
         }
 
         ConcurrentHashMap<String, InjectionPointInfo> idToIpInfo = new ConcurrentHashMap<>();
-        dependencies.allDependencies().forEach(dep -> {
+        dependencies.allDependencies().forEach(dep ->
             dep.injectionPointDependencies().forEach(ipDep -> {
                 String id = ipDep.id();
                 InjectionPointInfo prev = idToIpInfo.put(id, ipDep);
@@ -602,8 +593,7 @@ public abstract class AbstractServiceProvider<T>
                         && !prev.dependencyToServiceInfo().equals(ipDep.dependencyToServiceInfo())) {
                     logMultiDefInjectionNote(id, prev, ipDep);
                 }
-            });
-        });
+            }));
 
         ConcurrentHashMap<String, InjectionPlan> injectionPlan = new ConcurrentHashMap<>();
         AbstractServiceProvider<T> self = AbstractServiceProvider.this;
@@ -709,14 +699,12 @@ public abstract class AbstractServiceProvider<T>
         return Optional.of(result);
     }
 
-    protected void doGatheringDependencies(
+    private void doGatheringDependencies(
             LogEntryAndResult logEntryAndResult) {
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
 
-        Map<String, InjectionPlan> plans = getOrCreateInjectionPlan(false);
-        if (plans != null) {
-            logEntryAndResult.activationResult.injectionPlans(plans);
-        }
+        Map<String, InjectionPlan> plans = Objects.requireNonNull(getOrCreateInjectionPlan(false));
+        logEntryAndResult.activationResult.injectionPlans(plans);
 
         Map<String, Object> deps = resolveDependencies(plans);
         if (deps != null) {
@@ -813,7 +801,7 @@ public abstract class AbstractServiceProvider<T>
         return result;
     }
 
-    protected void doConstructing(
+    private void doConstructing(
             LogEntryAndResult logEntryAndResult) {
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.CONSTRUCTING);
 
@@ -823,43 +811,61 @@ public abstract class AbstractServiceProvider<T>
         finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
-    protected void serviceRef(
+    void serviceRef(
             T instance) {
         serviceRef.set(instance);
     }
 
+    /**
+     * Creates the service with the supplied resolved dependencies, key'ed by each injection point id.
+     *
+     * @param resolvedDeps the resolved dependencies
+     * @return the newly created managed service
+     */
     protected T createServiceProvider(
             Map<String, Object> resolvedDeps) {
-        InjectionException e = new InjectionException("don't know how to create an instance of " + serviceInfo(), this);
-        if (log != null) {
-            e.activationLog(log);
-        }
-        throw e;
+        throw new InjectionException("don't know how to create an instance of " + serviceInfo(), this)
+                .activationLog(activationLog());
     }
 
-    protected void doInjecting(
+    static boolean isQualifiedInjectionTarget(
+            ServiceProvider<?> sp) {
+        ServiceInfo serviceInfo = sp.serviceInfo();
+        Set<String> contractsImplemented = serviceInfo.contractsImplemented();
+        return !contractsImplemented.isEmpty()
+                && !contractsImplemented.contains(io.helidon.pico.Module.class.getName())
+                && !contractsImplemented.contains(Application.class.getName());
+    }
+
+    private void doInjecting(
             LogEntryAndResult logEntryAndResult) {
+        if (!isQualifiedInjectionTarget(this)) {
+            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
+            return;
+        }
+
         Map<String, Object> deps = logEntryAndResult.activationResult.resolvedDependencies();
         if (deps == null || deps.isEmpty()) {
             startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
-        } else {
-            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
-
-            T target = Objects.requireNonNull(serviceRef.get());
-            List<String> serviceTypeOrdering = serviceTypeInjectionOrder();
-            LinkedHashSet<String> injections = new LinkedHashSet<>();
-            serviceTypeOrdering.forEach((forServiceType) -> {
-                try {
-                    doInjectingFields(target, deps, injections, forServiceType);
-                    doInjectingMethods(target, deps, injections, forServiceType);
-                } catch (Throwable t) {
-                    throw new InjectionException("failed to activate/inject: " + this
-                                                         + "; dependency map was: " + deps, t, this);
-                }
-            });
-
-            finishedTransitionCurrentActivationPhase(logEntryAndResult);
+            return;
         }
+
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
+
+        T target = Objects.requireNonNull(serviceRef.get());
+        List<String> serviceTypeOrdering = serviceTypeInjectionOrder();
+        LinkedHashSet<String> injections = new LinkedHashSet<>();
+        serviceTypeOrdering.forEach((forServiceType) -> {
+            try {
+                doInjectingFields(target, deps, injections, forServiceType);
+                doInjectingMethods(target, deps, injections, forServiceType);
+            } catch (Throwable t) {
+                throw new InjectionException("failed to activate/inject: " + this
+                                                     + "; dependency map was: " + deps, t, this);
+            }
+        });
+
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
     protected List<String> serviceTypeInjectionOrder() {
@@ -884,7 +890,7 @@ public abstract class AbstractServiceProvider<T>
         boolean debugMe = true;
     }
 
-    protected void doPostConstructing(
+    void doPostConstructing(
             LogEntryAndResult logEntryAndResult) {
         Optional<PostConstructMethod> postConstruct = postConstructMethod();
         if (postConstruct.isPresent()) {
@@ -896,12 +902,12 @@ public abstract class AbstractServiceProvider<T>
         }
     }
 
-    protected void doActivationFinishing(
+    private void doActivationFinishing(
             LogEntryAndResult logEntryAndResult) {
         startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVATION_FINISHING);
     }
 
-    protected void doActivationActive(
+    private void doActivationActive(
             LogEntryAndResult logEntryAndResult) {
         startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.ACTIVE);
     }
@@ -910,7 +916,7 @@ public abstract class AbstractServiceProvider<T>
     public ActivationResult deactivate(
             DeActivationRequest req) {
         assert (req.serviceProvider() == this) : "not capable of handling service provider " + req;
-        if (isAlreadyAtTargetPhase(Phase.INIT) || isAlreadyAtTargetPhase(Phase.DESTROYED)) {
+        if (!currentActivationPhase().eligibleForDeactivation()) {
             return ActivationResult.createSuccess(this);
         }
 
@@ -934,22 +940,12 @@ public abstract class AbstractServiceProvider<T>
             }
             didAcquire = true;
 
-            if (!isAlreadyAtTargetPhase(Phase.ACTIVE)) {
-                return logEntryAndResult.activationResult;
-            }
-
             // if we made it to here then we "own" the semaphore and the subsequent activation steps...
             this.lastActivationThreadId = Thread.currentThread().getId();
 
-            if (!logEntryAndResult.activationResult.finished()) {
-                // quasi-reset
-                startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
-                doPreDestroying(logEntryAndResult);
-
-                serviceRef(null);
-
-                logEntryAndResult.activationResult.wasResolved(false);
-                logEntryAndResult.activationResult.resolvedDependencies(Map.of());
+            doPreDestroying(logEntryAndResult);
+            if (Phase.PRE_DESTROYING == logEntryAndResult.activationResult.finishingActivationPhase()) {
+                doDestroying(logEntryAndResult);
             }
         } catch (Throwable t) {
             InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
@@ -965,16 +961,25 @@ public abstract class AbstractServiceProvider<T>
         return logEntryAndResult.activationResult.build();
     }
 
-    protected void doPreDestroying(
+    private void doPreDestroying(
             LogEntryAndResult logEntryAndResult) {
         Optional<PreDestroyMethod> preDestroyMethod = preDestroyMethod();
         if (preDestroyMethod.isEmpty()) {
-            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
+            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
         } else {
-            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
+            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
             preDestroyMethod.get().preDestroy();
             finishedTransitionCurrentActivationPhase(logEntryAndResult);
         }
+    }
+
+    private void doDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
+        logEntryAndResult.activationResult.wasResolved(false);
+        logEntryAndResult.activationResult.resolvedDependencies(Map.of());
+        serviceRef(null);
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
     private void failedFinish(
@@ -982,19 +987,14 @@ public abstract class AbstractServiceProvider<T>
             Throwable t,
             boolean throwOnError) {
         this.lastActivationThreadId = 0;
-        finishFailedFinish(logEntryAndResult, t, throwOnError);
+        failedFinish(logEntryAndResult, t, throwOnError, activationLog());
     }
 
-    //    private static DefaultActivationResult failedFinish(
-    //            Throwable t,
-    //            boolean throwOnError) {
-    //        return finishFailedFinish(new DefaultActivationResult(), t, throwOnError);
-    //    }
-
-    private void finishFailedFinish(
+    void failedFinish(
             LogEntryAndResult logEntryAndResult,
             Throwable t,
-            boolean throwOnError) {
+            boolean throwOnError,
+            ActivationLog log) {
         InjectionException e;
 
         DefaultActivationLogEntry.Builder res = logEntryAndResult.logEntry;
@@ -1002,7 +1002,7 @@ public abstract class AbstractServiceProvider<T>
         if (prev == null || !(t instanceof InjectionException)) {
             String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
             e = new InjectionException(msg, t, this)
-                    .activationLog(activationLog());
+                    .activationLog(log);
         } else {
             e = (InjectionException) t;
         }
@@ -1057,9 +1057,8 @@ public abstract class AbstractServiceProvider<T>
     }
 
     private InjectionException managedServiceInstanceShouldHaveBeenSetException() {
-        InjectionException e = new InjectionException("managed service instance expected to have been set", this)
+        return new InjectionException("managed service instance expected to have been set", this)
                 .activationLog(activationLog());
-        return e;
     }
 
     private InjectionException expectedQualifiedServiceError(
@@ -1102,18 +1101,6 @@ public abstract class AbstractServiceProvider<T>
         }
     }
 
-//    void log(
-//            String message) {
-//        if (log != null) {
-//            log.record(DefaultActivationLogEntry.builder()
-//                               .serviceProvider(this)
-//                               .message(message)
-//                               .build());
-//        } else {
-//            LOGGER.log(System.Logger.Level.DEBUG, message);
-//        }
-//    }
-//
     LogEntryAndResult createLogEntryAndResult(
             Phase targetPhase) {
         Phase currentPhase = currentActivationPhase();
@@ -1142,7 +1129,6 @@ public abstract class AbstractServiceProvider<T>
             Phase newPhase) {
         Objects.requireNonNull(newPhase);
         logEntryAndResult.activationResult
-                .startingActivationPhase(Objects.requireNonNull(this.phase))
                 .finishingActivationPhase(newPhase);
         this.phase = newPhase;
         logEntryAndResult.logEntry

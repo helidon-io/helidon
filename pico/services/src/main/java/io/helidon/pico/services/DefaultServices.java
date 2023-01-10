@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.helidon.pico.Application;
 import io.helidon.pico.DefaultMetrics;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfoCriteria;
@@ -251,6 +252,15 @@ class DefaultServices implements Services, Resetable {
         return (List) result;
     }
 
+    ServiceProvider<?> serviceProviderFor(
+            String serviceTypeName) {
+        ServiceProvider<?> serviceProvider = servicesByTypeName.get(serviceTypeName);
+        if (serviceProvider == null) {
+            throw resolutionBasedInjectionError(serviceTypeName);
+        }
+        return serviceProvider;
+    }
+
     List<ServiceProvider<?>> allServiceProviders(
             boolean explode) {
         if (explode) {
@@ -310,27 +320,19 @@ class DefaultServices implements Services, Resetable {
                         ((ServiceProviderBindable<?>) sp).isIntercepted());
     }
 
-//    /**
-//     * Provides a means to validate whether a service provider is being carried in the registry, and if so may optionally
-//     * return the delegate service provider to use. Most often, however, the delegate returned is actually the service provider
-//     * that was passed in.
-//     *
-//     * @param serviceProvider the service provider to search for by its {@link io.helidon.pico.spi.ServiceInfo#getServiceTypeName()}
-//     * @return the service provider in the registry, or null if not found
-//     */
-//    public ServiceProvider<?> getServiceProvider(ServiceProvider<?> serviceProvider) {
-//        return servicesByTypeName.get(serviceProvider.getServiceInfo().getServiceTypeName());
-//    }
-//
-//    protected static String toModuleName(Module module) {
-//        return module.getName().orElse(null);
-//    }
-
     ServiceBinder createServiceBinder(
             PicoServices picoServices,
             DefaultServices services,
             String moduleName) {
         return new DefaultServiceBinder(picoServices, services, moduleName);
+    }
+
+    void bind(
+            PicoServices picoServices,
+            DefaultInjectionPlanBinder binder,
+            Application app) {
+        app.configure(binder);
+        bind(createServiceProvider(app, picoServices));
     }
 
     void bind(
@@ -348,7 +350,7 @@ class DefaultServices implements Services, Resetable {
         String serviceTypeName = serviceInfo.serviceTypeName();
 
         ServiceProvider<?> previous = servicesByTypeName.putIfAbsent(serviceTypeName, serviceProvider);
-        if (Objects.nonNull(previous) && previous != serviceProvider) {
+        if (previous != null && previous != serviceProvider) {
             if (cfg.permitsDynamic()) {
                 DefaultPicoServices.LOGGER.log(System.Logger.Level.WARNING,
                                                "overwriting " + previous + " with " + serviceProvider);
@@ -375,7 +377,7 @@ class DefaultServices implements Services, Resetable {
         }
 
         servicesByContract.compute(serviceTypeName, (contract, servicesSharingThisContract) -> {
-            if (Objects.isNull(servicesSharingThisContract)) {
+            if (servicesSharingThisContract == null) {
                 servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
             }
             boolean added = servicesSharingThisContract.add(serviceProvider);
@@ -384,7 +386,7 @@ class DefaultServices implements Services, Resetable {
         });
         for (String cn : serviceInfo.contractsImplemented()) {
             servicesByContract.compute(cn, (contract, servicesSharingThisContract) -> {
-                if (Objects.isNull(servicesSharingThisContract)) {
+                if (servicesSharingThisContract == null) {
                     servicesSharingThisContract = new TreeSet<>(serviceProviderComparator());
                 }
                 boolean ignored = servicesSharingThisContract.add(serviceProvider);
@@ -397,7 +399,7 @@ class DefaultServices implements Services, Resetable {
      * First use weight, then use FQN of the service type name as the secondary comparator if weights are the same.
      *
      * @return the pico comparator
-     * @see io.helidon.pico.services.ServiceProviderComparator
+     * @see ServiceProviderComparator
      */
     static Comparator<? super Provider<?>> serviceProviderComparator() {
         return COMPARATOR;
@@ -409,14 +411,20 @@ class DefaultServices implements Services, Resetable {
         }
     }
 
-    ServiceProvider<?> createServiceProvider(
+    private ServiceProvider<?> createServiceProvider(
             io.helidon.pico.Module module,
             String moduleName,
             PicoServices picoServices) {
-        return new BasicModule(module, moduleName, picoServices);
+        return new BasicModuleServiceProvider(module, moduleName, picoServices);
     }
 
-    protected static ServiceInfo toValidatedServiceInfo(
+    private ServiceProvider<?> createServiceProvider(
+            Application app,
+            PicoServices picoServices) {
+        return new BasicApplicationServiceProvider(app, picoServices);
+    }
+
+    static ServiceInfo toValidatedServiceInfo(
             ServiceProvider<?> serviceProvider) {
         ServiceInfo info = serviceProvider.serviceInfo();
         Objects.requireNonNull(info.serviceTypeName(), () -> "service type name is required for " + serviceProvider);
@@ -432,6 +440,11 @@ class DefaultServices implements Services, Resetable {
     static InjectionException resolutionBasedInjectionError(
             ServiceInfoCriteria ctx) {
         return new InjectionException("expected to resolve a service matching " + ctx);
+    }
+
+    static InjectionException resolutionBasedInjectionError(
+            String serviceTypeName) {
+        return resolutionBasedInjectionError(DefaultServiceInfoCriteria.builder().serviceTypeName(serviceTypeName).build());
     }
 
     static String toDescription(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package io.helidon.pico;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 /**
  * Responsible for binding service providers to the service registry.
  */
@@ -30,20 +27,5 @@ public interface ServiceBinder {
      * @param serviceProvider the service provider to bind into the service registry
      */
     void bind(ServiceProvider<?> serviceProvider);
-
-    /**
-     * Converts the array of contract types to their respective contract names.
-     *
-     * @param contractTypes the class types to convert
-     *
-     * @return the set of contract names
-     */
-    default Set<String> toContractNames(Class<?>... contractTypes) {
-        Set<String> result = new LinkedHashSet<>();
-        for (Class<?> clazz : contractTypes) {
-            result.add(clazz.getName());
-        }
-        return result;
-    }
 
 }

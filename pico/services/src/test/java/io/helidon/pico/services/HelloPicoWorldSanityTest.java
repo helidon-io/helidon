@@ -24,6 +24,7 @@ import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.ActivationResult;
+import io.helidon.pico.Application;
 import io.helidon.pico.DeActivationRequest;
 import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
@@ -86,12 +87,11 @@ class HelloPicoWorldSanityTest {
         assertThat(descriptions,
                    containsInAnyOrder("EmptyModule:ACTIVE", "HelloPicoModule:ACTIVE"));
 
-//        // TODO:
-//        List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
-//        assertThat(applications.size(),
-//                   equalTo(1));
-//        assertThat(DefaultServices.toDescriptions(applications),
-//                   containsInAnyOrder("BasicModule:HelloPicoApplication"));
+        List<ServiceProvider<Application>> applications = services.lookupAll(Application.class);
+        assertThat(applications.size(),
+                   equalTo(1));
+        assertThat(DefaultServices.toDescriptions(applications),
+                   containsInAnyOrder("HelloPicoApplication:ACTIVE"));
     }
 
     @Test
@@ -169,23 +169,27 @@ class HelloPicoWorldSanityTest {
         assertThat(((HelloPicoWorldImpl) helloProvider1.get()).preDestroyCallCount(),
                    equalTo(0));
 
-        // deactivate just that one service ...
+        // deactivate just the Hello service
         ActivationResult result = helloProvider1.deActivator().orElseThrow()
                 .deactivate(DeActivationRequest.create(helloProvider1));
         assertThat(result.finished(), is(true));
         assertThat(result.success(), is(true));
         assertThat(result.serviceProvider(), sameInstance(helloProvider2));
-        // TODO:
-//        assertThat(helloProvider1.description(),
-//                   equalTo("HelloPicoWorldImpl:DESTROYED"));
-//        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).postConstructCallCount(),
-//                   equalTo(1));
-//        assertThat(((HelloPicoWorldImpl) helloProvider1.get()).preDestroyCallCount(),
-//                   equalTo(1));
+        assertThat(result.finishingActivationPhase(),
+                   is(Phase.DESTROYED));
+        assertThat(result.startingActivationPhase(),
+                   is(Phase.ACTIVE));
+        assertThat(helloProvider1.description(),
+                   equalTo("HelloPicoWorldImpl:DESTROYED"));
+        assertThat(((HelloPicoWorldImpl) hello1).postConstructCallCount(),
+                   equalTo(1));
+        assertThat(((HelloPicoWorldImpl) hello1).preDestroyCallCount(),
+                   equalTo(1));
         assertThat(worldProvider1.description(),
                    equalTo("PicoWorldImpl:ACTIVE"));
     }
 
+    // TODO:
 //    @Test
 //    public void viaInjector() {
 //        Optional<PicoServices> picoServices = PicoServices.picoServices();
