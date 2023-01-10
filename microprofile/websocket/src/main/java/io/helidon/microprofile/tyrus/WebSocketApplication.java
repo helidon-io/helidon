@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -63,10 +64,10 @@ public final class WebSocketApplication {
     /**
      * Get access to all application classes. Possibly an empty set.
      *
-     * @return Set of application classes.
+     * @return Immutable set of application classes.
      */
     public Set<Class<? extends ServerApplicationConfig>> applicationClasses() {
-        return applicationClasses;
+        return Collections.unmodifiableSet(applicationClasses);
     }
 
     /**

@@ -159,10 +159,8 @@ public class WebSocketCdiExtension implements Extension {
 
             if (appClasses.isEmpty()) {
                 // Direct registration without calling application class
-                Optional<String> contextRoot = Optional.empty();
-                String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
-                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, aClass));
+                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, wsCfg));
                 app.extensions().forEach(wsRoutingBuilder::extension);
 
                 // Create routing wsRoutingBuilder
