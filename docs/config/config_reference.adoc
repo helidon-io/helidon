@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 The following section lists all configurable types in Helidon.
 
 - xref:{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[AbacProvider (security.providers.abac)]
+- xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList (common.configurable)]
 - xref:{rootdir}/config/io_helidon_metrics_api_BaseMetricsSettings.adoc[BaseMetricsSettings (metrics.api)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_Bulkhead.adoc[Bulkhead (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_CircuitBreaker.adoc[CircuitBreaker (faulttolerance)]

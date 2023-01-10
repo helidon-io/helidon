@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,6 +46,16 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.SocketConfiguration/io/helido
  socket.
 
  Default value is #DEFAULT_BACKLOG_SIZE.
+|`backpressure-buffer-size` |long |{nbsp} |Maximum length of the response data sending buffer can keep without flushing.
+ Depends on `backpressure-policy` what happens if max buffer size is reached.
+|`backpressure-strategy` |BackpressureStrategy (LINEAR, AUTO_FLUSH, PREFETCH, UNBOUNDED) |`LINEAR` |Sets a backpressure strategy for the server to apply against user provided response upstream.
+
+- LINEAR - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
+- AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
+- PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.
+- NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
+
+
 |[.line-through]#`bind-address`# |string |{nbsp} |*Deprecated* Configures local address where the server listens on with the server socket.
  If not configured, then listens an all local addresses.
 |`enable-compression` |boolean |`false` |Enable negotiation for gzip/deflate content encodings. Clients can
@@ -57,7 +67,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.SocketConfiguration/io/helido
  io.helidon.common.http.Http.Status#BAD_REQUEST_400
  is returned.
 
- Default is `8192`
+ Default is `16384`
 |`max-initial-line-length` |int |`4096` |Maximal number of characters in the initial HTTP line.
 
  Default is `4096`
@@ -72,6 +82,11 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.SocketConfiguration/io/helido
  server socket.
 
  If `0` then use implementation default.
+|`requested-uri-discovery.enabled` |boolean |`true if &#x27;types&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise` |Sets whether requested URI discovery is enabled for the socket.
+|`requested-uri-discovery.trusted-proxies` |xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList] |{nbsp} |Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
+ This setting automatically enables discovery for the socket.
+|`requested-uri-discovery.types` |RequestedUriDiscoveryType[&#93; (FORWARDED, X_FORWARDED, HOST) |`FORWARDED if discovery is enabled; none otherwise` |Assigns the front-end URI discovery type(s) this socket should use. This setting automatically enables
+ discovery for the socket.
 |`timeout-millis` |long |`0` |Socket timeout in milliseconds
 |`tls` |xref:{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[WebServerTls] |{nbsp} |Configures SSL for this socket. When configured, the server enforces SSL
  configuration.

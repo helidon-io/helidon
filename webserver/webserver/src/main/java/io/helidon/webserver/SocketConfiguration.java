@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
@@ -260,6 +263,19 @@ public interface SocketConfiguration {
     List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes();
 
     /**
+     *
+     * @return whether requested URI discovery is enabled.
+     */
+    boolean requestedUriDiscoveryEnabled();
+
+    /**
+     * The allow list for trusted proxies.
+     *
+     * @return allow list for trusted proxies
+     */
+    AllowList trustedProxies();
+
+    /**
      * Maximum length of the content of an upgrade request.
      *
      * @return maximum length of the content of an upgrade request
@@ -303,6 +319,12 @@ public interface SocketConfiguration {
      */
     @Configured
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
+
+        /**
+         * Config key prefix for requested URI discovery settings.
+         */
+        String REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX = "requested-uri-discovery.";
+
         /**
          * Configures a server port to listen on with the server socket. If port is
          * {@code 0} then any available ephemeral port will be used.
@@ -495,28 +517,51 @@ public interface SocketConfiguration {
         B maxUpgradeContentLength(int size);
 
         /**
-         * Add a type of frontend uri discovery to be used. If discovery is disabled, ti will be enabled by this method.
+         * Adds a type of front-end URI discovery Helidon should use for this socket. Adding a discovery type automatically
+         * enables discovery for the socket.
          *
          * @param type type to add
          * @return updated builder
          */
-        @ConfiguredOption(key = "requested-uri-discovery.types", kind = ConfiguredOption.Kind.LIST)
         B addRequestedUriDiscoveryType(RequestedUriDiscoveryType type);
 
         /**
-         * When set to {@code true}, unless you configure custom
-         * {@link #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)},
-         * {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType#FORWARDED} will be
-         * used to discover client requested uri, available through {@link ServerRequest#requestedUri()}.
-         * Discovery types can be configured explicitly.
-         * This method does not modify requested uri discovery types if already customized by
-         * {@link #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)}.
+         * Assigns the front-end URI discovery type(s) this socket should use. This setting automatically enables
+         * discovery for the socket.
+         *
+         * @param types {@link io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType} values to assign
+         * @return updated builder
+         * @see #addRequestedUriDiscoveryType(io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType)
+         * @see #requestedUriDiscoveryEnabled(boolean)
+         * @see io.helidon.webserver.ServerRequest#requestedUri()
+         */
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types",
+                          kind = ConfiguredOption.Kind.LIST,
+                          value = "FORWARDED if discovery is enabled; none otherwise")
+        B requestedUriDiscoveryTypes(List<RequestedUriDiscoveryType> types);
+
+        /**
+         * Sets whether requested URI discovery is enabled for the socket.
          *
          * @param enabled whether to enable discovery
          * @return updated builder
+         * @see io.helidon.webserver.ServerRequest#requestedUri()
          */
-        @ConfiguredOption(key = "requested-uri-discovery.enabled")
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "enabled",
+                          value = "true if '" + REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "types' or '"
+                          + REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "trusted-proxies' is set; false otherwise")
         B requestedUriDiscoveryEnabled(boolean enabled);
+
+        /**
+         * Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
+         * This setting automatically enables discovery for the socket.
+         *
+         * @param trustedProxies to apply to forwarded headers
+         * @return updated builder
+         * @see io.helidon.webserver.ServerRequest#requestedUri()
+         */
+        @ConfiguredOption(key = REQUESTED_URI_DISCOVERY_CONFIG_KEY_PREFIX + "trusted-proxies")
+        B trustedProxies(AllowList trustedProxies);
 
         /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
@@ -563,9 +608,12 @@ public interface SocketConfiguration {
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
 
+            // URI discovery support
             config.get("requested-uri-discovery.enabled").as(Boolean.class).ifPresent(this::requestedUriDiscoveryEnabled);
             config.get("requested-uri-discovery.types").asList(RequestedUriDiscoveryType.class)
-                    .ifPresent(it -> it.forEach(this::addRequestedUriDiscoveryType));
+                    .ifPresent(this::requestedUriDiscoveryTypes);
+            config.get("requested-uri-discovery.trusted-proxies").as(AllowList::create)
+                    .ifPresent(this::trustedProxies);
 
             return (B) this;
         }
@@ -582,6 +630,8 @@ public interface SocketConfiguration {
         @Deprecated
         static final String UNCONFIGURED_NAME = "io.helidon.webserver.SocketConfiguration.UNCONFIGURED";
         private final WebServerTls.Builder tlsConfigBuilder = WebServerTls.builder();
+
+        private static final Logger LOGGER = Logger.getLogger(SocketConfiguration.class.getName());
 
         private int port = 0;
         private InetAddress bindAddress = null;
@@ -605,8 +655,9 @@ public interface SocketConfiguration {
         private BackpressureStrategy backpressureStrategy = BackpressureStrategy.LINEAR;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
-        private List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
+        private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
         private Boolean requestedUriDiscoveryEnabled;
+        private AllowList trustedProxies;
 
         private Builder() {
         }
@@ -620,16 +671,7 @@ public interface SocketConfiguration {
             if (null == name) {
                 throw new ConfigException("Socket name must be configured for each socket");
             }
-            if (requestedUriDiscoveryEnabled == null) {
-                requestedUriDiscoveryEnabled = false;
-            }
-
-            if (requestedUriDiscoveryEnabled) {
-                // configure default type if enabled and no explicit types cconfigured
-                if (this.requestedUriDiscoveryTypes.isEmpty()) {
-                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
-                }
-            }
+            prepareAndCheckRequestedUriSettings();
 
             return new ServerBasicConfig.SocketConfig(this);
         }
@@ -873,8 +915,22 @@ public interface SocketConfiguration {
          * @param value compression flag
          * @return updated builder instance
          */
+        @Override
         public Builder enableCompression(boolean value) {
             this.enableCompression = value;
+            return this;
+        }
+
+        /**
+         * Configure the trusted proxy settings.
+         *
+         * @param trustedProxies prescribing proxies to be trusted
+         * @return updated builder instance
+         */
+        @Override
+        public Builder trustedProxies(AllowList trustedProxies) {
+            this.trustedProxies = trustedProxies;
+            this.requestedUriDiscoveryEnabled = true;
             return this;
         }
 
@@ -897,18 +953,19 @@ public interface SocketConfiguration {
         @Override
         public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
             this.requestedUriDiscoveryTypes.add(type);
-            this.requestedUriDiscoveryEnabled = true;
+            return this;
+        }
+
+        @Override
+        public Builder requestedUriDiscoveryTypes(List<RequestedUriDiscoveryType> types) {
+            requestedUriDiscoveryTypes.clear();
+            requestedUriDiscoveryTypes.addAll(types);
             return this;
         }
 
         @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             this.requestedUriDiscoveryEnabled = enabled;
-            if (enabled) {
-                if (this.requestedUriDiscoveryTypes.isEmpty()) {
-                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
-                }
-            }
             return this;
         }
 
@@ -989,6 +1046,77 @@ public interface SocketConfiguration {
                 return requestedUriDiscoveryTypes;
             }
             return List.of(RequestedUriDiscoveryType.HOST);
+        }
+
+        AllowList trustedProxies() {
+            return trustedProxies;
+        }
+
+        boolean requestedUriDiscoveryEnabled() {
+            return requestedUriDiscoveryEnabled;
+        }
+
+        /**
+         * Checks validity of requested URI settings and supplies defaults for omitted settings.
+         * <p>The behavior of `requested-uri-discovery` settings can be summarized as follows:
+         *     <ul>
+         *     <li>The `requested-uri-discovery` settings are optional.</li>
+         *     <li>If `requested-uri-discovery` is absent or is present with `enabled` explicitly set to `false`, Helidon
+         *     ignores any {@code Forwarded} or {@code X-Forwarded-*} headers and adopts the
+         *     {@code HOST} discovery type. That is, Helidon uses the {@code Host} header for the host
+         *     and the request's scheme and port.</li>
+         *     <li>If `requested-uri-discovery` is present and enabled, either because {@code enabled} is set to {@code true}
+         *     or {@code types} or {@code trusted-proxies} has been set, then Helidon performs a simple validity
+         *     check before adopting the selected discovery behavior: If {@code types} is specified and includes
+         *     either {@code FORWARDED} or {@code X_FORWARDED} then {@code trusted-proxies} must also be set to at least
+         *     one value. Put another way, if requested URI discovery is enabled then {@code trusted-proxies} can be unspecified
+         *     only if {@code types} contains only {@code HOST}.</li>
+         *     </ul>
+         * </p>
+         */
+        private void prepareAndCheckRequestedUriSettings() {
+            boolean isDiscoveryEnabledDefaulted = false;
+            if (requestedUriDiscoveryEnabled == null) {
+                requestedUriDiscoveryEnabled = !requestedUriDiscoveryTypes.isEmpty() || trustedProxies != null;
+                isDiscoveryEnabledDefaulted = true;
+            }
+
+            boolean areDiscoveryTypesDefaulted = false;
+
+            if (requestedUriDiscoveryEnabled) {
+                // Configure a default type if discovery is enabled and no explicit types are configured.
+                if (this.requestedUriDiscoveryTypes.isEmpty()) {
+                    areDiscoveryTypesDefaulted = true;
+                    this.requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.FORWARDED);
+                }
+
+                // Require _some_ settings for trusted proxies (except for HOST discovery) so the socket does not start unsafely
+                // by accident. The user _can_ set allow.all to run the socket unsafely but at least that way it was
+                // an explicit choice.
+                if (trustedProxies == null && !isDiscoveryTypesOnlyHost()) {
+                    throw new UnsafeRequestedUriSettingsException(this, areDiscoveryTypesDefaulted);
+                }
+            } else {
+                // Discovery is disabled so ignore any explicit settings of discovery type and use HOST discovery.
+                if (!requestedUriDiscoveryTypes.isEmpty()) {
+                    LOGGER.log(Level.INFO, """
+                            Ignoring explicit settings of requested-uri-discovery types and trusted-proxies because
+                            requested-uri-discovery.enabled {0} to false
+                            """, isDiscoveryEnabledDefaulted ? " defaulted" : "was set");
+                }
+                requestedUriDiscoveryTypes.clear();
+                requestedUriDiscoveryTypes.add(RequestedUriDiscoveryType.HOST);
+            }
+            if (trustedProxies == null) {
+                trustedProxies = AllowList.builder()
+                        .addDenied(s -> true)
+                        .build();
+            }
+        }
+
+        private boolean isDiscoveryTypesOnlyHost() {
+            return requestedUriDiscoveryTypes.size() == 1
+                    && requestedUriDiscoveryTypes.contains(RequestedUriDiscoveryType.HOST);
         }
     }
 }

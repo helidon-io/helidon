@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,6 +50,16 @@ This is a standalone configuration type, prefix from configuration root: `server
  socket.
 
  Default value is #DEFAULT_BACKLOG_SIZE.
+|`backpressure-buffer-size` |long |{nbsp} |Maximum length of the response data sending buffer can keep without flushing.
+ Depends on `backpressure-policy` what happens if max buffer size is reached.
+|`backpressure-strategy` |BackpressureStrategy (LINEAR, AUTO_FLUSH, PREFETCH, UNBOUNDED) |`LINEAR` |Sets a backpressure strategy for the server to apply against user provided response upstream.
+
+- LINEAR - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
+- AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
+- PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.
+- NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
+
+
 |[.line-through]#`bind-address`# |string |{nbsp} |*Deprecated* Configures local address where the server listens on with the server socket.
  If not configured, then listens an all local addresses.
 |`enable-compression` |boolean |`false` |Enable negotiation for gzip/deflate content encodings. Clients can
@@ -62,7 +72,7 @@ This is a standalone configuration type, prefix from configuration root: `server
  io.helidon.common.http.Http.Status#BAD_REQUEST_400
  is returned.
 
- Default is `8192`
+ Default is `16384`
 |`max-initial-line-length` |int |`4096` |Maximal number of characters in the initial HTTP line.
 
  Default is `4096`
@@ -71,28 +81,17 @@ This is a standalone configuration type, prefix from configuration root: `server
 |`max-upgrade-content-length` |int |`65536` |Set a maximum length of the content of an upgrade request.
 
  Default is `64*1024`
-|`backpressure-buffer-size` |long |`5242880` |Set a maximum length of the unflushed response data sending buffer can keep without applying backpressure.
-Depends on `backpressure-policy` what happens if max buffer size is reached.
-
- Default is `5*1024*1024` - 5Mb
-|`backpressure-policy` | String | `LINEAR` |Sets the strategy for applying backpressure to the reactive stream
-of response data.
-
-* LINEAR - Data chunks are requested one-by-one after previous data chunk has been written to Netty's buffer, when
-`backpressure-buffer-size` watermark is reached, new chunks are not requested until buffer size decrease under
-the watermark value.
-* PREFETCH - After first data chunk arrives, expected number of chunks needed to fill the buffer up
-to watermark is calculated and requested.
-* AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested and extra flush is initiated.
-* UNBOUNDED - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
-
- Default is `LINEAR`
 |`port` |int |`0` |Configures a server port to listen on with the server socket. If port is
  `0` then any available ephemeral port will be used.
 |`receive-buffer-size` |int |{nbsp} |Configures proposed value of the TCP receive window that is advertised to the remote peer on the
  server socket.
 
  If `0` then use implementation default.
+|`requested-uri-discovery.enabled` |boolean |`true if &#x27;types&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise` |Sets whether requested URI discovery is enabled for the socket.
+|`requested-uri-discovery.trusted-proxies` |xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList] |{nbsp} |Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
+ This setting automatically enables discovery for the socket.
+|`requested-uri-discovery.types` |RequestedUriDiscoveryType[&#93; (FORWARDED, X_FORWARDED, HOST) |`FORWARDED if discovery is enabled; none otherwise` |Assigns the front-end URI discovery type(s) this socket should use. This setting automatically enables
+ discovery for the socket.
 |`sockets` |xref:{rootdir}/config/io_helidon_webserver_SocketConfiguration.adoc[SocketConfiguration[&#93;] |{nbsp} |Adds an additional named server socket configuration. As a result, the server will listen
  on multiple ports.
 

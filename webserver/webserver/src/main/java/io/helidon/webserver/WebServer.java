@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -614,8 +616,20 @@ public interface WebServer {
         }
 
         @Override
+        public Builder requestedUriDiscoveryTypes(List<SocketConfiguration.RequestedUriDiscoveryType> types) {
+            defaultSocket(it -> it.requestedUriDiscoveryTypes(types));
+            return this;
+        }
+
+        @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             defaultSocket(it -> it.requestedUriDiscoveryEnabled(enabled));
+            return this;
+        }
+
+        @Override
+        public Builder trustedProxies(AllowList trustedProxies) {
+            defaultSocket(it -> it.trustedProxies(trustedProxies));
             return this;
         }
 
