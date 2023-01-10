@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,10 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 
 // we need to first call the methods, before validating metrics
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -95,7 +99,7 @@ public class MainTest {
     @Order(1)
     void testDefaultGreeting() {
         JsonObject jsonObject = get();
-        Assertions.assertEquals("Hello World!", jsonObject.getString("greeting"));
+        assertThat(jsonObject.getString("greeting"), is("Hello World!"));
     }
 
     @Test
@@ -114,10 +118,10 @@ public class MainTest {
                 .submit(TEST_JSON_OBJECT)
                 .await();
 
-        Assertions.assertEquals(Http.Status.NO_CONTENT_204, response.status());
+        assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
 
         JsonObject jsonObject = personalizedGet("Joe");
-        Assertions.assertEquals("Hola Joe!", jsonObject.getString("greeting"));
+        assertThat(jsonObject.getString("greeting"), is("Hola Joe!"));
     }
 
     @Test
@@ -128,21 +132,20 @@ public class MainTest {
                 .request()
                 .await();
 
-        Assertions.assertEquals(200, response.status()
-                .code());
+        assertThat(response.status().code(), is(200));
 
         String output = response.content()
                 .as(String.class)
                 .await();
         String expected = Main.ALL_GETS_TIMER_NAME + "_seconds_count " + expectedAllGets;
-        Assertions.assertTrue(output.contains(expected),
-                "Unable to find expected all-gets timer count " + expected + "; output is " + output); // all gets; the put
+        assertThat("Unable to find expected all-gets timer count " + expected + "; output is " + output,
+                output, containsString(expected)); // all gets; the put
         // is not counted
-        Assertions.assertTrue(output.contains(Main.ALL_GETS_TIMER_NAME + "_seconds_sum"),
-                "Unable to find expected all-gets timer sum");
+        assertThat("Unable to find expected all-gets timer sum", output,
+                containsString(Main.ALL_GETS_TIMER_NAME + "_seconds_sum"));
         expected = Main.PERSONALIZED_GETS_COUNTER_NAME + "_total " + expectedPersonalizedGets;
-        Assertions.assertTrue(output.contains(expected),
-                "Unable to find expected counter result " + expected + "; output is " + output);
+        assertThat("Unable to find expected counter result " + expected + "; output is " + output,
+                output, containsString(expected));
         response.close();
     }
 }
