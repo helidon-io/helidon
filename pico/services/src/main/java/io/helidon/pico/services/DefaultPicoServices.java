@@ -18,6 +18,7 @@ package io.helidon.pico.services;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,13 +26,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -45,10 +45,10 @@ import io.helidon.pico.Application;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.DefaultActivationLogEntry;
 import io.helidon.pico.DefaultActivationResult;
-import io.helidon.pico.DefaultInjectorOptions;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Event;
 import io.helidon.pico.Injector;
+import io.helidon.pico.InjectorOptions;
 import io.helidon.pico.Metrics;
 import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
@@ -149,24 +149,16 @@ class DefaultPicoServices implements PicoServices, Resetable {
     public Optional<Map<String, ActivationResult>> shutdown() {
         log("started shutdown");
         Map<String, ActivationResult> result = null;
-        if (services.get() != null) {
-            try {
+        synchronized (services) {
+            if (services.get() != null) {
                 result = doShutdown();
-            } catch (Throwable t) {
-                errorLog("failed to shutdown properly", t);
             }
         }
         log("finished shutdown");
         return Optional.ofNullable(result);
     }
 
-    Map<String, ActivationResult> doShutdown() throws ExecutionException, InterruptedException {
-        DefaultServices services = services();
-        Injector injector = injector().orElseThrow();
-        ActivationLog log = activationLog().orElseThrow();
-
-        CompletableFuture<Map<String, ActivationResult>> completableFuture = new CompletableFuture<>();
-        Map<String, ActivationResult> map = new ConcurrentHashMap<>();
+    private Map<String, ActivationResult> doShutdown() {
         ThreadFactory threadFactory = r -> {
             Thread thread = new Thread(r);
             thread.setDaemon(false);
@@ -175,78 +167,93 @@ class DefaultPicoServices implements PicoServices, Resetable {
             return thread;
         };
 
-        // will try to deactivate in the reverse order they were created, but only if logs were retained
+        Shutdown shutdown = new Shutdown();
         ExecutorService es = Executors.newSingleThreadExecutor(threadFactory);
-        es.submit(() -> {
-            try {
-                List<ActivationLogEntry> fullyActivationLog = log.toQuery().orElseThrow().fullActivationLog();
-                if (!fullyActivationLog.isEmpty()) {
-                    LinkedHashSet<ServiceProvider<?>> serviceProviderActivations = new LinkedHashSet<>();
-
-                    Collections.reverse(fullyActivationLog);
-                    fullyActivationLog.stream()
-                            .map(ActivationLogEntry::serviceProvider)
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
-                            .forEach(serviceProviderActivations::add);
-
-                    // prepare for the shutdown log event sequence
-                    log.toQuery().ifPresent(it -> it.reset(false));
-
-                    // shutdown using the reverse chronological ordering in the log for starters
-                    doShutdown(map, injector, serviceProviderActivations);
-                }
-
-                // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
-                List<ServiceProvider<?>> serviceProviders = services.lookupAll(DefaultServiceInfoCriteria.builder().build());
-                serviceProviders = serviceProviders.stream()
-                        .filter((sp) -> sp.currentActivationPhase().eligibleForDeactivation())
-                        .collect(Collectors.toList());
-                serviceProviders.sort((o1, o2) -> {
-                    int runLevel1 = o1.serviceInfo().realizedRunLevel();
-                    int runLevel2 = o2.serviceInfo().realizedRunLevel();
-                    return Integer.compare(runLevel1, runLevel2);
-                });
-                doShutdown(map, injector, serviceProviders);
-
-                // finally, clear everything
-                reset(false);
-
-                completableFuture.complete(map);
-            } catch (Throwable t) {
-                LOGGER.log(System.Logger.Level.ERROR, "failed in shutdown", t);
-                completableFuture.completeExceptionally(t);
-            } finally {
-                es.shutdown();
-            }
-        });
-
-        return completableFuture.get();
+        try {
+            return es.submit(shutdown)
+                    .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+        } catch(Throwable t) {
+            errorLog("error during shutdown", t);
+            throw new PicoException("error during shutdown", t);
+        } finally {
+            es.shutdown();
+        }
     }
 
-    private void doShutdown(
-            Map<String, ActivationResult> map,
-            Injector injector,
-            Collection<ServiceProvider<?>> serviceProviders) {
-        DefaultInjectorOptions opts = DefaultInjectorOptions.builder()
-                .throwOnFailure(false)
-                .build();
-        for (ServiceProvider<?> sp : serviceProviders) {
-            assert (sp.currentActivationPhase().eligibleForDeactivation());
+    /**
+     * Will attempt to shut down in reverse order of activation, but only if activation logs are retained.
+     */
+    private class Shutdown implements Callable<Map<String, ActivationResult>> {
+        final DefaultServices services;
+        final ActivationLog log;
+        final Injector injector;
+        final InjectorOptions opts = InjectorOptions.DEFAULT.get();
+        final Map<String, ActivationResult> map = new LinkedHashMap<>();
 
-            ActivationResult result;
-            try {
-                result = injector.deactivate(sp, opts);
-            } catch (Throwable t) {
-                result = DefaultActivationResult.builder()
-                        .serviceProvider(sp)
-                        .finishingStatus(ActivationStatus.FAILURE)
-                        .error(t)
-                        .build();
+        Shutdown() {
+            this.services = services();
+            this.injector = injector().orElseThrow();
+            this.log = activationLog().orElseThrow();
+        }
+
+        @Override
+        public Map<String, ActivationResult> call() {
+            List<ActivationLogEntry> fullyActivationLog = log.toQuery().orElseThrow().fullActivationLog();
+            if (!fullyActivationLog.isEmpty()) {
+                LinkedHashSet<ServiceProvider<?>> serviceProviderActivations = new LinkedHashSet<>();
+
+                Collections.reverse(fullyActivationLog);
+                fullyActivationLog.stream()
+                        .map(ActivationLogEntry::serviceProvider)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
+                        .forEach(serviceProviderActivations::add);
+
+                // prepare for the shutdown log event sequence
+                log.toQuery().ifPresent(it -> it.reset(false));
+
+                // shutdown using the reverse chronological ordering in the log for starters
+                doShutdown(serviceProviderActivations);
             }
-            Object prev = map.put(sp.serviceInfo().serviceTypeName(), result);
-            assert (prev == null);
+
+            // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
+            List<ServiceProvider<?>> serviceProviders = services.lookupAll(DefaultServiceInfoCriteria.builder().build());
+            serviceProviders = serviceProviders.stream()
+                    .filter((sp) -> sp.currentActivationPhase().eligibleForDeactivation())
+                    .collect(Collectors.toList());
+            serviceProviders.sort((o1, o2) -> {
+                int runLevel1 = o1.serviceInfo().realizedRunLevel();
+                int runLevel2 = o2.serviceInfo().realizedRunLevel();
+                return Integer.compare(runLevel1, runLevel2);
+            });
+            doShutdown(serviceProviders);
+
+            // finally, clear everything
+            reset(false);
+
+            return map;
+        }
+
+        private void doShutdown(
+                Collection<ServiceProvider<?>> serviceProviders) {
+            for (ServiceProvider<?> sp : serviceProviders) {
+                assert (sp.currentActivationPhase().eligibleForDeactivation());
+
+                ActivationResult result;
+                try {
+                    result = injector.deactivate(sp, opts);
+                } catch (Throwable t) {
+                    result = DefaultActivationResult.builder()
+                            .serviceProvider(sp)
+                            .finishingStatus(ActivationStatus.FAILURE)
+                            .error(t)
+                            .build();
+                    errorLog("error during shutdown", t);
+                }
+                Object prev = map.put(sp.serviceInfo().serviceTypeName(), result);
+                assert (prev == null);
+            }
         }
     }
 

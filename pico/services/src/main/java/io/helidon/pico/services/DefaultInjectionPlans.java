@@ -32,6 +32,7 @@ import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DefaultContextualServiceQuery;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.DependenciesInfo;
+import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.InjectionException;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.Interceptor;
@@ -57,7 +58,7 @@ class DefaultInjectionPlans {
      * @param self         the reference to the service provider associated with this plan
      * @param dependencies the dependencies
      * @param resolveIps   flag indicating whether injection points should be resolved
-     * @param logger       the logger to use for any logging
+     * @param logger            the logger to use for any logging
      * @return the injection plan per element identity belonging to the service provider
      */
     static Map<String, InjectionPlan> createInjectionPlans(
@@ -71,100 +72,107 @@ class DefaultInjectionPlans {
             return result;
         }
 
+        dependencies.allDependencies()
+                .forEach(dep -> accumulate(dep, result, picoServices, self, resolveIps, logger));
+
+        return result;
+    }
+
+    private static void accumulate(
+            DependencyInfo dep,
+            Map<String, InjectionPlan> result,
+            PicoServices picoServices,
+            ServiceProvider<?> self,
+            boolean resolveIps,
+            System.Logger logger) {
+        ServiceInfoCriteria depTo = dep.dependencyTo();
+        ServiceInfo selfInfo = self.serviceInfo();
+        if (selfInfo.declaredWeight().isPresent()
+                && selfInfo.contractsImplemented().containsAll(depTo.contractsImplemented())) {
+            // if we have a weight on ourselves, and we inject an interface that we actually offer, then
+            // be sure to use it to get lower weighted injection points ...
+            depTo = DefaultServiceInfoCriteria.toBuilder(depTo)
+                    .weight(selfInfo.declaredWeight().get())
+                    .build();
+        }
+
         Services services = picoServices.services();
         PicoServicesConfig cfg = picoServices.config();
         boolean isPrivateSupported = cfg.supportsJsr330Privates();
         boolean isStaticSupported = cfg.supportsJsr330Statics();
 
-        dependencies.allDependencies()
-                .forEach((dep) -> {
-                             ServiceInfoCriteria depTo = dep.dependencyTo();
-                             final ServiceInfo selfInfo = self.serviceInfo();
-                             if (selfInfo.declaredWeight().isPresent()
-                                     && selfInfo.contractsImplemented().containsAll(depTo.contractsImplemented())) {
-                                 // if we have a weight on ourselves, and we inject an interface that we actually offer, then
-                                 // be sure to use it to get lower weighted injection points ...
-                                 depTo = DefaultServiceInfoCriteria.toBuilder(depTo).weight(selfInfo.declaredWeight().get())
-                                         .build();
-                             }
+        if (self instanceof InjectionResolver) {
+            dep.injectionPointDependencies()
+                    .stream()
+                    .filter((ipInfo) -> (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
+                            && (isStaticSupported || !ipInfo.staticDeclaration()))
+                    .forEach((ipInfo) -> {
+                        String id = ipInfo.id();
+                        if (!result.containsKey(id)) {
+                            Object resolved = ((InjectionResolver) self)
+                                    .resolve(ipInfo, picoServices, self, resolveIps)
+                                    .orElse(null);
+                            if (resolved != null) {
+                                Object target = (resolved instanceof Optional)
+                                        ? ((Optional<?>) resolved).orElse(null) : resolved;
+                                InjectionPlan plan = DefaultInjectionPlan.builder()
+                                        .injectionPointInfo(ipInfo)
+                                        .injectionPointQualifiedServiceProviders(toIpQualified(target))
+                                        .unqualifiedProviders(toIpUnqualified(target))
+                                        .wasResolved(true)
+                                        .resolved(target)
+                                        .build();
+                                Object prev = result.put(id, plan);
+                                assert (Objects.isNull(prev)) : ipInfo;
+                            }
+                        }
+                    });
+        }
 
-                             if (self instanceof InjectionResolver) {
-                                 dep.injectionPointDependencies()
-                                         .stream()
-                                         .filter((ipInfo) ->
-                                                     (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
-                                                             && (isStaticSupported || !ipInfo.staticDeclaration()))
-                                         .forEach((ipInfo) -> {
-                                             String id = ipInfo.id();
-                                             if (!result.containsKey(id)) {
-                                                 Object resolved = ((InjectionResolver) self)
-                                                         .resolve(ipInfo, picoServices, self, resolveIps)
-                                                         .orElse(null);
-                                                 if (resolved != null) {
-                                                     Object target = (resolved instanceof Optional)
-                                                             ? ((Optional<?>) resolved).orElse(null) : resolved;
-                                                     InjectionPlan plan = DefaultInjectionPlan.builder()
-                                                             .injectionPointInfo(ipInfo)
-                                                             .injectionPointQualifiedServiceProviders(toIpQualified(target))
-                                                             .unqualifiedProviders(toIpUnqualified(target))
-                                                             .wasResolved(true)
-                                                             .resolved(target)
-                                                             .build();
-                                                     Object prev = result.put(id, plan);
-                                                     assert (Objects.isNull(prev)) : ipInfo;
-                                                 }
-                                             }
-                                         });
-                             }
+        List<ServiceProvider<?>> tmpServiceProviders = services.lookupAll(depTo, false);
+        if (tmpServiceProviders == null || tmpServiceProviders.isEmpty()) {
+            if (VoidServiceProvider.INSTANCE.serviceInfo().matches(depTo)) {
+                tmpServiceProviders = VoidServiceProvider.LIST_INSTANCE;
+            }
+        }
 
-                             List<ServiceProvider<?>> tmpServiceProviders = services.lookupAll(depTo, false);
-                             if (tmpServiceProviders == null || tmpServiceProviders.isEmpty()) {
-                                 if (VoidServiceProvider.INSTANCE.serviceInfo().matches(depTo)) {
-                                     tmpServiceProviders = VoidServiceProvider.LIST_INSTANCE;
-                                 }
-                             }
+        // filter down the selections to not include self...
+        List<ServiceProvider<?>> serviceProviders =
+                (tmpServiceProviders != null && !tmpServiceProviders.isEmpty())
+                        ? tmpServiceProviders.stream()
+                        .filter((sp) -> !isSelf(self, sp))
+                        .collect(Collectors.toList())
+                        : tmpServiceProviders;
 
-                             // filter down the selections to not include self...
-                             final List<ServiceProvider<?>> serviceProviders =
-                                     (tmpServiceProviders != null && !tmpServiceProviders.isEmpty())
-                                             ? tmpServiceProviders.stream()
-                                             .filter((sp) -> !isSelf(self, sp))
-                                             .collect(Collectors.toList())
-                                             : tmpServiceProviders;
-
-                             dep.injectionPointDependencies()
-                                     .stream()
-                                     .filter((ipInfo) ->
-                                                     (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
-                                                             && (isStaticSupported || !ipInfo.staticDeclaration()))
-                                     .forEach((ipInfo) -> {
-                                         String id = ipInfo.id();
-                                         if (!result.containsKey(id)) {
-                                             Object resolved = (resolveIps)
-                                                     ? resolve(self, ipInfo, serviceProviders, logger) : null;
-                                             if (!resolveIps && !ipInfo.optionalWrapped()
-                                                     && (serviceProviders == null || serviceProviders.isEmpty())
-                                                     && !allowNullableInjectionPoint(ipInfo)) {
-                                                 throw DefaultServices.resolutionBasedInjectionError(
-                                                         ipInfo.dependencyToServiceInfo());
-                                             }
-                                             InjectionPlan plan = DefaultInjectionPlan.builder()
-                                                     .injectionPointInfo(ipInfo)
-                                                     .injectionPointQualifiedServiceProviders(serviceProviders)
-                                                     .serviceProvider(self)
-                                                     .wasResolved(resolveIps)
-                                                     .resolved(
-                                                             (resolved instanceof Optional<?> && ((Optional<?>) resolved).isEmpty())
-                                                                       ? Optional.empty() : Optional.ofNullable(resolved))
-                                                     .build();
-                                             Object prev = result.put(id, plan);
-                                             assert (Objects.isNull(prev)) : ipInfo;
-                                         }
-                                     });
-                         }
-                );
-
-        return result;
+        dep.injectionPointDependencies()
+                .stream()
+                .filter((ipInfo) ->
+                                (isPrivateSupported || ipInfo.access() != InjectionPointInfo.Access.PRIVATE)
+                                        && (isStaticSupported || !ipInfo.staticDeclaration()))
+                .forEach((ipInfo) -> {
+                    String id = ipInfo.id();
+                    if (!result.containsKey(id)) {
+                        Object resolved = (resolveIps)
+                                ? resolve(self, ipInfo, serviceProviders, logger) : null;
+                        if (!resolveIps && !ipInfo.optionalWrapped()
+                                && (serviceProviders == null || serviceProviders.isEmpty())
+                                && !allowNullableInjectionPoint(ipInfo)) {
+                            throw DefaultServices.resolutionBasedInjectionError(
+                                    ipInfo.dependencyToServiceInfo());
+                        }
+                        InjectionPlan plan = DefaultInjectionPlan.builder()
+                                .injectionPointInfo(ipInfo)
+                                .injectionPointQualifiedServiceProviders(serviceProviders)
+                                .serviceProvider(self)
+                                .wasResolved(resolveIps)
+                                .resolved(
+                                        (resolved instanceof Optional<?> && ((Optional<?>) resolved).isEmpty())
+                                                ? Optional.empty() : Optional.ofNullable(resolved))
+                                .build();
+                        Object prev = result.put(id, plan);
+                        assert (Objects.isNull(prev)) : ipInfo;
+                    }
+                });
     }
 
     /**

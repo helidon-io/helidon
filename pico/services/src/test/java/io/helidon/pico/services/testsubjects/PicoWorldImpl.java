@@ -19,7 +19,7 @@ package io.helidon.pico.services.testsubjects;
 import io.helidon.pico.ExternalContracts;
 
 @ExternalContracts(PicoWorld.class)
-/*public*/ class PicoWorldImpl implements PicoWorld {
+public class PicoWorldImpl implements PicoWorld {
     private final String name;
 
     PicoWorldImpl() {

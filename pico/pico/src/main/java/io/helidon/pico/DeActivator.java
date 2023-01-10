@@ -34,6 +34,7 @@ public interface DeActivator<T> {
      * @param request deactivation request
      * @return the result
      */
-    ActivationResult deactivate(DeActivationRequest request);
+    ActivationResult deactivate(
+            DeActivationRequest request);
 
 }

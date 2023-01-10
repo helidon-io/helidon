@@ -18,17 +18,14 @@ package io.helidon.pico.services;
 
 import java.util.Objects;
 
-import io.helidon.pico.ActivationRequest;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.Activator;
 import io.helidon.pico.DeActivationRequest;
 import io.helidon.pico.DeActivator;
-import io.helidon.pico.DefaultActivationRequest;
 import io.helidon.pico.DefaultActivationResult;
 import io.helidon.pico.DefaultDeActivationRequest;
 import io.helidon.pico.Injector;
 import io.helidon.pico.InjectorOptions;
-import io.helidon.pico.Phase;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServiceProviderException;
 import io.helidon.pico.ServiceProvider;
@@ -64,12 +61,7 @@ class DefaultInjector implements Injector {
             return handleError(resultBuilder, opts, "the service provider does not have an activator", instance);
         }
 
-        ActivationRequest request = DefaultActivationRequest.builder()
-                .targetPhase(Phase.ACTIVE)
-                .serviceProvider(instance)
-                .throwOnFailure(opts.throwOnFailure())
-                .build();
-        return activator.activate(request);
+        return activator.activate(opts.activationRequest());
     }
 
     @Override
@@ -99,8 +91,7 @@ class DefaultInjector implements Injector {
         }
 
         DeActivationRequest request = DefaultDeActivationRequest.builder()
-                .serviceProvider(instance)
-                .throwOnFailure(opts.throwOnFailure())
+                .throwOnFailure(opts.activationRequest().throwOnFailure())
                 .build();
         return deactivator.deactivate(request);
     }
@@ -113,7 +104,7 @@ class DefaultInjector implements Injector {
         PicoException e = (serviceProvider == null)
                 ? new PicoException(message) : new PicoServiceProviderException(message, serviceProvider);
         resultBuilder.error(e);
-        if (opts.throwOnFailure()) {
+        if (opts.activationRequest().throwOnFailure()) {
             throw e;
         }
         return resultBuilder.build();

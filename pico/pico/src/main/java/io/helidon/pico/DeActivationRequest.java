@@ -17,6 +17,7 @@
 package io.helidon.pico;
 
 import io.helidon.builder.Builder;
+import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -26,21 +27,9 @@ import io.helidon.config.metadata.ConfiguredOption;
 public interface DeActivationRequest {
 
     /**
-     * Create a request with defaults.
-     *
-     * @param provider service provider responsible for invoking deactivate
-     * @return a new request
+     * Default request.
      */
-    static DeActivationRequest create(ServiceProvider<?> provider) {
-        return DefaultDeActivationRequest.builder().serviceProvider(provider).build();
-    }
-
-    /**
-     * Service provider responsible for invoking deactivate.
-     *
-     * @return service provider
-     */
-    ServiceProvider<?> serviceProvider();
+    LazyValue<DeActivationRequest> DEFAULT = LazyValue.create(() -> DefaultDeActivationRequest.builder().build());
 
     /**
      * Whether to throw an exception on failure, or return it as part of the result.

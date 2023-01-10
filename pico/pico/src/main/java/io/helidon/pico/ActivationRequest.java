@@ -19,6 +19,7 @@ package io.helidon.pico;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
+import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -28,18 +29,23 @@ import io.helidon.config.metadata.ConfiguredOption;
 public interface ActivationRequest {
 
     /**
-     * Target service provider.
-     *
-     * @return service provider
+     * Default request.
      */
-    ServiceProvider<?> serviceProvider();
+    LazyValue<ActivationRequest> DEFAULT = LazyValue.create(() -> DefaultActivationRequest.builder().build());
 
     /**
-     * Injection point context information.
+     * Optionally, the injection point context information.
      *
      * @return injection point info
      */
     Optional<InjectionPointInfo> injectionPoint();
+
+    /**
+     * The phase to start activation. Typically, this should be left as the default (i.e., PENDING).
+     *
+     * @return phase to start
+     */
+    Optional<Phase> startingPhase();
 
     /**
      * Ultimate target phase for activation.
@@ -60,14 +66,12 @@ public interface ActivationRequest {
     /**
      * Creates a new activation request.
      *
-     * @param serviceProvider   the service provider
      * @param targetPhase       the target phase
      * @return the activation request
      */
-    static ActivationRequest create(ServiceProvider serviceProvider,
-                                    Phase targetPhase) {
+    static ActivationRequest create(
+            Phase targetPhase) {
         return DefaultActivationRequest.builder()
-                .serviceProvider(serviceProvider)
                 .targetPhase(targetPhase)
                 .build();
     }

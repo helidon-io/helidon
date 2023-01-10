@@ -17,6 +17,8 @@
 package io.helidon.pico;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.BuilderInterceptor;
+import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -24,17 +26,13 @@ import io.helidon.config.metadata.ConfiguredOption;
  *
  * @see Injector
  */
-@Builder
+@Builder(interceptor = InjectorOptions.Interceptor.class)
 public interface InjectorOptions {
 
     /**
-     * The target finishing phase for the {@link Activator} behind the {@link Injector}.
-     * The default is {@link Phase#ACTIVE}.
-     *
-     * @return the target finish phase
+     * Default options.
      */
-    @ConfiguredOption("ACTIVE")
-    Phase targetPhase();
+    LazyValue<InjectorOptions> DEFAULT = LazyValue.create(() -> DefaultInjectorOptions.builder().build());
 
     /**
      * The strategy the injector should apply. The default is {@link Injector.Strategy#ANY}.
@@ -45,11 +43,24 @@ public interface InjectorOptions {
     Injector.Strategy strategy();
 
     /**
-     * Whether to throw an exception on failure to activate, or return an error activation result on activation.
+     * Optionally, customized activator options to use for the {@link io.helidon.pico.Activator}.
      *
-     * @return whether to throw on failure
+     * @return activator options, or leave blank to use defaults
      */
-    @ConfiguredOption("true")
-    boolean throwOnFailure();
+    ActivationRequest activationRequest();
+
+
+    /**
+     * This will ensure that the activation request is populated.
+     */
+    class Interceptor implements BuilderInterceptor<DefaultInjectorOptions.Builder> {
+        @Override
+        public DefaultInjectorOptions.Builder intercept(DefaultInjectorOptions.Builder target) {
+            if (target.activationRequest() == null) {
+                target.activationRequest(ActivationRequest.DEFAULT.get());
+            }
+            return target;
+        }
+    }
 
 }

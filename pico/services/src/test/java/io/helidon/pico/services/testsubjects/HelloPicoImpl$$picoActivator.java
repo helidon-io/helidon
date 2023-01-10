@@ -58,7 +58,7 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
 
     public static final HelloPicoImpl$$picoActivator INSTANCE = new HelloPicoImpl$$picoActivator();
 
-    HelloPicoImpl$$picoActivator() {
+    public HelloPicoImpl$$picoActivator() {
         serviceInfo(serviceInfo);
     }
 

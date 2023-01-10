@@ -432,7 +432,7 @@ public abstract class AbstractServiceProvider<T>
 
             if (serviceOrProvider == null
                     || Phase.ACTIVE != currentActivationPhase()) {
-                ActivationRequest req = ActivationRequest.create(this, Phase.ACTIVE);
+                ActivationRequest req = ActivationRequest.DEFAULT.get();
                 ActivationResult res = activate(req);
                 if (res.failure()) {
                     if (ctx.expected()) {
@@ -469,27 +469,35 @@ public abstract class AbstractServiceProvider<T>
 
         // if we get here then we own the semaphore for activation...
         try {
-            if (Phase.INIT == res.finishingActivationPhase()
-                    || Phase.PENDING == res.finishingActivationPhase()
-                    || Phase.DESTROYED == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_STARTING.ordinal() &&
+                    (Phase.INIT == res.finishingActivationPhase()
+                             || Phase.PENDING == res.finishingActivationPhase()
+                             || Phase.ACTIVATION_STARTING == res.finishingActivationPhase()
+                             || Phase.DESTROYED == res.finishingActivationPhase())) {
                 doStartingLifecycle(logEntryAndResult);
             }
-            if (Phase.ACTIVATION_STARTING == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.GATHERING_DEPENDENCIES.ordinal() &&
+                    (Phase.ACTIVATION_STARTING == res.finishingActivationPhase())) {
                 doGatheringDependencies(logEntryAndResult);
             }
-            if (Phase.GATHERING_DEPENDENCIES == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.CONSTRUCTING.ordinal() &&
+                    (Phase.GATHERING_DEPENDENCIES == res.finishingActivationPhase())) {
                 doConstructing(logEntryAndResult);
             }
-            if (Phase.CONSTRUCTING == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.INJECTING.ordinal() &&
+                    (Phase.CONSTRUCTING == res.finishingActivationPhase())) {
                 doInjecting(logEntryAndResult);
             }
-            if (Phase.INJECTING == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.POST_CONSTRUCTING.ordinal() &&
+                    (Phase.INJECTING == res.finishingActivationPhase())) {
                 doPostConstructing(logEntryAndResult);
             }
-            if (Phase.POST_CONSTRUCTING == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_FINISHING.ordinal() &&
+                    (Phase.POST_CONSTRUCTING == res.finishingActivationPhase())) {
                 doActivationFinishing(logEntryAndResult);
             }
-            if (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase()) {
+            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVE.ordinal() &&
+                    (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase())) {
                 doActivationActive(logEntryAndResult);
             }
         } catch (Throwable t) {
@@ -505,12 +513,12 @@ public abstract class AbstractServiceProvider<T>
     // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
     private LogEntryAndResult preambleActivate(
             ActivationRequest req) {
-        assert (req.serviceProvider() == this) : "not capable of handling service provider" + req;
         assert (picoServices != null) : "not initialized";
 
         LogEntryAndResult logEntryAndResult = createLogEntryAndResult(req.targetPhase());
         req.injectionPoint().ifPresent(logEntryAndResult.logEntry::injectionPoint);
-        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
+        Phase startingPhase = req.startingPhase().orElse(Phase.PENDING);
+        startTransitionCurrentActivationPhase(logEntryAndResult, startingPhase);
 
         // fail fast if we are in a recursive situation on this thread...
         if (logEntryAndResult.logEntry.threadId() == lastActivationThreadId && lastActivationThreadId > 0) {
@@ -704,12 +712,11 @@ public abstract class AbstractServiceProvider<T>
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
 
         Map<String, InjectionPlan> plans = Objects.requireNonNull(getOrCreateInjectionPlan(false));
-        logEntryAndResult.activationResult.injectionPlans(plans);
-
         Map<String, Object> deps = resolveDependencies(plans);
-        if (deps != null) {
+        if (!deps.isEmpty()) {
             logEntryAndResult.activationResult.resolvedDependencies(deps);
         }
+        logEntryAndResult.activationResult.injectionPlans(plans);
 
         finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
@@ -722,20 +729,20 @@ public abstract class AbstractServiceProvider<T>
      */
     Map<String, InjectionPlan> getOrCreateInjectionPlan(
             boolean resolveIps) {
-        if (injectionPlan != null) {
-            return injectionPlan;
+        if (this.injectionPlan != null) {
+            return this.injectionPlan;
         }
 
-        if (dependencies == null) {
+        if (this.dependencies == null) {
             dependencies(dependencies());
         }
 
         final Map<String, InjectionPlan> plan =
                 DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, LOGGER);
-        assert (injectionPlan == null);
-        injectionPlan = Objects.requireNonNull(plan);
+        assert (this.injectionPlan == null);
+        this.injectionPlan = Objects.requireNonNull(plan);
 
-        return injectionPlan;
+        return this.injectionPlan;
     }
 
     @Override
@@ -776,18 +783,19 @@ public abstract class AbstractServiceProvider<T>
     }
 
     Map<String, Object> resolveDependencies(
-            Map<String, InjectionPlan> plans) {
+            Map<String, InjectionPlan> mutablePlans) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        plans.forEach((key, value) -> {
+        Map.copyOf(mutablePlans).forEach((key, value) -> {
+            Object resolved;
             if (value.wasResolved()) {
-                result.put(key, value.resolved());
+                resolved = value.resolved();
+                result.put(key, resolved);
             } else {
                 List<ServiceProvider<?>> serviceProviders = value.injectionPointQualifiedServiceProviders();
                 serviceProviders = (serviceProviders == null)
                         ? Collections.emptyList()
                         : Collections.unmodifiableList(serviceProviders);
-                Object resolved;
                 if (serviceProviders.isEmpty()
                         && !value.unqualifiedProviders().isEmpty()) {
                     resolved = Collections.emptyList(); // deferred...
@@ -795,6 +803,14 @@ public abstract class AbstractServiceProvider<T>
                     resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, LOGGER);
                 }
                 result.put(key, resolved);
+            }
+
+            if (value.resolved().isEmpty()) {
+                // update the original plans map to properly reflect the resolved value
+                mutablePlans.put(key, DefaultInjectionPlan.toBuilder(value)
+                        .wasResolved(true)
+                        .resolved(resolved)
+                        .build());
             }
         });
 
@@ -915,7 +931,6 @@ public abstract class AbstractServiceProvider<T>
     @Override
     public ActivationResult deactivate(
             DeActivationRequest req) {
-        assert (req.serviceProvider() == this) : "not capable of handling service provider " + req;
         if (!currentActivationPhase().eligibleForDeactivation()) {
             return ActivationResult.createSuccess(this);
         }

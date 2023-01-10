@@ -16,37 +16,11 @@
 
 package io.helidon.pico.services;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.ContextualServiceQuery;
-import io.helidon.pico.DefaultContextualServiceQuery;
-import io.helidon.pico.DefaultServiceInfoCriteria;
-import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.InjectionException;
-import io.helidon.pico.InjectionPointInfo;
-import io.helidon.pico.Interceptor;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.ServiceInfo;
-import io.helidon.pico.ServiceInfoCriteria;
-import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.ServiceProviderBindable;
-import io.helidon.pico.ServiceProviderProvider;
-import io.helidon.pico.Services;
 import io.helidon.pico.spi.BasicInjectionPlan;
-import io.helidon.pico.spi.InjectionResolver;
 
 /**
  * The injection plan for a given service provider and element belonging to that service provider. This plan can be created during

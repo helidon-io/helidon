@@ -26,11 +26,6 @@ package io.helidon.pico;
 public interface Injector {
 
     /**
-     * Empty options is the same as passing no options, taking all the default values.
-     */
-    InjectorOptions EMPTY_OPTIONS = DefaultInjectorOptions.builder().build();
-
-    /**
      * The strategy the injector should attempt to apply. The reference implementation for Pico provider only handles
      * {@link Injector.Strategy#ACTIVATOR} type.
      */
@@ -59,7 +54,7 @@ public interface Injector {
      * {@link Phase#ACTIVE}.
      *
      * @param serviceOrServiceProvider the target instance or service provider being activated and injected
-     * @param opts                     the injector options, or use {@link #EMPTY_OPTIONS}
+     * @param opts                     the injector options, or use {@link InjectorOptions#DEFAULT}
      * @param <T>                      the managed service type
      * @return the result of the activation
      * @throws io.helidon.pico.PicoServiceProviderException if an injection or activation problem occurs
@@ -75,7 +70,7 @@ public interface Injector {
      * this lifecycle event.
      *
      * @param serviceOrServiceProvider the service provider or instance registered and being managed
-     * @param opts                     the injector options, or use {@link #EMPTY_OPTIONS}
+     * @param opts                     the injector options, or use {@link InjectorOptions#DEFAULT}
      * @param <T>                      the managed service type
      * @return the result of the deactivation
      * @throws io.helidon.pico.PicoServiceProviderException if a problem occurs
