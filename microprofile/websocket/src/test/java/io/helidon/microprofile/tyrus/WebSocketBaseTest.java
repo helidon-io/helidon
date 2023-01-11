@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package io.helidon.microprofile.tyrus;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.microprofile.server.ServerCdiExtension;
-
-import jakarta.enterprise.inject.se.SeContainer;
-import jakarta.enterprise.inject.spi.CDI;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.microprofile.tests.junit5.Socket;
+import jakarta.inject.Inject;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
@@ -35,35 +33,32 @@ import jakarta.websocket.OnMessage;
 import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import jakarta.ws.rs.client.WebTarget;
 
-/**
- * Class WebSocketBaseTest.
- */
-public abstract class WebSocketBaseTest {
+@HelidonTest
+abstract class WebSocketBaseTest {
 
-    static SeContainer container;
+    @Inject
+    private WebTarget target;
 
-    @AfterAll
-    static void destroyClass() {
-        container.close();
-    }
-
-    public abstract String context();
+    @Inject
+    @Socket("other")
+    private WebTarget otherTarget;
 
     public int port() {
-        ServerCdiExtension cdiExtension = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class);
-        return cdiExtension.port();
+        return target.getUri().getPort();
     }
 
-    @Test
-    public void testEchoAnnot() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + port() + context() + "/echoAnnot");
-        EchoClient echoClient = new EchoClient(echoUri);
-        echoClient.echo("hi", "how are you?");
-        echoClient.shutdown();
+    public WebTarget target() {
+        return target;
+    }
+
+    public int otherPort() {
+        return otherTarget.getUri().getPort();
+    }
+
+    public WebTarget otherTarget() {
+        return otherTarget;
     }
 
     @ServerEndpoint("/echoAnnot")

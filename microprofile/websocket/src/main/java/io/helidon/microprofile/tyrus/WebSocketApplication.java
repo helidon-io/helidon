@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -30,13 +31,13 @@ import jakarta.websocket.server.ServerApplicationConfig;
  */
 public final class WebSocketApplication {
 
-    private Class<? extends ServerApplicationConfig> applicationClass;
+    private Set<Class<? extends ServerApplicationConfig>> applicationClasses;
     private Set<Class<?>> annotatedEndpoints;
     private Set<Class<? extends Endpoint>> programmaticEndpoints;
     private Set<Extension> extensions;
 
     private WebSocketApplication(Builder builder) {
-        this.applicationClass = builder.applicationClass;
+        this.applicationClasses = builder.applicationClasses;
         this.annotatedEndpoints = builder.annotatedEndpoints;
         this.programmaticEndpoints = builder.programmaticEndpoints;
         this.extensions = builder.extensions;
@@ -52,12 +53,21 @@ public final class WebSocketApplication {
     }
 
     /**
-     * Get access to application class, if present.
+     * Get access to an application class, if present.
      *
      * @return Application class optional.
      */
     public Optional<Class<? extends ServerApplicationConfig>> applicationClass() {
-        return Optional.ofNullable(applicationClass);
+        return applicationClasses.isEmpty() ? Optional.empty() : Optional.of(applicationClasses.iterator().next());
+    }
+
+    /**
+     * Get access to all application classes. Possibly an empty set.
+     *
+     * @return Immutable set of application classes.
+     */
+    public Set<Class<? extends ServerApplicationConfig>> applicationClasses() {
+        return Collections.unmodifiableSet(applicationClasses);
     }
 
     /**
@@ -93,7 +103,7 @@ public final class WebSocketApplication {
     public static class Builder {
         private static final Logger LOGGER = Logger.getLogger(WebSocketApplication.Builder.class.getName());
 
-        private Class<? extends ServerApplicationConfig> applicationClass;
+        private Set<Class<? extends ServerApplicationConfig>> applicationClasses = new HashSet<>();
         private Set<Class<?>> annotatedEndpoints = new HashSet<>();
         private Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
         private Set<Extension> extensions = new HashSet<>();
@@ -105,24 +115,22 @@ public final class WebSocketApplication {
          * @return The builder.
          */
         Builder updateApplicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-            if (this.applicationClass != null) {
-                LOGGER.fine(() -> "Overriding websocket application using " + applicationClass);
+            if (!applicationClasses.isEmpty()) {
+                LOGGER.fine(() -> "Overriding websocket applications using " + applicationClass);
             }
-            this.applicationClass = applicationClass;
+            applicationClasses.clear();
+            applicationClasses.add(applicationClass);
             return this;
         }
 
         /**
-         * Set an application class in the builder.
+         * Add an application class in the builder.
          *
          * @param applicationClass The application class.
          * @return The builder.
          */
         public Builder applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-            if (this.applicationClass != null) {
-                throw new IllegalStateException("At most one subclass of ServerApplicationConfig is permitted");
-            }
-            this.applicationClass = applicationClass;
+            applicationClasses.add(applicationClass);
             return this;
         }
 

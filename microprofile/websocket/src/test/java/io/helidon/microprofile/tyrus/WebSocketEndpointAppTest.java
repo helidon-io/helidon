@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 
+import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
-
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.Configuration;
 import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.server.ServerApplicationConfig;
 import jakarta.websocket.server.ServerEndpointConfig;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,30 +35,63 @@ import org.junit.jupiter.api.Test;
  * {@code @RoutingPath} to register Websocket endpoints. The context for
  * Websocket endpoints is defined by the value of {@code @RoutingPath}.
  */
-public class WebSocketEndpointAppTest extends WebSocketBaseTest {
+@Configuration(configSources = "application.yaml")
+@AddBean(WebSocketEndpointAppTest.EndpointApplication.class)
+@AddBean(WebSocketEndpointAppTest.EndpointApplicationOther.class)
+class WebSocketEndpointAppTest extends WebSocketBaseTest {
 
-    @BeforeAll
-    static void initClass() {
-        container = SeContainerInitializer.newInstance()
-                .addBeanClasses(EndpointApplication.class)
-                .initialize();
-    }
-
-    @Override
-    public String context() {
-        return "/web";
+    @Test
+    public void testEchoAnnot() throws Exception {
+        URI echoUri = URI.create("ws://localhost:" + port() + "/web/echoAnnot");
+        EchoClient echoClient = new EchoClient(echoUri);
+        echoClient.echo("hi", "how are you?");
+        echoClient.shutdown();
     }
 
     @Test
     public void testEchoProg() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + port() + context() + "/echoProg");
+        URI echoUri = URI.create("ws://localhost:" + port() + "/web/echoProg");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
+        echoClient.shutdown();
+    }
+
+    @Test
+    public void testEchoAnnotOther() throws Exception {
+        URI echoUri = URI.create("ws://localhost:" + otherPort() + "/web/echoProg");
+        EchoClient echoClient = new EchoClient(echoUri);
+        echoClient.echo("hi", "how are you?");
+        echoClient.shutdown();
+    }
+
+    @Test
+    public void testEchoProgOther() throws Exception {
+        URI echoUri = URI.create("ws://localhost:" + otherPort() + "/web/echoProg");
+        EchoClient echoClient = new EchoClient(echoUri);
+        echoClient.echo("hi", "how are you?");
+        echoClient.shutdown();
     }
 
     @Dependent
     @RoutingPath("/web")
     public static class EndpointApplication implements ServerApplicationConfig {
+        @Override
+        public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpoints) {
+            ServerEndpointConfig.Builder builder = ServerEndpointConfig.Builder.create(
+                    EchoEndpointProg.class, "/echoProg");
+            return Collections.singleton(builder.build());
+        }
+
+        @Override
+        public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> endpoints) {
+            return Collections.singleton(EchoEndpointAnnot.class);
+        }
+    }
+
+    @Dependent
+    @RoutingPath("/other")
+    @RoutingName(value = "other", required = true)
+    public static class EndpointApplicationOther implements ServerApplicationConfig {
         @Override
         public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpoints) {
             ServerEndpointConfig.Builder builder = ServerEndpointConfig.Builder.create(
