@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ For more information see the link:{helidon-github-tree-url}/examples/webserver/w
 
 === WebSocket Endpoints on Different Ports
 
-The Helidon Reactive Webserver can listen on multiple ports or sockets. This can be useful when APIs for different type of users need to be exposed (such as admin vs. non-admin users). Just like for REST resources, it is possible to expose  WebSocket applications on different ports _provided that the routing paths are different_ --this is due to a constraint in Tyrus, given that it is simply unaware that the endpoints are bound to different ports in the Helidon Webserver.
+The Helidon WebServer can listen on multiple ports or sockets. This can be useful when APIs for different type of users need to be exposed (such as admin vs. non-admin users). Just like for REST resources, it is possible to expose  WebSocket applications on different ports _provided that the routing paths are different_ --this is due to a constraint in Tyrus, given that it is simply unaware that the endpoints are bound to different ports in the Helidon WebServer.
 
 NOTE: In practice, this implies that the value of `@RoutingPath`, or the equivalent entry in config, must be different across sockets to satisfy the restriction in Tyrus.
 
