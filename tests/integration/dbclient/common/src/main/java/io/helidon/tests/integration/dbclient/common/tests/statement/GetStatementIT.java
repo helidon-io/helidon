@@ -53,7 +53,6 @@ public class GetStatementIT {
 
     /**
      * Verify {@code params(List<?>)} parameters setting method.
-     *
      */
     @Test
     public void testGetListParams() {
@@ -71,7 +70,6 @@ public class GetStatementIT {
 
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
-     *
      */
     @Test
     public void testGetMapParams() {
@@ -89,7 +87,6 @@ public class GetStatementIT {
 
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
-     *
      */
     @Test
     public void testGetOrderParam() {

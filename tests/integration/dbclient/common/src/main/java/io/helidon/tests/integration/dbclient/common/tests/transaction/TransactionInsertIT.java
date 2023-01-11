@@ -16,7 +16,6 @@
 package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -28,9 +27,6 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyIns
  * Test set of basic JDBC inserts in transaction.
  */
 public class TransactionInsertIT extends AbstractIT {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(TransactionInsertIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 210;

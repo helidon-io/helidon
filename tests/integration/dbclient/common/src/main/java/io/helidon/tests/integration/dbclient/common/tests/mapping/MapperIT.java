@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.mapping;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbRow;
@@ -40,11 +40,11 @@ import static org.hamcrest.Matchers.equalTo;
 public class MapperIT extends AbstractIT  {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(MapperIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MapperIT.class.getName());
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 400;
 
-    private static void addPokemon(Pokemon pokemon) throws ExecutionException, InterruptedException {
+    private static void addPokemon(Pokemon pokemon) {
         POKEMONS.put(pokemon.getId(), pokemon);
         Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
@@ -68,19 +68,16 @@ public class MapperIT extends AbstractIT  {
             addPokemon(new Pokemon(++curId, "Makuhita", TYPES.get(2)));                 // BASE_ID+5
             addPokemon(new Pokemon(++curId, "Hariyama", TYPES.get(2)));                 // BASE_ID+6
         } catch (Exception ex) {
-            LOGGER.warning(() -> String.format("Exception in setup: %s", ex.getMessage()));
+            LOGGER.log(Level.WARNING, String.format("Exception in setup: %s", ex.getMessage()), ex);
             throw ex;
         }
     }
 
     /**
      * Verify insertion of PoJo instance using indexed mapping.
-     *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testInsertWithOrderMapping() throws ExecutionException, InterruptedException {
+    public void testInsertWithOrderMapping() {
         Pokemon pokemon = new Pokemon(BASE_ID+1 , "Articuno", TYPES.get(3), TYPES.get(15));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedInsert("insert-pokemon-order-arg-rev")
@@ -92,12 +89,9 @@ public class MapperIT extends AbstractIT  {
 
     /**
      * Verify insertion of PoJo instance using named mapping.
-     *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testInsertWithNamedMapping() throws ExecutionException, InterruptedException {
+    public void testInsertWithNamedMapping() {
         Pokemon pokemon = new Pokemon(BASE_ID+2 , "Zapdos", TYPES.get(3), TYPES.get(13));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedInsert("insert-pokemon-named-arg")
@@ -109,12 +103,9 @@ public class MapperIT extends AbstractIT  {
 
     /**
      * Verify update of PoJo instance using indexed mapping.
-     *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testUpdateWithOrderMapping() throws ExecutionException, InterruptedException {
+    public void testUpdateWithOrderMapping() {
         Pokemon pokemon = new Pokemon(BASE_ID+3 , "Masquerain", TYPES.get(3), TYPES.get(15));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-order-arg")
@@ -126,12 +117,9 @@ public class MapperIT extends AbstractIT  {
 
     /**
      * Verify update of PoJo instance using named mapping.
-     *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testUpdateWithNamedMapping() throws ExecutionException, InterruptedException {
+    public void testUpdateWithNamedMapping() {
         Pokemon pokemon = new Pokemon(BASE_ID+4 , "Moltres", TYPES.get(3), TYPES.get(13));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedUpdate("update-pokemon-named-arg")
@@ -143,12 +131,9 @@ public class MapperIT extends AbstractIT  {
 
     /**
      * Verify delete of PoJo instance using indexed mapping.
-     *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testDeleteWithOrderMapping() throws ExecutionException, InterruptedException {
+    public void testDeleteWithOrderMapping() {
         Pokemon pokemon = POKEMONS.get(BASE_ID+5);
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-full-order-arg")
@@ -160,12 +145,9 @@ public class MapperIT extends AbstractIT  {
 
     /**
      * Verify delete of PoJo instance using named mapping.
-     *
-     * @throws InterruptedException if the current thread was interrupted
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testDeleteWithNamedMapping() throws ExecutionException, InterruptedException {
+    public void testDeleteWithNamedMapping() {
         Pokemon pokemon = POKEMONS.get(BASE_ID+6);
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedDelete("delete-pokemon-full-named-arg")

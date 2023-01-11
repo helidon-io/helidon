@@ -15,12 +15,12 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.statement;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -36,7 +36,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class DmlStatementIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(DmlStatementIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DmlStatementIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 100;
@@ -54,12 +54,11 @@ public class DmlStatementIT extends AbstractIT {
 
     /**
      * Initialize DbStatementDml methods tests.
-     *
      */
     @BeforeAll
     public static void setup() {
         try {
-            addPokemon(new Pokemon(BASE_ID + 0, "Shinx", TYPES.get(13)));               // BASE_ID+0
+            addPokemon(new Pokemon(BASE_ID, "Shinx", TYPES.get(13)));                      // BASE_ID+0
             addPokemon(new Pokemon(BASE_ID + 1, "Luxio", TYPES.get(13)));               // BASE_ID+1
             addPokemon(new Pokemon(BASE_ID + 2, "Luxray", TYPES.get(13)));              // BASE_ID+2
             addPokemon(new Pokemon(BASE_ID + 3, "Kricketot", TYPES.get(7)));            // BASE_ID+3
@@ -67,7 +66,7 @@ public class DmlStatementIT extends AbstractIT {
             addPokemon(new Pokemon(BASE_ID + 5, "Phione", TYPES.get(11)));              // BASE_ID+5
             addPokemon(new Pokemon(BASE_ID + 6, "Chatot", TYPES.get(1), TYPES.get(3))); // BASE_ID+6
         } catch (Exception ex) {
-            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
+            LOGGER.log(Level.WARNING, String.format("Exception in setup: %s", ex), ex);
             throw ex;
         }
     }
@@ -80,7 +79,7 @@ public class DmlStatementIT extends AbstractIT {
      */
     @Test
     public void testDmlArrayParams() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID + 0, "Luxio", TYPES.get(13));
+        Pokemon pokemon = new Pokemon(BASE_ID, "Luxio", TYPES.get(13));
         Long result = DB_CLIENT.execute(exec -> exec
                 .createNamedDmlStatement("update-pokemon-order-arg")
                 .params(pokemon.getName(), pokemon.getId())

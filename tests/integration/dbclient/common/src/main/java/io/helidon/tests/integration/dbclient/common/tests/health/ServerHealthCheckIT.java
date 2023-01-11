@@ -17,14 +17,13 @@ package io.helidon.tests.integration.dbclient.common.tests.health;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.health.HealthCheck;
@@ -56,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ServerHealthCheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(ServerHealthCheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ServerHealthCheckIT.class.getName());
 
     private static WebServer SERVER;
     private static String URL;
@@ -82,7 +81,7 @@ public class ServerHealthCheckIT {
         final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
         final CompletionStage<WebServer> serverFuture = server.start();
         serverFuture.thenAccept(srv -> {
-            LOGGER.info(() -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
+            LOGGER.log(Level.DEBUG, () -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
             URL = String.format("http://localhost:%d", srv.port());
         });
         SERVER = serverFuture.toCompletableFuture().get();
@@ -129,10 +128,10 @@ public class ServerHealthCheckIT {
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemons"));
 
-        List<DbRow> pokemonList = rows.collectList().await();
+        rows.collectList().await();
         // Read and process health check response
         String response = get(URL + "/health");
-        LOGGER.info("RESPONSE: " + response);
+        LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));
         JsonStructure jsonResponse = null;
         try (JsonReader jr = Json.createReader(new StringReader(response))) {
             jsonResponse = jr.read();
@@ -141,7 +140,7 @@ public class ServerHealthCheckIT {
         }
         JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
         assertThat(checks.size(), greaterThan(0));
-        checks.stream().forEachOrdered((check) -> {
+        checks.forEach((check) -> {
             String status = check.asJsonObject().getString("status");
             assertThat(status, equalTo("UP"));
         });

@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.common;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 /**
  * Configuration utilities.
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class ConfigIT {
     
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(ConfigIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ConfigIT.class.getName());
 
     private static final String CONFIG_PROPERTY_NAME="io.helidon.tests.integration.dbclient.config";
 
@@ -38,7 +38,7 @@ public class ConfigIT {
      */
     public static String configFile() {
         String configFile = System.getProperty(CONFIG_PROPERTY_NAME, DEFAULT_CONFIG_FILE);
-        LOGGER.info(() -> String.format("Configuration file: %s", configFile));
+        LOGGER.log(Level.DEBUG, () -> String.format("Configuration file: %s", configFile));
         return configFile;
     }
 

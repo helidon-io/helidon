@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -34,7 +34,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class TransactionUpdateIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(TransactionUpdateIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TransactionUpdateIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 220;
@@ -68,7 +68,7 @@ public class TransactionUpdateIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Lombre", TYPES.get(11), TYPES.get(12)));   // BASE_ID+6
             addPokemon(new Pokemon(++curId, "Ludicolo", TYPES.get(11), TYPES.get(12))); // BASE_ID+7
         } catch (Exception ex) {
-            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
+            LOGGER.log(Level.WARNING, String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }

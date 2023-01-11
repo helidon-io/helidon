@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -34,7 +34,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyIns
 public class SimpleDeleteIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(SimpleDeleteIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SimpleDeleteIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 30;
@@ -68,7 +68,7 @@ public class SimpleDeleteIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Regirock", TYPES.get(6)));                // BASE_ID+6
             addPokemon(new Pokemon(++curId, "Kyogre", TYPES.get(11)));                 // BASE_ID+7
         } catch (Exception ex) {
-            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
+            LOGGER.log(Level.WARNING, String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }

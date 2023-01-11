@@ -15,8 +15,6 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
-import java.util.logging.Logger;
-
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
@@ -29,9 +27,6 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPok
  * Test set of basic JDBC queries.
  */
 public class SimpleQueriesIT extends AbstractIT {
-
-    /** Local logger instance. */
-    static final Logger LOGGER = Logger.getLogger(SimpleQueriesIT.class.getName());
 
     /**
      * Verify {@code createNamedQuery(String, String)} API method with ordered parameters.

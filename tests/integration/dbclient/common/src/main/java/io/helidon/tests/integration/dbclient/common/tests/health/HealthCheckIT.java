@@ -64,7 +64,7 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithName() {
-        final String hcName = "TestHC";
+        String hcName = "TestHC";
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).config(CONFIG.get("db.health-check")).name(hcName).build();
         HealthCheckResponse response = check.call();
         String name = check.name();
@@ -134,6 +134,5 @@ public class HealthCheckIT {
         HealthCheckResponse.Status state = response.status();
         assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
-
 
 }

@@ -36,7 +36,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
-     *
      */
     @Test
     public void testQueryArrayParams() {
@@ -50,7 +49,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code params(List<?>)} parameters setting method.
-     *
      */
     @Test
     public void testQueryListParams() {
@@ -67,7 +65,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
-     *
      */
     @Test
     public void testQueryMapParams() {
@@ -84,7 +81,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
-     *
      */
     @Test
     public void testQueryOrderParam() {
@@ -99,7 +95,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
-     *
      */
     @Test
     public void testQueryNamedParam() {
@@ -114,7 +109,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
-     *
      */
     @Test
     public void testQueryMappedNamedParam() {
@@ -129,7 +123,6 @@ public class QueryStatementIT extends AbstractIT {
 
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
-     *
      */
     @Test
     public void testQueryMappedOrderParam() {

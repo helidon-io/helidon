@@ -17,14 +17,13 @@ package io.helidon.tests.integration.dbclient.common.tests.metrics;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
@@ -62,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ServerMetricsCheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(ServerMetricsCheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ServerMetricsCheckIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 300;
@@ -106,7 +105,7 @@ public class ServerMetricsCheckIT {
         final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
         final CompletionStage<WebServer> serverFuture = server.start();
         serverFuture.thenAccept(srv -> {
-            LOGGER.info(() -> String
+            LOGGER.log(Level.DEBUG, () -> String
                     .format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
             URL = String.format("http://localhost:%d", srv.port());
         });
@@ -156,15 +155,15 @@ public class ServerMetricsCheckIT {
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemons"));
 
-        List<DbRow> pokemonList = rows.collectList().await();
+        rows.collectList().await();
         // Call insert-pokemon to trigger it
         Pokemon pokemon = new Pokemon(BASE_ID + 1, "Lickitung", TYPES.get(1));
-        Long result = DB_CLIENT.execute(exec -> exec
+        DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
         ).await();
         // Read and process metrics response
         String response = get(URL + "/metrics/application");
-        LOGGER.info("RESPONSE: " + response);
+        LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));
         JsonObject application = null;
         try (JsonReader jr = Json.createReader(new StringReader(response))) {
             application = jr.readObject();
