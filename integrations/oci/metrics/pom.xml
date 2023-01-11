@@ -16,24 +16,22 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations</groupId>
-        <artifactId>helidon-integrations-project</artifactId>
+        <groupId>io.helidon.integrations.oci</groupId>
+        <artifactId>helidon-integrations-oci-project</artifactId>
         <version>3.1.1-SNAPSHOT</version>
     </parent>
-
-    <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci-project</artifactId>
-    <name>Helidon Integrations OCI Project</name>
-
-    <description>OCI integrations</description>
+    <groupId>io.helidon.integrations.oci.metrics</groupId>
+    <artifactId>helidon-integrations-oci-metrics-project</artifactId>
+    <name>Helidon Integrations OCI Metrics Project</name>
+    <description>Helidon Metrics to OCI Project</description>
     <packaging>pom</packaging>
 
     <modules>
         <module>metrics</module>
-        <module>sdk</module>
+        <module>cdi</module>
     </modules>
 </project>
