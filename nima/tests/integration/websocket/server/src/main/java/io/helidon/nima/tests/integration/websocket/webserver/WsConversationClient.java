@@ -25,12 +25,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;;
+import java.util.logging.Logger;
 
 import static io.helidon.nima.tests.integration.websocket.webserver.WsAction.Operation.RCV;
 import static io.helidon.nima.tests.integration.websocket.webserver.WsAction.OperationType.BINARY;
 import static io.helidon.nima.tests.integration.websocket.webserver.WsAction.OperationType.TEXT;
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+;
 
 /**
  * A websocket client that is driven by a conversation instance.
@@ -63,15 +65,25 @@ class WsConversationClient implements Runnable, AutoCloseable {
 
     @Override
     public void close() {
-        socket.sendClose(WebSocket.NORMAL_CLOSURE, "bye");
+        try {
+            socket.sendClose(WebSocket.NORMAL_CLOSURE, "bye")
+                    .get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void sendMessage(WsAction action) {
-        switch (action.opType) {
-            case TEXT -> socket.sendText(action.message, true);
-            case BINARY -> socket.sendBinary(ByteBuffer.wrap(action.message.getBytes(UTF_8)), true);
+        try {
+            switch (action.opType) {
+                case TEXT -> socket.sendText(action.message, true).get(10, TimeUnit.SECONDS);
+                case BINARY -> socket.sendBinary(ByteBuffer.wrap(action.message.getBytes(UTF_8)), true)
+                        .get(10, TimeUnit.SECONDS);
+            }
+            LOGGER.log(Level.FINE, () -> "Client: " + action);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-       LOGGER.log(Level.FINE, () -> "Client: " + action);
     }
 
     private void waitMessage(WsAction action) {
