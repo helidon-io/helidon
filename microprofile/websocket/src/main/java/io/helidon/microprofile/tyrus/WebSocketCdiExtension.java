@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,15 +148,6 @@ public class WebSocketCdiExtension implements Extension {
 
             // If application present call its methods
             WebSocketRouting.Builder wsRoutingBuilder = WebSocketRouting.builder();
-            Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
-
-            Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
-            Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
-            boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
-
-            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
-
-            LOGGER.info("Registering websocket application at " + rootPath);
 
             executorService = ThreadPoolSupplier.builder()
                     .threadNamePrefix("helidon-websocket-")
@@ -164,46 +155,52 @@ public class WebSocketCdiExtension implements Extension {
 
             wsRoutingBuilder.executor(executorService);
 
-            if (appClass.isPresent()) {
-                Class<? extends ServerApplicationConfig> c = appClass.get();
+            Set<Class<? extends ServerApplicationConfig>> appClasses = app.applicationClasses();
 
-                // Attempt to instantiate via CDI
-                ServerApplicationConfig instance = null;
-                try {
-                    instance = CDI.current().select(c).get();
-                } catch (UnsatisfiedResolutionException e) {
-                    // falls through
-                }
-
-                // Otherwise, we create instance directly
-                if (instance == null) {
-                    try {
-                        instance = c.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Unable to instantiate websocket application " + c, e);
-                    }
-                }
-
-                // Call methods in application class
-                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
-                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
-
-                // Register classes and configs
-                endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
-
-                // Create routing wsRoutingBuilder
-                addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, c.getName());
-            } else {
+            if (appClasses.isEmpty()) {
                 // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
-                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+                app.annotatedEndpoints().forEach(aClass -> wsRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, aClass));
+                app.programmaticEndpoints().forEach(wsCfg -> wsRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, wsCfg));
                 app.extensions().forEach(wsRoutingBuilder::extension);
 
                 // Create routing wsRoutingBuilder
                 serverCdiExtension.serverBuilder().addRouting(wsRoutingBuilder.build());
-            }
+            } else {
+                appClasses.forEach(appClass -> {
+                    Optional<String> contextRoot = findContextRoot(config, appClass);
+                    String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
+                    Optional<String> namedRouting = findNamedRouting(config, appClass);
+                    boolean routingNameRequired = isNamedRoutingRequired(config, appClass);
 
+                    // Attempt to instantiate via CDI
+                    ServerApplicationConfig instance = null;
+                    try {
+                        instance = CDI.current().select(appClass).get();
+                    } catch (UnsatisfiedResolutionException e) {
+                        // falls through
+                    }
+
+                    // Otherwise, we create instance directly
+                    if (instance == null) {
+                        try {
+                            instance = appClass.getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
+                            throw new RuntimeException("Unable to instantiate websocket application " + appClass, e);
+                        }
+                    }
+
+                    // Call methods in application class
+                    Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
+                    Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
+
+                    // Register classes and configs
+                    endpointClasses.forEach(aClass -> wsRoutingBuilder.endpoint(rootPath, aClass));
+                    endpointConfigs.forEach(wsCfg -> wsRoutingBuilder.endpoint(rootPath, wsCfg));
+
+                    // Create routing wsRoutingBuilder
+                    addWsRouting(wsRoutingBuilder.build(), namedRouting, routingNameRequired, appClass.getName());
+                });
+            }
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to load WebSocket extension", e);
         }
