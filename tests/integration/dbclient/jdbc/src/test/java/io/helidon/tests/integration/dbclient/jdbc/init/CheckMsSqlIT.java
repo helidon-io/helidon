@@ -15,14 +15,13 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc.init;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class CheckMsSqlIT {
     
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CheckIT.class.getName());
 
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
@@ -72,7 +71,7 @@ public class CheckMsSqlIT {
                     connected = true;
                     return;
                 } catch (SQLException ex) {
-                    LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
+                    LOGGER.log(Level.DEBUG, () -> String.format("Connection check: %s", ex.getMessage()), ex);
                     if (System.currentTimeMillis() > endTm) {
                         conn = null;
                         return;
@@ -102,13 +101,13 @@ public class CheckMsSqlIT {
             String database = CheckIT.CONFIG.get("test.db-database").asString().get();
             try {
                 Statement stmt = conn.createStatement();
-                final int dbCount = stmt.executeUpdate(String.format("EXEC sp_configure 'CONTAINED DATABASE AUTHENTICATION', 1", database));
+                final int dbCount = stmt.executeUpdate("EXEC sp_configure 'CONTAINED DATABASE AUTHENTICATION', 1");
                 LOGGER.log(Level.INFO, () -> String.format("Executed EXEC statement. %d records modified.", dbCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not configure database:", ex);
             } try {
                 Statement stmt = conn.createStatement();
-                final int dbCount = stmt.executeUpdate(String.format("RECONFIGURE", database));
+                final int dbCount = stmt.executeUpdate("RECONFIGURE");
                 LOGGER.log(Level.INFO, () -> String.format("Executed RECONFIGURE statement. %d records modified.", dbCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not reconfigure database:", ex);
@@ -199,19 +198,20 @@ public class CheckMsSqlIT {
         CheckIT.ConnectionBuilder builder = new CheckIT.ConnectionBuilder();
         String ping = CONFIG.get("db.health-check.statement").asString().get();
         String typeStr = CONFIG.get("db.health-check.type").asString().get();
-        boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());
+        boolean pingDml = "dml".equalsIgnoreCase(typeStr);
         CONFIG.get("db.connection").ifExists(builder);
-        Connection conn = builder.createConnection();
-        if (pingDml) {
-            int result = conn.createStatement().executeUpdate(ping);
-            assertThat(result, equalTo(0));
-            LOGGER.info(() -> String.format("Command ping result: %d", result));
-        } else {
-            ResultSet rs = conn.createStatement().executeQuery(ping);
-            rs.next();
-            int result = rs.getInt(1);
-            assertThat(result, equalTo(0));
-            LOGGER.info(() -> String.format("Command ping result: %d", result));
+        try (Connection conn = builder.createConnection()) {
+            if (pingDml) {
+                int result = conn.createStatement().executeUpdate(ping);
+                assertThat(result, equalTo(0));
+                LOGGER.log(Level.DEBUG, () -> String.format("Command ping result: %d", result));
+            } else {
+                ResultSet rs = conn.createStatement().executeQuery(ping);
+                rs.next();
+                int result = rs.getInt(1);
+                assertThat(result, equalTo(0));
+                LOGGER.log(Level.DEBUG, () -> String.format("Command ping result: %d", result));
+            }
         }
     }
 

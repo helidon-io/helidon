@@ -15,10 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.mongodb.destroy;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbClient;
@@ -37,9 +36,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class DestroyIT {
 
-    /** Local logger instance. */
-    static final Logger LOGGER = Logger.getLogger(DestroyIT.class.getName());
-
     /**
      * Delete database content.
      *
@@ -52,7 +48,7 @@ public class DestroyIT {
                 .namedDelete("delete-poketypes")
                 .flatMapSingle(result -> exec.namedDelete("delete-pokemons"))
                 .flatMapSingle(result -> exec.namedDelete("delete-types"))
-        ).await(10, TimeUnit.SECONDS);
+        ).await(Duration.ofSeconds(10));
     }
 
     /**
@@ -71,13 +67,12 @@ public class DestroyIT {
      * Verify that table Types does not exist.
      */
     @Test
-    public void testTypesDeleted() throws InterruptedException {
+    public void testTypesDeleted() {
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-types"));
 
         if (rows != null) {
             List<DbRow> rowsList = rows.collectList().await();
-            LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
             assertThat(rowsList, empty());
         }
     }
@@ -86,30 +81,26 @@ public class DestroyIT {
      * Verify that table Pokemons does not exist.
      */
     @Test
-    public void testPokemonsDeleted() throws InterruptedException {
+    public void testPokemonsDeleted() {
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemons"));
 
         if (rows != null) {
             List<DbRow> rowsList = rows.collectList().await();
-            LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
             assertThat(rowsList, empty());
         }
     }
 
     /**
      * Verify that table PokemonTypes does not exist.
-     *
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testPokemonTypesDeleted() throws InterruptedException {
+    public void testPokemonTypesDeleted() {
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-poketypes-all"));
 
         if (rows != null) {
             List<DbRow> rowsList = rows.collectList().await();
-            LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
             assertThat(rowsList, empty());
         }
     }
