@@ -16,7 +16,6 @@
 package io.helidon.integrations.oci.metrics.cdi;
 
 import io.helidon.config.Config;
-import io.helidon.config.mp.MpConfig;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
 import io.helidon.microprofile.server.RoutingBuilders;
 
@@ -26,7 +25,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Singleton;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
@@ -40,8 +38,8 @@ public class OciMetricsBean {
 
     // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
     void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
-                            Monitoring monitoringClient) {
-        Config helidonConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get("ocimetrics");
+                            Config config, Monitoring monitoringClient) {
+        Config helidonConfig =  config.get("ocimetrics");
         if (helidonConfig.exists()) {
             OciMetricsSupport.Builder builder = OciMetricsSupport.builder()
                     .config(helidonConfig)

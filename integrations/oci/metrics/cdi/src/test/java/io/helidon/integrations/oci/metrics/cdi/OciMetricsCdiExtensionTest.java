@@ -29,6 +29,7 @@ import com.oracle.bmc.monitoring.requests.*;
 import com.oracle.bmc.monitoring.responses.*;
 
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -54,6 +55,7 @@ import static org.hamcrest.Matchers.is;
 // Helidon MP Extensions
 @AddExtension(ServerCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)
+@AddExtension(ConfigCdiExtension.class)
 // OciMetricsCdiExtension
 @AddExtension(OciMetricsCdiExtension.class)
 // ConfigSources
