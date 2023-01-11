@@ -36,16 +36,13 @@ import static org.hamcrest.Matchers.equalTo;
  */
 public class GetStatementIT {
 
-    private static final System.Logger LOGGER = System.getLogger(GetStatementIT.class.getName());
-
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
             .service("GetStatement")
             .build();
 
     // Test executor method
-    public void executeTest(final String testName, final int fromId, final int toId) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    public void executeTest(String testName, int fromId, int toId) {
         JsonObject data = testClient.callServiceAndGetData(
                 testName,
                 QueryParams.builder()
@@ -54,10 +51,10 @@ public class GetStatementIT {
                     .build()
         ).asJsonObject();
         LogData.logJsonObject(Level.DEBUG, data);
-        int counter[] = { 0 };
+        int[] counter = { 0 };
         Pokemon.POKEMONS.keySet().forEach(id -> {
             if (id > fromId && id < toId) {
-                final Pokemon pokemon = Pokemon.POKEMONS.get(id);
+                Pokemon pokemon = Pokemon.POKEMONS.get(id);
                 VerifyData.verifyPokemon(data, pokemon);
                 counter[0]++;
             }

@@ -45,8 +45,7 @@ public class SimpleDeleteIT {
             .build();
 
     // Test executor method
-    private void executeTest(final String testName, final int id) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName, int id) {
         try {
             JsonValue data = testClient.callServiceAndGetData(
                     testName,
@@ -58,7 +57,7 @@ public class SimpleDeleteIT {
             assertThat(count, equalTo(1L));
             assertThat(pokemonData.isEmpty(), equalTo(true));
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 

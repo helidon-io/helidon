@@ -40,8 +40,7 @@ public class SimpleInsertIT {
             .build();
 
     // Test executor method
-    private void executeTest(final String testName, final int id) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName, int id) {
         try {
             JsonObject data = testClient.callServiceAndGetData(
                     testName,
@@ -52,7 +51,7 @@ public class SimpleInsertIT {
             LogData.logJsonObject(Level.DEBUG, pokemonData);
             VerifyData.verifyPokemon(pokemonData, data);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 

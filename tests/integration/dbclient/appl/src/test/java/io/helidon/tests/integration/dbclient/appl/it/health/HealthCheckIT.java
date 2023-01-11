@@ -49,13 +49,12 @@ public class HealthCheckIT {
 
     @BeforeAll
     public void setup() {
-        LOGGER.log(Level.INFO, () -> "Running HealthCheckIT setup");
-        final JsonObject dbTypeValue = testClient
+        JsonObject dbTypeValue = testClient
                 .callServiceAndGetData("Verify", "getDatabaseType", null)
                 .asJsonObject();
         LogData.logJsonObject(Level.DEBUG, dbTypeValue);
         dbType = dbTypeValue.getString("type");
-        final JsonObject pingDmlValue = testClient
+        JsonObject pingDmlValue = testClient
                 .callServiceAndGetData(
                         "Verify", "getConfigParam",
                         QueryParams.single(QueryParams.NAME, "test.ping-dml"))
@@ -71,7 +70,6 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheck() {
-        LOGGER.log(Level.INFO, () -> "Running test testHealthCheck");
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheck")
                 .asJsonObject();
@@ -84,7 +82,6 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithName() {
-        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithName");
         final String hcName = "TestHC";
         JsonObject data = testClient
                 .callServiceAndGetData(
@@ -101,7 +98,6 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomNamedDML() {
-        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomNamedDML");
         if (!pingDml) {
             LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", dbType));
             return;
@@ -118,9 +114,8 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomDML() {
-        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomDML");
         if (!pingDml) {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", dbType));
+            LOGGER.log(Level.DEBUG, () -> String.format("Database %s does not support DML ping, skipping this test", dbType));
             return;
         }
         JsonObject data = testClient
@@ -135,7 +130,6 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomNamedQuery() {
-        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomNamedQuery");
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheckWithCustomNamedQuery")
                 .asJsonObject();
@@ -148,7 +142,6 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomQuery() {
-        LOGGER.log(Level.INFO, () -> "Running test testHealthCheckWithCustomQuery");
         JsonObject data = testClient
                 .callServiceAndGetData("testHealthCheckWithCustomQuery")
                 .asJsonObject();

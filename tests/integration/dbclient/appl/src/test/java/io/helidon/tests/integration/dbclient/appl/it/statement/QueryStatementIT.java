@@ -39,17 +39,13 @@ import static org.hamcrest.Matchers.lessThan;
  */
 public class QueryStatementIT {
 
-   /** Local logger instance. */
-    static final System.Logger LOGGER = System.getLogger(QueryStatementIT.class.getName());
-
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
             .service("QueryStatement")
             .build();
 
     // Test executor method
-    private void executeTest(final String testName, final int fromId, final int toId) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName, int fromId, int toId) {
         JsonArray data = testClient.callServiceAndGetData(
                 testName,
                 QueryParams.builder()
@@ -61,7 +57,7 @@ public class QueryStatementIT {
         assertThat(data.size(), equalTo(toId - fromId - 1));
         data.getValuesAs(JsonObject.class).forEach(dataPokemon -> {
             int id = dataPokemon.getInt("id");
-            final Pokemon pokemon = Pokemon.POKEMONS.get(id);
+            Pokemon pokemon = Pokemon.POKEMONS.get(id);
             assertThat(id, greaterThan(fromId));
             assertThat(id, lessThan(toId));
             VerifyData.verifyPokemon(dataPokemon, pokemon);

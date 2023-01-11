@@ -15,8 +15,6 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it.interceptor;
 
-import java.util.logging.Logger;
-
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.TestClient;
 import io.helidon.tests.integration.tools.client.TestServiceClient;
@@ -28,8 +26,6 @@ import org.junit.jupiter.api.Test;
  */
 public class InterceptorIT {
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptorIT.class.getName());
-
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
             .service("Interceptor")
@@ -40,7 +36,6 @@ public class InterceptorIT {
      */
     @Test
     public void testStatementInterceptor() {
-        LOGGER.fine("Running testStatementInterceptor");
         testClient
                 .callServiceAndGetData("testStatementInterceptor");
     }

@@ -16,7 +16,6 @@
 package io.helidon.tests.integration.dbclient.appl.it.metrics;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.tools.QueryParams;
@@ -31,12 +30,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
+
 /**
  * Verify metrics check in web server environment.
  */
 public class ServerMetricsCheckIT {
-
-    private static final Logger LOGGER = Logger.getLogger(ServerMetricsCheckIT.class.getName());
 
     private final TestClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)

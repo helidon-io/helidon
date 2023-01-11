@@ -42,15 +42,14 @@ public class FlowControlIT {
             .build();
 
     // Test executor method
-    private void executeTest(final String testName) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName) {
         try {
             JsonObject data = testClient
                     .callServiceAndGetData(testName)
                     .asJsonObject();
             LogData.logJsonObject(Level.DEBUG, data);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 

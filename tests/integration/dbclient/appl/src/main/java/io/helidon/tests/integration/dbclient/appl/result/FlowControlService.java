@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.appl.result;
 import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 

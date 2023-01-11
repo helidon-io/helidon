@@ -48,8 +48,7 @@ public class MapperIT {
             .service("Mapper")
             .build();
 
-    private void executeInsertTest(final String testName, final int id) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeInsertTest(String testName, int id) {
         try {
             JsonObject data = testClient.callServiceAndGetData(
                     testName,
@@ -60,12 +59,11 @@ public class MapperIT {
             LogData.logJsonObject(Level.DEBUG, pokemonData);
             VerifyData.verifyPokemon(pokemonData, data);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 
-    private void executeUpdateTest(final String testName, final int id, final String newName) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeUpdateTest(String testName, int id, String newName) {
         try {
             Pokemon pokemon = Pokemon.POKEMONS.get(id);
             Pokemon updatedPokemon = new Pokemon(pokemon.getId(), newName, pokemon.getTypes());
@@ -82,12 +80,11 @@ public class MapperIT {
             assertThat(count, equalTo(1L));
             VerifyData.verifyPokemon(pokemonData, updatedPokemon);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 
-    private void executeDeleteTest(final String testName, final int id) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeDeleteTest(String testName, int id) {
         try {
             JsonValue data = testClient.callServiceAndGetData(
                     testName,
@@ -100,7 +97,7 @@ public class MapperIT {
             assertThat(count, equalTo(1));
             assertThat(pokemonData.isEmpty(), equalTo(true));
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 
@@ -159,7 +156,6 @@ public class MapperIT {
      */
     @Test
     public void testQueryWithMapping() {
-        LOGGER.log(Level.INFO, () -> "Running testQueryWithMapping");
         final Pokemon pokemon = Pokemon.POKEMONS.get(1);
         JsonArray data = testClient.callServiceAndGetData(
                 "testQueryWithMapping",
@@ -175,7 +171,6 @@ public class MapperIT {
      */
     @Test
     public void testGetWithMapping() {
-        LOGGER.log(Level.INFO, () -> "Running testGetWithMapping");
         final Pokemon pokemon = Pokemon.POKEMONS.get(2);
         JsonObject data = testClient.callServiceAndGetData(
                 "testGetWithMapping",

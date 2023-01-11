@@ -46,8 +46,7 @@ public class DmlStatementIT {
             .build();
 
     // Test executor method
-    private void executeTest(final String testName, final int id, final String newName) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName, int id, String newName) {
         try {
             Pokemon pokemon = Pokemon.POKEMONS.get(id);
             Pokemon updatedPokemon = new Pokemon(pokemon.getId(), newName, pokemon.getTypes());
@@ -64,7 +63,7 @@ public class DmlStatementIT {
             assertThat(count, equalTo(1L));
             VerifyData.verifyPokemon(pokemonData, updatedPokemon);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Exception in %s: %s", testName, e.getMessage()), e);
+            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
         }
     }
 

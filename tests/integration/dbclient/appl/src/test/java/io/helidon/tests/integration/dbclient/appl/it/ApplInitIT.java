@@ -45,16 +45,14 @@ public class ApplInitIT {
 
     // Test executor methods
 
-    private void executeTest(final String testName) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName) {
         JsonObject data = testClient
                 .callServiceAndGetData(testName)
                 .asJsonObject();
         LogData.logJsonObject(Level.DEBUG, data);
     }
 
-    private void executeInit(final String testName) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeInit(String testName) {
         JsonValue data = testClient
                 .callServiceAndGetData(testName);
         Long count = JsonTools.getLong(data);
@@ -74,32 +72,32 @@ public class ApplInitIT {
     }
 
     // Called from LifeCycleExtension in setup phase
-    public void testDropSchema() {
+    public void dropSchema() {
         try {
             executeInit("testDropSchema");
         // This remote call will fail on fresh database without existing tables.
         } catch (HelidonTestException ex){
-            LOGGER.log(Level.INFO, () -> "Remote database tables did not exist.");
+            LOGGER.log(Level.INFO, "Remote database tables did not exist.");
         }
     }
 
     // Called from LifeCycleExtension in setup phase
-    public void testInitSchema() {
+    public void initSchema() {
         executeInit("testInitSchema");
     }
 
     // Called from LifeCycleExtension in setup phase
-    public void testInitTypes() {
+    public void initTypes() {
         executeInit("testInitTypes");
     }
 
     // Called from LifeCycleExtension in setup phase
-    public void testInitPokemons() {
+    public void initPokemons() {
         executeInit("testInitPokemons");
     }
 
     // Called from LifeCycleExtension in setup phase
-    public void testInitPokemonTypes() {
+    public void initPokemonTypes() {
         executeInit("testInitPokemonTypes");
     }
 

@@ -33,7 +33,7 @@ public class LogData {
      * @param level logging level
      * @param data  data to log
      */
-    public static void logJsonObject(final Level level, final JsonObject data) {
+    public static void logJsonObject(Level level, JsonObject data) {
         LOGGER.log(level, () -> "JSON object:");
         if (data == null) {
             LOGGER.log(level, "   is null");
@@ -53,7 +53,7 @@ public class LogData {
      * @param level logging level
      * @param data  data to log
      */
-    public static void logJsonArray(final Level level, final JsonArray data) {
+    public static void logJsonArray(Level level, JsonArray data) {
         LOGGER.log(level, () -> String.format("JSON array: %s", data.toString()));
         data.forEach(row -> {
             switch (row.getValueType()) {

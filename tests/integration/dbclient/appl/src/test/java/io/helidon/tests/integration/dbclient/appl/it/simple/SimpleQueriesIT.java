@@ -36,17 +36,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class SimpleQueriesIT {
 
-    /** Local logger instance. */
-    static final System.Logger LOGGER = System.getLogger(SimpleQueriesIT.class.getName());
-
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
             .service("SimpleQuery")
             .build();
 
     // Test executor method
-    private void executeTest(final String testName, final Pokemon pokemon) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    private void executeTest(String testName, Pokemon pokemon) {
         JsonArray data = testClient.callServiceAndGetData(
                 testName,
                 QueryParams.single(QueryParams.NAME, pokemon.getName()))

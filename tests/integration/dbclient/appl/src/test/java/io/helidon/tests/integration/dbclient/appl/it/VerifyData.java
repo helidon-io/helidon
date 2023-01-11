@@ -15,8 +15,6 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it;
 
-import java.util.logging.Logger;
-
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.tools.QueryParams;
 import io.helidon.tests.integration.tools.client.TestClient;
@@ -31,8 +29,6 @@ import static org.hamcrest.Matchers.notNullValue;
  * Test data verification helper methods.
  */
 public class VerifyData {
-
-    private static final Logger LOGGER = Logger.getLogger(VerifyData.class.getName());
 
     private static final String POKEMON_ID_KEY = "id";
     private static final String POKEMON_NAME_KEY = "name";
@@ -73,7 +69,7 @@ public class VerifyData {
      * @param id ID of pokemon to retrieve
      * @return pokemon stored in JSON object
      */
-    public static JsonObject getPokemon(final TestClient testClient, final int id) {
+    public static JsonObject getPokemon(TestClient testClient, int id) {
         return testClient.callServiceAndGetData(
                 "Verify",
                 "getPokemonById",

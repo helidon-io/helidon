@@ -33,16 +33,13 @@ import org.junit.jupiter.api.Test;
  */
 public class SimpleGetIT {
 
-    private static final System.Logger LOGGER = System.getLogger(SimpleGetIT.class.getName());
-
     private final TestServiceClient testClient = TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
             .service("SimpleGet")
             .build();
 
     // Test executor method
-    public void executeTest(final String testName, final Pokemon pokemon) {
-        LOGGER.log(Level.INFO, () -> String.format("Running %s", testName));
+    public void executeTest(String testName, Pokemon pokemon) {
         JsonObject data = testClient.callServiceAndGetData(
                 testName,
                 QueryParams.single(QueryParams.NAME, pokemon.getName())

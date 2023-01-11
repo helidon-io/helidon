@@ -19,7 +19,7 @@ import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientResponse;
@@ -41,6 +41,9 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
 
     /* Startup timeout in seconds for both database and web server. */
     private static final int TIMEOUT = 60;
+
+    // Await duration for the response
+    private static final Duration AWAIT_DURATION = Duration.ofMinutes(1);
 
     // Application config file retrieved from "app.config" property
     private final String appConfigProperty;
@@ -67,20 +70,19 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
         // Call schema initialization services
         if ("h2.yaml".equals(appConfigProperty)) {
             ApplInitIT init = new ApplInitIT();
-            init.testDropSchema();
-            init.testInitSchema();
-            init.testInitTypes();
-            init.testInitPokemons();
-            init.testInitPokemonTypes();
+            init.dropSchema();
+            init.initSchema();
+            init.initTypes();
+            init.initPokemons();
+            init.initPokemonTypes();
         }
     }
 
     /**
      * Cleanup JPA application tests.
-     * @throws java.lang.Throwable
      */
     @Override
-    public void close() throws Throwable {
+    public void close() {
         LOGGER.log(Level.DEBUG, "Running test application close()");
         shutdown();
     }
@@ -110,11 +112,11 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
         return new String[] {appConfigProperty};
     }
 
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "BusyWait"})
     public static void waitForDatabase() {
-        final String dbUser = System.getProperty("db.user");
-        final String dbPassword = System.getProperty("db.password");
-        final String dbUrl = System.getProperty("db.url");
+        String dbUser = System.getProperty("db.user");
+        String dbPassword = System.getProperty("db.password");
+        String dbUrl = System.getProperty("db.url");
         if (dbUser == null) {
             throw new IllegalStateException("Database user name was not set!");
         }
@@ -144,6 +146,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
             }
         }
     }
+
     /**
      * Shutdown test application
      */
@@ -156,7 +159,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
                 .get()
                 .path("/Exit")
                 .submit()
-                .await(1, TimeUnit.MINUTES);
+                .await(AWAIT_DURATION);
         LOGGER.log(Level.INFO, () -> String.format(
                 "Status: %s",
                 response.status()));
@@ -165,11 +168,11 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
                 response
                         .content()
                         .as(String.class)
-                        .await(1, TimeUnit.MINUTES)));
+                        .await(AWAIT_DURATION)));
     }
 
     // Close database connection.
-    private static void closeConnection(final Connection connection) {
+    private static void closeConnection(Connection connection) {
         try {
             connection.close();
         } catch (SQLException ex) {
