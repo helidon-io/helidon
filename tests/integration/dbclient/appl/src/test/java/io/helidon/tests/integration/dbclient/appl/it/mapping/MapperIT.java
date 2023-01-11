@@ -48,59 +48,6 @@ public class MapperIT {
             .service("Mapper")
             .build();
 
-    private void executeInsertTest(String testName, int id) {
-        try {
-            JsonObject data = testClient.callServiceAndGetData(
-                    testName,
-                    QueryParams.single(QueryParams.ID, String.valueOf(id)))
-                    .asJsonObject();
-            LogData.logJsonObject(Level.DEBUG, data);
-            JsonObject pokemonData = VerifyData.getPokemon(testClient, id);
-            LogData.logJsonObject(Level.DEBUG, pokemonData);
-            VerifyData.verifyPokemon(pokemonData, data);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
-        }
-    }
-
-    private void executeUpdateTest(String testName, int id, String newName) {
-        try {
-            Pokemon pokemon = Pokemon.POKEMONS.get(id);
-            Pokemon updatedPokemon = new Pokemon(pokemon.getId(), newName, pokemon.getTypes());
-            JsonValue data = testClient.callServiceAndGetData(
-                    testName,
-                    QueryParams.builder()
-                            .add(QueryParams.NAME, newName)
-                            .add(QueryParams.ID, String.valueOf(id))
-                            .build());
-            Long count = JsonTools.getLong(data);
-            LOGGER.log(Level.DEBUG, () -> String.format("Rows updated: %d", count));
-            JsonObject pokemonData = VerifyData.getPokemon(testClient, pokemon.getId());
-            LogData.logJsonObject(Level.DEBUG, pokemonData);
-            assertThat(count, equalTo(1L));
-            VerifyData.verifyPokemon(pokemonData, updatedPokemon);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
-        }
-    }
-
-    private void executeDeleteTest(String testName, int id) {
-        try {
-            JsonValue data = testClient.callServiceAndGetData(
-                    testName,
-                    QueryParams.single(QueryParams.ID, String.valueOf(id)))
-                    .asJsonObject();
-            Long count = JsonTools.getLong(data);
-            LOGGER.log(Level.DEBUG, () -> String.format("Rows deleted: %d", count));
-            JsonObject pokemonData = VerifyData.getPokemon(testClient, id);
-            LogData.logJsonObject(Level.DEBUG, pokemonData);
-            assertThat(count, equalTo(1));
-            assertThat(pokemonData.isEmpty(), equalTo(true));
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, String.format("Exception in %s: %s", testName, e.getMessage()), e);
-        }
-    }
-
     /**
      * Verify insertion of PoJo instance using indexed mapping.
      */
@@ -178,6 +125,46 @@ public class MapperIT {
         ).asJsonObject();
         LogData.logJsonObject(Level.DEBUG, data);
         VerifyData.verifyPokemon(data, pokemon);
+    }
+
+    private void executeInsertTest(String testName, int id) {
+        JsonObject data = testClient.callServiceAndGetData(
+                        testName,
+                        QueryParams.single(QueryParams.ID, String.valueOf(id)))
+                .asJsonObject();
+        LogData.logJsonObject(Level.DEBUG, data);
+        JsonObject pokemonData = VerifyData.getPokemon(testClient, id);
+        LogData.logJsonObject(Level.DEBUG, pokemonData);
+        VerifyData.verifyPokemon(pokemonData, data);
+    }
+
+    private void executeUpdateTest(String testName, int id, String newName) {
+        Pokemon pokemon = Pokemon.POKEMONS.get(id);
+        Pokemon updatedPokemon = new Pokemon(pokemon.getId(), newName, pokemon.getTypes());
+        JsonValue data = testClient.callServiceAndGetData(
+                testName,
+                QueryParams.builder()
+                        .add(QueryParams.NAME, newName)
+                        .add(QueryParams.ID, String.valueOf(id))
+                        .build());
+        Long count = JsonTools.getLong(data);
+        LOGGER.log(Level.DEBUG, () -> String.format("Rows updated: %d", count));
+        JsonObject pokemonData = VerifyData.getPokemon(testClient, pokemon.getId());
+        LogData.logJsonObject(Level.DEBUG, pokemonData);
+        assertThat(count, equalTo(1L));
+        VerifyData.verifyPokemon(pokemonData, updatedPokemon);
+    }
+
+    private void executeDeleteTest(String testName, int id) {
+        JsonValue data = testClient.callServiceAndGetData(
+                        testName,
+                        QueryParams.single(QueryParams.ID, String.valueOf(id)));
+        Long count = JsonTools.getLong(data);
+        LOGGER.log(Level.DEBUG, () -> String.format("Rows deleted: %d", count));
+        JsonObject pokemonData = VerifyData.getPokemon(testClient, id);
+        LogData.logJsonObject(Level.DEBUG, pokemonData);
+        assertThat(count, equalTo(1L));
+        assertThat(pokemonData.isEmpty(), equalTo(true));
     }
 
 }
