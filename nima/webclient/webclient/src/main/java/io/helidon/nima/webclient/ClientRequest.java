@@ -19,7 +19,6 @@ package io.helidon.nima.webclient;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.http.ClientRequestHeaders;
