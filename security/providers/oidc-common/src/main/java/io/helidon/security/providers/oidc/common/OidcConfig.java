@@ -898,6 +898,7 @@ public final class OidcConfig extends TenantConfigImpl {
             form.add("client_secret", clientSecret());
         }
     }
+
     Supplier<WebClient.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
