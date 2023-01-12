@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,8 @@ class LoomServer implements WebServer {
             defaultRouter = Router.empty();
         }
 
+       boolean inheritThreadLocals = builder.inheritThreadLocals();
+
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
             if (router == null) {
@@ -90,13 +92,14 @@ class LoomServer implements WebServer {
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers));
+                                             simpleHandlers,
+                                             inheritThreadLocals));
         }
 
         this.listeners = Map.copyOf(listeners);
         this.executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                           .allowSetThreadLocals(true)
-                                                                          .inheritInheritableThreadLocals(false)
+                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                           .factory());
     }
 
