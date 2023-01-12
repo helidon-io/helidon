@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,12 @@ package io.helidon.nima.webclient;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.nima.common.tls.Tls;
 
@@ -86,6 +90,14 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     default B header(Http.HeaderName name, String value) {
         return header(Http.Header.create(name, true, false, value));
     }
+
+    /**
+     * Update headers.
+     *
+     * @param headersConsumer consumer of client request headers
+     * @return updated request
+     */
+    B headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer);
 
     /**
      * Replace a placeholder in URI with an actual value.
