@@ -58,7 +58,7 @@ class WebSocketEndpointAppTest extends WebSocketBaseTest {
 
     @Test
     public void testEchoAnnotOther() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + otherPort() + "/web/echoProg");
+        URI echoUri = URI.create("ws://localhost:" + otherPort() + "/other/echoAnnot");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
         echoClient.shutdown();
@@ -66,7 +66,7 @@ class WebSocketEndpointAppTest extends WebSocketBaseTest {
 
     @Test
     public void testEchoProgOther() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + otherPort() + "/web/echoProg");
+        URI echoUri = URI.create("ws://localhost:" + otherPort() + "/other/echoProg");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
         echoClient.shutdown();
