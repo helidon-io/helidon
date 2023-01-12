@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,7 +145,10 @@ public interface WebClient {
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 
-        private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.derive();
+        private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.derive()
+                //We need to clear cookie store when new WebClient is created
+                //to prevent cookie propagation across the multiple clients
+                .cookieStore(null);
         private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(WebClientServiceProvider.class));
         private final List<WebClientService> webClientServices = new ArrayList<>();
@@ -460,6 +463,17 @@ public interface WebClient {
          */
         public Builder validateHeaders(boolean validate) {
             configuration.validateHeaders(validate);
+            return this;
+        }
+
+        /**
+         * Set whether cookies should be automatically saved to the store.
+         *
+         * @param enableAutomaticCookieStore whether to save cookies, default is false
+         * @return updated builder instance
+         */
+        public Builder enableAutomaticCookieStore(boolean enableAutomaticCookieStore) {
+            configuration.enableAutomaticCookieStore(enableAutomaticCookieStore);
             return this;
         }
 
