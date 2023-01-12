@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.reactive</groupId>
         <artifactId>helidon-reactive-project</artifactId>
-        <version>4.0.0-ALPHA3-SNAPSHOT</version>
+        <version>4.0.0-ALPHA3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

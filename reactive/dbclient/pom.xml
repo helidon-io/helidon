@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-reactive-project</artifactId>
         <groupId>io.helidon.reactive</groupId>
-        <version>4.0.0-ALPHA3-SNAPSHOT</version>
+        <version>4.0.0-ALPHA3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>

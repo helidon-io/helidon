@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
-        <version>4.0.0-ALPHA3-SNAPSHOT</version>
+        <version>4.0.0-ALPHA3</version>
     </parent>
 
     <artifactId>tck-lra</artifactId>

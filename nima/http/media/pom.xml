@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.nima.http</groupId>
         <artifactId>helidon-nima-http-project</artifactId>
-        <version>4.0.0-ALPHA3-SNAPSHOT</version>
+        <version>4.0.0-ALPHA3</version>
     </parent>
 
     <groupId>io.helidon.nima.http.media</groupId>
