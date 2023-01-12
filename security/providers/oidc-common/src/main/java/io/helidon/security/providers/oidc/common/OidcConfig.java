@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.reactive.Single;
@@ -878,6 +879,23 @@ public final class OidcConfig extends TenantConfigImpl {
     public URI introspectUri() {
         return defaultTenant.get().introspectUri();
     }
+
+    /**
+     * Update request that uses form params with authentication.
+     *
+     * @param type type of the request
+     * @param request request builder
+     * @param form form params builder
+     * @deprecated this will be removed without replacement
+     */
+    @Deprecated(since = "2.5.5", forRemoval = true)
+    public void updateRequest(RequestType type, WebClientRequestBuilder request, FormParams.Builder form) {
+        if (type == RequestType.CODE_TO_TOKEN && tokenEndpointAuthentication() == ClientAuthentication.CLIENT_SECRET_POST) {
+            form.add("client_id", clientId());
+            form.add("client_secret", clientSecret());
+        }
+    }
+
 
     Supplier<WebClient.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
