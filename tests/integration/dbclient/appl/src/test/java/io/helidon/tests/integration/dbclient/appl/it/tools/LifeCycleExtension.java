@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,35 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it.tools;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.time.Duration;
 
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.WebClientResponse;
 import io.helidon.tests.integration.dbclient.appl.ApplMain;
+import io.helidon.tests.integration.dbclient.appl.it.ApplInitIT;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner.ExecType;
 import io.helidon.tests.integration.tools.client.TestsLifeCycleExtension;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
 
 /**
  * jUnit test life cycle extensions.
  */
 public class LifeCycleExtension extends TestsLifeCycleExtension {
 
-    private static final Logger LOGGER = Logger.getLogger(LifeCycleExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LifeCycleExtension.class.getName());
 
     /* Thread sleep time in miliseconds while waiting for database or appserver to come up. */
     private static final int SLEEP_MILIS = 250;
 
     /* Startup timeout in seconds for both database and web server. */
     private static final int TIMEOUT = 60;
+
+    // Await duration for the response
+    private static final Duration AWAIT_DURATION = Duration.ofMinutes(1);
 
     // Application config file retrieved from "app.config" property
     private final String appConfigProperty;
@@ -54,7 +57,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
 
     @Override
     public void check() {
-        LOGGER.fine("Running test application check()");
+        LOGGER.log(Level.DEBUG, "Running test application check()");
         waitForDatabase();
     }
 
@@ -63,16 +66,24 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
      */
     @Override
     public void setup() {
-        LOGGER.fine("Running test application setup()");
+        LOGGER.log(Level.DEBUG, "Running test application setup()");
+        // Call schema initialization services
+        if ("h2.yaml".equals(appConfigProperty)) {
+            ApplInitIT init = new ApplInitIT();
+            init.dropSchema();
+            init.initSchema();
+            init.initTypes();
+            init.initPokemons();
+            init.initPokemonTypes();
+        }
     }
 
     /**
      * Cleanup JPA application tests.
-     * @throws java.lang.Throwable
      */
     @Override
-    public void close() throws Throwable {
-        LOGGER.fine("Running test application close()");
+    public void close() {
+        LOGGER.log(Level.DEBUG, "Running test application close()");
         shutdown();
     }
 
@@ -101,11 +112,11 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
         return new String[] {appConfigProperty};
     }
 
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "BusyWait"})
     public static void waitForDatabase() {
-        final String dbUser = System.getProperty("db.user");
-        final String dbPassword = System.getProperty("db.password");
-        final String dbUrl = System.getProperty("db.url");
+        String dbUser = System.getProperty("db.user");
+        String dbPassword = System.getProperty("db.password");
+        String dbUrl = System.getProperty("db.url");
         if (dbUser == null) {
             throw new IllegalStateException("Database user name was not set!");
         }
@@ -118,23 +129,24 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
         long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
         while (true) {
             try {
-                LOGGER.finest(() -> String.format("Connection check: user=%s password=%s url=%s", dbUser, dbPassword, dbUrl));
+                LOGGER.log(Level.DEBUG, () -> String.format("Connection check: user=%s password=%s url=%s", dbUser, dbPassword, dbUrl));
                 Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
                 closeConnection(conn);
                 return;
             } catch (SQLException ex) {
-                LOGGER.finest(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.log(Level.DEBUG, () -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > endTm) {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
                 try {
                     Thread.sleep(SLEEP_MILIS);
                 } catch (InterruptedException ie) {
-                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+                    LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
                 }
             }
         }
     }
+
     /**
      * Shutdown test application
      */
@@ -147,24 +159,24 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
                 .get()
                 .path("/Exit")
                 .submit()
-                .await(1, TimeUnit.MINUTES);
-        LOGGER.info(() -> String.format(
+                .await(AWAIT_DURATION);
+        LOGGER.log(Level.INFO, () -> String.format(
                 "Status: %s",
                 response.status()));
-        LOGGER.info(() -> String.format(
+        LOGGER.log(Level.INFO, () -> String.format(
                 "Response: %s",
                 response
                         .content()
                         .as(String.class)
-                        .await(1, TimeUnit.MINUTES)));
+                        .await(AWAIT_DURATION)));
     }
 
     // Close database connection.
-    private static void closeConnection(final Connection connection) {
+    private static void closeConnection(Connection connection) {
         try {
             connection.close();
         } catch (SQLException ex) {
-            LOGGER.warning(() -> String.format("Could not close database connection: %s", ex.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("Could not close database connection: %s", ex.getMessage()));
         }
     }
 

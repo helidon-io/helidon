@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package io.helidon.tests.integration.dbclient.appl.dbmapper;
 
 import java.util.Optional;
 
-import jakarta.json.JsonObject;
-
 import io.helidon.reactive.dbclient.DbMapper;
 import io.helidon.reactive.dbclient.spi.DbMapperProvider;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.model.RangePoJo;
+
+import jakarta.json.JsonObject;
 
 /**
  * Provides DB Client mappers.

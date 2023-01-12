@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,14 +30,10 @@ db:
   statements:
     # custom query ping statement
     ping-query: "SELECT 0"
-    # database schema drop statements
-    drop-types: "DROP TABLE Types"
-    drop-pokemons: "DROP TABLE Pokemons"
-    drop-poketypes: "DROP TABLE PokemonTypes"
     # database schema initialization statements
     create-types: "CREATE TABLE Types (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
-    create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL, id_type INTEGER NOT NULL REFERENCES Types(id))"
+    create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL REFERENCES Pokemons(id), id_type INTEGER NOT NULL REFERENCES Types(id))"
     # database schema cleanup statements
     drop-types: "DROP TABLE Types"
     drop-pokemons: "DROP TABLE Pokemons"
@@ -50,10 +46,6 @@ db:
     select-types: "SELECT id, name FROM Types"
     select-pokemons: "SELECT id, name FROM Pokemons"
     select-poketypes: "SELECT id_pokemon, id_type FROM PokemonTypes p WHERE id_pokemon = ?"
-    # data verification: get pokemon by ID
-    get-pokemon-by-id: "SELECT id, name FROM Pokemons WHERE id = ?"
-    # data verification: get pokemon's types by pokemon's ID
-    get-pokemon-types: "SELECT t.id AS id, t.name AS name FROM Types t INNER JOIN PokemonTypes pt ON pt.id_type = t.id WHERE pt.id_pokemon = ?"
     # data cleanup verification statements
     select-poketypes-all: "SELECT id_pokemon, id_type FROM PokemonTypes"
     # retrieve max. Pokemon ID
@@ -84,5 +76,5 @@ db:
 
 # Tests configuration
 test:
-    # Whether database supports ping statement as DML (default value is true)
-    ping-dml: false
+  # Whether database supports ping statement as DML (default value is true)
+  ping-dml: false

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,17 @@
 package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.INSERT_POKEMON_NAMED_ARG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.INSERT_POKEMON_ORDER_ARG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 
 /**
  * Test set of basic JDBC inserts in transaction.
  */
 public class TransactionInsertIT extends AbstractIT {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(TransactionInsertIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 210;

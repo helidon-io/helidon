@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,16 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.UPDATE_POKEMON_NAMED_ARG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.UPDATE_POKEMON_ORDER_ARG;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
 
@@ -39,7 +34,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class TransactionUpdateIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(TransactionUpdateIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TransactionUpdateIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 220;
@@ -73,7 +68,7 @@ public class TransactionUpdateIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Lombre", TYPES.get(11), TYPES.get(12)));   // BASE_ID+6
             addPokemon(new Pokemon(++curId, "Ludicolo", TYPES.get(11), TYPES.get(12))); // BASE_ID+7
         } catch (Exception ex) {
-            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
+            LOGGER.log(Level.WARNING, String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }

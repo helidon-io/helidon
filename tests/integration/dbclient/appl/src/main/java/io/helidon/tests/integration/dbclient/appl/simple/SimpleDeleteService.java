@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,20 @@
  */
 package io.helidon.tests.integration.dbclient.appl.simple;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Logger;
-
-import jakarta.json.Json;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.tests.integration.dbclient.appl.AbstractService;
-import io.helidon.tests.integration.tools.service.AppResponse;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.tests.integration.dbclient.appl.AbstractService;
+import io.helidon.tests.integration.tools.service.AppResponse;
+import io.helidon.tests.integration.tools.service.RemoteTestException;
+
+import jakarta.json.Json;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 
@@ -37,7 +37,7 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class SimpleDeleteService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleUpdateService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SimpleUpdateService.class.getName());
 
     // Internal functional interface used to implement testing code.
     // Method call: apply(srcPokemon, updatedPokemon)
@@ -49,7 +49,7 @@ public class SimpleDeleteService extends AbstractService {
      * @param dbClient DbClient instance
      * @param statements statements from configuration file
      */
-    public SimpleDeleteService(final DbClient dbClient, final Map<String, String> statements) {
+    public SimpleDeleteService(DbClient dbClient, Map<String, String> statements) {
         super(dbClient, statements);
     }
 
@@ -73,8 +73,7 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Common test execution code
-    private void executeTest(final ServerRequest request, final ServerResponse response, final String testName, final TestFunction test) {
-        LOGGER.fine(() -> String.format("Running SimpleDeleteService.%s on server", testName));
+    private void executeTest(ServerRequest request, ServerResponse response, String testName, TestFunction test) {
         try {
             String idStr = param(request, QUERY_ID_PARAM);
             int id = Integer.parseInt(idStr);
@@ -87,13 +86,13 @@ public class SimpleDeleteService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException | NumberFormatException ex) {
-            LOGGER.fine(() -> String.format("Error in SimpleDeleteService.%s on server", testName));
+            LOGGER.log(Level.WARNING, String.format("Error in SimpleDeleteService.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
         }
     }
 
     // Verify {@code createNamedDelete(String, String)} API method with ordered parameters.
-    private void testCreateNamedDeleteStrStrOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateNamedDeleteStrStrOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateNamedDeleteStrStrOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
@@ -103,7 +102,7 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createNamedDelete(String)} API method with named parameters.
-    private void testCreateNamedDeleteStrNamedArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateNamedDeleteStrNamedArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateNamedDeleteStrNamedArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
@@ -113,7 +112,7 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createNamedDelete(String)} API method with ordered parameters.
-    private void testCreateNamedDeleteStrOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateNamedDeleteStrOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateNamedDeleteStrOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
@@ -123,8 +122,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createDelete(String)} API method with named parameters.
-    private void testCreateDeleteNamedArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testCreateDeleteNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testCreateDeleteNamedArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                 .createDelete(statement("delete-pokemon-named-arg"))
@@ -133,7 +132,7 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createDelete(String)} API method with ordered parameters.
-    private void testCreateDeleteOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateDeleteOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateDeleteOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
@@ -143,8 +142,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code namedDelete(String)} API method with ordered parameters.
-    private void testNamedDeleteOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testNamedDeleteOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testNamedDeleteOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                 .namedDelete("delete-pokemon-order-arg", id)
@@ -152,8 +151,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code delete(String)} API method with ordered parameters.
-    private void testDeleteOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testDeleteOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testDeleteOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                 .delete(statement("delete-pokemon-order-arg"), id)
@@ -163,8 +162,8 @@ public class SimpleDeleteService extends AbstractService {
     // DML delete
 
     // Verify {@code createNamedDmlStatement(String, String)} API method with delete with ordered parameters.
-    private void testCreateNamedDmlWithDeleteStrStrOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testCreateNamedDmlWithDeleteStrStrOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testCreateNamedDmlWithDeleteStrStrOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .createNamedDmlStatement("delete-mudkip", statement("delete-pokemon-order-arg"))
@@ -174,8 +173,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createNamedDmlStatement(String)} API method with delete with named parameters.
-    private void testCreateNamedDmlWithDeleteStrNamedArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testCreateNamedDmlWithDeleteStrNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testCreateNamedDmlWithDeleteStrNamedArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .createNamedDmlStatement("delete-pokemon-named-arg")
@@ -185,8 +184,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createNamedDmlStatement(String)} API method with delete with ordered parameters.
-    private void testCreateNamedDmlWithDeleteStrOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testCreateNamedDmlWithDeleteStrOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testCreateNamedDmlWithDeleteStrOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .createNamedDmlStatement("delete-pokemon-order-arg")
@@ -196,8 +195,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createDmlStatement(String)} API method with delete with named parameters.
-    private void testCreateDmlWithDeleteNamedArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testCreateDmlWithDeleteNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testCreateDmlWithDeleteNamedArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .createDmlStatement(statement("delete-pokemon-named-arg"))
@@ -207,8 +206,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code createDmlStatement(String)} API method with delete with ordered parameters.
-    private void testCreateDmlWithDeleteOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testCreateDmlWithDeleteOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testCreateDmlWithDeleteOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .createDmlStatement(statement("delete-pokemon-order-arg"))
@@ -218,8 +217,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code namedDml(String)} API method with delete with ordered parameters.
-    private void testNamedDmlWithDeleteOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testNamedDmlWithDeleteOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testNamedDmlWithDeleteOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .namedDml("delete-pokemon-order-arg", id)
@@ -227,8 +226,8 @@ public class SimpleDeleteService extends AbstractService {
     }
 
     // Verify {@code dml(String)} API method with delete with ordered parameters.
-    private void testDmlWithDeleteOrderArgs(final ServerRequest request, final ServerResponse response) {
-        executeTest(request, response, "testCreateNamedUpdateStrStrNamedArgs",
+    private void testDmlWithDeleteOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(request, response, "testDmlWithDeleteOrderArgs",
                 (id) -> dbClient().execute(
                         exec -> exec
                                 .dml(statement("delete-pokemon-order-arg"), id)
