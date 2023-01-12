@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -212,7 +213,6 @@ public class OciMetricsSupport implements Service {
         LOGGER.finest(String.format("Pushing %d metrics to OCI", metricDataDetailsList.size()));
         if (LOGGER.isLoggable(Level.FINEST)) {
             metricDataDetailsList
-                    .stream()
                     .forEach(m -> {
                         LOGGER.finest(String.format(
                                 "Metric details: name=%s, namespace=%s, dimensions=%s, "
@@ -242,8 +242,6 @@ public class OciMetricsSupport implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.onNewWebServer(this::prepareShutdown);
-
         if (!enabled) {
             LOGGER.info("Metric push to OCI is disabled!");
             return;
@@ -253,6 +251,8 @@ public class OciMetricsSupport implements Service {
             LOGGER.info("No selected metric scopes to push to OCI");
             return;
         }
+
+        rules.onNewWebServer(this::prepareShutdown);
 
         LOGGER.fine("Starting OCI Metrics agent");
 
@@ -317,7 +317,7 @@ public class OciMetricsSupport implements Service {
          * @param value initial delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "1")
         public Builder initialDelay(long value) {
             initialDelay = value;
             return this;
@@ -330,7 +330,7 @@ public class OciMetricsSupport implements Service {
          * @param value delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "60")
         public Builder delay(long value) {
             delay = value;
             return this;
@@ -343,7 +343,7 @@ public class OciMetricsSupport implements Service {
          * @param value batch delay, expressed in time units set by {@link #schedulingTimeUnit(TimeUnit)}
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "1")
         public Builder batchDelay(long value) {
             batchDelay = value;
             return this;
@@ -355,8 +355,10 @@ public class OciMetricsSupport implements Service {
          * @param timeUnit unit of time
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "TimeUnit.SECONDS")
         public Builder schedulingTimeUnit(TimeUnit timeUnit) {
+            Objects.requireNonNull(timeUnit);
+
             schedulingTimeUnit = timeUnit;
             return this;
         }
@@ -369,6 +371,8 @@ public class OciMetricsSupport implements Service {
          */
         @ConfiguredOption
         public Builder compartmentId(String value) {
+            Objects.requireNonNull(value);
+
             compartmentId = value;
             return this;
         }
@@ -381,6 +385,8 @@ public class OciMetricsSupport implements Service {
          */
         @ConfiguredOption
         public Builder namespace(String value) {
+            Objects.requireNonNull(value);
+
             namespace = value;
             return this;
         }
@@ -396,6 +402,8 @@ public class OciMetricsSupport implements Service {
          * @return updated builder
          */
         public Builder nameFormatter(NameFormatter nameFormatter) {
+            Objects.requireNonNull(nameFormatter);
+
             this.nameFormatter = nameFormatter;
             return this;
         }
@@ -408,17 +416,22 @@ public class OciMetricsSupport implements Service {
          */
         @ConfiguredOption
         public Builder resourceGroup(String value) {
+            Objects.requireNonNull(value);
+
             resourceGroup = value;
             return this;
         }
 
         /**
          * Sets whether the description should be enabled or not.
+         * <p>
+         *     Defaults to {@code true}.
+         * </p>
          *
          * @param value enabled
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "true")
         public Builder descriptionEnabled(boolean value) {
             descriptionEnabled = value;
             return this;
@@ -433,8 +446,10 @@ public class OciMetricsSupport implements Service {
          * @param value array of metric scopes to process
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "All scopes")
         public Builder scopes(String[] value) {
+            Objects.requireNonNull(value);
+
             return scopes(Arrays.asList(value));
         }
 
@@ -462,7 +477,7 @@ public class OciMetricsSupport implements Service {
          * @param value whether metrics transmission should be enabled
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "true")
         public Builder enabled(boolean value) {
             enabled = value;
             return this;
@@ -475,7 +490,7 @@ public class OciMetricsSupport implements Service {
          * @param value maximum no. of metrics to send in a batch
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(value = "50")
         public Builder batchSize(int value) {
             batchSize = value;
             return this;
