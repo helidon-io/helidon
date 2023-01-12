@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -60,7 +61,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private static final String HTTPS = "https";
     private static final Map<KeepAliveKey, Queue<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
-    private final WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private final UriQueryWriteable query;
     private final Map<String, String> pathParams = new HashMap<>();
 
@@ -121,6 +122,12 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     @Override
+    public Http1ClientRequest headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
+        this.explicitHeaders = headersConsumer.apply(ClientRequestHeaders.create(explicitHeaders));
+        return this;
+    }
+
+    @Override
     public Http1ClientRequest pathParam(String name, String value) {
         pathParams.put(name, value);
         return this;
@@ -164,7 +171,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             entityBytes = entityBytes(entity, headers);
         }
 
-        headers.setIfAbsent(Header.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
+        headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
 
         writeHeaders(headers, writeBuffer);
         if (entityBytes.length > 0) {

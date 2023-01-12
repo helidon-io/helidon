@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -51,9 +54,11 @@ class AccessLogTest {
     private static final AtomicReference<MemoryLogHandler> LOG_HANDLER = new AtomicReference<>();
 
     private final Http1Client client;
+    private final SocketHttpClient socketClient;
 
-    AccessLogTest(Http1Client client) {
+    AccessLogTest(Http1Client client, SocketHttpClient socketClient) {
         this.client = client;
+        this.socketClient = socketClient;
     }
 
     @SetUpRoute
@@ -83,10 +88,11 @@ class AccessLogTest {
         response = client.get("/wrong").request();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
 
-        response = client.get("/access")
-                .header(Http.Header.create(Http.Header.CONTENT_LENGTH, "47a"))
-                .request();
-        assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+        String socketResponse = socketClient.sendAndReceive("/access",
+                                                            Http.Method.GET,
+                                                            null,
+                                                            List.of("Content-Length: 47a"));
+        assertThat(socketResponse, startsWith("HTTP/1.1 " + Http.Status.BAD_REQUEST_400.text()));
 
         // Use retry since no happens-before relationship between log entry and assertion
         assertThatWithRetry("Check log entry for /access exist",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
@@ -42,7 +44,7 @@ import io.helidon.nima.webclient.UriHelper;
 class ClientRequestImpl implements Http2ClientRequest {
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
-    private final WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
 
     private final Http2ClientImpl client;
 
@@ -90,6 +92,12 @@ class ClientRequestImpl implements Http2ClientRequest {
     }
 
     @Override
+    public Http2ClientRequest headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
+        this.explicitHeaders = headersConsumer.apply(ClientRequestHeaders.create(explicitHeaders));
+        return this;
+    }
+
+    @Override
     public Http2ClientRequest pathParam(String name, String value) {
         throw new UnsupportedOperationException("Not implemented");
     }
@@ -118,7 +126,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         } else {
             entityBytes = entityBytes(entity);
         }
-        headers.setIfAbsent(Header.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
+        headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
 
         Http2Headers http2Headers = prepareHeaders(headers);
         stream.write(http2Headers, entityBytes.length == 0);
