@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config.git;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
@@ -31,8 +32,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -67,7 +66,7 @@ import static java.util.Collections.singleton;
 public class GitConfigSource extends AbstractConfigSource
         implements ParsableSource, PollableSource<byte[]>, AutoCloseable {
 
-    private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GitConfigSource.class.getName());
 
     private final URI uri;
     private final String branch;
@@ -242,7 +241,7 @@ public class GitConfigSource extends AbstractConfigSource
                         .setBranch("refs/heads/" + branch)
                         .setDirectory(directory.toFile());
                 Git cloneResult = recordGit(cloneCommand.call());
-                LOGGER.log(Level.CONFIG, () -> String.format("git clone result: %s", cloneResult.toString()));
+                LOGGER.log(Level.DEBUG, () -> String.format("git clone result: %s", cloneResult.toString()));
             }
         }
 
@@ -264,19 +263,19 @@ public class GitConfigSource extends AbstractConfigSource
         if (!result.isSuccessful()) {
             LOGGER.log(Level.WARNING, () -> String.format("Cannot pull from git '%s', branch '%s'", uri.toASCIIString(), branch));
 
-            if (LOGGER.isLoggable(Level.FINEST)) {
+            if (LOGGER.isLoggable(Level.TRACE)) {
                 Status status = git.status().call();
-                LOGGER.finest(() -> "git status cleanliness: " + status.isClean());
+                LOGGER.log(Level.TRACE, () -> "git status cleanliness: " + status.isClean());
                 if (!status.isClean()) {
-                    LOGGER.finest(() -> "git status uncommitted changes: " + status.getUncommittedChanges());
-                    LOGGER.finest(() -> "git status untracked: " + status.getUntracked());
+                    LOGGER.log(Level.TRACE, () -> "git status uncommitted changes: " + status.getUncommittedChanges());
+                    LOGGER.log(Level.TRACE, () -> "git status untracked: " + status.getUntracked());
                 }
             }
         } else {
-            LOGGER.fine("Pull was successful.");
+            LOGGER.log(Level.DEBUG, "Pull was successful.");
         }
-        LOGGER.finest(() -> "git rebase result: " + result.getRebaseResult().getStatus().name());
-        LOGGER.finest(() -> "git fetch result: " + result.getFetchResult().getMessages());
+        LOGGER.log(Level.TRACE, () -> "git rebase result: " + result.getRebaseResult().getStatus().name());
+        LOGGER.log(Level.TRACE, () -> "git fetch result: " + result.getFetchResult().getMessages());
     }
 
     GitConfigSourceBuilder.GitEndpoint gitEndpoint() {
@@ -310,7 +309,7 @@ public class GitConfigSource extends AbstractConfigSource
     }
 
     private void deleteTempDirectory() throws IOException {
-        LOGGER.log(Level.FINE, () -> String.format("GitConfigSource deleting temp directory %s", directory.toString()));
+        LOGGER.log(Level.DEBUG, () -> String.format("GitConfigSource deleting temp directory %s", directory.toString()));
         Files.walkFileTree(directory, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {

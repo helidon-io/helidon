@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -25,8 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.function.BiFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utilities for file-related source classes.
@@ -36,7 +35,7 @@ import java.util.logging.Logger;
  */
 class ClasspathSourceHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(ClasspathSourceHelper.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ClasspathSourceHelper.class.getName());
 
     private ClasspathSourceHelper() {
         throw new AssertionError("Instantiation not allowed.");
@@ -51,7 +50,7 @@ class ClasspathSourceHelper {
             }
         } catch (Exception ex) {
             //ignore it
-            LOGGER.log(Level.FINE,
+            LOGGER.log(Level.DEBUG,
                        "Not possible to get filesystem path for resource '" + resourceName
                                + "'. Resource's name is used as ConfigSource URI.",
                        ex);
@@ -82,7 +81,7 @@ class ClasspathSourceHelper {
                 return Files.getLastModifiedTime(resourcePath).toInstant();
             }
         } catch (Exception ex) {
-            LOGGER.log(Level.FINE, "Error to get resource '" + resourceName + "' last modified time.", ex);
+            LOGGER.log(Level.DEBUG, "Error to get resource '" + resourceName + "' last modified time.", ex);
         }
         return Instant.EPOCH;
     }
@@ -95,17 +94,17 @@ class ClasspathSourceHelper {
         InputStream inputStream = classLoader.getResourceAsStream(resource);
 
         if (inputStream == null) {
-            LOGGER.log(Level.FINE,
+            LOGGER.log(Level.DEBUG,
                        String.format("Error to get %s using %s CONTEXT ClassLoader.", description, classLoader));
             throw new ConfigException(description + " does not exist. Used ClassLoader: " + classLoader);
         }
         Instant resourceTimestamp = resourceTimestamp(resource);
         try {
-            LOGGER.log(Level.FINE,
+            LOGGER.log(Level.DEBUG,
                        String.format("Getting content from '%s'. Last modified at %s. Used ClassLoader: %s",
                                      resourcePath(resource), resourceTimestamp, classLoader));
         } catch (Exception ex) {
-            LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
+            LOGGER.log(Level.DEBUG, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
         }
 
         return processor.apply(inputStream, resourceTimestamp);

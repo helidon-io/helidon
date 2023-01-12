@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.helidon.grpc.server;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.test.Echo;
@@ -61,9 +61,9 @@ public class TracingIT {
     // ----- data members ---------------------------------------------------
 
     /**
-     * The {@link java.util.logging.Logger} to use for logging.
+     * The {@link System.Logger} to use for logging.
      */
-    private static final Logger LOGGER = Logger.getLogger(TracingIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TracingIT.class.getName());
 
     /**
      * The Helidon {@link io.helidon.grpc.server.GrpcServer} being tested.
@@ -180,7 +180,7 @@ public class TracingIT {
                         .toCompletableFuture()
                         .get(10, TimeUnit.SECONDS);
 
-       LOGGER.info("Started gRPC server at: localhost:" + grpcServer.port());
+       LOGGER.log(Level.INFO, "Started gRPC server at: localhost:" + grpcServer.port());
     }
 
     /**

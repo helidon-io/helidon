@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.grpc.server;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLException;
@@ -58,9 +58,9 @@ public class SslIT {
     // ----- data members ---------------------------------------------------
 
     /**
-     * The {@link java.util.logging.Logger} to use for logging.
+     * The {@link System.Logger} to use for logging.
      */
-    private static final Logger LOGGER = Logger.getLogger(SslIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SslIT.class.getName());
 
     /**
      * The Helidon {@link GrpcServer} being tested.
@@ -307,7 +307,7 @@ public class SslIT {
             throw new RuntimeException(t);
         }
 
-       LOGGER.info("Started gRPC server at: localhost:" + grpcServer.port());
+       LOGGER.log(Level.INFO, "Started gRPC server at: localhost:" + grpcServer.port());
 
        return grpcServer;
     }

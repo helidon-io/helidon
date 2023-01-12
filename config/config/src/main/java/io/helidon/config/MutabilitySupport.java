@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -25,8 +26,6 @@ import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.NativeImageHelper;
@@ -41,7 +40,7 @@ import io.helidon.config.spi.PollingStrategy;
  * for file watching ({@link #watch(java.nio.file.Path, java.util.function.Consumer, java.util.function.Consumer)}).
  */
 public final class MutabilitySupport {
-    private static final Logger LOGGER = Logger.getLogger(MutabilitySupport.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MutabilitySupport.class.getName());
     private static final LazyValue<ScheduledExecutorService> EXECUTOR
             = LazyValue.create(Executors::newSingleThreadScheduledExecutor);
 
@@ -59,7 +58,7 @@ public final class MutabilitySupport {
      */
     public static Runnable poll(Path path, Duration duration, Consumer<Path> updater, Consumer<Path> cleaner) {
         if (NativeImageHelper.isBuildTime()) {
-            LOGGER.info("File polling is not enabled in native image build time. Path: " + path);
+            LOGGER.log(Level.INFO, "File polling is not enabled in native image build time. Path: " + path);
         }
 
         PollingStrategy strategy = PollingStrategies.regular(duration)
@@ -80,7 +79,7 @@ public final class MutabilitySupport {
      */
     public static Runnable watch(Path path, Consumer<Path> updater, Consumer<Path> cleaner) {
         if (NativeImageHelper.isBuildTime()) {
-            LOGGER.info("File watching is not enabled in native image build time. Path: " + path);
+            LOGGER.log(Level.INFO, "File watching is not enabled in native image build time. Path: " + path);
         }
         FileSystemWatcher watcher = FileSystemWatcher.builder()
                 .executor(EXECUTOR.get())
