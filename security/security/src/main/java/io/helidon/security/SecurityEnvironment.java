@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package io.helidon.security;
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -51,7 +54,8 @@ public class SecurityEnvironment implements AbacSupport {
     private final String method;
     private final String transport;
     private final Optional<String> path;
-    private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, List<String>> headers;
+    private final UriQuery queryParams;
 
     private SecurityEnvironment(Builder builder) {
         BasicAttributes basicAttributes = BasicAttributes.create(builder.attributes);
@@ -61,7 +65,10 @@ public class SecurityEnvironment implements AbacSupport {
         this.path = Optional.ofNullable(builder.path);
         this.method = builder.method;
         this.transport = builder.transport;
-        this.headers.putAll(builder.headers);
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.putAll(builder.headers);
+        this.headers = Collections.unmodifiableMap(headers);
+        this.queryParams = builder.queryParams;
 
         basicAttributes.put("time", time);
         basicAttributes.put("uri", targetUri);
@@ -181,7 +188,8 @@ public class SecurityEnvironment implements AbacSupport {
                 .method(method)
                 .transport(transport)
                 .path(path.orElse(null))
-                .headers(headers);
+                .headers(headers)
+                .queryParams(queryParams);
     }
 
     /**
@@ -201,6 +209,16 @@ public class SecurityEnvironment implements AbacSupport {
     }
 
     /**
+     * Query parameters obtained from the request.
+     * If transport protocol does not support query parameters, instance will be empty.
+     *
+     * @return query parameter instance, If transport protocol does not support query parameters, instance will be empty.
+     */
+    public UriQuery queryParams() {
+        return queryParams;
+    }
+
+    /**
      * A fluent API builder for {@link SecurityEnvironment}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, SecurityEnvironment> {
@@ -214,6 +232,7 @@ public class SecurityEnvironment implements AbacSupport {
         public static final String DEFAULT_METHOD = "GET";
 
         private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        private UriQueryWriteable queryParams = UriQueryWriteable.create();
         private SecurityTime timeProvider;
         private ZonedDateTime time;
         private BasicAttributes attributes = BasicAttributes.create();
@@ -354,6 +373,53 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder time(SecurityTime time) {
             this.timeProvider = time;
+            return this;
+        }
+
+        /**
+         * Add a single-value query parameter. Note that if method {@link #queryParams(UriQuery)} is called after
+         * this method, it will remove changes by this method.
+         *
+         * @param paramName parameter name
+         * @param value parameter value
+         * @return this instance
+         */
+        public Builder queryParam(String paramName, String value) {
+            this.queryParams.set(paramName, value);
+            return this;
+        }
+
+        /**
+         * Add a multivalued query parameter. Note that if method {@link #queryParams(UriQuery)} is called after
+         * this method, it will remove changes by this method.
+         *
+         * @param paramName parameter name
+         * @param values parameter values
+         * @return this instance
+         */
+        public Builder queryParam(String paramName, List<String> values) {
+            this.queryParams.set(paramName, values.toArray(new String[0]));
+            return this;
+        }
+
+        /**
+         * Add query parameters of the request.
+         *
+         * @param queryParams request query parameters
+         * @return this instance
+         */
+        public Builder queryParams(UriQuery queryParams) {
+            queryParams.toMap().forEach(this::queryParam);
+            return this;
+        }
+
+        /**
+         * We may want to clear existing query parameters.
+         *
+         * @return this instance
+         */
+        public Builder clearQueryParams() {
+            this.queryParams = UriQueryWriteable.create();
             return this;
         }
     }

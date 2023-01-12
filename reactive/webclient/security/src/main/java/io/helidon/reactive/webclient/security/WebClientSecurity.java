@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,12 +117,14 @@ public class WebClientSecurity implements WebClientService {
         try {
             SecurityEnvironment.Builder outboundEnv = context.env()
                     .derive()
-                    .clearHeaders();
+                    .clearHeaders()
+                    .clearQueryParams();
 
             outboundEnv.method(request.method().name())
                     .path(request.path().toString())
                     .targetUri(request.uri())
-                    .headers(request.headers().toMap());
+                    .headers(request.headers().toMap())
+                    .queryParams(request.queryParams());
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
             Map<String, String> propMap = request.properties();
