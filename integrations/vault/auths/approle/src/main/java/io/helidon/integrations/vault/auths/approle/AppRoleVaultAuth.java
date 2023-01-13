@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -33,7 +33,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class AppRoleVaultAuth implements VaultAuth {
-    private static final Logger LOGGER = Logger.getLogger(AppRoleVaultAuth.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AppRoleVaultAuth.class.getName());
 
     private final String appRoleId;
     private final String secretId;
@@ -79,7 +79,7 @@ public class AppRoleVaultAuth implements VaultAuth {
                         .asOptional());
 
         if (maybeAppRoleId.isEmpty()) {
-            LOGGER.fine("AppRole vault authentication not used, as app-role.role-id is not defined");
+            LOGGER.log(Level.DEBUG, "AppRole vault authentication not used, as app-role.role-id is not defined");
             return Optional.empty();
         }
 
@@ -92,7 +92,7 @@ public class AppRoleVaultAuth implements VaultAuth {
                                                                  + "Cannot "
                                                                  + "authenticate."));
 
-        LOGGER.finest("Will try to login to Vault using app role id: " + appRoleId + " and a secret id.");
+        LOGGER.log(Level.TRACE, "Will try to login to Vault using app role id: " + appRoleId + " and a secret id.");
 
         // this may be changed in the future, when running with a sidecar (there should be a way to get the address from evn)
         String address = vaultBuilder.address()
@@ -114,7 +114,8 @@ public class AppRoleVaultAuth implements VaultAuth {
                         .asString()
                         .orElse(AppRoleAuthRx.AUTH_METHOD.defaultPath()));
 
-        LOGGER.info("Authenticated Vault " + address + "/" + methodPath + " using AppRole, roleId \"" + appRoleId + "\"");
+        LOGGER.log(Level.INFO, "Authenticated Vault " + address + "/" + methodPath + " using AppRole, roleId \"" + appRoleId +
+                "\"");
 
         return Optional.of(AppRoleRestApi.appRoleBuilder()
                                    .webClientBuilder(webclient -> {
