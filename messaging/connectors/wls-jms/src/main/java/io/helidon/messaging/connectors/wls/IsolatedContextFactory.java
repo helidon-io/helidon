@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.messaging.connectors.wls;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
+import java.util.Optional;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -28,23 +29,26 @@ import javax.naming.spi.InitialContextFactory;
  */
 public class IsolatedContextFactory implements InitialContextFactory {
 
-    private static final String WLS_INIT_CTX_FACTORY = "weblogic.jndi.WLInitialContextFactory";
+    private static final String WLS_INIT_CTX_FACTORY_DEFAULT = "weblogic.jms.WLInitialContextFactory";
 
     @Override
     public Context getInitialContext(Hashtable<?, ?> env) throws NamingException {
         return ThinClientClassLoader.executeInIsolation(() -> {
+            String wlsInitFactoryClass =
+                    Optional.ofNullable((String) env.get("wls-init-ctx-factory"))
+                            .orElse(WLS_INIT_CTX_FACTORY_DEFAULT);
             try {
-                Class<?> wlInitialContextFactory = ThinClientClassLoader.getInstance().loadClass(WLS_INIT_CTX_FACTORY);
+                Class<?> wlInitialContextFactory = ThinClientClassLoader.getInstance().loadClass(wlsInitFactoryClass);
                 Constructor<?> contextFactoryConstructor = wlInitialContextFactory.getConstructor();
                 InitialContextFactory contextFactoryInstance = (InitialContextFactory) contextFactoryConstructor.newInstance();
                 return contextFactoryInstance.getInitialContext(env);
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Cannot find " + WLS_INIT_CTX_FACTORY, e);
+                throw new RuntimeException("Cannot find " + wlsInitFactoryClass, e);
             } catch (NoSuchMethodException
                      | InvocationTargetException
                      | InstantiationException
                      | IllegalAccessException e) {
-                throw new RuntimeException("Cannot instantiate " + WLS_INIT_CTX_FACTORY, e);
+                throw new RuntimeException("Cannot instantiate " + wlsInitFactoryClass, e);
             }
         });
     }
