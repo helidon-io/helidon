@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.lra.coordinator;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,8 +26,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,7 +53,7 @@ class Participant {
     private static final int RETRY_CNT = 60;
     private static final int SYNCHRONOUS_RETRY_CNT = 5;
 
-    private static final Logger LOGGER = Logger.getLogger(Participant.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Participant.class.getName());
     private final AtomicReference<CompensateStatus> compensateCalled = new AtomicReference<>(CompensateStatus.NOT_SENT);
     private final AtomicReference<ForgetStatus> forgetCalled = new AtomicReference<>(ForgetStatus.NOT_SENT);
     private final AtomicReference<AfterLraStatus> afterLRACalled = new AtomicReference<>(AfterLraStatus.NOT_SENT);
@@ -281,7 +280,7 @@ class Participant {
         for (AtomicInteger i = new AtomicInteger(0); i.getAndIncrement() < SYNCHRONOUS_RETRY_CNT;) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
             if (!compensateCalled.compareAndSet(CompensateStatus.NOT_SENT, CompensateStatus.SENDING)) return false;
-            LOGGER.log(Level.FINE, () -> "Sending compensate, sync retry: " + i.get()
+            LOGGER.log(Level.DEBUG, () -> "Sending compensate, sync retry: " + i.get()
                     + ", status: " + status.get().name()
                     + " statusUri: " + getStatusURI().map(URI::toASCIIString).orElse(null));
             WebClientResponse response = null;
@@ -351,9 +350,10 @@ class Participant {
                 }
 
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, e, () ->
-                        "Can't reach participant's compensate endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
-                );
+                LOGGER.log(Level.WARNING,
+                        () -> "Can't reach participant's compensate endpoint: " + endpointURI.map(URI::toASCIIString)
+                                                                                             .orElse("unknown")
+                        , e);
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
                     LOGGER.log(Level.WARNING, "Failed to compensate participant of LRA {0} {1} {2}",
                             new Object[] {lra.lraId(), this.getCompensateURI(), e.getMessage()});
@@ -375,7 +375,7 @@ class Participant {
         Optional<URI> endpointURI = getCompleteURI();
         for (AtomicInteger i = new AtomicInteger(0); i.getAndIncrement() < SYNCHRONOUS_RETRY_CNT;) {
             if (!sendingStatus.compareAndSet(SendingStatus.NOT_SENDING, SendingStatus.SENDING)) return false;
-            LOGGER.log(Level.FINE, () -> "Sending complete, sync retry: " + i.get()
+            LOGGER.log(Level.DEBUG, () -> "Sending complete, sync retry: " + i.get()
                     + ", status: " + status.get().name()
                     + " statusUri: " + getStatusURI().map(URI::toASCIIString).orElse(null));
             WebClientResponse response = null;
@@ -440,9 +440,10 @@ class Participant {
                 }
 
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, e, () ->
-                        "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString).orElse("unknown")
-                );
+                LOGGER.log(Level.WARNING,
+                        () -> "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString)
+                                                                                           .orElse("unknown")
+                        , e);
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
                     LOGGER.log(Level.WARNING, "Failed to complete participant of LRA {0} {1} {2}",
                             new Object[] {lra.lraId(), this.getCompleteURI(), e.getMessage()});
