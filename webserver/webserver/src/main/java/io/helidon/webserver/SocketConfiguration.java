@@ -1079,7 +1079,7 @@ public interface SocketConfiguration {
                 }
             } else {
                 // Discovery is disabled so ignore any explicit settings of discovery type and use HOST discovery.
-                if (!requestedUriDiscoveryTypes.isEmpty()) {
+                if (!requestedUriDiscoveryTypes.isEmpty() && !isDiscoveryTypesOnlyHost()) {
                     LOGGER.log(Level.INFO, "Ignoring explicit settings of requested-uri-discovery types and trusted-proxies "
                                + "because requested-uri-discovery.enabled {0} to false",
                                isDiscoveryEnabledDefaulted ? " defaulted" : "was set");
