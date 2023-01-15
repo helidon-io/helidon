@@ -28,7 +28,7 @@ import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
 public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
     /**
-     * @deprecated This constructor is only to be used by {@link java.util.ServiceLoader}, use {@link #wsBuilder()}
+     * @deprecated This constructor is only to be used by {@link java.util.ServiceLoader}, use {@link #builder()}
      */
     @Deprecated()
     public TyrusUpgradeProvider() {
