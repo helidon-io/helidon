@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.util.logging.Logger;
-
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BOOLEAN;
@@ -33,7 +31,7 @@ interface ElementGenerator {
     /**
      * Logger.
      */
-    Logger LOGGER = Logger.getLogger(ElementGenerator.class.getName());
+    System.Logger LOGGER = System.getLogger(ElementGenerator.class.getName());
 
     /**
      * Empty string.

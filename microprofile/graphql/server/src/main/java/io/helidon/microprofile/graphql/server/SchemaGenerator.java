@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -36,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -138,7 +138,7 @@ class SchemaGenerator {
     /**
      * Logger.
      */
-    private static final Logger LOGGER = Logger.getLogger(SchemaGenerator.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SchemaGenerator.class.getName());
 
     /**
      * {@link JandexUtils} instance to hold indexes.
@@ -170,7 +170,7 @@ class SchemaGenerator {
             String message = "Unable to find or load jandex index files: "
                     + jandexUtils.getIndexFile() + ".\nEnsure you are using the "
                     + "jandex-maven-plugin when you are building your application";
-            LOGGER.warning(message);
+            LOGGER.log(Level.WARNING, message);
         }
     }
 
@@ -192,7 +192,7 @@ class SchemaGenerator {
     public Schema generateSchema() {
         int count = collectedApis.size();
 
-        LOGGER.info("Discovered " + count + " annotated GraphQL API class" + (count != 1 ? "es" : ""));
+        LOGGER.log(Level.INFO, "Discovered " + count + " annotated GraphQL API class" + (count != 1 ? "es" : ""));
 
         try {
             return generateSchemaFromClasses(collectedApis);
@@ -335,7 +335,7 @@ class SchemaGenerator {
 
         // process the @GraphQLApi annotated classes
         if (rootQueryType.fieldDefinitions().size() == 0 && rootMutationType.fieldDefinitions().size() == 0) {
-            LOGGER.warning("Unable to find any classes with @GraphQLApi annotation."
+            LOGGER.log(Level.WARNING, "Unable to find any classes with @GraphQLApi annotation."
                                    + "Unable to build schema");
         }
 
@@ -1094,7 +1094,7 @@ class SchemaGenerator {
                         || nonNullAnnotation != null && defaultValue == null;
 
             } catch (NoSuchFieldException ignored) {
-                LOGGER.fine("No such field " + pd.getName() + " on class " + clazz.getName());
+                LOGGER.log(Level.DEBUG, "No such field " + pd.getName() + " on class " + clazz.getName());
             }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
