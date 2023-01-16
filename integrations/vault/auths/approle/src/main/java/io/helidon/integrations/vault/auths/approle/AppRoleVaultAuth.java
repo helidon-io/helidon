@@ -114,8 +114,8 @@ public class AppRoleVaultAuth implements VaultAuth {
                         .asString()
                         .orElse(AppRoleAuthRx.AUTH_METHOD.defaultPath()));
 
-        LOGGER.log(Level.INFO, "Authenticated Vault " + address + "/" + methodPath + " using AppRole, roleId \"" + appRoleId +
-                "\"");
+        LOGGER.log(Level.INFO, "Authenticated Vault " + address + "/" + methodPath + " using AppRole, roleId \"" + appRoleId
+                + "\"");
 
         return Optional.of(AppRoleRestApi.appRoleBuilder()
                                    .webClientBuilder(webclient -> {
