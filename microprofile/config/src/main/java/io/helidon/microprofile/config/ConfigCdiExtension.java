@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.config;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
@@ -33,7 +34,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -73,7 +73,7 @@ import org.eclipse.microprofile.config.spi.Converter;
  * {@link org.eclipse.microprofile.config.Config} and {@link ConfigProperty} and {@link ConfigProperties}).
  */
 public class ConfigCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ConfigCdiExtension.class.getName());
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
     private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
     private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigPropertyLiteral();
@@ -100,7 +100,7 @@ public class ConfigCdiExtension implements Extension {
      * Constructor invoked by CDI container.
      */
     public ConfigCdiExtension() {
-        LOGGER.fine("ConfigCdiExtension instantiated");
+        LOGGER.log(Level.DEBUG,"ConfigCdiExtension instantiated");
     }
 
     private void harvestConfigPropertyInjectionPointsFromEnabledBean(@Observes ProcessBean<?> event) {
