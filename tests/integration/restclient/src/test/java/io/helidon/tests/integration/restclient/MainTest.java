@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 class MainTest {
@@ -47,16 +48,16 @@ class MainTest {
         Counter counter = registry.getCounters().get(id);
 
         // Initially counter must be zero
-        assertEquals(0L, counter.getCount());
+        assertThat(counter.getCount(), is(0L));
 
         // Invoke proxy and verify return value
         JsonObject jsonObject = target
                 .path("proxy")
                 .request()
                 .get(JsonObject.class);
-        assertEquals("Hello World!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
 
         // Verify that @Retry code was executed by looking at counter
-        assertEquals(2L, counter.getCount());
+        assertThat(counter.getCount(), is(2L));
     }
 }
