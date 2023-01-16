@@ -491,8 +491,8 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                     .flatMapCompletionStage(m -> consume(m, session, mapper, producer, config))
                                   .onError(t -> LOGGER.log(Level.ERROR,
                                           () -> "Error intercepted from channel " + config.get(CHANNEL_NAME_ATTRIBUTE)
-                                                                                                                        .asString()
-                                                                                                                        .orElse("unknown"), t))
+                                                                                           .asString()
+                                                                                           .orElse("unknown"), t))
                     .ignore();
         } catch (JMSException e) {
             throw new MessagingException("Error when creating JMS producer.", e);

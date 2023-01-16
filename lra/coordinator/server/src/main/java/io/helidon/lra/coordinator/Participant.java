@@ -331,7 +331,7 @@ class Participant {
                     // complete or compensated
                     case 200:
                     case 410:
-                        LOGGER.log(Level.INFO, "Compensated participant of LRA {0} {1}",
+                        LOGGER.log(Level.INFO,"Compensated participant of LRA {0} {1}",
                                 new Object[] {lra.lraId(), this.getCompensateURI()});
                         status.set(Status.COMPENSATED);
                         compensateCalled.set(CompensateStatus.SENT);
@@ -441,10 +441,9 @@ class Participant {
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
                         () -> "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString)
-                                                                                           .orElse("unknown")
-                        , e);
+                                                                                           .orElse("unknown"), e);
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
-                    LOGGER.log(Level.WARNING, "Failed to complete participant of LRA {0} {1} {2}", new Object[]{lra.lraId(),
+                    LOGGER.log(Level.WARNING,"Failed to complete participant of LRA {0} {1} {2}", new Object[]{lra.lraId(),
                             this.getCompleteURI(), e.getMessage()});
                     status.set(Status.FAILED_TO_COMPLETE);
                 } else {
