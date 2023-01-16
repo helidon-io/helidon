@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.microprofile.grpc.server;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -65,8 +64,8 @@ import org.eclipse.microprofile.config.ConfigProvider;
 public class GrpcServerCdiExtension
         implements Extension {
 
-    private static final Logger LOGGER = Logger.getLogger(GrpcServerCdiExtension.class.getName());
-    private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
+    private static final System.Logger LOGGER = System.getLogger(GrpcServerCdiExtension.class.getName());
+    private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
 
     private GrpcServer server;
 
@@ -86,14 +85,15 @@ public class GrpcServerCdiExtension
         server.start()
                 .whenComplete((grpcServer, throwable) -> {
                     if (null != throwable) {
-                        STARTUP_LOGGER.log(Level.SEVERE, throwable, () -> "gRPC server startup failed");
+                        STARTUP_LOGGER.log(Level.ERROR, () -> "gRPC server startup failed", throwable);
                         startedFuture.completeExceptionally(throwable);
                     } else {
                         long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
 
                         int port = grpcServer.port();
-                        STARTUP_LOGGER.finest("gRPC server started up");
-                        LOGGER.info(() -> "gRPC server started on localhost:" + port + " (and all other host addresses) "
+                        STARTUP_LOGGER.log(Level.TRACE, "gRPC server started up");
+                        LOGGER.log(Level.INFO, () -> "gRPC server started on localhost:"
+                                + port + " (and all other host addresses) "
                                 + "in " + t + " milliseconds.");
 
                         grpcServer.whenShutdown()
@@ -116,15 +116,15 @@ public class GrpcServerCdiExtension
 
     private void stopServer(@Observes BeforeShutdown event) {
         if (server != null) {
-            LOGGER.info("Stopping gRPC server");
+            LOGGER.log(Level.INFO, "Stopping gRPC server");
             long beforeT = System.nanoTime();
             server.shutdown()
                   .whenComplete((webServer, throwable) -> {
                       if (null != throwable) {
-                          LOGGER.log(Level.SEVERE, throwable, () -> "An error occurred stopping the gRPC server");
+                          LOGGER.log(Level.ERROR, () -> "An error occurred stopping the gRPC server", throwable);
                       } else {
                           long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
-                          LOGGER.info(() -> "gRPC Server stopped in " + t + " milliseconds.");
+                          LOGGER.log(Level.INFO, () -> "gRPC Server stopped in " + t + " milliseconds.");
                       }
                   });
         }
