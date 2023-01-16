@@ -100,7 +100,7 @@ public class ConfigCdiExtension implements Extension {
      * Constructor invoked by CDI container.
      */
     public ConfigCdiExtension() {
-        LOGGER.log(Level.DEBUG,"ConfigCdiExtension instantiated");
+        LOGGER.log(Level.DEBUG, "ConfigCdiExtension instantiated");
     }
 
     private void harvestConfigPropertyInjectionPointsFromEnabledBean(@Observes ProcessBean<?> event) {

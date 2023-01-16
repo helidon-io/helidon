@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.System.Logger.Level;
 import java.util.NoSuchElementException;
-import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -25,7 +25,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * Class FaultToleranceParameter.
  */
 class FaultToleranceParameter {
-    private static final Logger LOGGER = Logger.getLogger(FaultToleranceParameter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FaultToleranceParameter.class.getName());
 
     private FaultToleranceParameter() {
     }
@@ -55,7 +55,7 @@ class FaultToleranceParameter {
         try {
             ClassLoader ccl = Thread.currentThread().getContextClassLoader();
             String value = ConfigProvider.getConfig(ccl).getValue(name, String.class);
-            LOGGER.fine(() -> "Found config property '" + name + "' value '" + value + "'");
+            LOGGER.log(Level.DEBUG, () -> "Found config property '" + name + "' value '" + value + "'");
             return value;
         } catch (NoSuchElementException e) {
             return null;

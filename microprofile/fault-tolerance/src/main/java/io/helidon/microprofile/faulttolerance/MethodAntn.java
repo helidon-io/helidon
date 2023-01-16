@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
@@ -36,7 +35,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.get
  * Base class for all method annotations.
  */
 abstract class MethodAntn {
-    private static final Logger LOGGER = Logger.getLogger(MethodAntn.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MethodAntn.class.getName());
 
     private static final AnnotationFinder ANNOTATION_FINDER = AnnotationFinder.create(Retry.class.getPackage());
 
@@ -206,8 +205,8 @@ abstract class MethodAntn {
                                                                    BeanManager beanManager) {
         A annotation = (A) getMethodAnnotation(method, annotClass, beanManager);
         if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Found annotation '" + annotClass.getName()
                         + "' method '" + method.getJavaMember().getName() + "'");
             }
             return new LookupResult<>(MatchingType.METHOD, annotation);
@@ -215,16 +214,16 @@ abstract class MethodAntn {
         AnnotatedType<?> type = method.getDeclaringType();
         annotation = (A) getClassAnnotation(type, annotClass, beanManager);
         if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Found annotation '" + annotClass.getName()
                         + "' class '" + method.getJavaMember().getDeclaringClass().getName() + "'");
             }
             return new LookupResult<>(MatchingType.CLASS, annotation);
         }
         annotation = (A) getClassAnnotation(method.getJavaMember().getDeclaringClass(), annotClass, beanManager);
         if (annotation != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + annotClass.getName()
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Found annotation '" + annotClass.getName()
                         + "' class '" + method.getJavaMember().getDeclaringClass().getName() + "'");
             }
             return new LookupResult<>(MatchingType.CLASS, annotation);
