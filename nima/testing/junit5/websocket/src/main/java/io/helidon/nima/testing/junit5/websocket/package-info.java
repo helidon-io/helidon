@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.websocket.webserver;
-
-import io.helidon.common.buffers.BufferData;
-
-interface Frame {
-    boolean fin();
-
-    WsOpCode opCode();
-
-    boolean masked();
-
-    long payloadLength();
-
-    int[] maskingKey();
-
-    BufferData payloadData();
-}
+/**
+ * Unit and integration testing support for Níma WebSocket and JUnit 5.
+ */
+package io.helidon.nima.testing.junit5.websocket;

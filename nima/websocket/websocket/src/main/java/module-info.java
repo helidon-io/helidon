@@ -29,6 +29,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.nima.websocket {
     requires static io.helidon.common.features.api;
 
+    requires io.helidon.common;
+    requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.http;
 

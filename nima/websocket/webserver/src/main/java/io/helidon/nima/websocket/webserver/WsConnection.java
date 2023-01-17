@@ -24,22 +24,27 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.websocket.CloseCodes;
+import io.helidon.nima.websocket.ClientWsFrame;
+import io.helidon.nima.websocket.ServerWsFrame;
+import io.helidon.nima.websocket.WsCloseCodes;
+import io.helidon.nima.websocket.WsCloseException;
 import io.helidon.nima.websocket.WsListener;
+import io.helidon.nima.websocket.WsOpCode;
 import io.helidon.nima.websocket.WsSession;
 
 import static io.helidon.nima.websocket.webserver.WsUpgradeProvider.PROTOCOL;
 
-class WsConnection implements ServerConnection, WsSession {
+/**
+ * WebSocket connection, server side session implementation.
+ */
+public class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
-    private final WritableHeaders<?> headers;
     private final Headers upgradeHeaders;
     private final String wsKey;
     private final WsListener listener;
@@ -51,33 +56,51 @@ class WsConnection implements ServerConnection, WsSession {
     private boolean sendContinuation;
     private boolean closeSent;
 
-    WsConnection(ConnectionContext ctx,
-                 HttpPrologue prologue,
-                 WritableHeaders<?> headers,
-                 Headers upgradeHeaders,
-                 String wsKey,
-                 WebSocket wsRoute) {
+    private WsConnection(ConnectionContext ctx,
+                         HttpPrologue prologue,
+                         Headers upgradeHeaders,
+                         String wsKey,
+                         WsRoute wsRoute) {
         this.ctx = ctx;
         this.prologue = prologue;
-        this.headers = headers;
         this.upgradeHeaders = upgradeHeaders;
         this.wsKey = wsKey;
         this.listener = wsRoute.listener();
         this.dataReader = ctx.dataReader();
     }
 
+    /**
+     * Create a new connection.
+     *
+     * @param ctx            server connection context
+     * @param prologue       prologue of this request
+     * @param upgradeHeaders headers for
+     * @param wsKey          ws key
+     * @param wsRoute        route to use
+     * @return a new connection
+     */
+    public static WsConnection create(ConnectionContext ctx,
+                                      HttpPrologue prologue,
+                                      Headers upgradeHeaders,
+                                      String wsKey,
+                                      WsRoute wsRoute) {
+        return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsRoute);
+    }
+
     @Override
     public void handle() {
         listener.onOpen(this);
         while (true) {
-            ClientFrame frame = readFrame();
+            ClientWsFrame frame = readFrame();
             try {
                 if (!processFrame(frame)) {
                     return;
                 }
+            } catch (CloseConnectionException e) {
+                throw e;
             } catch (Exception e) {
                 listener.onError(this, e);
-                this.close(CloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
                 return;
             }
         }
@@ -85,22 +108,22 @@ class WsConnection implements ServerConnection, WsSession {
 
     @Override
     public WsSession send(String text, boolean last) {
-        return send(ServerFrame.data(text, last));
+        return send(ServerWsFrame.data(text, last));
     }
 
     @Override
     public WsSession send(BufferData bufferData, boolean last) {
-        return send(ServerFrame.data(bufferData, last));
+        return send(ServerWsFrame.data(bufferData, last));
     }
 
     @Override
     public WsSession ping(BufferData bufferData) {
-        return send(ServerFrame.control(WsOpCode.PING, bufferData));
+        return send(ServerWsFrame.control(WsOpCode.PING, bufferData));
     }
 
     @Override
     public WsSession pong(BufferData bufferData) {
-        return send(ServerFrame.control(WsOpCode.PONG, bufferData));
+        return send(ServerWsFrame.control(WsOpCode.PONG, bufferData));
     }
 
     @Override
@@ -111,26 +134,22 @@ class WsConnection implements ServerConnection, WsSession {
         bufferData.writeInt16(code);
         bufferData.write(reasonBytes);
 
-        return send(ServerFrame.control(WsOpCode.CLOSE, bufferData));
+        return send(ServerWsFrame.control(WsOpCode.CLOSE, bufferData));
     }
 
     @Override
-    public WsSession abort() {
-        close(CloseCodes.NORMAL_CLOSE, "Abort");
-        throw new CloseConnectionException("Aborting from WebSocket");
+    public WsSession terminate() {
+        close(WsCloseCodes.NORMAL_CLOSE, "Terminate");
+        throw new CloseConnectionException("Terminate from WebSocket");
     }
 
     @Override
     public Optional<String> subProtocol() {
-        if (upgradeHeaders != null) {
-            return upgradeHeaders.first(PROTOCOL);
-        }
-        return Optional.empty();
+        return upgradeHeaders.first(PROTOCOL);
     }
 
-    private boolean processFrame(ClientFrame frame) {
-        // TODO listener.onError should be called for errors
-        BufferData payload = frame.unmasked();
+    private boolean processFrame(ClientWsFrame frame) {
+        BufferData payload = frame.payloadData();
         switch (frame.opCode()) {
         case CONTINUATION -> {
             boolean finalFrame = frame.fin();
@@ -142,7 +161,7 @@ class WsConnection implements ServerConnection, WsSession {
             case TEXT -> listener.receive(this, payload.readString(payload.available(), StandardCharsets.UTF_8), finalFrame);
             case BINARY -> listener.receive(this, payload, finalFrame);
             default -> {
-                close(CloseCodes.PROTOCOL_ERROR, "Unexpected continuation received");
+                close(WsCloseCodes.PROTOCOL_ERROR, "Unexpected continuation received");
                 throw new CloseConnectionException("Websocket unexpected continuation");
             }
             }
@@ -165,7 +184,7 @@ class WsConnection implements ServerConnection, WsSession {
             }
             listener.onClose(this, status, reason);
             if (!closeSent) {
-                close(CloseCodes.NORMAL_CLOSE, "normal");
+                close(WsCloseCodes.NORMAL_CLOSE, "normal");
             }
             return false;
         }
@@ -176,72 +195,17 @@ class WsConnection implements ServerConnection, WsSession {
         return true;
     }
 
-    private ClientFrame readFrame() {
-        /*
-         Frame header
-         */
-        // byte 0
-        int opCodeByte = dataReader.read();
-        boolean fin = (opCodeByte & 0b10000000) != 0;
-        int extensionFlags = opCodeByte & 0b01110000;
-        if (extensionFlags != 0) {
-            close(CloseCodes.PROTOCOL_ERROR, "Extension flags defined where none should be");
-            throw new CloseConnectionException("Websocket extension flags defined where none should be");
+    private ClientWsFrame readFrame() {
+        try {
+            // TODO check may payload size, danger of oom
+            return ClientWsFrame.read(ctx, dataReader, Integer.MAX_VALUE);
+        } catch (WsCloseException e) {
+            close(e.closeCode(), e.getMessage());
+            throw new CloseConnectionException("WebSocket failed to read client frame", e);
         }
-        WsOpCode opCode = WsOpCode.get(opCodeByte & 0b00001111);
-
-        // byte 1 (possible to byte 9 if maximal number of bytes used for length)
-        int lenByte = dataReader.read();
-        boolean masked = (lenByte & 0b10000000) != 0;
-
-        if (!masked) {
-            close(1002, "Unmasked client request");
-            throw new CloseConnectionException("Websocket unmasked client request");
-        }
-        long frameLength;
-        int length = lenByte & 0b01111111;
-        if (length < 126) {
-            frameLength = length;
-        } else if (length == 126) {
-            frameLength = dataReader.readBuffer(2).readInt16();
-        } else {
-            frameLength = dataReader.readBuffer(8).readLong();
-        }
-        // TODO check may payload size, danger of oom
-        if (frameLength < 0) {
-            close(CloseCodes.PROTOCOL_ERROR, "Negative payload length");
-            throw new CloseConnectionException("Negative websocket payload length");
-        }
-        if (frameLength > Integer.MAX_VALUE) {
-            close(CloseCodes.TOO_BIG, "Payload too large");
-            throw new CloseConnectionException("Websocket payload too large");
-        }
-
-        // next 2 bytes - masking key
-        int[] maskingKey = new int[4];
-        maskingKey[0] = dataReader.read();
-        maskingKey[1] = dataReader.read();
-        maskingKey[2] = dataReader.read();
-        maskingKey[3] = dataReader.read();
-
-        // next frameLength bytes - actual payload
-        // we can safely cast to int, as we make sure it is smaller or equal to MAX_INT
-        BufferData payload = dataReader.readBuffer((int) frameLength);
-
-        ClientFrame frame = new ClientFrame(opCode,
-                                            frameLength,
-                                            payload,
-                                            fin,
-                                            maskingKey);
-
-        if (LOGGER.isLoggable(Level.TRACE)) {
-            ctx.log(LOGGER, Level.TRACE, "ws frame recv %s", frame);
-        }
-
-        return frame;
     }
 
-    private WsSession send(ServerFrame frame) {
+    private WsSession send(ServerWsFrame frame) {
         WsOpCode usedCode = frame.opCode();
         if (frame.isPayload()) {
             // check if continuation or set continuation
@@ -256,7 +220,7 @@ class WsConnection implements ServerConnection, WsSession {
         frame.opCode(usedCode);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
-            ctx.log(LOGGER, Level.TRACE, "ws frame send %s", frame);
+            ctx.log(LOGGER, Level.TRACE, "ws server frame send %s", frame);
         }
 
         sendBuffer.clear();
@@ -266,7 +230,7 @@ class WsConnection implements ServerConnection, WsSession {
 
         if (frame.payloadLength() < 126) {
             sendBuffer.write((int) frame.payloadLength());
-            //TODO finish other options
+            // TODO finish other options (payload longer than 126 bytes)
         }
         sendBuffer.write(frame.payloadData());
         ctx.dataWriter().writeNow(sendBuffer);

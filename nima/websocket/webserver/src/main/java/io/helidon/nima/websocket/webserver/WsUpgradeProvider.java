@@ -32,6 +32,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -95,6 +96,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
     private static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
+    static final Headers EMPTY_HEADERS = WritableHeaders.create();
 
     private final Set<String> origins;
     private final boolean anyOrigin;
@@ -151,10 +153,12 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
                     .build();
         }
 
-        WebSocket route = ctx.router().routing(WebSocketRouting.class, WebSocketRouting.empty())
-                .findRoute(prologue);
+        WsRoute route;
 
-        if (route == null) {
+        try {
+            route = ctx.router().routing(WsRouting.class, WsRouting.empty())
+                    .findRoute(prologue);
+        } catch (NotFoundException e) {
             return null;
         }
 
@@ -196,7 +200,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
         }
 
-        return new WsConnection(ctx, prologue, headers, upgradeHeaders.orElse(null), wsKey, route);
+        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, route);
     }
 
     protected boolean anyOrigin() {

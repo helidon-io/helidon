@@ -17,6 +17,7 @@
 package io.helidon.microprofile.tyrus;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +25,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.websocket.CloseCodes;
+import io.helidon.nima.websocket.WsCloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
@@ -65,7 +66,7 @@ class TyrusConnection implements ServerConnection, WsSession {
                 listener.receive(this, buffer, true);
             } catch (Exception e) {
                 listener.onError(this, e);
-                listener.onClose(this, CloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                listener.onClose(this, WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
                 return;
             }
         }
@@ -97,8 +98,13 @@ class TyrusConnection implements ServerConnection, WsSession {
     }
 
     @Override
-    public WsSession abort() {
+    public WsSession terminate() {
         return this;
+    }
+
+    @Override
+    public Optional<String> subProtocol() {
+        return Optional.empty();
     }
 
     class TyrusListener implements WsListener {

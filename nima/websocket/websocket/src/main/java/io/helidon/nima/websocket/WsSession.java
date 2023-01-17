@@ -61,18 +61,18 @@ public interface WsSession {
     /**
      * Close session.
      *
-     * @param code   close code, may be one of {@link io.helidon.nima.websocket.CloseCodes}
+     * @param code   close code, may be one of {@link io.helidon.nima.websocket.WsCloseCodes}
      * @param reason reason description
      * @return this instance
      */
     WsSession close(int code, String reason);
 
     /**
-     * Abort session.
+     * Terminate session. Sends a close and closes the connection.
      *
      * @return this instance
      */
-    WsSession abort();
+    WsSession terminate();
 
     /**
      * The WebSocket sub-protocol negotiated for this session.

@@ -115,6 +115,13 @@ public interface WebServer {
     }
 
     /**
+     * Context associated with the {@code WebServer}, used as a parent for request contexts.
+     *
+     * @return a server context
+     */
+    Context context();
+
+    /**
      * Returns {@code true} if TLS is configured for the named socket.
      *
      * @param socketName the name of a socket

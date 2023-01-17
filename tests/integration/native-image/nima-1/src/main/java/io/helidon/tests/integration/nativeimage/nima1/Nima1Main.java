@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.tests.integration.nativeimage.nima1;
 
 import java.nio.file.Paths;
@@ -28,7 +29,7 @@ import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.staticcontent.StaticContentSupport;
-import io.helidon.nima.websocket.webserver.WebSocketRouting;
+import io.helidon.nima.websocket.webserver.WsRouting;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -68,7 +69,7 @@ public final class Nima1Main {
         WebServer server = WebServer.builder()
                 .port(7076)
                 .addRouting(createRouting(config))
-                .addRouting(WebSocketRouting.builder()
+                .addRouting(WsRouting.builder()
                                     .endpoint("/ws/messages", WebSocketEndpoint::new)
                                     .build())
                 .start();

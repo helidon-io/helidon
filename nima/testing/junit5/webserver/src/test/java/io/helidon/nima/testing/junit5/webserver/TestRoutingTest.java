@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,8 +82,8 @@ class TestRoutingTest {
                 });
     }
 
-    @SetUpRoute
-    static void adminRouting(@Socket("admin") HttpRouting.Builder router) {
+    @SetUpRoute("admin")
+    static void adminRouting(HttpRouting.Builder router) {
         router.get("/get", (req, res) -> res.send(ADMIN_ENTITY));
     }
 
