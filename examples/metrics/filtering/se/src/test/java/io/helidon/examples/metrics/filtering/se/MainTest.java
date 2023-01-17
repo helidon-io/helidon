@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,8 @@
 
 package io.helidon.examples.metrics.filtering.se;
 
-import java.io.LineNumberReader;
-import java.io.StringReader;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -38,10 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -85,31 +77,31 @@ public class MainTest {
                 .path("/greet")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello World!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hello Joe!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
 
         response = webClient.put()
                 .path("/greet/greeting")
                 .submit(TEST_JSON_OBJECT)
                 .await();
-        assertEquals(204, response.status().code());
+        assertThat(response.status().code(), is(204));
 
         jsonObject = webClient.get()
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .await();
-        assertEquals("Hola Joe!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hola Joe!"));
 
         response = webClient.get()
                 .path("/metrics")
                 .request()
                 .await();
-        assertEquals(200, response.status().code());
+        assertThat(response.status().code(), is(200));
     }
 
     @Test
@@ -121,14 +113,14 @@ public class MainTest {
                 .request(String.class)
                 .await();
 
-        assertTrue(get.contains("Hello World!"));
+        assertThat(get, containsString("Hello World!"));
 
         get = webClient.get()
                 .path("/greet/Joe")
                 .request(String.class)
                 .await();
 
-        assertTrue(get.contains("Hello Joe!"));
+        assertThat(get, containsString("Hello Joe!"));
 
         String openMetricsOutput = webClient.get()
                 .path("/metrics/application")
