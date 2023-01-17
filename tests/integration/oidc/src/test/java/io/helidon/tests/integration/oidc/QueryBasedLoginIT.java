@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,6 +123,28 @@ class QueryBasedLoginIT extends CommonLoginBase {
         form = Entity.form(new Form().param("username", "userone")
                                    .param("password", "12345")
                                    .param("credentialId", ""));
+        try (Response response = client.target(formUri).request().post(form)) {
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
+        }
+    }
+    @Test
+    public void testDefaultTenantUsage(WebTarget webTarget) {
+        String formUri;
+
+        //greet endpoint is protected, and we need to get JWT token out of the Keycloak. We will get redirected to the Keycloak.
+        try (Response response = client.target(webTarget.getUri()).path("/test")
+                .request()
+                .get()) {
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            //We need to get form URI out of the HTML
+            formUri = getRequestUri(response.readEntity(String.class));
+        }
+
+        //Sending authentication to the Keycloak and getting redirected back to the running Helidon app.
+        Entity<Form> form = Entity.form(new Form().param("username", "userone")
+                                                .param("password", "12345")
+                                                .param("credentialId", ""));
         try (Response response = client.target(formUri).request().post(form)) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
