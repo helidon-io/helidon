@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.lang.System.Logger.Level;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedParameterizedType;
