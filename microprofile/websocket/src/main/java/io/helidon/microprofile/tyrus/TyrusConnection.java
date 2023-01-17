@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -43,7 +42,7 @@ import static jakarta.websocket.CloseReason.CloseCodes.getCloseCode;
  * that takes place.
  */
 class TyrusConnection implements ServerConnection, WsSession {
-    private static final Logger LOGGER = Logger.getLogger(TyrusConnection.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TyrusConnection.class.getName());
 
     private final ConnectionContext ctx;
     private final WebSocketEngine.UpgradeInfo upgradeInfo;
@@ -167,7 +166,7 @@ class TyrusConnection implements ServerConnection, WsSession {
         }
 
         private static void close(CloseReason closeReason) {
-            LOGGER.log(Level.FINE, () -> "Connection closed: " + closeReason);
+            LOGGER.log(Level.DEBUG, () -> "Connection closed: " + closeReason);
         }
     }
 }

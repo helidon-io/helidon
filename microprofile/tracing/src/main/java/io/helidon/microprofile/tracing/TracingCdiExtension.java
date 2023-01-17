@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.microprofile.tracing;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -74,10 +74,10 @@ public class TracingCdiExtension implements Extension {
                 .build();
 
         if (!helidonTracer.enabled()) {
-            Logger.getLogger(TracingCdiExtension.class.getName())
-                    .warning("helidon-microprofile-tracing is on the classpath, yet there is no tracer implementation "
-                                     + "library. Tracing uses a no-op tracer. As a result, no tracing will be configured"
-                                     + " for WebServer and JAX-RS");
+            System.getLogger(TracingCdiExtension.class.getName())
+                  .log(Level.WARNING, "helidon-microprofile-tracing is on the classpath, yet there is no tracer implementation "
+                          + "library. Tracing uses a no-op tracer. As a result, no tracing will be configured for WebServer and"
+                          + " JAX-RS");
 
             Contexts.globalContext().register(io.helidon.tracing.Tracer.noOp());
             Contexts.globalContext().register(GlobalTracer.get());

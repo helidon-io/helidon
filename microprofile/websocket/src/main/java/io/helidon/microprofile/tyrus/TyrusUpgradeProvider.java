@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -24,8 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Weight;
@@ -57,7 +56,7 @@ import org.glassfish.tyrus.spi.WebSocketEngine;
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 100)      // higher than base class
 public class TyrusUpgradeProvider extends WsUpgradeProvider {
-    private static final Logger LOGGER = Logger.getLogger(TyrusUpgradeProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TyrusUpgradeProvider.class.getName());
 
     private String path;
     private String queryString;
@@ -142,8 +141,8 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
         String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey) + SWITCHING_PROTOCOLS_SUFFIX;
         dataWriter.write(BufferData.create(switchingProtocols.getBytes(StandardCharsets.US_ASCII)));
 
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, "Upgraded to websocket version " + version);
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Upgraded to websocket version " + version);
         }
         return new TyrusConnection(ctx, upgradeInfo);
     }
@@ -184,12 +183,12 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
         tyrusRouting.routes().forEach(route -> {
             try {
                 if (route.serverEndpointConfig() != null) {
-                    LOGGER.log(Level.FINE, () -> "Registering ws endpoint "
+                    LOGGER.log(Level.DEBUG, () -> "Registering ws endpoint "
                             + route.path()
                             + route.serverEndpointConfig().getPath());
                     engine.register(route.serverEndpointConfig(), route.path());
                 } else {
-                    LOGGER.log(Level.FINE, () -> "Registering annotated ws endpoint " + route.path());
+                    LOGGER.log(Level.DEBUG, () -> "Registering annotated ws endpoint " + route.path());
                     engine.register(route.endpointClass(), route.path());
                 }
             } catch (DeploymentException e) {
@@ -201,7 +200,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
     }
 
     WebSocketEngine.UpgradeInfo protocolHandshake(WritableHeaders<?> headers) {
-        LOGGER.log(Level.FINE, "Initiating WebSocket handshake with Tyrus...");
+        LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake with Tyrus...");
 
         // Create Tyrus request context, copy request headers and query params
         Map<String, String[]> paramsMap = new HashMap<>();
