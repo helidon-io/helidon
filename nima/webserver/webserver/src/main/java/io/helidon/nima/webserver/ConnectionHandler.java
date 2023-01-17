@@ -30,6 +30,7 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+import io.helidon.nima.webserver.task.spi.InterruptableTask;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -39,7 +40,7 @@ import static java.lang.System.Logger.Level.WARNING;
  * Representation of a single channel between client and server.
  * Everything in this class runs in the channel reader virtual thread
  */
-class ConnectionHandler implements Runnable {
+class ConnectionHandler implements InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
 
     private final ConnectionProviders connectionProviders;
@@ -80,6 +81,11 @@ class ConnectionHandler implements Runnable {
                                             simpleHandlers,
                                             socket,
                                             maxPayloadSize);
+    }
+
+    @Override
+    public boolean canInterrupt() {
+       return connection instanceof InterruptableTask<?> task && task.canInterrupt();
     }
 
     @Override
