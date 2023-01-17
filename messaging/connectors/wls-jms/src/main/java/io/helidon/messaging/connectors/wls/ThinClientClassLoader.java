@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,9 @@ class ThinClientClassLoader extends URLClassLoader {
             try {
                 return super.loadClass(name, resolve);
             } catch (ClassNotFoundException e) {
-                LOGGER.log(TRACE, "Cannot load class " + name + " from WLS thin client classloader.", e);
+                LOGGER.log(TRACE, () -> "Cannot load class "
+                        + name
+                        + " from WLS thin client classloader, delegating to ctx classloader.", e);
                 contextClassLoader.loadClass(name);
             }
         }
@@ -94,6 +96,11 @@ class ThinClientClassLoader extends URLClassLoader {
     }
 
     boolean inWlsJar(String name) {
+        // Load jms exceptions from inside the thin jar to avoid deserialization issues
+        if (name.startsWith("javax.jms") && name.endsWith("Exception")) {
+            return true;
+        }
+
         // Load only javax JMS API from outside, so cast works
         return !name.startsWith("javax.jms")
                 && !name.equals(IsolatedContextFactory.class.getName());
