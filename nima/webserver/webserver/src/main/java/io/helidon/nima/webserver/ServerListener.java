@@ -46,6 +46,7 @@ import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.task.spi.HelidonTaskExecutor;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
@@ -134,30 +135,25 @@ class ServerListener {
         running = false;
         try {
             // Stop listening for connections
-            long millis = System.currentTimeMillis();
             serverSocket.close();
-            System.out.println("Socket close " + (System.currentTimeMillis() - millis));
 
             // Shutdown reader executor
-            millis = System.currentTimeMillis();
             readerExecutor.terminate(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
             if (!readerExecutor.isTerminated()) {
+                LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
                 readerExecutor.forceTerminate();
             }
-            System.out.println("Reader shutdown " + (System.currentTimeMillis() - millis));
 
             // Shutdown shared executor
-            millis = System.currentTimeMillis();
             try {
                 sharedExecutor.shutdown();
                 boolean done = sharedExecutor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
                 if (!done) {
                     List<Runnable> running = sharedExecutor.shutdownNow();
                     if (!running.isEmpty()) {
-                        LOGGER.log(INFO, running.size() + " channel tasks did not terminate gracefully");
+                        LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
                     }
                 }
-                System.out.println("Shared shutdown " + (System.currentTimeMillis() - millis));
             } catch (InterruptedException e) {
                 // falls through
             }
