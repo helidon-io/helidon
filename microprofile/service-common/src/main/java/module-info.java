@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ module io.helidon.microprofile.servicecommon {
 
     requires jakarta.cdi;
     requires io.helidon.nima.servicecommon;
-    requires java.logging;
     requires microprofile.config.api;
     requires jakarta.interceptor.api;
     requires jakarta.inject;
