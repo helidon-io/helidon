@@ -15,8 +15,8 @@
  */
 package io.helidon.microprofile.lra;
 
-import java.lang.System.Logger.Level;
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 
 import jakarta.inject.Inject;

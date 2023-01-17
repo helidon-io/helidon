@@ -43,7 +43,8 @@ import jakarta.interceptor.InvocationContext;
 abstract class MicrometerInterceptorBase<M extends Meter> extends HelidonInterceptor.Base<MeterWorkItem>
         implements HelidonInterceptor.WithPostCompletion<MeterWorkItem> {
 
-    private static final System.Logger LOGGER = System.getLogger(MicrometerInterceptorBase.class.getPackageName() + ".Interceptor*");
+    private static final System.Logger LOGGER = System.getLogger(MicrometerInterceptorBase.class.getPackageName()
+            + ".Interceptor*");
 
     private final Class<? extends Annotation> annotationType;
     private final Class<M> meterType;
