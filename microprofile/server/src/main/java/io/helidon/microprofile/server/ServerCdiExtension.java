@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.server;
 
+import java.lang.System.Logger.Level;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -30,8 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -75,8 +74,8 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Extension to handle web server configuration and lifecycle.
  */
 public class ServerCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
-    private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
+    private static final System.Logger LOGGER = System.getLogger(ServerCdiExtension.class.getName());
+    private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans = Collections.synchronizedMap(new IdentityHashMap<>());
     // build time
@@ -127,7 +126,7 @@ public class ServerCdiExtension implements Extension {
                                                             + socket
                                                             + " to exist, yet such a socket is not configured for web server");
                 } else {
-                    LOGGER.info("Routing " + socket + " does not exist, using default routing for application "
+                    LOGGER.log(Level.INFO, "Routing " + socket + " does not exist, using default routing for application "
                                         + appName);
 
                     return serverRoutingBuilder();
@@ -292,7 +291,7 @@ public class ServerCdiExtension implements Extension {
         if (!routingsWithKPIMetrics.contains(routing)) {
             routingsWithKPIMetrics.add(routing);
             routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
-            LOGGER.finer(() -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'",
+            LOGGER.log(Level.TRACE, () -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'",
                                              namedRouting.orElse("<unnamed>")));
         }
     }
@@ -349,7 +348,7 @@ public class ServerCdiExtension implements Extension {
         String host = "0.0.0.0".equals(listenHost) ? "localhost" : listenHost;
         String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
 
-        LOGGER.info(() -> "Server started on "
+        LOGGER.log(Level.INFO, () -> "Server started on "
                 + protocol + "://" + host + ":" + port
                 + note + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
 
@@ -358,7 +357,7 @@ public class ServerCdiExtension implements Extension {
         routingBuilder = null;
         namedRoutings = null;
 
-        STARTUP_LOGGER.finest("Server created");
+        STARTUP_LOGGER.log(Level.TRACE, "Server created");
     }
 
     private void registerJaxRsApplications(BeanManager beanManager) {
@@ -366,7 +365,8 @@ public class ServerCdiExtension implements Extension {
 
         List<JaxRsApplication> jaxRsApplications = jaxRs.applicationsToRun();
         if (jaxRsApplications.isEmpty()) {
-            LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
+            LOGGER.log(Level.WARNING,
+                    "There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
         } else {
             // Creates shared injection manager if multiple apps and "internal" property false
             boolean singleManager = config.get("server.single-injection-manager").asBoolean().asOptional().orElse(false);
@@ -393,7 +393,7 @@ public class ServerCdiExtension implements Extension {
             // Add all applications
             jaxRsApplications.forEach(it -> addApplication(jaxRs, it, shared));
         }
-        STARTUP_LOGGER.finest("Registered jersey application(s)");
+        STARTUP_LOGGER.log(Level.TRACE, "Registered jersey application(s)");
     }
 
     private void registerDefaultRedirect() {
@@ -404,7 +404,7 @@ public class ServerCdiExtension implements Extension {
                     res.headers().set(Http.Header.LOCATION, basePath);
                     res.send();
                 }));
-        STARTUP_LOGGER.finest("Builders ready");
+        STARTUP_LOGGER.log(Level.TRACE, "Builders ready");
     }
 
     private void registerStaticContent() {
@@ -434,7 +434,7 @@ public class ServerCdiExtension implements Extension {
         } else {
             routingBuilder.register(staticContent);
         }
-        STARTUP_LOGGER.finest("Static path");
+        STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
 
     private void registerClasspathStaticContent(Config config) {
@@ -461,7 +461,7 @@ public class ServerCdiExtension implements Extension {
         } else {
             routingBuilder.register(staticContent);
         }
-        STARTUP_LOGGER.finest("Static classpath");
+        STARTUP_LOGGER.log(Level.TRACE, "Static classpath");
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
@@ -488,20 +488,20 @@ public class ServerCdiExtension implements Extension {
             started = false;
         } finally {
             long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
-            LOGGER.info(() -> "Server stopped in " + t + " milliseconds.");
+            LOGGER.log(Level.INFO, () -> "Server stopped in " + t + " milliseconds.");
         }
     }
 
     private void addApplication(JaxRsCdiExtension jaxRs, JaxRsApplication applicationMeta,
                                 InjectionManager injectionManager) {
-        LOGGER.info("Registering JAX-RS Application: " + applicationMeta.appName());
+        LOGGER.log(Level.INFO, "Registering JAX-RS Application: " + applicationMeta.appName());
 
         Optional<String> contextRoot = jaxRs.findContextRoot(config, applicationMeta);
         Optional<String> namedRouting = jaxRs.findNamedRouting(config, applicationMeta);
         boolean routingNameRequired = jaxRs.isNamedRoutingRequired(config, applicationMeta);
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("Application " + applicationMeta.appName()
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Application " + applicationMeta.appName()
                                   + ", class: " + applicationMeta.appClassName()
                                   + ", contextRoot: " + contextRoot
                                   + ", namedRouting: " + namedRouting
@@ -513,7 +513,8 @@ public class ServerCdiExtension implements Extension {
         JaxRsService jerseyHandler = jaxRs.toJerseySupport(applicationMeta, injectionManager);
         if (contextRoot.isPresent()) {
             String contextRootString = contextRoot.get();
-            LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '" + contextRootString + "'");
+            LOGGER.log(Level.DEBUG, () -> "JAX-RS application " + applicationMeta.appName() + " registered on '"
+                    + contextRootString + "'");
             if (contextRootString.endsWith("/")) {
                 routing.register(contextRootString.substring(0, contextRootString.length() - 1), jerseyHandler);
             } else {
@@ -521,7 +522,7 @@ public class ServerCdiExtension implements Extension {
             }
 
         } else {
-            LOGGER.fine(() -> "JAX-RS application " + applicationMeta.appName() + " registered on '/'");
+            LOGGER.log(Level.DEBUG, () -> "JAX-RS application " + applicationMeta.appName() + " registered on '/'");
             routing.register(jerseyHandler);
         }
     }
@@ -536,7 +537,7 @@ public class ServerCdiExtension implements Extension {
             HttpService service = (HttpService) objBean.create(context);
             registerWebServerService(serviceBeans.remove(bean), service);
         }
-        STARTUP_LOGGER.finest("Registered WebServer services");
+        STARTUP_LOGGER.log(Level.TRACE, "Registered WebServer services");
     }
 
     private void registerWebServerService(RoutingConfiguration routingConf, HttpService service) {
@@ -573,7 +574,7 @@ public class ServerCdiExtension implements Extension {
                                                         + " web server");
             }
 
-            LOGGER.fine(() -> className + " is configured with named routing " + routingName + ". Such a routing"
+            LOGGER.log(Level.DEBUG, () -> className + " is configured with named routing " + routingName + ". Such a routing"
                     + " is not configured, this service/application will run on default socket.");
             return serverRoutingBuilder();
         }
