@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.lra;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -27,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.lra.coordinator.client.Participant;
@@ -50,7 +49,7 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 
 class ParticipantImpl implements Participant {
 
-    private static final Logger LOGGER = Logger.getLogger(ParticipantImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ParticipantImpl.class.getName());
 
     static final Set<Class<? extends Annotation>> LRA_ANNOTATIONS =
             Set.of(

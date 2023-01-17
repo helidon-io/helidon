@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.lra;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -28,8 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,7 +55,7 @@ import org.jboss.jandex.Type;
 @Reflected
 class InspectionService {
 
-    private static final Logger LOGGER = Logger.getLogger(InspectionService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(InspectionService.class.getName());
 
     private final IndexView index;
     static final DotName LRA = DotName.createSimple(LRA.class.getName());
@@ -124,7 +123,7 @@ class InspectionService {
                 .map(className -> {
                     ClassInfo ci = index.getClassByName(className);
                     if (ci == null) {
-                        LOGGER.log(Level.FINE, "Class {0} not found in index", className);
+                        LOGGER.log(Level.DEBUG, "Class {0} not found in index", className);
                     }
                     return ci;
                 })
