@@ -30,7 +30,7 @@ import io.helidon.config.Config;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.ServerConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.DirectHandlers;

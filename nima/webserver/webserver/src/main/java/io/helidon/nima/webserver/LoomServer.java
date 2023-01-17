@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.nima.webserver.http.DirectHandlers;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());

@@ -41,6 +41,7 @@ import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.DirectTransportRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
 import static java.lang.System.Logger.Level.TRACE;
@@ -53,7 +54,7 @@ public class Http1Connection implements ServerConnection {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
 
     private final ConnectionContext ctx;
-    private final Http1Config config;
+    private final Http1Config http1Config;
     private final DataWriter writer;
     private final DataReader reader;
     private final Map<String, Http1Upgrader> upgradeProviderMap;
@@ -64,6 +65,8 @@ public class Http1Connection implements ServerConnection {
     private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
     private final HttpRouting routing;
     private final long maxPayloadSize;
+    private final Http1ConnectionListener recvListener;
+    private final Http1ConnectionListener sendListener;
 
     // overall connection
     private int requestId;
@@ -74,21 +77,23 @@ public class Http1Connection implements ServerConnection {
      * Create a new connection.
      *
      * @param ctx                connection context
-     * @param config             connection provider configuration
+     * @param http1Config             connection provider configuration
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
      */
     public Http1Connection(ConnectionContext ctx,
-                           Http1Config config,
+                           Http1Config http1Config,
                            Map<String, Http1Upgrader> upgradeProviderMap) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
-        this.config = config;
+        this.http1Config = http1Config;
         this.upgradeProviderMap = upgradeProviderMap;
         this.canUpgrade = !upgradeProviderMap.isEmpty();
-        this.reader.listener(config.recvListeners(), ctx);
-        this.http1headers = new Http1Headers(reader, config.maxHeadersSize(), config.validateHeaders());
-        this.http1prologue = new Http1Prologue(reader, config.maxPrologueLength(), config.validatePath());
+        this.recvListener = http1Config.compositeReceiveListener();
+        this.sendListener = http1Config.compositeSendListener();
+        this.reader.listener(recvListener, ctx);
+        this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateHeaders());
+        this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.maxPayloadSize();
     }
@@ -100,12 +105,12 @@ public class Http1Connection implements ServerConnection {
             while (true) {
                 // prologue (first line of request)
                 HttpPrologue prologue = http1prologue.readPrologue();
-                config.recvListeners().prologue(ctx, prologue);
+                recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
-                config.recvListeners().headers(ctx, headers);
+                recvListener.headers(ctx, headers);
 
                 if (canUpgrade) {
                     if (headers.contains(Http.Header.UPGRADE)) {
@@ -232,7 +237,7 @@ public class Http1Connection implements ServerConnection {
         if (entity == EntityStyle.NONE) {
             Http1ServerRequest request = Http1ServerRequest.create(ctx, routing.security(), prologue, headers, requestId);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
-                                                                   config.sendListeners(),
+                                                                   sendListener,
                                                                    writer,
                                                                    request,
                                                                    !request.headers()
@@ -287,7 +292,7 @@ public class Http1Connection implements ServerConnection {
                                                                entityReadLatch,
                                                                () -> this.readEntityFromPipeline(prologue, headers));
         Http1ServerResponse response = new Http1ServerResponse(ctx,
-                                                               config.sendListeners(),
+                                                               sendListener,
                                                                writer,
                                                                request,
                                                                !request.headers()
@@ -348,8 +353,8 @@ public class Http1Connection implements ServerConnection {
             buffer.write(message);
         }
 
-        config.sendListeners().headers(ctx, headers);
-        config.sendListeners().data(ctx, buffer);
+        sendListener.headers(ctx, headers);
+        sendListener.data(ctx, buffer);
         writer.write(buffer);
 
         if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
@@ -359,7 +364,7 @@ public class Http1Connection implements ServerConnection {
 
     // jUnit Http2Config pkg only visible test accessor.
     Http1Config config() {
-        return config;
+        return http1Config;
     }
 
 }

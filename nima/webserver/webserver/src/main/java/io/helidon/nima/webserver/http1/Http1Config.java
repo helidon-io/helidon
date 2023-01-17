@@ -15,59 +15,34 @@
  */
 package io.helidon.nima.webserver.http1;
 
-import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.config.Config;
+import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.builder.config.ConfigBean;
 
 /**
  * HTTP/1.1 server configuration.
  */
-public class Http1Config {
-
-    private static final int DEFAULT_MAX_PROLOGUE_LENGTH = 2048;
-    private static final int DEFAULT_MAX_HEADERS_SIZE = 16384;
-    private static final boolean DEFAULT_VALIDATE_HEADERS = true;
-    private static final boolean DEFAULT_VALIDATE_PATH = true;
-
-    private final int maxPrologueLength;
-    private final int maxHeadersSize;
-    private final boolean validateHeaders;
-    private final boolean validatePath;
-    private final Http1ConnectionListener sendListeners;
-    private final Http1ConnectionListener recvListeners;
-
-    private Http1Config(int maxPrologueLength,
-                        int maxHeadersSize,
-                        boolean validateHeaders,
-                        boolean validatePath,
-                        Http1ConnectionListener sendListeners,
-                        Http1ConnectionListener recvListeners) {
-        this.maxPrologueLength = maxPrologueLength;
-        this.maxHeadersSize = maxHeadersSize;
-        this.validateHeaders = validateHeaders;
-        this.validatePath = validatePath;
-        this.sendListeners = sendListeners;
-        this.recvListeners = recvListeners;
-    }
-
+@Builder(interceptor = Http1BuilderInterceptor.class)
+@ConfigBean(key = "server.connection-providers.http_1_1")
+public interface Http1Config {
     /**
      * Maximal size of received HTTP prologue (GET /path HTTP/1.1).
      *
      * @return maximal size in bytes
      */
-    public int maxPrologueLength() {
-        return maxPrologueLength;
-    }
+    @ConfiguredOption("2048")
+    int maxPrologueLength();
 
     /**
      * Maximal size of received headers in bytes.
      *
      * @return maximal header size
      */
-    public int maxHeadersSize() {
-        return maxHeadersSize;
-    }
+    @ConfiguredOption("16384")
+    int maxHeadersSize();
 
     /**
      * Whether to validate headers.
@@ -78,179 +53,62 @@ public class Http1Config {
      *
      * @return whether to validate headers
      */
-    public boolean validateHeaders() {
-        return validateHeaders;
-    }
+    @ConfiguredOption("true")
+    boolean validateHeaders();
 
     /**
      * If set to false, any path is accepted (even containing illegal characters).
      *
      * @return whether to validate path
      */
-    public boolean validatePath() {
-        return validatePath;
-    }
+    @ConfiguredOption("true")
+    boolean validatePath();
 
-    // Return builder with default values
-    static Builder builder() {
-        return new Builder();
-    }
+    /**
+     * Logging of received packets. Uses trace and debug levels on logger of
+     * {@link io.helidon.nima.webserver.http1.Http1LoggingConnectionListener} with suffix of {@code .recv`}.
+     *
+     * @return {@code true} if logging should be enabled for received packets, {@code false} if no logging should be done
+     */
+    @ConfiguredOption(key = "recv-log", value = "true")
+    boolean receiveLog();
 
-    // Return builder with values initialized from existing configuration
-    static Builder builder(Http1Config config) {
-        return new Builder(config);
-    }
+    /**
+     * Logging of sent packets. Uses trace and debug levels on logger of
+     * {@link io.helidon.nima.webserver.http1.Http1LoggingConnectionListener} with suffix of {@code .send`}.
+     *
+     * @return {@code true} if logging should be enabled for sent packets, {@code false} if no logging should be done
+     */
+    @ConfiguredOption(key = "send-log", value = "true")
+    boolean sendLog();
 
     /**
      * Connection send event listeners for HTTP/1.1.
      *
      * @return send event listeners
      */
-    public Http1ConnectionListener sendListeners() {
-        return sendListeners;
-    }
+    @Singular
+    List<Http1ConnectionListener> sendListeners();
 
     /**
      * Connection receive event listeners for HTTP/1.1.
      *
      * @return receive event listeners
      */
-    public Http1ConnectionListener recvListeners() {
-        return recvListeners;
-    }
+    @Singular
+    List<Http1ConnectionListener> receiveListeners();
 
     /**
-     *  HTTP/1.1 server configuration fluent API builder.
+     * A single send listener, this value is computed.
+     *
+     * @return send listener
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, Http1Config> {
+    Http1ConnectionListener compositeSendListener();
 
-        private int maxPrologueLength;
-        private int maxHeaderSize;
-        private boolean validateHeaders;
-        private boolean validatePath;
-        private final List<Http1ConnectionListener> sendListeners;
-        private final List<Http1ConnectionListener> recvListeners;
-
-        private Builder() {
-            this.maxPrologueLength = DEFAULT_MAX_PROLOGUE_LENGTH;
-            this.maxHeaderSize = DEFAULT_MAX_HEADERS_SIZE;
-            this.validateHeaders = DEFAULT_VALIDATE_HEADERS;
-            this.validatePath = DEFAULT_VALIDATE_PATH;
-            this.sendListeners = new LinkedList<>();
-            this.recvListeners = new LinkedList<>();
-        }
-
-        private Builder(Http1Config config) {
-            this.maxPrologueLength = config.maxPrologueLength;
-            this.maxHeaderSize = config.maxHeadersSize;
-            this.validateHeaders = config.validateHeaders;
-            this.validatePath = config.validatePath;
-            this.sendListeners = Http1ConnectionListenerUtil.singleListenerToList(config.sendListeners);
-            this.recvListeners = Http1ConnectionListenerUtil.singleListenerToList(config.recvListeners);
-        }
-
-        /**
-         * HTTP/1.1 connection provider configuration node.
-         *
-         * @param config configuration note to process
-         * @return updated builder
-         */
-        public Builder config(Config config) {
-            config.get("max-prologue-length").asInt().ifPresent(value -> maxPrologueLength = value);
-            config.get("max-headers-size").asInt().ifPresent(value -> maxHeaderSize = value);
-            config.get("validate-headers").asBoolean().ifPresent(value -> validateHeaders = value);
-            config.get("validate-path").asBoolean().ifPresent(value -> validatePath = value);
-            if (config.get("recv-log").asBoolean().orElse(true)) {
-                addSendListener(new Http1LoggingConnectionListener("send"));
-            }
-            if (config.get("send-log").asBoolean().orElse(true)) {
-                addReceiveListener(new Http1LoggingConnectionListener("recv"));
-            }
-            return this;
-        }
-
-        /**
-         * Maximal size of received HTTP prologue (GET /path HTTP/1.1).
-         *
-         * @param maxPrologueLength maximal size in bytes
-         * @return updated builder
-         */
-        public Builder maxPrologueLength(int maxPrologueLength) {
-            this.maxPrologueLength = maxPrologueLength;
-            return this;
-        }
-
-        /**
-         * Maximal size of received headers in bytes.
-         *
-         * @param maxHeaderSize maximal header size
-         * @return updated builder
-         */
-        public Builder maxHeaderSize(int maxHeaderSize) {
-            this.maxHeaderSize = maxHeaderSize;
-            return this;
-        }
-
-        /**
-         * Whether to validate headers.
-         * If set to false, any value is accepted, otherwise validates headers + known headers
-         * are validated by format
-         * (content length is always validated as it is part of protocol processing (other headers may be validated if
-         * features use them)).
-         *
-         * @param validateHeaders whether to validate headers
-         * @return updated builder
-         */
-        public Builder validateHeaders(boolean validateHeaders) {
-            this.validateHeaders = validateHeaders;
-            return this;
-        }
-
-        /**
-         * If set to false, any path is accepted (even containing illegal characters).
-         *
-         * @param validatePath whether to validate path
-         * @return updated builder
-         */
-        public Builder validatePath(boolean validatePath) {
-            this.validatePath = validatePath;
-            return this;
-        }
-
-        /**
-         * Add a send event listener.
-         *
-         * @param listener listener to add
-         * @return updated builder
-         */
-        public Builder addSendListener(Http1ConnectionListener listener) {
-            sendListeners.add(listener);
-            return this;
-        }
-
-        /**
-         * Add a receive event listener.
-         *
-         * @param listener listener to add
-         * @return updated builder
-         */
-        public Builder addReceiveListener(Http1ConnectionListener listener) {
-            recvListeners.add(listener);
-            return this;
-        }
-
-        @Override
-        public Http1Config build() {
-            return new Http1Config(
-                    maxPrologueLength,
-                    maxHeaderSize,
-                    validateHeaders,
-                    validatePath,
-                    Http1ConnectionListener.create(sendListeners),
-                    Http1ConnectionListener.create(recvListeners)
-            );
-        }
-
-    }
-
+    /**
+     * A single receive listener, this value is computed.
+     *
+     * @return receive listener
+     */
+    Http1ConnectionListener compositeReceiveListener();
 }

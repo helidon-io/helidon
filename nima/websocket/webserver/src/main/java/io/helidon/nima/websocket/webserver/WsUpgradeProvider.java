@@ -18,17 +18,26 @@ package io.helidon.nima.websocket.webserver;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.http1.Http1Upgrader;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to WebSocket.
  */
 public class WsUpgradeProvider implements Http1UpgradeProvider {
 
+    /**
+     * HTTP/2 server connection provider configuration node name.
+     */
+    protected static final String CONFIG_NAME = "websocket";
     private final Set<String> origins;
+
+    protected WsUpgradeProvider(AbstractBuilder<?, ?> builder) {
+        this.origins = Set.copyOf(builder.origins());
+    }
 
     /**
      * Create a new instance with default configuration.
@@ -37,36 +46,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
      */
     @Deprecated()
     public WsUpgradeProvider() {
-        this(new HashSet<>());
-    }
-
-    protected WsUpgradeProvider(Set<String> origins) {
-        this.origins = origins;
-    }
-
-    /** HTTP/2 server connection provider configuration node name. */
-    private static final String CONFIG_NAME = "websocket";
-
-    @Override
-    public String configKey() {
-        return CONFIG_NAME;
-    }
-
-    @Override
-    public void config(Config config) {
-        // Accept origins as list of String values from config file
-        config.get("origins")
-                .asList(String.class)
-                .ifPresent(origins::addAll);
-    }
-
-    @Override
-    public Http1Upgrader create() {
-        return new WsUpgrader(Set.copyOf(origins));
-    }
-
-    protected Set<String> origins() {
-        return origins;
+        this(builder());
     }
 
     /**
@@ -76,6 +56,32 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public Set<String> configKeys() {
+        return Set.of(CONFIG_NAME);
+    }
+
+    @Override
+    public Http1Upgrader create(Function<String, Config> config) {
+        Set<String> usedOrigins;
+
+        if (origins.isEmpty()) {
+            usedOrigins = config.apply(CONFIG_NAME)
+                    .get("origins")
+                    .asList(String.class)
+                    .map(Set::copyOf)
+                    .orElseGet(Set::of);
+        } else {
+            usedOrigins = origins;
+        }
+
+        return new WsUpgrader(usedOrigins);
+    }
+
+    protected Set<String> origins() {
+        return origins;
     }
 
     /**
@@ -119,9 +125,8 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
 
         @Override
         public WsUpgradeProvider build() {
-            return new WsUpgradeProvider(origins());
+            return new WsUpgradeProvider(this);
         }
 
     }
-
 }

@@ -13,99 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.nima.http2.webserver;
 
-import io.helidon.config.Config;
-import io.helidon.nima.http2.Http2Setting;
-import io.helidon.nima.http2.Http2Settings;
+import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.builder.config.ConfigBean;
 
 /**
  * HTTP/2 server configuration.
  */
-class Http2Config {
+@Builder
+@ConfigBean(key = "server.connection-providers.http_2")
+public interface Http2Config {
+    /**
+     * The size of the largest frame payload that the sender is willing to receive in bytes.
+     * See RFC 9113 section 6.5.2 for details.
+     *
+     * @return maximal frame size
+     */
+    @ConfiguredOption("16_384")
+    long maxFrameSize();
 
-    private static final String CONFIG_MAX_FRAME_SIZE = "max-frame-size";
-    private static final String CONFIG_MAX_HEADER_LIST_SIZE = "max-header-size";
+    /**
+     * The maximum field section size that the sender is prepared to accept in bytes.
+     * See RFC 9113 section 6.5.2 for details.
+     * Default is maximal unsigned int.
+     *
+     * @return maximal header list size in bytes
+     */
+    @ConfiguredOption("0xFFFFFFFFL")
+    long maxHeaderListSize();
 
-    private final long maxFrameSize;
-    private final long maxHeaderListSize;
+    /**
+     * Initial maximal size of client frames.
+     *
+     * @return maximal size in bytes
+     */
+    @ConfiguredOption("16384")
+    int maxClientFrameSize();
 
-    private Http2Config(long maxFrameSize, long maxHeaderListSize) {
-        this.maxFrameSize = maxFrameSize;
-        this.maxHeaderListSize = maxHeaderListSize;
-    }
-
-    Long maxFrameSize() {
-        return maxFrameSize;
-    }
-
-    Long maxHeaderListSize() {
-        return maxHeaderListSize;
-    }
-
-    // Apply configuration values on HTTP settings frame builder
-    Http2Settings.Builder apply(Http2Settings.Builder builder) {
-        applySetting(builder, maxFrameSize, Http2Setting.MAX_FRAME_SIZE);
-        applySetting(builder, maxHeaderListSize, Http2Setting.MAX_HEADER_LIST_SIZE);
-        return builder;
-    }
-
-    // Add value to the builder only when differs from default
-    private void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
-        if (value != settings.defaultValue()) {
-            builder.add(settings, value);
-        }
-    }
-
-    // Return builder with default values
-    static Builder builder() {
-        return new Builder();
-    }
-
-    // Return builder with values initialized from existing configuration
-    static Builder builder(Http2Config config) {
-        return new Builder(config);
-    }
-
-    static class Builder {
-
-        private long maxFrameSize;
-        private long maxHeaderListSize;
-
-        private Builder() {
-            maxFrameSize = Http2Setting.MAX_FRAME_SIZE.defaultValue();
-            maxHeaderListSize = Http2Setting.MAX_HEADER_LIST_SIZE.defaultValue();
-        }
-
-        private Builder(Http2Config config) {
-            maxFrameSize = config.maxFrameSize;
-            maxHeaderListSize = config.maxHeaderListSize;
-        }
-
-
-        // Get values from config.
-        Builder config(Config config) {
-            config.get(CONFIG_MAX_FRAME_SIZE).asLong()
-                    .ifPresent(value -> maxFrameSize = value);
-            config.get(CONFIG_MAX_HEADER_LIST_SIZE).asLong()
-                    .ifPresent(value -> maxHeaderListSize = value);
-            return this;
-        }
-
-        Builder maxFrameSize(long maxFrameSize) {
-            this.maxFrameSize = maxFrameSize;
-            return this;
-        }
-
-        Builder maxHeaderListSize(long maxHeaderListSize) {
-            this.maxHeaderListSize = maxHeaderListSize;
-            return this;
-        }
-
-        Http2Config build() {
-            return new Http2Config(maxFrameSize, maxHeaderListSize);
-        }
-
-    }
-
+    /**
+     * Whether to send error message over HTTP to client.
+     * Defaults to {@code false}, as exception message may contain internal information that could be used as an
+     * attack vector. Use with care and in cases where both server and clients are under your full control (such as for
+     * testing).
+     *
+     * @return whether to send error messages over the network
+     */
+    @ConfiguredOption("false")
+    boolean sendErrorDetails();
 }

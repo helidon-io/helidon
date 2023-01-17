@@ -16,12 +16,14 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.ServerConnectionSelector;
 import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static io.helidon.nima.http2.Http2Util.PREFACE_LENGTH;
 import static io.helidon.nima.http2.Http2Util.isPreface;
@@ -31,11 +33,13 @@ import static io.helidon.nima.http2.Http2Util.isPreface;
  */
 public class Http2ConnectionSelector implements ServerConnectionSelector {
 
-    private final Http2Config config;
+    private final Http2Config http2Config;
+    private final List<Http2SubProtocolSelector> subProviders;
 
     // Creates an instance of HTTP/2 server connection selector.
-    Http2ConnectionSelector(Http2Config config) {
-        this.config = config;
+    Http2ConnectionSelector(Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
+        this.http2Config = http2Config;
+        this.subProviders = subProviders;
     }
 
     @Override
@@ -64,7 +68,7 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        Http2Connection result = new Http2Connection(ctx, config);
+        Http2Connection result = new Http2Connection(ctx, http2Config, subProviders);
         result.expectPreface();
 
         return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,8 @@ package io.helidon.nima.http2.webserver;
 
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
@@ -45,7 +43,7 @@ import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.http2.Http2WindowUpdate;
-import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 import io.helidon.nima.http2.webserver.spi.SubProtocolResult;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -62,13 +60,13 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                   Http2Flag.DataFlags.create(Http2Flag.DataFlags.END_OF_STREAM),
                                                   0), BufferData.empty());
     private static final System.Logger LOGGER = System.getLogger(Http2Stream.class.getName());
-    private static final List<Http2SubProtocolProvider> SUB_PROTOCOL_PROVIDERS =
-            HelidonServiceLoader.create(ServiceLoader.load(Http2SubProtocolProvider.class))
-                    .asList();
+
     // todo nima - use or remove
     //private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
     private final FlowControl flowControl;
     private final ConnectionContext ctx;
+    private final Http2Config http2Config;
+    private final List<Http2SubProtocolSelector> subProviders;
     private final int streamId;
     private final Http2Settings serverSettings;
     private final Http2Settings clientSettings;
@@ -80,7 +78,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private volatile Http2Priority priority;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
-    private Http2SubProtocolProvider.SubProtocolHandler subProtocolHandler;
+    private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
     private long expectedLength = -1;
     private HttpRouting routing;
     private HttpPrologue prologue;
@@ -90,6 +88,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
      *
      * @param ctx            connection context
      * @param routing        HTTP routing
+     * @param http2Config    HTTP/2 configuration
+     * @param subProviders
      * @param streamId       stream id
      * @param serverSettings server settings
      * @param clientSettings client settings
@@ -98,6 +98,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
      */
     public Http2Stream(ConnectionContext ctx,
                        HttpRouting routing,
+                       Http2Config http2Config,
+                       List<Http2SubProtocolSelector> subProviders,
                        int streamId,
                        Http2Settings serverSettings,
                        Http2Settings clientSettings,
@@ -105,6 +107,8 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                        FlowControl flowControl) {
         this.ctx = ctx;
         this.routing = routing;
+        this.http2Config = http2Config;
+        this.subProviders = subProviders;
         this.streamId = streamId;
         this.serverSettings = serverSettings;
         this.clientSettings = clientSettings;
@@ -329,7 +333,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
 
         subProtocolHandler = null;
 
-        for (Http2SubProtocolProvider provider : SUB_PROTOCOL_PROVIDERS) {
+        for (Http2SubProtocolSelector provider : subProviders) {
             SubProtocolResult subProtocolResult = provider.subProtocol(ctx,
                                                                        prologue,
                                                                        headers,

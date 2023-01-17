@@ -16,12 +16,14 @@
 
 package io.helidon.nima.webserver.http1.spi;
 
+import java.util.Set;
+import java.util.function.Function;
+
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.http1.Http1Upgrader;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for HTTP/1.1 connection upgrade provider.
- * This interface serves as {@link io.helidon.nima.webserver.http1.Http1Upgrader} builder
+ * This interface serves as {@link Http1Upgrader} builder
  * which receives requested configuration nodes from the server configuration when server builder
  * is running.
  */
@@ -32,22 +34,14 @@ public interface Http1UpgradeProvider {
      *
      * @return name of the node to request
      */
-    String configKey();
+    Set<String> configKeys();
 
     /**
-     * Provider's configuration reader.
-     * Node with {@code configKey()} name will be provided. May receive empty config
-     * when node with specified key is missing.
+     * Creates an instance of HTTP/HTTP/1.1 connection upgrader.
      *
-     * @param config {@link io.helidon.config.Config} configuration node
-     */
-    void config(Config config);
-
-    /**
-     * Creates an instance of server HTTP/1.1 connection upgrade selector.
-     *
+     * @param config {@link io.helidon.config.Config} configuration function that provides a value for any {@link #configKeys()}
      * @return new server HTTP/1.1 connection upgrade selector
      */
-    Http1Upgrader create();
+    Http1Upgrader create(Function<String, Config> config);
 
 }

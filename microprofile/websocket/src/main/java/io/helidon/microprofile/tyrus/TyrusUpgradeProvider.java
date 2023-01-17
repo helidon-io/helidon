@@ -16,10 +16,11 @@
 
 package io.helidon.microprofile.tyrus;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 
-import io.helidon.nima.webserver.http1.Http1Upgrader;
+import io.helidon.config.Config;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
 
 /**
@@ -27,26 +28,16 @@ import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
  */
 public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
+    TyrusUpgradeProvider(Builder builder) {
+        super(builder);
+    }
+
     /**
      * @deprecated This constructor is only to be used by {@link java.util.ServiceLoader}, use {@link #builder()}
      */
     @Deprecated()
     public TyrusUpgradeProvider() {
-        this(new HashSet<>());
-    }
-
-    TyrusUpgradeProvider(Set<String> origins) {
-        super(origins);
-    }
-
-    @Override
-    public Http1Upgrader create() {
-        return new TyrusUpgrader(Set.copyOf(origins()));
-    }
-
-    // jUnit test accessor for origins set (package private only)
-    protected Set<String> origins() {
-        return super.origins();
+        this(tyrusBuilder());
     }
 
     /**
@@ -56,6 +47,28 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
      */
     public static Builder tyrusBuilder() {
         return new Builder();
+    }
+
+    @Override
+    public Http1Upgrader create(Function<String, Config> config) {
+        Set<String> usedOrigins;
+
+        if (origins().isEmpty()) {
+            usedOrigins = config.apply(CONFIG_NAME)
+                    .get("origins")
+                    .asList(String.class)
+                    .map(Set::copyOf)
+                    .orElseGet(Set::of);
+        } else {
+            usedOrigins = origins();
+        }
+
+        return new TyrusUpgrader(usedOrigins);
+    }
+
+    // jUnit test accessor for origins set (package private only)
+    protected Set<String> origins() {
+        return super.origins();
     }
 
     /**
@@ -69,7 +82,7 @@ public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
         @Override
         public TyrusUpgradeProvider build() {
-            return new TyrusUpgradeProvider(origins());
+            return new TyrusUpgradeProvider(this);
         }
 
     }

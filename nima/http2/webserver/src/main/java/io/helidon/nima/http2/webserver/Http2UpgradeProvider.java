@@ -16,16 +16,30 @@
 
 package io.helidon.nima.http2.webserver;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.http1.Http1Upgrader;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 
 /**
  * {@link java.util.ServiceLoader} upgrade protocol provider to upgrade from HTTP/1.1 to HTTP/2.
  */
 public class Http2UpgradeProvider implements Http1UpgradeProvider {
+    private final Http2Config http2Config;
+    private final List<Http2SubProtocolProvider> subProtocolProviders;
 
-    private Http2Config config;
+    private Http2UpgradeProvider(Builder builder) {
+        this.http2Config = builder.http2Config;
+        this.subProtocolProviders = builder.subProtocolProviders.build().asList();
+    }
 
     /**
      * Create a new instance with default configuration.
@@ -33,33 +47,7 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
      * @deprecated to be used solely by {@link java.util.ServiceLoader}
      */
     public Http2UpgradeProvider() {
-        config = Http2Config.builder().build();
-    }
-
-    private Http2UpgradeProvider(Http2Config config) {
-        this.config = config;
-    }
-
-    @Override
-    public String configKey() {
-        return Http2ConnectionProvider.CONFIG_NAME;
-    }
-
-    @Override
-    public void config(Config config) {
-        // Empty node can't overwrite existing configuration.
-        if (config.exists()) {
-            // Initialize builder with existing configuration
-            this.config = Http2Config.builder(this.config)
-                    // Overwrite values from config node
-                    .config(config)
-                    .build();
-        }
-    }
-
-    @Override
-    public Http1Upgrader create() {
-        return new Http2Upgrader(config);
+        this(builder());
     }
 
     /**
@@ -71,46 +59,74 @@ public class Http2UpgradeProvider implements Http1UpgradeProvider {
         return new Builder();
     }
 
+    @Override
+    public Set<String> configKeys() {
+        Set<String> result = new HashSet<>();
+        result.add(Http2ConnectionProvider.CONFIG_NAME);
+
+        result.addAll(subProtocolProviders.stream()
+                              .map(Http2SubProtocolProvider::configKey)
+                              .collect(Collectors.toSet()));
+
+        return result;
+    }
+
+    @Override
+    public Http1Upgrader create(Function<String, Config> config) {
+        Http2Config usedConfig;
+
+        if (http2Config == null) {
+            usedConfig = DefaultHttp2Config.toBuilder(config.apply(Http2ConnectionProvider.CONFIG_NAME)).build();
+        } else {
+            usedConfig = http2Config;
+        }
+
+        var subProtocolSelectors = subProtocolProviders.stream()
+                .map(it -> it.create(config.apply(it.configKey())))
+                .toList();
+
+        return new Http2Upgrader(usedConfig, subProtocolSelectors);
+    }
+
     /**
      * Fluent API builder for {@link Http2UpgradeProvider}.
      */
     public static class Builder implements io.helidon.common.Builder<Http2UpgradeProvider.Builder, Http2UpgradeProvider> {
+        private final HelidonServiceLoader.Builder<Http2SubProtocolProvider> subProtocolProviders = HelidonServiceLoader.builder(
+                ServiceLoader.load(Http2SubProtocolProvider.class));
 
-        private final Http2Config.Builder configBuilder;
+        private Http2Config http2Config;
 
         private Builder() {
-            this.configBuilder = Http2Config.builder();
-        }
-
-        /**
-         * The size of the largest frame payload that the sender is willing to receive in bytes.
-         * See RFC 9113 section 6.5.2 for details.
-         *
-         * @param maxFrameSize maximum length of the frame payload
-         * @return updated builder
-         */
-        public Builder maxFrameSize(long maxFrameSize) {
-            configBuilder.maxFrameSize(maxFrameSize);
-            return this;
-        }
-
-        /**
-         * The maximum field section size that the sender is prepared to accept in bytes.
-         * See RFC 9113 section 6.5.2 for details.
-         *
-         * @param maxHeaderListSize maximum field section size
-         * @return updated builder
-         */
-        public Builder maxHeaderListSize(long maxHeaderListSize) {
-            configBuilder.maxHeaderListSize(maxHeaderListSize);
-            return this;
         }
 
         @Override
         public Http2UpgradeProvider build() {
-            return new Http2UpgradeProvider(configBuilder.build());
+            return new Http2UpgradeProvider(this);
         }
 
-    }
+        /**
+         * Custom configuration of HTTP/2 connections.
+         * If not defined, it will be configured from config, or defaults would be used.
+         *
+         * @param http2Config HTTP/2 configuration
+         * @return updated builder
+         */
+        public Builder http2Config(Http2Config http2Config) {
+            this.http2Config = http2Config;
+            return this;
+        }
 
+        /**
+         * Add a configured sub-protocol provider. This will replace the instance discovered through service loader (if one
+         * exists).
+         *
+         * @param provider provider to add
+         * @return updated builer
+         */
+        public Builder addSubProtocolProvider(Http2SubProtocolProvider provider) {
+            subProtocolProviders.addService(provider);
+            return this;
+        }
+    }
 }

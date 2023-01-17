@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver;
+package io.helidon.nima.webserver.spi;
 
 import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.webserver.ConnectionContext;
 
 /**
  * Connection selector is given a chance to analyze request bytes and decide whether this is a connection it can accept.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.nima.webserver.http1.DefaultHttp1Config;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 
@@ -58,8 +59,10 @@ class ConfiguredLimitsTest {
     @SetUpServer
     static void server(WebServer.Builder server) {
         ServerConnectionProvider http1 = Http1ConnectionProvider.builder()
-                .maxHeadersSize(1024)
-                .maxPrologueLength(512)
+                .http1Config(DefaultHttp1Config.builder()
+                                     .maxHeadersSize(1024)
+                                     .maxPrologueLength(512)
+                                     .build())
                 .build();
 
         server.addConnectionProvider(http1);

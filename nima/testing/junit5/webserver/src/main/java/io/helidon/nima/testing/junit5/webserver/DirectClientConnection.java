@@ -26,6 +26,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.config.Config;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
@@ -159,7 +160,7 @@ class DirectClientConnection implements ClientConnection {
 
         ServerConnection connection = Http1ConnectionProvider.builder()
                 .build()
-                .create()
+                .create(it -> Config.empty())
                 .connection(ctx);
         executorService.submit(() -> {
             try {
