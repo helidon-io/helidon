@@ -37,6 +37,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 /**
  * Server that opens server sockets and handles requests through routing.
@@ -389,6 +390,7 @@ public interface WebServer {
         /**
          * Configure the default {@link MediaContext}.
          * This method discards all previously registered MediaContext.
+         *
          * @param mediaContext media context
          * @return updated instance of the builder
          */
@@ -401,6 +403,7 @@ public interface WebServer {
         /**
          * Configure the default {@link ContentEncodingContext}.
          * This method discards all previously registered ContentEncodingContext.
+         *
          * @param contentEncodingContext content encoding context
          * @return updated instance of the builder
          */
@@ -412,6 +415,7 @@ public interface WebServer {
 
         /**
          * Configure the application scoped context to be used as a parent for webserver request contexts.
+         *
          * @param context top level context
          * @return an updated builder
          */
@@ -437,6 +441,7 @@ public interface WebServer {
         /**
          * Configure whether server threads should inherit inheritable thread locals.
          * Default value is {@code false}.
+         *
          * @param inheritThreadLocals whether to inherit thread locals
          * @return an updated builder
          */
@@ -468,6 +473,7 @@ public interface WebServer {
         Map<String, ListenerConfiguration.Builder> socketBuilders() {
             return socketBuilder;
         }
+
         /**
          * Map of socket name to router.
          *
@@ -482,10 +488,9 @@ public interface WebServer {
         List<ServerConnectionSelector> connectionProviders() {
             List<ServerConnectionProvider> providers = connectionProviders.build().asList();
             // Send configuration nodes to providers
-            providers.forEach(
-                    provider -> provider.configKeys().forEach(
-                            key -> provider.config(providersConfig.get(key))));
-            return providers.stream().map(ServerConnectionProvider::create).toList();
+            return providers.stream()
+                    .map(it -> it.create(providersConfig::get))
+                    .toList();
         }
 
         private ListenerConfiguration.Builder socket(String socketName) {

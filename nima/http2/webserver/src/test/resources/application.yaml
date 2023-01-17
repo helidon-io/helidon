@@ -21,4 +21,4 @@ server:
   connection-providers:
     http_2:
       max-frame-size: 8192
-      max-header-size: 4096
+      max-header-list-size: 4096

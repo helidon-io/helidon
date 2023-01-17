@@ -29,7 +29,7 @@ import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.ServerConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.DirectHandlers;
@@ -38,86 +38,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ConnectionConfigTest {
-
-    // ConnectionContext mockup
-    private static class TestContext implements ConnectionContext {
-
-        @Override
-        public PeerInfo remotePeer() {
-            return null;
-        }
-
-        @Override
-        public PeerInfo localPeer() {
-            return null;
-        }
-
-        @Override
-        public boolean isSecure() {
-            return false;
-        }
-
-        @Override
-        public String socketId() {
-            return null;
-        }
-
-        @Override
-        public String childSocketId() {
-            return null;
-        }
-
-        @Override
-        public ServerContext serverContext() {
-            return null;
-        }
-
-        @Override
-        public ExecutorService sharedExecutor() {
-            return null;
-        }
-
-        @Override
-        public DataWriter dataWriter() {
-            return null;
-        }
-
-        @Override
-        public DataReader dataReader() {
-            return null;
-        }
-
-        @Override
-        public Router router() {
-            return new Router() {
-                @Override
-                public <T extends Routing> T routing(Class<T> routingType, T defaultValue) {
-                    return null;
-                }
-
-                @Override
-                public void afterStop() {
-                }
-
-                @Override
-                public void beforeStart() {
-                }
-            };
-        }
-
-        @Override
-        public long maxPayloadSize() {
-            return 0;
-        }
-
-        @Override
-        public DirectHandlers directHandlers() {
-            return null;
-        }
-
-    }
 
     // Verify that HTTP/2 connection provider is properly configured from config file
     @Test
@@ -145,7 +69,7 @@ class ConnectionConfigTest {
         for (ServerConnectionSelector provider : providers) {
             if (provider instanceof Http2ConnectionSelector) {
                 haveHttp2Provider = true;
-                Http2Connection conn = (Http2Connection) provider.connection(new TestContext());
+                Http2Connection conn = (Http2Connection) provider.connection(mockContext());
                 // Verify values to be updated from configuration file
                 assertThat(conn.config().maxFrameSize(), is(8192L));
                 assertThat(conn.config().maxHeaderListSize(), is(4096L));
@@ -162,12 +86,15 @@ class ConnectionConfigTest {
     void testProviderConfigBuilder() {
 
         Http2ConnectionSelector provider = (Http2ConnectionSelector) Http2ConnectionProvider.builder()
-                .maxFrameSize(4096L)
-                .maxHeaderListSize(2048L)
+                .http2Config(DefaultHttp2Config.builder()
+                                     .maxFrameSize(4096L)
+                                     .maxHeaderListSize(2048L)
+                                     .build())
                 .build()
-                .create();
+                .create(it -> Config.empty());
 
-        Http2Connection conn = (Http2Connection) provider.connection(new TestContext());
+
+        Http2Connection conn = (Http2Connection) provider.connection(mockContext());
         // Verify values to be updated from configuration file
         assertThat(conn.config().maxFrameSize(), is(4096L));
         assertThat(conn.config().maxHeaderListSize(), is(2048L));
@@ -176,4 +103,9 @@ class ConnectionConfigTest {
         assertThat(conn.serverSettings().value(Http2Setting.MAX_HEADER_LIST_SIZE), is(2048L));
     }
 
+    private static ConnectionContext mockContext() {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        return ctx;
+    }
 }

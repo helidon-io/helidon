@@ -29,6 +29,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;

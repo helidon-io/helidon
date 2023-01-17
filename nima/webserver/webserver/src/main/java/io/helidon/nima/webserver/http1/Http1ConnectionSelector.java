@@ -22,8 +22,9 @@ import java.util.Set;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.ServerConnectionSelector;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 /**
  * HTTP/1.1 server connection selector.
@@ -32,8 +33,8 @@ public class Http1ConnectionSelector implements ServerConnectionSelector {
     private static final String PROTOCOL = " HTTP/1.1\r";
 
     // HTTP/1.1 connection upgrade providers
-    private final Map<String, Http1Upgrader> upgradeProviderMap;
     private final Http1Config config;
+    private final Map<String, Http1Upgrader> upgradeProviderMap;
 
     // Creates an instance of HTTP/1.1 server connection selector.
     Http1ConnectionSelector(Http1Config config, Map<String, Http1Upgrader> upgradeProviderMap) {

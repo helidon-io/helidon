@@ -31,13 +31,13 @@ import io.helidon.config.Config;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.ServerConnectionSelector;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http1.Http1Connection;
 import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
-import io.helidon.nima.webserver.http1.Http1Upgrader;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 
 import org.junit.jupiter.api.Test;
 
@@ -171,7 +171,7 @@ public class WsUpgradeProviderConfigTest {
                 .addOrigin("bOrigin1")
                 .addOrigin("bOrigin2")
                 .build()
-                .create();
+                .create(it -> Config.empty());
 
         Set<String> origins = upgrader.origins();
         assertThat(origins, containsInAnyOrder("bOrigin1", "bOrigin2"));

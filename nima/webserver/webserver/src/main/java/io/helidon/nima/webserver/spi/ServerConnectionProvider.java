@@ -16,17 +16,17 @@
 
 package io.helidon.nima.webserver.spi;
 
+import java.util.function.Function;
+
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.ServerConnectionSelector;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for server connection providers.
- * This interface serves as {@link io.helidon.nima.webserver.ServerConnectionSelector} builder
+ * This interface serves as {@link ServerConnectionSelector} builder
  * which receives requested configuration nodes from the server configuration when server builder
  * is running.
  */
 public interface ServerConnectionProvider {
-
     /**
      * Provider's specific configuration nodes names.
      *
@@ -35,19 +35,12 @@ public interface ServerConnectionProvider {
     Iterable<String> configKeys();
 
     /**
-     * Provider's configuration reader.
-     * Node with {@code configKey()} name will be provided. May receive empty config
-     * when node with specified key is missing.
-     *
-     * @param config {@link io.helidon.config.Config} configuration node
-     */
-    void config(Config config);
-
-    /**
      * Creates an instance of server connection selector.
      *
+     * @param configs configuration for each {@link #configKeys()}, the config may be empty, but it will be present
+     *                for each value
      * @return new server connection selector
      */
-    ServerConnectionSelector create();
+    ServerConnectionSelector create(Function<String, Config> configs);
 
 }

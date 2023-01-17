@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,16 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
+    requires io.helidon.builder;
+    requires io.helidon.pico.builder.config;
 
     requires java.management;
 
     requires jakarta.annotation;
     requires io.helidon.common.uri;
+
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use

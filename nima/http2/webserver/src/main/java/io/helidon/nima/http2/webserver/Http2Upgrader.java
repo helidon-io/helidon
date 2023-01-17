@@ -18,6 +18,7 @@ package io.helidon.nima.http2.webserver;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
@@ -27,8 +28,9 @@ import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2Settings;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http1.Http1Upgrader;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnection;
 
 /**
@@ -44,12 +46,14 @@ public class Http2Upgrader implements Http1Upgrader {
     private static final Base64.Decoder BASE_64_DECODER = Base64.getDecoder();
 
     private final Http2Config config;
+    private final List<Http2SubProtocolSelector> subProtocolProviders;
 
     /**
      * Creates an instance of HTTP/1.1 to HTTP/2 protocol upgrade.
      */
-    Http2Upgrader(Http2Config config) {
+    Http2Upgrader(Http2Config config, List<Http2SubProtocolSelector> subProtocolProviders) {
         this.config = config;
+        this.subProtocolProviders = subProtocolProviders;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class Http2Upgrader implements Http1Upgrader {
     public ServerConnection upgrade(ConnectionContext ctx,
                                     HttpPrologue prologue,
                                     WritableHeaders<?> headers) {
-        Http2Connection connection = new Http2Connection(ctx, config);
+        Http2Connection connection = new Http2Connection(ctx, config, subProtocolProviders);
         if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
             connection.clientSettings(Http2Settings.create(BufferData.create(BASE_64_DECODER.decode(headers.get(
                     HTTP2_SETTINGS_HEADER_NAME).value().getBytes(StandardCharsets.US_ASCII)))));

@@ -22,7 +22,7 @@ package io.helidon.nima.webserver.spi;
 public interface ServerConnection {
     /**
      * Start handling the connection. Data is provided through
-     * {@link io.helidon.nima.webserver.ServerConnectionSelector#connection(io.helidon.nima.webserver.ConnectionContext)}.
+     * {@link ServerConnectionSelector#connection(io.helidon.nima.webserver.ConnectionContext)}.
      *
      * @throws InterruptedException to interrupt any waiting state and terminate this connection
      */
