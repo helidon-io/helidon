@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.security.providers.oidc.common.OidcConfig;
-import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
@@ -89,8 +89,8 @@ class TenantIdentificationIT {
     void testNoneTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
             String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
-            String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
-            assertThat(tenantName, is(TenantConfigFinder.DEFAULT_TENANT_ID));
+            URI uri = URI.create(redirectUri);
+            assertThat(uri.getRawQuery(), nullValue());
         }
     }
 
