@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.reactive.graphql.server;
 
+import java.lang.System.Logger.Level;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
@@ -51,7 +50,7 @@ import static org.eclipse.yasson.YassonConfig.ZERO_TIME_PARSE_DEFAULTING;
  * Support for GraphQL for Helidon WebServer.
  */
 public class GraphQlSupport implements Service {
-    private static final Logger LOGGER = Logger.getLogger(GraphQlSupport.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GraphQlSupport.class.getName());
     private static final Jsonb JSONB = JsonbBuilder.newBuilder()
             .withConfig(new JsonbConfig()
                                 .setProperty(ZERO_TIME_PARSE_DEFAULTING, true)
@@ -147,7 +146,7 @@ public class GraphQlSupport implements Service {
             } catch (Error e) {
                 res.send(e);
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Unexpected exception when executing graphQL request", e);
+                LOGGER.log(Level.ERROR, "Unexpected exception when executing graphQL request", e);
             }
         });
 
