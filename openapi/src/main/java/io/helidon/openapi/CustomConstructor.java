@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package io.helidon.openapi;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
@@ -163,7 +162,7 @@ final class CustomConstructor extends Constructor {
             ChildNameAdder<P> childNameAdder,
             Function<Class<?>, ExpandedTypeDescription.ListMapLikeTypeDescription<P, C>> typeDescriptionFunction) { }
 
-    private static final Logger LOGGER = Logger.getLogger(CustomConstructor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CustomConstructor.class.getName());
 
     CustomConstructor(TypeDescription td) {
         super(td);
