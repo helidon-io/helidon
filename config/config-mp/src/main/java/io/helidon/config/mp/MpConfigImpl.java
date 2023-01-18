@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -336,9 +336,14 @@ class MpConfigImpl implements Config {
                 LOGGER.finest("Found property " + propertyName + " in source " + source.getName());
             }
             String rawValue = value;
-            return applyFilters(propertyName, value)
-                    .map(it -> resolveReferences(propertyName, it))
-                    .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+            try {
+                return applyFilters(propertyName, value)
+                        .map(it -> resolveReferences(propertyName, it))
+                        .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+            } catch (NoSuchElementException e) {
+                // Property does not exist, but we don't fail.
+                return Optional.empty();
+            }
         }
 
         return Optional.empty();
