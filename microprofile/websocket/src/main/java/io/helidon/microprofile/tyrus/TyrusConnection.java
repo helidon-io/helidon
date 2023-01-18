@@ -18,6 +18,7 @@ package io.helidon.microprofile.tyrus;
 
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
