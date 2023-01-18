@@ -1,6 +1,6 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
-  Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+  Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -58,10 +58,15 @@
                     <exclude name="testNeedsGroup1Mapping"/>
                 </methods>
             </class>
-            <!-- There is no reason why this should fail -->
-            <class name="org.eclipse.microprofile.jwt.tck.container.jaxrs.jwe.RolesAllowedSignEncryptTest">
+            <!--
+            This test fails with JDK 19 because of the bug in TokenUtils. It is obtaining AES key with default length.
+            It used to be 128bit prior JDK 19, but it is 256bit long after JDK 19.
+
+            Remove this exclusion once JWT Auth is updated to the next version after 2.0.
+            -->
+            <class name="org.eclipse.microprofile.jwt.tck.util.TokenUtilsEncryptTest">
                 <methods>
-                    <exclude name="callEchoSignToken"/>
+                    <exclude name="testFailAlgorithm"/>
                 </methods>
             </class>
         </classes>

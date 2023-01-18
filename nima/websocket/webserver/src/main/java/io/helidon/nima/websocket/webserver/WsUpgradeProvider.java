@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,30 @@
 package io.helidon.nima.websocket.webserver;
 
 import java.lang.System.Logger.Level;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
 import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.websocket.WsUpgradeException;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to WebSocket.
@@ -45,17 +50,22 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     /**
      * Websocket key header name.
      */
-    protected static final HeaderName WS_KEY = Header.create("Sec-WebSocket-Key");
+    public static final HeaderName WS_KEY = Header.create("Sec-WebSocket-Key");
 
     /**
      * Websocket version header name.
      */
-    protected static final HeaderName WS_VERSION = Header.create("Sec-WebSocket-Version");
+    public static final HeaderName WS_VERSION = Header.create("Sec-WebSocket-Version");
 
     /**
      * Websocket protocol header name.
      */
-    protected static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
+    public static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
+
+    /**
+     * Websocket protocol header name.
+     */
+    public static final HeaderName EXTENSIONS = Header.create("Sec-WebSocket-Extensions");
 
     /**
      * Switching response prefix.
@@ -81,10 +91,12 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
     protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
 
     private static final System.Logger LOGGER = System.getLogger(WsUpgradeProvider.class.getName());
-    private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
+    private static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
+    static final Headers EMPTY_HEADERS = WritableHeaders.create();
 
     private final Set<String> origins;
     private final boolean anyOrigin;
@@ -141,10 +153,12 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
                     .build();
         }
 
-        WebSocket route = ctx.router().routing(WebSocketRouting.class, WebSocketRouting.empty())
-                .findRoute(prologue);
+        WsRoute route;
 
-        if (route == null) {
+        try {
+            route = ctx.router().routing(WsRouting.class, WsRouting.empty())
+                    .findRoute(prologue);
+        } catch (NotFoundException e) {
             return null;
         }
 
@@ -160,17 +174,33 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
             }
         }
 
-        // todo support subprotocols (must be provided by route)
-        // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
+        // invoke user-provided HTTP upgrade handler
+        Optional<Headers> upgradeHeaders;
+        try {
+            upgradeHeaders = route.listener().onHttpUpgrade(prologue, headers);
+        } catch (WsUpgradeException e) {
+            LOGGER.log(Level.TRACE, "Websocket upgrade rejected", e);
+            return null;
+        }
+
+        // write switch protocol response including headers from listener
         DataWriter dataWriter = ctx.dataWriter();
-        String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey) + SWITCHING_PROTOCOLS_SUFFIX;
-        dataWriter.write(BufferData.create(switchingProtocols.getBytes(StandardCharsets.US_ASCII)));
+        String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey);
+        dataWriter.write(BufferData.create(switchingProtocols.getBytes(US_ASCII)));
+        BufferData separator = BufferData.create(HEADERS_SEPARATOR);
+        dataWriter.write(separator);
+        upgradeHeaders.ifPresent(hs -> {
+            BufferData headerData = BufferData.growing(128);
+            hs.forEach(h -> h.writeHttp1Header(headerData));
+            dataWriter.write(headerData);
+        });
+        dataWriter.write(separator.rewind());
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + version);
         }
 
-        return new WsConnection(ctx, prologue, headers, wsKey, route);
+        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, route);
     }
 
     protected boolean anyOrigin() {
@@ -197,7 +227,7 @@ public class WsUpgradeProvider implements Http1UpgradeProvider {
                     .message("Invalid Sec-WebSocket-Key header")
                     .build();
         }
-        byte[] wsKeyBytes = wsKey.getBytes(StandardCharsets.US_ASCII);
+        byte[] wsKeyBytes = wsKey.getBytes(US_ASCII);
         int wsKeyBytesLength = wsKeyBytes.length;
         byte[] toHash = new byte[wsKeyBytesLength + KEY_SUFFIX_LENGTH];
         System.arraycopy(wsKeyBytes, 0, toHash, 0, wsKeyBytesLength);

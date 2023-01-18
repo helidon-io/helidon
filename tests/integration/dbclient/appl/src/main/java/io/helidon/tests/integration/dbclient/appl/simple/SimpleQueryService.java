@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,23 @@
  */
 package io.helidon.tests.integration.dbclient.appl.simple;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Logger;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.DbRow;
-import io.helidon.tests.integration.dbclient.appl.AbstractService;
-import io.helidon.tests.integration.tools.service.AppResponse;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.tests.integration.dbclient.appl.AbstractService;
+import io.helidon.tests.integration.tools.service.AppResponse;
+import io.helidon.tests.integration.tools.service.RemoteTestException;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonObject;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 
@@ -40,11 +40,11 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class SimpleQueryService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleQueryService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SimpleQueryService.class.getName());
 
     private interface TestFunction extends Function<String, Multi<DbRow>> {}
 
-    public SimpleQueryService(final DbClient dbClient, final Map<String, String> statements) {
+    public SimpleQueryService(DbClient dbClient, Map<String, String> statements) {
         super(dbClient, statements);
     }
 
@@ -62,12 +62,11 @@ public class SimpleQueryService extends AbstractService {
 
     // Common test execution code
     private void executeTest(
-            final ServerRequest request,
-            final ServerResponse response,
-            final String testName,
-            final TestFunction test
+            ServerRequest request,
+            ServerResponse response,
+            String testName,
+            TestFunction test
     ) {
-        LOGGER.fine(() -> String.format("Running SimpleQueryService.%s on server", testName));
         try {
             String name = param(request, QUERY_NAME_PARAM);
             Multi<DbRow> future = test.apply(name);
@@ -79,13 +78,13 @@ public class SimpleQueryService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException ex) {
-            LOGGER.fine(() -> String.format("Error in SimpleQueryService.%s on server", testName));
+            LOGGER.log(Level.WARNING, String.format("Error in SimpleQueryService.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
         }
     }
 
     // Verify {@code createNamedQuery(String, String)} API method with ordered
-    private JsonObject testCreateNamedQueryStrStrOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateNamedQueryStrStrOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateNamedQueryStrStrOrderArgs",
                 name -> dbClient().execute(
                         exec -> exec
@@ -93,11 +92,10 @@ public class SimpleQueryService extends AbstractService {
                                 .addParam(name)
                                 .execute())
         );
-        return null;
     }
 
     // Verify {@code createNamedQuery(String)} API method with named parameters.
-    private JsonObject testCreateNamedQueryStrNamedArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateNamedQueryStrNamedArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateNamedQueryStrNamedArgs",
                 name -> dbClient().execute(
                         exec -> exec
@@ -105,11 +103,10 @@ public class SimpleQueryService extends AbstractService {
                                 .addParam("name", name)
                                 .execute())
         );
-        return null;
     }
 
     // Verify {@code createNamedQuery(String)} API method with ordered
-    private JsonObject testCreateNamedQueryStrOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateNamedQueryStrOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateNamedQueryStrOrderArgs",
                 name -> dbClient().execute(
                         exec -> exec
@@ -117,11 +114,10 @@ public class SimpleQueryService extends AbstractService {
                                 .addParam(name)
                                 .execute())
         );
-        return null;
     }
 
     // Verify {@code createQuery(String)} API method with named parameters.
-    private JsonObject testCreateQueryNamedArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateQueryNamedArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateQueryNamedArgs",
                 name -> dbClient().execute(
                         exec -> exec
@@ -129,38 +125,34 @@ public class SimpleQueryService extends AbstractService {
                                 .addParam("name", name)
                                 .execute())
         );
-        return null;
     }
 
     // Verify {@code createQuery(String)} API method with ordered parameters.
-    private JsonObject testCreateQueryOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testCreateQueryOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testCreateQueryOrderArgs",
                 name -> dbClient().execute(
                         exec -> exec
                                 .createQuery(statement("select-pokemon-order-arg"))
                                 .addParam(name)
                                 .execute()));
-        return null;
     }
 
     // Verify {@code namedQuery(String)} API method with ordered parameters
-    private JsonObject testNamedQueryOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testNamedQueryOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testNamedQueryOrderArgs",
                 name -> dbClient().execute(
                         exec -> exec
                                 .namedQuery("select-pokemon-order-arg", name))
         );
-        return null;
     }
 
     // Verify {@code query(String)} API method with ordered parameters passed
-    private JsonObject testQueryOrderArgs(final ServerRequest request, final ServerResponse response) {
+    private void testQueryOrderArgs(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testQueryOrderArgs",
                 name -> dbClient().execute(
                         exec -> exec
                                 .query(statement("select-pokemon-order-arg"), name))
         );
-        return null;
     }
 
 }

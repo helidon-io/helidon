@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 
-class DirectSocket implements HelidonSocket {
+/**
+ * A socket not backed by any network, used for unit testing.
+ */
+public class DirectSocket implements HelidonSocket {
     private final PeerInfo localPeer;
     private final PeerInfo remotePeer;
     private final boolean isSecure;
@@ -29,6 +32,18 @@ class DirectSocket implements HelidonSocket {
         this.localPeer = localPeer;
         this.remotePeer = remotePeer;
         this.isSecure = isSecure;
+    }
+
+    /**
+     * Create a new socket with explicit peer information.
+     *
+     * @param localPeer local peer (local host and port)
+     * @param remotePeer remote peer (remote party host and port)
+     * @param isSecure whether the socket is secured (TLS)
+     * @return a new direct socket
+     */
+    public static DirectSocket create(PeerInfo localPeer, PeerInfo remotePeer, boolean isSecure) {
+        return new DirectSocket(localPeer, remotePeer, isSecure);
     }
 
     @Override

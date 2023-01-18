@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,12 +188,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
                                                                               Http.Method.GET);
-        builder.headers(clientRequest.headers());
-        builder.queryParams(clientRequest.queryParams());
-        builder.uri = clientRequest.uri();
         builder.httpVersion = clientRequest.version();
         builder.proxy = clientRequest.proxy();
-        builder.fragment = clientRequest.fragment();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;
         int maxRedirects = builder.configuration.maxRedirects();
         if (builder.redirectionCount > maxRedirects) {

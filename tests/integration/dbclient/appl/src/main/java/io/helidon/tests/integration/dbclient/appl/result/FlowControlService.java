@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,26 @@
  */
 package io.helidon.tests.integration.dbclient.appl.result;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.logging.Logger;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.reactive.webserver.Routing;
+import io.helidon.reactive.webserver.ServerRequest;
+import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.dbclient.appl.model.Type;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 
@@ -45,7 +44,7 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
 public class FlowControlService extends AbstractService {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(FlowControlService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FlowControlService.class.getName());
 
     /**
      * Creates an instance of web resource to test proper flow control handling in query processing.
@@ -53,7 +52,7 @@ public class FlowControlService extends AbstractService {
      * @param dbClient DbClient instance
      * @param statements statements from configuration file
      */
-    public FlowControlService(final DbClient dbClient, final Map<String, String> statements) {
+    public FlowControlService(DbClient dbClient, Map<String, String> statements) {
         super(dbClient, statements);
     }
 
@@ -101,27 +100,27 @@ public class FlowControlService extends AbstractService {
             // Initially request 3 DbRows.
             requested = REQUESTS[reqIdx];
             remaining = REQUESTS[reqIdx++];
-            LOGGER.finer(() -> String.format("Requesting first rows: %d", requested));
+            LOGGER.log(Level.DEBUG, () -> String.format("Requesting first rows: %d", requested));
             this.subscription.request(requested);
         }
 
         @Override
-        public void onNext(final DbRow dbRow) {
+        public void onNext(DbRow dbRow) {
             final Type type = new Type(dbRow.column(1).as(Integer.class), dbRow.column(2).as(String.class));
             total++;
             if (remaining > 0) {
                 remaining -= 1;
-                LOGGER.finer(() -> String.format(
+                LOGGER.log(Level.DEBUG, () -> String.format(
                         "NEXT: tot: %d req: %d rem: %d type: %s", total, requested, remaining, type.toString()));
                 if (remaining == 0 && reqIdx < REQUESTS.length) {
-                    LOGGER.finer(() -> String.format("Notifying main thread to request more rows"));
+                    LOGGER.log(Level.DEBUG, () -> "Notifying main thread to request more rows");
                     synchronized (this) {
                         this.notify();
                     }
                 }
                 // Shall not recieve dbRow when not requested!
             } else {
-                LOGGER.warning(() -> String.format(
+                LOGGER.log(Level.WARNING, () -> String.format(
                         "NEXT: tot: %d req: %d rem: %d type: %s", total, requested, remaining, type.toString()));
                 throw new RemoteTestException(String.format("Recieved unexpected row: %s", type.toString()));
             }
@@ -130,13 +129,13 @@ public class FlowControlService extends AbstractService {
         @Override
         public void onError(Throwable throwable) {
             error = throwable.getMessage();
-            LOGGER.warning(() -> String.format("EXCEPTION: %s", throwable.getMessage()));
+            LOGGER.log(Level.WARNING, String.format("EXCEPTION: %s", throwable.getMessage()), throwable);
             finished = true;
         }
 
         @Override
         public void onComplete() {
-            LOGGER.finer(() -> String.format("COMPLETE: tot: %d req: %d rem: %d", total, requested, remaining));
+            LOGGER.log(Level.DEBUG, () -> String.format("COMPLETE: tot: %d req: %d rem: %d", total, requested, remaining));
             finished = true;
             synchronized (this) {
                 this.notify();
@@ -150,7 +149,7 @@ public class FlowControlService extends AbstractService {
         private void requestNext() {
             if (reqIdx < REQUESTS.length) {
                 requested = remaining = REQUESTS[reqIdx++];
-                LOGGER.finer(() -> String.format("Requesting more rows: %d", requested));
+                LOGGER.log(Level.DEBUG, () -> String.format("Requesting more rows: %d", requested));
                 this.subscription.request(requested);
             } else {
                 throw new RemoteTestException("Can't request more rows, processing shall be finished now.");
@@ -164,15 +163,12 @@ public class FlowControlService extends AbstractService {
      */
     private static final class SourceDataThread implements Runnable {
 
-        private final ServerRequest request;
         private final ServerResponse response;
         private final DbClient dbClient;
 
         private SourceDataThread(
-                final ServerRequest request,
                 final ServerResponse response,
                 final DbClient dbClient) {
-            this.request = request;
             this.response = response;
             this.dbClient = dbClient;
         }
@@ -203,11 +199,11 @@ public class FlowControlService extends AbstractService {
                                         Type.TYPES.get(id).getName(),
                                         name));
                     }
-                    LOGGER.fine(() -> type.toString());
+                    LOGGER.log(Level.DEBUG, type::toString);
                 });
                 response.send(AppResponse.okStatus(JsonObject.EMPTY_JSON_OBJECT));
             } catch (RemoteTestException ex) {
-                LOGGER.fine("Sending error response.");
+                LOGGER.log(Level.DEBUG, "Sending error response.");
                 response.send(exceptionStatus(ex));
             }
         }
@@ -217,8 +213,7 @@ public class FlowControlService extends AbstractService {
     // Source data verification test.
     // Testing code is blocking so it's running in a separate thread.
     private void testSourceData(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine("Running FlowControl.testSourceData on server");
-        Thread thread = new Thread(new SourceDataThread(request, response, dbClient()));
+        Thread thread = new Thread(new SourceDataThread(response, dbClient()));
         thread.start();
     }
 
@@ -227,24 +222,20 @@ public class FlowControlService extends AbstractService {
      */
     private static final class FlowControlThread implements Runnable {
 
-        private final ServerRequest request;
         private final ServerResponse response;
         private final DbClient dbClient;
 
         private FlowControlThread(
-                final ServerRequest request,
                 final ServerResponse response,
                 final DbClient dbClient) {
-            this.request = request;
             this.response = response;
             this.dbClient = dbClient;
         }
 
         @Override
-        @SuppressWarnings("SleepWhileInLoop")
+        @SuppressWarnings({"SleepWhileInLoop", "BusyWait", "SynchronizationOnLocalVariableOrMethodParameter"})
         public void run() {
             try {
-                CompletableFuture<Long> rowsFuture = new CompletableFuture<>();
                 TestSubscriber subscriber = new TestSubscriber();
                 Multi<DbRow> rows = dbClient.execute(exec -> exec
                         .namedQuery("select-types"));
@@ -263,20 +254,20 @@ public class FlowControlService extends AbstractService {
                         Thread.sleep(500);
                         subscriber.requestNext();
                     } else {
-                        LOGGER.finer(() -> String.format("All requests were already done."));
+                        LOGGER.log(Level.DEBUG, "All requests were already done.");
                     }
                 }
                 if (subscriber.error != null) {
                     throw new RemoteTestException(subscriber.error);
                 }
-                LOGGER.fine("Sending OK response.");
+                LOGGER.log(Level.DEBUG, "Sending OK response.");
                 JsonObjectBuilder job = Json.createObjectBuilder();
                 job.add("requested", subscriber.requested);
                 job.add("remaining", subscriber.remaining);
                 job.add("total", subscriber.total);
                 response.send(AppResponse.okStatus(job.build()));
             } catch (RemoteTestException | InterruptedException ex) {
-                LOGGER.fine("Sending error response.");
+                LOGGER.log(Level.DEBUG, "Sending error response.", ex);
                 response.send(exceptionStatus(ex));
             }
         }
@@ -285,9 +276,8 @@ public class FlowControlService extends AbstractService {
 
     // Flow control test.
     // Testing code is blocking so it's running in a separate thread.
-    private void testFlowControl(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine("Running FlowControl.testFlowControl on server");
-        Thread thread = new Thread(new FlowControlThread(request, response, dbClient()));
+    private void testFlowControl(ServerRequest request, ServerResponse response) {
+        Thread thread = new Thread(new FlowControlThread(response, dbClient()));
         thread.start();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,8 @@ public interface Http1UpgradeProvider {
      * @param ctx      connection context
      * @param prologue http prologue of the upgrade request
      * @param headers  http headers of the upgrade request
-     * @return a new connection to use instead of the original {@link io.helidon.nima.webserver.http1.Http1Connection}
+     * @return a new connection to use instead of the original {@link io.helidon.nima.webserver.http1.Http1Connection},
+     *           or {@code null} if the connection cannot be upgraded
      */
     ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers);
 }

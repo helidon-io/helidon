@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package io.helidon.tests.integration.dbclient.mongodb.init;
 
+import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class CheckIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CheckIT.class.getName());
 
     /** Timeout in seconds to wait for database to come up. */
     private static final int TIMEOUT = 60;
@@ -65,14 +64,14 @@ public class CheckIT extends AbstractIT {
         while (retry) {
             try {
                 dbClient.execute(exec -> exec.namedGet("ping"))
-                        .await(1, TimeUnit.SECONDS);
+                        .await(Duration.ofSeconds(1));
                 retry = false;
             } catch (Exception ex) {
                 if (System.currentTimeMillis() > endTm) {
                     fail("Database startup failed!", ex);
                 } else {
-                    LOGGER.info(() -> String.format("Exception: %s", ex.getMessage()));
-                    LOGGER.log(Level.INFO, "Exception details: ", ex);
+                    // Exceptions will be coming until database is up
+                    LOGGER.log(Level.DEBUG, () -> String.format("Exception: %s", ex.getMessage()), ex);
                 }
             }
         }
@@ -90,7 +89,7 @@ public class CheckIT extends AbstractIT {
                     .flatMapSingle(result -> exec.namedGet("create-user"))
             ).await();
         } catch (Exception ex) {
-                LOGGER.warning(() -> String.format("Exception: %s", ex.getMessage()));
+                LOGGER.log(Level.WARNING, () -> String.format("Exception: %s", ex.getMessage()), ex);
                 fail("Database user setup failed!", ex);
         }
     }
@@ -98,12 +97,9 @@ public class CheckIT extends AbstractIT {
     /**
      * Setup database for tests.
      * Wait for database to start. Returns after ping query completed successfully or timeout passed.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void setup() throws ExecutionException, InterruptedException {
+    public static void setup() {
         waitForStart(DB_ADMIN);
         //initUser(DB_ADMIN);
     }
@@ -111,18 +107,15 @@ public class CheckIT extends AbstractIT {
     /**
      * Simple test to verify that DML query execution works.
      * Used before running database schema initialization.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlStatementExecution() throws ExecutionException, InterruptedException {
+    public void testDmlStatementExecution() {
         Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery("ping-query"));
         List<DbRow> rowsList = result.collectList().await(5, TimeUnit.SECONDS);
         DbRow row = rowsList.get(0);
         Double ok = row.column("ok").as(Double.class);
         assertThat(ok, equalTo(1.0));
-        LOGGER.info(() -> String.format("Command ping row: %s", row.toString()));
+        LOGGER.log(Level.DEBUG, () -> String.format("Command ping row: %s", row));
     }
 
 }

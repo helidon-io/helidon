@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package io.helidon.nima.websocket;
  * Codes to use with {@link io.helidon.nima.websocket.WsSession#close(int, String)} and to receive
  * in {@link io.helidon.nima.websocket.WsListener#onClose(WsSession, int, String)}.
  */
-public final class CloseCodes {
+public final class WsCloseCodes {
     /**
      * Code to use with {@link io.helidon.nima.websocket.WsSession#close(int, String)} to indicate normal close operation.
      */
@@ -118,6 +118,6 @@ public final class CloseCodes {
      */
     public static final int APPLICATION_MAX = 4999;
 
-    private CloseCodes() {
+    private WsCloseCodes() {
     }
 }

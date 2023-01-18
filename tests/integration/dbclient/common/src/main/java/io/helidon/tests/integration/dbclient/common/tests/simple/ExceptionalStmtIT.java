@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletionException;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbClientException;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
@@ -31,58 +31,47 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ExceptionalStmtIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(ExceptionalStmtIT.class.getName());
-
-    /** Maximum Pokemon ID. */
-    private static final int BASE_ID = LAST_POKEMON_ID + 40;
+    private static final System.Logger LOGGER = System.getLogger(ExceptionalStmtIT.class.getName());
 
     /**
      * Verify that execution of query with non existing named statement throws an exception.
-     *
      */
     @Test
     public void testCreateNamedQueryNonExistentStmt() {
-        LOGGER.info(() -> "Starting test");
         try {
             DB_CLIENT.execute(exec -> exec
                     .createNamedQuery("select-pokemons-not-exists")
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
             fail("Execution of non existing statement shall cause an exception to be thrown.");
         } catch (DbClientException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
 
     /**
      * Verify that execution of query with both named and ordered arguments throws an exception.
-     *
      */
     @Test
     public void testCreateNamedQueryNamedAndOrderArgsWithoutArgs() {
-        LOGGER.info(() -> "Starting test");
         try {
             DB_CLIENT.execute(exec -> exec
                     .createNamedQuery("select-pokemons-error-arg")
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
             fail("Execution of query with both named and ordered parameters without passing any shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
 
     /**
      * Verify that execution of query with both named and ordered arguments throws an exception.
-     *
      */
     @Test
     public void testCreateNamedQueryNamedAndOrderArgsWithArgs() {
-        LOGGER.info(() -> "Starting test");
         try {
             DB_CLIENT.execute(exec -> exec
                     .createNamedQuery("select-pokemons-error-arg")
@@ -91,20 +80,17 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
             fail("Execution of query with both named and ordered parameters without passing them shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
 
     /**
      * Verify that execution of query with named arguments throws an exception while trying to set ordered argument.
-     *
      */
     @Test
     public void testCreateNamedQueryNamedArgsSetOrderArg() {
-        LOGGER.info(() -> "Starting test");
         try {
             DB_CLIENT.execute(exec -> exec
                     .createNamedQuery("select-pokemon-named-arg")
@@ -112,20 +98,17 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
             fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
 
     /**
      * Verify that execution of query with ordered arguments throws an exception while trying to set named argument.
-     *
      */
     @Test
     public void testCreateNamedQueryOrderArgsSetNamedArg() {
-        LOGGER.info(() -> "Starting test");
         try {
             DB_CLIENT.execute(exec -> exec
                     .createNamedQuery("select-pokemon-order-arg")
@@ -133,10 +116,9 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute())
                     .collectList()
                     .await();
-            LOGGER.warning(() -> "Test failed");
             fail("Execution of query with ordered parameter with passing named parameter value shall fail.");
         } catch (DbClientException | CompletionException ex) {
-            LOGGER.info(() -> String.format("Expected exception: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
 

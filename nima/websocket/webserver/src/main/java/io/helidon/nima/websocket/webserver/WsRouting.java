@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Routing;
 import io.helidon.nima.websocket.WsListener;
@@ -28,11 +29,11 @@ import io.helidon.nima.websocket.WsListener;
 /**
  * WebSocket specific routing.
  */
-public class WebSocketRouting implements Routing {
-    private static final WebSocketRouting EMPTY = WebSocketRouting.builder().build();
-    private final List<WebSocket> routes;
+public class WsRouting implements Routing {
+    private static final WsRouting EMPTY = WsRouting.builder().build();
+    private final List<WsRoute> routes;
 
-    private WebSocketRouting(Builder builder) {
+    private WsRouting(Builder builder) {
         this.routes = new ArrayList<>(builder.routes);
     }
 
@@ -50,47 +51,53 @@ public class WebSocketRouting implements Routing {
      *
      * @return empty routing
      */
-    public static WebSocketRouting empty() {
+    public static WsRouting empty() {
         return EMPTY;
     }
 
     @Override
     public void beforeStart() {
-        for (WebSocket route : routes) {
+        for (WsRoute route : routes) {
             route.beforeStart();
         }
     }
 
     @Override
     public void afterStop() {
-        for (WebSocket route : routes) {
+        for (WsRoute route : routes) {
             route.afterStop();
         }
     }
 
-    WebSocket findRoute(HttpPrologue prologue) {
-        for (WebSocket route : routes) {
+    /**
+     * Find a route based on the provided prologue.
+     *
+     * @param prologue prologue with path and other request information
+     * @return found route
+     */
+    public WsRoute findRoute(HttpPrologue prologue) {
+        for (WsRoute route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {
                 return route;
             }
         }
 
-        return null;
+        throw new NotFoundException("No WebSocket route available for " + prologue);
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.nima.websocket.webserver.WebSocketRouting}.
+     * Fluent API builder for {@link WsRouting}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, WebSocketRouting> {
-        private final List<WebSocket> routes = new ArrayList<>();
+    public static class Builder implements io.helidon.common.Builder<Builder, WsRouting> {
+        private final List<WsRoute> routes = new ArrayList<>();
 
         private Builder() {
         }
 
         @Override
-        public WebSocketRouting build() {
-            return new WebSocketRouting(this);
+        public WsRouting build() {
+            return new WsRouting(this);
         }
 
         /**
@@ -101,7 +108,7 @@ public class WebSocketRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(String path, WsListener listener) {
-            return route(WebSocket.create(path, listener));
+            return route(WsRoute.create(path, listener));
         }
 
         /**
@@ -112,10 +119,10 @@ public class WebSocketRouting implements Routing {
          * @return updated builder
          */
         public Builder endpoint(String path, Supplier<WsListener> listener) {
-            return route(WebSocket.create(path, listener));
+            return route(WsRoute.create(path, listener));
         }
 
-        private Builder route(WebSocket wsRoute) {
+        private Builder route(WsRoute wsRoute) {
             routes.add(wsRoute);
             return this;
         }

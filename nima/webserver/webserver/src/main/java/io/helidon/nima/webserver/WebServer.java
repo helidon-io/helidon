@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,13 @@ public interface WebServer {
     }
 
     /**
+     * Context associated with the {@code WebServer}, used as a parent for request contexts.
+     *
+     * @return a server context
+     */
+    Context context();
+
+    /**
      * Returns {@code true} if TLS is configured for the named socket.
      *
      * @param socketName the name of a socket
@@ -145,6 +152,7 @@ public interface WebServer {
 
         private boolean shutdownHook = true;
         private Context context;
+        private boolean inheritThreadLocals = false;
 
         Builder(Config rootConfig) {
             config(rootConfig.get("server"));
@@ -188,6 +196,7 @@ public interface WebServer {
             config.get("host").asString().ifPresent(this::host);
             config.get("port").asInt().ifPresent(this::port);
             config.get("tls").as(Tls::create).ifPresent(this::tls);
+            config.get("inherit-thread-locals").asBoolean().ifPresent(this::inheritThreadLocals);
 
             // now let's configure the sockets
             config.get("sockets")
@@ -419,6 +428,21 @@ public interface WebServer {
         public Builder shutdownHook(boolean shutdownHook) {
             this.shutdownHook = shutdownHook;
             return this;
+        }
+
+        /**
+         * Configure whether server threads should inherit inheritable thread locals.
+         * Default value is {@code false}.
+         * @param inheritThreadLocals whether to inherit thread locals
+         * @return an updated builder
+         */
+        public Builder inheritThreadLocals(boolean inheritThreadLocals) {
+            this.inheritThreadLocals = inheritThreadLocals;
+            return this;
+        }
+
+        boolean inheritThreadLocals() {
+            return inheritThreadLocals;
         }
 
         Context context() {

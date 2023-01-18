@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -90,6 +91,7 @@ abstract class SecurityFilterCommon {
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())
+                .queryParams(filterContext.getQueryParams())
                 .headers(allHeaders)
                 .addAttribute("resourceType", filterContext.getResourceName());
 
@@ -374,6 +376,7 @@ abstract class SecurityFilterCommon {
         context.setHeaders(requestContext.getHeaders());
         context.setTargetUri(requestContext.getUriInfo().getRequestUri());
         context.setResourcePath(context.getTargetUri().getPath());
+        context.setQueryParams(UriQuery.create(uriInfo.getRequestUri().getQuery()));
 
         context.setJerseyRequest((ContainerRequest) requestContext);
 
@@ -414,6 +417,7 @@ abstract class SecurityFilterCommon {
         private boolean traceSuccess = true;
         private String traceDescription;
         private Throwable traceThrowable;
+        private UriQuery queryParams;
 
         String getResourceName() {
             return resourceName;
@@ -509,6 +513,13 @@ abstract class SecurityFilterCommon {
 
         void setTraceThrowable(Throwable traceThrowable) {
             this.traceThrowable = traceThrowable;
+        }
+
+        UriQuery getQueryParams() {
+            return queryParams;
+        }
+        void setQueryParams(UriQuery queryParams) {
+            this.queryParams = queryParams;
         }
 
         void clearTrace() {

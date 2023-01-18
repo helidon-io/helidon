@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.appl.it;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -26,7 +25,7 @@ import jakarta.json.JsonObject;
  */
 public class LogData {
 
-    private static final Logger LOGGER = Logger.getLogger(LogData.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LogData.class.getName());
 
     /**
      * Log JSON object in human readable form.
@@ -34,7 +33,7 @@ public class LogData {
      * @param level logging level
      * @param data  data to log
      */
-    public static void logJsonObject(final Level level, final JsonObject data) {
+    public static void logJsonObject(Level level, JsonObject data) {
         LOGGER.log(level, () -> "JSON object:");
         if (data == null) {
             LOGGER.log(level, "   is null");
@@ -54,7 +53,7 @@ public class LogData {
      * @param level logging level
      * @param data  data to log
      */
-    public static void logJsonArray(final Level level, final JsonArray data) {
+    public static void logJsonArray(Level level, JsonArray data) {
         LOGGER.log(level, () -> String.format("JSON array: %s", data.toString()));
         data.forEach(row -> {
             switch (row.getValueType()) {

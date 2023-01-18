@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ Weblogic installation.
 WARNING: Avoid placing `wlthint3client.jar` on Helidon classpath, client library location needs to be
 configured and loaded by Helidon messaging connector.
 
+WARNING: Don't forget to start your Helidon app with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow
+wlthint3client use reflection.
+
 === Configuration
 
 Connector name: `helidon-weblogic-jms`
@@ -58,7 +61,7 @@ Connector name: `helidon-weblogic-jms`
 |`thin-jar` | Filepath to the Weblogic thin T3 client jar(wlthint3client.jar), can be usually found within Weblogic installation
 `WL_HOME/server/lib/wlthint3client.jar`
 |`principal` | Weblogic initial context principal(user)
-|`credential` | Weblogic initial context credential(password)
+|`credentials` | Weblogic initial context credential(password)
 |`type` | Possible values are: `queue`, `topic`. Default value is: `topic`
 |`destination` | Queue or topic name in WebLogic CDI Syntax(CDI stands for Create Destination Identifier)
 |`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client’s receipt of a message,

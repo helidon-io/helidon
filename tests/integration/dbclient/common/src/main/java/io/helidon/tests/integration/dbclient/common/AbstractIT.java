@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 package io.helidon.tests.integration.dbclient.common;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -32,9 +31,6 @@ import io.helidon.reactive.dbclient.DbRow;
  * Common testing code.
  */
 public abstract class AbstractIT {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(AbstractIT.class.getName());
 
     public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
 
@@ -121,9 +117,7 @@ public abstract class AbstractIT {
             this.name = name;
             this.types = new ArrayList<>(types != null ? types.length : 0);
             if (types != null) {
-                for (Type type : types) {
-                    this.types.add(type);
-                }
+                this.types.addAll(Arrays.asList(types));
             }
         }
 

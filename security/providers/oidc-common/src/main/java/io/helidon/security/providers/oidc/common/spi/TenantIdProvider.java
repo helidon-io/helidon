@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.websocket.webserver;
+package io.helidon.security.providers.oidc.common.spi;
 
-import io.helidon.common.buffers.BufferData;
+import io.helidon.config.Config;
 
-interface Frame {
-    boolean fin();
-
-    WsOpCode opCode();
-
-    boolean masked();
-
-    long payloadLength();
-
-    int[] maskingKey();
-
-    BufferData payloadData();
+/**
+ * Java {@link java.util.ServiceLoader} service interface for multitenancy support.
+ */
+public interface TenantIdProvider {
+    /**
+     * Create a tenant ID finder API from Helidon config. This method is only called once.
+     *
+     * @param config configuration (may be empty)
+     * @return a tenant id finder API
+     */
+    TenantIdFinder createTenantIdFinder(Config config);
 }

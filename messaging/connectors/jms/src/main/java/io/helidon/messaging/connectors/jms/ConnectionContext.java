@@ -110,7 +110,7 @@ public class ConnectionContext {
         try {
             return ctx.lookup(jndi);
         } catch (NamingException e) {
-            LOGGER.log(Level.DEBUG, () -> "JNDI lookup of " + jndi + " failed", e);
+            LOGGER.log(Level.WARNING, e, () -> "JNDI lookup of " + jndi + " failed");
             return null;
         }
     }

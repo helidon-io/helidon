@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,27 @@ package io.helidon.tests.integration.dbclient.common.tests.health;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonStructure;
-import jakarta.json.JsonValue;
-import jakarta.json.stream.JsonParsingException;
 
 import io.helidon.common.reactive.Multi;
-import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
 import io.helidon.reactive.dbclient.DbRow;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 import io.helidon.reactive.health.HealthSupport;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.WebServer;
 
-import org.eclipse.microprofile.health.HealthCheck;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonStructure;
+import jakarta.json.stream.JsonParsingException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -59,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ServerHealthCheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(ServerHealthCheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ServerHealthCheckIT.class.getName());
 
     private static WebServer SERVER;
     private static String URL;
@@ -67,7 +63,7 @@ public class ServerHealthCheckIT {
     private static Routing createRouting() {
         HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         final HealthSupport health = HealthSupport.builder()
-                .addLiveness(check)
+                .add(check)
                 .build();
         return Routing.builder()
                 .register(health) // Health at "/health"
@@ -85,7 +81,7 @@ public class ServerHealthCheckIT {
         final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
         final CompletionStage<WebServer> serverFuture = server.start();
         serverFuture.thenAccept(srv -> {
-            LOGGER.info(() -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
+            LOGGER.log(Level.DEBUG, () -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
             URL = String.format("http://localhost:%d", srv.port());
         });
         SERVER = serverFuture.toCompletableFuture().get();
@@ -132,10 +128,10 @@ public class ServerHealthCheckIT {
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemons"));
 
-        List<DbRow> pokemonList = rows.collectList().await();
+        rows.collectList().await();
         // Read and process health check response
         String response = get(URL + "/health");
-        LOGGER.info("RESPONSE: " + response);
+        LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));
         JsonStructure jsonResponse = null;
         try (JsonReader jr = Json.createReader(new StringReader(response))) {
             jsonResponse = jr.read();
@@ -144,13 +140,8 @@ public class ServerHealthCheckIT {
         }
         JsonArray checks = jsonResponse.asJsonObject().getJsonArray("checks");
         assertThat(checks.size(), greaterThan(0));
-        checks.stream().map((check) -> {
-            String name = check.asJsonObject().getString("name");
-            return check;
-        }).forEachOrdered((check) -> {
-            String state = check.asJsonObject().getString("state");
+        checks.forEach((check) -> {
             String status = check.asJsonObject().getString("status");
-            assertThat(state, equalTo("UP"));
             assertThat(status, equalTo("UP"));
         });
     }

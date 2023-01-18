@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,6 +50,10 @@ db:
     select-types: "SELECT id, name FROM Types"
     select-pokemons: "SELECT id, name FROM Pokemons"
     select-poketypes: "SELECT id_pokemon, id_type FROM PokemonTypes p WHERE id_pokemon = ?"
+    # data verification: get pokemon by ID
+    get-pokemon-by-id: "SELECT id, name FROM Pokemons WHERE id = ?"
+    # data verification: get pokemon's types by pokemon's ID
+    get-pokemon-types: "SELECT t.id AS id, t.name AS name FROM Types t INNER JOIN PokemonTypes pt ON pt.id_type = t.id WHERE pt.id_pokemon = ?"
     # data cleanup verification statements
     select-poketypes-all: "SELECT id_pokemon, id_type FROM PokemonTypes"
     # retrieve max. Pokemon ID

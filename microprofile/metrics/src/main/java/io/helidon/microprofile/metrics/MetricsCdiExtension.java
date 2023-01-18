@@ -787,7 +787,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
 
         Config metricsConfig = mpConfig.get("metrics").detach();
 
-        Config.Builder builder = Config.builder();
+        Config.Builder builder = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource();
         if (!mpConfigSettings.isEmpty()) {
             builder.addSource(ConfigSources.create(mpConfigSettings));
         }

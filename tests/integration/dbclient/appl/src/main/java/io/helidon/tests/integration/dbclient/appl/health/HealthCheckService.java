@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,23 @@
  */
 package io.helidon.tests.integration.dbclient.appl.health;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
-import java.util.logging.Logger;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.tests.integration.dbclient.appl.AbstractService;
-import io.helidon.tests.integration.tools.service.AppResponse;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.tests.integration.dbclient.appl.AbstractService;
+import io.helidon.tests.integration.tools.service.AppResponse;
+import io.helidon.tests.integration.tools.service.RemoteTestException;
 
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 
@@ -41,7 +40,7 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class HealthCheckService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(HealthCheckService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HealthCheckService.class.getName());
 
     private final Config dbConfig;
 
@@ -91,14 +90,16 @@ public class HealthCheckService extends AbstractService {
             try {
                 JsonObjectBuilder job = Json.createObjectBuilder();
                 HealthCheckResponse hcResponse = check.call();
-                HealthCheckResponse.Status state = hcResponse.getStatus();
-                job.add("name", hcResponse.getName());
+                HealthCheckResponse.Status state = hcResponse.status();
+                job.add("name", check.name());
                 job.add("status", state.name());
                 response.send(AppResponse.okStatus(job.build()));
             } catch (Throwable t) {
-                LOGGER.warning(() -> String.format(
-                        "Error in HealthCheckService.testHealthCheck on server: %s",
-                        t.getMessage()));
+                LOGGER.log(Level.WARNING,
+                           String.format(
+                                   "Error in HealthCheckService.testHealthCheck on server: %s",
+                                   t.getMessage()),
+                           t);
                 response.send(exceptionStatus(t));
             }
 
@@ -106,8 +107,7 @@ public class HealthCheckService extends AbstractService {
     }
 
     // Verify health check implementation with default settings.
-    private void testHealthCheck(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running test HealthCheckService.testHealthCheck on server");
+    private void testHealthCheck(ServerRequest request, ServerResponse response) {
         Thread thread = new Thread(
                 new HealthCheckThread(
                         request,
@@ -120,15 +120,16 @@ public class HealthCheckService extends AbstractService {
     }
 
     // Verify health check implementation with builder and custom name.
-    private void testHealthCheckWithName(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running test HealthCheckService.testHealthCheckWithName on server");
+    private void testHealthCheckWithName(ServerRequest request, ServerResponse response) {
         final String name;
         try {
             name = param(request, QUERY_NAME_PARAM);
         } catch (RemoteTestException ex) {
-            LOGGER.fine(() -> String.format(
-                    "Error in HealthCheckService.testHealthCheckWithName on server: %s",
-                    ex.getMessage()));
+            LOGGER.log(Level.WARNING,
+                       () -> String.format(
+                               "Error in HealthCheckService.testHealthCheckWithName on server: %s",
+                               ex.getMessage()),
+                       ex);
             response.send(exceptionStatus(ex));
             return;
         }
@@ -145,8 +146,7 @@ public class HealthCheckService extends AbstractService {
     }
 
     // Verify health check implementation using custom DML named statement.
-    private void testHealthCheckWithCustomNamedDML(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running test HealthCheckService.testHealthCheckWithCustomNamedDML on server");
+    private void testHealthCheckWithCustomNamedDML(ServerRequest request, ServerResponse response) {
         Config cfgStatement = dbConfig.get("statements.ping-dml");
         if (!cfgStatement.exists()) {
             response.send(exceptionStatus(new RemoteTestException("Missing statements.ping-dml configuration parameter.")));
@@ -165,8 +165,7 @@ public class HealthCheckService extends AbstractService {
     }
 
     // Verify health check implementation using custom DML statement.
-    private void testHealthCheckWithCustomDML(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running test HealthCheckService.testHealthCheckWithCustomDML on server");
+    private void testHealthCheckWithCustomDML(ServerRequest request, ServerResponse response) {
         Config cfgStatement = dbConfig.get("statements.ping-dml");
         if (!cfgStatement.exists()) {
             response.send(exceptionStatus(new RemoteTestException("Missing statements.ping-dml configuration parameter.")));
@@ -185,8 +184,7 @@ public class HealthCheckService extends AbstractService {
     }
 
     // Verify health check implementation using custom query named statement.
-    private void testHealthCheckWithCustomNamedQuery(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running test HealthCheckService.testHealthCheckWithCustomNamedQuery on server");
+    private void testHealthCheckWithCustomNamedQuery(ServerRequest request, ServerResponse response) {
         Config cfgStatement = dbConfig.get("statements.ping-query");
         if (!cfgStatement.exists()) {
             response.send(exceptionStatus(new RemoteTestException("Missing statements.ping-query configuration parameter.")));
@@ -205,8 +203,7 @@ public class HealthCheckService extends AbstractService {
     }
 
     // Verify health check implementation using custom query statement.
-    private void testHealthCheckWithCustomQuery(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running test HealthCheckService.testHealthCheckWithCustomQuery on server");
+    private void testHealthCheckWithCustomQuery(ServerRequest request, ServerResponse response) {
         Config cfgStatement = dbConfig.get("statements.ping-query");
         if (!cfgStatement.exists()) {
             response.send(exceptionStatus(new RemoteTestException("Missing statements.ping-query configuration parameter.")));

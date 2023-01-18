@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,4 +31,14 @@ module io.helidon.nima.testing.junit5.webserver {
 
 
     exports io.helidon.nima.testing.junit5.webserver;
+    exports io.helidon.nima.testing.junit5.webserver.spi;
+
+    uses io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
+    uses io.helidon.nima.testing.junit5.webserver.spi.DirectJunitExtension;
+
+    provides io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension
+            with io.helidon.nima.testing.junit5.webserver.Http1ServerJunitExtension;
+
+    provides io.helidon.nima.testing.junit5.webserver.spi.DirectJunitExtension
+            with io.helidon.nima.testing.junit5.webserver.Http1DirectJunitExtension;
 }
