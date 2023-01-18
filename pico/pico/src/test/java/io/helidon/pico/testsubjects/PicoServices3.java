@@ -20,10 +20,10 @@ import java.util.Objects;
 
 import io.helidon.pico.Bootstrap;
 
-public class PicoServices3 extends AbstractPicoServices {
+class PicoServices3 extends AbstractPicoServices {
     private final Bootstrap bootstrap;
 
-    public PicoServices3(Bootstrap bootstrap) {
+    PicoServices3(Bootstrap bootstrap) {
         this.bootstrap = Objects.requireNonNull(bootstrap);
     }
 

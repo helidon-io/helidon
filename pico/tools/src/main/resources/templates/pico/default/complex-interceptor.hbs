@@ -1,0 +1,86 @@
+{{!
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+}}package {{packageName}};
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
+
+import io.helidon.pico.spi.DefaultAnnotationAndValue;
+import io.helidon.pico.spi.DefaultTypeName;
+import io.helidon.pico.spi.DefaultTypedElementName;
+import io.helidon.pico.spi.Interceptor;
+import io.helidon.pico.spi.InvocationException;
+import io.helidon.pico.spi.ServiceProvider;
+import io.helidon.pico.spi.TypedElementName;
+
+import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.pico.types.TypeName;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+
+import static io.helidon.pico.spi.DefaultTypeName.create;
+import static io.helidon.pico.spi.ext.Invocation.createAndInvoke;
+import static io.helidon.pico.spi.ext.Invocation.createInvokeAndSupply;
+import static io.helidon.pico.spi.ext.Invocation.mergeAndCollapse;
+
+@jakarta.annotation.Generated({{{generatedanno}}})
+@io.helidon.common.Weight({{weight}})
+@io.helidon.pico.spi.Intercepted({{parent}}.class)
+@Singleton
+@SuppressWarnings("ALL")
+public class {{className}} extends {{parent}} {
+    private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of({{#servicelevelannotations}}
+            {{{.}}}{{#unless @last}},{{/unless}}{{/servicelevelannotations}});
+{{#interceptedmethoddecls}}
+    private static final TypedElementName __{{id}} = DefaultTypedElementName.builder()
+            {{{.}}}.build();{{/interceptedmethoddecls}}
+
+    private final Provider<{{parent}}> __provider;
+    private final ServiceProvider<{{parent}}> __sp;
+    private final {{parent}} __impl;
+    private final TypeName __serviceTypeName;{{#interceptedmethods}}
+    private final List<Provider<Interceptor>> __{{{id}}}__interceptors;{{/interceptedmethods}}
+
+    @Inject
+    public {{this.className}}({{#annotationtriggertypenames}}
+                @Named("{{{.}}}") List<Provider<Interceptor>> {{id}},{{/annotationtriggertypenames}}
+                Provider<{{parent}}> provider) {
+        this.__provider = Objects.requireNonNull(provider);
+        this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<{{parent}}>) __provider : null;
+        this.__serviceTypeName = DefaultTypeName.create({{parent}}.class);
+        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse({{#annotationtriggertypenames}}{{id}}{{#unless @last}}, {{/unless}}{{/annotationtriggertypenames}});{{#interceptedmethods}}
+        this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedmethods}}
+
+        Supplier<{{parent}}> call = __provider::get;
+        {{parent}} result = createInvokeAndSupply(call,
+                                         __ctor__interceptors,
+                                         __sp,
+                                         __serviceTypeName,
+                                         __serviceLevelAnnotations,
+                                         __ctor,
+                                         null);
+        this.__impl = Objects.requireNonNull(result);
+    }
+{{#interceptedmethods}}
+    @Override
+    {{{.}}}{{/interceptedmethods}}
+}

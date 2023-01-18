@@ -26,7 +26,7 @@ import io.helidon.pico.ServiceProviderBindable;
 /**
  * The default implementation for {@link ServiceBinder}.
  */
-class DefaultServiceBinder implements ServiceBinder {
+public class DefaultServiceBinder implements ServiceBinder {
     private final PicoServices picoServices;
     private final DefaultServices serviceRegistry;
     private final String moduleName;
@@ -61,7 +61,7 @@ class DefaultServiceBinder implements ServiceBinder {
      * @param sp the service provider
      * @return the bindable service provider if available, otherwise empty
      */
-    static Optional<ServiceProviderBindable<?>> toBindableProvider(
+    public static Optional<ServiceProviderBindable<?>> toBindableProvider(
             ServiceProvider<?> sp) {
         return Optional.ofNullable((sp instanceof ServiceProviderBindable) ? (ServiceProviderBindable<?>) sp : null);
     }
@@ -72,7 +72,7 @@ class DefaultServiceBinder implements ServiceBinder {
      * @param sp the service provider
      * @return the root provider of the service provider, falling back to the service provider passed
      */
-    static ServiceProvider<?> toRootProvider(
+    public static ServiceProvider<?> toRootProvider(
             ServiceProvider<?> sp) {
         Optional<ServiceProviderBindable<?>> bindable = toBindableProvider(sp);
         if (bindable.isPresent()) {

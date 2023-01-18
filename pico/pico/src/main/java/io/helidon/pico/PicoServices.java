@@ -61,6 +61,16 @@ public interface PicoServices {
     }
 
     /**
+     * First attempts to locate and return the {@link #globalBootstrap()} and if not found will create a new bootstrap instance.
+     *
+     * @return a bootstrap
+     */
+    static Bootstrap realizedGlobalBootStrap() {
+        Optional<Bootstrap> bootstrap = globalBootstrap();
+        return bootstrap.orElseGet(() -> PicoServicesHolder.bootstrap(true).orElseThrow());
+    }
+
+    /**
      * Sets the primordial bootstrap configuration that will supply {@link #picoServices()} during global
      * singleton initialization.
      *

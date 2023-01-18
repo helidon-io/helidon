@@ -136,6 +136,23 @@ public interface Services {
             boolean expected);
 
     /**
+     * Same as calling
+     * <pre>
+     *     lookupFirst(criteria, true).orElseThrow();
+     * </pre>
+     *
+     * @param criteria the criteria to find
+     * @param <T> the type of the service
+     * @return the best service provider matching the criteria
+     * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
+     */
+    @SuppressWarnings("unchecked")
+    default <T> ServiceProvider<T> lookupFirst(
+            ServiceInfoCriteria criteria) {
+        return (ServiceProvider<T>) lookupFirst(criteria, true).orElseThrow();
+    }
+
+    /**
      * Retrieve all services that implement a given contract type.
      *
      * @param type the criteria to find

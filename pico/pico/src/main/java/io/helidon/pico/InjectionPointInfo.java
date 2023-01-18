@@ -16,10 +16,7 @@
 
 package io.helidon.pico;
 
-import java.util.Set;
-
 import io.helidon.builder.Builder;
-import io.helidon.builder.Singular;
 
 /**
  * Describes a receiver for injection - identifies who/what is requesting an injection that needs to be satisfied.
@@ -44,14 +41,6 @@ public interface InjectionPointInfo extends ElementInfo {
      * @return the base identity of the element
      */
     String baseIdentity();
-
-    /**
-     * The qualifiers on this element.
-     *
-     * @return The qualifiers on this element
-     */
-    @Singular
-    Set<QualifierAndValue> qualifiers();
 
     /**
      * True if the injection point is of type {@link java.util.List}.

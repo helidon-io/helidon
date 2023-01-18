@@ -34,11 +34,15 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-types</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico-types</artifactId>
+            <artifactId>helidon-pico-services</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -58,14 +62,26 @@
             <artifactId>handlebars</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-processor</artifactId>
-            <scope>provided</scope> <!-- to force reactor ordering -->
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>compile</scope> <!-- because we have Provider<> dependencies -->
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -81,6 +97,22 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
+        </dependency>
+        <!-- see JavaXTypeTools -->
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${javax.injection.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <!-- see JavaXTypeTools -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>${javax.annotations.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

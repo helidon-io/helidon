@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
 import io.helidon.pico.types.AnnotationAndValue;
 
 /**
@@ -139,6 +140,15 @@ public interface ElementInfo {
      *
      * @return the annotations on this element
      */
+    @Singular
     Set<AnnotationAndValue> annotations();
+
+    /**
+     * The qualifier type annotations on this element.
+     *
+     * @return the qualifier type annotations on this element
+     */
+    @Singular
+    Set<QualifierAndValue> qualifiers();
 
 }

@@ -21,10 +21,10 @@ import java.util.Objects;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.PicoServicesConfig;
 
-public class PicoServices1 extends AbstractPicoServices {
+class PicoServices1 extends AbstractPicoServices {
     private final Bootstrap bootstrap;
 
-    public PicoServices1(Bootstrap bootstrap) {
+    PicoServices1(Bootstrap bootstrap) {
         this.bootstrap = Objects.requireNonNull(bootstrap);
     }
 

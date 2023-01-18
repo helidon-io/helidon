@@ -29,6 +29,7 @@ import io.helidon.pico.ActivationResult;
 import io.helidon.pico.Application;
 import io.helidon.pico.DeActivationRequest;
 import io.helidon.pico.DefaultActivationRequest;
+import io.helidon.pico.DefaultBootstrap;
 import io.helidon.pico.Injector;
 import io.helidon.pico.InjectorOptions;
 import io.helidon.pico.Phase;
@@ -53,7 +54,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static io.helidon.pico.services.DefaultPicoServicesConfig.realizedBootStrapConfig;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -66,7 +66,6 @@ import static org.hamcrest.Matchers.sameInstance;
  * Sanity ttype tests only. The "real" testing is in the tests submodules.
  */
 class HelloPicoWorldSanityTest {
-
     private static final int EXPECTED_MODULES = 2;
 
     @BeforeEach
@@ -75,7 +74,7 @@ class HelloPicoWorldSanityTest {
         Config config = Config.create(
                 ConfigSources.create(
                         Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"));
-        realizedBootStrapConfig(Optional.of(config));
+        PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
     }
 
     @AfterEach

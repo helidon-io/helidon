@@ -16,14 +16,6 @@
 
 package io.helidon.pico.services;
 
-import java.util.Optional;
-
-import io.helidon.common.config.Config;
-import io.helidon.pico.Bootstrap;
-import io.helidon.pico.DefaultBootstrap;
-import io.helidon.pico.PicoServices;
-import io.helidon.pico.PicoServicesConfig;
-
 /**
  * The default reference implementation {@link io.helidon.pico.PicoServicesConfig}.
  * <p>
@@ -36,19 +28,6 @@ class DefaultPicoServicesConfig {
     static final String PROVIDER = "oracle";
 
     private DefaultPicoServicesConfig() {
-    }
-
-    static PicoServicesConfig realizedBootStrapConfig(
-            Optional<Config> defaultConfig) {
-        Bootstrap bootstrap = PicoServices.globalBootstrap().orElse(null);
-        if (bootstrap == null) {
-            bootstrap = DefaultBootstrap.builder()
-                    .picoConfig(createDefaultConfigBuilder().build())
-                    .config(defaultConfig)
-                    .build();
-            PicoServices.globalBootstrap(bootstrap);
-        }
-        return bootstrap.realizedPicoConfig();
     }
 
     static io.helidon.pico.DefaultPicoServicesConfig.Builder createDefaultConfigBuilder() {

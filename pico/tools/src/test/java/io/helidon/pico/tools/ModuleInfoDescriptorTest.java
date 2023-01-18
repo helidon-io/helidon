@@ -35,8 +35,8 @@ class ModuleInfoDescriptorTest {
     void programmatic() {
         DefaultModuleInfoDescriptor.Builder builder = DefaultModuleInfoDescriptor.builder();
         assertThat(builder.build().contents(),
-                   equalTo("// @Generated({provider=null, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=null})\n"
+                   equalTo("// @Generated({provider=oracle, generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
                                    + "module unnamed {\n"
                                    + "}"));
         builder.name("my.module");
@@ -46,8 +46,8 @@ class ModuleInfoDescriptorTest {
                    equalTo("/**\n"
                                    + " * comments here.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=null, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=null})\n"
+                                   + "// @Generated({provider=oracle, generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "}"));
@@ -57,8 +57,8 @@ class ModuleInfoDescriptorTest {
                    equalTo("/**\n"
                                    + " * comments here.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=null, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=null})\n"
+                                   + "// @Generated({provider=oracle, generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "    uses " + ExternalContracts.class.getName() + ";\n"
@@ -69,8 +69,8 @@ class ModuleInfoDescriptorTest {
                    equalTo("/**\n"
                                    + " * comments here.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=null, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=null})\n"
+                                   + "// @Generated({provider=oracle, generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "    uses " + ExternalContracts.class.getName() + ";\n"
@@ -88,8 +88,8 @@ class ModuleInfoDescriptorTest {
                 .addItem(ModuleInfoDescriptor.exportsPackage("export2"))
                 .build();
         assertThat(descriptor.contents(),
-                   equalTo("// @Generated({provider=null, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=null})\n"
+                   equalTo("// @Generated({provider=oracle, generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
                                    + "module test {\n"
                                    + "    provides cn2 with impl2;\n"
                                    + "    provides cn1;\n"
@@ -120,8 +120,8 @@ class ModuleInfoDescriptorTest {
                                  .build())
                 .build();
         assertThat(descriptor.contents(),
-                   equalTo("// @Generated({provider=null, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=null})\n"
+                   equalTo("// @Generated({provider=oracle, generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
                                    + "module test {\n"
                                    + "    provides cn1;\n"
                                    + "    provides cn2 with impl2;\n"
@@ -178,6 +178,66 @@ class ModuleInfoDescriptorTest {
                 tempFile.delete();
             }
         }
+    }
+
+    @Test
+    void mergeCreate() {
+        ModuleInfoDescriptor descriptor = ModuleInfoDescriptor
+                .create(CommonUtils.loadStringFromResource("testsubjects/m0._java_"),
+                        ModuleInfoDescriptor.Ordering.NATURAL);
+        assertThat(descriptor.contents(false),
+                   equalTo("module io.helidon.pico {\n"
+                                   + "    requires transitive io.helidon.pico.api;\n"
+                                   + "    requires static com.fasterxml.jackson.annotation;\n"
+                                   + "    requires static lombok;\n"
+                                   + "    requires io.helidon.common;\n"
+                                   + "    exports io.helidon.pico.spi.impl;\n"
+                                   + "    provides io.helidon.pico.PicoServices with io.helidon.pico.spi.impl"
+                                   + ".DefaultPicoServices;\n"
+                                   + "    uses io.helidon.pico.Module;\n"
+                                   + "    uses io.helidon.pico.Application;\n"
+                                   + "}"));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> descriptor.mergeCreate(descriptor));
+        assertThat(e.getMessage(), equalTo("can't merge with self"));
+
+        ModuleInfoDescriptor mergeCreated = descriptor.mergeCreate(DefaultModuleInfoDescriptor.toBuilder(descriptor));
+        assertThat(descriptor.contents(), equalTo(mergeCreated.contents()));
+
+        ModuleInfoDescriptor descriptor1 = DefaultModuleInfoDescriptor.builder()
+                .addItem(ModuleInfoDescriptor.exportsPackage("one"))
+                .build();
+        ModuleInfoDescriptor descriptor2 = DefaultModuleInfoDescriptor.builder()
+                .addItem(ModuleInfoDescriptor.exportsPackage("two"))
+                .build();
+        mergeCreated = descriptor1.mergeCreate(descriptor2);
+        assertThat(mergeCreated.contents(false),
+                   equalTo("module unnamed {\n"
+                                   + "    exports one;\n"
+                                   + "    exports two;\n"
+                                   + "}"));
+    }
+
+    @Test
+    void addIfAbsent() {
+        DefaultModuleInfoDescriptor.Builder builder = DefaultModuleInfoDescriptor.builder();
+        ModuleInfoDescriptor.addIfAbsent(builder, "external",
+                                         () -> DefaultModuleInfoItem.builder()
+                                                 .uses(true)
+                                                 .target("external")
+                                                 .addPrecomment("// 1")
+                                                 .build());
+        ModuleInfoDescriptor.addIfAbsent(builder, "external",
+                                                   () -> DefaultModuleInfoItem.builder()
+                                                           .uses(true)
+                                                           .target("external")
+                                                           .addPrecomment("// 2")
+                                                           .build());
+        ModuleInfoDescriptor descriptor = builder.build();
+        assertThat(descriptor.contents(false),
+                   equalTo("module unnamed {\n"
+                                   + "    // 1\n"
+                                   + "    uses external;\n"
+                                   + "}"));
     }
 
 }

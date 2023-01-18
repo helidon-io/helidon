@@ -28,15 +28,16 @@ import io.helidon.pico.spi.Resetable;
 /**
  * The holder for the globally active {@link PicoServices} singleton instance, as well as its associated
  * {@link io.helidon.pico.Bootstrap} primordial configuration.
+ *
+ * @deprecated use {@link PicoServices#picoServices()} or {@link PicoServices#globalBootstrap()}.
  */
-public class PicoServicesHolder {
+// exposed in the testing module as non deprecated
+public abstract class PicoServicesHolder {
     private static final AtomicReference<Bootstrap> BOOTSTRAP = new AtomicReference<>();
     private static final AtomicReference<ProviderAndServicesTuple> INSTANCE = new AtomicReference<>();
 
     /**
      * Default Constructor.
-     *
-     * @deprecated
      */
     // exposed in the testing module as non deprecated
     protected PicoServicesHolder() {
@@ -48,7 +49,7 @@ public class PicoServicesHolder {
      *
      * @return the loaded global pico services instance
      */
-    public static Optional<PicoServices> picoServices() {
+    static Optional<PicoServices> picoServices() {
         if (INSTANCE.get() == null) {
             INSTANCE.compareAndSet(null, new ProviderAndServicesTuple(load()));
         }
@@ -57,8 +58,6 @@ public class PicoServicesHolder {
 
     /**
      * Resets the bootstrap state.
-     *
-     * @deprecated
      */
     protected static synchronized void reset() {
         ProviderAndServicesTuple instance = INSTANCE.get();
@@ -101,7 +100,7 @@ public class PicoServicesHolder {
                 Optional<PicoServicesProvider> provider) {
             this.provider = provider.orElse(null);
             this.picoServices = (provider.isPresent())
-                    ? this.provider.services(bootstrap(true).orElse(null)) : null;
+                    ? this.provider.services(bootstrap(true).orElseThrow()) : null;
         }
 
         private void reset() {

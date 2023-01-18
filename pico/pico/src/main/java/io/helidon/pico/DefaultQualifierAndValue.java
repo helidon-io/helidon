@@ -17,6 +17,7 @@
 package io.helidon.pico;
 
 import java.lang.annotation.Annotation;
+import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.pico.types.AnnotationAndValue;
@@ -110,6 +111,20 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
         return (DefaultQualifierAndValue) builder()
                 .typeName(qualifierType)
                 .value(val)
+                .build();
+    }
+
+    /**
+     * Creates a qualifier.
+     *
+     * @param qualifierType the qualifier
+     * @param vals           the values
+     * @return qualifier
+     */
+    public static DefaultQualifierAndValue create(TypeName qualifierType, Map<String, String> vals) {
+        return (DefaultQualifierAndValue) builder()
+                .typeName(qualifierType)
+                .values(vals)
                 .build();
     }
 

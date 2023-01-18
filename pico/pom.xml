@@ -41,6 +41,7 @@
 
         <!-- pico supports legacy javax.inject and javax.annotations in tooling -->
         <javax.injection.version>1</javax.injection.version>
+        <javax.annotations.version>1.3.2</javax.annotations.version>
     </properties>
 
     <!-- this will show the progression of what has come over, and what is left to come over -->

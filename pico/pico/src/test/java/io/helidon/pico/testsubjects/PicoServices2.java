@@ -23,7 +23,7 @@ import io.helidon.pico.Bootstrap;
 public class PicoServices2 extends AbstractPicoServices {
     private final Bootstrap bootstrap;
 
-    public PicoServices2(Bootstrap bootstrap) {
+    PicoServices2(Bootstrap bootstrap) {
         this.bootstrap = Objects.requireNonNull(bootstrap);
     }
 

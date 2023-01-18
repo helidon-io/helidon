@@ -197,4 +197,33 @@ public interface ModuleInfoItem {
         return builder.toString();
     }
 
+    /**
+     * Provides the ability to create a new merged descriptor item using this as the basis, and then combining another into it
+     * in order to create a new descriptor item.
+     *
+     * @param another the other descriptor item to merge
+     * @return the merged descriptor
+     */
+    default ModuleInfoItem mergeCreate(
+            ModuleInfoItem another) {
+        if (another == this) {
+            return this;
+        }
+
+        if (!Objects.equals(target(), another.target())) {
+            throw new IllegalArgumentException();
+        }
+
+        DefaultModuleInfoItem.Builder newOne = DefaultModuleInfoItem.toBuilder(another);
+        another.precomments().forEach(newOne::addPrecomment);
+        newOne.requires(requires() || another.requires());
+        newOne.transitiveUsed(isTransitiveUsed() || another.isTransitiveUsed());
+        newOne.staticUsed(isStaticUsed() || another.isStaticUsed());
+        newOne.requires(exports() || another.exports());
+        newOne.opens(opens() || another.opens());
+        newOne.provides(opens() || another.provides());
+        another.withOrTo().forEach(newOne::addWithOrTo);
+        return newOne.build();
+    }
+
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.pico.services;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Weight;
@@ -43,6 +44,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
     @Override
     public PicoServices services(
             Bootstrap bootstrap) {
+        Objects.requireNonNull(bootstrap);
         if (INSTANCE.get() == null) {
             DefaultPicoServices global = new DefaultPicoServices(bootstrap, true);
             INSTANCE.compareAndSet(null, global);

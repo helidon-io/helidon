@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
-import io.helidon.pico.Bootstrap;
+import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.TagType;
 import com.github.jknack.handlebars.Template;
+
+import static io.helidon.pico.tools.CommonUtils.loadStringFromResource;
 
 /**
  * Helper tools for dealing with Pico-related Handlebar templates.
@@ -53,18 +53,19 @@ class TemplateHelper {
     private final String providerName;
     private final String versionId;
 
-    private TemplateHelper(PicoServicesConfig cfg) {
-        this.providerName = cfg.providerName();
-        this.versionId = cfg.providerVersion();
+    private TemplateHelper(
+            PicoServicesConfig cfg) {
+        this.providerName = Objects.requireNonNull(cfg.providerName(), "provider name is required");
+        this.versionId = Objects.requireNonNull(cfg.providerVersion(), "provider version is required");
     }
 
     /**
-     * Creates a template helper utility using the provided {@link io.helidon.pico.PicoServicesConfig}.
+     * Creates a template helper utility using the global bootstrap configuration.
      *
-     * @param cfg the Pico configuration
      * @return the template helper initialized with the bootstrap configuration
      */
-    static TemplateHelper create(PicoServicesConfig cfg) {
+    static TemplateHelper create() {
+        PicoServicesConfig cfg = PicoServices.picoServices().orElseThrow().config();
         return new TemplateHelper(cfg);
     }
 
@@ -74,7 +75,8 @@ class TemplateHelper {
      * @param generatorClassTypeName the generator class type name
      * @return the generated sticker
      */
-    public String defaultGeneratedStickerFor(String generatorClassTypeName) {
+    String defaultGeneratedStickerFor(
+            String generatorClassTypeName) {
         return "{" + String.join(", ",
                                  List.of(
                                          "provider=" + providerName,
@@ -92,9 +94,10 @@ class TemplateHelper {
      *
      * @return the new string, fully resolved with substitutions
      */
-    public String applySubstitutions(String target,
-                                     Map<String, Object> props,
-                                     boolean logErr) {
+    String applySubstitutions(
+            String target,
+            Map<String, Object> props,
+            boolean logErr) {
         Set<String> missingArgs = new LinkedHashSet<>();
         try {
             return applySubstitutions(target, props, logErr, true, missingArgs, null, null);
@@ -109,7 +112,8 @@ class TemplateHelper {
      * @param target the target template
      * @return the set of attributes that are required for substitution
      */
-    public Set<String> requiredArguments(String target) {
+    public Set<String> requiredArguments(
+            String target) {
         return requiredArguments(target, Optional.empty(), Optional.empty());
     }
 
@@ -120,7 +124,8 @@ class TemplateHelper {
      *
      * @return the template file, without substitutions applied
      */
-    String safeLoadTemplate(String name) {
+    String safeLoadTemplate(
+            String name) {
         return safeLoadTemplate(DEFAULT_TEMPLATE_NAME, name);
     }
 
@@ -132,10 +137,10 @@ class TemplateHelper {
      *
      * @return the template file, without substitutions applied
      */
-    String safeLoadTemplate(String templateName,
-                                    String name) {
-        return Objects.requireNonNull(loadTemplate(templateName, name),
-                                      "failed to load: "  + toFQN(templateName, name));
+    String safeLoadTemplate(
+            String templateName,
+            String name) {
+        return Objects.requireNonNull(loadTemplate(templateName, name),"failed to load: "  + toFQN(templateName, name));
     }
 
     /**
@@ -145,12 +150,15 @@ class TemplateHelper {
      * @param name          the template name to use
      * @return the template, or null if not found
      */
-    private String loadTemplate(String templateName, String name) {
-        return CommonUtils.loadStringFromResource(toFQN(templateName, name));
+    private String loadTemplate(
+            String templateName,
+            String name) {
+        return loadStringFromResource(toFQN(templateName, name));
     }
 
-    private static String toFQN(String templateName,
-                                String name) {
+    private static String toFQN(
+            String templateName,
+            String name) {
         return "templates/" + PicoServicesConfig.NAME + "/" + templateName + "/" + name;
     }
 
@@ -162,9 +170,10 @@ class TemplateHelper {
      * @param delimEnd      provides support for custom delimiters
      * @return the set of attributes that are required for substitution
      */
-    Set<String> requiredArguments(String target,
-                                  Optional<String> delimStart,
-                                  Optional<String> delimEnd) {
+    Set<String> requiredArguments(
+            String target,
+            Optional<String> delimStart,
+            Optional<String> delimEnd) {
         try {
             Handlebars handlebars = new Handlebars();
             delimStart.ifPresent(handlebars::setStartDelimiter);
@@ -182,13 +191,14 @@ class TemplateHelper {
         }
     }
 
-    private static String applySubstitutions(String target,
-                                             Map<String, Object> props,
-                                             boolean logErr,
-                                             boolean throwOnMissingArgs,
-                                             Set<String> missingArgs,
-                                             String delimStart,
-                                             String delimEnd) throws IOException {
+    private static String applySubstitutions(
+            String target,
+            Map<String, Object> props,
+            boolean logErr,
+            boolean throwOnMissingArgs,
+            Set<String> missingArgs,
+            String delimStart,
+            String delimEnd) throws IOException {
         if (target == null) {
             return null;
         }
@@ -218,14 +228,16 @@ class TemplateHelper {
         return target;
     }
 
-    private static String toString(Bootstrap bootstrap, String key) {
-        Optional<Config> cfg = bootstrap.config();
-        if (cfg.isEmpty()) {
-            return null;
-        }
-
-        ConfigValue<String> val = cfg.get().get(key).asString();
-        return val.orElse(null);
-    }
+//    private static String toString(
+//            Bootstrap bootstrap,
+//            String key) {
+//        Optional<Config> cfg = bootstrap.config();
+//        if (cfg.isEmpty()) {
+//            return null;
+//        }
+//
+//        ConfigValue<String> val = cfg.get().get(key).asString();
+//        return val.orElse(null);
+//    }
 
 }

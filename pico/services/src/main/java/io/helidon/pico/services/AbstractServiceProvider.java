@@ -37,7 +37,6 @@ import io.helidon.pico.ActivationRequest;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.ActivationStatus;
 import io.helidon.pico.Activator;
-import io.helidon.pico.Application;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DeActivationRequest;
 import io.helidon.pico.DeActivator;
@@ -151,15 +150,15 @@ public abstract class AbstractServiceProvider<T>
         return false;
     }
 
-//    /**
-//     * Identifies whether the implementation was custom written and not code generated. We assume by default this is part
-//     * of code-generation, and the return defaulting to false.
-//     *
-//     * @return true if a custom, user-supplied implementation (rare)
-//     */
-//    protected boolean isCustom() {
-//        return false;
-//    }
+    /**
+     * Identifies whether the implementation was custom written and not code generated. We assume by default this is part
+     * of code-generation, and the default is to return false.
+     *
+     * @return true if a custom, user-supplied implementation (rare)
+     */
+    public boolean isCustom() {
+        return false;
+    }
 
     @Override
     public ServiceInfo serviceInfo() {
@@ -623,7 +622,7 @@ public abstract class AbstractServiceProvider<T>
             public ServiceInjectionPlanBinder.Binder bind(
                     String id,
                     ServiceProvider<?> serviceProvider) {
-                DefaultInjectionPlan plan = createBuilder(id)
+                InjectionPlan plan = createBuilder(id)
                         .injectionPointQualifiedServiceProviders(Collections.singletonList(bind(serviceProvider)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
@@ -635,7 +634,7 @@ public abstract class AbstractServiceProvider<T>
             public ServiceInjectionPlanBinder.Binder bindMany(
                     String id,
                     ServiceProvider<?>... serviceProviders) {
-                DefaultInjectionPlan plan = createBuilder(id)
+                InjectionPlan plan = createBuilder(id)
                         .injectionPointQualifiedServiceProviders(bind(Arrays.asList(serviceProviders)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
@@ -727,7 +726,7 @@ public abstract class AbstractServiceProvider<T>
      * @param resolveIps true if the injection points should also be activated/resolved.
      * @return the injection plan
      */
-    Map<String, InjectionPlan> getOrCreateInjectionPlan(
+    public Map<String, InjectionPlan> getOrCreateInjectionPlan(
             boolean resolveIps) {
         if (this.injectionPlan != null) {
             return this.injectionPlan;
@@ -844,18 +843,9 @@ public abstract class AbstractServiceProvider<T>
                 .activationLog(activationLog());
     }
 
-    static boolean isQualifiedInjectionTarget(
-            ServiceProvider<?> sp) {
-        ServiceInfo serviceInfo = sp.serviceInfo();
-        Set<String> contractsImplemented = serviceInfo.contractsImplemented();
-        return !contractsImplemented.isEmpty()
-                && !contractsImplemented.contains(io.helidon.pico.Module.class.getName())
-                && !contractsImplemented.contains(Application.class.getName());
-    }
-
     private void doInjecting(
             LogEntryAndResult logEntryAndResult) {
-        if (!isQualifiedInjectionTarget(this)) {
+        if (!Utils.isQualifiedInjectionTarget(this)) {
             startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.INJECTING);
             return;
         }
@@ -1162,6 +1152,27 @@ public abstract class AbstractServiceProvider<T>
         onPhaseEvent(Event.FINISHED, this.phase);
     }
 
+    /**
+     * Will test and downcast the passed service provider to an instance of
+     * {@link io.helidon.pico.services.AbstractServiceProvider}.
+     *
+     * @param sp        the service provider
+     * @param expected  is the result expected to be present
+     * @return          the abstract service provider
+     * @param <T>       the managed service type
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<AbstractServiceProvider<T>> toAbstractServiceProvider(
+            ServiceProvider<?> sp,
+            boolean expected) {
+        if (!(sp instanceof AbstractServiceProvider)) {
+            if (expected) {
+                throw new IllegalStateException("expected provider to be of type " + AbstractServiceProvider.class.getName());
+            }
+            return Optional.empty();
+        }
+        return Optional.of((AbstractServiceProvider<T>) sp);
+    }
 
     // note that for one result, there may be N logEntry records we will build and write to the log
     static class LogEntryAndResult {

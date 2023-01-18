@@ -539,7 +539,7 @@ public class Dependencies {
         return deps;
     }
 
-    private static String toBaseIdentity(
+    static String toBaseIdentity(
             InjectionPointInfo dep) {
         ElementInfo.ElementKind kind = Objects.requireNonNull(dep.elementKind());
         String elemName = Objects.requireNonNull(dep.elementName());
@@ -557,7 +557,7 @@ public class Dependencies {
         return baseId;
     }
 
-    private static String toId(
+    static String toId(
             InjectionPointInfo dep) {
         ElementInfo.ElementKind kind = Objects.requireNonNull(dep.elementKind());
         String elemName = Objects.requireNonNull(dep.elementName());
@@ -614,7 +614,7 @@ public class Dependencies {
      * @param packageName   the method's enclosing package name
      * @return the base identity (relative to the owning service type)
      */
-    private static String toMethodBaseIdentity(
+    public static String toMethodBaseIdentity(
             String elemName,
             int methodArgCount,
             ElementInfo.Access access,

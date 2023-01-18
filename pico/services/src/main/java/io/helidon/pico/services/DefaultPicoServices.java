@@ -23,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
@@ -58,8 +57,6 @@ import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.spi.Resetable;
 
-import static io.helidon.pico.services.DefaultPicoServicesConfig.realizedBootStrapConfig;
-
 /**
  * The default implementation for {@link io.helidon.pico.PicoServices}.
  */
@@ -86,8 +83,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
     DefaultPicoServices(
             Bootstrap bootstrap,
             boolean global) {
-        this.bootstrap = Objects.requireNonNull(bootstrap);
-        this.cfg = realizedBootStrapConfig(Optional.empty());
+        this.bootstrap = bootstrap;
+        this.cfg = DefaultPicoServicesConfig.createDefaultConfigBuilder().build();
         this.isGlobal = global;
         this.log = cfg.activationLogs()
                 ? DefaultActivationLog.createRetainedLog(LOGGER)
