@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package io.helidon.reactive.webserver.websocket;
 
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.webserver.ForwardingHandler;
 
@@ -30,7 +29,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 
 class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
 
-    private static final Logger LOGGER = Logger.getLogger(WebSocketUpgradeCodec.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(WebSocketUpgradeCodec.class.getName());
 
     private final WebSocketRouting webSocketRouting;
     private String path;
@@ -57,7 +56,7 @@ class WebSocketUpgradeCodec implements HttpServerUpgradeHandler.UpgradeCodec {
             this.wsHandler = new WebSocketHandler(ctx, path, upgradeRequest, upgradeResponseHeaders, webSocketRouting);
             return true;
         } catch (Throwable cause) {
-            LOGGER.log(Level.SEVERE, "Error during upgrade to WebSocket", cause);
+            LOGGER.log(Level.ERROR, "Error during upgrade to WebSocket", cause);
             return false;
         }
     }
