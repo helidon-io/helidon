@@ -36,11 +36,6 @@ import io.helidon.pico.types.TypeName;
 public interface ActivatorCreatorCodeGen {
 
     /**
-     * See {@link #classPrefixName()}.
-     */
-    String TEST_SCOPE = "test";
-
-    /**
      * Optionally, for each service type also provide its parent (super class) service type mapping.
      *
      * @return the service type to parent (super class) service type mapping

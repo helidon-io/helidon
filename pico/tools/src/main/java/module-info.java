@@ -33,12 +33,14 @@ module io.helidon.pico.tools {
     requires static jakarta.annotation;
     // see JavaXTools
     requires static java.annotation;
+    requires io.helidon.builder.processor.spi;
 
     exports io.helidon.pico.tools;
     exports io.helidon.pico.tools.spi;
 
     uses io.helidon.pico.tools.ActivatorCreator;
     uses io.helidon.pico.tools.ApplicationCreator;
+    uses io.helidon.pico.tools.CustomAnnotationTemplateCreator;
     uses io.helidon.pico.tools.ExternalModuleCreator;
     uses io.helidon.pico.tools.InterceptorCreator;
     uses io.helidon.pico.tools.JavaxTypeTools;

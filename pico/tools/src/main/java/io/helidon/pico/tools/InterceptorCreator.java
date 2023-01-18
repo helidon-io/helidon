@@ -27,6 +27,8 @@ import io.helidon.pico.ServiceInfoBasics;
 /**
  * Provides the strategy used to determine which annotations cause interceptor creation. Only services that are pico-
  * activated may qualify for interception.
+ *
+ * @see io.helidon.pico.tools.spi.InterceptorCreatorProvider
  */
 @Contract
 public interface InterceptorCreator {
@@ -116,5 +118,43 @@ public interface InterceptorCreator {
             ServiceInfoBasics interceptedService,
             ProcessingEnvironment processingEnvironment,
             Set<String> annotationTypeTriggers);
+
+    /**
+     * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if
+     * the serviceTypeElement is provided.
+     *
+     * @param interceptedService    the service being intercepted
+     * @param delegateCreator       the "real" creator
+     * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
+     * @return the processor to use for the given arguments.
+     */
+    InterceptorProcessor createInterceptorProcessor(
+            ServiceInfoBasics interceptedService,
+            InterceptorCreator delegateCreator,
+            Optional<ProcessingEnvironment> processEnv);
+
+
+    /**
+     * Abstraction for interceptor processing.
+     */
+    interface InterceptorProcessor {
+
+        /**
+         * The set of annotation types that are trigger interception.
+         *
+         * @return the set of annotation types that are trigger interception
+         */
+        Set<String> allAnnotationTypeTriggers();
+
+        /**
+         * Creates the interception plan.
+         *
+         * @param interceptorAnnotationTriggers the annotation type triggering the interception creation.
+         * @return the plan, or empty if there is no interception needed
+         */
+        Optional<InterceptionPlan> createInterceptorPlan(
+                Set<String> interceptorAnnotationTriggers);
+
+    }
 
 }

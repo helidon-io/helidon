@@ -57,6 +57,7 @@ import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InjectionPointProvider;
+import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
@@ -88,7 +89,7 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 /**
  * Generically handles Pico generated artifact creation via APT.
  */
-class TypeTools extends BuilderTypeTools {
+public class TypeTools extends BuilderTypeTools {
 
     private TypeTools() {
     }
@@ -111,7 +112,7 @@ class TypeTools extends BuilderTypeTools {
      * @param fileType the file type, typically ".java"
      * @return the file path expression where dots are translated to file separators
      */
-    static String toFilePath(
+    public static String toFilePath(
             TypeName typeName,
             String fileType) {
         String className = typeName.className();
@@ -219,7 +220,7 @@ class TypeTools extends BuilderTypeTools {
      * @deprecated Switch to use pure annotation processing instead of reflection
      */
     @Deprecated
-    static List<AnnotationAndValue> createAnnotationAndValueListFromAnnotations(
+    public static List<AnnotationAndValue> createAnnotationAndValueListFromAnnotations(
             Annotation[] annotations) {
         if (annotations == null || annotations.length <= 0) {
             return Collections.emptyList();
@@ -399,7 +400,7 @@ class TypeTools extends BuilderTypeTools {
      * @param type the element type (from anno processing)
      * @return the set of qualifiers that the owning element has
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(
+    public static Set<QualifierAndValue> createQualifierAndValueSet(
             Element type) {
         return createQualifierAndValueSet(type.getAnnotationMirrors());
     }
@@ -410,7 +411,7 @@ class TypeTools extends BuilderTypeTools {
      * @param annoMirrors the annotation type mirrors (from anno processing)
      * @return the set of qualifiers that the owning element has
      */
-    static Set<QualifierAndValue> createQualifierAndValueSet(
+    public static Set<QualifierAndValue> createQualifierAndValueSet(
             List<? extends AnnotationMirror> annoMirrors) {
         Set<QualifierAndValue> qualifiers = null;
 
@@ -454,7 +455,7 @@ class TypeTools extends BuilderTypeTools {
                     }
                 }
             } catch (Throwable t) {
-                // it is ok!
+                // normal
             }
         }
 
@@ -480,7 +481,7 @@ class TypeTools extends BuilderTypeTools {
      * @param type the enclosing/owing type element
      * @return the annotation value set
      */
-    static Set<AnnotationAndValue> createAnnotationAndValueSet(
+    public static Set<AnnotationAndValue> createAnnotationAndValueSet(
             Element type) {
         return type.getAnnotationMirrors().stream()
                 .map(TypeTools::createAnnotationAndValue)
@@ -1351,7 +1352,7 @@ class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to check
      * @return true if {@link jakarta.inject.Provider} or {@link InjectionPointProvider}
      */
-    static boolean isProviderType(
+    public static boolean isProviderType(
             String typeName) {
         String type = translate(componentTypeNameOf(typeName));
         return (Provider.class.getName().equals(type)
@@ -1414,7 +1415,7 @@ class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to transpose
      * @return the transposed value, or the same if not able to be transposed
      */
-    static String oppositeOf(
+    public static String oppositeOf(
             String typeName) {
         boolean startsWithJakarta = typeName.startsWith("jakarta.");
         boolean startsWithJavax = !startsWithJakarta && typeName.startsWith("javax.");
@@ -1482,7 +1483,7 @@ class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return true if static
      */
-    static boolean isStatic(
+    public static boolean isStatic(
             Element element) {
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
         return (modifiers != null) && modifiers.contains(javax.lang.model.element.Modifier.STATIC);
@@ -1505,7 +1506,7 @@ class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return true if abstract
      */
-    static boolean isAbstract(
+    public static boolean isAbstract(
             Element element) {
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
         return (modifiers != null) && modifiers.contains(javax.lang.model.element.Modifier.ABSTRACT);
@@ -1536,7 +1537,7 @@ class TypeTools extends BuilderTypeTools {
      * @param element the element
      * @return the access
      */
-    static InjectionPointInfo.Access toAccess(
+    public static InjectionPointInfo.Access toAccess(
             Element element) {
         InjectionPointInfo.Access access = InjectionPointInfo.Access.PACKAGE_PRIVATE;
         Set<javax.lang.model.element.Modifier> modifiers = element.getModifiers();
@@ -1579,6 +1580,34 @@ class TypeTools extends BuilderTypeTools {
             ExecutableElement methodInfo) {
         return (methodInfo.getKind() == ElementKind.CONSTRUCTOR)
                 ? ElementInfo.ElementKind.CONSTRUCTOR : ElementInfo.ElementKind.METHOD;
+    }
+
+    /**
+     * Checks whether the package name need to be declared.
+     *
+     * @param packageName the package name
+     * @return true if the package name needs to be declared
+     */
+    public static boolean needToDeclarePackageUsage(
+            String packageName) {
+        return !(packageName.startsWith("java.")
+                         || packageName.startsWith("sun.")
+                         || packageName.toLowerCase().endsWith(".impl"));
+    }
+
+    /**
+     * Checks whether the module name needs to be declared.
+     *
+     * @param moduleName the module name
+     * @return true if the module name needs to be declared
+     */
+    public static boolean needToDeclareModuleUsage(
+            String moduleName) {
+        return (moduleName != null) && !moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
+                && !(moduleName.startsWith("java.")
+                             || moduleName.startsWith("sun.")
+                             || moduleName.startsWith("jakarta.inject")
+                             || moduleName.startsWith(PicoServicesConfig.FQN));
     }
 
 }

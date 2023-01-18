@@ -21,6 +21,8 @@ import io.helidon.pico.Contract;
 /**
  * Implementors of this contract are responsible for creating the {@link io.helidon.pico.Application} instance.
  * This is used by Pico's maven-plugin.
+ *
+ * @see io.helidon.pico.tools.spi.ApplicationCreatorProvider
  */
 @Contract
 public interface ApplicationCreator {

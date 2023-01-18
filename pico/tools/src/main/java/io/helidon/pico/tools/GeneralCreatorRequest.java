@@ -30,6 +30,11 @@ import io.helidon.pico.types.TypeName;
 public interface GeneralCreatorRequest extends GeneralCodeGenNames {
 
     /**
+     * See {@code #classPrefixName()}.
+     */
+    String TEST_SCOPE = "test";
+
+    /**
      * Set to true to avoid code-generating, and instead provide the plan for what would be built.
      *
      * @return if set to true then no codegen will occur on disk.
@@ -70,7 +75,7 @@ public interface GeneralCreatorRequest extends GeneralCodeGenNames {
      * @return true if the creator should fail, otherwise the response will show the error
      */
     @ConfiguredOption("true")
-    boolean throwOnFailure();
+    boolean throwIfError();
 
     /**
      * Provides the generator (used to append to code generated artifacts in {@code javax.annotation.processing.Generated}
@@ -79,5 +84,12 @@ public interface GeneralCreatorRequest extends GeneralCodeGenNames {
      * @return the generator name
      */
     String generator();
+
+    /**
+     * The code gen filer to use.
+     *
+     * @return the code gen filer
+     */
+    CodeGenFiler filer();
 
 }

@@ -19,6 +19,7 @@ package io.helidon.pico.tools;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
@@ -31,22 +32,22 @@ import static io.helidon.pico.tools.CommonUtils.toList;
  * Options that can be provided via -A (in annotation processing mode), or via system properties or env properties
  * if running normally.
  */
-class Options {
+public class Options {
 
     /**
      * Put pico's annotation processing into debug mode.
      */
-    static final String TAG_DEBUG = PicoServicesConfig.FQN + ".debugAnnoProcessor";
+    public static final String TAG_DEBUG = PicoServicesConfig.FQN + ".debugAnnoProcessor";
 
     /**
      * Treat all super types as a contract for a given service type being added.
      */
-    static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = PicoServicesConfig.FQN + ".autoAddNonContractInterfaces";
+    public static final String TAG_AUTO_ADD_NON_CONTRACT_INTERFACES = PicoServicesConfig.FQN + ".autoAddNonContractInterfaces";
 
     /**
      * Pre-creates a placeholder for an {@link io.helidon.pico.Application}.
      */
-    static final String TAG_APPLICATION_PRE_CREATE = ActivatorCreatorConfigOptions.TAG_APPLICATION_PRE_CREATE;
+    public static final String TAG_APPLICATION_PRE_CREATE = ActivatorCreatorConfigOptions.TAG_APPLICATION_PRE_CREATE;
 
     /**
      * For future use.  Should the module-info.java be automatically patched to reflect the pico DI model.
@@ -56,7 +57,7 @@ class Options {
     /**
      * Identify the module name being processed or the desired target module name.
      */
-    static final String TAG_MODULE_NAME = ModuleUtils.TAG_MODULE_NAME;
+    public static final String TAG_MODULE_NAME = ModuleUtils.TAG_MODULE_NAME;
 
     /**
      * Identify the additional annotation type names that will trigger interception.
@@ -67,13 +68,13 @@ class Options {
     /**
      * Identify whether any application scopes (from ee) is translated to {@link jakarta.inject.Singleton}.
      */
-    static final String TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE = PicoServicesConfig.FQN
+    public static final String TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE = PicoServicesConfig.FQN
             + ".mapApplicationToSingletonScope";
 
     /**
      * Identify whether any unsupported types should trigger annotation processing to keep going (the default is to fail).
      */
-    static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.FQN
+    public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.FQN
             + ".ignoreUnsupportedAnnotations";
 
     /**
@@ -92,7 +93,7 @@ class Options {
      *
      * @param processingEnv the processing env
      */
-    static void init(
+    public static void init(
             ProcessingEnvironment processingEnv) {
         if (initCalled) {
             return;
@@ -127,29 +128,35 @@ class Options {
     }
 
     /**
+     * Only supports the subset of options that pico cares about, and should not be generally used for options.
+     *
      * @param option the key (assumed to be meaningful to this class)
-     * @return This only supports the subset of options that pico cares about, and should not be generally used for options.
+     * @return true if the option is enabled
      */
-    static boolean isOptionEnabled(
+    public static boolean isOptionEnabled(
             String option) {
         return "true".equals(getOption(option, ""));
     }
 
     /**
+     * This only supports the subset of options that pico cares about, and should not be generally used for options.
+     *
      * @param option the key (assumed to be meaningful to this class)
-     * @return This only supports the subset of options that pico cares about, and should not be generally used for options.
+     * @return the option value
      */
-    static String getOption(
+    public static Optional<String> getOption(
             String option) {
-        return getOption(option, null);
+        return Optional.ofNullable(getOption(option, null));
     }
 
     /**
+     * This only supports the subset of options that pico cares about, and should not be generally used for options.
+     *
      * @param option the key (assumed to be meaningful to this class)
      * @param defaultVal the default value used if the associated value is null.
-     * @return This only supports the subset of options that pico cares about, and should not be generally used for options.
+     * @return the option value
      */
-    static String getOption(
+    private static String getOption(
             String option,
             String defaultVal) {
         assert (initCalled);

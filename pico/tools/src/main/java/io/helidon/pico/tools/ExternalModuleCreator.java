@@ -25,6 +25,8 @@ import io.helidon.pico.Contract;
  * This involves a two-step process of first preparing to create using
  * {@link #prepareToCreateExternalModule(ExternalModuleCreatorRequest)}, followed by taking the response and proceeding
  * to call {@link ActivatorCreator#createModuleActivators(ActivatorCreatorRequest)}.
+ *
+ * @see io.helidon.pico.tools.spi.ExternalModuleCreatorProvider
  */
 @Contract
 public interface ExternalModuleCreator {

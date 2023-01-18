@@ -26,10 +26,10 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * Provides access to the {@link ExternalModuleCreator} in use.
+ * Provides access to the global singleton {@link ExternalModuleCreator} in use.
  */
 @Singleton
-public class ExternalModuleCreatorProvider  implements Provider<ExternalModuleCreator> {
+public class ExternalModuleCreatorProvider implements Provider<ExternalModuleCreator> {
     private static final LazyValue<ExternalModuleCreator> INSTANCE = LazyValue.create(ExternalModuleCreatorProvider::load);
 
     private static ExternalModuleCreator load() {
@@ -43,6 +43,16 @@ public class ExternalModuleCreatorProvider  implements Provider<ExternalModuleCr
     // note that this is guaranteed to succeed since the default implementation is in this module
     @Override
     public ExternalModuleCreator get() {
+        return INSTANCE.get();
+    }
+
+    /**
+     * Returns the global instance that was service loaded. Note that this call is guaranteed to return a result since the
+     * default implementation is here in this module.
+     *
+     * @return the global service instance with the highest weight
+     */
+    public static ExternalModuleCreator instance() {
         return INSTANCE.get();
     }
 

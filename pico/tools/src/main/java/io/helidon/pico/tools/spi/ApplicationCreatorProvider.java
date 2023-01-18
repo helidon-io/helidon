@@ -26,7 +26,7 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * Provides access to the {@link ApplicationCreatorProvider} in use.
+ * Provides access to the global singleton {@link ApplicationCreatorProvider} in use.
  */
 @Singleton
 public class ApplicationCreatorProvider implements Provider<ApplicationCreator> {
@@ -42,6 +42,16 @@ public class ApplicationCreatorProvider implements Provider<ApplicationCreator> 
     // note that this is guaranteed to succeed since the default implementation is in this module
     @Override
     public ApplicationCreator get() {
+        return INSTANCE.get();
+    }
+
+    /**
+     * Returns the global instance that was service loaded. Note that this call is guaranteed to return a result since the
+     * default implementation is here in this module.
+     *
+     * @return the global service instance with the highest weight
+     */
+    public static ApplicationCreator instance() {
         return INSTANCE.get();
     }
 

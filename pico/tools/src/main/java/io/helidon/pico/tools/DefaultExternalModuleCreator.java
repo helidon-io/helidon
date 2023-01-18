@@ -70,26 +70,26 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
 
     @Override
     public ExternalModuleCreatorResponse prepareToCreateExternalModule(
-            ExternalModuleCreatorRequest request) {
-        Objects.requireNonNull(request);
+            ExternalModuleCreatorRequest req) {
+        Objects.requireNonNull(req);
 
         DefaultExternalModuleCreatorResponse.Builder responseBuilder =
                 DefaultExternalModuleCreatorResponse.builder();
-        Collection<String> packageNames = request.packageNamesToScan();
+        Collection<String> packageNames = req.packageNamesToScan();
         if (packageNames.isEmpty()) {
-            return handleError(request, new ToolsException("Package names to scan are required"), responseBuilder);
+            return handleError(req, new ToolsException("Package names to scan are required"), responseBuilder);
         }
 
         Collection<Path> targetExternalJars = identifyExternalJars(packageNames);
         if (1 != targetExternalJars.size()) {
-            return handleError(request, new ToolsException("the package names provided " + packageNames
+            return handleError(req, new ToolsException("the package names provided " + packageNames
                                                      + " must map to a single jar file, but instead found: "
                                                      + targetExternalJars), responseBuilder);
         }
 
         try {
             // handle the explicit qualifiers passed in
-            request.serviceTypeToQualifiersMap().forEach((serviceTypeName, qualifiers) ->
+            req.serviceTypeToQualifiersMap().forEach((serviceTypeName, qualifiers) ->
                 services.addQualifiers(createFromTypeName(serviceTypeName), qualifiers));
 
             // process each found service type
@@ -99,16 +99,17 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
                     .filter((classInfo) -> !classInfo.isInterface())
                     .filter((classInfo) -> !classInfo.isExternalClass())
                     .filter((classInfo) -> !isPrivate(classInfo.getModifiers()))
-                    .filter((classInfo) -> !classInfo.isInnerClass() || request.innerClassesProcessed())
+                    .filter((classInfo) -> !classInfo.isInnerClass() || req.innerClassesProcessed())
                     .forEach(this::processServiceType);
 
             ActivatorCreatorCodeGen activatorCreatorCodeGen =
-                    DefaultActivatorCreator.createActivatorCreatorCodeGen(services);
+                    DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElseThrow();
             ActivatorCreatorRequest activatorCreatorRequest =
                     DefaultActivatorCreator
                             .createActivatorCreatorRequest(services, activatorCreatorCodeGen,
-                                                       request.activatorCreatorConfigOptions(),
-                                                       request.throwOnFailure());
+                                                       req.activatorCreatorConfigOptions(),
+                                                       req.filer(),
+                                                       req.throwIfError());
             return responseBuilder
                     .activatorCreatorRequest(activatorCreatorRequest)
                     .serviceTypeNames(services.serviceTypeNames())
@@ -116,7 +117,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
                     .packageName(activatorCreatorRequest.packageName())
                     .build();
         } catch (Throwable t) {
-            return handleError(request, new ToolsException("failed to analyze / prepare external module", t), responseBuilder);
+            return handleError(req, new ToolsException("failed to analyze / prepare external module", t), responseBuilder);
         } finally {
             services.reset(false);
         }
@@ -130,7 +131,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             if (packageInfo != null) {
                 for (ClassInfo classInfo : packageInfo.getClassInfo()) {
                     URI uri = classInfo.getClasspathElementURI();
-                    File file = ModuleUtils.toFile(uri);
+                    File file = ModuleUtils.toFile(uri).orElse(null);
                     if (file != null) {
                         classpath.add(file.toPath());
                     }
@@ -303,7 +304,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             ExternalModuleCreatorRequest request,
             ToolsException e,
             DefaultExternalModuleCreatorResponse.Builder builder) {
-        if (Objects.isNull(request) || request.throwOnFailure()) {
+        if (Objects.isNull(request) || request.throwIfError()) {
             throw e;
         }
 

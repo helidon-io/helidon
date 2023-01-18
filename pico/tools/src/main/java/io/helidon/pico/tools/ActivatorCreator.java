@@ -16,6 +16,8 @@
 
 package io.helidon.pico.tools;
 
+import java.util.Map;
+
 import io.helidon.pico.Contract;
 import io.helidon.pico.types.TypeName;
 
@@ -31,6 +33,8 @@ import io.helidon.pico.types.TypeName;
  * <p>
  * All activators for your jar module are then aggregated and registered into a pico code-generated
  * {@link io.helidon.pico.Module} class.
+ *
+ * @see io.helidon.pico.tools.spi.ActivatorCreatorProvider
  */
 @Contract
 public interface ActivatorCreator {
@@ -44,6 +48,17 @@ public interface ActivatorCreator {
      */
     ActivatorCreatorResponse createModuleActivators(
             ActivatorCreatorRequest request);
+
+    /**
+     * Generates just the interceptors.
+     *
+     * @param request the request for what to generate
+     * @param interceptionPlans the interceptor plans
+     * @return the response result for the create operation
+     */
+    InterceptorCreatorResponse codegenInterceptors(
+            GeneralCreatorRequest request,
+            Map<TypeName, InterceptionPlan> interceptionPlans);
 
     /**
      * Generates the would-be implementation type name that will be generated if

@@ -37,6 +37,6 @@ public interface DeActivationRequest {
      * @return throw on failure
      */
     @ConfiguredOption("true")
-    boolean throwOnFailure();
+    boolean throwIfError();
 
 }

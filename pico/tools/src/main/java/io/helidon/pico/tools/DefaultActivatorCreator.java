@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,8 +64,11 @@ import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.CommonUtils.toFlatName;
 import static io.helidon.pico.tools.CommonUtils.toSet;
-import static io.helidon.pico.tools.TypeTools.*;
-import static io.helidon.pico.types.DefaultTypeName.*;
+import static io.helidon.pico.tools.TypeTools.componentTypeNameOf;
+import static io.helidon.pico.tools.TypeTools.createTypeNameFromClassInfo;
+import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
+import static io.helidon.pico.types.DefaultTypeName.create;
+import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
 
 /**
  * Responsible for building all pico-di related collateral for a module, including:
@@ -91,8 +95,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     private static final String SERVICE_PROVIDER_APPLICATION_STUB_HBS = "service-provider-application-stub.hbs";
     private static final String SERVICE_PROVIDER_MODULE_HBS = "service-provider-module.hbs";
 
-    private CodeGenFiler filer;
-
     /**
      * Constructor.
      *
@@ -102,41 +104,14 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
-    /**
-     * Constructor.
-     *
-     * @param filer the filer to used to support codegen
-     */
-    @Inject
-    DefaultActivatorCreator(
-            CodeGenFiler filer) {
-        this();
-        this.filer = Objects.requireNonNull(filer);
-    }
-
-    String getTemplateName() {
+    String templateName() {
         return templateName;
-    }
-
-    /**
-     * Sets the codegen filer for this creator.
-     *
-     * @param codeGen the codegen filer
-     */
-    void filer(
-            CodeGenFiler codeGen) {
-        assert (filer == null);
-        this.filer = codeGen;
-    }
-
-    CodeGenFiler filer() {
-        return filer;
     }
 
     @Override
     public ActivatorCreatorResponse createModuleActivators(
             ActivatorCreatorRequest req) throws ToolsException {
-        String templateName = (hasValue(req.templateName())) ? req.templateName() : getTemplateName();
+        String templateName = (hasValue(req.templateName())) ? req.templateName() : templateName();
 
         DefaultActivatorCreatorResponse.Builder builder = DefaultActivatorCreatorResponse.builder()
                 .configOptions(req.configOptions())
@@ -145,18 +120,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         if (req.serviceTypeNames().isEmpty()) {
             return handleError(req, new ToolsException("ServiceTypeNames is required to be passed"), builder);
         }
-
-        if (filer() == null) {
-            return handleError(req, new ToolsException("an annotation processor env is required"), builder);
-        }
-
-//        if (Objects.isNull(req.configOptions())) {
-//            return handleError(req, new ToolsException("ConfigOptions are required"), builder);
-//        }
-//
-//        if (Objects.isNull(req.codeGen())) {
-//            return handleError(req, new ToolsException("CodeGenPaths are required"), builder);
-//        }
 
         try {
             LazyValue<ScanResult> scan = LazyValue.create(ReflectionHandler.INSTANCE::scan);
@@ -197,7 +160,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
 
             InterceptionPlan interceptionPlan = req.codeGen().serviceTypeInterceptionPlan().get(serviceTypeName);
             if (interceptionPlan != null) {
-                codegenInterceptorFilerOut(builder, interceptionPlan);
+                codegenInterceptorFilerOut(req, builder, interceptionPlan);
             }
         }
         builder.serviceTypeNames(activatorTypeNames)
@@ -340,7 +303,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            filer().codegenMetaInfServices(paths, metaInfServices);
+            req.filer().codegenMetaInfServices(paths, metaInfServices);
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -357,7 +320,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            filer().codegenActivatorFilerOut(activatorDetail);
+            req.filer().codegenActivatorFilerOut(activatorDetail);
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -374,7 +337,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            filer().codegenModuleFilerOut(moduleDetail);
+            req.filer().codegenModuleFilerOut(moduleDetail);
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -392,7 +355,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            filer().codegenApplicationFilerOut(applicationTypeName, applicationBody);
+            req.filer().codegenApplicationFilerOut(applicationTypeName, applicationBody);
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -409,7 +372,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            return filer().codegenModuleInfoFilerOut(descriptor, true);
+            return req.filer().codegenModuleInfoFilerOut(descriptor, true);
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -417,27 +380,27 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    /**
-     * Generates just the interceptors.
-     *
-     * @param interceptionPlans the interceptor plans
-     */
-    void codegenInterceptors(
+    @Override
+    public InterceptorCreatorResponse codegenInterceptors(
+            GeneralCreatorRequest req,
             Map<TypeName, InterceptionPlan> interceptionPlans) {
-        if (interceptionPlans == null) {
-            return;
-        }
+        DefaultInterceptorCreatorResponse.Builder res = DefaultInterceptorCreatorResponse.builder();
+        res.interceptionPlans(interceptionPlans);
 
         for (Map.Entry<TypeName, InterceptionPlan> e : interceptionPlans.entrySet()) {
             try {
-                codegenInterceptorFilerOut(null, e.getValue());
+                File file = codegenInterceptorFilerOut(req, null, e.getValue());
+                res.addGeneratedFile(e.getKey(), file);
             } catch (Throwable t) {
                 throw new ToolsException("Failed while processing: " + e.getKey(), t);
             }
         }
+
+        return res.build();
     }
 
-    File codegenInterceptorFilerOut(
+    private File codegenInterceptorFilerOut(
+            GeneralCreatorRequest req,
             DefaultActivatorCreatorResponse.Builder builder,
             InterceptionPlan interceptionPlan) {
         TypeName interceptorTypeName = DefaultInterceptorCreator.createInterceptorSourceTypeName(interceptionPlan);
@@ -446,10 +409,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         if (builder != null) {
             builder.addServiceTypeInterceptorPlan(interceptorTypeName, interceptionPlan);
         }
-        return filer().codegenJavaFilerOut(interceptorTypeName, body);
+        return req.filer().codegenJavaFilerOut(interceptorTypeName, body);
     }
 
-    ActivatorCodeGenDetail createActivatorCodeGenDetail(
+    private ActivatorCodeGenDetail createActivatorCodeGenDetail(
             ActivatorCreatorRequest req,
             TypeName serviceTypeName,
             LazyValue<ScanResult> scan) {
@@ -512,10 +475,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     /**
      * Creates a payload given the batch of services to process.
      *
-     * @param services the services to process.
-     * @return the payload, or null if unable or nothing to process
+     * @param services  the services to process
+     * @return the payload, or empty if unable or nothing to process
      */
-    static ActivatorCreatorCodeGen createActivatorCreatorCodeGen(
+    public static Optional<ActivatorCreatorCodeGen> createActivatorCreatorCodeGen(
             ServicesToProcess services) {
         // do not generate activators for modules or applications...
         List<TypeName> serviceTypeNames = services.serviceTypeNames();
@@ -533,10 +496,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                     .collect(Collectors.toList());
         }
         if (serviceTypeNames.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
-        return DefaultActivatorCreatorCodeGen.builder()
+        return Optional.of(DefaultActivatorCreatorCodeGen.builder()
                 .serviceTypeToParentServiceTypes(toFilteredParentServiceTypes(services))
                 .serviceTypeToActivatorGenericDecl(services.activatorGenericDecls())
                 .serviceTypeHierarchy(toFilteredHierarchy(services))
@@ -556,7 +519,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .classPrefixName(services.lastKnownTypeSuffix())
                 .serviceTypeInterceptionPlan(services.interceptorPlans())
                 .extraCodeGen(services.extraCodeGen())
-                .build();
+                .build());
     }
 
     /**
@@ -565,14 +528,16 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param servicesToProcess the batch being processed
      * @param codeGen           the code gen request
      * @param configOptions     the config options
-     * @param throwOnFailure       fail on error?
+     * @param filer             the filer
+     * @param throwIfError      fail on error?
      * @return the activator request instance
      */
-    static ActivatorCreatorRequest createActivatorCreatorRequest(
+    public static ActivatorCreatorRequest createActivatorCreatorRequest(
             ServicesToProcess servicesToProcess,
             ActivatorCreatorCodeGen codeGen,
             ActivatorCreatorConfigOptions configOptions,
-            boolean throwOnFailure) {
+            CodeGenFiler filer,
+            boolean throwIfError) {
         String moduleName = servicesToProcess.determineGeneratedModuleName();
         String packageName = servicesToProcess.determineGeneratedPackageName();
 
@@ -582,8 +547,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .serviceTypeNames(servicesToProcess.serviceTypeNames())
                 .codeGen(codeGen)
                 .codeGenPaths(codeGenPaths)
+                .filer(filer)
                 .configOptions(configOptions)
-                .throwOnFailure(throwOnFailure)
+                .throwIfError(throwIfError)
                 .moduleName(moduleName)
                 .packageName(packageName)
                 .build();
@@ -1223,7 +1189,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param codeGen         the code gen request
      * @return the service info
      */
-    ServiceInfo toServiceInfo(
+    public static ServiceInfo toServiceInfo(
             TypeName serviceTypeName,
             ActivatorCreatorCodeGen codeGen) {
         Set<TypeName> contracts = codeGen.serviceTypeContracts().get(serviceTypeName);
@@ -1297,7 +1263,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             ActivatorCreatorRequest request,
             ToolsException e,
             DefaultActivatorCreatorResponse.Builder builder) {
-        if (request.throwOnFailure()) {
+        if (request.throwIfError()) {
             throw e;
         }
 

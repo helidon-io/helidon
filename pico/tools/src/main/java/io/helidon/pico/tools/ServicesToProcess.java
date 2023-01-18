@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -53,8 +54,7 @@ import io.helidon.pico.types.TypeName;
  * Note that the flow might be repeated multiple times since annotation processors by definition are recurrent in
  * nature.
  */
-class ServicesToProcess implements Resetable {
-
+public class ServicesToProcess implements Resetable {
     private static final class INSTANCE {
         private static ServicesToProcess SERVICES = new ServicesToProcess();
     }
@@ -92,7 +92,7 @@ class ServicesToProcess implements Resetable {
     private ModuleInfoDescriptor lastGeneratedModuleInfoDescriptor;
     private String lastGeneratedPackageName;
 
-    static ServicesToProcess servicesInstance() {
+    public static ServicesToProcess servicesInstance() {
         return INSTANCE.SERVICES;
     }
 
@@ -142,7 +142,7 @@ class ServicesToProcess implements Resetable {
      * @param parentServiceTypeName the parent for this service type name
      * @return flag indicating whether the parent was accepted
      */
-    boolean addParentServiceType(
+    public boolean addParentServiceType(
             TypeName serviceTypeName,
             TypeName parentServiceTypeName) {
         return addParentServiceType(serviceTypeName, parentServiceTypeName, null);
@@ -164,7 +164,7 @@ class ServicesToProcess implements Resetable {
         }
 
         Boolean locked = servicesToLockParentServiceTypeName.get(serviceTypeName);
-        if (Objects.nonNull(locked)) {
+        if (locked != null) {
             if (locked) {
                 TypeName lockedParentType = servicesToParentServiceTypeNames.get(serviceTypeName);
                 if (!parentServiceTypeName.equals(lockedParentType)) {
@@ -221,7 +221,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param access the access level for the service type name
      */
-    void addAccessLevel(
+    public void addAccessLevel(
             TypeName serviceTypeName,
             InjectionPointInfo.Access access) {
         addServiceTypeName(serviceTypeName);
@@ -246,7 +246,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param isAbstract whether the service type name is abstract (i.e., interface or abstract)
      */
-    void addIsAbstract(
+    public void addIsAbstract(
             TypeName serviceTypeName,
             boolean isAbstract) {
         addServiceTypeName(serviceTypeName);
@@ -273,7 +273,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param serviceTypeHierarchy the list of superclasses (where this service type is the last in the list)
      */
-    void addServiceTypeHierarchy(
+    public void addServiceTypeHierarchy(
             TypeName serviceTypeName,
             List<TypeName> serviceTypeHierarchy) {
         addServiceTypeName(serviceTypeName);
@@ -291,7 +291,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @return true if the hierarchy is known for this service type
      */
-    boolean hasHierarchyFor(
+    public boolean hasHierarchyFor(
             TypeName serviceTypeName) {
         Collection<?> coll = serviceTypeHierarchy.get(serviceTypeName);
         return (coll != null);
@@ -303,7 +303,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @return true if contracts are known about this service type
      */
-    boolean hasContractsFor(
+    public boolean hasContractsFor(
             TypeName serviceTypeName) {
         Collection<?> coll = servicesToContracts.get(serviceTypeName);
         if (coll != null) {
@@ -325,7 +325,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @return true if this service type has already been considered for interceptors
      */
-    boolean hasVisitedInterceptorPlanFor(
+    public boolean hasVisitedInterceptorPlanFor(
             TypeName serviceTypeName) {
         return interceptorPlanFor.containsKey(serviceTypeName);
     }
@@ -336,11 +336,11 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName   the service type name
      * @param plan              the interceptor plan
      */
-    void addInterceptorPlanFor(
+    public void addInterceptorPlanFor(
             TypeName serviceTypeName,
-            InterceptionPlan plan) {
-        Object prev = interceptorPlanFor.put(serviceTypeName, plan);
-        if (Objects.nonNull(prev) && Objects.nonNull(plan)) {
+            Optional<InterceptionPlan> plan) {
+        Object prev = interceptorPlanFor.put(serviceTypeName, plan.orElse(null));
+        if (prev != null && plan.isPresent()) {
             throw new ToolsException("should only set interception plan once for: " + serviceTypeName);
         }
     }
@@ -348,7 +348,7 @@ class ServicesToProcess implements Resetable {
     /**
      * @return the interception plan for each service type that has a non-null interception plan.
      */
-    Map<TypeName, InterceptionPlan> interceptorPlans() {
+    public Map<TypeName, InterceptionPlan> interceptorPlans() {
         return interceptorPlanFor.entrySet().stream()
                 .filter(e -> Objects.nonNull(e.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> b, TreeMap::new));
@@ -357,7 +357,7 @@ class ServicesToProcess implements Resetable {
     /**
      * Clears out just the interceptor plans.
      */
-    void clearInterceptorPlans() {
+    public void clearInterceptorPlans() {
         interceptorPlanFor.clear();
     }
 
@@ -394,7 +394,7 @@ class ServicesToProcess implements Resetable {
      * @param contractTypeName the contract type name
      * @param isExternal whether the contract is external
      */
-    void addTypeForContract(
+    public void addTypeForContract(
             TypeName serviceTypeName,
             TypeName contractTypeName,
             boolean isExternal) {
@@ -428,7 +428,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param dependencies the dependencies
      */
-    void addDependencies(
+    public void addDependencies(
             DependenciesInfo dependencies) {
         TypeName serviceTypeName =
                 DefaultTypeName.createFromTypeName(dependencies.fromServiceTypeName().orElseThrow());
@@ -446,7 +446,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param preDestroyMethodName the method name
      */
-    void addPreDestroyMethod(
+    public void addPreDestroyMethod(
             TypeName serviceTypeName,
             String preDestroyMethodName) {
         addServiceTypeName(serviceTypeName);
@@ -462,7 +462,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param postConstructMethodName the method name
      */
-    void addPostConstructMethod(
+    public void addPostConstructMethod(
             TypeName serviceTypeName,
             String postConstructMethodName) {
         addServiceTypeName(serviceTypeName);
@@ -478,7 +478,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param weight the weight priority
      */
-    void addDeclaredWeight(
+    public void addDeclaredWeight(
             TypeName serviceTypeName,
             Double weight) {
         addServiceTypeName(serviceTypeName);
@@ -494,7 +494,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param runLevel its run level
      */
-    void addDeclaredRunLevel(
+    public void addDeclaredRunLevel(
             TypeName serviceTypeName,
             Integer runLevel) {
         addServiceTypeName(serviceTypeName);
@@ -510,7 +510,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param scopeTypeName its scope type name
      */
-    void addScopeTypeName(
+    public void addScopeTypeName(
             TypeName serviceTypeName,
             String scopeTypeName) {
         if (scopeTypeName == null) {
@@ -518,7 +518,7 @@ class ServicesToProcess implements Resetable {
         }
         addServiceTypeName(serviceTypeName);
 
-        Object prev = servicesToScopeTypeNames.compute(serviceTypeName, (k, v) -> {
+        Object ignored = servicesToScopeTypeNames.compute(serviceTypeName, (k, v) -> {
             if (v == null) {
                 v = new LinkedHashSet<>();
             }
@@ -533,7 +533,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param providerFor the types that it provides
      */
-    void addProviderFor(
+    public void addProviderFor(
             TypeName serviceTypeName,
             Set<TypeName> providerFor) {
         addServiceTypeName(serviceTypeName);
@@ -549,7 +549,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param qualifiers its qualifiers
      */
-    void addQualifiers(
+    public void addQualifiers(
             TypeName serviceTypeName,
             Set<QualifierAndValue> qualifiers) {
         addServiceTypeName(serviceTypeName);
@@ -563,7 +563,7 @@ class ServicesToProcess implements Resetable {
     /**
      * @return Fetches the set of known service type names being processed in this batch.
      */
-    List<TypeName> serviceTypeNames() {
+    public List<TypeName> serviceTypeNames() {
         ArrayList<TypeName> result = new ArrayList<>(servicesTypeNames);
         Collections.sort(result);
         return result;
@@ -605,9 +605,11 @@ class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the map of service types to their priorities.
+     * Fetches the map of service types to their priorities.
+     *
+     * @return Fetches the map of service types to their priorities
      */
-    Map<TypeName, Double> weightedPriorities() {
+    public Map<TypeName, Double> weightedPriorities() {
         return new TreeMap<>(servicesToWeightedPriority);
     }
 
@@ -619,9 +621,11 @@ class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the map of service types to their scope type names.
+     * Fetches the map of service types to their scope type names.
+     *
+     * @return the map of service types to their scope type names
      */
-    Map<TypeName, Set<String>> scopeTypeNames() {
+    public Map<TypeName, Set<String>> scopeTypeNames() {
         return new TreeMap<>(servicesToScopeTypeNames);
     }
 
@@ -645,7 +649,7 @@ class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param moduleNames the required module names to support known external contracts
      */
-    void addExternalRequiredModules(
+    public void addExternalRequiredModules(
             TypeName serviceTypeName,
             Collection<String> moduleNames) {
         if (moduleNames != null) {
@@ -665,7 +669,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param moduleName the module name
      */
-    void moduleName(
+    public void moduleName(
             String moduleName) {
         // special note: the compiler uses the same jvm instance for each round, including source and test, so we
         // cannot guard against changes here!!
@@ -674,15 +678,22 @@ class ServicesToProcess implements Resetable {
         //            and " + moduleName);
         //        }
         this.moduleName = moduleName;
-        if (moduleName != null) {
-            this.lastKnownModuleName = moduleName;
-        }
+        this.lastKnownModuleName = moduleName;
     }
 
     /**
-     * @return Fetches this module name.
+     * Clears the module name.
      */
-    String moduleName() {
+    public void clearModuleName() {
+        this.moduleName = null;
+    }
+
+    /**
+     * This module name.
+     *
+     * @return this module name
+     */
+    public String moduleName() {
         return moduleName;
     }
 
@@ -691,7 +702,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param descriptor the descriptor
      */
-    void lastKnownModuleInfoDescriptor(
+    public void lastKnownModuleInfoDescriptor(
             ModuleInfoDescriptor descriptor) {
         this.lastKnownModuleInfoDescriptor = descriptor;
         if (descriptor != null) {
@@ -711,7 +722,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param lastKnownModuleInfoFile the file location for the descriptor
      */
-    void lastKnownModuleInfoFile(
+    public void lastKnownModuleInfoFile(
             File lastKnownModuleInfoFile) {
         this.lastKnownModuleInfoFile = lastKnownModuleInfoFile;
     }
@@ -755,7 +766,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param lastKnownSourcePathBeingProcessed the last source path being processed
      */
-    void lastKnownSourcePathBeingProcessed(
+    public void lastKnownSourcePathBeingProcessed(
             File lastKnownSourcePathBeingProcessed) {
         this.lastKnownSourcePathBeingProcessed = lastKnownSourcePathBeingProcessed;
     }
@@ -772,7 +783,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param typeSuffix the optional type suffix
      */
-    void lastKnownTypeSuffix(
+    public void lastKnownTypeSuffix(
             String typeSuffix) {
         this.lastKnownTypeSuffix = typeSuffix;
     }
@@ -789,7 +800,7 @@ class ServicesToProcess implements Resetable {
      *
      * @param lastGeneratedPackageName the package name
      */
-    void lastGeneratedPackageName(
+    public void lastGeneratedPackageName(
             String lastGeneratedPackageName) {
         this.lastGeneratedPackageName = lastGeneratedPackageName;
     }
@@ -841,7 +852,7 @@ class ServicesToProcess implements Resetable {
      * @param annotations the annotations being processed
      * @param roundEnv the round env
      */
-    static void onBeginProcessing(
+    public static void onBeginProcessing(
             Msgr processor,
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {
@@ -860,7 +871,7 @@ class ServicesToProcess implements Resetable {
      * @param annotations the annotations being processed
      * @param roundEnv the round env
      */
-    static void onEndProcessing(
+    public static void onEndProcessing(
             Msgr processor,
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {

@@ -50,11 +50,11 @@
         <module>builder-config</module>
         <module>pico</module>
         <module>tools</module>
+        <module>processor</module>
         <module>testing</module>
         <module>services</module>
 <!--        <module>config</module>-->
 <!--        <module>tck</module>-->
-<!--        <module>processor</module>-->
 <!--        <module>maven-plugin</module>-->
 <!--        <module>test-support</module>-->
 <!--        <module>test-resources</module>-->

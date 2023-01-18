@@ -455,7 +455,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             ApplicationCreatorRequest request,
             ToolsException e,
             DefaultApplicationCreatorResponse.Builder builder) {
-        if (request.throwOnFailure()) {
+        if (request.throwIfError()) {
             throw e;
         }
 

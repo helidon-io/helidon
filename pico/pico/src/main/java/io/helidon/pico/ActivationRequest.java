@@ -61,7 +61,7 @@ public interface ActivationRequest {
      * @return whether to throw on failure
      */
     @ConfiguredOption("true")
-    boolean throwOnFailure();
+    boolean throwIfError();
 
     /**
      * Creates a new activation request.

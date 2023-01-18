@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -52,7 +53,7 @@ import io.helidon.pico.types.TypeName;
  * invocation. It also provides a circuit breaker in case the filer should be disabled from actually writing out source
  * and resources, and instead will use the filer's messager to report what it would have performed (applicable for apt cases).
  */
-class CodeGenFiler {
+public class CodeGenFiler {
     private static boolean FILER_WRITE_IS_DISABLED = true;
     private static final boolean FILER_WRITE_ONCE_PER_TYPE = true;
     private static final Set<TypeName> FILER_TYPES_FILED = new LinkedHashSet<>();
@@ -65,7 +66,7 @@ class CodeGenFiler {
      *
      * @param filer the filer to use for creating resources.
      */
-    CodeGenFiler(
+    public CodeGenFiler(
             AbstractFilerMsgr filer) {
         this(filer, null);
     }
@@ -115,7 +116,7 @@ class CodeGenFiler {
      * @param paths           paths to where code should be written.
      * @param metaInfServices the meta-inf services mapping
      */
-    void codegenMetaInfServices(
+    public void codegenMetaInfServices(
             CodeGenPaths paths,
             Map<String, List<String>> metaInfServices) {
         if (metaInfServices == null || metaInfServices.isEmpty()) {
@@ -171,13 +172,13 @@ class CodeGenFiler {
      *
      * @param outPath   the path to output the resource to
      * @param body      the resource body
-     * @param fnUpdater the optional updater of the body
+     * @param optFnUpdater the optional updater of the body
      * @return file coordinates corresponding to the resource in question
      */
-    File codegenResourceFilerOut(
+    public File codegenResourceFilerOut(
             String outPath,
             String body,
-            Function<InputStream, String> fnUpdater) {
+            Optional<Function<InputStream, String>> optFnUpdater) {
         Msgr messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);
@@ -187,6 +188,7 @@ class CodeGenFiler {
 
         Filer filer = filer();
         boolean contentsAlreadyVerified = false;
+        Function<InputStream, String> fnUpdater = optFnUpdater.orElse(null);
         AtomicReference<File> fileRef = new AtomicReference<>();
         try {
             if (fnUpdater != null) {
@@ -213,7 +215,7 @@ class CodeGenFiler {
                 os.write(body);
             }
 
-            return ModuleUtils.toFile(f.toUri());
+            return ModuleUtils.toFile(f.toUri()).orElse(null);
         } catch (FilerException x) {
             // messager.debug(getClass().getSimpleName() + ":" + x.getMessage(), null);
             if (!contentsAlreadyVerified) {
@@ -334,7 +336,7 @@ class CodeGenFiler {
      * @param body     the source body
      * @return the new file coordinates or null if nothing was written
      */
-    File codegenJavaFilerOut(
+    public File codegenJavaFilerOut(
             TypeName typeName,
             String body) {
         Msgr messager = messager();
@@ -357,7 +359,7 @@ class CodeGenFiler {
                 os.write(body);
             }
 
-            return ModuleUtils.toFile(javaSrc.toUri());
+            return ModuleUtils.toFile(javaSrc.toUri()).orElse(null);
         } catch (FilerException x) {
             messager.log("Failed to write java file: " + x);
         } catch (Exception x) {
@@ -395,7 +397,7 @@ class CodeGenFiler {
             return newDescriptor.contents();
         };
 
-        File file = codegenResourceFilerOut(typeName, newDeltaDescriptor.contents(), moduleInfoUpdater);
+        File file = codegenResourceFilerOut(typeName, newDeltaDescriptor.contents(), Optional.of(moduleInfoUpdater));
         if (file != null) {
             messager.debug("Wrote module-info: " + file);
         } else if (overwriteTargetIfExists) {
@@ -448,7 +450,7 @@ class CodeGenFiler {
             String name) {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
-            return ModuleUtils.toFile(f.toUri());
+            return ModuleUtils.toFile(f.toUri()).orElse(null);
         } catch (IOException e) {
             messager().debug("unable to load resource: " + name);
         }
@@ -461,7 +463,7 @@ class CodeGenFiler {
      * @param name the name of the type
      * @return the file coordinates if it can be ascertained, or null if not possible to ascertain this information
      *
-     * @see ModuleUtils#toSourcePath(java.io.File, javax.lang.model.element.TypeElement) for annotation processing use cases
+     * @see ModuleUtils#toSourcePath for annotation processing use cases
      */
     File toSourceLocation(
             String name) {

@@ -500,7 +500,7 @@ public abstract class AbstractServiceProvider<T>
                 doActivationActive(logEntryAndResult);
             }
         } catch (Throwable t) {
-            failedFinish(logEntryAndResult, t, req.throwOnFailure());
+            failedFinish(logEntryAndResult, t, req.throwIfError());
         } finally {
             this.lastActivationThreadId = 0;
             activationSemaphore.release();
@@ -521,7 +521,7 @@ public abstract class AbstractServiceProvider<T>
 
         // fail fast if we are in a recursive situation on this thread...
         if (logEntryAndResult.logEntry.threadId() == lastActivationThreadId && lastActivationThreadId > 0) {
-            failedFinish(logEntryAndResult, recursiveActivationInjectionError(logEntryAndResult.logEntry), req.throwOnFailure());
+            failedFinish(logEntryAndResult, recursiveActivationInjectionError(logEntryAndResult.logEntry), req.throwIfError());
             return logEntryAndResult;
         }
 
@@ -531,7 +531,7 @@ public abstract class AbstractServiceProvider<T>
             // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)
             if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't get semaphore than we (or someone else) is busy activating this services, or we deadlocked
-                failedFinish(logEntryAndResult, timedOutActivationInjectionError(logEntryAndResult.logEntry), req.throwOnFailure());
+                failedFinish(logEntryAndResult, timedOutActivationInjectionError(logEntryAndResult.logEntry), req.throwIfError());
                 return logEntryAndResult;
             }
             didAcquire = true;
@@ -553,7 +553,7 @@ public abstract class AbstractServiceProvider<T>
             }
 
             InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
-            failedFinish(logEntryAndResult, e, req.throwOnFailure());
+            failedFinish(logEntryAndResult, e, req.throwIfError());
         }
 
         return logEntryAndResult;
@@ -940,7 +940,7 @@ public abstract class AbstractServiceProvider<T>
                 // if we couldn't grab the semaphore than we (or someone else) is busy activating this services, or
                 // we deadlocked.
                 InjectionException e = timedOutDeActivationInjectionError(logEntryAndResult.logEntry);
-                failedFinish(logEntryAndResult, e, req.throwOnFailure());
+                failedFinish(logEntryAndResult, e, req.throwIfError());
                 return logEntryAndResult.activationResult.build();
             }
             didAcquire = true;
@@ -954,7 +954,7 @@ public abstract class AbstractServiceProvider<T>
             }
         } catch (Throwable t) {
             InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
-            failedFinish(logEntryAndResult, e, req.throwOnFailure());
+            failedFinish(logEntryAndResult, e, req.throwIfError());
         } finally {
             lastActivationThreadId = 0;
             //            res.setFinished(true);

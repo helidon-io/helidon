@@ -91,7 +91,7 @@ class DefaultInjector implements Injector {
         }
 
         DeActivationRequest request = DefaultDeActivationRequest.builder()
-                .throwOnFailure(opts.activationRequest().throwOnFailure())
+                .throwIfError(opts.activationRequest().throwIfError())
                 .build();
         return deactivator.deactivate(request);
     }
@@ -104,7 +104,7 @@ class DefaultInjector implements Injector {
         PicoException e = (serviceProvider == null)
                 ? new PicoException(message) : new PicoServiceProviderException(message, serviceProvider);
         resultBuilder.error(e);
-        if (opts.activationRequest().throwOnFailure()) {
+        if (opts.activationRequest().throwIfError()) {
             throw e;
         }
         return resultBuilder.build();

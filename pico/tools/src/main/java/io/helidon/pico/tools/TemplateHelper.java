@@ -37,7 +37,7 @@ import static io.helidon.pico.tools.CommonUtils.loadStringFromResource;
 /**
  * Helper tools for dealing with Pico-related Handlebar templates.
  */
-class TemplateHelper {
+public class TemplateHelper {
     /**
      * The tag that us used to represent the template name to use.
      */
@@ -64,7 +64,7 @@ class TemplateHelper {
      *
      * @return the template helper initialized with the bootstrap configuration
      */
-    static TemplateHelper create() {
+    public static TemplateHelper create() {
         PicoServicesConfig cfg = PicoServices.picoServices().orElseThrow().config();
         return new TemplateHelper(cfg);
     }
@@ -75,7 +75,7 @@ class TemplateHelper {
      * @param generatorClassTypeName the generator class type name
      * @return the generated sticker
      */
-    String defaultGeneratedStickerFor(
+    public String defaultGeneratedStickerFor(
             String generatorClassTypeName) {
         return "{" + String.join(", ",
                                  List.of(
@@ -94,7 +94,7 @@ class TemplateHelper {
      *
      * @return the new string, fully resolved with substitutions
      */
-    String applySubstitutions(
+    public String applySubstitutions(
             String target,
             Map<String, Object> props,
             boolean logErr) {
@@ -150,7 +150,7 @@ class TemplateHelper {
      * @param name          the template name to use
      * @return the template, or null if not found
      */
-    private String loadTemplate(
+    public String loadTemplate(
             String templateName,
             String name) {
         return loadStringFromResource(toFQN(templateName, name));

@@ -74,31 +74,6 @@ public class Dependencies {
 //                                                new LinkedHashMap<>(serviceInfoDependencies),
 //                                                new LinkedList<>(dependencies));
 //    }
-//
-//    @Override
-//    public String toString() {
-//        return getForServiceTypeName() + " : " + getServiceInfoDependencies();
-//    }
-//
-//    /**
-//     * {@inheritDoc}
-//     */
-//    @JsonIgnore
-//    @Override
-//    @SuppressWarnings("unchecked")
-//    public Map<ServiceInfo, Set<DependencyInfo>> getServiceInfoDependencyMap() {
-//        return (Map) getServiceInfoDependencies();
-//    }
-//
-//    /**
-//     * {@inheritDoc}
-//     */
-//    @JsonIgnore
-//    @Override
-//    @SuppressWarnings("unchecked")
-//    public List<DependencyInfo> getAllDependencies() {
-//        return (List) getDependencies();
-//    }
 
     /**
      * Creates a builder.
@@ -111,63 +86,7 @@ public class Dependencies {
         return new BuilderContinuation(serviceTypeName);
     }
 
-//    @Override
-//    public Map<ServiceInfo, Set<DependencyInfo>> serviceInfoDependencies() {
-//        return null;
-//    }
-//
-//    @Override
-//    public Set<DependencyInfo> allDependencies() {
-//        return null;
-//    }
-//
-//    @Override
-//    public Optional<TypeName> fromServiceTypeName() {
-//        return Optional.empty();
-//    }
-//
-//    /**
-//     * The Builder.
-//     */
-//    public static class Builder {
-//        private String forServiceTypeName;
-//        private final Map<ServiceInfo, Set<io.helidon.pico.spi.ext.Dependency<Object>>> serviceInfoDependencies = new LinkedHashMap<>();
-//        private final List<io.helidon.pico.spi.ext.Dependency<Object>> allDependencies = new LinkedList<>();
-//        private BuilderContinuation continuation;
-//
-//        private Builder() {
-//        }
-//
-//        public String getForServiceTypeName() {
-//            return forServiceTypeName;
-//        }
-//
-//        /**
-//         * Sets the service type name.
-//         *
-//         * @param forServiceTypeName service type name
-//         * @return the continuation builder
-//         */
-//        public BuilderContinuation forServiceTypeName(String forServiceTypeName) {
-//            assert (Objects.isNull(this.forServiceTypeName) || this.forServiceTypeName.equals(forServiceTypeName));
-//            this.forServiceTypeName = Objects.requireNonNull(forServiceTypeName);
-//            if (Objects.isNull(continuation)) {
-//                continuation = new BuilderContinuation(this);
-//            }
-//            return continuation;
-//        }
-//
-//        /**
-//         * Builds the dependencies.
-//         *
-//         * @return dependencies
-//         */
-//        public Dependencies build() {
-//            continuation = null;
-//            return new Dependencies(forServiceTypeName, serviceInfoDependencies, allDependencies);
-//        }
-//    }
-//
+
     /**
      * The continuation builder. This is a specialized builder used within the generated Pico {@link io.helidon.pico.Activator}.
      * It is specialized in that it validates and decorates over the normal builder, and provides a more streamlined interface.

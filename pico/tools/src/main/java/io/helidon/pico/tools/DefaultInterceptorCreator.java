@@ -114,7 +114,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
     @Override
     public Set<String> whiteListedAnnotationTypes() {
-        return Objects.nonNull(whiteListedAnnoTypeNames) ? whiteListedAnnoTypeNames : Collections.emptySet();
+        return (whiteListedAnnoTypeNames != null) ? whiteListedAnnoTypeNames : Collections.emptySet();
     }
 
     @Override
@@ -122,7 +122,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             ServiceInfoBasics interceptedService,
             ProcessingEnvironment processEnv,
             Set<String> annotationTypeTriggers) {
-        return createInterceptorProcessor(interceptedService, this, processEnv)
+        return createInterceptorProcessor(interceptedService, this, Optional.of(processEnv))
                 .createInterceptorPlan(annotationTypeTriggers);
     }
 
@@ -370,7 +370,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * Able to abstractly handle processing in annotation processing mode, or in reflection mode.
      */
     @SuppressWarnings("checkstyle:VisibilityModifier")
-    abstract class InterceptorProcessor {
+    abstract static class AbstractInterceptorProcessor implements InterceptorProcessor {
         /**
          * The service being intercepted/processed.
          */
@@ -383,15 +383,18 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
 
         private final AnnotationTypeNameResolver resolver;
         private final TriggerFilter triggerFilter;
+        private final System.Logger logger;
 
-        protected InterceptorProcessor(
+        protected AbstractInterceptorProcessor(
                 ServiceInfoBasics interceptedService,
                 InterceptorCreator realCreator,
-                AnnotationTypeNameResolver resolver) {
+                AnnotationTypeNameResolver resolver,
+                System.Logger logger) {
             this.creator = realCreator;
             this.interceptedService = interceptedService;
             this.resolver = resolver;
             this.triggerFilter = createTriggerFilter(realCreator, resolver);
+            this.logger = logger;
         }
 
         String serviceTypeName() {
@@ -413,12 +416,15 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
 
         /**
-         * @return the set of annotation types that are trigger interception.
+         * The set of annotation types that are trigger interception.
+         *
+         * @return the set of annotation types that are trigger interception
          */
-        Set<String> allAnnotationTypeTriggers() {
+        @Override
+        public Set<String> allAnnotationTypeTriggers() {
             Set<String> allAnnotations = getAllAnnotations();
             if (allAnnotations.isEmpty()) {
-                return Collections.emptySet();
+                return Set.of();
             }
 
             TriggerFilter triggerFilter = triggerFilter();
@@ -429,27 +435,21 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             return annotationTypeTriggers;
         }
 
-        /**
-         * Creates the interception plan.
-         *
-         * @param interceptorAnnotationTriggers the annotation type triggering the interception creation.
-         * @return the plan
-         */
-        Optional<InterceptionPlan> createInterceptorPlan(
+        @Override
+        public Optional<InterceptionPlan> createInterceptorPlan(
                 Set<String> interceptorAnnotationTriggers) {
             List<InterceptedElement> interceptedElements = getInterceptedElements(interceptorAnnotationTriggers);
-            if (Objects.isNull(interceptedElements) || interceptedElements.isEmpty()) {
+            if (interceptedElements == null || interceptedElements.isEmpty()) {
                 return Optional.empty();
             }
 
             if (!hasNoArgConstructor()) {
                 ToolsException te =  new ToolsException("there must be a no-arg constructor for: " + serviceTypeName());
-                logger().log(System.Logger.Level.WARNING, "skipping interception for: " + serviceTypeName(), te);
+                logger.log(System.Logger.Level.WARNING, "skipping interception for: " + serviceTypeName(), te);
                 return Optional.empty();
             }
 
             Set<AnnotationAndValue> serviceLevelAnnotations = getServiceLevelAnnotations();
-
             InterceptionPlan plan = DefaultInterceptionPlan.builder()
                     .interceptedService(interceptedService)
                     .serviceLevelAnnotations(serviceLevelAnnotations)
@@ -521,15 +521,16 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
     }
 
-    private class ProcessorBased extends InterceptorProcessor {
+    private static class ProcessorBased extends AbstractInterceptorProcessor {
         private final TypeElement serviceTypeElement;
         private final ProcessingEnvironment processEnv;
 
         ProcessorBased(
                 ServiceInfoBasics interceptedService,
                 InterceptorCreator realCreator,
-                ProcessingEnvironment processEnv) {
-            super(interceptedService, realCreator, createResolverFromProcessor(processEnv));
+                ProcessingEnvironment processEnv,
+                System.Logger logger) {
+            super(interceptedService, realCreator, createResolverFromProcessor(processEnv), logger);
             this.serviceTypeElement = Objects
                     .requireNonNull(processEnv.getElementUtils().getTypeElement(serviceTypeName()));
             this.processEnv = processEnv;
@@ -582,14 +583,15 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
     }
 
-    private class ReflectionBased extends InterceptorProcessor {
+    private static class ReflectionBased extends AbstractInterceptorProcessor {
         private final ClassInfo classInfo;
 
         ReflectionBased(
                 ServiceInfoBasics interceptedService,
                 InterceptorCreator realCreator,
-                ClassInfo classInfo) {
-            super(/*serviceTypeName,*/ interceptedService, realCreator, createResolverFromReflection());
+                ClassInfo classInfo,
+                System.Logger logger) {
+            super(/*serviceTypeName,*/ interceptedService, realCreator, createResolverFromReflection(), logger);
             this.classInfo = classInfo;
         }
 
@@ -661,23 +663,15 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         return new ReflectionResolver(SCAN.get());
     }
 
-    /**
-     * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if
-     * the serviceTypeElement is provided.
-     *
-     * @param interceptedService    the service being intercepted
-     * @param realCreator           the "real" creator
-     * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
-     * @return the processor to use for the given arguments.
-     */
-    InterceptorProcessor createInterceptorProcessor(
+    @Override
+    public AbstractInterceptorProcessor createInterceptorProcessor(
             ServiceInfoBasics interceptedService,
-            InterceptorCreator realCreator,
-            ProcessingEnvironment processEnv) {
-        if (processEnv != null) {
-            return createInterceptorProcessorFromProcessor(interceptedService, realCreator, processEnv);
+            InterceptorCreator delegateCreator,
+            Optional<ProcessingEnvironment> processEnv) {
+        if (processEnv.isPresent()) {
+            return createInterceptorProcessorFromProcessor(interceptedService, delegateCreator, processEnv.get());
         }
-        return createInterceptorProcessorFromReflection(interceptedService, realCreator);
+        return createInterceptorProcessorFromReflection(interceptedService, delegateCreator);
     }
 
 
@@ -687,9 +681,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      * @param interceptedService the service being processed
      * @param realCreator     the real/delegate creator
      * @param processEnv the processing env
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.InterceptorProcessor} to use.
+     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use.
      */
-    InterceptorProcessor createInterceptorProcessorFromProcessor(
+    AbstractInterceptorProcessor createInterceptorProcessorFromProcessor(
             ServiceInfoBasics interceptedService,
             InterceptorCreator realCreator,
             ProcessingEnvironment processEnv) {
@@ -699,7 +693,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         }
         return new ProcessorBased(Objects.requireNonNull(interceptedService),
                                   Objects.requireNonNull(realCreator),
-                                  Objects.requireNonNull(processEnv));
+                                  Objects.requireNonNull(processEnv),
+                                  logger());
     }
 
     /**
@@ -707,14 +702,15 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
      *
      * @param interceptedService the service being processed
      * @param realCreator     the real/delegate creator
-     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.InterceptorProcessor} to use.
+     * @return the {@link io.helidon.pico.tools.DefaultInterceptorCreator.AbstractInterceptorProcessor} to use.
      */
-    InterceptorProcessor createInterceptorProcessorFromReflection(
+    AbstractInterceptorProcessor createInterceptorProcessorFromReflection(
             ServiceInfoBasics interceptedService,
             InterceptorCreator realCreator) {
         return new ReflectionBased(Objects.requireNonNull(interceptedService),
                                    Objects.requireNonNull(realCreator),
-                                   Objects.requireNonNull(SCAN.get().getClassInfo(interceptedService.serviceTypeName())));
+                                   Objects.requireNonNull(SCAN.get().getClassInfo(interceptedService.serviceTypeName())),
+                                   logger());
     }
 
     /**
@@ -861,6 +857,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         if (!mi.throwableTypeNames().isEmpty()) {
             builder.append(" throws ").append(CommonUtils.toString(mi.throwableTypeNames()));
         }
+        // note to self: turn these into mustaches
         builder.append(" {\n");
         if (hasArgs) {
             builder.append("\t\tObject[] args = new Object[] {" + args + "};\n");

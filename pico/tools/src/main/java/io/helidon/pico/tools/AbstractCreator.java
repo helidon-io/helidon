@@ -30,6 +30,8 @@ import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.types.TypeName;
 
+import static io.helidon.pico.tools.TypeTools.*;
+
 /**
  * Abstract base for any codegen creator.
  */
@@ -280,34 +282,6 @@ abstract class AbstractCreator {
         Set<TypeName> result = new LinkedHashSet<>();
         servicesToContracts.forEach((serviceTypeName, cn) -> result.addAll(cn));
         return result;
-    }
-
-    /**
-     * Checks whether the package name need to be declared.
-     *
-     * @param packageName the package name
-     * @return true if the package name needs to be declared
-     */
-    static boolean needToDeclarePackageUsage(
-            String packageName) {
-        return !(packageName.startsWith("java.")
-                         || packageName.startsWith("sun.")
-                         || packageName.toLowerCase().endsWith(".impl"));
-    }
-
-    /**
-     * Checks whether the module name needs to be declared.
-     *
-     * @param moduleName the module name
-     * @return true if the module name needs to be declared
-     */
-    static boolean needToDeclareModuleUsage(
-            String moduleName) {
-        return (moduleName != null) && !moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
-                    && !(moduleName.startsWith("java.")
-                        || moduleName.startsWith("sun.")
-                        || moduleName.startsWith("jakarta.inject")
-                        || moduleName.startsWith(PicoServicesConfig.FQN));
     }
 
     /**

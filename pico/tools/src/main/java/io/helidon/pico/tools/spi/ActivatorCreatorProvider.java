@@ -26,7 +26,7 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * Provides access to the {@link ActivatorCreator} in use.
+ * Provides access to the global singleton {@link ActivatorCreator} in use.
  */
 @Singleton
 public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
@@ -42,6 +42,16 @@ public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
     // note that this is guaranteed to succeed since the default implementation is in this module
     @Override
     public ActivatorCreator get() {
+        return INSTANCE.get();
+    }
+
+    /**
+     * Returns the global instance that was service loaded. Note that this call is guaranteed to return a result since the
+     * default implementation is here in this module.
+     *
+     * @return the global service instance with the highest weight
+     */
+    public static ActivatorCreator instance() {
         return INSTANCE.get();
     }
 

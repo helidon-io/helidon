@@ -47,7 +47,7 @@ import io.helidon.pico.types.TypeName;
 /**
  * Used to abstract processor based filer from direct filer (the later used via maven plugin and other tooling).
  */
-abstract class AbstractFilerMsgr implements Filer, Msgr {
+public abstract class AbstractFilerMsgr implements Filer, Msgr {
     private static final System.Logger LOGGER = System.getLogger(AbstractFilerMsgr.class.getName());
 
     private final Filer filerDelegate;

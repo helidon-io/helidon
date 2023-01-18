@@ -30,11 +30,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 public interface ApplicationCreatorCodeGen {
 
     /**
-     * See {@link #classPrefixName()}.
-     */
-    String TEST_SCOPE = "test";
-
-    /**
      * The package name to use for code generation.
      *
      * @return package name

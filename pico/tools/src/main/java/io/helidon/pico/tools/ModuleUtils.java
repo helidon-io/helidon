@@ -42,13 +42,13 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 /**
  * Module specific utils.
  */
-class ModuleUtils {
+public class ModuleUtils {
     static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());
 
     /**
      * The "real" module-info.java file name.
      */
-    static final String REAL_MODULE_INFO_JAVA_NAME = ModuleInfoDescriptor.DEFAULT_MODULE_INFO_JAVA_NAME;
+    public static final String REAL_MODULE_INFO_JAVA_NAME = ModuleInfoDescriptor.DEFAULT_MODULE_INFO_JAVA_NAME;
 
     /**
      * The pico generated module-info.java.pico file name.
@@ -210,7 +210,7 @@ class ModuleUtils {
         // if we did not find it, then there is a chance we are in the tests directory; try to infer the module name
         if (basePath != null) {
             if (typeSuffix != null) {
-                typeSuffix.set(inferSourceOrTest(basePath, sourcePath));
+                typeSuffix.set(inferSourceOrTest(basePath, sourcePath).orElse(null));
             }
             if (!basePath.equals(sourcePath)) {
                 moduleInfoPaths = findFile(sourcePath.getParent(), basePath, ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
@@ -238,9 +238,9 @@ class ModuleUtils {
      * Attempts to infer 'test' or base (null) given the path.
      *
      * @param path the path
-     * @return 'test' or null (for base)
+     * @return 'test' or empty (for base)
      */
-    static String inferSourceOrTest(
+    public static Optional<String> inferSourceOrTest(
             Path path) {
         return inferSourceOrTest(path.getParent().getParent(), path);
     }
@@ -252,7 +252,7 @@ class ModuleUtils {
      * @param sourcePath the source path, assumed a child of the base path
      * @return 'test' or null (for base)
      */
-    static String inferSourceOrTest(
+    static Optional<String> inferSourceOrTest(
             Path basePath,
             Path sourcePath) {
         // create a relative path from the two paths
@@ -262,45 +262,48 @@ class ModuleUtils {
             path = "/" + path;
         }
         if (path.contains("/test/") || path.contains("/generated-test-sources/") || path.contains("/test-classes/")) {
-            return ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX;
+            return Optional.of(ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
         }
 
-        return null;
+        return Optional.empty();
     }
 
     /**
-     * Will return non-null File iff the uri represents a local file on the fs.
+     * Will return non-empty File iff the uri represents a local file on the fs.
      *
      * @param uri the uri of the artifact
-     * @return the file instance, or null if not local.
+     * @return the file instance, or empty if not local.
      */
-    static File toFile(
+    public static Optional<File> toFile(
             URI uri) {
-        if (uri == null || uri.getHost() != null) {
-            return null;
+        if (uri.getHost() != null) {
+            return Optional.empty();
         }
-        return new File(uri.getPath());
+        return Optional.of(new File(uri.getPath()));
     }
 
     /**
      * Translates to the source path coordinate given a source file and type name.
      * Only available during annotation processing.
      *
-     * @param file the source file
+     * @param optFile the source file
      * @param type the type name
-     * @return the source path
+     * @return the source path, or empty if cannot be inferred
      */
-    static File toSourcePath(
-            File file,
+    public static Optional<File> toSourcePath(
+            Optional<File> optFile,
             TypeElement type) {
+        if (optFile.isEmpty()) {
+            return Optional.empty();
+        }
         TypeName typeName = TypeTools.createTypeNameFromElement(type).orElseThrow();
         String typePath = TypeTools.toFilePath(typeName);
-        String filePath = file.getPath();
+        String filePath = optFile.get().getPath();
         if (filePath.endsWith(typePath)) {
             filePath = filePath.substring(0, filePath.length() - typePath.length());
-            return new File(filePath);
+            return Optional.of(new File(filePath));
         }
-        return null;
+        return Optional.empty();
     }
 
     private static Set<Path> findFile(
