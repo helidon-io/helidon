@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.reactive.dbclient.jdbc;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,8 +34,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
@@ -55,7 +54,7 @@ import io.helidon.reactive.dbclient.common.DbStatementContext;
 class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> implements DbStatementQuery {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JdbcStatementQuery.class.getName());
 
     JdbcStatementQuery(JdbcExecuteContext executeContext,
                        DbStatementContext statementContext) {
@@ -111,7 +110,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                                                  queryFuture,
                                                  rs));
             } catch (Throwable e) {
-                LOGGER.log(Level.FINEST,
+                LOGGER.log(Level.TRACE,
                            String.format("Failed to execute query %s: %s", statement.toString(), e.getMessage()),
                            e);
                 result.completeExceptionally(e);
@@ -291,12 +290,12 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                         try {
                             nextElement = requestQueue.poll(10, TimeUnit.MINUTES);
                         } catch (InterruptedException e) {
-                            LOGGER.finest("Interrupted while polling for requests, terminating DB read");
+                            LOGGER.log(Level.TRACE, "Interrupted while polling for requests, terminating DB read");
                             subscriber.onError(e);
                             break;
                         }
                         if (nextElement == null) {
-                            LOGGER.finest("No data requested for 10 minutes, terminating DB read");
+                            LOGGER.log(Level.TRACE, "No data requested for 10 minutes, terminating DB read");
                             subscriber.onError(new TimeoutException("No data requested in 10 minutes"));
                             break;
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.reactive.dbclient.mongodb;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.common.reactive.Single;
 
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class MongoDbClientTest {
 
-    private static final Logger LOGGER = Logger.getLogger(MongoDbClientTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MongoDbClientTest.class.getName());
 
     private static final MongoClient CLIENT = Mockito.mock(MongoClient.class);
     private static final MongoDatabase DB = Mockito.mock(MongoDatabase.class);
@@ -55,7 +55,7 @@ public class MongoDbClientTest {
             MongoCollection connection = future.await();
             fail("Unsupported unwrap call must throw UnsupportedOperationException");
         } catch (UnsupportedOperationException ex) {
-            LOGGER.fine(() -> String.format("Caught expected UnsupportedOperationException: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Caught expected UnsupportedOperationException: %s", ex.getMessage()));
         }
     }
 
@@ -79,7 +79,8 @@ public class MongoDbClientTest {
                 MongoClient connection = future.await();
                 fail("Unsupported unwrap call must throw UnsupportedOperationException");
             } catch (UnsupportedOperationException ex) {
-                LOGGER.fine(() -> String.format("Caught expected UnsupportedOperationException: %s", ex.getMessage()));
+                LOGGER.log(Level.DEBUG, () -> String.format("Caught expected UnsupportedOperationException: %s"
+                        , ex.getMessage()));
             }
             return exec.query("{\"operation\": \"command\", \"query\": { ping: 1 }}");
         });

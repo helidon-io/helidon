@@ -21,7 +21,6 @@ open module helidon.webserver.websocket.test {
     requires io.helidon.reactive.webserver.websocket;
     requires io.helidon.logging.common;
 
-    requires java.logging;
     requires java.net.http;
     requires hamcrest.all;
     requires org.junit.jupiter.api;

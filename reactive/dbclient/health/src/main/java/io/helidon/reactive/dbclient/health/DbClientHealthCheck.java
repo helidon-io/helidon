@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package io.helidon.reactive.dbclient.health;
 
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Awaitable;
 import io.helidon.config.Config;
@@ -34,7 +33,7 @@ import io.helidon.reactive.dbclient.DbClient;
 public abstract class DbClientHealthCheck implements HealthCheck {
 
     /* Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(DbClientHealthCheck.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DbClientHealthCheck.class.getName());
 
     /* Default hHealth check timeout in seconds (to wait for statement execution response). */
     private static final int DEFAULT_TIMEOUT_SECONDS = 10;
@@ -92,8 +91,8 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             builder.status(HealthCheckResponse.Status.DOWN);
             builder.detail("ErrorMessage", e.getMessage());
             builder.detail("ErrorClass", e.getClass().getName());
-            LOGGER.log(Level.FINER, e, () -> String.format(
-                    "Database %s is not responding: %s", dbClient.dbType(), e.getMessage()));
+            LOGGER.log(Level.TRACE, () -> String.format("Database %s is not responding: %s", dbClient.dbType(), e.getMessage()),
+                    e);
         }
 
         return builder.build();
@@ -125,7 +124,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private DbClientHealthCheckAsNamedDml(Builder builder) {
             super(builder);
             this.statementName = builder.statementName();
-            LOGGER.finest("Created an instance of DbClientHealthCheckAsNamedDml");
+            LOGGER.log(Level.TRACE, "Created an instance of DbClientHealthCheckAsNamedDml");
         }
 
         @Override
@@ -151,7 +150,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private DbClientHealthCheckAsDml(Builder builder) {
             super(builder);
             this.statement = builder.statement();
-            LOGGER.finest("Created an instance of DbClientHealthCheckAsDml");
+            LOGGER.log(Level.TRACE, "Created an instance of DbClientHealthCheckAsDml");
         }
 
         @Override
@@ -177,7 +176,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private DbClientHealthCheckAsNamedQuery(Builder builder) {
             super(builder);
             this.statementName = builder.statementName();
-            LOGGER.finest("Created an instance of DbClientHealthCheckAsNamedQuery");
+            LOGGER.log(Level.TRACE, "Created an instance of DbClientHealthCheckAsNamedQuery");
         }
 
         @Override
@@ -204,7 +203,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private DbClientHealthCheckAsQuery(Builder builder) {
             super(builder);
             this.statement = builder.statement();
-            LOGGER.finest("Created an instance of DbClientHealthCheckAsQuery");
+            LOGGER.log(Level.TRACE, "Created an instance of DbClientHealthCheckAsQuery");
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.helidon.reactive.dbclient.mongodb;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbRow;
 import io.helidon.reactive.dbclient.common.DbClientContext;
@@ -33,7 +33,7 @@ import org.reactivestreams.Subscription;
 final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Document>, Flow.Publisher<DbRow>, Flow.Subscription {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(MongoDbQueryProcessor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MongoDbQueryProcessor.class.getName());
 
     private final AtomicLong count = new AtomicLong();
     private final CompletableFuture<Long> queryFuture;
@@ -63,7 +63,7 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
     public void onNext(Document doc) {
         MongoDbRow dbRow = new MongoDbRow(clientContext.dbMapperManager(), clientContext.mapperManager(), doc.size());
         doc.forEach((name, value) -> {
-            LOGGER.finest(() -> String.format(
+            LOGGER.log(Level.TRACE, () -> String.format(
                     "Column name = %s, value = %s", name, (value != null ? value.toString() : "N/A")));
             dbRow.add(name, new MongoDbColumn(clientContext.dbMapperManager(), clientContext.mapperManager(), name, value));
         });
@@ -73,44 +73,44 @@ final class MongoDbQueryProcessor implements org.reactivestreams.Subscriber<Docu
 
     @Override
     public void onError(Throwable t) {
-        LOGGER.finest(() -> String.format("Query error: %s", t.getMessage()));
+        LOGGER.log(Level.TRACE, () -> String.format("Query error: %s", t.getMessage()));
         statementFuture.completeExceptionally(t);
         queryFuture.completeExceptionally(t);
         if (dbStatement.txManager() != null) {
             dbStatement.txManager().stmtFailed(dbStatement);
         }
         subscriber.onError(t);
-        LOGGER.finest(() -> String.format("Query %s execution failed", dbStatement.statementName()));
+        LOGGER.log(Level.TRACE, () -> String.format("Query %s execution failed", dbStatement.statementName()));
     }
 
     @Override
     public void onComplete() {
-        LOGGER.finest(() -> "Query finished");
+        LOGGER.log(Level.TRACE, () -> "Query finished");
         statementFuture.complete(null);
         queryFuture.complete(count.get());
         if (dbStatement.txManager() != null) {
             dbStatement.txManager().stmtFinished(dbStatement);
         }
         subscriber.onComplete();
-        LOGGER.finest(() -> String.format("Query %s execution succeeded", dbStatement.statementName()));
+        LOGGER.log(Level.TRACE, () -> String.format("Query %s execution succeeded", dbStatement.statementName()));
     }
 
     @Override
     public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
         this.subscriber = subscriber;
-        LOGGER.finest(() -> "Calling onSubscribe on subscriber");
+        LOGGER.log(Level.TRACE, () -> "Calling onSubscribe on subscriber");
         subscriber.onSubscribe(this);
     }
 
     @Override
     public void request(long n) {
-        LOGGER.finest(() -> String.format("Requesting %d records from MongoDB", n));
+        LOGGER.log(Level.TRACE, () -> String.format("Requesting %d records from MongoDB", n));
         this.subscription.request(n);
     }
 
     @Override
     public void cancel() {
-        LOGGER.finest(() -> "Cancelling MongoDB result processing");
+        LOGGER.log(Level.TRACE, () -> "Cancelling MongoDB result processing");
         this.subscription.cancel();
     }
 

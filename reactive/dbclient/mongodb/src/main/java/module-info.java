@@ -30,7 +30,6 @@ import io.helidon.reactive.dbclient.spi.DbClientProvider;
 module io.helidon.reactive.dbclient.mongodb {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
     requires java.sql;
 
     requires transitive jakarta.json;

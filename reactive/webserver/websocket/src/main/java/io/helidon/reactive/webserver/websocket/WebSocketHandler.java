@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.reactive.webserver.websocket;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -23,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.reactive.BufferedEmittingPublisher;
@@ -55,7 +54,7 @@ import static jakarta.websocket.CloseReason.CloseCodes.UNEXPECTED_CONDITION;
 
 class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
-    private static final Logger LOGGER = Logger.getLogger(WebSocketHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(WebSocketHandler.class.getName());
 
     private static final int MAX_RETRIES = 5;
 
@@ -122,12 +121,12 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
         webSocketRouting.getRoutes().forEach(wsRoute -> {
             try {
                 if (wsRoute.serverEndpointConfig() != null) {
-                    LOGGER.log(Level.FINE, () -> "Registering ws endpoint "
+                    LOGGER.log(Level.DEBUG, () -> "Registering ws endpoint "
                             + wsRoute.path()
                             + wsRoute.serverEndpointConfig().getPath());
                     engine.register(wsRoute.serverEndpointConfig(), wsRoute.path());
                 } else {
-                    LOGGER.log(Level.FINE, () -> "Registering annotated ws endpoint " + wsRoute.path());
+                    LOGGER.log(Level.DEBUG, () -> "Registering annotated ws endpoint " + wsRoute.path());
                     engine.register(wsRoute.endpointClass(), wsRoute.path());
                 }
             } catch (DeploymentException e) {
@@ -141,7 +140,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.log(Level.SEVERE, "WS handler ERROR ", cause);
+        LOGGER.log(Level.ERROR, "WS handler ERROR ", cause);
     }
 
     @Override
@@ -174,7 +173,7 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     WebSocketEngine.UpgradeInfo upgrade(ChannelHandlerContext ctx) {
-        LOGGER.fine("Initiating WebSocket handshake ...");
+        LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake ...");
 
         // Create Tyrus request context, copy request headers and query params
         Map<String, String[]> paramsMap = new HashMap<>();
@@ -238,10 +237,10 @@ class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     private void logError(Throwable throwable){
-        LOGGER.log(Level.SEVERE, "WS handler ERROR ", throwable);
+        LOGGER.log(Level.ERROR, "WS handler ERROR ", throwable);
     }
 
     private static void close(CloseReason closeReason) {
-        LOGGER.fine(() -> "Connection closed: " + closeReason);
+        LOGGER.log(Level.DEBUG, () -> "Connection closed: " + closeReason);
     }
 }
