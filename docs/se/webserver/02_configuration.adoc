@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ Available socket configuration options:
 |`backpressure-buffer-size` |long |`5242880` |Set a maximum length of the unflushed response data sending buffer can keep without applying backpressure.
 Depends on `backpressure-policy` what happens if max buffer size is reached.
 
- Default is `5*1024*1024` - 5Mb
+Default is `5*1024*1024` - 5Mb
 |`backpressure-policy` | String | `LINEAR` |Sets the strategy for applying backpressure to the reactive stream
 of response data.
 
@@ -100,8 +100,12 @@ to watermark is calculated and requested.
 * AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested and extra flush is initiated.
 * UNBOUNDED - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
 
- Default is `LINEAR`
+Default is `LINEAR`
 |`validate-headers` |`true` |boolean |Whether to validate header names, if they contain illegal characters.
 |`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
 |`tls` |{nbsp} |Object |Configuration of TLS, please see our TLS example in repository
+|`requested-uri-discovery.enabled` |boolean |`true` if `types` or `trusted-proxies` is set; `false` otherwise` |Sets whether requested URI discovery is enabled for the socket.
+|`requested-uri-discovery.trusted-proxies` |link:{common-http-javadoc-base-url}/AllowList.html[`AllowList`] |{nbsp} |Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
+This setting automatically enables discovery for the socket.
+|`requested-uri-discovery.types` |`(FORWARDED, X_FORWARDED, HOST)` (See link:{javadoc-base-url-api}/SocketConfiguration.RequestedUriDiscoveryType.html[`RequestedUriDiscoveryType`]) |`FORWARDED if discovery is enabled; none otherwise` |Assigns the front-end URI discovery type(s) this socket should use. This setting automatically enables discovery for the socket.
 |===
