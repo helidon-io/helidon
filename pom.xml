@@ -77,7 +77,7 @@
         <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
         <version.lib.test.containers>1.17.5</version.lib.test.containers>
         <version.lib.test.containers.keycloak>2.3.0</version.lib.test.containers.keycloak>
-        <version.lib.testng>7.5</version.lib.testng>
+        <version.lib.testng>7.7.0</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
