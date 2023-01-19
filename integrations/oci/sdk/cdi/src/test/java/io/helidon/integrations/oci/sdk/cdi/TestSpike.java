@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ class TestSpike {
                             // isn't; see the comments in the
                             // constructor body below.  It should be
                             // unsatisfied.
-                            Instance<com.oracle.bmc.circuitbreaker.JaxRsCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
+                            Instance<com.oracle.bmc.circuitbreaker.OciCircuitBreaker> unresolvedJaxRsCircuitBreakerInstance,
                             // Streaming turns out to be the only
                             // convention-violating service in the
                             // entire portfolio, and the violation is

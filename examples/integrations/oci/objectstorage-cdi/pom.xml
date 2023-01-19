@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,16 +37,6 @@
         <mainClass>io.helidon.examples.integrations.oci.objectstorage.cdi.ObjectStorageCdiMain</mainClass>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.oracle.oci.sdk</groupId>
-                <artifactId>oci-java-sdk-shaded-full</artifactId>
-                <version>${version.lib.oci}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -55,16 +45,10 @@
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-shaded-full</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <scope>runtime</scope>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

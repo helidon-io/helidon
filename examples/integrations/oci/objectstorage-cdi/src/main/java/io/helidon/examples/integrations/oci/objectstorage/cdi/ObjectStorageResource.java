@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,10 +90,10 @@ public class ObjectStorageResource {
         try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             Response.ResponseBuilder ok = Response.ok(objectContent)
-                    .header(Http.Header.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .header(Http.Header.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
                     .header("request-id", getObjectResponse.getOpcClientRequestId())
-                    .header(Http.Header.CONTENT_LENGTH, getObjectResponse.getContentLength());
+                    .header(Http.Header.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength());
 
             return ok.build();
         } catch (IOException e) {
