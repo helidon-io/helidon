@@ -230,6 +230,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final long maxPayloadSize;
         private final long backpressureBufferSize;
         private final BackpressureStrategy backpressureStrategy;
+        private final boolean continueImmediately;
         private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
         private final AllowList trustedProxies;
         private final boolean isRequestedUriDiscoveryEnabled;
@@ -254,6 +255,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxPayloadSize = builder.maxPayloadSize();
             this.backpressureBufferSize = builder.backpressureBufferSize();
             this.backpressureStrategy = builder.backpressureStrategy();
+            this.continueImmediately = builder.continueImmediately();
             WebServerTls webServerTls = builder.tlsConfig();
             this.webServerTls = webServerTls.enabled() ? webServerTls : null;
             this.requestedUriDiscoveryTypes = builder.requestedUriDiscoveryTypes();
@@ -364,6 +366,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public BackpressureStrategy backpressureStrategy() {
             return backpressureStrategy;
+        }
+
+        @Override
+        public boolean continueImmediately() {
+            return continueImmediately;
         }
 
         @Override

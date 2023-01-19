@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class SocketHttpClient implements AutoCloseable {
 
     private static final Logger LOGGER = Logger.getLogger(SocketHttpClient.class.getName());
-    private static final String EOL = "\r\n";
+    static final String EOL = "\r\n";
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
 
     private final Socket socket;
@@ -65,6 +66,18 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public SocketHttpClient(WebServer webServer) throws IOException {
         socket = new Socket("localhost", webServer.port());
+        socket.setSoTimeout(10000);
+        socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Creates the instance linked with the provided webserver.
+     *
+     * @param port the port to link this client with
+     * @throws IOException in case of an error
+     */
+    public SocketHttpClient(int port) throws IOException {
+        socket = new Socket("localhost", port);
         socket.setSoTimeout(10000);
         socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
     }
@@ -293,6 +306,42 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Execute immediately given consumer with this
+     * socket client as an argument.
+     *
+     * @param exec consumer to execute
+     * @return this http client
+     */
+    public SocketHttpClient then(Consumer<SocketHttpClient> exec){
+        exec.accept(this);
+        return this;
+    }
+
+    /**
+     * Wait for text coming from socket.
+     *
+     * @param expectedStartsWith expected beginning
+     * @param expectedEndsWith expected end
+     * @return this http client
+     */
+    public SocketHttpClient awaitResponse(String expectedStartsWith, String expectedEndsWith) {
+        StringBuilder sb = new StringBuilder();
+        String t;
+        while (true) {
+            try {
+                if ((t = socketReader.readLine()) == null) break;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            sb.append(t).append("\n");
+            if (sb.toString().startsWith(expectedStartsWith) && sb.toString().endsWith(expectedEndsWith)) {
+                break;
+            }
+        }
+        return this;
+    }
+
+    /**
      * Sends a request to the webserver.
      *
      * @param method the http method
@@ -380,6 +429,38 @@ public class SocketHttpClient implements AutoCloseable {
         pw.print(EOL);
         pw.print(EOL);
         pw.flush();
+    }
+
+    /**
+     * Send supplied text manually to socket.
+     *
+     * @param formatString text to send
+     * @param args format arguments
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient manualRequest(String formatString, Object... args) throws IOException {
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        pw.printf(formatString.replaceAll("\\n",EOL), args);
+        pw.flush();
+        return this;
+    }
+
+
+    /**
+     * Continue sending more to text to socket.
+     * @param payload text to be sent
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient continuePayload(String payload)
+            throws IOException {
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        if (payload != null) {
+            pw.print(payload);
+        }
+        pw.flush();
+        return this;
     }
 
     /**

@@ -580,6 +580,21 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        /**
+         * When true WebServer answers to expect continue with 100 continue immediately,
+         * not waiting for user to actually request the data.
+         * <p>
+         * Default is {@code false}
+         *
+         * @param continueImmediately , answer with 100 continue immediately after expect continue, default is false
+         * @return this builder
+         */
+        @Override
+        public Builder continueImmediately(boolean continueImmediately) {
+            defaultSocketBuilder().continueImmediately(continueImmediately);
+            return this;
+        }
+
         @Override
         public Builder addRequestedUriDiscoveryType(RequestedUriDiscoveryType type) {
             defaultSocketBuilder().addRequestedUriDiscoveryType(type);
