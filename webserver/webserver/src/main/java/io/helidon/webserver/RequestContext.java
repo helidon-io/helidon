@@ -36,7 +36,7 @@ class RequestContext {
     private final HttpRequestScopedPublisher publisher;
     private final HttpRequest request;
     private final Context scope;
-    private SocketConfiguration socketConfiguration;
+    private final SocketConfiguration socketConfiguration;
     private volatile boolean responseCompleted;
     private volatile boolean emitted;
 
