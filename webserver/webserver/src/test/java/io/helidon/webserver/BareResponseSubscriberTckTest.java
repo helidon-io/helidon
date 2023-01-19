@@ -51,14 +51,15 @@ public class BareResponseSubscriberTckTest extends FlowSubscriberWhiteboxVerific
         Mockito.when(ctx.channel()).thenReturn(channel);
         Mockito.when(channel.closeFuture()).thenReturn(channelFuture);
 
+        SocketConfiguration socketConfiguration = SocketConfiguration.create("@default");
+
         return new BareResponseImpl(ctx,
                 CompletableFuture.completedFuture(false),
                 httpRequest,
                 requestContext,
                 CompletableFuture.completedFuture(null),
                 CompletableFuture.completedFuture(null),
-                100 * 1024,
-                BackpressureStrategy.LINEAR,
+                socketConfiguration,
                 0L) {
             @Override
             public void onSubscribe(Flow.Subscription subscription) {

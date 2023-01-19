@@ -604,6 +604,12 @@ public interface WebServer {
         }
 
         @Override
+        public Builder continueImmediately(boolean continueImmediately) {
+            configurationBuilder.continueImmediately(continueImmediately);
+            return this;
+        }
+
+        @Override
         public Builder maxUpgradeContentLength(int size) {
             configurationBuilder.maxUpgradeContentLength(size);
             return this;

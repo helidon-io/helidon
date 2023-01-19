@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,6 +66,18 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public SocketHttpClient(WebServer webServer) throws IOException {
         socket = new Socket("localhost", webServer.port());
+        socket.setSoTimeout(10000);
+        socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Creates the instance linked with the provided webserver.
+     *
+     * @param port the port to link this client with
+     * @throws IOException in case of an error
+     */
+    public SocketHttpClient(int port) throws IOException {
+        socket = new Socket("localhost", port);
         socket.setSoTimeout(10000);
         socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
     }
@@ -293,7 +306,20 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Execute immediately given consumer with this
+     * socket client as an argument.
+     *
+     * @param exec consumer to execute
+     * @return this http client
+     */
+    public SocketHttpClient then(Consumer<SocketHttpClient> exec){
+        exec.accept(this);
+        return this;
+    }
+
+    /**
      * Wait for text coming from socket.
+     *
      * @param expectedStartsWith expected beginning
      * @param expectedEndsWith expected end
      * @return this http client

@@ -104,15 +104,14 @@ class BareResponseImpl implements BareResponse {
                      RequestContext requestContext,
                      CompletableFuture<?> prevRequestChunk,
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
-                     long backpressureBufferSize,
-                     BackpressureStrategy backpressureStrategy,
+                     SocketConfiguration soConfig,
                      long requestId) {
         this.entityRequested = entityRequested;
         this.requestContext = requestContext;
         this.originalEntityAnalyzed = requestEntityAnalyzed;
         this.requestEntityAnalyzed = requestEntityAnalyzed;
-        this.backpressureStrategy = backpressureStrategy;
-        this.backpressureBufferSize = backpressureBufferSize;
+        this.backpressureStrategy = soConfig.backpressureStrategy();
+        this.backpressureBufferSize = soConfig.backpressureBufferSize();
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
         this.channel = new NettyChannel(ctx);
@@ -171,7 +170,9 @@ class BareResponseImpl implements BareResponse {
             throw new IllegalStateException("Status and headers were already sent");
         }
 
-        if (HttpUtil.is100ContinueExpected(requestContext.request()) && !requestContext.isDataRequested()) {
+        if (!requestContext.socketConfiguration().continueImmediately()
+                && HttpUtil.is100ContinueExpected(requestContext.request())
+                && !requestContext.isDataRequested()) {
             channel.expectationFailed();
             entityRequested.complete(false);
             originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);

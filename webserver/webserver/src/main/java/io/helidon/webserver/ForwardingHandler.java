@@ -301,7 +301,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // Context, publisher and DataChunk queue for this request/response
         DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
         HttpRequestScopedPublisher publisher = new HttpRequestScopedPublisher(queue);
-        requestContext = new RequestContext(publisher, request, requestScope);
+        requestContext = new RequestContext(publisher, request, requestScope, soConfig);
 
         // Closure local variables that cache mutable instance variables
         RequestContext requestContextRef = requestContext;
@@ -407,8 +407,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                                      requestContext,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
-                                     soConfig.backpressureBufferSize(),
-                                     soConfig.backpressureStrategy(),
+                                     soConfig,
                                      requestId);
         prevRequestFuture = new CompletableFuture<>();
         CompletableFuture<?> thisResp = prevRequestFuture;
@@ -435,12 +434,19 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     }
                 });
 
-        // Send 100 continue only when entity is actually requested
-        entityRequested.thenAccept(requestedByUser -> {
-            if (requestedByUser && HttpUtil.is100ContinueExpected(request)) {
+
+        if (soConfig.continueImmediately()) {
+            if (HttpUtil.is100ContinueExpected(request)) {
                 send100Continue(ctx, request);
             }
-        });
+        } else {
+            // Send 100 continue only when entity is actually requested
+            entityRequested.thenAccept(requestedByUser -> {
+                if (requestedByUser && HttpUtil.is100ContinueExpected(request)) {
+                    send100Continue(ctx, request);
+                }
+            });
+        }
 
         // If a problem during routing, return 400 response
         try {
