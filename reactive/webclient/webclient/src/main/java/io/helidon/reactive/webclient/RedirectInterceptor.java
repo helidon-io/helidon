@@ -15,10 +15,10 @@
  */
 package io.helidon.reactive.webclient;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 
@@ -31,7 +31,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  */
 class RedirectInterceptor implements HttpInterceptor {
 
-    private static final Logger LOGGER = Logger.getLogger(RedirectInterceptor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(RedirectInterceptor.class.getName());
 
     @Override
     public void handleInterception(HttpResponse httpResponse,
@@ -40,7 +40,7 @@ class RedirectInterceptor implements HttpInterceptor {
         if (httpResponse.headers().contains(HttpHeaderNames.LOCATION)) {
             long requestId = clientRequest.configuration().requestId();
             String newUri = httpResponse.headers().get(HttpHeaderNames.LOCATION);
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
+            LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
             WebClientRequestBuilder requestBuilder = WebClientRequestBuilderImpl
                     .create(clientRequest);
             if (URI.create(newUri).getHost() == null) {
