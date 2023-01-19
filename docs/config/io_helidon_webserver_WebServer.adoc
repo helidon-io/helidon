@@ -87,6 +87,9 @@ This is a standalone configuration type, prefix from configuration root: `server
  server socket.
 
  If `0` then use implementation default.
+
+|`continue-immediately`|boolean |`false` |When true WebServer answers to expect continue with 100 continue immediately, not waiting for user to actually request the data.
+ Default is `false`
 |`requested-uri-discovery.enabled` |boolean |`true if &#x27;types&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise` |Sets whether requested URI discovery is enabled for the socket.
 |`requested-uri-discovery.trusted-proxies` |xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList] |{nbsp} |Assigns the settings governing the acceptance and rejection of forwarded headers from incoming requests to this socket.
  This setting automatically enables discovery for the socket.

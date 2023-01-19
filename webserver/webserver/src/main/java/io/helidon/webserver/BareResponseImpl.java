@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ class BareResponseImpl implements BareResponse {
     private final AtomicBoolean internallyClosed = new AtomicBoolean(false);
     private final CompletableFuture<BareResponse> responseFuture;
     private final CompletableFuture<BareResponse> headersFuture;
+    private final CompletableFuture<Boolean> entityRequested;
     private final RequestContext requestContext;
     private final long requestId;
     private final String http2StreamId;
@@ -98,21 +99,22 @@ class BareResponseImpl implements BareResponse {
      * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
+                     CompletableFuture<Boolean> entityRequested,
                      HttpRequest request,
                      RequestContext requestContext,
                      CompletableFuture<?> prevRequestChunk,
                      CompletableFuture<ChannelFutureListener> requestEntityAnalyzed,
-                     long backpressureBufferSize,
-                     BackpressureStrategy backpressureStrategy,
+                     SocketConfiguration soConfig,
                      long requestId) {
+        this.entityRequested = entityRequested;
         this.requestContext = requestContext;
         this.originalEntityAnalyzed = requestEntityAnalyzed;
         this.requestEntityAnalyzed = requestEntityAnalyzed;
-        this.backpressureStrategy = backpressureStrategy;
-        this.backpressureBufferSize = backpressureBufferSize;
+        this.backpressureStrategy = soConfig.backpressureStrategy();
+        this.backpressureBufferSize = soConfig.backpressureBufferSize();
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
-        this.channel = new NettyChannel(ctx.channel());
+        this.channel = new NettyChannel(ctx);
         this.requestId = requestId;
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
@@ -166,6 +168,14 @@ class BareResponseImpl implements BareResponse {
         Objects.requireNonNull(status, "Parameter 'statusCode' was null!");
         if (!statusHeadersSent.compareAndSet(false, true)) {
             throw new IllegalStateException("Status and headers were already sent");
+        }
+
+        if (!requestContext.socketConfiguration().continueImmediately()
+                && HttpUtil.is100ContinueExpected(requestContext.request())
+                && !requestContext.isDataRequested()) {
+            channel.expectationFailed();
+            entityRequested.complete(false);
+            originalEntityAnalyzed.complete(ChannelFutureListener.CLOSE_ON_FAILURE);
         }
 
         HttpResponseStatus nettyStatus;

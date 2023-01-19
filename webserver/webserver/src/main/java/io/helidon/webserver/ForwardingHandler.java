@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -301,7 +301,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // Context, publisher and DataChunk queue for this request/response
         DataChunkHoldingQueue queue = new DataChunkHoldingQueue();
         HttpRequestScopedPublisher publisher = new HttpRequestScopedPublisher(queue);
-        requestContext = new RequestContext(publisher, request, requestScope);
+        requestContext = new RequestContext(publisher, request, requestScope, soConfig);
 
         // Closure local variables that cache mutable instance variables
         RequestContext requestContextRef = requestContext;
@@ -313,8 +313,11 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         IndirectReference<HttpRequestScopedPublisher, DataChunkHoldingQueue> publisherRef =
                 new IndirectReference<>(publisher, queues, queue);
 
+        CompletableFuture<Boolean> entityRequested = new CompletableFuture<>();
+
         // Set up read strategy for channel based on consumer demand
         publisher.onRequest((n, demand) -> {
+            entityRequested.complete(true);
             if (publisher.isUnbounded()) {
                 LOGGER.finest(() -> formatMsg("Netty autoread: true", ctx));
                 ctx.channel().config().setAutoRead(true);
@@ -399,12 +402,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         // Create response and handler for its completion
         BareResponseImpl bareResponse =
                 new BareResponseImpl(ctx,
+                                     entityRequested,
                                      request,
                                      requestContext,
                                      prevRequestFuture,
                                      requestEntityAnalyzed,
-                                     soConfig.backpressureBufferSize(),
-                                     soConfig.backpressureStrategy(),
+                                     soConfig,
                                      requestId);
         prevRequestFuture = new CompletableFuture<>();
         CompletableFuture<?> thisResp = prevRequestFuture;
@@ -412,7 +415,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 .thenRun(() -> {
                     // Mark response completed in context
                     requestContextRef.responseCompleted(true);
-
+                    entityRequested.complete(false);
                     // Consume and release any buffers in publisher
                     publisher.clearAndRelease();
 
@@ -430,12 +433,19 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         LOGGER.fine(formatMsg("Response complete: %s", ctx, System.identityHashCode(msg)));
                     }
                 });
-        /*
-        TODO we should only send continue in case the entity is request (e.g. we found a route and user started reading it)
-        This would solve connection close for 404 for requests with entity
-         */
-        if (HttpUtil.is100ContinueExpected(request)) {
-            send100Continue(ctx, request);
+
+
+        if (soConfig.continueImmediately()) {
+            if (HttpUtil.is100ContinueExpected(request)) {
+                send100Continue(ctx, request);
+            }
+        } else {
+            // Send 100 continue only when entity is actually requested
+            entityRequested.thenAccept(requestedByUser -> {
+                if (requestedByUser && HttpUtil.is100ContinueExpected(request)) {
+                    send100Continue(ctx, request);
+                }
+            });
         }
 
         // If a problem during routing, return 400 response
