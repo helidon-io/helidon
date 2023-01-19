@@ -27,10 +27,21 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview, Overview>>
+- <<Overview,Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
+** <<Configuring the WebServer in Your Code, Configuring the WebServer in Your Code>>
+** <<Configuring the WebServer in a Configuration File, Configuring the WebServer in a Configuration File>>
+** <<Configuration Options, Configuration Options>>
+*** <<Routing, Routing>>
+*** <<Request Handling, Request Handling>>
+*** <<Error Handling, Error Handling>>
+- <<Supported Technologies, Supported Technologies>>
+** <<HTTP/2 Support, HTTP/2 Support>>
+** <<Static Content Support, Static Content Support>>
+** <<Jersey (JAX-RS) Support, Jersey (JAX-RS) Support>>
+** <<JSON Support, JSON Support>>
 - <<Reference, Reference>>
 - <<Additional Information, Additional Information>>
 
@@ -70,7 +81,7 @@ WebServer webServer = WebServer.builder()
       .build();
 ----
 
-=== Configuring the WebServer in a configuration file
+=== Configuring the WebServer in a Configuration File
 
 You can also define the configuration in a file.
 
@@ -99,7 +110,7 @@ just use `Config.create()`
 
 include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+2,tag=config]
 
-== Routing [[routing]]
+== Routing 
 Routing lets you use request matching criteria to bind requests to a `handler` that implements
 your custom business logic. Matching criteria include one or more *HTTP Method(s)* and, optionally,
 a request *path matcher*. Use the `RequestPredicate` class to specify more routing
@@ -294,7 +305,7 @@ To complete the request handling, you must send a response by calling the `res.s
 <1> handler that terminates the request handling for any HTTP method using the `/hello` path
 <2> send the response
 
-== Protocol Specific Routing
+=== Protocol Specific Routing
 Handling routes based on the protocol version is possible by registering specific routes
 on routing builder.
 
@@ -443,7 +454,7 @@ are equivalent.
 <1> Call a downstream error handler with the `Throwable` instance.
 <2> Here, `req.next()` is the same as `req.next(ex)`. In both cases, the downstream error handler is called.
 
-=== Default error handling
+=== Default Error Handling
 If no user-defined error handler is matched, or if the last error handler of the
 exception called `req.next()`, then the exception is translated to an HTTP response as follows:
 
@@ -458,6 +469,7 @@ exception called `req.next()`, then the exception is translated to an HTTP respo
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
 error code `500`.
 
+== Supported Technologies
 == HTTP/2 Support
 
 Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge
@@ -465,7 +477,7 @@ and HTTP/2 with ALPN over TLS.
 HTTP/2 support is enabled in webserver by default when it's artifact is available on classpath.
 
 === Maven Coordinates
-To enable Http/2 support add the following dependency to your project's `pom.xml`.
+To enable HTTP/2 support add the following dependency to your project's `pom.xml`.
 
 [source,xml]
 ----
