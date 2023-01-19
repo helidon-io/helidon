@@ -31,7 +31,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 
-public class Continue100Test {
+class Continue100Test {
 
     private static final Duration TEST_TIMEOUT = Duration.ofSeconds(10);
     private static WebServer webServer;
@@ -72,11 +72,11 @@ public class Continue100Test {
     }
 
     @Test
-    void continue100POST() throws Exception {
+    void continue100Post() throws Exception {
         try (SocketHttpClient socketHttpClient = new SocketHttpClient(webServer)) {
             String content = "looong payload data";
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             POST / HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue
@@ -100,7 +100,7 @@ public class Continue100Test {
         try (SocketHttpClient socketHttpClient = new SocketHttpClient(webServer)) {
             String content = "looong payload data";
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             POST /redirect HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue
@@ -112,7 +112,7 @@ public class Continue100Test {
                             """, content.length())
                     .awaitResponse("HTTP/1.1 301 Moved Permanently\n", "\n\n");
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             POST / HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue
@@ -146,7 +146,7 @@ public class Continue100Test {
         try (SocketHttpClient socketHttpClient = new SocketHttpClient(webServer)) {
             String content = "looong payload data";
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             POST / HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue
@@ -167,11 +167,11 @@ public class Continue100Test {
         }
     }
     @Test
-    void continue100PUT() throws Exception {
+    void continue100Put() throws Exception {
         try (SocketHttpClient socketHttpClient = new SocketHttpClient(webServer)) {
             String content = "looong payload data";
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             PUT / HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue
@@ -195,7 +195,7 @@ public class Continue100Test {
         try (SocketHttpClient socketHttpClient = new SocketHttpClient(webServer)) {
             String content = "looong payload data";
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             POST / HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue
@@ -216,7 +216,7 @@ public class Continue100Test {
         try (SocketHttpClient socketHttpClient = new SocketHttpClient(webServer)) {
             String content = "looong payload data";
             socketHttpClient
-                    .manualReq("""                            
+                    .manualRequest("""                            
                             POST /test HTTP/1.1
                             Host: localhost:8080
                             Expect: 100-continue

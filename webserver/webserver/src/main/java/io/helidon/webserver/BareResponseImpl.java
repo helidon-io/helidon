@@ -69,7 +69,7 @@ class BareResponseImpl implements BareResponse {
     private final AtomicBoolean internallyClosed = new AtomicBoolean(false);
     private final CompletableFuture<BareResponse> responseFuture;
     private final CompletableFuture<BareResponse> headersFuture;
-    private CompletableFuture<Boolean> entityRequested;
+    private final CompletableFuture<Boolean> entityRequested;
     private final RequestContext requestContext;
     private final long requestId;
     private final String http2StreamId;

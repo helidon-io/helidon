@@ -407,14 +407,15 @@ public class SocketHttpClient implements AutoCloseable {
 
     /**
      * Send supplied text manually to socket.
-     * @param requestString text to send
+     *
+     * @param formatString text to send
      * @param args format arguments
      * @return this http client
      * @throws IOException
      */
-    public SocketHttpClient manualReq(String requestString, Object... args) throws IOException {
+    public SocketHttpClient manualRequest(String formatString, Object... args) throws IOException {
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-        pw.printf(requestString.replaceAll("\\n",EOL), args);
+        pw.printf(formatString.replaceAll("\\n",EOL), args);
         pw.flush();
         return this;
     }
