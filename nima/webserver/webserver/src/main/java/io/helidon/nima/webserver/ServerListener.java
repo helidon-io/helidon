@@ -42,7 +42,6 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.http.DirectHandlers;
-
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.task.spi.HelidonTaskExecutor;
 
