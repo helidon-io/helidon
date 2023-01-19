@@ -46,9 +46,9 @@ class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
 
         serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
         Map<String, InjectionPlan> plans = parent.getOrCreateInjectionPlan(false);
-        logEntryAndResult.activationResult.injectionPlans(plans);
+        logEntryAndResult.activationResult().injectionPlans(plans);
         Map<String, Object> deps = parent.resolveDependencies(plans);
-        logEntryAndResult.activationResult.resolvedDependencies(deps);
+        logEntryAndResult.activationResult().resolvedDependencies(deps);
         serviceProvider.finishedTransitionCurrentActivationPhase(logEntryAndResult);
 
         serviceProvider.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.CONSTRUCTING);

@@ -32,6 +32,14 @@ import jakarta.inject.Singleton;
 public class ExternalModuleCreatorProvider implements Provider<ExternalModuleCreator> {
     private static final LazyValue<ExternalModuleCreator> INSTANCE = LazyValue.create(ExternalModuleCreatorProvider::load);
 
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public ExternalModuleCreatorProvider() {
+    }
+
     private static ExternalModuleCreator load() {
         return HelidonServiceLoader.create(
                 ServiceLoader.load(ExternalModuleCreator.class, ExternalModuleCreator.class.getClassLoader()))

@@ -36,12 +36,12 @@ public interface ActivatorCreatorConfigOptions {
 
     /**
      * Should jsr-330 be followed in strict accordance. The default here is actually set to false for two reasons:
-     * <p/>
-     * 1) It is usually not what people expect (i.e., losing @inject on overridden injectable setter methods), and
-     * <p/>
-     * 2) The implementation will e slightly more performant (i.e., the "rules" governing jsr-330 requires that base classes
+     * <ol>
+     * <li> It is usually not what people expect (i.e., losing @inject on overridden injectable setter methods), and
+     * <li> The implementation will e slightly more performant (i.e., the "rules" governing jsr-330 requires that base classes
      * are injected prior to derived classes. This coupled with point 1 requires special additional book-keeping to be
      * managed by the activators that are generated).
+     * </ol>
      *
      * @return true if strict mode is in effect
      */

@@ -173,7 +173,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
         return (srcWeight.compareTo(criteria.weight().get()) <= 0);
     }
 
-    // TODO:
+    // note to self: review the need for this
 
 //    /**
 //     * Determines whether this matches the given contract.

@@ -88,7 +88,7 @@ public interface InterceptorCreator {
     /**
      * Applicable when {@link Strategy#WHITE_LISTED} is in use.
      *
-     * @return the set of Class<? extends Annotation> type names that should trigger creation.
+     * @return the set of type names that should trigger creation
      */
     default Set<String> whiteListedAnnotationTypes() {
         return Set.of();
@@ -98,7 +98,7 @@ public interface InterceptorCreator {
      * Applicable when {@link Strategy#CUSTOM} is in use.
      *
      * @param annotationType the annotation type name
-     * @return true if the annotation type should trigger interceptor creation.
+     * @return true if the annotation type should trigger interceptor creation
      */
     default boolean isWhiteListed(
             String annotationType) {
@@ -126,7 +126,7 @@ public interface InterceptorCreator {
      * @param interceptedService    the service being intercepted
      * @param delegateCreator       the "real" creator
      * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
-     * @return the processor to use for the given arguments.
+     * @return the processor to use for the given arguments
      */
     InterceptorProcessor createInterceptorProcessor(
             ServiceInfoBasics interceptedService,

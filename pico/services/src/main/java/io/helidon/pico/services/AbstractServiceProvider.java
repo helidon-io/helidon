@@ -184,6 +184,11 @@ public abstract class AbstractServiceProvider<T>
         return (dependencies == null) ? NO_DEPS : dependencies;
     }
 
+    /**
+     * Used to set the dependencies from this service provider.
+     *
+     * @param dependencies the dependencies from this service provider
+     */
     protected void dependencies(
             DependenciesInfo dependencies) {
         Objects.requireNonNull(dependencies);
@@ -203,12 +208,17 @@ public abstract class AbstractServiceProvider<T>
         return phase;
     }
 
-    protected boolean isAlreadyAtTargetPhase(
+    boolean isAlreadyAtTargetPhase(
             Phase ultimateTargetPhase) {
         Objects.requireNonNull(ultimateTargetPhase);
         return (currentActivationPhase() == ultimateTargetPhase);
     }
 
+    /**
+     * Used to access the current pico services instance assigned to this service provider.
+     *
+     * @return the pico services assigned to this service provider
+     */
     protected PicoServices picoServices() {
         return Objects.requireNonNull(picoServices);
     }
@@ -468,35 +478,35 @@ public abstract class AbstractServiceProvider<T>
 
         // if we get here then we own the semaphore for activation...
         try {
-            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_STARTING.ordinal() &&
-                    (Phase.INIT == res.finishingActivationPhase()
+            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_STARTING.ordinal()
+                    && (Phase.INIT == res.finishingActivationPhase()
                              || Phase.PENDING == res.finishingActivationPhase()
                              || Phase.ACTIVATION_STARTING == res.finishingActivationPhase()
                              || Phase.DESTROYED == res.finishingActivationPhase())) {
                 doStartingLifecycle(logEntryAndResult);
             }
-            if (res.targetActivationPhase().ordinal() >= Phase.GATHERING_DEPENDENCIES.ordinal() &&
-                    (Phase.ACTIVATION_STARTING == res.finishingActivationPhase())) {
+            if (res.targetActivationPhase().ordinal() >= Phase.GATHERING_DEPENDENCIES.ordinal()
+                    && (Phase.ACTIVATION_STARTING == res.finishingActivationPhase())) {
                 doGatheringDependencies(logEntryAndResult);
             }
-            if (res.targetActivationPhase().ordinal() >= Phase.CONSTRUCTING.ordinal() &&
-                    (Phase.GATHERING_DEPENDENCIES == res.finishingActivationPhase())) {
+            if (res.targetActivationPhase().ordinal() >= Phase.CONSTRUCTING.ordinal()
+                    && (Phase.GATHERING_DEPENDENCIES == res.finishingActivationPhase())) {
                 doConstructing(logEntryAndResult);
             }
-            if (res.targetActivationPhase().ordinal() >= Phase.INJECTING.ordinal() &&
-                    (Phase.CONSTRUCTING == res.finishingActivationPhase())) {
+            if (res.targetActivationPhase().ordinal() >= Phase.INJECTING.ordinal()
+                    && (Phase.CONSTRUCTING == res.finishingActivationPhase())) {
                 doInjecting(logEntryAndResult);
             }
-            if (res.targetActivationPhase().ordinal() >= Phase.POST_CONSTRUCTING.ordinal() &&
-                    (Phase.INJECTING == res.finishingActivationPhase())) {
+            if (res.targetActivationPhase().ordinal() >= Phase.POST_CONSTRUCTING.ordinal()
+                    && (Phase.INJECTING == res.finishingActivationPhase())) {
                 doPostConstructing(logEntryAndResult);
             }
-            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_FINISHING.ordinal() &&
-                    (Phase.POST_CONSTRUCTING == res.finishingActivationPhase())) {
+            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_FINISHING.ordinal()
+                    && (Phase.POST_CONSTRUCTING == res.finishingActivationPhase())) {
                 doActivationFinishing(logEntryAndResult);
             }
-            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVE.ordinal() &&
-                    (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase())) {
+            if (res.targetActivationPhase().ordinal() >= Phase.ACTIVE.ordinal()
+                    && (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase())) {
                 doActivationActive(logEntryAndResult);
             }
         } catch (Throwable t) {
@@ -874,10 +884,23 @@ public abstract class AbstractServiceProvider<T>
         finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
+    /**
+     * Used to control the order of injection. Jsr-330 is particular about this.
+     *
+     * @return the order of injection
+     */
     protected List<String> serviceTypeInjectionOrder() {
         return Collections.singletonList(serviceInfo.serviceTypeName());
     }
 
+    /**
+     * Called during the injection of fields.
+     *
+     * @param target            the target
+     * @param deps              the dependencies
+     * @param injections        the injections
+     * @param forServiceType    the service type
+     */
     protected void doInjectingFields(
             Object target,
             Map<String, Object> deps,
@@ -887,6 +910,14 @@ public abstract class AbstractServiceProvider<T>
         boolean debugMe = true;
     }
 
+    /**
+     * Called during the injection of methods.
+     *
+     * @param target            the target
+     * @param deps              the dependencies
+     * @param injections        the injections
+     * @param forServiceType    the service type
+     */
     protected void doInjectingMethods(
             Object target,
             Map<String, Object> deps,
@@ -1176,14 +1207,22 @@ public abstract class AbstractServiceProvider<T>
 
     // note that for one result, there may be N logEntry records we will build and write to the log
     static class LogEntryAndResult {
-        final DefaultActivationResult.Builder activationResult;
-        final DefaultActivationLogEntry.Builder logEntry;
+        private final DefaultActivationResult.Builder activationResult;
+        private final DefaultActivationLogEntry.Builder logEntry;
 
         LogEntryAndResult(
                 DefaultActivationLogEntry.Builder logEntry,
                 DefaultActivationResult.Builder activationResult) {
             this.logEntry = logEntry;
             this.activationResult = activationResult;
+        }
+
+        DefaultActivationResult.Builder activationResult() {
+            return activationResult;
+        }
+
+        DefaultActivationLogEntry.Builder logEntry() {
+            return logEntry;
         }
     }
 

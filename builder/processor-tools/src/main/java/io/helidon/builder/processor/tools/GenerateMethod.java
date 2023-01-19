@@ -156,8 +156,8 @@ final class GenerateMethod {
         if (typeName.isList() || typeName.isSet()) {
             builder.append(".add(val);\n");
         } else { // isMap
-            boolean useComputeStyle = forceUseComputeStyle ||
-                    (mapValueType != null && (mapValueType.isSet() || mapValueType.isList() || mapValueType.isMap()));
+            boolean useComputeStyle = forceUseComputeStyle
+                    || (mapValueType != null && (mapValueType.isSet() || mapValueType.isList() || mapValueType.isMap()));
             if (useComputeStyle) {
                 builder.append(".compute(key, (k, v) -> {\n");
                 builder.append("\t\t\t\tif (v == null) {\n");

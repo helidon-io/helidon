@@ -122,8 +122,7 @@ public interface ServiceInfoCriteria {
 
         boolean matches = matches(serviceTypeName(), criteria.serviceTypeName());
         if (matches && criteria.serviceTypeName().isEmpty()) {
-            matches = contractsImplemented().containsAll(criteria.contractsImplemented())
-                    || criteria.contractsImplemented().contains(serviceTypeName());
+            matches = contractsImplemented().containsAll(criteria.contractsImplemented());
         }
         return matches
                 && scopeTypeNames().containsAll(criteria.scopeTypeNames())

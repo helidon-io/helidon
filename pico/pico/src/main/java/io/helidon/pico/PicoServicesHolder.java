@@ -93,8 +93,8 @@ public abstract class PicoServicesHolder {
 
     // we need to keep the provider and the instance the provider creates together as one entity
     private static class ProviderAndServicesTuple {
-        final PicoServicesProvider provider;
-        final PicoServices picoServices;
+        private final PicoServicesProvider provider;
+        private final PicoServices picoServices;
 
         private ProviderAndServicesTuple(
                 Optional<PicoServicesProvider> provider) {

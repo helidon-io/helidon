@@ -16,6 +16,7 @@
 
 package io.helidon.pico.services;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 import io.helidon.common.Weights;
@@ -28,7 +29,7 @@ import jakarta.inject.Provider;
  * A comparator appropriate for service providers, first using its {@link io.helidon.common.Weight} and then service type name
  * to determine its natural ordering.
  */
-class ServiceProviderComparator implements Comparator<Provider<?>> {
+class ServiceProviderComparator implements Comparator<Provider<?>>, Serializable {
 
     @Override
     public int compare(Provider<?> p1, Provider<?> p2) {
@@ -51,13 +52,13 @@ class ServiceProviderComparator implements Comparator<Provider<?>> {
             double w2 = info2.realizedWeight();
             int comp = Double.compare(w1, w2);
             if (0 != comp) {
-                return -comp;
+                return -1 * comp;
             }
             // secondary ordering based upon its name...
             String name1 = info1.serviceTypeName();
             String name2 = info2.serviceTypeName();
             comp = name2.compareTo(name1);
-            return -comp;
+            return -1 * comp;
         } else {
             return Weights.weightComparator().compare(p1, p2);
         }

@@ -52,7 +52,9 @@ public interface ActivatorCreatorResponse extends GeneralCreatorResponse {
     Optional<ModuleDetail> moduleDetail();
 
     /**
-     * @return Set iff the application stub was requested to have been created.
+     * Set if the application stub was requested to have been created.
+     *
+     * @return the application name that was created.
      */
     Optional<TypeName> applicationTypeName();
 

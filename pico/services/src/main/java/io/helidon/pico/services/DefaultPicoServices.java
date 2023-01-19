@@ -16,11 +16,11 @@
 
 package io.helidon.pico.services;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -144,14 +144,13 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     @Override
     public Optional<Map<String, ActivationResult>> shutdown() {
-        log("started shutdown");
         Map<String, ActivationResult> result = null;
-        synchronized (services) {
-            if (services.get() != null) {
-                result = doShutdown();
-            }
+        DefaultServices current = services.get();
+        if (services.compareAndSet(current, null)) {
+            log("started shutdown");
+            result = doShutdown();
+            log("finished shutdown");
         }
-        log("finished shutdown");
         return Optional.ofNullable(result);
     }
 
@@ -169,7 +168,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         try {
             return es.submit(shutdown)
                     .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             errorLog("error during shutdown", t);
             throw new PicoException("error during shutdown", t);
         } finally {
@@ -181,11 +180,11 @@ class DefaultPicoServices implements PicoServices, Resetable {
      * Will attempt to shut down in reverse order of activation, but only if activation logs are retained.
      */
     private class Shutdown implements Callable<Map<String, ActivationResult>> {
-        final DefaultServices services;
-        final ActivationLog log;
-        final Injector injector;
-        final InjectorOptions opts = InjectorOptions.DEFAULT.get();
-        final Map<String, ActivationResult> map = new LinkedHashMap<>();
+        private final DefaultServices services;
+        private final ActivationLog log;
+        private final Injector injector;
+        private final InjectorOptions opts = InjectorOptions.DEFAULT.get();
+        private final Map<String, ActivationResult> map = new LinkedHashMap<>();
 
         Shutdown() {
             this.services = services();
@@ -258,31 +257,26 @@ class DefaultPicoServices implements PicoServices, Resetable {
     public boolean reset(
             boolean deep) {
         boolean result = deep;
-
         DefaultServices.assertPermitsDynamic(cfg);
 
-        synchronized (services) {
-            DefaultServices prev = services.get();
-            if (prev != null) {
-                boolean affected = prev.reset(deep);
-                result |= affected;
-            }
-
-            boolean affected = log.reset(deep);
+        DefaultServices prev = services.get();
+        if (prev != null) {
+            boolean affected = prev.reset(deep);
             result |= affected;
+        }
 
-            if (deep) {
-                synchronized (moduleList) {
-                    isBinding.set(false);
-                    initializedServices = new CountDownLatch(1);
-                    moduleList.set(null);
-                    applicationList.set(null);
-                    if (prev != null) {
-                        services.set(new DefaultServices(cfg));
-                    }
-                    initializingServices.set(false);
-                }
+        boolean affected = log.reset(deep);
+        result |= affected;
+
+        if (deep) {
+            isBinding.set(false);
+            initializedServices = new CountDownLatch(1);
+            moduleList.set(null);
+            applicationList.set(null);
+            if (prev != null) {
+                services.set(new DefaultServices(cfg));
             }
+            initializingServices.set(false);
         }
 
         return result;
@@ -334,58 +328,46 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     private List<Application> findApplications(
             boolean load) {
-        if (applicationList.get() != null) {
-            return applicationList.get();
+        List<Application> result = applicationList.get();
+        if (result != null) {
+            return result;
         }
 
-        synchronized (applicationList) {
-            if (applicationList.get() != null) {
-                return applicationList.get();
-            }
-
-            List<Application> result = new LinkedList<>();
-            if (load) {
-                ServiceLoader<Application> serviceLoader = ServiceLoader.load(Application.class);
-                for (Application app : serviceLoader) {
-                    result.add(app);
-                }
+        result = new ArrayList<>();
+        if (load) {
+            ServiceLoader<Application> serviceLoader = ServiceLoader.load(Application.class);
+            for (Application app : serviceLoader) {
+                result.add(app);
             }
 
             if (!cfg.permitsDynamic()) {
-                result = Collections.unmodifiableList(result);
-                applicationList.set(result);
+                applicationList.compareAndSet(null, List.copyOf(result));
+                result = applicationList.get();
             }
-
-            return result;
         }
+        return result;
     }
 
     private List<io.helidon.pico.Module> findModules(
             boolean load) {
-        if (moduleList.get() != null) {
-            return moduleList.get();
+        List<io.helidon.pico.Module> result = moduleList.get();
+        if (result != null) {
+            return result;
         }
 
-        synchronized (moduleList) {
-            if (moduleList.get() != null) {
-                return moduleList.get();
-            }
-
-            List<io.helidon.pico.Module> result = new LinkedList<>();
-            if (load) {
-                ServiceLoader<io.helidon.pico.Module> serviceLoader = ServiceLoader.load(io.helidon.pico.Module.class);
-                for (io.helidon.pico.Module module : serviceLoader) {
-                    result.add(module);
-                }
+        result = new ArrayList<>();
+        if (load) {
+            ServiceLoader<io.helidon.pico.Module> serviceLoader = ServiceLoader.load(io.helidon.pico.Module.class);
+            for (io.helidon.pico.Module module : serviceLoader) {
+                result.add(module);
             }
 
             if (!cfg.permitsDynamic()) {
-                result = Collections.unmodifiableList(result);
+                moduleList.compareAndSet(null, List.copyOf(result));
+                result = moduleList.get();
             }
-            moduleList.set(result);
-
-            return result;
         }
+        return result;
     }
 
     protected void bindApplications(

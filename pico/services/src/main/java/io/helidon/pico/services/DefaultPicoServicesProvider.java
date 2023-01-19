@@ -41,6 +41,14 @@ import jakarta.inject.Singleton;
 public class DefaultPicoServicesProvider implements PicoServicesProvider, Resetable {
     private static final AtomicReference<DefaultPicoServices> INSTANCE = new AtomicReference<>();
 
+    /**
+     * Service loaded.
+     *
+     * @deprecated
+     */
+    public DefaultPicoServicesProvider() {
+    }
+
     @Override
     public PicoServices services(
             Bootstrap bootstrap) {

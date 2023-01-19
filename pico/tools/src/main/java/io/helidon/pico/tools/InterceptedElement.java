@@ -31,12 +31,16 @@ import io.helidon.builder.Builder;
 public interface InterceptedElement {
 
     /**
-     * @return The set of {@link io.helidon.pico.InterceptedTrigger} types that apply to this method/element.
+     * The set of {@link io.helidon.pico.InterceptedTrigger} types that apply to this method/element.
+     *
+     * @return the set of intercepted trigger types that apply to this method/element
      */
     Set<String> interceptedTriggerTypeNames();
 
     /**
-     * @return The method element info for this intercepted method.
+     * The method element info for this intercepted method.
+     *
+     * @return the method element info for this intercepted method
      */
     MethodElementInfo elementInfo();
 

@@ -92,8 +92,16 @@ public class ServicesToProcess implements Resetable {
     private ModuleInfoDescriptor lastGeneratedModuleInfoDescriptor;
     private String lastGeneratedPackageName;
 
+    /**
+     * The current services to process instance.
+     *
+     * @return the current services to process instance
+     */
     public static ServicesToProcess servicesInstance() {
         return INSTANCE.SERVICES;
+    }
+
+    private ServicesToProcess() {
     }
 
     @Override
@@ -346,7 +354,9 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return the interception plan for each service type that has a non-null interception plan.
+     * The interception plan for each service type that has a non-null interception plan.
+     *
+     * @return the interception plan for each service type
      */
     public Map<TypeName, InterceptionPlan> interceptorPlans() {
         return interceptorPlanFor.entrySet().stream()
@@ -561,7 +571,9 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * @return Fetches the set of known service type names being processed in this batch.
+     * Fetches the set of known service type names being processed in this batch.
+     *
+     * @return the set of known service type names being processed
      */
     public List<TypeName> serviceTypeNames() {
         ArrayList<TypeName> result = new ArrayList<>(servicesTypeNames);

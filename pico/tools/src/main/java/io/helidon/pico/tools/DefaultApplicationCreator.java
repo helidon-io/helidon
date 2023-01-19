@@ -66,7 +66,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             = "service-provider-application.hbs";
 
     /**
-     * Constructor.
+     * Service loader based constructor.
      *
      * @deprecated
      */

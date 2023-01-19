@@ -33,8 +33,8 @@ public class Utils {
     /**
      * Determines if the service provider is valid to receive injections.
      *
-     * @param sp the service provider.
-     * @return
+     * @param sp the service provider
+     * @return true if the service provider can receive injection
      */
     public static boolean isQualifiedInjectionTarget(
             ServiceProvider<?> sp) {

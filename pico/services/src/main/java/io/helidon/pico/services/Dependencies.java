@@ -45,6 +45,8 @@ public class Dependencies {
     private Dependencies() {
     }
 
+    // note to self: review the need for this
+
 //    /**
 //     * Remove a dependency from the list.
 //     *
@@ -52,7 +54,8 @@ public class Dependencies {
 //     * @return the new set of dependencies
 //     */
 //    public Dependencies removeDependency(String serviceTypeName) {
-//        Map<ServiceInfo, Set<io.helidon.pico.spi.ext.Dependency<Object>>> serviceInfoDependencies = new LinkedHashMap<>(this.serviceInfoDependencies);
+//        Map<ServiceInfo, Set<io.helidon.pico.spi.ext.Dependency<Object>>> serviceInfoDependencies
+//              = new LinkedHashMap<>(this.serviceInfoDependencies);
 //        List<io.helidon.pico.spi.ext.Dependency<Object>> dependencies = new LinkedList<>(this.dependencies);
 //
 //        this.serviceInfoDependencies.forEach((serviceInfo, value) -> {
@@ -78,6 +81,7 @@ public class Dependencies {
     /**
      * Creates a builder.
      *
+     * @param serviceTypeName the service type name
      * @return the fluent builder
      */
     public static BuilderContinuation builder(

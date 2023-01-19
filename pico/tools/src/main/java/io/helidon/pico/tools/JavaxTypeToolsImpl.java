@@ -29,7 +29,8 @@ import javax.lang.model.type.DeclaredType;
 import io.helidon.pico.types.TypeName;
 
 /**
- * Will load only if supporting types are on the classpath.
+ * Will load only if supporting (javax) types are on the classpath.
+ *
  * @deprecated
  */
 public class JavaxTypeToolsImpl implements JavaxTypeTools {
@@ -38,6 +39,14 @@ public class JavaxTypeToolsImpl implements JavaxTypeTools {
 
     boolean getPriorityEnabled = true;
     boolean getAnnotationsWithAnnotationEnabled = true;
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public JavaxTypeToolsImpl() {
+    }
 
     @Override
     public Optional<Integer> priorityOf(

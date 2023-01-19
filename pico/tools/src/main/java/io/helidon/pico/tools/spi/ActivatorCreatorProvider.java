@@ -32,6 +32,14 @@ import jakarta.inject.Singleton;
 public class ActivatorCreatorProvider implements Provider<ActivatorCreator> {
     private static final LazyValue<ActivatorCreator> INSTANCE = LazyValue.create(ActivatorCreatorProvider::load);
 
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public ActivatorCreatorProvider() {
+    }
+
     private static ActivatorCreator load() {
         return HelidonServiceLoader.create(ServiceLoader.load(ActivatorCreator.class, ActivatorCreator.class.getClassLoader()))
                 .asList()

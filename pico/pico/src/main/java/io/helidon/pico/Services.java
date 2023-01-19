@@ -136,7 +136,9 @@ public interface Services {
             boolean expected);
 
     /**
-     * Same as calling
+     * Retrieves the first match based upon the passed service info criteria.
+     * <p>
+     * This is the same as calling the following:
      * <pre>
      *     lookupFirst(criteria, true).orElseThrow();
      * </pre>

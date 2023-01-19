@@ -69,7 +69,7 @@ class DefaultServices implements Services, Resetable {
      *
      * @param cfg the config
      */
-    public DefaultServices(
+    DefaultServices(
             PicoServicesConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
     }
@@ -316,8 +316,7 @@ class DefaultServices implements Services, Resetable {
 
     static boolean isIntercepted(
             ServiceProvider<?> sp) {
-        return (sp instanceof ServiceProviderBindable &&
-                        ((ServiceProviderBindable<?>) sp).isIntercepted());
+        return (sp instanceof ServiceProviderBindable && ((ServiceProviderBindable<?>) sp).isIntercepted());
     }
 
     ServiceBinder createServiceBinder(

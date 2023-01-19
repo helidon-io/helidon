@@ -31,8 +31,9 @@ public interface TemplateHelperTools {
     /**
      * Convenience method to help with the typical/generic case where the the request + the provided generatedType
      * is injected into the supplied template to produce the response.
-     * <p/>
+     * <p>
      * The substitutions are as follows:
+     * <ul>
      * <li> substitutions.put("generatedSticker", {generated-sticker});
      * <li> substitutions.put("generatedTypeName", req.getGeneratedTypeName().getName());
      * <li> substitutions.put("annoTypeName", TypeNameImpl.toName(req.getAnnoType()));
@@ -53,6 +54,7 @@ public interface TemplateHelperTools {
      * <li> substitutions.put("elementEnclosingTypeName.className", req.getElementEnclosingType().getClassName());
      * <li> substitutions.put("elementArgs", req.getElementArgs());
      * <li> substitutions.put("elementArgs-declaration", req.getElementArgs());
+     * </ul>
      *
      * @param request           the request, as populated as indicated above
      * @param generatedType     the type that should be code generated

@@ -60,7 +60,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
     private final ServicesToProcess services = ServicesToProcess.servicesInstance();
 
     /**
-     * Constructor.
+     * Service loader based constructor.
      *
      * @deprecated
      */
@@ -123,7 +123,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         }
     }
 
-    protected Collection<Path> identifyExternalJars(
+    private Collection<Path> identifyExternalJars(
             Collection<String> packageNames) {
         Set<Path> classpath = new LinkedHashSet<>();
         for (String packageName : packageNames) {
@@ -141,7 +141,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         return classpath;
     }
 
-    protected void processServiceType(
+    private void processServiceType(
             ClassInfo classInfo) {
         logger().log(System.Logger.Level.DEBUG, "processing " + classInfo);
 

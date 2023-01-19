@@ -73,11 +73,13 @@ import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
 
 /**
  * Responsible for building all pico-di related collateral for a module, including:
+ * <ol>
  * <li>The {@link io.helidon.pico.ServiceProvider} for each service type implementation passed in.
  * <li>The {@link io.helidon.pico.Activator} and {@link io.helidon.pico.DeActivator} for each service type implementation passed in.
  * <li>The {@link Module} for the aggregate service provider bindings for the same set of service type names.
  * <li>The module-info as appropriate for the above set of services (and contracts).
  * <li>The /META-INF/services entries as appropriate.
+ * </ol>
  *
  * This API can also be used to only produce meta-information describing the model without the codegen option - see
  * {@link ActivatorCreatorRequest#codeGenPaths()} for details.
@@ -97,7 +99,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     private static final String SERVICE_PROVIDER_MODULE_HBS = "service-provider-module.hbs";
 
     /**
-     * Constructor.
+     * Service loader based constructor.
      *
      * @deprecated
      */

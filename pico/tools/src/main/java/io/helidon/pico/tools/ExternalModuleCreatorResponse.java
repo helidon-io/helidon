@@ -28,7 +28,9 @@ import io.helidon.builder.Builder;
 public interface ExternalModuleCreatorResponse extends GeneralCreatorResponse {
 
     /**
-     * @return the activator creator request.
+     * The activator creator request.
+     *
+     * @return the activator creator request
      */
     ActivatorCreatorRequest activatorCreatorRequest();
 
