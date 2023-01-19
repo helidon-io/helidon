@@ -12,142 +12,6 @@
    <cpe>cpe:/a:etcd:etcd</cpe>
 </suppress>
 
-<!-- GraalVM -->
-<!-- This suppresses multiple JDK CVEs related to running untrusted Java code.
-     These do not apply to Helidon's use of Java/GraalVM.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21248</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21271</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21277</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21282</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21283</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21291</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21293</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21294</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21296</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21299</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21305</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21340</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21341</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21349</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21360</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21365</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: graal-sdk-22.3.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\..*/.*@.*$</packageUrl>
-   <cve>CVE-2022-21366</cve>
-</suppress>
-
-<!-- grpc -->
-<!-- This was applying the version of opentracing-grpc to grpc
-     which triggered CVEs for older versions of grpc and grpc-js
--->
-<suppress>
-   <notes><![CDATA[
-   file name: opentracing-grpc-0.2.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.opentracing\.contrib/opentracing\-grpc@.*$</packageUrl>
-   <cpe>cpe:/a:grpc:grpc</cpe>
-</suppress>
-
 
 <!-- This CVE is against Neo4j through 3.4.18. We use Neo4j 4.x
      Helidon's Neo4j integration triggered a false positive due to it's 
@@ -161,60 +25,6 @@
    <cve>CVE-2021-34371</cve>
 </suppress>
 
-<!-- Neo4j driver bundles some netty components. This CVE "only impacts applications
-     running on Java version 6". We require Java 11 or newer.
-     Helidon's Netty version has already been upgraded to 4.1.77.Final (or newer) which does
-     not contain this CVE.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: neo4j-java-driver-4.4.3.jar (shaded: io.netty:netty-transport:4.1.73.Final)
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@4.1.73.Final$</packageUrl>
-   <cve>CVE-2022-24823</cve>
-</suppress>
-
-<!-- These files are being detected as an old version of Netty and raises false positives for
-     a number of old Netty CVEs.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: netty-incubator-transport-native-io_uring-0.0.8.Final-linux-x86_64.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty\.incubator/netty\-incubator\-transport\-native\-io_uring@.*$</packageUrl>
-   <cpe>cpe:/a:netty:netty</cpe>
-</suppress>
-
-<!-- This package was being detected as an old version of com.google.code.gson:gson. The version 
-     of com.google.cod.gson:gson that is brought in transitively is 2.8.9 which does not 
-     contain this CVE.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: google-http-client-gson-1.41.8.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
-   <cve>CVE-2022-25647</cve>
-</suppress>
-
-<!-- False positive. This CVE is against Go-Yaml, a project we do not use.
-     Scanner mistakenly identifies Helidon's Yaml support as Go-Yaml v3.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: io.helidon.config:helidon-config-yaml-mp:3.0.0-SNAPSHOT
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.helidon\.config/helidon\-config\-yaml\-mp@.*$</packageUrl>
-   <cve>CVE-2022-28948</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: io.helidon.config:helidon-config-yaml:3.0.0-SNAPSHOT
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.helidon\.config/helidon\-config\-yaml@.*$</packageUrl>
-   <cve>CVE-2022-28948</cve>
-</suppress>
-
 <!-- False positive.
      This CVE is against the H2 web admin console which we do not use
 -->
@@ -224,17 +34,6 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
    <cve>CVE-2022-45868</cve>
-</suppress>
-
-<!-- This CVE is against micronaut's Content Type header parsing. We never use micronaut classes
-     to parse the Content Type header. So this is N/A in our use of micronaut (for micronaut data).
--->
-<suppress>
-   <notes><![CDATA[
-   file name: micronaut-core-3.1.3.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.micronaut/micronaut\-core@.*$</packageUrl>
-   <vulnerabilityName>CVE-2022-21700</vulnerabilityName>
 </suppress>
 
 <!-- okhttp is a transitive fourth party dependency of Jaeger client. This CVE is considered
@@ -302,16 +101,8 @@
    <cve>CVE-2022-34917</cve>
 </suppress>
 
-<!-- False Postive. This CVE is against accesslog_project:accesslog not helidon-webserver-access-log -->
-<suppress>
-   <notes><![CDATA[
-   file name: helidon-webserver-access-log-3.0.2.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.helidon\.webserver/helidon\-webserver\-access\-log@.*$</packageUrl>
-   <cve>CVE-2022-25760</cve>
-</suppress>
-
-<!-- False Postives. CVE CVE-2022-45129 is against Payara not jakarta.resource-api nor microprofile -->
+<!-- False Postives. CVE CVE-2022-45129 is against Payara not jakarta.resource-api nor microprofile
+ -->
 <suppress>
    <notes><![CDATA[
    file name: jakarta.resource-api-2.0.0.jar
@@ -332,34 +123,6 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.jwt/microprofile\-jwt\-auth\-api@.*$</packageUrl>
    <cve>CVE-2022-45129</cve>
-</suppress>
-
-<!-- False Positive. This is a WLS CVE that somehow is getting associated with Tyrus 2.0.4 via oracle javase 2.0.4 -->
-<suppress>
-   <notes><![CDATA[
-   file name: tyrus-container-jdk-client-2.0.4.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.glassfish\.tyrus/tyrus\-container\-jdk\-client@.*$</packageUrl>
-   <cve>CVE-2020-2801</cve>
-</suppress>
-
-<!-- False Positive.
-     This CVE is against Apache Commons Net, but is being triggered by any apache commons package. See
-     https://github.com/jeremylong/DependencyCheck/issues/5121
--->
-<suppress>
-   <notes><![CDATA[
-   file name: commons-pool2-2.9.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-pool2@.*$</packageUrl>
-   <cve>CVE-2021-37533</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: commons-text-1.4.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-text@.*$</packageUrl>
-   <cve>CVE-2021-37533</cve>
 </suppress>
 
 </suppressions>
