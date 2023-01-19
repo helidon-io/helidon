@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,9 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Reference, Reference>>
 
 == Overview
+
+WARNING: MicroProfile Tracing specification is discontinued. This feature is marked as `@Deprecated` in
+Helidon. The specification is Superseded by link:https://github.com/eclipse/microprofile-telemetry[MicroProfile Telemetry specification].
 
 Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
 within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
