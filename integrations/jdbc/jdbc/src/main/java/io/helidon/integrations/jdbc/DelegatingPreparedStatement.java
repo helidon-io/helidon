@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ public class DelegatingPreparedStatement<S extends PreparedStatement> extends De
      * @param strictClosedChecking if {@code true}, then <em>this</em> {@link DelegatingPreparedStatement}'s {@link
      * #isClosed()} method will be invoked before every operation that cannot take place on a closed statement, and, if
      * it returns {@code true}, the operation in question will fail with a {@link SQLException}
+     *
      * @exception NullPointerException if either argument is {@code
      * null}
      *
