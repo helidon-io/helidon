@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import com.oracle.bmc.database.Database;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
-import com.oracle.bmc.http.internal.ResponseHelper;
+import com.oracle.bmc.http.client.Options;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.ws.rs.GET;
@@ -82,7 +82,7 @@ public class AtpResource {
     @GET
     @Path("/wallet")
     public Response generateWallet() {
-        ResponseHelper.shouldAutoCloseResponseInputStream(false);
+        Options.shouldAutoCloseResponseInputStream(false);
         GenerateAutonomousDatabaseWalletResponse walletResponse =
                 databaseClient.generateAutonomousDatabaseWallet(
                         GenerateAutonomousDatabaseWalletRequest.builder()
