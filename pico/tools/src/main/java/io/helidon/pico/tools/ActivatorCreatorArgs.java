@@ -22,7 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.ServiceInfo;
+import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.types.TypeName;
 
 /**
@@ -37,7 +37,7 @@ abstract class ActivatorCreatorArgs {
     abstract TypeName parentTypeName();
     abstract Set<String> scopeTypeNames();
     abstract List<String> description();
-    abstract ServiceInfo serviceInfo();
+    abstract ServiceInfoBasics serviceInfo();
     abstract DependenciesInfo dependencies();
     abstract DependenciesInfo parentDependencies();
     abstract Collection<Object> injectionPointsSkippedInParent();

@@ -26,6 +26,7 @@ import java.util.TreeSet;
 /**
  * The default/reference implementation for {@link ServiceInfo}.
  */
+// TODO:
 public class DefaultServiceInfo implements ServiceInfo {
     private final String serviceTypeName;
     private final Set<String> contractsImplemented;

@@ -31,9 +31,21 @@ import io.helidon.pico.tools.TemplateHelperTools;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
-// Note: if we uncomment this @Singleton, a compile-time activator will be built!
+/**
+ * For Testing (service loaded).
+ *
+ * @deprecated
+ */
+// Note: if we uncomment this @Singleton, a compile-time activator will be built - we want to avoid that here
 //@Singleton
 public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCreator {
+
+    /**
+     * For testing.
+     */
+    public ExtensibleGetTemplateProducer() {
+        int debugMe = 1;
+    }
 
     @Override
     public Set<Class<? extends Annotation>> annoTypes() {

@@ -23,6 +23,9 @@ import javax.lang.model.element.ElementKind;
 
 import io.helidon.builder.processor.spi.DefaultTypeInfo;
 import io.helidon.builder.processor.spi.TypeInfo;
+import io.helidon.pico.DefaultServiceInfo;
+import io.helidon.pico.ElementInfo;
+import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.processor.spi.ExtensibleGetTemplateProducer;
 import io.helidon.pico.processor.testsubjects.BasicEndpoint;
 import io.helidon.pico.processor.testsubjects.ExtensibleGET;
@@ -34,7 +37,6 @@ import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultTypedElementName;
 import io.helidon.pico.types.TypedElementName;
 
-import jakarta.inject.Singleton;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
@@ -50,12 +52,11 @@ class CustomAnnotationProcessorTest {
     void annotationSupported() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
         assertThat(processor.annoTypes(),
-                   containsInAnyOrder(ExtensibleGET.class, Singleton.class));
+                   containsInAnyOrder(ExtensibleGET.class));
     }
 
-
     @Test
-    public void extensibleGET() {
+    void extensibleGET() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
 
         List<AnnotationAndValue> annotations = createAnnotationAndValueListFromAnnotations(BasicEndpoint.class.getAnnotations());
@@ -72,11 +73,14 @@ class CustomAnnotationProcessorTest {
                 .typeName(create(String.class))
                 .elementName("header")
                 .build();
+        ServiceInfoBasics serviceInfo = DefaultServiceInfo.builder();
         DefaultTemplateHelperTools tools = new DefaultTemplateHelperTools(ExtensibleGetTemplateProducer.class);
         CustomAnnotationTemplateRequest req = DefaultCustomAnnotationTemplateRequest.builder()
                 .annoTypeName(create(ExtensibleGET.class))
+                .serviceInfo(serviceInfo)
                 .targetElement(target)
                 .targetElementArgs(List.of(arg1))
+                .targetElementAccess(ElementInfo.Access.PUBLIC)
                 .enclosingTypeInfo(enclosingTypeInfo)
                 .templateHelperTools(tools)
                 .build();
@@ -99,8 +103,8 @@ class CustomAnnotationProcessorTest {
                              + "import jakarta.inject.Provider;\n"
                              + "import jakarta.inject.Singleton;\n"
                              + "\n"
-                             + "@javax.annotation.processing.Generated({\"provider=oracle\", \"generator=io.helidon"
-                             + ".pico.processor.spi.ExtensibleGetTemplateProducer\", \"ver=1.0-SNAPSHOT\"})\n"
+                             + "@javax.annotation.processing.Generated({provider=oracle, generator=io.helidon"
+                             + ".pico.processor.spi.ExtensibleGetTemplateProducer, ver=1})\n"
                              + "@Singleton\n"
                              + "@Named(\"io.helidon.pico.processor.testsubjects.ExtensibleGET\")\n"
                              + "@Weight(100.0)\n"

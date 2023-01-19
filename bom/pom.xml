@@ -1424,6 +1424,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.pico</groupId>
                 <artifactId>helidon-pico-testing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

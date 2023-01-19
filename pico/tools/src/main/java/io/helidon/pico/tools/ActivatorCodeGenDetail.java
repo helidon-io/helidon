@@ -18,7 +18,7 @@ package io.helidon.pico.tools;
 
 import io.helidon.builder.Builder;
 import io.helidon.pico.DependenciesInfo;
-import io.helidon.pico.ServiceInfo;
+import io.helidon.pico.ServiceInfoBasics;
 
 /**
  * The specifics for a single {@link io.helidon.pico.ServiceProvider} that was code generated.
@@ -33,7 +33,7 @@ public interface ActivatorCodeGenDetail extends GeneralCodeGenDetail {
      *
      * @return additional meta-information describing the generated service info
      */
-    ServiceInfo serviceInfo();
+    ServiceInfoBasics serviceInfo();
 
     /**
      * The additional meta-information describing what the generated service depends upon.

@@ -71,7 +71,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     static List<CustomAnnotationTemplateCreator> initialize() {
         // note: it is important to use this class' CL since maven will not give us the "right" one.
         List<CustomAnnotationTemplateCreator> producers = HelidonServiceLoader.create(ServiceLoader.load(
-                        CustomAnnotationTemplateCreator.class, CustomAnnotationProcessor.class.getClassLoader())).asList();
+                        CustomAnnotationTemplateCreator.class, CustomAnnotationTemplateCreator.class.getClassLoader())).asList();
         producers.forEach(producer -> {
             producer.annoTypes().forEach(annoType -> {
                 PRODUCERS_BY_ANNOTATION.compute(DefaultTypeName.create(annoType), (k, v) -> {
@@ -213,18 +213,16 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     DefaultCustomAnnotationTemplateRequest.Builder toRequestBuilder(
             TypeName annoTypeName,
             Element typeToProcess,
-            RoundEnvironment roundEnv) {
+            RoundEnvironment ignoredRoundEnv) {
         TypeElement enclosingClassType = toEnclosingClassTypeElement(typeToProcess);
         TypeName enclosingClassTypeName = createTypeNameFromElement(enclosingClassType).orElse(null);
         if (enclosingClassTypeName == null) {
             return null;
         }
-
         ServiceInfoBasics siInfo = toBasicServiceInfo(enclosingClassTypeName);
         if (siInfo == null) {
             return null;
         }
-
         TypeInfoCreatorProvider tools = HelidonServiceLoader.create(
                         ServiceLoader.load(TypeInfoCreatorProvider.class, TypeInfoCreatorProvider.class.getClassLoader()))
                 .asList()
@@ -237,7 +235,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return DefaultCustomAnnotationTemplateRequest.builder()
                 .filerEnabled(true)
                 .annoTypeName(annoTypeName)
-                .basicServiceInfo(siInfo)
+                .serviceInfo(siInfo)
                 .targetElement(createTypedElementNameFromElement(typeToProcess, elements))
                 .targetElementArgs(toArgs(typeToProcess))
                 .targetElementAccess(toAccess(typeToProcess))

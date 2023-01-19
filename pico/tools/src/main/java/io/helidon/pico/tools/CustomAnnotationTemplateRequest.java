@@ -74,7 +74,7 @@ public interface CustomAnnotationTemplateRequest {
      *
      * @return the basic service info of the element being processed
      */
-    ServiceInfoBasics basicServiceInfo();
+    ServiceInfoBasics serviceInfo();
 
     /**
      * The enclosing class type info of the target element being processed.

@@ -47,6 +47,7 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.ServiceInfo;
+import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.Dependencies;
@@ -418,7 +419,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             LazyValue<ScanResult> scan) {
         ActivatorCreatorCodeGen codeGen = req.codeGen();
         String template = templateHelper.safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_ACTIVATOR_HBS);
-        ServiceInfo serviceInfo = toServiceInfo(serviceTypeName, codeGen);
+        ServiceInfoBasics serviceInfo = toServiceInfo(serviceTypeName, codeGen);
         TypeName activatorTypeName = toActivatorTypeName(serviceTypeName);
         TypeName parentTypeName = toParentTypeName(serviceTypeName, codeGen);
         String activatorGenericDecl = toActivatorGenericDecl(serviceTypeName, codeGen);
@@ -664,8 +665,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("isprovider", args.isProvider());
         subst.put("isconcrete", args.isConcrete());
         subst.put("contracts", args.serviceInfo().contractsImplemented());
-        if (args.serviceInfo() instanceof DefaultServiceInfo) {
-            subst.put("externalcontracts", args.serviceInfo().externalContractsImplemented());
+        if (args.serviceInfo() instanceof ServiceInfo) {
+            subst.put("externalcontracts", ((ServiceInfo) args.serviceInfo()).externalContractsImplemented());
         }
         subst.put("qualifiers", toCodegenQualifiers(args.serviceInfo().qualifiers()));
         subst.put("dependencies", toCodegenDependencies(args.dependencies()));
@@ -1189,7 +1190,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
      * @param codeGen         the code gen request
      * @return the service info
      */
-    public static ServiceInfo toServiceInfo(
+    public static ServiceInfoBasics toServiceInfo(
             TypeName serviceTypeName,
             ActivatorCreatorCodeGen codeGen) {
         Set<TypeName> contracts = codeGen.serviceTypeContracts().get(serviceTypeName);
