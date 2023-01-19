@@ -165,7 +165,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 .addListener(future -> {
                     data.release();
                     subscription.request(1);
-                    LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
+                    LOGGER.log(Level.TRACE,
+                            () -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
                 })
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") Failure when sending a content!"))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));
