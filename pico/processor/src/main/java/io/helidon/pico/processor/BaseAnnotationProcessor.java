@@ -308,7 +308,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             TypeName serviceTypeName) {
         return DefaultServiceInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
-                .weight(services.weightedPriorities().get(serviceTypeName))
+                .declaredWeight(services.weightedPriorities().get(serviceTypeName))
+                .declaredRunLevel(services.runLevels().get(serviceTypeName))
                 .scopeTypeNames(services.scopeTypeNames().get(serviceTypeName))
                 .build();
     }

@@ -607,16 +607,18 @@ public class ServicesToProcess implements Resetable {
     /**
      * Fetches the map of service types to their priorities.
      *
-     * @return Fetches the map of service types to their priorities
+     * @return the map of service types to their priorities
      */
     public Map<TypeName, Double> weightedPriorities() {
         return new TreeMap<>(servicesToWeightedPriority);
     }
 
     /**
-     * @return Fetches the map of service types to their run levels.
+     * Fetches the map of service types to their run levels.
+     *
+     * @return the map of service types to their run levels
      */
-    Map<TypeName, Integer> runLevels() {
+    public Map<TypeName, Integer> runLevels() {
         return new TreeMap<>(servicesToRunLevel);
     }
 

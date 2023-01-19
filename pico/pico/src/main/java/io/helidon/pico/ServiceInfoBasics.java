@@ -19,6 +19,8 @@ package io.helidon.pico;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
 import io.helidon.common.Weighted;
 
 /**
@@ -26,7 +28,14 @@ import io.helidon.common.Weighted;
  *
  * @see ServiceInfo
  */
-public interface ServiceInfoBasics extends Weighted {
+@Builder
+public interface ServiceInfoBasics {
+
+    /**
+     * Default weight for any weighted component (whether it implements this interface
+     * or uses {@link  io.helidon.common.Weight} annotation).
+     */
+    double DEFAULT_WEIGHT = Weighted.DEFAULT_WEIGHT;
 
     /**
      * The managed service implementation {@link Class}.
@@ -40,6 +49,7 @@ public interface ServiceInfoBasics extends Weighted {
      *
      * @return the service scope type name
      */
+    @Singular
     Set<String> scopeTypeNames();
 
     /**
@@ -47,6 +57,7 @@ public interface ServiceInfoBasics extends Weighted {
      *
      * @return the service qualifiers
      */
+    @Singular
     Set<QualifierAndValue> qualifiers();
 
     /**
@@ -55,6 +66,7 @@ public interface ServiceInfoBasics extends Weighted {
      * @see io.helidon.pico.ExternalContracts
      * @return the service contracts implemented
      */
+    @Singular
     Set<String> contractsImplemented();
 
     /**
@@ -90,7 +102,7 @@ public interface ServiceInfoBasics extends Weighted {
      * @see #declaredWeight()
      */
     default double realizedWeight() {
-        return declaredWeight().orElse(weight());
+        return declaredWeight().orElse(DEFAULT_WEIGHT);
     }
 
 }

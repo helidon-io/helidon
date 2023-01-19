@@ -21,6 +21,7 @@ import java.util.Map;
 import io.helidon.common.Weight;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.DependenciesInfo;
+import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.Dependencies;
 
@@ -35,10 +36,10 @@ public class PicoWorldImpl$$picoActivator extends AbstractServiceProvider<PicoWo
     private static final DefaultServiceInfo serviceInfo =
             DefaultServiceInfo.builder()
                     .serviceTypeName(getServiceTypeName())
-                    .addExternalContractImplemented(PicoWorld.class.getName())
                     .activatorTypeName(PicoWorldImpl$$picoActivator.class.getName())
-                    .scopeTypeName(Singleton.class.getName())
-                    .weight(DefaultServiceInfo.DEFAULT_WEIGHT)
+                    .addExternalContractsImplemented(PicoWorld.class.getName())
+                    .addScopeTypeName(Singleton.class.getName())
+                    .declaredWeight(ServiceInfo.DEFAULT_WEIGHT)
                     .build();
 
     public static final PicoWorldImpl$$picoActivator INSTANCE = new PicoWorldImpl$$picoActivator();

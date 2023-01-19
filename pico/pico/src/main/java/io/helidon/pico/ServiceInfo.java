@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.Builder;
+import io.helidon.builder.Singular;
 import io.helidon.pico.types.AnnotationAndValue;
 
 /**
@@ -30,6 +32,7 @@ import io.helidon.pico.types.AnnotationAndValue;
  * @see Services
  * @see ServiceInfoCriteria
  */
+@Builder(interceptor = ServiceInfoBuildInterceptor.class)
 public interface ServiceInfo extends ServiceInfoBasics {
 
     /**
@@ -40,6 +43,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
      * @see io.helidon.pico.ExternalContracts
      * @return the service external contracts implemented
      */
+    @Singular
     Set<String> externalContractsImplemented();
 
     /**
@@ -47,7 +51,7 @@ public interface ServiceInfo extends ServiceInfoBasics {
      *
      * @return the activator type name
      */
-    String activatorTypeName();
+    Optional<String> activatorTypeName();
 
     /**
      * The name of the ascribed module, if known.
@@ -252,6 +256,5 @@ public interface ServiceInfo extends ServiceInfoBasics {
 //        }
 //        return result;
 //    }
-
 
 }

@@ -201,7 +201,8 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
         substitutions.put("enclosingClassTypeName", req.enclosingTypeInfo().typeName());
         substitutions.put("enclosingAnnotations", req.enclosingTypeInfo().annotations());
         substitutions.put("basicServiceInfo", req.serviceInfo());
-        substitutions.put("weight", req.serviceInfo().weight());
+        substitutions.put("weight", req.serviceInfo().realizedWeight());
+        substitutions.put("runLevel", req.serviceInfo().realizedRunLevel());
         substitutions.put("elementAccess", req.targetElementAccess());
         substitutions.put("elementIsStatic", req.isElementStatic());
         substitutions.put("elementKind", req.targetElement().elementKind());

@@ -49,11 +49,10 @@ public class HelloPicoImpl$$picoActivator extends AbstractServiceProvider<HelloP
     private static final DefaultServiceInfo serviceInfo =
             DefaultServiceInfo.builder()
                     .serviceTypeName(getServiceTypeName())
-                    .addContractImplemented(HelloPicoWorld.class.getName())
                     .activatorTypeName(HelloPicoImpl$$picoActivator.class.getName())
-                    .scopeTypeName(Singleton.class.getName())
-                    .weight(null)
-                    .runLevel(0)
+                    .addContractsImplemented(HelloPicoWorld.class.getName())
+                    .addScopeTypeName(Singleton.class.getName())
+                    .declaredRunLevel(0)
                     .build();
 
     public static final HelloPicoImpl$$picoActivator INSTANCE = new HelloPicoImpl$$picoActivator();

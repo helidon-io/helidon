@@ -140,7 +140,7 @@ class HelloPicoWorldSanityTest {
                    containsInAnyOrder(Singleton.class.getName()));
         assertThat(serviceInfo.qualifiers().size(),
                    equalTo(0));
-        assertThat(serviceInfo.activatorTypeName(),
+        assertThat(serviceInfo.activatorTypeName().get(),
                    equalTo(HelloPicoImpl$$picoActivator.class.getName()));
         assertThat(serviceInfo.declaredRunLevel(),
                    optionalValue(equalTo(0)));

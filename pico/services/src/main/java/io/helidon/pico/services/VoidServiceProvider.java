@@ -36,10 +36,10 @@ class VoidServiceProvider extends AbstractServiceProvider<Void> {
     private VoidServiceProvider() {
         serviceInfo(DefaultServiceInfo.builder()
                 .serviceTypeName(getServiceTypeName())
-                .addContractImplemented(getServiceTypeName())
+                .addContractsImplemented(getServiceTypeName())
                 .activatorTypeName(VoidServiceProvider.class.getName())
-                .scopeTypeName(Singleton.class.getName())
-                .weight(DEFAULT_WEIGHT)
+                .addScopeTypeName(Singleton.class.getName())
+                .declaredWeight(DEFAULT_WEIGHT)
                 .build());
     }
 

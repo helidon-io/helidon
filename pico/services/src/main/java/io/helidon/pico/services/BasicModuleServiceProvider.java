@@ -16,6 +16,7 @@
 
 package io.helidon.pico.services;
 
+import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
@@ -39,11 +40,11 @@ class BasicModuleServiceProvider extends AbstractServiceProvider<io.helidon.pico
             io.helidon.pico.Module module,
             String moduleName) {
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
-                .serviceType(module.getClass())
-                .addContractImplemented(io.helidon.pico.Module.class.getName());
+                .serviceTypeName(module.getClass().getName())
+                .addContractsImplemented(io.helidon.pico.Module.class.getName());
         if (moduleName != null) {
             builder.moduleName(moduleName)
-                    .named(moduleName);
+                    .addQualifier(DefaultQualifierAndValue.createNamed(moduleName));
         }
         return builder.build();
     }
