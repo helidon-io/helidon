@@ -13,6 +13,17 @@ This is a bugfix release of Helidon. It is recommended for all users of Helidon 
 
 ### CHANGES
 
+- Config: Add config enum mapping support [5788](https://github.com/helidon-io/helidon/pull/5788)
+- Dependencies: Neo4j Driver update [5753](https://github.com/helidon-io/helidon/pull/5753)
+- Dependencies: Upgrade Netty to 4.1.86.Final [5725](https://github.com/helidon-io/helidon/pull/5725)
+- Security: Accidentally removed updateRequest method returned [5843](https://github.com/helidon-io/helidon/pull/5843)
+- Security: Default tenant is not included for propagation [5899](https://github.com/helidon-io/helidon/pull/5899)
+- Security: Oidc tenant name now properly escaped  [5856](https://github.com/helidon-io/helidon/pull/5856)
+- WebServer: Add support for requested URI discovery [5827](https://github.com/helidon-io/helidon/pull/5827)
+- Build: remove duplicated dependencies in some projects [5864](https://github.com/helidon-io/helidon/pull/5864)
+- Docs: Update 01_vault.adoc [5483](https://github.com/helidon-io/helidon/pull/5483)
+- Test: Use Hamcrest assertions instead of JUnit [5870](https://github.com/helidon-io/helidon/pull/5870) and others
+
 ## [2.5.5]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2051,6 +2062,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.5.6]: https://github.com/oracle/helidon/compare/2.5.5...2.5.6
 [2.5.5]: https://github.com/oracle/helidon/compare/2.5.4...2.5.5
 [2.5.4]: https://github.com/oracle/helidon/compare/2.5.3...2.5.4
 [2.5.3]: https://github.com/oracle/helidon/compare/2.5.2...2.5.3
