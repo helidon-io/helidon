@@ -24,8 +24,8 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.http.Headers;
 import io.helidon.common.config.Config;
+import io.helidon.common.http.Headers;
 import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
 
 /**
