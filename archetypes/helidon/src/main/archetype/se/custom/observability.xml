@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,12 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
         <model if="${tracing}">
+            <list key="Main-helidon-imports">
+                <value>io.helidon.webserver.WebTracingConfig</value>
+            </list>
+            <list key="Main-routingBuilder">
+                <value>        .register(WebTracingConfig.create(config.get("tracing")))</value>
+            </list>
             <list key="application-yaml-entries">
                 <value if="${tracing.provider} == 'jaeger'"><![CDATA[
 tracing:
@@ -37,7 +43,7 @@ tracing:
     log-spans: false      # JAEGER_REPORTER_LOG_SPANS
     max-queue-size: 42    # JAEGER_REPORTER_MAX_QUEUE_SIZE
     flush-interval-ms: 10001 # JAEGER_REPORTER_FLUSH_INTERVAL
-    sampler-type: "remote"# JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
+    sampler-type: "constant"# JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
     sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
     sampler-manager: "localhost:47877" # JAEGER_SAMPLER_MANAGER_HOST_PORT
     tags:
