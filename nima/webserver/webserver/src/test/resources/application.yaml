@@ -26,4 +26,11 @@ server:
       validate-path: false
 
   content-encoding:
-    disable: true
+    discover-services: false
+
+server2:
+  port: 8079
+  host: 127.0.0.1
+
+  connection-providers:
+    discover-services: false

@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,11 +31,13 @@ import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -75,6 +78,29 @@ public class ConnectionConfigTest {
         }
         assertThat("No Http12ConnectionProvider was found", haveHttp1Provider, is(true));
     }
+    @Test
+    void testConnectionProvidersDisabled()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        // This will pick up application.yaml from the classpath as default configuration file
+        Config config = Config.create();
+
+        // Builds LoomServer instance including connectionProviders list using server2 node.
+        WebServer.Builder wsBuilder = WebServer.builder()
+                .config(config.get("server2"));
+
+        // Call wsBuilder.connectionProviders() trough reflection
+        Method connectionProviders
+                = WebServer.Builder.class.getDeclaredMethod("connectionProviders", (Class<?>[]) null);
+        connectionProviders.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<ServerConnectionSelector> providers
+                = (List<ServerConnectionSelector>) connectionProviders.invoke(wsBuilder, (Object[]) null);
+
+        // No providers shall be loaded with ServiceLoader disabled for connection providers.
+        assertThat(providers, notNullValue());
+        assertThat(providers, is(empty()));
+    }
 
     // Check that WebServer ContentEncodingContext is disabled when disable is present in config
     @Test
@@ -90,11 +116,28 @@ public class ConnectionConfigTest {
         Field contentEncodingContextField = WebServer.Builder.class.getDeclaredField("contentEncodingContext");
         contentEncodingContextField.setAccessible(true);
         ContentEncodingContext contentEncodingContext = (ContentEncodingContext) contentEncodingContextField.get(wsBuilder);
-
-        assertThat(contentEncodingContext.contentEncodingEnabled(), is(false));
-        assertThat(contentEncodingContext.contentDecodingEnabled(), is(false));
+        // helidon-nima-http-encoding-gzip is on classpath so disabling ServiceLoader shall remove them
+        assertThat(contentEncodingContext.contentEncodingEnabled(), is(true));
+        assertThat(contentEncodingContext.contentDecodingEnabled(), is(true));
+        failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
+        failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
+        failsWith(() -> contentEncodingContext.encoder("gzip"), NoSuchElementException.class);
+        failsWith(() -> contentEncodingContext.decoder("x-gzip"), NoSuchElementException.class);
+        failsWith(() -> contentEncodingContext.encoder("x-gzip"), NoSuchElementException.class);
     }
 
+    // Verify that provided task throws an exception
+    private static void failsWith(Runnable task, Class<? extends Exception> exception) {
+        try {
+            task.run();
+            // Fail the test when no Exception was thrown
+            fail(String.format("Exception %s was not thrown", exception.getName()));
+        } catch (Exception ex) {
+            if (!exception.isAssignableFrom(ex.getClass())) {
+                throw ex;
+            }
+        }
+    }
 
     private static ConnectionContext mockContext() {
         ConnectionContext ctx = mock(ConnectionContext.class);

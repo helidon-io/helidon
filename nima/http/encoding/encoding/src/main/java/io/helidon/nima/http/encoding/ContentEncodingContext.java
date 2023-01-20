@@ -16,7 +16,6 @@
 
 package io.helidon.nima.http.encoding;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,9 +116,6 @@ public interface ContentEncodingContext {
         private final HelidonServiceLoader.Builder<ContentEncodingProvider> encodingProviders
                 = HelidonServiceLoader.builder(ServiceLoader.load(ContentEncodingProvider.class));
 
-        // Force disable of encoders/decoders. Will build empty Maps when false.
-        private boolean enabled = true;
-
         /**
          * Update this builder from configuration.
          * <p>
@@ -131,7 +127,7 @@ public interface ContentEncodingContext {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("disable").asBoolean().ifPresent(this::disableFromConfig);
+            config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
             return this;
         }
 
@@ -140,8 +136,8 @@ public interface ContentEncodingContext {
          *
          * @return updated builder
          */
-        public Builder disable() {
-            enabled = false;
+        public Builder discoverServices(boolean discoverServices) {
+            this.encodingProviders.useSystemServiceLoader(discoverServices);
             return this;
         }
 
@@ -160,44 +156,35 @@ public interface ContentEncodingContext {
         @Override
         public ContentEncodingContext build() {
             List<ContentEncodingProvider> providers = encodingProviders.build().asList();
-            Map<String, ContentEncoder> encoders = enabled ? new HashMap<>() : Collections.emptyMap();
-            Map<String, ContentDecoder> decoders = enabled ? new HashMap<>() : Collections.emptyMap();
+            Map<String, ContentEncoder> encoders = new HashMap<>();
+            Map<String, ContentDecoder> decoders = new HashMap<>();
             ContentEncoder firstEncoder = null;
 
-            if (enabled) {
-                for (ContentEncodingProvider provider : providers) {
-                    Set<String> ids = provider.ids();
+            for (ContentEncodingProvider provider : providers) {
+                Set<String> ids = provider.ids();
 
-                    if (provider.supportsEncoding()) {
-                        for (String id : ids) {
-                            ContentEncoder encoder = provider.encoder();
-                            if (firstEncoder == null) {
-                                firstEncoder = encoder;
-                            }
-                            encoders.putIfAbsent(id, encoder);
+                if (provider.supportsEncoding()) {
+                    for (String id : ids) {
+                        ContentEncoder encoder = provider.encoder();
+                        if (firstEncoder == null) {
+                            firstEncoder = encoder;
                         }
+                        encoders.putIfAbsent(id, encoder);
                     }
-
-                    if (provider.supportsDecoding()) {
-                        for (String id : ids) {
-                            decoders.putIfAbsent(id, provider.decoder());
-                        }
-                    }
-
                 }
 
-                encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
-                decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
+                if (provider.supportsDecoding()) {
+                    for (String id : ids) {
+                        decoders.putIfAbsent(id, provider.decoder());
+                    }
+                }
+
             }
+
+            encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
+            decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
 
             return new ContentEncodingSupportImpl(Map.copyOf(encoders), Map.copyOf(decoders), firstEncoder);
-        }
-
-        // Config helper: Disable encoders/decoders when forced by config value.
-        private void disableFromConfig(boolean disable) {
-            if (disable) {
-                enabled = false;
-            }
         }
 
     }

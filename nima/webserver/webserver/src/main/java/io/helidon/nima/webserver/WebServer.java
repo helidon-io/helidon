@@ -507,6 +507,7 @@ public interface WebServer {
         }
 
         List<ServerConnectionSelector> connectionProviders() {
+            providersConfig.get("discover-services").asBoolean().ifPresent(connectionProviders::useSystemServiceLoader);
             List<ServerConnectionProvider> providers = connectionProviders.build().asList();
             // Send configuration nodes to providers
             return providers.stream()
