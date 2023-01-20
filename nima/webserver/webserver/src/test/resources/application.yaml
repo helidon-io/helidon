@@ -24,3 +24,6 @@ server:
       max-headers-size: 8192
       validate-headers: false
       validate-path: false
+
+  content-encoding:
+    disable: true

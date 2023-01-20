@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webserver.http1;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -24,10 +25,12 @@ import org.junit.jupiter.api.Test;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.config.Config;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -72,6 +75,26 @@ public class ConnectionConfigTest {
         }
         assertThat("No Http12ConnectionProvider was found", haveHttp1Provider, is(true));
     }
+
+    // Check that WebServer ContentEncodingContext is disabled when disable is present in config
+    @Test
+    void testContentEncodingConfig() throws NoSuchFieldException, IllegalAccessException {
+        // This will pick up application.yaml from the classpath as default configuration file
+        Config config = Config.create();
+
+        // Builds LoomServer instance including connectionProviders list.
+        WebServer.Builder wsBuilder = WebServer.builder()
+                .config(config.get("server"));
+
+        // Access WebServer.Builder.contentEncodingContext trough reflection
+        Field contentEncodingContextField = WebServer.Builder.class.getDeclaredField("contentEncodingContext");
+        contentEncodingContextField.setAccessible(true);
+        ContentEncodingContext contentEncodingContext = (ContentEncodingContext) contentEncodingContextField.get(wsBuilder);
+
+        assertThat(contentEncodingContext.contentEncodingEnabled(), is(false));
+        assertThat(contentEncodingContext.contentDecodingEnabled(), is(false));
+    }
+
 
     private static ConnectionContext mockContext() {
         ConnectionContext ctx = mock(ConnectionContext.class);
