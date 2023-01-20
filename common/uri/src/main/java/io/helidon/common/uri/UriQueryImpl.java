@@ -106,11 +106,6 @@ final class UriQueryImpl implements UriQuery {
     }
 
     @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
     public int size() {
         ensureDecoded();
         return decodedQueryParams.size();
