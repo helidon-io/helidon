@@ -35,7 +35,7 @@ import io.helidon.pico.types.TypeName;
 public interface JavaxTypeTools {
 
     /**
-     * Will be non-null if the classpath supports the ability to resolve javax annotations
+     * Will be non-null if the classpath supports the ability to resolve javax annotations.
      */
     LazyValue<JavaxTypeTools> INSTANCE = LazyValue.create(() -> {
        try {

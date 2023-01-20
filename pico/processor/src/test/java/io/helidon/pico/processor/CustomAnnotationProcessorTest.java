@@ -49,6 +49,7 @@ import static org.hamcrest.Matchers.is;
 class CustomAnnotationProcessorTest {
 
     @Test
+    @SuppressWarnings("unchecked")
     void annotationSupported() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();
         assertThat(processor.annoTypes(),

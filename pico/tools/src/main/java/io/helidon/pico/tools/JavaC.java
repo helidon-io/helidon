@@ -245,15 +245,15 @@ class JavaC {
             System.Logger.Level level;
             if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
                 level = System.Logger.Level.ERROR;
+                isSuccessful = false;
             } else if (Diagnostic.Kind.MANDATORY_WARNING == diagnostic.getKind()
                        || Diagnostic.Kind.WARNING == diagnostic.getKind()) {
                 level = System.Logger.Level.WARNING;
+                hasWarnings = true;
             } else {
                 level = System.Logger.Level.INFO;
             }
             diagList.add(diagnostic);
-            isSuccessful &= (System.Logger.Level.ERROR != level);
-            hasWarnings |= (System.Logger.Level.WARNING != level);
 
             if (messager == null) {
                 logger.log(level, diagnostic);

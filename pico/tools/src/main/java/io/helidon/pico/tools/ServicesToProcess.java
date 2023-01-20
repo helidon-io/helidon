@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,9 +55,7 @@ import io.helidon.pico.types.TypeName;
  * nature.
  */
 public class ServicesToProcess implements Resetable {
-    private static final class INSTANCE {
-        private static ServicesToProcess SERVICES = new ServicesToProcess();
-    }
+    private static final ServicesToProcess SERVICES = new ServicesToProcess();
 
     private static final AtomicInteger RUNNING_PROCESSORS = new AtomicInteger();
 
@@ -82,13 +80,13 @@ public class ServicesToProcess implements Resetable {
     private final Map<TypeName, List<String>> extraCodeGen = new LinkedHashMap<>();
     private final Map<TypeName, List<TypeName>> serviceTypeHierarchy = new LinkedHashMap<>();
 
-    private File lastKnownSourcePathBeingProcessed;
+    private Path lastKnownSourcePathBeingProcessed;
     private String lastKnownTypeSuffix;
     private String moduleName;
     private String lastKnownModuleName;
-    private File lastKnownModuleInfoFile;
+    private Path lastKnownModuleInfoFilePath;
     private ModuleInfoDescriptor lastKnownModuleInfoDescriptor;
-    private File lastGeneratedModuleInfoFile;
+    private Path lastGeneratedModuleInfoFilePath;
     private ModuleInfoDescriptor lastGeneratedModuleInfoDescriptor;
     private String lastGeneratedPackageName;
 
@@ -98,7 +96,7 @@ public class ServicesToProcess implements Resetable {
      * @return the current services to process instance
      */
     public static ServicesToProcess servicesInstance() {
-        return INSTANCE.SERVICES;
+        return SERVICES;
     }
 
     private ServicesToProcess() {
@@ -112,11 +110,11 @@ public class ServicesToProcess implements Resetable {
         servicesToContracts.clear();
         servicesToExternalContracts.clear();
         // we intentionally except parent service type names from being cleared - we need to remember this fact!
-        if (false) {
-            servicesToLockParentServiceTypeName.clear();
-            servicesToParentServiceTypeNames.clear();
-            servicesToActivatorGenericDecl.clear();
-        }
+//        if (false) {
+//            servicesToLockParentServiceTypeName.clear();
+//            servicesToParentServiceTypeNames.clear();
+//            servicesToActivatorGenericDecl.clear();
+//        }
         servicesToAccess.clear();
         servicesToIsAbstract.clear();
         servicesToDependencies.clear();
@@ -523,12 +521,9 @@ public class ServicesToProcess implements Resetable {
     public void addScopeTypeName(
             TypeName serviceTypeName,
             String scopeTypeName) {
-        if (scopeTypeName == null) {
-            return;
-        }
         addServiceTypeName(serviceTypeName);
 
-        Object ignored = servicesToScopeTypeNames.compute(serviceTypeName, (k, v) -> {
+        servicesToScopeTypeNames.compute(serviceTypeName, (k, v) -> {
             if (v == null) {
                 v = new LinkedHashSet<>();
             }
@@ -732,20 +727,20 @@ public class ServicesToProcess implements Resetable {
     }
 
     /**
-     * The last known file location for the module-info descriptor being processed.
+     * The last known file path location for the module-info descriptor being processed.
      *
-     * @param lastKnownModuleInfoFile the file location for the descriptor
+     * @param lastKnownModuleInfoFile the file path location for the descriptor
      */
-    public void lastKnownModuleInfoFile(
-            File lastKnownModuleInfoFile) {
-        this.lastKnownModuleInfoFile = lastKnownModuleInfoFile;
+    public void lastKnownModuleInfoFilePath(
+            Path lastKnownModuleInfoFile) {
+        this.lastKnownModuleInfoFilePath = lastKnownModuleInfoFile;
     }
 
     /**
-     * @return Fetches the last known module info file.
+     * @return Fetches the last known module info file path.
      */
-    File lastKnownModuleInfoFile() {
-        return lastKnownModuleInfoFile;
+    Path lastKnownModuleInfoFilePath() {
+        return lastKnownModuleInfoFilePath;
     }
 
     /**
@@ -756,9 +751,9 @@ public class ServicesToProcess implements Resetable {
      */
     void lastGeneratedModuleInfoDescriptor(
             ModuleInfoDescriptor descriptor,
-            File location) {
+            Path location) {
         this.lastGeneratedModuleInfoDescriptor = descriptor;
-        this.lastGeneratedModuleInfoFile = location;
+        this.lastGeneratedModuleInfoFilePath = location;
     }
 
     /**
@@ -771,8 +766,8 @@ public class ServicesToProcess implements Resetable {
     /**
      * @return Fetches the last generated module descriptor location.
      */
-    File lastGeneratedModuleInfoFile() {
-        return lastGeneratedModuleInfoFile;
+    Path lastGeneratedModuleInfoFilePath() {
+        return lastGeneratedModuleInfoFilePath;
     }
 
     /**
@@ -781,14 +776,14 @@ public class ServicesToProcess implements Resetable {
      * @param lastKnownSourcePathBeingProcessed the last source path being processed
      */
     public void lastKnownSourcePathBeingProcessed(
-            File lastKnownSourcePathBeingProcessed) {
+            Path lastKnownSourcePathBeingProcessed) {
         this.lastKnownSourcePathBeingProcessed = lastKnownSourcePathBeingProcessed;
     }
 
     /**
      * @return Fetches the last known source path being processed.
      */
-    File lastKnownSourcePathBeingProcessed() {
+    Path lastKnownSourcePathBeingProcessed() {
         return lastKnownSourcePathBeingProcessed;
     }
 

@@ -16,7 +16,6 @@
 
 package io.helidon.pico.tools;
 
-import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -24,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.LazyValue;
@@ -46,8 +46,18 @@ import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import static io.helidon.pico.tools.TypeTools.*;
-import static io.helidon.pico.types.DefaultTypeName.*;
+import static io.helidon.pico.tools.TypeTools.createInjectionPointInfo;
+import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
+import static io.helidon.pico.tools.TypeTools.createTypeNameFromClassInfo;
+import static io.helidon.pico.tools.TypeTools.extractScopeTypeName;
+import static io.helidon.pico.tools.TypeTools.hasAnnotation;
+import static io.helidon.pico.tools.TypeTools.isAbstract;
+import static io.helidon.pico.tools.TypeTools.isPrivate;
+import static io.helidon.pico.tools.TypeTools.isStatic;
+import static io.helidon.pico.tools.TypeTools.methodsAnnotatedWith;
+import static io.helidon.pico.tools.TypeTools.providesContractType;
+import static io.helidon.pico.tools.TypeTools.toAccess;
+import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
 
 /**
  * The default implementation of {@link ExternalModuleCreator}.
@@ -131,10 +141,8 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             if (packageInfo != null) {
                 for (ClassInfo classInfo : packageInfo.getClassInfo()) {
                     URI uri = classInfo.getClasspathElementURI();
-                    File file = ModuleUtils.toFile(uri).orElse(null);
-                    if (file != null) {
-                        classpath.add(file.toPath());
-                    }
+                    Optional<Path> filePath = ModuleUtils.toPath(uri);
+                    filePath.ifPresent(classpath::add);
                 }
             }
         }

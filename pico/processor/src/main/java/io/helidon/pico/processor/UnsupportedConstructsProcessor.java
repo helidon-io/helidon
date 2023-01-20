@@ -38,14 +38,16 @@ import jakarta.inject.Singleton;
 /**
  * When used will recognize constructs that are explicitly known to be unsupported in Pico's reference implementation.
  * Examples include:
+ * <ul>
  *  <li>{@link jakarta.annotation.ManagedBean} and "javax.annotation.ManagedBean"
  *  <li>{@link jakarta.annotation.Resource} and "javax...."
  *  <li>{@link jakarta.annotation.Resources} and "javax...."
  *  <li>Any scopes from jakarta.enterprise api module(s) other than ApplicationScoped, which can optionally be mapped to
  *      Singleton scope.
+ * </ul>
  */
 public class UnsupportedConstructsProcessor extends AbstractProcessor {
-    private static final System.Logger logger = System.getLogger(UnsupportedConstructsProcessor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(UnsupportedConstructsProcessor.class.getName());
 
     static final String APPLICATION_SCOPED_TYPE_NAME = "jakarta.enterprise.context.ApplicationScoped";
 
@@ -80,6 +82,14 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
         UNSUPPORTED_TARGETS.add("jakarta.enterprise.util.Nonbinding");
     }
 
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public UnsupportedConstructsProcessor() {
+    }
+
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
     }
@@ -103,15 +113,14 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
             RoundEnvironment roundEnv) {
         if (!annotations.isEmpty()) {
             Set<String> annotationTypeNames = annotations.stream().map(Object::toString).collect(Collectors.toSet());
-            boolean ignoredRemovedApp = false;
             if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
-                ignoredRemovedApp = annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME);
+                annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME);
             }
 
             if (!annotationTypeNames.isEmpty()) {
                 if (Options.isOptionEnabled(Options.TAG_IGNORE_UNSUPPORTED_ANNOTATIONS)) {
                     String msg = "ignoring unsupported annotations: " + annotationTypeNames;
-                    logger.log(System.Logger.Level.DEBUG, msg);
+                    LOGGER.log(System.Logger.Level.DEBUG, msg);
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg);
                     return false;
                 }
@@ -124,7 +133,7 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
                 }
                 msg += "Use -A" + Options.TAG_IGNORE_UNSUPPORTED_ANNOTATIONS + "=true to ignore all unsupported annotations.";
 
-                logger.log(System.Logger.Level.ERROR, msg);
+                LOGGER.log(System.Logger.Level.ERROR, msg);
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             }
         }

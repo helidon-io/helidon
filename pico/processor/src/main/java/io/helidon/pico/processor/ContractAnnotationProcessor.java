@@ -24,9 +24,17 @@ import javax.lang.model.element.TypeElement;
 import io.helidon.pico.Contract;
 
 /**
- * Looks for @{@link io.helidon.pico.Contract} annotations.
+ * Handles {@code @Contract} annotations.
  */
 public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public ContractAnnotationProcessor() {
+    }
 
     @Override
     public Set<Class<? extends Annotation>> annoTypes() {

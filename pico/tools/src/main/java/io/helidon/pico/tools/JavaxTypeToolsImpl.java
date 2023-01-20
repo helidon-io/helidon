@@ -37,8 +37,8 @@ public class JavaxTypeToolsImpl implements JavaxTypeTools {
     private static final String JAVAX_SCOPE_TYPE = "javax.inject.Scope";
     private static final String JAVAX_EE_NORMAL_SCOPE_TYPE = "jakarta.enterprise.context.NormalScope";
 
-    boolean getPriorityEnabled = true;
-    boolean getAnnotationsWithAnnotationEnabled = true;
+    private boolean getPriorityEnabled = true;
+    private boolean getAnnotationsWithAnnotationEnabled = true;
 
     /**
      * Service loader based constructor.

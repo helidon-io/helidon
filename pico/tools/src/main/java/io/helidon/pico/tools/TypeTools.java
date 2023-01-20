@@ -274,7 +274,7 @@ public class TypeTools extends BuilderTypeTools {
                     }
                     result.put(propertyName, stringValue);
                 }
-            } catch (Exception ignored) {
+            } catch (Throwable ignored) {
                 boolean debugMe = true;
             }
         }
@@ -440,8 +440,8 @@ public class TypeTools extends BuilderTypeTools {
                     for (AnnotationMirror annoMirror : annoMirrors) {
                         if (annoMirror.getAnnotationType().asElement().getAnnotation(javaxQualifier) != null) {
                             String val = null;
-                            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : annoMirror.getElementValues()
-                                    .entrySet()) {
+                            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e
+                                    : annoMirror.getElementValues().entrySet()) {
                                 if (e.getKey().toString().equals("value()")) {
                                     val = String.valueOf(e.getValue().getValue());
                                     break;

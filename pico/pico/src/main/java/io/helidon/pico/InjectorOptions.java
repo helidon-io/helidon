@@ -54,6 +54,9 @@ public interface InjectorOptions {
      * This will ensure that the activation request is populated.
      */
     class Interceptor implements BuilderInterceptor<DefaultInjectorOptions.Builder> {
+        Interceptor() {
+        }
+
         @Override
         public DefaultInjectorOptions.Builder intercept(DefaultInjectorOptions.Builder target) {
             if (target.activationRequest() == null) {

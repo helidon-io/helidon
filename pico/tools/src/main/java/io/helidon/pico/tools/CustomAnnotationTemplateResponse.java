@@ -30,7 +30,7 @@ import io.helidon.pico.types.TypedElementName;
 public interface CustomAnnotationTemplateResponse {
 
     /**
-     * The request that was processed
+     * The request that was processed.
      *
      * @return the request that was processed
      */

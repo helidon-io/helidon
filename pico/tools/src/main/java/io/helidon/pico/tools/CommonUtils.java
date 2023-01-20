@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /**
  * General utils.
  */
-final public class CommonUtils {
+public final class CommonUtils {
 
     private CommonUtils() {
     }

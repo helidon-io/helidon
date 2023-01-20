@@ -14,34 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tools;
-
-import java.nio.file.Path;
-import java.util.Map;
-
-import io.helidon.builder.Builder;
-import io.helidon.builder.Singular;
-import io.helidon.pico.types.TypeName;
-
 /**
- * Response from interception creation.
+ * Pico testing support.
  */
-@Builder
-public interface InterceptorCreatorResponse {
-
-    /**
-     * The generated files.
-     *
-     * @return the generated files
-     */
-    @Singular
-    Map<TypeName, Path> generatedFiles();
-
-    /**
-     * The interception plans.
-     *
-     * @return the interception plans
-     */
-    Map<TypeName, InterceptionPlan> interceptionPlans();
-
-}
+package io.helidon.pico.testing;

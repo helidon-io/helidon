@@ -16,6 +16,8 @@
 
 package io.helidon.pico.tools;
 
+import java.util.Optional;
+
 import io.helidon.builder.Builder;
 
 /**
@@ -57,6 +59,6 @@ public interface CodeGenPaths {
      *
      * @return the module-info location
      */
-    String moduleInfoPath();
+    Optional<String> moduleInfoPath();
 
 }

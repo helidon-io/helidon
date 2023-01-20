@@ -16,9 +16,9 @@
 
 package io.helidon.pico.processor;
 
-import java.io.File;
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -116,11 +116,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     static final String TARGET_DIR = "/target/";
     static final String SRC_MAIN_JAVA_DIR = "src/main/java";
 
-    boolean processed;
-    RoundEnvironment roundEnv;
-    ActivatorCreatorResponse result;
-    final ServicesToProcess services = ServicesToProcess.servicesInstance();
-    final InterceptorCreator interceptorCreator = InterceptorCreatorProvider.instance();
+    private final ServicesToProcess services = ServicesToProcess.servicesInstance();
+    private final InterceptorCreator interceptorCreator = InterceptorCreatorProvider.instance();
+    private RoundEnvironment roundEnv;
+    private ActivatorCreatorResponse result;
 
     @Override
     public void init(ProcessingEnvironment processingEnv) {
@@ -138,6 +137,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return annoTypes().stream().map(Class::getName).collect(Collectors.toSet());
+    }
+
+    ServicesToProcess servicesToProcess() {
+        return services;
     }
 
     /**
@@ -160,7 +163,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     public boolean process(
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {
-        this.processed = true;
         this.roundEnv = roundEnv;
 
         try {
@@ -197,7 +199,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     private boolean containsAnyAnnotation(
             Element element,
             Set<String> contraAnnotations) {
-        List<AnnotationAndValue> annotationAndValues = createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils());
+        List<AnnotationAndValue> annotationAndValues =
+                createAnnotationAndValueListFromElement(element, processingEnv.getElementUtils());
         Optional<AnnotationAndValue> annotation = annotationAndValues.stream()
                 .filter(it -> contraAnnotations.contains(it.typeName().name()))
                 .findFirst();
@@ -364,7 +367,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         TypeElement superTypeElement = TypeTools.toTypeElement(type.getSuperclass()).orElseThrow();
         TypeName parentServiceTypeName = createTypeNameFromElement(superTypeElement).orElse(null);
-        boolean acceptedParent = services.addParentServiceType(serviceTypeName, parentServiceTypeName);
+        services.addParentServiceType(serviceTypeName, parentServiceTypeName);
         services.addAccessLevel(serviceTypeName, toAccess(type));
         services.addIsAbstract(serviceTypeName, isAbstract(type));
 
@@ -473,8 +476,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 return false;
             }
             JavaFileObject sourceFile = path.getCompilationUnit().getSourceFile();
-            Optional<File> file = ModuleUtils.toFile(sourceFile.toUri());
-            Optional<File> srcPath = ModuleUtils.toSourcePath(file, type);
+            Optional<Path> filePath = ModuleUtils.toPath(sourceFile.toUri());
+            Optional<Path> srcPath = ModuleUtils.toSourcePath(filePath, type);
             srcPath.ifPresent(services::lastKnownSourcePathBeingProcessed);
             return true;
         } catch (Throwable t) {

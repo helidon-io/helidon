@@ -41,7 +41,8 @@ public class ApplicationCreatorProvider implements Provider<ApplicationCreator> 
     }
 
     private static ApplicationCreator load() {
-        return HelidonServiceLoader.create(ServiceLoader.load(ApplicationCreator.class, ApplicationCreator.class.getClassLoader()))
+        return HelidonServiceLoader.create(ServiceLoader.load(ApplicationCreator.class,
+                                                              ApplicationCreator.class.getClassLoader()))
                 .asList()
                 .stream()
                 .findFirst().orElseThrow();

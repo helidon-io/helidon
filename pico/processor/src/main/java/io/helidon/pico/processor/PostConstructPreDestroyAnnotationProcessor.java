@@ -49,6 +49,14 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         addJavaxTypes(SUPPORTED_TARGETS);
     }
 
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public PostConstructPreDestroyAnnotationProcessor() {
+    }
+
     private static void addJavaxTypes(
             Set<Class<? extends Annotation>> supportedTargets) {
         if (javaxPreDestroyType != null && javaxPostConstructType != null) {
@@ -115,18 +123,18 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         }
 
         if (method.getAnnotation(PreDestroy.class) != null) {
-            services.addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
+            servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                          method.getSimpleName().toString());
         } else if (javaxPreDestroyType != null && Objects.nonNull(method.getAnnotation(javaxPreDestroyType))) {
-            services.addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
+            servicesToProcess().addPreDestroyMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                          method.getSimpleName().toString());
         }
 
         if (method.getAnnotation(PostConstruct.class) != null) {
-            services.addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
+            servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                             method.getSimpleName().toString());
         } else if (Objects.nonNull(javaxPostConstructType) && Objects.nonNull(method.getAnnotation(javaxPostConstructType))) {
-            services.addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
+            servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                             method.getSimpleName().toString());
         }
     }

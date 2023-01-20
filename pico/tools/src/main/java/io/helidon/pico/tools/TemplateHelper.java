@@ -140,7 +140,7 @@ public class TemplateHelper {
     String safeLoadTemplate(
             String templateName,
             String name) {
-        return Objects.requireNonNull(loadTemplate(templateName, name),"failed to load: "  + toFQN(templateName, name));
+        return Objects.requireNonNull(loadTemplate(templateName, name), "failed to load: " + toFQN(templateName, name));
     }
 
     /**

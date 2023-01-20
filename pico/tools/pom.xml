@@ -31,6 +31,10 @@
     <artifactId>helidon-pico-tools</artifactId>
     <name>Helidon Pico Tools</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico</groupId>

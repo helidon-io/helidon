@@ -19,6 +19,7 @@ package io.helidon.pico.processor;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,6 +54,14 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         SUPPORTED_TARGETS.add(ExternalContracts.class);
         SUPPORTED_TARGETS.add(Intercepted.class);
         addJavaxTypes(SUPPORTED_TARGETS);
+    }
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public ServiceAnnotationProcessor() {
     }
 
     private static void addJavaxTypes(
@@ -91,35 +100,32 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     public boolean process(
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {
-        this.processed = true;
-        this.roundEnv = roundEnv;
-
         try {
             if (!roundEnv.processingOver()
-                    && services.moduleName() != null) {
+                    && servicesToProcess().moduleName() != null) {
                 AtomicReference<String> typeSuffix = new AtomicReference<>();
                 AtomicReference<File> moduleInfoFile = new AtomicReference<>();
                 AtomicReference<File> srcPath = new AtomicReference<>();
                 ModuleInfoDescriptor thisModuleDescriptor =
                         getThisModuleDescriptor(typeSuffix, moduleInfoFile, srcPath);
                 if (thisModuleDescriptor != null) {
-                    services.lastKnownModuleInfoDescriptor(thisModuleDescriptor);
+                    servicesToProcess().lastKnownModuleInfoDescriptor(thisModuleDescriptor);
                 } else {
                     String thisModuleName = getThisModuleName(null);
                     if (thisModuleName == null) {
-                        services.clearModuleName();
+                        servicesToProcess().clearModuleName();
                     } else {
-                        services.moduleName(thisModuleName);
+                        servicesToProcess().moduleName(thisModuleName);
                     }
                 }
                 if (typeSuffix.get() != null) {
-                    services.lastKnownTypeSuffix(typeSuffix.get());
+                    servicesToProcess().lastKnownTypeSuffix(typeSuffix.get());
                 }
                 if (srcPath.get() != null) {
-                    services.lastKnownSourcePathBeingProcessed(srcPath.get());
+                    servicesToProcess().lastKnownSourcePathBeingProcessed(srcPath.get().toPath());
                 }
                 if (moduleInfoFile.get() != null) {
-                    services.lastKnownModuleInfoFile(moduleInfoFile.get());
+                    servicesToProcess().lastKnownModuleInfoFilePath(moduleInfoFile.get().toPath());
                 }
             }
 
@@ -127,13 +133,12 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         } catch (Throwable t) {
             error(getClass().getSimpleName() + " error during processing; " + t
                           + " @ " + CommonUtils.rootStackTraceElementOf(t), t);
-            // we typically will not even get to this next line since the messager.error() call will trigger things
-            // to halt
+            // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("error during processing: " + t
                                              + " @ " + CommonUtils.rootStackTraceElementOf(t), t);
         } finally {
             if (roundEnv.processingOver()) {
-                services.clearModuleName();
+                servicesToProcess().clearModuleName();
             }
         }
     }
@@ -218,24 +223,23 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         try {
             FileObject f = filer.getResource(location, "", ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
             URI uri = f.toUri();
-            File file = ModuleUtils.toFile(uri).orElse(null);
-            if (file != null) {
-                File parent = file.getParentFile();
+            Path filePath = ModuleUtils.toPath(uri).orElse(null);
+            if (filePath != null) {
+                Path parent = filePath.getParent();
                 if (srcPath != null) {
-                    srcPath.set(parent);
+                    srcPath.set(parent.toFile());
                 }
                 if (typeSuffix != null) {
-                    String type = ModuleUtils.inferSourceOrTest(parent.toPath()).orElse(null);
+                    String type = ModuleUtils.inferSourceOrTest(parent).orElse(null);
                     if (type != null) {
                         typeSuffix.set(type);
                     }
                 }
-
-                if (file.exists()) {
+                if (filePath.toFile().exists()) {
                     if (moduleInfoFile != null) {
-                        moduleInfoFile.set(file);
+                        moduleInfoFile.set(filePath.toFile());
                     }
-                    return ModuleInfoDescriptor.create(file.toPath());
+                    return ModuleInfoDescriptor.create(filePath);
                 }
             }
         } catch (Exception e) {

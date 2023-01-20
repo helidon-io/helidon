@@ -17,14 +17,15 @@
 package io.helidon.pico.tools;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -121,7 +122,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
         List<ServiceProvider<Provider>> providers = services.lookupAll(Provider.class);
         if (providers.isEmpty()) {
-            return Collections.emptyList();
+            return List.of();
         }
 
         List<TypeName> providersInUseThatAreNotAllowed = new LinkedList<>();
@@ -184,13 +185,12 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         return !spQualifierTypeNames.isEmpty();
     }
 
-    @SuppressWarnings("unchecked")
     ApplicationCreatorResponse codegen(
             ApplicationCreatorRequest req,
             DefaultApplicationCreatorResponse.Builder builder) {
         PicoServices picoServices = PicoServices.picoServices().orElseThrow();
 
-        String serviceTypeBindingTemplate = templateHelper
+        String serviceTypeBindingTemplate = templateHelper()
                 .safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_SERVICETYPEBINDING_HBS);
 
         List<TypeName> serviceTypeNames = new LinkedList<>();
@@ -219,11 +219,11 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         subst.put("modulename", moduleName);
         subst.put("servicetypebindings", serviceTypeBindings);
 
-        String template = templateHelper.safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_HBS);
-        String body = templateHelper.applySubstitutions(template, subst, true).trim();
+        String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_HBS);
+        String body = templateHelper().applySubstitutions(template, subst, true).trim();
 
         if (Objects.nonNull(req.codeGenPaths().generatedSourcesPath())) {
-            codegen(picoServices, (DefaultApplicationCreatorRequest) req, application, body);
+            codegen(picoServices, req, application, body);
         }
 
         GeneralCodeGenDetail codeGenDetail = DefaultGeneralCodeGenDetail.builder()
@@ -263,8 +263,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
     static String toModuleName(
             ApplicationCreatorRequest req) {
-        String moduleName = req.moduleName().orElse(null);
-        return (moduleName != null) ? moduleName : ModuleInfoDescriptor.DEFAULT_MODULE_NAME;
+        return req.moduleName().orElse(ModuleInfoDescriptor.DEFAULT_MODULE_NAME);
     }
 
     String toServiceTypeInjectionPlan(
@@ -288,7 +287,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             subst.put("injectionplan", toInjectionPlanBindings(sp));
             subst.put("modulename", sp.serviceInfo().moduleName());
 
-            return templateHelper.applySubstitutions(serviceTypeBindingTemplate, subst, true);
+            return templateHelper().applySubstitutions(serviceTypeBindingTemplate, subst, true);
         }
     }
 
@@ -361,9 +360,9 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             TypeName applicationTypeName,
             String body) {
         CodeGenFiler filer = createDirectCodeGenFiler(req.codeGenPaths(), req.analysisOnly());
-        File applicationJavaFile = filer.codegenJavaFilerOut(applicationTypeName, body);
+        Path applicationJavaFilePath = filer.codegenJavaFilerOut(applicationTypeName, body).orElse(null);
 
-        final String outputDirectory = req.codeGenPaths().outputPath();
+        String outputDirectory = req.codeGenPaths().outputPath();
         if (outputDirectory != null) {
             File outDir = new File(outputDirectory);
 
@@ -376,7 +375,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             codegenModuleInfoDescriptor(filer, picoServices, req, applicationTypeName);
 
             // compile, but only if we generated the source file
-            if (applicationJavaFile != null) {
+            if (applicationJavaFilePath != null) {
                 CompilerOptions opts = req.compilerOptions().orElse(null);
                 JavaC.Builder compilerBuilder = JavaC.builder()
                         .outputDirectory(outDir)
@@ -392,10 +391,10 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
                             .commandLineArgs(opts.commandLineArguments());
                 }
                 JavaC compiler = compilerBuilder.build();
-                JavaC.Result result = compiler.compile(applicationJavaFile);
+                JavaC.Result result = compiler.compile(applicationJavaFilePath.toFile());
                 ToolsException e = result.maybeGenerateError();
                 if (e != null) {
-                    throw new ToolsException("failed to compile: " + applicationJavaFile, e);
+                    throw new ToolsException("failed to compile: " + applicationJavaFilePath, e);
                 }
             }
         }
@@ -414,10 +413,10 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             PicoServices picoServices,
             ApplicationCreatorRequest req,
             TypeName applicationTypeName) {
-        File picoModuleInfo = filer.toResourceLocation(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME);
-        ModuleInfoDescriptor descriptor = filer.readModuleInfo(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME);
+        Optional<Path> picoModuleInfoPath = filer.toResourceLocation(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME);
+        ModuleInfoDescriptor descriptor = filer.readModuleInfo(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME).orElse(null);
         if (descriptor != null) {
-            Objects.requireNonNull(picoModuleInfo);
+            Objects.requireNonNull(picoModuleInfoPath.orElseThrow());
             String moduleName = req.moduleName().orElse(null);
             if (moduleName == null || ModuleInfoDescriptor.DEFAULT_MODULE_NAME.equals(moduleName)) {
                 moduleName = descriptor.name();
@@ -429,7 +428,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
                     .name(moduleName)
                     .moduleTypeName(moduleTypeName)
                     .applicationTypeName(applicationTypeName)
-                    .moduleInfoPath(picoModuleInfo.getPath())
+                    .moduleInfoPath(picoModuleInfoPath.get().toAbsolutePath().toString())
                     .classPrefixName(typePrefix)
                     .applicationCreated(true)
                     .moduleCreated(false)
@@ -437,9 +436,9 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             descriptor = createModuleInfo(moduleBuilderRequest);
             filer.codegenModuleInfoFilerOut(descriptor, true);
         } else {
-            File realModuleInfo = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
-            if (realModuleInfo != null && realModuleInfo.exists()) {
-                throw new ToolsException("expected to find " + picoModuleInfo
+            Path realModuleInfoPath = filer.toSourceLocation(ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).orElse(null);
+            if (realModuleInfoPath != null && !realModuleInfoPath.toFile().exists()) {
+                throw new ToolsException("expected to find " + realModuleInfoPath
                                                  + ". did the " + NAME + " annotation processor run?");
             }
         }

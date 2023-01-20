@@ -80,10 +80,9 @@ public class Options {
     /**
      * Identify the pico sidecar module-info.java file name.
      */
-    static final String TAG_PICO_MODULE_NAME = ModuleUtils.TAG_PICO_MODULE_NAME;
+    private static final String TAG_PICO_MODULE_NAME = ModuleUtils.TAG_PICO_MODULE_NAME;
 
     private static final Map<String, String> OPTS = new HashMap<>();
-    private static boolean initCalled;
 
     private Options() {
     }
@@ -95,15 +94,7 @@ public class Options {
      */
     public static void init(
             ProcessingEnvironment processingEnv) {
-        if (initCalled) {
-            return;
-        }
-
-        synchronized (OPTS) {
-            if (initCalled) {
-                return;
-            }
-
+        if (OPTS.isEmpty()) {
             OPTS.put(TAG_DEBUG,
                      String.valueOf(isOptionEnabled(TAG_DEBUG, processingEnv)));
             OPTS.put(TAG_AUTO_ADD_NON_CONTRACT_INTERFACES,
@@ -122,8 +113,6 @@ public class Options {
                      getOption(TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE, null, processingEnv));
             OPTS.put(TAG_IGNORE_UNSUPPORTED_ANNOTATIONS,
                      getOption(TAG_IGNORE_UNSUPPORTED_ANNOTATIONS, null, processingEnv));
-
-            initCalled = true;
         }
     }
 
@@ -159,7 +148,6 @@ public class Options {
     private static String getOption(
             String option,
             String defaultVal) {
-        assert (initCalled);
         assert (OPTS.containsKey(option));
         return OPTS.getOrDefault(option, defaultVal);
     }

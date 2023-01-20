@@ -21,9 +21,10 @@ import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -123,7 +124,7 @@ public class ModuleUtils {
             return defaultName;
         }
         if (moduleName == null) {
-            moduleName = (defaultName == null) ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : moduleName;
+            moduleName = (defaultName == null) ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : defaultName;
         }
         return (typeSuffix == null) ? moduleName : moduleName + normalizedModuleNameTypeSuffix(typeSuffix);
     }
@@ -163,18 +164,19 @@ public class ModuleUtils {
      *
      * @param basePath         the secondary path to try if module-info was not found in the source path
      * @param sourcePath       the source path
-     * @param defaultToUnnamed if true, will return the default name, otherwise null is returned
+     * @param defaultToUnnamed if true, will return the default name, otherwise empty is returned
      * @return the module name suggested to use, most appropriate for the name of {@link
      *         io.helidon.pico.Application} or {@link io.helidon.pico.Module}
      */
-    static String toSuggestedModuleName(
+    static Optional<String> toSuggestedModuleName(
             Path basePath,
             Path sourcePath,
             boolean defaultToUnnamed) {
         AtomicReference<String> typeSuffix = new AtomicReference<>();
-        ModuleInfoDescriptor descriptor = findModuleInfo(basePath, sourcePath, typeSuffix, null, null);
-        return toSuggestedModuleName((descriptor != null) ? descriptor.name() : null, typeSuffix.get(),
-                                     defaultToUnnamed ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : null);
+        ModuleInfoDescriptor descriptor = findModuleInfo(basePath, sourcePath, typeSuffix, null, null)
+                .orElse(null);
+        return Optional.ofNullable(toSuggestedModuleName((descriptor != null) ? descriptor.name() : null, typeSuffix.get(),
+                                     defaultToUnnamed ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : null));
     }
 
     /**
@@ -187,51 +189,51 @@ public class ModuleUtils {
      * @param srcPath        the holder that will be set with the source path
      * @return the descriptor, or null if one cannot be found
      */
-    static ModuleInfoDescriptor findModuleInfo(
+    static Optional<ModuleInfoDescriptor> findModuleInfo(
             Path basePath,
             Path sourcePath,
             AtomicReference<String> typeSuffix,
             AtomicReference<File> moduleInfoPath,
             AtomicReference<File> srcPath) {
+        Objects.requireNonNull(basePath);
+        Objects.requireNonNull(sourcePath);
         // if we found a module-info in the source path, then that has to be the module to use
         Set<Path> moduleInfoPaths = findFile(sourcePath, ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
         if (1 == moduleInfoPaths.size()) {
-            File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(),
-                                           ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
-            if (moduleInfoPath != null) {
-                moduleInfoPath.set(moduleInfoFile);
-            }
-            if (srcPath != null) {
-                srcPath.set(moduleInfoFile.getParentFile());
-            }
-            return ModuleInfoDescriptor.create(moduleInfoFile.toPath());
+            return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths);
         }
 
         // if we did not find it, then there is a chance we are in the tests directory; try to infer the module name
-        if (basePath != null) {
-            if (typeSuffix != null) {
-                typeSuffix.set(inferSourceOrTest(basePath, sourcePath).orElse(null));
-            }
-            if (!basePath.equals(sourcePath)) {
-                moduleInfoPaths = findFile(sourcePath.getParent(), basePath, ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
-                if (1 == moduleInfoPaths.size()) {
-                    // looks to be a potential test module, get the base name from the source tree...
-                    File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(),
-                                                   ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
-                    if (moduleInfoPath != null) {
-                        moduleInfoPath.set(moduleInfoFile);
-                    }
-                    if (srcPath != null) {
-                        srcPath.set(moduleInfoFile.getParentFile());
-                    }
-                    return ModuleInfoDescriptor.create(moduleInfoFile.toPath());
-                } else if (moduleInfoPaths.size() > 0) {
-                    LOGGER.log(System.Logger.Level.WARNING, "ambiguous which module-info to select: " + moduleInfoPaths);
-                }
+        if (typeSuffix != null) {
+            typeSuffix.set(inferSourceOrTest(basePath, sourcePath).orElse(null));
+        }
+        if (!basePath.equals(sourcePath)) {
+            Path parent = sourcePath.getParent();
+            moduleInfoPaths = findFile(parent, basePath, ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
+            if (1 == moduleInfoPaths.size()) {
+                // looks to be a potential test module, get the base name from the source tree...
+                return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths);
+            } else if (moduleInfoPaths.size() > 0) {
+                LOGGER.log(System.Logger.Level.WARNING, "ambiguous which module-info to select: " + moduleInfoPaths);
             }
         }
 
-        return null;
+        return Optional.empty();
+    }
+
+    private static Optional<ModuleInfoDescriptor> finishModuleInfoDescriptor(
+            AtomicReference<File> moduleInfoPath,
+            AtomicReference<File> srcPath,
+            Set<Path> moduleInfoPaths) {
+        File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(),
+                                       ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
+        if (moduleInfoPath != null) {
+            moduleInfoPath.set(moduleInfoFile);
+        }
+        if (srcPath != null) {
+            srcPath.set(moduleInfoFile.getParentFile());
+        }
+        return Optional.of(ModuleInfoDescriptor.create(moduleInfoFile.toPath()));
     }
 
     /**
@@ -242,7 +244,16 @@ public class ModuleUtils {
      */
     public static Optional<String> inferSourceOrTest(
             Path path) {
-        return inferSourceOrTest(path.getParent().getParent(), path);
+        Objects.requireNonNull(path);
+        Path parent = path.getParent();
+        if (parent == null) {
+            return Optional.empty();
+        }
+        Path gparent = parent.getParent();
+        if (gparent == null) {
+            return Optional.empty();
+        }
+        return inferSourceOrTest(gparent, path);
     }
 
     /**
@@ -269,17 +280,17 @@ public class ModuleUtils {
     }
 
     /**
-     * Will return non-empty File iff the uri represents a local file on the fs.
+     * Will return non-empty File if the uri represents a local file on the fs.
      *
      * @param uri the uri of the artifact
      * @return the file instance, or empty if not local.
      */
-    public static Optional<File> toFile(
+    public static Optional<Path> toPath(
             URI uri) {
         if (uri.getHost() != null) {
             return Optional.empty();
         }
-        return Optional.of(new File(uri.getPath()));
+        return Optional.of(Paths.get(uri));
     }
 
     /**
@@ -288,20 +299,19 @@ public class ModuleUtils {
      *
      * @param optFile the source file
      * @param type the type name
-     * @return the source path, or empty if cannot be inferred
+     * @return the source path, or empty if it cannot be inferred
      */
-    public static Optional<File> toSourcePath(
-            Optional<File> optFile,
+    public static Optional<Path> toSourcePath(
+            Optional<Path> optFile,
             TypeElement type) {
         if (optFile.isEmpty()) {
             return Optional.empty();
         }
         TypeName typeName = TypeTools.createTypeNameFromElement(type).orElseThrow();
-        String typePath = TypeTools.toFilePath(typeName);
-        String filePath = optFile.get().getPath();
+        Path typePath = Paths.get(TypeTools.toFilePath(typeName));
+        Path filePath = optFile.get();
         if (filePath.endsWith(typePath)) {
-            filePath = filePath.substring(0, filePath.length() - typePath.length());
-            return Optional.of(new File(filePath));
+            return Optional.of(filePath.resolveSibling(typePath));
         }
         return Optional.empty();
     }
@@ -310,7 +320,7 @@ public class ModuleUtils {
             Path startPath,
             Path untilPath,
             String fileToFind) {
-        if (!startPath.toString().contains(untilPath.toString())) {
+        if (startPath == null || !startPath.toString().contains(untilPath.toString())) {
             return Set.of();
         }
 
@@ -325,7 +335,7 @@ public class ModuleUtils {
             startPath = startPath.getParent();
         } while (startPath != null);
 
-        return Collections.emptySet();
+        return Set.of();
     }
 
     private static Set<Path> findFile(

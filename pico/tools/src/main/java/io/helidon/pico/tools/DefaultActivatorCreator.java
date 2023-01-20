@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -107,10 +107,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         super(TemplateHelper.DEFAULT_TEMPLATE_NAME);
     }
 
-    String templateName() {
-        return templateName;
-    }
-
     @Override
     public ActivatorCreatorResponse createModuleActivators(
             ActivatorCreatorRequest req) throws ToolsException {
@@ -137,10 +133,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     }
 
     @SuppressWarnings("unchecked")
-    ActivatorCreatorResponse codegen
-            (ActivatorCreatorRequest req,
-             DefaultActivatorCreatorResponse.Builder builder,
-             LazyValue<ScanResult> scan) {
+    ActivatorCreatorResponse codegen(
+            ActivatorCreatorRequest req,
+            DefaultActivatorCreatorResponse.Builder builder,
+            LazyValue<ScanResult> scan) {
         boolean isApplicationPreCreated = req.configOptions().isApplicationPreCreated();
         boolean isModuleCreated = req.configOptions().isModuleCreated();
         CodeGenPaths codeGenPaths = req.codeGenPaths();
@@ -192,8 +188,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             builder.moduleDetail(moduleDetail);
             if (moduleDetail != null && isModuleCreated) {
                 codegenModuleFilerOut(req, moduleDetail);
-                File out = codegenModuleInfoFilerOut(req, moduleDetail.descriptor().orElseThrow());
-                logger().log(System.Logger.Level.DEBUG, "codegen module-info written to: " + out);
+                Path outPath = codegenModuleInfoFilerOut(req, moduleDetail.descriptor().orElseThrow());
+                logger().log(System.Logger.Level.DEBUG, "codegen module-info written to: " + outPath);
             }
 
             metaInfServices = toMetaInfServices(moduleDetail,
@@ -219,7 +215,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String className = moduleTypeName.className();
         String packageName = moduleTypeName.packageName();
         String moduleName = req.moduleName().orElse(null);
-        String generator = req.generator();
+//        String generator = req.generator();
 
         ActivatorCreatorCodeGen codeGen = req.codeGen();
         String typePrefix = codeGen.classPrefixName();
@@ -227,7 +223,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         Map<TypeName, Set<TypeName>> serviceTypeContracts = codeGen.serviceTypeContracts();
         Map<TypeName, Set<TypeName>> externalContracts = codeGen.serviceTypeExternalContracts();
 
-        String moduleInfoPath = req.codeGenPaths().moduleInfoPath();
+        Optional<String> moduleInfoPath = req.codeGenPaths().moduleInfoPath();
         ModuleInfoCreatorRequest moduleCreatorRequest = DefaultModuleInfoCreatorRequest.builder()
                 .name(moduleName)
                 .moduleTypeName(moduleTypeName)
@@ -366,7 +362,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
     }
 
-    File codegenModuleInfoFilerOut(
+    Path codegenModuleInfoFilerOut(
             GeneralCreatorRequest req,
             ModuleInfoDescriptor descriptor) {
         boolean prev = true;
@@ -375,7 +371,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            return req.filer().codegenModuleInfoFilerOut(descriptor, true);
+            return req.filer().codegenModuleInfoFilerOut(descriptor, true).orElseThrow();
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -392,8 +388,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
 
         for (Map.Entry<TypeName, InterceptionPlan> e : interceptionPlans.entrySet()) {
             try {
-                File file = codegenInterceptorFilerOut(req, null, e.getValue());
-                res.addGeneratedFile(e.getKey(), file);
+                Path filePath = codegenInterceptorFilerOut(req, null, e.getValue());
+                res.addGeneratedFile(e.getKey(), filePath);
             } catch (Throwable t) {
                 throw new ToolsException("Failed while processing: " + e.getKey(), t);
             }
@@ -402,7 +398,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         return res.build();
     }
 
-    private File codegenInterceptorFilerOut(
+    private Path codegenInterceptorFilerOut(
             GeneralCreatorRequest req,
             DefaultActivatorCreatorResponse.Builder builder,
             InterceptionPlan interceptionPlan) {
@@ -412,7 +408,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         if (builder != null) {
             builder.addServiceTypeInterceptorPlan(interceptorTypeName, interceptionPlan);
         }
-        return req.filer().codegenJavaFilerOut(interceptorTypeName, body);
+        return req.filer().codegenJavaFilerOut(interceptorTypeName, body).orElseThrow();
     }
 
     private ActivatorCodeGenDetail createActivatorCodeGenDetail(
@@ -420,7 +416,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             TypeName serviceTypeName,
             LazyValue<ScanResult> scan) {
         ActivatorCreatorCodeGen codeGen = req.codeGen();
-        String template = templateHelper.safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_ACTIVATOR_HBS);
+        String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_ACTIVATOR_HBS);
         ServiceInfoBasics serviceInfo = toServiceInfo(serviceTypeName, codeGen);
         TypeName activatorTypeName = toActivatorTypeName(serviceTypeName);
         TypeName parentTypeName = toParentTypeName(serviceTypeName, codeGen);
@@ -526,7 +522,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     }
 
     /**
-     * Create a request based upon the contents of services to processor
+     * Create a request based upon the contents of services to processor.
      *
      * @param servicesToProcess the batch being processed
      * @param codeGen           the code gen request
@@ -612,7 +608,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             ActivatorCreatorRequest req,
             TypeName applicationTypeName,
             String moduleName) {
-        String template = templateHelper.safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_STUB_HBS);
+        String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_STUB_HBS);
 
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", applicationTypeName.className());
@@ -621,7 +617,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("generatedanno", toGeneratedSticker(req));
         subst.put("modulename", moduleName);
 
-        return templateHelper.applySubstitutions(template, subst, true).trim();
+        return templateHelper().applySubstitutions(template, subst, true).trim();
     }
 
     String toModuleBody(
@@ -630,7 +626,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             String className,
             String moduleName,
             List<TypeName> activatorTypeNames) {
-        String template = templateHelper.safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_MODULE_HBS);
+        String template = templateHelper().safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_MODULE_HBS);
 
         Map<String, Object> subst = new HashMap<>();
         subst.put("classname", className);
@@ -640,7 +636,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("modulename", moduleName);
         subst.put("activators", activatorTypeNames);
 
-        return templateHelper.applySubstitutions(template, subst, true).trim();
+        return templateHelper().applySubstitutions(template, subst, true).trim();
     }
 
     @Override
@@ -690,7 +686,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         logger().log(System.Logger.Level.DEBUG, "dependencies for "
                 + args.serviceTypeName() + " == " + args.dependencies());
 
-        return templateHelper.applySubstitutions(args.template(), subst, true).trim();
+        return templateHelper().applySubstitutions(args.template(), subst, true).trim();
     }
 
     String toCodenParent(
@@ -699,7 +695,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             TypeName parentTypeName) {
         String result;
         if (parentTypeName == null || Object.class.getName().equals(parentTypeName.name())) {
-//            getFiler().getMessager().log(activatorTypeName + " path is: 1: " + ServicesToProcess.getServicesInstance().getServiceTypeToParentServiceTypes());
+//            getFiler().getMessager().log(activatorTypeName + " path is: 1: "
+//            + ServicesToProcess.getServicesInstance().getServiceTypeToParentServiceTypes());
             result = AbstractServiceProvider.class.getName() + "<" + activatorTypeName.className() + ">";
         } else if (parentTypeName.typeArguments() == null || parentTypeName.typeArguments().isEmpty()) {
 //            getFiler().getMessager().log(activatorTypeName + " path is: 2");
@@ -736,7 +733,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         StringBuilder builder = new StringBuilder();
         //.add("world", World.class, InjectionPointInfo.ElementKind.FIELD, InjectionPointInfo.Access.PACKAGE_PRIVATE)
         String elemName = Objects.requireNonNull(ipInfo.elementName());
-        if (ipInfo.elementKind() == InjectionPointInfo.ElementKind.CONSTRUCTOR && elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
+        if (ipInfo.elementKind() == InjectionPointInfo.ElementKind.CONSTRUCTOR
+                && elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
             elemName = "CTOR";
         } else {
             elemName = "\"" + elemName + "\"";
@@ -838,16 +836,17 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         AtomicReference<String> nameRef = new AtomicReference<>();
         List<String> args = new LinkedList<>();
         dependencies.allDependencies()
-                .forEach(dep1 -> dep1.injectionPointDependencies().stream()
-                                       .filter(dep2 -> DefaultInjectionPointInfo.CONSTRUCTOR.equals(dep2.elementName()))
-                                       .forEach(dep2 -> {
-                                           if ((nameRef.get() == null)) {
-                                               nameRef.set(dep2.baseIdentity());
-                                           } else {
-                                               assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 ctor can be injectable";
-                                           }
-                                           args.add("c" + count.incrementAndGet());
-                                       })
+                .forEach(dep1 -> dep1.injectionPointDependencies()
+                        .stream()
+                        .filter(dep2 -> DefaultInjectionPointInfo.CONSTRUCTOR.equals(dep2.elementName()))
+                        .forEach(dep2 -> {
+                            if ((nameRef.get() == null)) {
+                                nameRef.set(dep2.baseIdentity());
+                            } else {
+                                assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 ctor can be injectable";
+                            }
+                            args.add("c" + count.incrementAndGet());
+                        })
         );
 
         return (args.isEmpty()) ? null : CommonUtils.toString(args);

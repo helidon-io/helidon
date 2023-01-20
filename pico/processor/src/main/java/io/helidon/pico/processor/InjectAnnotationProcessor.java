@@ -49,7 +49,7 @@ import static io.helidon.pico.tools.TypeTools.oppositeOf;
 import static io.helidon.pico.tools.TypeTools.toAccess;
 
 /**
- * Looks for @Inject type field & method annotations.
+ * Handles {@code @Inject} annotations on fields and methods.
  */
 public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependencies.BuilderContinuation> {
     private static final Set<Class<? extends Annotation>> SUPPORTED_TARGETS;
@@ -58,6 +58,14 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
         SUPPORTED_TARGETS = new HashSet<>();
         SUPPORTED_TARGETS.add(Inject.class);
         addJavaxTypes(SUPPORTED_TARGETS);
+    }
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public InjectAnnotationProcessor() {
     }
 
     private static void addJavaxTypes(
@@ -110,7 +118,7 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
                 throw new ToolsException("there can be max 1 injectable constructor for " + serviceTypeName);
             }
             DependenciesInfo dependencies = builder.build();
-            services.addDependencies(dependencies);
+            servicesToProcess().addDependencies(dependencies);
             maybeSetBasicsForServiceType(serviceTypeName, null);
         }
 

@@ -80,9 +80,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     private static final String COMPLEX_INTERCEPTOR_HBS = "complex-interceptor.hbs";
     private static final double INTERCEPTOR_PRIORITY_DELTA = 0.001;
     private static final String CTOR_ALIAS = "ctor";
+    private static final Set<String> MANUALLY_WHITE_LISTED = new LinkedHashSet<>();
 
     private Set<String> whiteListedAnnoTypeNames;
-    private static List<String> manuallyWhiteListed;
 
     /**
      * Service loader based constructor.
@@ -267,8 +267,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         @Override
         public boolean isQualifyingTrigger(
                 String annotationTypeName) {
-            return resolver.resolve(annotationTypeName).contains(RUNTIME)
-                    || (manuallyWhiteListed != null && manuallyWhiteListed.contains(annotationTypeName));
+            Objects.requireNonNull(resolver);
+            Objects.requireNonNull(annotationTypeName);
+            return (resolver.resolve(annotationTypeName).contains(RUNTIME) || MANUALLY_WHITE_LISTED.contains(annotationTypeName));
         }
     }
 
@@ -287,8 +288,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         @Override
         public boolean isQualifyingTrigger(
                 String annotationTypeName) {
-            return whiteListed.contains(annotationTypeName)
-                    || (manuallyWhiteListed != null && manuallyWhiteListed.contains(annotationTypeName));
+            Objects.requireNonNull(annotationTypeName);
+            return whiteListed.contains(annotationTypeName) || MANUALLY_WHITE_LISTED.contains(annotationTypeName);
         }
     }
 
@@ -304,8 +305,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         @Override
         public boolean isQualifyingTrigger(
                 String annotationTypeName) {
-            return creator.isWhiteListed(annotationTypeName)
-                    || (manuallyWhiteListed != null && manuallyWhiteListed.contains(annotationTypeName));
+            Objects.requireNonNull(creator);
+            Objects.requireNonNull(annotationTypeName);
+            return (creator.isWhiteListed(annotationTypeName) || MANUALLY_WHITE_LISTED.contains(annotationTypeName));
         }
     }
 
@@ -688,9 +690,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             InterceptorCreator realCreator,
             ProcessingEnvironment processEnv) {
         Options.init(processEnv);
-        if (manuallyWhiteListed == null) {
-            manuallyWhiteListed = Options.getOptionStringList(Options.TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS);
-        }
+        MANUALLY_WHITE_LISTED.addAll(Options.getOptionStringList(Options.TAG_WHITE_LISTED_INTERCEPTOR_ANNOTATIONS));
         return new ProcessorBased(Objects.requireNonNull(interceptedService),
                                   Objects.requireNonNull(realCreator),
                                   Objects.requireNonNull(processEnv),
@@ -750,8 +750,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                              (str) -> new IdAndToString(str.replace(".", "_"), str)));
         subst.put("servicelevelannotations", IdAndToString
                 .toList(plan.serviceLevelAnnotations(), DefaultInterceptorCreator::toDecl));
-        String template = templateHelper.safeLoadTemplate(COMPLEX_INTERCEPTOR_HBS);
-        return templateHelper.applySubstitutions(template, subst, true).trim();
+        String template = templateHelper().safeLoadTemplate(COMPLEX_INTERCEPTOR_HBS);
+        return templateHelper().applySubstitutions(template, subst, true).trim();
     }
 
     private static List<IdAndToString> toInterceptedMethodDecls(

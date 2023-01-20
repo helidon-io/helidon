@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,7 +55,7 @@ import io.helidon.pico.types.TypeName;
  * and resources, and instead will use the filer's messager to report what it would have performed (applicable for apt cases).
  */
 public class CodeGenFiler {
-    private static boolean FILER_WRITE_IS_DISABLED = true;
+    private static boolean filerWriteIsDisabled = true;
     private static final boolean FILER_WRITE_ONCE_PER_TYPE = true;
     private static final Set<TypeName> FILER_TYPES_FILED = new LinkedHashSet<>();
 
@@ -93,13 +94,13 @@ public class CodeGenFiler {
      */
     static boolean filerEnabled(
             boolean enabled) {
-        boolean prev = FILER_WRITE_IS_DISABLED;
-        FILER_WRITE_IS_DISABLED = enabled;
+        boolean prev = filerWriteIsDisabled;
+        filerWriteIsDisabled = enabled;
         return prev;
     }
 
     boolean isFilerWriteEnabled() {
-        return (enabled != null) ? enabled : !FILER_WRITE_IS_DISABLED;
+        return (enabled != null) ? enabled : !filerWriteIsDisabled;
     }
 
     AbstractFilerMsgr filer() {
@@ -163,7 +164,7 @@ public class CodeGenFiler {
                 }
             }
 
-            codegenResourceFilerOut(outPath, baos.toString(), null);
+            codegenResourceFilerOut(outPath, baos.toString(Charset.defaultCharset()), Optional.empty());
         }
     }
 
@@ -173,16 +174,16 @@ public class CodeGenFiler {
      * @param outPath   the path to output the resource to
      * @param body      the resource body
      * @param optFnUpdater the optional updater of the body
-     * @return file coordinates corresponding to the resource in question
+     * @return file path coordinates corresponding to the resource in question, or empty if not generated
      */
-    public File codegenResourceFilerOut(
+    public Optional<Path> codegenResourceFilerOut(
             String outPath,
             String body,
             Optional<Function<InputStream, String>> optFnUpdater) {
         Msgr messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);
-            return null;
+            return Optional.empty();
         }
         messager.debug("Writing " + outPath);
 
@@ -215,7 +216,7 @@ public class CodeGenFiler {
                 os.write(body);
             }
 
-            return ModuleUtils.toFile(f.toUri()).orElse(null);
+            return ModuleUtils.toPath(f.toUri());
         } catch (FilerException x) {
             // messager.debug(getClass().getSimpleName() + ":" + x.getMessage(), null);
             if (!contentsAlreadyVerified) {
@@ -226,7 +227,7 @@ public class CodeGenFiler {
             messager.error(te.getMessage(), te);
         }
 
-        return fileRef.get();
+        return Optional.of(fileRef.get().toPath());
     }
 
     /**
@@ -334,20 +335,20 @@ public class CodeGenFiler {
      *
      * @param typeName the source type name
      * @param body     the source body
-     * @return the new file coordinates or null if nothing was written
+     * @return the new file path coordinates or empty if nothing was written
      */
-    public File codegenJavaFilerOut(
+    public Optional<Path> codegenJavaFilerOut(
             TypeName typeName,
             String body) {
         Msgr messager = messager();
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + typeName + " with:\n" + body);
-            return null;
+            return Optional.empty();
         }
 
         if (FILER_WRITE_ONCE_PER_TYPE && !FILER_TYPES_FILED.add(typeName)) {
             messager.log(typeName + ": already processed");
-            return null;
+            return Optional.empty();
         }
 
         messager.debug("Writing " + typeName);
@@ -359,14 +360,14 @@ public class CodeGenFiler {
                 os.write(body);
             }
 
-            return ModuleUtils.toFile(javaSrc.toUri()).orElse(null);
+            return ModuleUtils.toPath(javaSrc.toUri());
         } catch (FilerException x) {
             messager.log("Failed to write java file: " + x);
         } catch (Exception x) {
             messager.warn("Failed to write java file: " + x, x);
         }
 
-        return null;
+        return Optional.empty();
     }
 
     /**
@@ -374,20 +375,18 @@ public class CodeGenFiler {
      *
      * @param newDeltaDescriptor      the descriptor
      * @param overwriteTargetIfExists should the file be overwritten if it already exists
-     * @return the module-info coordinates, or null if nothing was written
+     * @return the module-info coordinates, or empty if nothing was written
      */
-    File codegenModuleInfoFilerOut(
+    Optional<Path> codegenModuleInfoFilerOut(
             ModuleInfoDescriptor newDeltaDescriptor,
             boolean overwriteTargetIfExists) {
-        if (newDeltaDescriptor == null) {
-            return null;
-        }
+        Objects.requireNonNull(newDeltaDescriptor);
 
         Msgr messager = messager();
         String typeName = ModuleUtils.PICO_MODULE_INFO_JAVA_NAME;
         if (!isFilerWriteEnabled()) {
             messager.log("(disabled) Writing " + typeName + " with:\n" + newDeltaDescriptor);
-            return null;
+            return Optional.empty();
         }
         messager.debug("Writing " + typeName);
 
@@ -397,30 +396,28 @@ public class CodeGenFiler {
             return newDescriptor.contents();
         };
 
-        File file = codegenResourceFilerOut(typeName, newDeltaDescriptor.contents(), Optional.of(moduleInfoUpdater));
-        if (file != null) {
-            messager.debug("Wrote module-info: " + file);
+        Optional<Path> filePath = codegenResourceFilerOut(typeName,
+                                                          newDeltaDescriptor.contents(), Optional.of(moduleInfoUpdater));
+        if (filePath.isPresent()) {
+            messager.debug("Wrote module-info: " + filePath.get());
         } else if (overwriteTargetIfExists) {
-            messager.warn("Expected to have written module-info, but failed to write it", null);
+            messager.warn("Expected to have written module-info, but failed to write it");
         }
 
-        return file;
+        return filePath;
     }
 
     /**
      * Reads in the module-info if it exists, or returns null if it doesn't exist.
      *
      * @param name the name to the module-info file.
-     * @return the module-info descriptor, or null if it doesn't exist
+     * @return the module-info descriptor, or empty if it doesn't exist
      */
-    ModuleInfoDescriptor readModuleInfo(
+    Optional<ModuleInfoDescriptor> readModuleInfo(
             String name) {
-        if (name == null) {
-            return null;
-        }
-
+        Objects.requireNonNull(name);
         CharSequence body = readResourceAsString(name);
-        return (body == null) ? null : ModuleInfoDescriptor.create(body.toString());
+        return Optional.ofNullable((body == null) ? null : ModuleInfoDescriptor.create(body.toString()));
     }
 
     /**
@@ -444,36 +441,36 @@ public class CodeGenFiler {
      * Attempts to translate the resource name to a file coordinate, or null if translation is not possible.
      *
      * @param name the name of the resource
-     * @return the file coordinates if it can be ascertained, or null if not possible to ascertain this information
+     * @return the file path coordinates if it can be ascertained, or empty if not possible to ascertain this information
      */
-    File toResourceLocation(
+    Optional<Path> toResourceLocation(
             String name) {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
-            return ModuleUtils.toFile(f.toUri()).orElse(null);
+            return ModuleUtils.toPath(f.toUri());
         } catch (IOException e) {
             messager().debug("unable to load resource: " + name);
         }
-        return null;
+        return Optional.empty();
     }
 
     /**
-     * Attempts to translate the type name to a file coordinate, or null if translation is not possible.
+     * Attempts to translate the type name to a file coordinate, or empty if translation is not possible.
      *
      * @param name the name of the type
-     * @return the file coordinates if it can be ascertained, or null if not possible to ascertain this information
+     * @return the file coordinates if it can be ascertained, or empty if not possible to ascertain this information
      *
      * @see ModuleUtils#toSourcePath for annotation processing use cases
      */
-    File toSourceLocation(
+    Optional<Path> toSourceLocation(
             String name) {
         if (filer instanceof AbstractFilerMsgr.DirectFilerMsgr) {
             TypeName typeName = DefaultTypeName.createFromTypeName(name);
-            return ((AbstractFilerMsgr.DirectFilerMsgr) filer).toSourcePath(StandardLocation.SOURCE_PATH, typeName);
+            return Optional.of(((AbstractFilerMsgr.DirectFilerMsgr) filer).toSourcePath(StandardLocation.SOURCE_PATH, typeName));
         }
 
         messager().debug("unable to determine source location for : " + name);
-        return null;
+        return Optional.empty();
     }
 
 }

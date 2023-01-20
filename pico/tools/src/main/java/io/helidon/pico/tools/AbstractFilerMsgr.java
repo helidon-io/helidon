@@ -27,8 +27,11 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 import javax.annotation.processing.Filer;
@@ -257,17 +260,17 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
         public JavaFileObject createSourceFile(
                 CharSequence name,
                 Element... originatingElement) {
-            File javaFile = toSourcePath(StandardLocation.SOURCE_OUTPUT, name.toString());
-            return new DirectJavaFileObject(javaFile);
+            Path javaFilePath = toSourcePath(StandardLocation.SOURCE_OUTPUT, name.toString());
+            return new DirectJavaFileObject(javaFilePath.toFile());
         }
 
-        public File toSourcePath(
+        Path toSourcePath(
                 JavaFileManager.Location location,
                 String name) {
             return toSourcePath(location, DefaultTypeName.createFromTypeName(name));
         }
 
-        public File toSourcePath(
+        Path toSourcePath(
                 JavaFileManager.Location location,
                 TypeName typeName) {
             String sourcePath;
@@ -284,7 +287,7 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
                 return null;
             }
 
-            return new File(sourcePath, TypeTools.toFilePath(typeName));
+            return new File(sourcePath, TypeTools.toFilePath(typeName)).toPath();
         }
     }
 
@@ -314,14 +317,15 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
 
         @Override
         public OutputStream openOutputStream() throws IOException {
-            file.getParentFile().mkdirs();
+            Path parent = Paths.get(file.getParent());
+            Files.createDirectories(parent);
             return new FileOutputStream(file);
         }
 
         @Override
         public Reader openReader(
                 boolean ignoreEncodingErrors) throws IOException {
-            return new InputStreamReader(openInputStream());
+            return new InputStreamReader(openInputStream(), Charset.defaultCharset());
         }
 
         @Override
@@ -332,7 +336,7 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
 
         @Override
         public Writer openWriter() throws IOException {
-            return new OutputStreamWriter(openOutputStream());
+            return new OutputStreamWriter(openOutputStream(), Charset.defaultCharset());
         }
 
         @Override
@@ -353,7 +357,8 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
 
 
     static class DirectJavaFileObject extends DirectFileObject implements JavaFileObject {
-        DirectJavaFileObject(File javaFile) {
+        DirectJavaFileObject(
+                File javaFile) {
             super(javaFile);
         }
 

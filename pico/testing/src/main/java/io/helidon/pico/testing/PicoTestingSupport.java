@@ -23,13 +23,15 @@ import io.helidon.pico.PicoServicesHolder;
  */
 public class PicoTestingSupport {
 
+    private PicoTestingSupport() {
+    }
+
     /**
      * Resets all internal Pico configuration instances, JVM global singletons, service registries, etc.
      */
     public static void resetAll() {
         Holder.reset();
     }
-
 
     private static class Holder extends PicoServicesHolder {
         public static void reset() {

@@ -68,6 +68,14 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     private static final Set<Class<? extends Annotation>> ALL_ANNO_TYPES_HANDLED = new CopyOnWriteArraySet<>();
     private static final List<CustomAnnotationTemplateCreator> PRODUCERS = initialize();
 
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated
+     */
+    public CustomAnnotationProcessor() {
+    }
+
     static List<CustomAnnotationTemplateCreator> initialize() {
         // note: it is important to use this class' CL since maven will not give us the "right" one.
         List<CustomAnnotationTemplateCreator> producers = HelidonServiceLoader.create(ServiceLoader.load(
@@ -109,9 +117,6 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     public boolean process(
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv) {
-        this.processed = true;
-        this.roundEnv = roundEnv;
-
         try {
             if (!roundEnv.processingOver()) {
                 for (Class<? extends Annotation> annoType : annoTypes()) {
@@ -127,8 +132,6 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             // we typically will not even get to this next line since the messager.error() call will trigger things to halt
             throw new ToolsException("error during processing: " + t + " @ "
                                              + CommonUtils.rootStackTraceElementOf(t), t);
-        } finally {
-            this.roundEnv = null;
         }
     }
 
@@ -229,8 +232,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .stream()
                 .findFirst()
                 .orElse(null);
-        TypeInfo enclosingClassTypeInfo = tools.createTypeInfo(annoTypeName, enclosingClassTypeName, (TypeElement) typeToProcess, processingEnv)
-                .orElseThrow();
+        TypeInfo enclosingClassTypeInfo = tools
+                .createTypeInfo(annoTypeName, enclosingClassTypeName, (TypeElement) typeToProcess, processingEnv).orElseThrow();
         Elements elements = processingEnv.getElementUtils();
         return DefaultCustomAnnotationTemplateRequest.builder()
                 .filerEnabled(true)
@@ -246,7 +249,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     ServiceInfoBasics toBasicServiceInfo(
             TypeName enclosingClassType) {
         ActivatorCreatorCodeGen codeGen =
-                DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElse(null);
+                DefaultActivatorCreator.createActivatorCreatorCodeGen(servicesToProcess()).orElse(null);
         if (codeGen == null) {
             return null;
         }
@@ -267,7 +270,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         return result;
     }
 
-    protected TypeElement toEnclosingClassTypeElement(Element typeToProcess) {
+    TypeElement toEnclosingClassTypeElement(
+            Element typeToProcess) {
         while (typeToProcess != null && !(typeToProcess instanceof TypeElement)) {
             typeToProcess = typeToProcess.getEnclosingElement();
         }

@@ -16,6 +16,7 @@
 
 package io.helidon.pico.tools;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -77,7 +78,7 @@ public interface InterceptorCreator {
     }
 
     /**
-     * Determines the strategy being applied
+     * Determines the strategy being applied.
      *
      * @return the strategy being applied
      */
@@ -102,6 +103,7 @@ public interface InterceptorCreator {
      */
     default boolean isWhiteListed(
             String annotationType) {
+        Objects.requireNonNull(annotationType);
         return whiteListedAnnotationTypes().contains(annotationType);
     }
 
