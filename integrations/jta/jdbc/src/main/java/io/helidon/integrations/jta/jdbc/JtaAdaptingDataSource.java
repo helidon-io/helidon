@@ -148,7 +148,7 @@ public final class JtaAdaptingDataSource extends AbstractDataSource {
      * question implementing or supplying the {@link XADataSource} has the behavior described above; normally an {@link
      * XAConnection} should not be used directly or closed by end-user code.
      */
-    @Deprecated
+    @Deprecated(since = "3.1.0")
     public JtaAdaptingDataSource(TransactionSupplier ts,
                                  TransactionSynchronizationRegistry tsr,
                                  boolean interposedSynchronizations,
