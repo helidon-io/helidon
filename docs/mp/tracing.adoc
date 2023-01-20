@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Configuration, Configuration>>
+** <<Enabling and Disabling Tracing, Enabling and Disabling Tracing>>
+** <<Configuration options, Configuration Options>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 ** <<Zipkin Tracing, Zipkin Tracing>>
@@ -158,7 +160,7 @@ The examples in this guide demonstrate how to integrate tracing with Helidon, ho
 across multiple services, and how to integrate tracing with Kubernetes.  All examples use Zipkin and traces
 will be viewed using both the Zipkin API and UI.
 
-=== Set up Zipkin
+=== Set Up Zipkin
 
 First, you need to run the Zipkin tracer.  Helidon will communicate with this tracer at runtime.
 
@@ -847,7 +849,7 @@ docker rm -f zipkin
 ----
 
 
-== Creating custom spans
+== Creating Custom Spans
 
 Helidon MP fully supports MicroProfile OpenTracing.
 You can add custom spans using `@Traced` annotation on methods of CDI beans.
@@ -857,7 +859,7 @@ _If you invoke a method on the same class, `@Traced` annotation would be ignored
 invoked through a CDI proxy and as such cannot be intercepted.
 To make sure `@Traced` is honored, use it on JAX-RS resource methods and on CDI bean methods used from other beans._
 
-== Trace propagation across services
+== Trace Propagation Across Services
 Automated trace propagation is supported currently only with Jersey client.
 
 Tracing propagation works automatically as long as you run within the scope of
