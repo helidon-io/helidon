@@ -17,7 +17,6 @@ package io.helidon.tests.integration.tools.client;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.media.common.MessageBodyReadableContent;
 import io.helidon.reactive.webclient.WebClient;
@@ -32,7 +31,7 @@ import jakarta.json.JsonValue;
  */
 public class TestServiceClient extends TestClient {
 
-    private static final Logger LOGGER = Logger.getLogger(TestServiceClient.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TestServiceClient.class.getName());
 
     private final String service;
 

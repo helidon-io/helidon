@@ -17,8 +17,7 @@
 package io.helidon.integration.webserver.upgrade;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
@@ -27,16 +26,16 @@ import jakarta.websocket.Session;
 
 public class ConfiguredEndpoint extends Endpoint {
 
-    private static final Logger LOGGER = Logger.getLogger(ConfiguredEndpoint.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ConfiguredEndpoint.class.getName());
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
-        LOGGER.fine("SERVER: onOpen " + session.getId());
+        LOGGER.log(Level.DEBUG, "SERVER: onOpen " + session.getId());
         send(session, "Hello this is server calling on open!");
         session.addMessageHandler(new MessageHandler.Whole<String>() {
             @Override
             public void onMessage(String s) {
-                LOGGER.fine("SERVER: onMessage " + session.getId() + " - " + s);
+                LOGGER.log(Level.DEBUG, "SERVER: onMessage " + session.getId() + " - " + s);
                 send(session, s);
             }
         });
@@ -45,7 +44,7 @@ public class ConfiguredEndpoint extends Endpoint {
 
     @Override
     public void onError(Session session, Throwable thr) {
-        LOGGER.log(Level.SEVERE, "SERVER: onError", thr);
+        LOGGER.log(Level.ERROR, "SERVER: onError", thr);
         super.onError(session, thr);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -29,7 +28,7 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class Dispatcher {
 
-    private static final Logger LOGGER = Logger.getLogger(Dispatcher.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Dispatcher.class.getName());
 
     /**
      * Test invocation handler.
@@ -155,7 +154,8 @@ public class Dispatcher {
             try {
                 return handle.result().fail("Missing method handle.");
             } catch (Exception ex) {
-                LOGGER.warning(() -> String.format("Test %s execution throwed an exception: %s", name, ex.getMessage()));
+                LOGGER.log(Level.WARNING, () -> String.format("Test %s execution throwed an exception: %s",
+                        name, ex.getMessage()));
                 throw ex;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package io.helidon.common.reactive;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Assertions;
 
 public class TidyTestExecutor extends ThreadPoolExecutor {
 
-    private static final Logger LOGGER = Logger.getLogger(TidyTestExecutor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TidyTestExecutor.class.getName());
 
     private final ConcurrentLinkedQueue<Future<?>> futures = new ConcurrentLinkedQueue<>();
     private final AtomicReference<State> state = new AtomicReference<>(State.READY);
@@ -89,7 +89,7 @@ public class TidyTestExecutor extends ThreadPoolExecutor {
         WAITING {
             @Override
             boolean submit(final Runnable runnable, TidyTestExecutor tidyTestExecutor) {
-                LOGGER.warning("Cannot submit, executor is waiting for cleanup!");
+                LOGGER.log(Level.WARNING, "Cannot submit, executor is waiting for cleanup!");
                 return false;
             }
         };

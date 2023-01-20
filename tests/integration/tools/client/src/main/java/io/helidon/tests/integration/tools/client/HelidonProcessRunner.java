@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.System.Logger.Level;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -29,8 +30,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.netty.util.internal.SocketUtils;
 
@@ -40,7 +39,7 @@ import io.netty.util.internal.SocketUtils;
  */
 public class HelidonProcessRunner {
 
-    private static final Logger LOGGER = Logger.getLogger(HelidonProcessRunner.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HelidonProcessRunner.class.getName());
 
     /** HTTP port of running application. Value is set to {@code -1} before application will be started. */
     public static int HTTP_PORT = -1;
@@ -248,7 +247,7 @@ public class HelidonProcessRunner {
         long timeout = TimeUnit.SECONDS.toMillis(timeoutSeconds);
 
         long begin = System.currentTimeMillis();
-        LOGGER.finest(() -> String.format("Waiting for %d to listen", port));
+        LOGGER.log(Level.TRACE, () -> String.format("Waiting for %d to listen", port));
         while (true) {
             // check port open
             if (portOpen(port)) {
@@ -279,10 +278,10 @@ public class HelidonProcessRunner {
         try {
             Socket socket = new Socket();
             socket.connect(sa, 1000);
-            LOGGER.finest(() -> String.format("Socket localhost:%d is ready", port));
+            LOGGER.log(Level.TRACE, () -> String.format("Socket localhost:%d is ready", port));
             return true;
         } catch (IOException ex) {
-            LOGGER.finest(() -> String.format("Socket localhost:%d exception: %s", port, ex.getMessage()));
+            LOGGER.log(Level.TRACE, () -> String.format("Socket localhost:%d exception: %s", port, ex.getMessage()));
             return false;
         }
     }
@@ -394,7 +393,7 @@ public class HelidonProcessRunner {
             command.add(moduleName);
         }
 
-        LOGGER.fine(() -> String.format("Command: %s", command));
+        LOGGER.log(Level.DEBUG, () -> String.format("Command: %s", command));
         processBuilder.command(buildCommand(args, command));
     }
 

@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.appl.transaction;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbClient;
@@ -40,7 +40,7 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class TransactionQueriesService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(TransactionQueriesService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TransactionQueriesService.class.getName());
 
     private interface TestFunction extends Function<String, Multi<DbRow>> {}
 
@@ -67,7 +67,7 @@ public class TransactionQueriesService extends AbstractService {
             final String testName,
             final TestFunction test
     ) {
-        LOGGER.fine(() -> String.format("Running SimpleQueryService.%s on server", testName));
+        LOGGER.log(Level.DEBUG, () -> String.format("Running SimpleQueryService.%s on server", testName));
         try {
             String name = param(request, QUERY_NAME_PARAM);
             Multi<DbRow> future = test.apply(name);
@@ -79,7 +79,7 @@ public class TransactionQueriesService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException ex) {
-            LOGGER.fine(() -> String.format("Error in SimpleQueryService.%s on server", testName));
+            LOGGER.log(Level.DEBUG, () -> String.format("Error in SimpleQueryService.%s on server", testName));
             response.send(exceptionStatus(ex));
         }
     }

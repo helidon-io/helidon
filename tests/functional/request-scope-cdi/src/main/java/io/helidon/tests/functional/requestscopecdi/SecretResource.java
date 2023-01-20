@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.tests.functional.requestscopecdi;
 
+import java.lang.System.Logger.Level;
 import java.util.Collections;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -33,7 +33,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/greet")
 @RequestScoped
 public class SecretResource {
-    private static final Logger LOGGER = Logger.getLogger(SecretResource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecretResource.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     @Inject
@@ -48,7 +48,7 @@ public class SecretResource {
         try {
             // Access shared bean to get it proxied before calling the async op
             // for it to be migrated to FT thread
-            LOGGER.info("Secret is " + shared.secret());
+            LOGGER.log(Level.INFO, "Secret is " + shared.secret());
 
             // Call async operation
             var f = worker.asyncOp();
@@ -58,7 +58,7 @@ public class SecretResource {
                     .add("secret1", shared.secret())
                     .add("secret2", f.get())
                     .build();
-            LOGGER.info("Response is " + o);
+            LOGGER.log(Level.INFO, "Response is " + o);
 
             return Response.ok(o).build();
         } catch (Exception e) {

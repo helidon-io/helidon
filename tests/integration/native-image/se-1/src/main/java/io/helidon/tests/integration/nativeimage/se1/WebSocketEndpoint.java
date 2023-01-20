@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package io.helidon.tests.integration.nativeimage.se1;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
@@ -28,7 +27,7 @@ import jakarta.websocket.Session;
 
 public class WebSocketEndpoint extends Endpoint {
 
-    private static final Logger LOGGER = Logger.getLogger(WebSocketEndpoint.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(WebSocketEndpoint.class.getName());
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
@@ -54,7 +53,7 @@ public class WebSocketEndpoint extends Endpoint {
         try {
             session.getBasicRemote().sendText(msg);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Message sending failed", e);
+            LOGGER.log(Level.ERROR, "Message sending failed", e);
         }
     }
 }

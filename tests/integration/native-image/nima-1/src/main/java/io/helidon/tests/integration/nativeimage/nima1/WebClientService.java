@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package io.helidon.tests.integration.nativeimage.nima1;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -37,7 +37,7 @@ import jakarta.json.JsonValue;
 
 class WebClientService implements HttpService {
     private static final Duration TRACE_TIMEOUT = Duration.ofSeconds(15);
-    private static final Logger LOGGER = Logger.getLogger(WebClientService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(WebClientService.class.getName());
     private final Http1Client client;
     private final MockZipkinService zipkinService;
     private final String context;
@@ -163,7 +163,7 @@ class WebClientService implements HttpService {
     }
 
     private void fail(Exception e) {
-        LOGGER.severe(e.getMessage());
+        LOGGER.log(Level.ERROR, e.getMessage());
         throw new RuntimeException("Assertion error!", e);
     }
 }

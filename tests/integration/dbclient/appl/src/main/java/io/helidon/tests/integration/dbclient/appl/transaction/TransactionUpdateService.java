@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.appl.transaction;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.reactive.dbclient.DbClient;
@@ -39,7 +39,7 @@ import static io.helidon.tests.integration.tools.service.AppResponse.exceptionSt
  */
 public class TransactionUpdateService extends AbstractService {
 
-    private static final Logger LOGGER = Logger.getLogger(TransactionUpdateService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TransactionUpdateService.class.getName());
 
     // Internal functional interface used to implement testing code.
     // Method call: apply(srcPokemon, updatedPokemon)
@@ -70,7 +70,7 @@ public class TransactionUpdateService extends AbstractService {
 
     // Common test execution code
     private JsonObject executeTest(final ServerRequest request, final ServerResponse response, final String testName, final TestFunction test) {
-        LOGGER.fine(() -> String.format("Running SimpleUpdateService.%s on server", testName));
+        LOGGER.log(Level.DEBUG, () -> String.format("Running SimpleUpdateService.%s on server", testName));
         try {
             String name = param(request, QUERY_NAME_PARAM);
             String idStr = param(request, QUERY_ID_PARAM);
@@ -86,7 +86,7 @@ public class TransactionUpdateService extends AbstractService {
                         return null;
                     });
         } catch (RemoteTestException | NumberFormatException ex) {
-            LOGGER.fine(() -> String.format("Error in SimpleUpdateService.%s on server", testName));
+            LOGGER.log(Level.DEBUG, () -> String.format("Error in SimpleUpdateService.%s on server", testName));
             response.send(exceptionStatus(ex));
         }
         return null;

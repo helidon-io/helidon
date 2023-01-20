@@ -15,11 +15,10 @@
  */
 package io.helidon.tests.integration.tools.example;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.TestClient;
@@ -32,7 +31,7 @@ import io.helidon.tests.integration.tools.client.TestsLifeCycleExtension;
  */
 public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
 
-    private static final Logger LOGGER = Logger.getLogger(ServerLifeCycleExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ServerLifeCycleExtension.class.getName());
 
     // Application config file retrieved from "app.config" property
     private final String appConfigProperty;
@@ -49,7 +48,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
 
     @Override
     public void check() {
-        LOGGER.info("Running initial test check()");
+        LOGGER.log(Level.INFO, "Running initial test check()");
         waitForDatabase();
     }
 
@@ -62,7 +61,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
                     .port(HelidonProcessRunner.HTTP_PORT)
                     .service("LifeCycle")
                     .build();
-        LOGGER.info("Running global test setup setup()");
+        LOGGER.log(Level.INFO, "Running global test setup setup()");
         lifeCycleClient.callServiceAndGetData("init");
     }
 
@@ -71,7 +70,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
      */
     @Override
     public void close() {
-        LOGGER.fine("Running global test close()");
+        LOGGER.log(Level.DEBUG, "Running global test close()");
         runner.stopApplication();
     }
 
@@ -104,7 +103,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
     protected Runnable processRunnerStopCommand() {
         return () -> {
             String response = lifeCycleClient.callServiceAndGetString("exit");
-            LOGGER.fine(() -> String.format("Response: %s", response));
+            LOGGER.log(Level.DEBUG, () -> String.format("Response: %s", response));
         };
     }
 
@@ -131,19 +130,20 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
         long endTm = 1000 * TIMEOUT + System.currentTimeMillis();
         while (true) {
             try {
-                LOGGER.finest(() -> String.format("Connection check: user=%s password=%s url=%s", dbUser, dbPassword, dbUrl));
+                LOGGER.log(Level.TRACE, () -> String.format("Connection check: user=%s password=%s url=%s",
+                        dbUser, dbPassword, dbUrl));
                 Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
                 closeConnection(conn);
                 return;
             } catch (SQLException ex) {
-                LOGGER.finest(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.log(Level.TRACE, () -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > endTm) {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
                 try {
                     Thread.sleep(SLEEP_MILIS);
                 } catch (InterruptedException ie) {
-                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+                    LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
                 }
             }
         }
@@ -154,7 +154,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
         try {
             connection.close();
         } catch (SQLException ex) {
-            LOGGER.warning(() -> String.format("Could not close database connection: %s", ex.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("Could not close database connection: %s", ex.getMessage()));
         }
     }
 

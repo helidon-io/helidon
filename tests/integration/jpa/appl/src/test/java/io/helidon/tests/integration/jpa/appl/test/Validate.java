@@ -16,7 +16,7 @@
 package io.helidon.tests.integration.jpa.appl.test;
 
 import java.io.StringReader;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class Validate {
 
-    private static final Logger LOGGER = Logger.getLogger(Validate.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Validate.class.getName());
 
     private Validate() {
         throw new UnsupportedOperationException("Instances of Validate class are not allowed");
@@ -77,28 +77,28 @@ public class Validate {
         final String printName = name != null ? name : "UNKNOWN TEST";
         final String printStatus = status != null ? status : "N?A";
         final int dotsCount = 60 - printName.length();
-        LOGGER.fine(() -> String.format("*** %s %s", printName, dots(dotsCount)));
-        LOGGER.fine(printStatus);
+        LOGGER.log(Level.DEBUG, () -> String.format("*** %s %s", printName, dots(dotsCount)));
+        LOGGER.log(Level.DEBUG, printStatus);
     }
 
     private static void printMessages(final JsonArray messages) {
         if (messages != null && messages.size() > 0) {
-            LOGGER.fine("Messages:");
+            LOGGER.log(Level.DEBUG, "Messages:");
             for (int i = 0; i < messages.size(); i++) {
                 final int idx = i;
-                LOGGER.fine(() -> String.format(" - %s", messages.getString(idx)));
+                LOGGER.log(Level.DEBUG, () -> String.format(" - %s", messages.getString(idx)));
             }
         }
     }
 
     private static void printException(final JsonObject exception) {
         final String message = exception.getString("message");
-        LOGGER.fine(() -> String.format("Exception: %s", message != null ? message : ""));
+        LOGGER.log(Level.DEBUG, () -> String.format("Exception: %s", message != null ? message : ""));
         if (exception.containsKey("trace")) {
             final JsonArray trace = exception.getJsonArray("trace");
             for (int i = 0; i < trace.size(); i++) {
                 final int idx = i;
-                LOGGER.fine(() -> String.format(" - %s", trace.getString(idx)));
+                LOGGER.log(Level.DEBUG, () -> String.format(" - %s", trace.getString(idx)));
             }
         }
     }
