@@ -26,8 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
         description = "MicroProfile tracing spec implementation",
         in = HelidonFlavor.MP,
         path = "Tracing",
-        since = "4.0.0"
-)
+        since = "1.0.0")
+@Deprecated(since="4.0.0", forRemoval = true)
 module io.helidon.microprofile.tracing {
     requires static io.helidon.common.features.api;
 
