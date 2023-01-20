@@ -72,7 +72,17 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
     private static final Logger LOGGER = Logger.getLogger(JtaConnection.class.getName());
 
-    private static final String INVALID_TRANSACTION_STATE = "25000";
+    // The standard SQL state used for unspecified connection exceptions. Used in this class primarily to indicate
+    // premature connection closure.
+    private static final String CONNECTION_EXCEPTION_NO_SUBCLASS = "08000";
+
+    // The standard SQL state used for transaction-related issues.
+    private static final String INVALID_TRANSACTION_STATE_NO_SUBCLASS = "25000";
+
+    // IBM's proprietary but very descriptive, useful and specific SQL state for when a savepoint operation has been
+    // attempted during a global transaction ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is not allowed
+    // in a trigger, function, or global transaction").
+    private static final String PROHIBITED_SAVEPOINT_OPERATION = "3B503";
 
     // SQL state 40000 ("transaction rollback, no subclass") is unclear whether it means the SQL/local transaction or
     // the XA branch transaction or both. It's a convenient SQLState to use nonetheless for handling converting
@@ -286,7 +296,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.ts = Objects.requireNonNull(transactionSupplier, "transactionSupplier");
         this.tsr = Objects.requireNonNull(transactionSynchronizationRegistry, "transactionSynchronizationRegistry");
         if (delegate.isClosed()) {
-            throw new SQLNonTransientConnectionException("delegate is closed", "08000");
+            throw new SQLNonTransientConnectionException("delegate is closed", CONNECTION_EXCEPTION_NO_SUBCLASS);
         }
         this.interposedSynchronizations = interposedSynchronizations;
         this.xaResourceSupplier =
@@ -348,7 +358,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.enlist();
         if (autoCommit && this.enlisted()) {
             // "SQLException...if...setAutoCommit(true) is called while participating in a distributed transaction"
-            throw new SQLNonTransientException("Connection enlisted in transaction", INVALID_TRANSACTION_STATE);
+            throw new SQLNonTransientException("Connection enlisted in transaction", INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
         super.setAutoCommit(autoCommit);
     }
@@ -366,7 +376,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
-            throw new SQLNonTransientException("Connection enlisted in transaction", INVALID_TRANSACTION_STATE);
+            throw new SQLNonTransientException("Connection enlisted in transaction", INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
         super.commit();
     }
@@ -377,7 +387,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
-            throw new SQLNonTransientException("Connection enlisted in transaction", INVALID_TRANSACTION_STATE);
+            throw new SQLNonTransientException("Connection enlisted in transaction", INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
         super.rollback();
     }
@@ -486,10 +496,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
-            //
-            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
-            // not allowed in a trigger, function, or global transaction").
-            throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
+            throw new SQLNonTransientException("Connection enlisted in transaction", PROHIBITED_SAVEPOINT_OPERATION);
         }
         return super.setSavepoint();
     }
@@ -500,10 +507,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
-            //
-            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
-            // not allowed in a trigger, function, or global transaction").
-            throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
+            throw new SQLNonTransientException("Connection enlisted in transaction", PROHIBITED_SAVEPOINT_OPERATION);
         }
         return super.setSavepoint(name);
     }
@@ -514,10 +518,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         this.enlist();
         if (this.enlisted()) {
             // "SQLException...if...this method is called while participating in a distributed transaction"
-            //
-            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
-            // not allowed in a trigger, function, or global transaction").
-            throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
+            throw new SQLNonTransientException("Connection enlisted in transaction", PROHIBITED_SAVEPOINT_OPERATION);
         }
         super.rollback(savepoint);
     }
@@ -529,12 +530,9 @@ class JtaConnection extends ConditionallyCloseableConnection {
         if (this.enlisted()) {
             // "SQLException...if...the given Savepoint object is not a valid savepoint in the current transaction"
             //
-            // Use IBM's very descriptive 3B503 SQL state ("A SAVEPOINT, RELEASE SAVEPOINT, or ROLLBACK TO SAVEPOINT is
-            // not allowed in a trigger, function, or global transaction").
-            //
             // Interestingly JDBC doesn't mandate an exception being thrown here if the connection is enlisted in a
-            // global transaction, but it looks like SQLState 3B503 is often thrown in this case.
-            throw new SQLNonTransientException("Connection enlisted in transaction", "3B503");
+            // global transaction, but it looks like a SQL state such as 3B503 is often thrown in this case.
+            throw new SQLNonTransientException("Connection enlisted in transaction", PROHIBITED_SAVEPOINT_OPERATION);
         }
         super.releaseSavepoint(savepoint);
     }
@@ -786,7 +784,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
                     LOGGER.logp(Level.FINE, this.getClass().getName(), "close", e.getMessage(), e);
                 }
             } catch (SystemException e) {
-                throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
+                throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE_NO_SUBCLASS, e);
             }
         }
         super.close();
@@ -850,7 +848,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // that possible SystemExceptions thrown by TransactionManager#getStatus() implementations will have to be
             // dealt with in *some* way, even though the javadoc for
             // TransactionSynchronizationRegistry#getTransactionStatus() does not account for such a thing.
-            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
+            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE_NO_SUBCLASS, e);
         }
     }
 
@@ -873,7 +871,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // We're enlisted in a Transaction on thread 1, and a caller from thread 2 is trying to do something with
             // us. This could have unintended side effects. Throw.
             throw new SQLTransientException("Already enlisted (" + enlistment + "); current thread id: "
-                                            + Thread.currentThread().getId(), INVALID_TRANSACTION_STATE);
+                                            + Thread.currentThread().getId(), INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
         // We are, or were, enlisted. Let's see in what way.
@@ -898,7 +896,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
                     return true;
                 }
                 throw new SQLTransientException("Attempting to perform work while associated with a suspended transaction",
-                                                INVALID_TRANSACTION_STATE);
+                                                INVALID_TRANSACTION_STATE_NO_SUBCLASS);
             case Status.STATUS_COMMITTED:
             case Status.STATUS_ROLLEDBACK:
             case Status.STATUS_COMMITTING:
@@ -911,12 +909,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 // which we are enlisted, so by definition we're enlisted in a suspended transaction and no further
                 // work should be done until that transaction is resumed.
                 throw new SQLTransientException("Attempting to perform work while associated with a suspended transaction",
-                                                INVALID_TRANSACTION_STATE);
+                                                INVALID_TRANSACTION_STATE_NO_SUBCLASS);
             case Status.STATUS_UNKNOWN:
             default:
                 // Unexpected or illegal. Throw.
                 throw new SQLTransientException("Unexpected transaction status: " + currentThreadTransactionStatus,
-                                                INVALID_TRANSACTION_STATE);
+                                                INVALID_TRANSACTION_STATE_NO_SUBCLASS);
             }
         case Status.STATUS_COMMITTED:
         case Status.STATUS_ROLLEDBACK:
@@ -932,7 +930,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_ROLLING_BACK:
             // Interim or effectively interim. Throw to prevent accidental side effects.
             throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus,
-                                            INVALID_TRANSACTION_STATE);
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         case Status.STATUS_NO_TRANSACTION:
             // Somehow an Enlistment was created with a Transaction in the Status.STATUS_NO_TRANSACTION status. This
             // should absolutely never happen.
@@ -940,7 +938,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_UNKNOWN:
         default:
             // Unexpected or illegal. Throw.
-            throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, INVALID_TRANSACTION_STATE);
+            throw new SQLTransientException("Unexpected transaction status: " + transactionStatus,
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
     }
 
@@ -948,7 +947,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         try {
             return this.ts.getTransaction();
         } catch (RuntimeException | SystemException e) {
-            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
+            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE_NO_SUBCLASS, e);
         }
     }
 
@@ -987,12 +986,12 @@ class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_ROLLING_BACK:
             // Interim or effectively interim state. Uncommon. Throw to prevent accidental side effects.
             throw new SQLTransientException("Non-terminal current thread transaction status: " + currentThreadTransactionStatus,
-                                            INVALID_TRANSACTION_STATE);
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         case Status.STATUS_UNKNOWN:
         default:
             // Unexpected or illegal state. Throw.
             throw new SQLTransientException("Unexpected current thread transaction status: " + currentThreadTransactionStatus,
-                                            INVALID_TRANSACTION_STATE);
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
         if (!super.getAutoCommit()) {
@@ -1002,7 +1001,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // transaction enlistment machinery. In such a case, we don't want to permit enlistment, because a local
             // transaction may be in progress and we don't want to have its effects mixed in.
             throw new SQLTransientException("autoCommit was false during active transaction enlistment",
-                                            INVALID_TRANSACTION_STATE);
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
         Transaction t = this.transaction();
@@ -1021,7 +1020,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_PREPARING:
         case Status.STATUS_ROLLING_BACK:
             // Interim or effectively interim. Throw to prevent accidental side effects.
-            throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus, INVALID_TRANSACTION_STATE);
+            throw new SQLTransientException("Non-terminal transaction status: " + transactionStatus,
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         case Status.STATUS_NO_TRANSACTION:
             // Impossible state machine transition since t is non-null and at least at one earlier point on this thread
             // the status was Status.STATUS_ACTIVE. Even if somehow the global transaction is disassociated from the
@@ -1032,7 +1032,8 @@ class JtaConnection extends ConditionallyCloseableConnection {
         case Status.STATUS_UNKNOWN:
         default:
             // Unexpected or illegal. Throw.
-            throw new SQLTransientException("Unexpected transaction status: " + transactionStatus, INVALID_TRANSACTION_STATE);
+            throw new SQLTransientException("Unexpected transaction status: " + transactionStatus,
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
         // One last check to see if we've been actually closed or requested to close asynchronously.
@@ -1058,7 +1059,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             throw new SQLTransientException("Already enlisted (" + this.enlistment
                                             + "); current transaction: " + t
                                             + "; current thread id: " + Thread.currentThread().getId(),
-                                            INVALID_TRANSACTION_STATE);
+                                            INVALID_TRANSACTION_STATE_NO_SUBCLASS);
         }
 
         try {
@@ -1104,7 +1105,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
             // tsr.registerInterposedSynchronization(Synchronization) operation failed, or the
             // t.registerSynchronization(Synchronization) operation failed. In any case, no XAResource was actually
             // enlisted.
-            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
+            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE_NO_SUBCLASS, e);
         } catch (Error e) {
             this.enlistment = null; // volatile write
             throw e;
@@ -1162,7 +1163,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
         try {
             return t.getStatus();
         } catch (RuntimeException | SystemException e) {
-            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE, e);
+            throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE_NO_SUBCLASS, e);
         }
     }
 
