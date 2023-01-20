@@ -250,9 +250,13 @@ public interface WebServer {
                             connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
                         });
                     });
+            // Configure content encoding
+            config.get("content-encoding")
+                    .asNode()
+                    .ifPresent(encodingConfig ->
+                            contentEncodingContext(ContentEncodingContext.builder().config(encodingConfig).build()));
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
-
             return this;
         }
 
