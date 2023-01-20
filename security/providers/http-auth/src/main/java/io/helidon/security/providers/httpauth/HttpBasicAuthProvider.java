@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,7 +71,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String BASIC_PREFIX = "basic ";
 
-    private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HttpBasicAuthProvider.class.getName());
     static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*?):(.*)");
 
     private final List<SecureUserStore> userStores;
@@ -238,7 +238,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
         Matcher matcher = CREDENTIAL_PATTERN.matcher(usernameAndPassword);
         if (!matcher.matches()) {
-            LOGGER.finest(() -> "Basic authentication header with invalid content: " + usernameAndPassword);
+            LOGGER.log(Level.TRACE, () -> "Basic authentication header with invalid content: " + usernameAndPassword);
             return failOrAbstain("Basic authentication header with invalid content");
         }
 

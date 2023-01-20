@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.security.providers.idcs.mapper;
 
+import java.lang.System.Logger.Level;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -65,7 +65,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      */
     protected static final String IDCS_APP_HEADER = "X-RESOURCE-SERVICE-INSTANCE-IDENTITY-APPNAME";
 
-    private static final Logger LOGGER = Logger
+    private static final System.Logger LOGGER = System
             .getLogger(IdcsMtRoleMapperProvider.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
@@ -135,7 +135,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         Optional<IdcsMtContext> maybeIdcsMtContext = extractIdcsMtContext(subject, request);
 
         if (!maybeIdcsMtContext.isPresent()) {
-            LOGGER.finest(() -> "Missing multitenant information IDCS CONTEXT: "
+            LOGGER.log(Level.TRACE, () -> "Missing multitenant information IDCS CONTEXT: "
                     + maybeIdcsMtContext
                     + ", subject: "
                     + subject);
@@ -431,7 +431,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                         + idcsInfraHostName.replaceAll(idcsInfraTenantId, tenantId)
                         + assertUrlSuffix;
 
-                LOGGER.finest(() -> "MT Asserter endpoint: " + url);
+                LOGGER.log(Level.TRACE, () -> "MT Asserter endpoint: " + url);
 
                 return generalClient.target(url);
             });
@@ -444,7 +444,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                         + idcsInfraHostName.replaceAll(idcsInfraTenantId, tenantId)
                         + tokenUrlSuffix
                         + idcsInfraTenantId;
-                LOGGER.finest(() -> "MT Token endpoint: " + url);
+                LOGGER.log(Level.TRACE, () -> "MT Token endpoint: " + url);
 
                 return appClient.target(url);
             });
