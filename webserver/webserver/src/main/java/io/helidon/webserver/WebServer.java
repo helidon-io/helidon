@@ -435,6 +435,12 @@ public interface WebServer {
             return this;
         }
 
+        /**
+         * Configure the transport to be used by this server.
+         *
+         * @param transport transport to use
+         * @return updated builder instance
+         */
         public Builder transport(Transport transport) {
             configurationBuilder.transport(transport);
             return this;
@@ -652,6 +658,12 @@ public interface WebServer {
         @Override
         public Builder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
             configurationBuilder.backpressureStrategy(backpressureStrategy);
+            return this;
+        }
+
+        @Override
+        public Builder continueImmediately(boolean continueImmediately) {
+            configurationBuilder.continueImmediately(continueImmediately);
             return this;
         }
 
