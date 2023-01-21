@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 
 /**
  * Verify create/insert operations of ORM.
@@ -100,7 +101,7 @@ public class InsertIT {
             em.persist(type);
             em.flush();
             Type dbType = em.find(Type.class, 20);
-            assertEquals(type, dbType);
+            assertThat(dbType, is(type));
         });
     }
 
@@ -146,13 +147,13 @@ public class InsertIT {
             Pokemon dbDodrio = em.find(Pokemon.class, pokemons[4].getId());
             Pokemon dbMagmar = em.find(Pokemon.class, pokemons[5].getId());
             Trainer dbTrainer = dbKrabby.getTrainer();
-            assertEquals(pokemons[0], dbKrabby);
-            assertEquals(pokemons[1], dbNidoran);
-            assertEquals(pokemons[2], dbEvee);
-            assertEquals(pokemons[3], dbElectivire);
-            assertEquals(pokemons[4], dbDodrio);
-            assertEquals(pokemons[5], dbMagmar);
-            assertEquals(trainers[0], dbTrainer);
+            assertThat(dbKrabby, is(pokemons[0]));
+            assertThat(dbNidoran, is(pokemons[1]));
+            assertThat(dbEvee, is(pokemons[2]));
+            assertThat(dbElectivire, is(pokemons[3]));
+            assertThat(dbDodrio, is(pokemons[4]));
+            assertThat(dbMagmar, is(pokemons[5]));
+            assertThat(dbTrainer, is(trainers[0]));
             for (Pokemon pokemon : pokemons) {
                 DELETE_POKEMONS.add(pokemon.getId());
             }
@@ -204,12 +205,12 @@ public class InsertIT {
                 pokemonSet.add(pokemon);
             }
             for (Pokemon dbPokemon : dbPokemons) {
-                assertTrue(pokemonSet.remove(dbPokemon));
+                assertThat(pokemonSet.remove(dbPokemon), is(true));
             }
-            assertTrue(pokemonSet.isEmpty());
-            assertEquals(trainers[0], dbTrainer);
-            assertEquals(stadiums[0], dbStadium);
-            assertEquals(cities[0], dbCity);
+            assertThat(pokemonSet, empty());
+            assertThat(dbTrainer, is(trainers[0]));
+            assertThat(dbStadium, is(stadiums[0]));
+            assertThat(dbCity, is(cities[0]));
             for (Pokemon pokemon : pokemons) {
                 DELETE_POKEMONS.add(pokemon.getId());
             }
