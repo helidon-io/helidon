@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.examples.integrations.micrometer.mp.GreetResource.PERSONALIZED_GETS_COUNTER_NAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 @HelidonTest
@@ -48,7 +49,7 @@ public class TestEndpoint {
 
         String responseString = jsonObject.getString("message");
 
-        assertEquals("Hello Joe!", responseString, "Response string");
+        assertThat("Response string", responseString, is("Hello Joe!"));
         Counter counter = registry.counter(PERSONALIZED_GETS_COUNTER_NAME);
         double before = counter.count();
 
@@ -59,9 +60,9 @@ public class TestEndpoint {
 
         responseString = jsonObject.getString("message");
 
-        assertEquals("Hello Jose!", responseString, "Response string");
+        assertThat("Response string", responseString, is("Hello Jose!"));
         double after = counter.count();
-        assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
+        assertThat("Difference in personalized greeting counter between successive calls", after - before, is(1d));
 
     }
 }
