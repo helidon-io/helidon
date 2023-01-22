@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.nima.webserver.http.DirectHandlers;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
@@ -59,7 +59,7 @@ class LoomServer implements WebServer {
                                                                 builder.mediaContext(),
                                                                 builder.contentEncodingContext());
 
-        List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
+        List<ServerConnectionSelector> connectionProviders = builder.connectionProviders();
 
         Map<String, Router> routers = builder.routers();
         Map<String, ListenerConfiguration.Builder> sockets = builder.socketBuilders();

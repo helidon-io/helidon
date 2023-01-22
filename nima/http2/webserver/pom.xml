@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.nima.http2</groupId>
@@ -37,10 +37,25 @@
             <artifactId>helidon-nima-http2</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.pico.builder.config</groupId>
+            <artifactId>helidon-pico-builder-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -50,6 +65,11 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -64,6 +84,16 @@
                         <path>
                             <groupId>io.helidon.common.features</groupId>
                             <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.pico.builder.config</groupId>
+                            <artifactId>helidon-pico-builder-config-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config</groupId>
+                            <artifactId>helidon-config-metadata-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

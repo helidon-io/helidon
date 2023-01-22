@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,68 +16,117 @@
 
 package io.helidon.nima.http2.webserver;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.http2.Http2Settings;
-import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.config.Config;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
 import io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.nima.webserver.spi.ServerConnection;
+import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 
 /**
  * {@link java.util.ServiceLoader} upgrade protocol provider to upgrade from HTTP/1.1 to HTTP/2.
  */
 public class Http2UpgradeProvider implements Http1UpgradeProvider {
-    private static final byte[] SWITCHING_PROTOCOLS_BYTES = (
-            "HTTP/1.1 101 Switching Protocols\r\n"
-                    + "Connection: Upgrade\r\n"
-                    + "Upgrade: h2c\r\n\r\n")
-            .getBytes(StandardCharsets.UTF_8);
-    private static final HeaderName HTTP2_SETTINGS_HEADER_NAME = Header.create("HTTP2-Settings");
-    private static final Base64.Decoder BASE_64_DECODER = Base64.getDecoder();
+    private final Http2Config http2Config;
+    private final List<Http2SubProtocolProvider> subProtocolProviders;
 
-    @Override
-    public String supportedProtocol() {
-        return "h2c";
+    private Http2UpgradeProvider(Builder builder) {
+        this.http2Config = builder.http2Config;
+        this.subProtocolProviders = builder.subProtocolProviders.build().asList();
+    }
+
+    /**
+     * Create a new instance with default configuration.
+     *
+     * @deprecated to be used solely by {@link java.util.ServiceLoader}
+     */
+    public Http2UpgradeProvider() {
+        this(builder());
+    }
+
+    /**
+     * Builder to set up this provider.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
-    public ServerConnection upgrade(ConnectionContext ctx,
-                                    HttpPrologue prologue,
-                                    WritableHeaders<?> headers) {
-        Http2Connection connection = new Http2Connection(ctx);
-        if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
-            connection.clientSettings(Http2Settings.create(BufferData.create(BASE_64_DECODER.decode(headers.get(
-                    HTTP2_SETTINGS_HEADER_NAME).value().getBytes(StandardCharsets.US_ASCII)))));
+    public Set<String> configKeys() {
+        Set<String> result = new HashSet<>();
+        result.add(Http2ConnectionProvider.CONFIG_NAME);
+
+        result.addAll(subProtocolProviders.stream()
+                              .map(Http2SubProtocolProvider::configKey)
+                              .collect(Collectors.toSet()));
+
+        return result;
+    }
+
+    @Override
+    public Http1Upgrader create(Function<String, Config> config) {
+        Http2Config usedConfig;
+
+        if (http2Config == null) {
+            usedConfig = DefaultHttp2Config.toBuilder(config.apply(Http2ConnectionProvider.CONFIG_NAME)).build();
         } else {
-            throw new RuntimeException("Bad request -> not " + HTTP2_SETTINGS_HEADER_NAME + " header");
+            usedConfig = http2Config;
         }
-        Http2Headers http2Headers = Http2Headers.create(headers);
-        http2Headers.path(prologue.uriPath().rawPath());
-        http2Headers.method(prologue.method());
-        headers.remove(Header.HOST,
-                       it -> http2Headers.authority(it.value()));
-        http2Headers.scheme("http"); // TODO need to get if https (ctx)?
 
-        HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
-                                                       prologue.protocol(),
-                                                       Http2Connection.PROTOCOL_VERSION,
-                                                       prologue.method(),
-                                                       prologue.uriPath(),
-                                                       prologue.query(),
-                                                       prologue.fragment());
+        var subProtocolSelectors = subProtocolProviders.stream()
+                .map(it -> it.create(config.apply(it.configKey())))
+                .toList();
 
-        connection.upgradeConnectionData(newPrologue, http2Headers);
-        connection.expectPreface();
-        DataWriter dataWriter = ctx.dataWriter();
-        dataWriter.write(BufferData.create(SWITCHING_PROTOCOLS_BYTES));
-        return connection;
+        return new Http2Upgrader(usedConfig, subProtocolSelectors);
+    }
+
+    /**
+     * Fluent API builder for {@link Http2UpgradeProvider}.
+     */
+    public static class Builder implements io.helidon.common.Builder<Http2UpgradeProvider.Builder, Http2UpgradeProvider> {
+        private final HelidonServiceLoader.Builder<Http2SubProtocolProvider> subProtocolProviders = HelidonServiceLoader.builder(
+                ServiceLoader.load(Http2SubProtocolProvider.class));
+
+        private Http2Config http2Config;
+
+        private Builder() {
+        }
+
+        @Override
+        public Http2UpgradeProvider build() {
+            return new Http2UpgradeProvider(this);
+        }
+
+        /**
+         * Custom configuration of HTTP/2 connections.
+         * If not defined, it will be configured from config, or defaults would be used.
+         *
+         * @param http2Config HTTP/2 configuration
+         * @return updated builder
+         */
+        public Builder http2Config(Http2Config http2Config) {
+            this.http2Config = http2Config;
+            return this;
+        }
+
+        /**
+         * Add a configured sub-protocol provider. This will replace the instance discovered through service loader (if one
+         * exists).
+         *
+         * @param provider provider to add
+         * @return updated builer
+         */
+        public Builder addSubProtocolProvider(Http2SubProtocolProvider provider) {
+            subProtocolProviders.addService(provider);
+            return this;
+        }
     }
 }

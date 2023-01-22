@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (c) 2016, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@
     <!-- PKCS#1 private keys - required for OCI Instance Principal Authentication -->
     <suppress checks="IllegalImport"
             files="DerUtils\.java"/>
+
+    <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
+    <suppress files="nima/http2/webserver/src/main/java/io/helidon/nima/http2/webserver/spi/Http2SubProtocolSelector.java"
+            checks="ParameterNumber"/>
 
     <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
     <suppress files="nima/webserver/webserver/src/main/java/io/helidon/nima/webserver/ConnectionContext.java"

@@ -414,7 +414,10 @@ public final class OidcSupport implements Service {
         } else {
             uri = oidcConfig.redirectUriWithHost();
         }
-        return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+        if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+            return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+        }
+        return uri;
     }
 
     private String processJsonResponse(ServerRequest req,
@@ -429,7 +432,9 @@ public final class OidcSupport implements Service {
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + tokenValue;
-            state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+            }
         }
 
         state = increaseRedirectCounter(state);

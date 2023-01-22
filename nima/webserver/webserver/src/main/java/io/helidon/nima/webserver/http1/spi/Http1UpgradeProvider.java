@@ -16,31 +16,32 @@
 
 package io.helidon.nima.webserver.http1.spi;
 
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.spi.ServerConnection;
+import java.util.Set;
+import java.util.function.Function;
+
+import io.helidon.config.Config;
 
 /**
- * {@link java.util.ServiceLoader} provider interface for upgrading an HTTP/1.1 connection.
+ * {@link java.util.ServiceLoader} provider interface for HTTP/1.1 connection upgrade provider.
+ * This interface serves as {@link Http1Upgrader} builder
+ * which receives requested configuration nodes from the server configuration when server builder
+ * is running.
  */
 public interface Http1UpgradeProvider {
-    /**
-     * Expected value of the protocol upgrade, such as {@code h2c}, or {@code websocket}.
-     * If an implementation supports multiple protocols, please implement this provider for each protocol
-     *
-     * @return supported protocol
-     */
-    String supportedProtocol();
 
     /**
-     * Upgrade connection.
+     * Provider's specific configuration node name.
      *
-     * @param ctx      connection context
-     * @param prologue http prologue of the upgrade request
-     * @param headers  http headers of the upgrade request
-     * @return a new connection to use instead of the original {@link io.helidon.nima.webserver.http1.Http1Connection},
-     *           or {@code null} if the connection cannot be upgraded
+     * @return name of the node to request
      */
-    ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers);
+    Set<String> configKeys();
+
+    /**
+     * Creates an instance of HTTP/HTTP/1.1 connection upgrader.
+     *
+     * @param config {@link io.helidon.config.Config} configuration function that provides a value for any {@link #configKeys()}
+     * @return new server HTTP/1.1 connection upgrade selector
+     */
+    Http1Upgrader create(Function<String, Config> config);
+
 }

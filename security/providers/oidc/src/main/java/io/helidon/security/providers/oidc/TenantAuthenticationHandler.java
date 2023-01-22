@@ -64,6 +64,7 @@ import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.util.TokenHandler;
 
 import static io.helidon.security.providers.oidc.common.OidcConfig.postJsonResponse;
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
  * Authentication handler.
@@ -291,9 +292,13 @@ class TenantAuthenticationHandler {
 
             String authorizationEndpoint = tenant.authorizationEndpointUri();
             String nonce = UUID.randomUUID().toString();
-            String redirectUri =
-                    encode(redirectUri(providerRequest.env()) + "?"
-                                   + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
+            String redirectUri;
+            if (DEFAULT_TENANT_ID.equals(tenantId)) {
+                redirectUri = encode(redirectUri(providerRequest.env()));
+            } else {
+                redirectUri = encode(redirectUri(providerRequest.env()) + "?"
+                                             + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
+            }
 
 
             StringBuilder queryString = new StringBuilder("?");

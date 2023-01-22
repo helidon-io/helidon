@@ -37,6 +37,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 /**
  * Server that opens server sockets and handles requests through routing.
@@ -144,9 +145,10 @@ public interface WebServer {
         private final Map<String, Router.Builder> routers = new HashMap<>();
         private final DirectHandlers.Builder simpleHandlers = DirectHandlers.builder();
 
-        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
-                HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
+        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
+                = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
+        private Config providersConfig = Config.empty();
         private MediaContext mediaContext = MediaContext.create();
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
@@ -231,6 +233,9 @@ public interface WebServer {
                             connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
                         });
                     });
+            // Store providers config node for later usage.
+            providersConfig = config.get("connection-providers");
+
             return this;
         }
 
@@ -361,7 +366,7 @@ public interface WebServer {
         }
 
         /**
-         * Configure a connection provider. This instance has priority over provider(s) discovered by service loader.
+         * Configure a connection providers. This instance has priority over provider(s) discovered by service loader.
          *
          * @param connectionProvider explicit connection provider
          * @return updated builder
@@ -385,6 +390,7 @@ public interface WebServer {
         /**
          * Configure the default {@link MediaContext}.
          * This method discards all previously registered MediaContext.
+         *
          * @param mediaContext media context
          * @return updated instance of the builder
          */
@@ -397,6 +403,7 @@ public interface WebServer {
         /**
          * Configure the default {@link ContentEncodingContext}.
          * This method discards all previously registered ContentEncodingContext.
+         *
          * @param contentEncodingContext content encoding context
          * @return updated instance of the builder
          */
@@ -408,6 +415,7 @@ public interface WebServer {
 
         /**
          * Configure the application scoped context to be used as a parent for webserver request contexts.
+         *
          * @param context top level context
          * @return an updated builder
          */
@@ -433,6 +441,7 @@ public interface WebServer {
         /**
          * Configure whether server threads should inherit inheritable thread locals.
          * Default value is {@code false}.
+         *
          * @param inheritThreadLocals whether to inherit thread locals
          * @return an updated builder
          */
@@ -464,6 +473,7 @@ public interface WebServer {
         Map<String, ListenerConfiguration.Builder> socketBuilders() {
             return socketBuilder;
         }
+
         /**
          * Map of socket name to router.
          *
@@ -475,8 +485,12 @@ public interface WebServer {
             return result;
         }
 
-        List<ServerConnectionProvider> connectionProviders() {
-            return connectionProviders.build().asList();
+        List<ServerConnectionSelector> connectionProviders() {
+            List<ServerConnectionProvider> providers = connectionProviders.build().asList();
+            // Send configuration nodes to providers
+            return providers.stream()
+                    .map(it -> it.create(providersConfig::get))
+                    .toList();
         }
 
         private ListenerConfiguration.Builder socket(String socketName) {
@@ -487,4 +501,5 @@ public interface WebServer {
             return routers.computeIfAbsent(socketName, it -> Router.builder());
         }
     }
+
 }
