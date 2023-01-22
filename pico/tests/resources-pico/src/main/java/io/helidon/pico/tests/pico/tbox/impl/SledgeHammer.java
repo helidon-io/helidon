@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.services.testsubjects;
+package io.helidon.pico.tests.pico.tbox.impl;
 
 import java.util.Optional;
 
-import io.helidon.pico.Module;
-import io.helidon.pico.ServiceBinder;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
+import io.helidon.pico.tests.pico.tbox.Hammer;
 
-import jakarta.annotation.Generated;
-import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
-@Generated(value = "example", comments = "API Version: n")
 @Singleton
-@Named(HelloPicoModule.NAME)
-public class HelloPicoModule implements Module {
+@Weight(Weighted.DEFAULT_WEIGHT + 2)
+//@Named(SledgeHammer.NAME)
+public class SledgeHammer implements Hammer {
 
-    public static final String NAME = "example";
-
-    public HelloPicoModule() {
-        int dummy = 1;
-    }
+    public static final String NAME = "sledge";
 
     @Override
     public Optional<String> named() {
-        return Optional.of(NAME);
-    }
-
-    @Override
-    public void configure(ServiceBinder binder) {
-        binder.bind(HelloPicoImpl$$picoActivator.INSTANCE);
-        binder.bind(PicoWorldImpl$$picoActivator.INSTANCE);
+        return Optional.of(NAME + " hammer");
     }
 
 }

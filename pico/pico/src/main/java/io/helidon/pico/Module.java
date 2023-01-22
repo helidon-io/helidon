@@ -16,6 +16,8 @@
 
 package io.helidon.pico;
 
+import java.util.Optional;
+
 /**
  * Provides aggregation of services to the "containing" (jar) module.
  * <p>
@@ -36,5 +38,10 @@ public interface Module extends Named {
      * @param binder the binder used to register the services to the registry
      */
     void configure(ServiceBinder binder);
+
+    @Override
+    default Optional<String> named() {
+        return Optional.empty();
+    }
 
 }

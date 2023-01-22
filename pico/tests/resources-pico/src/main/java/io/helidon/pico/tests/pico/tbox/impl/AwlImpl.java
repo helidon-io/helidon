@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.services.testsubjects;
+package io.helidon.pico.tests.pico.tbox.impl;
 
 import java.util.Optional;
 
-import io.helidon.pico.Module;
-import io.helidon.pico.ServiceBinder;
+import io.helidon.pico.Named;
+import io.helidon.pico.tests.pico.tbox.Awl;
 
-import jakarta.annotation.Generated;
-import jakarta.inject.Named;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-@Generated(value = "example", comments = "API Version: n")
 @Singleton
-@Named(HelloPicoModule.NAME)
-public class HelloPicoModule implements Module {
+public class AwlImpl implements Awl, Named {
 
-    public static final String NAME = "example";
-
-    public HelloPicoModule() {
-        int dummy = 1;
+    @Inject
+    AwlImpl() {
     }
 
     @Override
     public Optional<String> named() {
-        return Optional.of(NAME);
-    }
-
-    @Override
-    public void configure(ServiceBinder binder) {
-        binder.bind(HelloPicoImpl$$picoActivator.INSTANCE);
-        binder.bind(PicoWorldImpl$$picoActivator.INSTANCE);
+        return Optional.of("awl");
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.pico;
+package io.helidon.pico.tests.pico.tbox;
 
-import java.util.Optional;
-
-/**
- * Provides a means to identify if the instance is named.
- *
- * @see jakarta.inject.Named
- */
-public interface Named {
-
-    /**
-     * The optional name for this instance.
-     *
-     * @return the name associated with this instance or empty if not available or known
-     */
-    Optional<String> named();
+// @Singleton -- intentionally not declared to be a contract
+public interface Lubricant {
 
 }

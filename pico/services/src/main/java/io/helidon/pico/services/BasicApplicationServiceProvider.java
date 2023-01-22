@@ -41,7 +41,7 @@ class BasicApplicationServiceProvider extends AbstractServiceProvider<Applicatio
         DefaultServiceInfo.Builder builder = DefaultServiceInfo.builder()
                 .serviceTypeName(app.getClass().getName())
                 .addContractsImplemented(Application.class.getName());
-        app.name().ifPresent(name -> builder.addQualifier(DefaultQualifierAndValue.createNamed(name)));
+        app.named().ifPresent(name -> builder.addQualifier(DefaultQualifierAndValue.createNamed(name)));
         return builder.build();
     }
 

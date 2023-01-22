@@ -120,7 +120,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     public Optional<ServiceBinder> createServiceBinder(
             io.helidon.pico.Module module) {
         DefaultServices.assertPermitsDynamic(cfg);
-        return Optional.of(new DefaultServiceBinder(this, services(), module.name().orElse(null)));
+        return Optional.of(new DefaultServiceBinder(this, services(), module.named().orElse(null)));
     }
 
     @Override

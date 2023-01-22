@@ -337,7 +337,7 @@ class DefaultServices implements Services, Resetable {
     void bind(
             PicoServices picoServices,
             io.helidon.pico.Module module) {
-        String moduleName = module.name().orElse(null);
+        String moduleName = module.named().orElse(null);
         ServiceBinder moduleServiceBinder = createServiceBinder(picoServices, this, moduleName);
         module.configure(moduleServiceBinder);
         bind(createServiceProvider(module, moduleName, picoServices));

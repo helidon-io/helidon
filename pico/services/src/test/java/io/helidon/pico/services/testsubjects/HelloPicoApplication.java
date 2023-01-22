@@ -41,7 +41,7 @@ public class HelloPicoApplication implements Application {
     }
 
     @Override
-    public Optional<String> name() {
+    public Optional<String> named() {
         return Optional.of(NAME);
     }
 
