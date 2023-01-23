@@ -226,7 +226,7 @@ public interface SocketConfiguration {
 
     /**
      * Strategy for applying backpressure to the reactive stream of response data.
-     * Switched default to {@link BackpressureStrategy#AUTO_FLUSH} since 2.5.6.
+     * Switched default to {@link BackpressureStrategy#AUTO_FLUSH} since 2.5.7.
      *
      * @return strategy identifier for applying backpressure
      */
