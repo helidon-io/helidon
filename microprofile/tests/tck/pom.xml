@@ -36,11 +36,7 @@
         <module>tck-metrics</module>
         <module>tck-messaging</module>
         <module>tck-graphql</module>
-        <!-- TODO:Java19 - fails
-        Expected exception of type class org.jose4j.jwt.consumer.InvalidJwtException but got org.jose4j.lang.InvalidKeyException:
-            Invalid key for JWE A128KW, expected a 128 bit key but a 256 bit key was provided.
         <module>tck-jwt-auth</module>
-        -->
         <module>tck-openapi</module>
         <module>tck-opentracing</module>
         <module>tck-rest-client</module>

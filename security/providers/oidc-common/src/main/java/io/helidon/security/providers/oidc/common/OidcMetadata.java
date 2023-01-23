@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,8 +25,6 @@ import java.util.logging.Logger;
 import io.helidon.common.Errors;
 import io.helidon.reactive.webclient.WebClient;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
 final class OidcMetadata {
@@ -97,7 +94,6 @@ final class OidcMetadata {
     }
 
     static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {
-        private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
         private boolean enableRemoteLoad;
         private JsonObject metadata;
         private WebClient webClient;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.nima.tests.integration.websocket.webserver;
 
 import java.net.URI;
@@ -25,7 +26,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.tests.integration.websocket.webserver.WsConversationClient.WsConversationListener;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.websocket.webserver.WebSocketRouting;
+import io.helidon.nima.websocket.webserver.WsRouting;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ class WsConversationTest {
     @SetUpRoute
     static void router(Router.RouterBuilder<?> router) {
         service = new WsConversationService();
-        router.addRouting(WebSocketRouting.builder().endpoint("/conversation", service));
+        router.addRouting(WsRouting.builder().endpoint("/conversation", service));
     }
 
     @Test

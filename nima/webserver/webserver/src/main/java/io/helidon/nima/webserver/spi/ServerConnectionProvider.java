@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,63 +16,31 @@
 
 package io.helidon.nima.webserver.spi;
 
-import java.util.Set;
+import java.util.function.Function;
 
-import io.helidon.common.buffers.BufferData;
-import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.config.Config;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for server connection providers.
- * Connection provider is given a chance to analyze request bytes and decide whether this is a connection it can accept.
+ * This interface serves as {@link ServerConnectionSelector} builder
+ * which receives requested configuration nodes from the server configuration when server builder
+ * is running.
  */
 public interface ServerConnectionProvider {
     /**
-     * How many bytes are needed to identify this connection.
+     * Provider's specific configuration nodes names.
      *
-     * @return number of bytes needed, return 0 if this is not a fixed value
+     * @return names of the nodes to request
      */
-    int bytesToIdentifyConnection();
+    Iterable<String> configKeys();
 
     /**
-     * Does this provider support current server connection.
-     * The same buffer will be sent to {@link ServerConnection#handle()}
+     * Creates an instance of server connection selector.
      *
-     * @param data bytes (with available bytes of at least {@link #bytesToIdentifyConnection()})
-     * @return support response
+     * @param configs configuration for each {@link #configKeys()}, the config may be empty, but it will be present
+     *                for each value
+     * @return new server connection selector
      */
-    Support supports(BufferData data);
+    ServerConnectionSelector create(Function<String, Config> configs);
 
-    /**
-     * Application protocols supported by this provider, used for example for ALPN negotiation.
-     *
-     * @return set of supported protocols
-     */
-    Set<String> supportedApplicationProtocols();
-
-    /**
-     * Create a new connection.
-     * All methods will be invoked from a SINGLE virtual thread.
-     *
-     * @param ctx connection context with access to data writer, data reader and other useful information
-     * @return a new server connection
-     */
-    ServerConnection connection(ConnectionContext ctx);
-
-    /**
-     * Support by this provider.
-     */
-    enum Support {
-        /**
-         * Yes, this is a connection this provider can handle.
-         */
-        SUPPORTED,
-        /**
-         * No, this connection is not compatible with this provider.
-         */
-        UNSUPPORTED,
-        /**
-         * We do not have enough bytes to decide, please ask this provider again with more bytes.
-         */
-        UNKNOWN
-    }
 }

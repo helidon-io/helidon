@@ -90,6 +90,11 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

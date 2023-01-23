@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-import io.helidon.nima.websocket.CloseCodes;
+import io.helidon.nima.websocket.WsCloseCodes;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
-import io.helidon.nima.websocket.webserver.WebSocketRouting;
+import io.helidon.nima.websocket.webserver.WsRouting;
 import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
 
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,7 @@ class WebSocketOriginTest {
 
     @SetUpRoute
     static void routing(Router.RouterBuilder<?> router) {
-        router.addRouting(WebSocketRouting.builder()
+        router.addRouting(WsRouting.builder()
                                   .endpoint("/single", WebSocketOriginTest::single));
     }
 
@@ -93,7 +93,7 @@ class WebSocketOriginTest {
                             })
                 .get(5, TimeUnit.SECONDS);
         webSocket.sendText("lower", true);
-        webSocket.sendClose(CloseCodes.NORMAL_CLOSE, "finished");
+        webSocket.sendClose(WsCloseCodes.NORMAL_CLOSE, "finished");
         Boolean wasLast = wsCompleted.get(5, TimeUnit.SECONDS);
         assertThat(wasLast, is(true));
         assertThat(received, hasItem("LOWER"));

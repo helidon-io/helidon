@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc.init;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class CheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(CheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CheckIT.class.getName());
 
     /** Test configuration. */
     public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
@@ -71,7 +71,7 @@ public class CheckIT {
                     connected = true;
                     return;
                 } catch (SQLException ex) {
-                    LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
+                    LOGGER.log(Level.DEBUG, () -> String.format("Connection check: %s", ex.getMessage()), ex);
                     if (System.currentTimeMillis() > endTm) {
                         return;
                     }
@@ -147,19 +147,20 @@ public class CheckIT {
         ConnectionBuilder builder = new ConnectionBuilder();
         String ping = CONFIG.get("db.health-check.statement").asString().get();
         String typeStr = CONFIG.get("db.health-check.type").asString().get();
-        boolean pingDml = typeStr != null && "dml".equals(typeStr.toLowerCase());
+        boolean pingDml = "dml".equalsIgnoreCase(typeStr);
         CONFIG.get("db.connection").ifExists(builder);
-        Connection conn = builder.createConnection();
-        if (pingDml) {
-            int result = conn.createStatement().executeUpdate(ping);
-            assertThat(result, equalTo(0));
-            LOGGER.info(() -> String.format("Command ping result: %d", result));
-        } else {
-            ResultSet rs = conn.createStatement().executeQuery(ping);
-            rs.next();
-            int result = rs.getInt(1);
-            assertThat(result, equalTo(0));
-            LOGGER.info(() -> String.format("Command ping result: %d", result));
+        try (Connection conn = builder.createConnection()) {
+            if (pingDml) {
+                int result = conn.createStatement().executeUpdate(ping);
+                assertThat(result, equalTo(0));
+                LOGGER.log(Level.DEBUG, () -> String.format("Command ping result: %d", result));
+            } else {
+                ResultSet rs = conn.createStatement().executeQuery(ping);
+                rs.next();
+                int result = rs.getInt(1);
+                assertThat(result, equalTo(0));
+                LOGGER.log(Level.DEBUG, () -> String.format("Command ping result: %d", result));
+            }
         }
     }
 

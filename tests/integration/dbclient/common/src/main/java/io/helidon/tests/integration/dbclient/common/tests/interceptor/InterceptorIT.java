@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.interceptor;
 
-import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.DbClientService;
 import io.helidon.reactive.dbclient.DbClientServiceContext;
-import io.helidon.reactive.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
@@ -38,26 +36,19 @@ public class InterceptorIT {
     private static final class TestClientService implements DbClientService {
 
         private boolean called;
-        private DbClientServiceContext context;
 
         private TestClientService() {
             this.called = false;
-            this.context = null;
         }
 
         @Override
         public Single<DbClientServiceContext> statement(DbClientServiceContext context) {
             this.called = true;
-            this.context = context;
             return Single.just(context);
         }
 
         private boolean called() {
             return called;
-        }
-
-        private DbClientServiceContext getContext() {
-            return context;
         }
 
     }
@@ -75,7 +66,7 @@ public class InterceptorIT {
     public void testStatementInterceptor() {
         TestClientService interceptor = new TestClientService();
         DbClient dbClient = initDbClient(interceptor);
-        Multi<DbRow> rows = dbClient.execute(exec -> exec
+        dbClient.execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")
                 .addParam("name", POKEMONS.get(6).getName())
                 .execute());

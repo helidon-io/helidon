@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc.init;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -42,9 +41,6 @@ import static org.hamcrest.Matchers.notNullValue;
  * Initialize database
  */
 public class InitIT extends AbstractIT {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(InitIT.class.getName());
 
     /**
      * Initializes database schema (tables).
@@ -116,8 +112,6 @@ public class InitIT extends AbstractIT {
      */
     @BeforeAll
     public static void setup() {
-        LOGGER.info(() -> "Initializing Integration Tests");
-
         initSchema(DB_CLIENT);
         initData(DB_CLIENT);
     }
@@ -132,7 +126,7 @@ public class InitIT extends AbstractIT {
                 .namedQuery("select-types"));
 
         assertThat(rows, notNullValue());
-        List<DbRow> rowsList = rows.collectList().await(5, TimeUnit.SECONDS);
+        List<DbRow> rowsList = rows.collectList().await(Duration.ofSeconds(5));
         assertThat(rowsList, not(empty()));
         Set<Integer> ids = new HashSet<>(TYPES.keySet());
         for (DbRow row : rowsList) {

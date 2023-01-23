@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,13 +85,14 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Relative URIs", config.relativeUris(), is(OidcConfig.DEFAULT_RELATIVE_URIS)),
                 () -> assertThat("Use Cookie", config.useCookie(), is(OidcConfig.DEFAULT_COOKIE_USE)),
                 () -> assertThat("Use Header", config.useHeader(), is(OidcConfig.DEFAULT_HEADER_USE)),
-                () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.DEFAULT_BASE_SCOPES)),
+                () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.Builder.DEFAULT_BASE_SCOPES)),
                 () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is(OidcConfig.DEFAULT_COOKIE_NAME + "=")),
                 () -> assertThat("Cookie name", config.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
-                () -> assertThat("Realm", config.realm(), is(OidcConfig.DEFAULT_REALM)),
+                () -> assertThat("Realm", config.realm(), is(OidcConfig.Builder.DEFAULT_REALM)),
                 () -> assertThat("Redirect Attempt Parameter", config.redirectAttemptParam(), is(OidcConfig.DEFAULT_ATTEMPT_PARAM)),
                 () -> assertThat("Max Redirects", config.maxRedirects(), is(OidcConfig.DEFAULT_MAX_REDIRECTS)),
-                () -> assertThat("Client Timeout", config.clientTimeout(), is(Duration.ofSeconds(OidcConfig.DEFAULT_TIMEOUT_SECONDS))),
+                () -> assertThat("Client Timeout", config.clientTimeout(),
+                                 is(Duration.ofSeconds(OidcConfig.Builder.DEFAULT_TIMEOUT_SECONDS))),
                 () -> assertThat("Force HTTPS Redirects", config.forceHttpsRedirects(), is(OidcConfig.DEFAULT_FORCE_HTTPS_REDIRECTS)),
                 () -> assertThat("Token Refresh Skew", config.tokenRefreshSkew(), is(OidcConfig.DEFAULT_TOKEN_REFRESH_SKEW)),
                 // cookie options should be separated by space as defined by the specification

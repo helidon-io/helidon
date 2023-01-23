@@ -59,9 +59,11 @@
         <version.lib.arquillian>1.7.0.Alpha10</version.lib.arquillian>
         <version.lib.asm>9.4</version.lib.asm>
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
+        <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
+        <version.lib.jsoup>1.15.3</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
@@ -117,7 +119,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>7.4.4</version.plugin.dependency-check>
+        <version.plugin.dependency-check>8.0.1</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -1176,6 +1178,17 @@
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
                 <version>${version.lib.classgraph}</version>
+            </dependency>
+            <!-- Used for OIDC integration tests -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${version.lib.jsoup}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

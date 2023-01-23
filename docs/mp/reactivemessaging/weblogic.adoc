@@ -47,6 +47,9 @@ Weblogic installation.
 WARNING: Avoid placing `wlthint3client.jar` on Helidon classpath, client library location needs to be
 configured and loaded by Helidon messaging connector.
 
+WARNING: Don't forget to start your Helidon app with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow
+wlthint3client use reflection.
+
 === Configuration
 
 Connector name: `helidon-weblogic-jms`

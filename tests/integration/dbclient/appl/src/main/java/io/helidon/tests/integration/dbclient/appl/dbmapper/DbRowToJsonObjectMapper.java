@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import io.helidon.reactive.dbclient.DbColumn;
+import io.helidon.reactive.dbclient.DbMapper;
+import io.helidon.reactive.dbclient.DbRow;
+
 import jakarta.json.Json;
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
-
-import io.helidon.reactive.dbclient.DbColumn;
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.DbRow;
 
 // This implementation is limited only to conversions required by jUnit tests.
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -114,12 +115,14 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         try {
             SecurityEnvironment.Builder outboundEnv = securityContext.env()
                     .derive()
-                    .clearHeaders();
+                    .clearHeaders()
+                    .clearQueryParams();
 
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
-                    .headers(requestContext.getStringHeaders());
+                    .headers(requestContext.getStringHeaders())
+                    .queryParams(UriQuery.create(requestContext.getUri().getQuery()));
 
             EndpointConfig.Builder outboundEp = securityContext.endpointConfig().derive();
 

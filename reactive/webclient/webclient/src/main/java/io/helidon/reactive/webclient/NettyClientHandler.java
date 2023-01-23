@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,6 +144,18 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             WebClientResponse clientResponse = responseBuilder.build();
             channel.attr(RESPONSE).set(clientResponse);
 
+            Map<String, List<String>> cookieMap = new HashMap<>();
+            WebClientResponseHeaders responseHeaders = clientResponse.headers();
+
+            if (responseHeaders.contains(Http.Header.SET_COOKIE)) {
+                cookieMap.put(Http.Header.SET_COOKIE.defaultCase(), responseHeaders.get(Http.Header.SET_COOKIE).allValues());
+            }
+            if (responseHeaders.contains(Http.Header.SET_COOKIE2)) {
+                cookieMap.put(Http.Header.SET_COOKIE2.defaultCase(), responseHeaders.get(Http.Header.SET_COOKIE2).allValues());
+            }
+            requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
+                                                     cookieMap);
+
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     boolean continueAfter = !interceptor.continueAfterInterception();
@@ -156,18 +168,6 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     }
                 }
             }
-
-            Map<String, List<String>> cookieMap = new HashMap<>();
-            WebClientResponseHeaders responseHeaders = clientResponse.headers();
-
-            if (responseHeaders.contains(Http.Header.SET_COOKIE)) {
-                cookieMap.put(Http.Header.SET_COOKIE.defaultCase(), responseHeaders.get(Http.Header.SET_COOKIE).allValues());
-            }
-            if (responseHeaders.contains(Http.Header.SET_COOKIE2)) {
-                cookieMap.put(Http.Header.SET_COOKIE2.defaultCase(), responseHeaders.get(Http.Header.SET_COOKIE2).allValues());
-            }
-            requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
-                                                     cookieMap);
 
             WebClientServiceResponse clientServiceResponse =
                     new WebClientServiceResponseImpl(requestConfiguration.context().get(),

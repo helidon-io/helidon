@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -247,7 +247,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     SignedJwt signedJwt;
                     try {
                         headers = JwtHeaders.parseToken(token);
-                        if (headers.encryption().isPresent()) {
+                        if (headers.encryption().isPresent() || decryptionKeys.get() != null) {
                             EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(headers, token);
                             if (!headers.contentType().map("JWT"::equals).orElse(false)) {
                                 throw new JwtException("Header \"cty\" (content type) must be set to \"JWT\" "

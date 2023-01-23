@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ package io.helidon.nima.webserver.spi;
 public interface ServerConnection {
     /**
      * Start handling the connection. Data is provided through
-     * {@link ServerConnectionProvider#connection(io.helidon.nima.webserver.ConnectionContext)}.
+     * {@link ServerConnectionSelector#connection(io.helidon.nima.webserver.ConnectionContext)}.
      *
      * @throws InterruptedException to interrupt any waiting state and terminate this connection
      */

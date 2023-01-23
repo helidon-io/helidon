@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -34,7 +34,7 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 public class SimpleUpdateIT extends AbstractIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(SimpleUpdateIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SimpleUpdateIT.class.getName());
 
     /** Maximum Pokemon ID. */
     private static final int BASE_ID = LAST_POKEMON_ID + 20;
@@ -68,7 +68,7 @@ public class SimpleUpdateIT extends AbstractIT {
             addPokemon(new Pokemon(++curId, "Sandslash", TYPES.get(5)));             // BASE_ID+6
             addPokemon(new Pokemon(++curId, "Diglett", TYPES.get(5)));               // BASE_ID+7
         } catch (Exception ex) {
-            LOGGER.warning(() -> String.format("Exception in setup: %s", ex));
+            LOGGER.log(Level.WARNING, String.format("Exception in setup: %s", ex));
             throw ex;
         }
     }
