@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ fi
 
 readonly GITHUB_API_URL="https://api.github.com"
 readonly MEDIA_TYPE="application/vnd.github.v3+json"
-readonly GITHUB_OWNER="oracle"
+readonly GITHUB_OWNER="helidon-io"
 readonly REPO="helidon"
 
 BODY=$(cat ${CHANGELOG} | awk '{printf "%s\\n", $0;}' | sed -e 's/"/\\"/g')
