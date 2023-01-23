@@ -571,7 +571,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * <li>PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.</li>
          * <li>NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.</li>
          * </ul>
-         * @param backpressureStrategy One of NONE, PREFETCH or LINEAR, default is LINEAR
+         * @param backpressureStrategy One of NONE, PREFETCH, LINEAR or AUTO_FLUSH, default is AUTO_FLUSH
          * @return an updated builder
          */
         @Override

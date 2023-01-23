@@ -226,11 +226,12 @@ public interface SocketConfiguration {
 
     /**
      * Strategy for applying backpressure to the reactive stream of response data.
+     * Switched default to {@link BackpressureStrategy#AUTO_FLUSH} since 2.5.6.
      *
      * @return strategy identifier for applying backpressure
      */
     default BackpressureStrategy backpressureStrategy() {
-        return BackpressureStrategy.LINEAR;
+        return BackpressureStrategy.AUTO_FLUSH;
     }
 
     /**
@@ -508,10 +509,10 @@ public interface SocketConfiguration {
          * <li>PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.</li>
          * <li>NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.</li>
          * </ul>
-         * @param backpressureStrategy One of NONE, PREFETCH or LINEAR, default is LINEAR
+         * @param backpressureStrategy One of NONE, PREFETCH, LINEAR or AUTO_FLUSH, default is AUTO_FLUSH
          * @return this builder
          */
-        @ConfiguredOption("LINEAR")
+        @ConfiguredOption("AUTO_FLUSH")
         B backpressureStrategy(BackpressureStrategy backpressureStrategy);
 
         /**
@@ -663,7 +664,7 @@ public interface SocketConfiguration {
         private int initialBufferSize = 128;
         private boolean enableCompression = false;
         private long maxPayloadSize = -1;
-        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.LINEAR;
+        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.AUTO_FLUSH;
         private boolean continueImmediately = false;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
