@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Verify update operations on ORM.
@@ -86,7 +86,7 @@ public class UpdateIT {
         pu.tx(pu -> {
             final EntityManager em = pu.getCleanEm();
             Pokemon dbGraveler = em.find(Pokemon.class, pokemons[0].getId());
-            assertEquals(pokemons[0], dbGraveler);
+            assertThat(dbGraveler, is(pokemons[0]));
         });
     }
 
@@ -104,7 +104,7 @@ public class UpdateIT {
                     .setParameter("newCp", 647)
                     .setParameter("name", "Slowpoke")
                     .executeUpdate();
-            assertEquals(1, updated);
+            assertThat(updated, is(1));
         });
         pu.tx(pu -> {
             final EntityManager em = pu.getCleanEm();
@@ -112,7 +112,7 @@ public class UpdateIT {
                     "SELECT p FROM Pokemon p WHERE p.name=:name", Pokemon.class)
                     .setParameter("name", "Slowbro")
                     .getSingleResult();
-            assertEquals(647, dbWartortle.getCp());
+            assertThat(dbWartortle.getCp(), is(647));
         });
     }
 
@@ -131,7 +131,7 @@ public class UpdateIT {
                     .set("name", "Ursaring")
                     .set("cp", 1568);
             int updated = em.createQuery(cu).executeUpdate();
-            assertEquals(1, updated);
+            assertThat(updated, is(1));
         });
         pu.tx(pu -> {
             final EntityManager em = pu.getCleanEm();
@@ -141,7 +141,7 @@ public class UpdateIT {
             cq.select(pokemonRoot)
                     .where(cb.equal(pokemonRoot.get("name"), "Ursaring"));
             Pokemon dbUrsaring = em.createQuery(cq).getSingleResult();
-            assertEquals(1568, dbUrsaring.getCp());
+            assertThat(dbUrsaring.getCp(), is(1568));
         });
     }
 
@@ -192,9 +192,9 @@ public class UpdateIT {
             Stadium stadium = city.getStadium();
             Trainer trainer = stadium.getTrainer();
             List<Pokemon> pokemons = trainer.getPokemons();
-            assertEquals(trainer.getName(), "Janine");
+            assertThat(trainer.getName(), is("Janine"));
             for (Pokemon pokemon : pokemons) {
-                assertTrue(pokemonNames.remove(pokemon.getName()), "Pokemon " + pokemon.getName() + " is missing");
+                assertThat("Pokemon " + pokemon.getName() + " is missing", pokemonNames.remove(pokemon.getName()), is(true));
             }
         });
     }
