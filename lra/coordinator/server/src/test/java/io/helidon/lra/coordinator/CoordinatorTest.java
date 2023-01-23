@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,11 @@ import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CoordinatorTest {
 
@@ -96,26 +98,26 @@ public class CoordinatorTest {
     void startAndClose() {
         String lraId = start();
 
-        Assertions.assertEquals(LRAStatus.Active, getParsedStatusOfLra(lraId));
-        Assertions.assertEquals(LRAStatus.Active, status(lraId));
+        assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Active));
+        assertThat(status(lraId), is(LRAStatus.Active));
 
         close(lraId);
 
-        Assertions.assertEquals(LRAStatus.Closed, getParsedStatusOfLra(lraId));
-        Assertions.assertEquals(LRAStatus.Closed, status(lraId));
+        assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Closed));
+        assertThat(status(lraId), is(LRAStatus.Closed));
     }
 
     @Test
     void startAndCancel() {
         String lraId = start();
 
-        Assertions.assertEquals(LRAStatus.Active, getParsedStatusOfLra(lraId));
-        Assertions.assertEquals(LRAStatus.Active, status(lraId));
+        assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Active));
+        assertThat(status(lraId), is(LRAStatus.Active));
 
         close(lraId);
 
-        Assertions.assertEquals(LRAStatus.Closed, getParsedStatusOfLra(lraId));
-        Assertions.assertEquals(LRAStatus.Closed, status(lraId));
+        assertThat(getParsedStatusOfLra(lraId), is(LRAStatus.Closed));
+        assertThat(status(lraId), is(LRAStatus.Closed));
     }
 
     private String start() {
