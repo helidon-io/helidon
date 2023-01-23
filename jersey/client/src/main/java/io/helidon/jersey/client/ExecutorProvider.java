@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.jersey.client;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 
@@ -38,7 +38,7 @@ import org.glassfish.jersey.spi.ThreadPoolExecutorProvider;
 public class ExecutorProvider extends ThreadPoolExecutorProvider {
 
     static final String THREAD_NAME_PREFIX = "helidon-client-async-executor";
-    private static final Logger LOGGER = Logger.getLogger(ExecutorProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ExecutorProvider.class.getName());
     private final LazyValue<Integer> asyncThreadPoolSize;
 
     /**
@@ -51,11 +51,11 @@ public class ExecutorProvider extends ThreadPoolExecutorProvider {
 
         this.asyncThreadPoolSize = Values.lazy((Value<Integer>) () -> {
             if (poolSize.filter(i -> i > 0).isEmpty()) {
-                LOGGER.config(LocalizationMessages.IGNORED_ASYNC_THREADPOOL_SIZE(poolSize.orElse(0)));
+                LOGGER.log(Level.DEBUG, LocalizationMessages.IGNORED_ASYNC_THREADPOOL_SIZE(poolSize.orElse(0)));
                 // using default
                 return Integer.MAX_VALUE;
             } else {
-                LOGGER.config(LocalizationMessages.USING_FIXED_ASYNC_THREADPOOL(poolSize.get()));
+                LOGGER.log(Level.DEBUG, LocalizationMessages.USING_FIXED_ASYNC_THREADPOOL(poolSize.get()));
                 return poolSize.get();
             }
         });

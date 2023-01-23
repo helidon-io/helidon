@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.integration.grpc;
 
+import java.lang.System.Logger.Level;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,8 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
@@ -79,7 +78,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 @Priority(InterceptorPriorities.CONTEXT)
 public class GrpcSecurityHandler
         implements ServerInterceptor, ServiceDescriptor.Configurer {
-    private static final Logger LOGGER = Logger.getLogger(GrpcSecurityHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcSecurityHandler.class.getName());
     private static final String KEY_ROLES_ALLOWED = "roles-allowed";
     private static final String KEY_AUTHENTICATOR = "authenticator";
     private static final String KEY_AUTHORIZER = "authorizer";
@@ -405,7 +404,7 @@ public class GrpcSecurityHandler
             }
         } catch (Throwable throwable) {
             tracing.error(throwable);
-            LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", throwable);
+            LOGGER.log(Level.ERROR, "Unexpected exception during security processing", throwable);
             callWrapper.close(Status.INTERNAL, new Metadata());
             listener = new EmptyListener<>();
         }
@@ -507,7 +506,7 @@ public class GrpcSecurityHandler
 
     private boolean atnAbstainFailure(CompletableFuture<AtxResult> future) {
         if (authenticationOptional.orElse(false)) {
-            LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
+            LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             return false;
         }
 
@@ -518,7 +517,7 @@ public class GrpcSecurityHandler
     private boolean atnFinishFailure(CompletableFuture<AtxResult> future) {
 
         if (authenticationOptional.orElse(false)) {
-            LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
+            LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             return false;
         } else {
             future.complete(AtxResult.STOP);

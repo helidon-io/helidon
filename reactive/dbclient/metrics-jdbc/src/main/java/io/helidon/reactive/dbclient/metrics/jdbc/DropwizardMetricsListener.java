@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.reactive.dbclient.metrics.jdbc;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -37,7 +37,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 public class DropwizardMetricsListener implements MetricRegistryListener {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(DropwizardMetricsListener.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DropwizardMetricsListener.class.getName());
 
     private final String prefix;
     // Helidon metrics registry
@@ -54,61 +54,61 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
     @Override
     public void onGaugeAdded(String name, Gauge<?> gauge) {
-        LOGGER.finest(() -> String.format("Gauge added: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Gauge added: %s", name));
         registry.get().register(prefix + name, new JdbcMetricsGauge<>(gauge));
     }
 
     @Override
     public void onGaugeRemoved(String name) {
-        LOGGER.finest(() -> String.format("Gauge removed: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Gauge removed: %s", name));
         registry.get().remove(prefix + name);
     }
 
     @Override
     public void onCounterAdded(String name, Counter counter) {
-        LOGGER.finest(() -> String.format("Counter added: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Counter added: %s", name));
         registry.get().register(prefix + name, new JdbcMetricsCounter(counter));
     }
 
     @Override
     public void onCounterRemoved(String name) {
-        LOGGER.finest(() -> String.format("Counter removed: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Counter removed: %s", name));
         registry.get().remove(prefix + name);
     }
 
     @Override
     public void onHistogramAdded(String name, Histogram histogram) {
-        LOGGER.finest(() -> String.format("Histogram added: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Histogram added: %s", name));
         registry.get().register(prefix + name, new JdbcMetricsHistogram(histogram));
     }
 
     @Override
     public void onHistogramRemoved(String name) {
-        LOGGER.finest(() -> String.format("Histogram removed: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Histogram removed: %s", name));
         registry.get().remove(prefix + name);
     }
 
     @Override
     public void onMeterAdded(String name, Meter meter) {
-        LOGGER.finest(() -> String.format("Meter added: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Meter added: %s", name));
         registry.get().register(prefix + name, new JdbcMetricsMeter(meter));
     }
 
     @Override
     public void onMeterRemoved(String name) {
-        LOGGER.finest(() -> String.format("Meter removed: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Meter removed: %s", name));
         registry.get().remove(prefix + name);
     }
 
     @Override
     public void onTimerAdded(String name, Timer timer) {
-        LOGGER.finest(() -> String.format("Timer added: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Timer added: %s", name));
         registry.get().register(prefix + name, new JdbcMetricsTimer(timer));
     }
 
     @Override
     public void onTimerRemoved(String name) {
-        LOGGER.finest(() -> String.format("Timer removed: %s", name));
+        LOGGER.log(Level.TRACE, () -> String.format("Timer removed: %s", name));
         registry.get().remove(prefix + name);
     }
 

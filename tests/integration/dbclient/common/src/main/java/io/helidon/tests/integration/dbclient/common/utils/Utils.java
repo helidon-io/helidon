@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package io.helidon.tests.integration.dbclient.common.utils;
 
+import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbRow;
@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class Utils {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Utils.class.getName());
 
     private Utils() {
         throw new IllegalStateException("No instances of this class are allowed!");
@@ -68,7 +68,7 @@ public class Utils {
         for (DbRow row : rowsList) {
             Integer id = row.column(1).as(Integer.class);
             String name = row.column(2).as(String.class);
-            LOGGER.info(() -> String.format("Pokemon id=%d, name=%s", id, name));
+            LOGGER.log(Level.INFO, () -> String.format("Pokemon id=%d, name=%s", id, name));
             assertThat(valid.containsKey(id), equalTo(true));
             assertThat(name, equalTo(valid.get(id).getName()));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package io.helidon.microprofile.restclient;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 
@@ -31,7 +30,7 @@ import org.eclipse.microprofile.rest.client.spi.RestClientListener;
  * {@link io.helidon.common.context.Contexts#wrap(java.util.concurrent.ExecutorService)}.
  */
 public class MpRestClientListener implements RestClientListener {
-    private static final Logger LOGGER = Logger.getLogger(MpRestClientListener.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MpRestClientListener.class.getName());
 
     @SuppressWarnings("unchecked")
     @Override
@@ -47,7 +46,7 @@ public class MpRestClientListener implements RestClientListener {
             Supplier<ExecutorService> newSupplier = () -> Contexts.wrap(existingSupplier.get());
             execServiceField.set(restClientBuilder, newSupplier);
         } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Failed to replace executor service for a REST Client: " + aClass, e);
+            LOGGER.log(Level.DEBUG, "Failed to replace executor service for a REST Client: " + aClass, e);
         }
 
         restClientBuilder.register(new HelidonInboundHeaderProvider());

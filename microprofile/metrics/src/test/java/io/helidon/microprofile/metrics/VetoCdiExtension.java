@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.Extension;
@@ -31,7 +30,7 @@ import jakarta.ws.rs.Path;
  */
 public class VetoCdiExtension implements Extension {
 
-    private static final Logger LOGGER = Logger.getLogger(VetoCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(VetoCdiExtension.class.getName());
 
     private static final Set<Class<?>> VETOED_RESOURCE_CLASSES = Set.of(VetoedResource.class,
             VetoedJaxRsButOtherwiseUnmeasuredResource.class);
@@ -39,7 +38,7 @@ public class VetoCdiExtension implements Extension {
     private void vetoResourceClass(@Observes @WithAnnotations(Path.class) ProcessAnnotatedType<?> resourceType) {
         Class<?> resourceClass = resourceType.getAnnotatedType().getJavaClass();
         if (VETOED_RESOURCE_CLASSES.contains(resourceClass)) {
-            LOGGER.log(Level.FINE, () -> "Unit test is vetoing " + resourceClass.getName());
+            LOGGER.log(Level.DEBUG, () -> "Unit test is vetoing " + resourceClass.getName());
             resourceType.veto();
         }
     }

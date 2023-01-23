@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.servicecommon;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -27,8 +28,6 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.container.AsyncResponse;
@@ -42,7 +41,7 @@ import jakarta.ws.rs.container.TimeoutHandler;
  */
 class InterceptionRunnerImpl implements InterceptionRunner {
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptionRunnerImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(InterceptionRunnerImpl.class.getName());
     private static final String POST_INVOCATION_HANDLER_FAILURE = "Interceptor post-invocation handler failed; continuing";
     private static final String ERROR_DURING_INTERCEPTION = "Error during interception";
 
@@ -154,7 +153,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
             Collection<Class<?>> register = throwableCapturingAsyncResponse.register(
                     FinishCallback.create(context, throwableCapturingAsyncResponse, postCompletionHandler, workItems));
             if (register.isEmpty()) {
-                LOGGER.log(Level.FINEST, "Failed to register callbacks.");
+                LOGGER.log(Level.TRACE, "Failed to register callbacks.");
             }
             return context.proceed();
         }
@@ -258,7 +257,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
 
     private static class FinishCallback<T> implements CompletionCallback {
 
-        private static final Logger LOGGER = Logger.getLogger(FinishCallback.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(FinishCallback.class.getName());
 
         private final InvocationContext context;
         private final ThrowableCapturingAsyncResponse throwableCapturingAsyncResponse;
@@ -284,10 +283,10 @@ class InterceptionRunnerImpl implements InterceptionRunner {
         @Override
         public void onComplete(Throwable throwable) {
             if (throwable != null) {
-                LOGGER.log(Level.FINE, "Unmapped throwable detected by interceptor async callback", throwable);
+                LOGGER.log(Level.DEBUG, "Unmapped throwable detected by interceptor async callback", throwable);
             } else if (throwableCapturingAsyncResponse.throwable() != null) {
                 throwable = throwableCapturingAsyncResponse.throwable();
-                LOGGER.log(Level.FINE, "Mapped throwable detected by interceptor async callback", throwable);
+                LOGGER.log(Level.DEBUG, "Mapped throwable detected by interceptor async callback", throwable);
             }
             Throwable reportingThrowable = processPostInvocationHandlers(context,
                     throwable,

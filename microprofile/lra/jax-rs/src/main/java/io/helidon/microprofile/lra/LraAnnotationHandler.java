@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.microprofile.lra;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
@@ -43,7 +43,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 
 class LraAnnotationHandler implements AnnotationHandler {
 
-    private static final Logger LOGGER = Logger.getLogger(LraAnnotationHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LraAnnotationHandler.class.getName());
 
     private final InspectionService.Lra annotation;
     private final CoordinatorClient coordinatorClient;
@@ -127,7 +127,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                     setLraContext(reqCtx, lraId);
                     break;
                 default:
-                    LOGGER.severe("Unsupported LRA type " + annotation.value() + " on method " + method.getName());
+                    LOGGER.log(Level.ERROR, "Unsupported LRA type " + annotation.value() + " on method " + method.getName());
                     reqCtx.abortWith(Response.status(500).build());
                     break;
             }

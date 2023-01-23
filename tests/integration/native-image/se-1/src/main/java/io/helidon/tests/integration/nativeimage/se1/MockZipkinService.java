@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +28,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import io.helidon.common.GenericType;
@@ -48,7 +48,7 @@ import jakarta.json.JsonValue;
 
 public class MockZipkinService implements Service {
 
-    private static final Logger LOGGER = Logger.getLogger(MockZipkinService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MockZipkinService.class.getName());
 
     final static JsonPointer TAGS_POINTER = Json.createPointer("/tags");
     final static JsonPointer COMPONENT_POINTER = Json.createPointer("/tags/component");
@@ -123,7 +123,7 @@ public class MockZipkinService implements Service {
                 .onError(Throwable::printStackTrace)
                 .onError(t -> response.status(500).send(t))
                 .onComplete(response::send)
-                .peek(json -> LOGGER.info(json.toString()))
+                .peek(json -> LOGGER.log(Level.INFO, json.toString()))
                 .forEach(e -> next.getAndSet(new CompletableFuture<>()).complete(e));
     }
 }

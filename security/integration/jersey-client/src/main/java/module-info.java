@@ -18,7 +18,6 @@
  * Security integration with Jersey Client.
  */
 module io.helidon.security.integration.jersey.client {
-    requires java.logging;
     requires jakarta.annotation;
 
     requires transitive io.helidon.security;

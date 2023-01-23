@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package io.helidon.tracing.zipkin;
 
+import java.lang.System.Logger.Level;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -110,7 +110,7 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  */
 @Configured(prefix = "tracing", root = true, description = "Zipkin tracer configuration")
 public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTracerBuilder> {
-    static final Logger LOGGER = Logger.getLogger(ZipkinTracerBuilder.class.getName());
+    static final System.Logger LOGGER = System.getLogger(ZipkinTracerBuilder.class.getName());
     static final String DEFAULT_PROTOCOL = "http";
     static final int DEFAULT_ZIPKIN_PORT = 9411;
     static final String DEFAULT_ZIPKIN_HOST = "127.0.0.1";
@@ -319,15 +319,16 @@ public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTrace
                     .build();
 
             if (null == sender) {
-                LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + createEndpoint());
+                LOGGER.log(Level.INFO, () -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: "
+                        + createEndpoint());
             } else {
-                LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
+                LOGGER.log(Level.INFO, () -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
             }
 
             // use this to create an OpenTracing Tracer
             result = new ZipkinTracer(BraveTracer.create(braveTracing), new LinkedList<>(tags));
         } else {
-            LOGGER.info("Zipkin Tracer is explicitly disabled.");
+            LOGGER.log(Level.INFO, "Zipkin Tracer is explicitly disabled.");
             result = NoopTracerFactory.create();
         }
 

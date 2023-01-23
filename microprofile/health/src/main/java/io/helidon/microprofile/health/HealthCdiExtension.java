@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.microprofile.health;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
@@ -60,7 +60,7 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthFeature> {
         }
     };
 
-    private static final Logger LOGGER = Logger.getLogger(HealthCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HealthCdiExtension.class.getName());
     private static final Function<Config, HealthFeature> HEALTH_SUPPORT_FACTORY = (Config helidonConfig) -> {
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
@@ -136,7 +136,7 @@ public class HealthCdiExtension extends HelidonRestCdiExtension<HealthFeature> {
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
-            LOGGER.finest("Health support is disabled in configuration");
+            LOGGER.log(Level.TRACE, "Health support is disabled in configuration");
         }
         return defaultRouting;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -39,7 +38,7 @@ import io.helidon.tests.integration.jpa.dao.Create;
 @RequestScoped
 public class JpaTestResource {
     
-    private static final Logger LOGGER = Logger.getLogger(JpaTestResource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JpaTestResource.class.getName());
 
     @PersistenceContext(unitName = "test")
     private EntityManager em;
@@ -74,7 +73,7 @@ public class JpaTestResource {
             Create.dbInsertTypes(em);
             result.message("Database was initialized");
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, t, () -> String.format("Pokemon types initialization failed: %s", t.getMessage()));
+            LOGGER.log(Level.ERROR, () -> String.format("Pokemon types initialization failed: %s", t.getMessage()), t);
             result.throwed(t);
         }
         return result.build();
@@ -99,7 +98,7 @@ public class JpaTestResource {
             result.assertNotNull(pokemonClass);
             result.assertNotNull(trainerClass);
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, t, () -> String.format("JPA Entity beans check failed: %s", t.getMessage()));
+            LOGGER.log(Level.ERROR, () -> String.format("JPA Entity beans check failed: %s", t.getMessage()), t);
             result.throwed(t);
         }
         return result.build();

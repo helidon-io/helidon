@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.microprofile.lra;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.net.URI;
@@ -28,8 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
@@ -81,7 +80,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 @Reflected
 public class LraCdiExtension implements Extension {
 
-    private static final Logger LOGGER = Logger.getLogger(LraCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LraCdiExtension.class.getName());
 
     private static final Set<Class<? extends Annotation>> EXPECTED_ANNOTATIONS = Set.of(
             AfterLRA.class,
@@ -254,7 +253,7 @@ public class LraCdiExtension implements Extension {
 
     void runtimeIndex(DotName fqdn) {
         if (fqdn == null) return;
-        LOGGER.fine("Indexing " + fqdn);
+        LOGGER.log(Level.DEBUG, "Indexing " + fqdn);
         ClassInfo classInfo;
         try {
             classInfo = indexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
@@ -263,7 +262,7 @@ public class LraCdiExtension implements Extension {
             // and implemented interfaces
             classInfo.interfaceNames().forEach(this::runtimeIndex);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Unable to index referenced class.", e);
+            LOGGER.log(Level.ERROR, "Unable to index referenced class.", e);
         }
     }
 

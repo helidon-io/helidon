@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
@@ -92,6 +94,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
     private static final Context ROOT_CONTEXT;
+    // whether the current shutdown was invoked by the shutdown hook
+    private static final AtomicBoolean FROM_SHUTDOWN_HOOK = new AtomicBoolean();
 
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
@@ -107,8 +111,10 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         CDI.setCDIProvider(new HelidonCdiProvider());
     }
 
+    private static volatile Thread shutdownHook;
     private final WeldBootstrap bootstrap;
     private final String id;
+
     private HelidonCdi cdi;
 
     HelidonContainerImpl() {
@@ -303,39 +309,10 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         // let's add a Handler
         // this is to workaround https://bugs.openjdk.java.net/browse/JDK-8161253
 
-        Thread shutdownHook = new Thread(() -> {
-            cdi.close();
-        }, "helidon-cdi-shutdown-hook");
+        shutdownHook = new Thread(new CdiShutdownHook(cdi),
+                                  "helidon-cdi-shutdown-hook");
 
-        Logger rootLogger = LogManager.getLogManager().getLogger("");
-        Handler[] handlers = rootLogger.getHandlers();
-        Handler[] newHandlers = new Handler[handlers.length + 1];
-        newHandlers[0] = new Handler() {
-            @Override
-            public void publish(LogRecord record) {
-                // noop
-            }
-
-            @Override
-            public void flush() {
-                // noop
-            }
-
-            @Override
-            public void close() throws SecurityException {
-                try {
-                    shutdownHook.join();
-                } catch (InterruptedException ignored) {
-                }
-            }
-        };
-        System.arraycopy(handlers, 0, newHandlers, 1, handlers.length);
-        for (Handler handler : handlers) {
-            rootLogger.removeHandler(handler);
-        }
-        for (Handler newHandler : newHandlers) {
-            rootLogger.addHandler(newHandler);
-        }
+        keepLoggingActive(shutdownHook);
 
         bm.getEvent().select(Initialized.Literal.APPLICATION).fire(new ContainerInitialized(id));
 
@@ -349,6 +326,35 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         // shutdown hook should be added after all initialization is done, otherwise a race condition may happen
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         return this;
+    }
+
+    private void keepLoggingActive(Thread shutdownHook) {
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        Handler[] handlers = rootLogger.getHandlers();
+
+        List<Handler> newHandlers = new ArrayList<>();
+
+        boolean added = false;
+        for (Handler handler : handlers) {
+            if (handler instanceof KeepLoggingActiveHandler) {
+                // we want to replace it with our current shutdown hook
+                newHandlers.add(new KeepLoggingActiveHandler(shutdownHook));
+                added = true;
+            } else {
+                newHandlers.add(handler);
+            }
+        }
+        if (!added) {
+            // out handler must be first, so other handlers are not closed before we finish shutdown hook
+            newHandlers.add(0, new KeepLoggingActiveHandler(shutdownHook));
+        }
+
+        for (Handler handler : handlers) {
+            rootLogger.removeHandler(handler);
+        }
+        for (Handler newHandler : newHandlers) {
+            rootLogger.addHandler(newHandler);
+        }
     }
 
     private void exitOnStarted() {
@@ -395,6 +401,13 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             IN_RUNTIME.set(false);
             // need to reset - if somebody decides to restart CDI (such as a test)
             ContainerInstanceHolder.reset();
+
+            if (!FROM_SHUTDOWN_HOOK.get()) {
+                Thread thread = shutdownHook;
+                if (thread != null) {
+                    Runtime.getRuntime().removeShutdownHook(thread);
+                }
+            }
         }
 
         @Override
@@ -441,6 +454,47 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 }
             }
             return deployment.loadBeanDeploymentArchive(WeldContainer.class);
+        }
+    }
+
+    private static final class CdiShutdownHook implements Runnable {
+        private final HelidonCdi cdi;
+
+        private CdiShutdownHook(HelidonCdi cdi) {
+            this.cdi = cdi;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.info("Shutdown requested by JVM shutting down");
+            FROM_SHUTDOWN_HOOK.set(true);
+            cdi.close();
+            LOGGER.info("Shutdown finished");
+        }
+    }
+    private static final class KeepLoggingActiveHandler extends Handler {
+        private final Thread shutdownHook;
+
+        private KeepLoggingActiveHandler(Thread shutdownHook) {
+            this.shutdownHook = shutdownHook;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            // noop
+        }
+
+        @Override
+        public void flush() {
+            // noop
+        }
+
+        @Override
+        public void close() {
+            try {
+                shutdownHook.join();
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 }

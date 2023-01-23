@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.reactive.media.common;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -36,7 +35,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
     /**
      * Logger.
      */
-    private static final Logger LOGGER = Logger.getLogger(MessageBodyContext.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MessageBodyContext.class.getName());
 
     /**
      * Message body content subscription event listener.

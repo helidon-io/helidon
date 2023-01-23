@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,8 +36,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.common.context.Context;
@@ -65,7 +64,7 @@ import org.reactivestreams.Subscriber;
  */
 public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaPublisher.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(KafkaPublisher.class.getName());
     private static final String POLL_TIMEOUT = "poll.timeout";
     private static final String PERIOD_EXECUTIONS = "period.executions";
     private static final String ENABLE_AUTOCOMMIT = "enable.auto.commit";
@@ -115,7 +114,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
      * This execution runs in one thread that is triggered by the scheduler.
      */
     private void start() {
-        LOGGER.fine(() -> String.format("%s Start to consume", topics));
+        LOGGER.log(Level.DEBUG, () -> String.format("%s Start to consume", topics));
         try {
             kafkaConsumer = consumerSupplier.get();
             if (topicPattern != null) {
@@ -138,18 +137,19 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                                 try {
                                     kafkaConsumer.poll(Duration.ofMillis(pollTimeout)).forEach(backPressureBuffer::add);
                                     if (!backPressureBuffer.isEmpty()) {
-                                        LOGGER.fine(() -> String.format("%s Poll: %s", topics, backPressureBuffer));
+                                        LOGGER.log(Level.DEBUG, () -> String.format("%s Poll: %s", topics, backPressureBuffer));
                                     }
                                 } catch (WakeupException e) {
-                                    LOGGER.fine(() -> String.format("%s It was requested to stop polling from channel", topics));
+                                    LOGGER.log(Level.DEBUG, () -> String.format("%s It was requested to stop polling from "
+                                            + "channel", topics));
                                 }
                             } else {
                                 long totalToEmit = requests.get();
                                 // Avoid index out bound exceptions
                                 long eventsToEmit = Math.min(totalToEmit, backPressureBuffer.size());
                                 if (eventsToEmit > 0) {
-                                    LOGGER.fine(() -> String.format("%s %s messages to emit. %s in buffer and %s requested",
-                                            topics, eventsToEmit, backPressureBuffer.size(), totalToEmit));
+                                    LOGGER.log(Level.DEBUG, () -> String.format("%s %s messages to emit. %s in buffer and %s "
+                                            + "requested", topics, eventsToEmit, backPressureBuffer.size(), totalToEmit));
                                 }
                                 for (long i = 0; i < eventsToEmit; i++) {
                                     ConsumerRecord<K, V> cr = backPressureBuffer.poll();
@@ -178,7 +178,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                         processACK();
                     }
                 } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, "KafkaPublisher " + topics + " failed", e);
+                    LOGGER.log(Level.ERROR, "KafkaPublisher " + topics + " failed", e);
                     emitter.fail(e);
                 } finally {
                     taskLock.unlock();
@@ -225,17 +225,17 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             }
             if (highest != null) {
                 OffsetAndMetadata offset = new OffsetAndMetadata(highest.getOffset().get() + 1);
-                LOGGER.fine(() -> String.format("%s Will commit %s %s", topics, entry.getKey(), offset));
+                LOGGER.log(Level.DEBUG, () -> String.format("%s Will commit %s %s", topics, entry.getKey(), offset));
                 offsets.put(entry.getKey(), offset);
             }
         }
         if (!messagesToCommit.isEmpty()) {
-            LOGGER.fine(() -> String.format("%s Offsets %s", topics, offsets));
+            LOGGER.log(Level.DEBUG, () -> String.format("%s Offsets %s", topics, offsets));
             try {
                 kafkaConsumer.commitSync(offsets);
                 messagesToCommit.forEach(message -> message.kafkaCommit().complete(null));
             } catch (RuntimeException e) {
-                LOGGER.log(Level.SEVERE, "Unable to commit in Kafka " + offsets, e);
+                LOGGER.log(Level.ERROR, "Unable to commit in Kafka " + offsets, e);
                 messagesToCommit.forEach(message -> message.kafkaCommit().completeExceptionally(e));
             }
         }
@@ -247,7 +247,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
      * It must be invoked after {@link ScheduledExecutorService} is shutdown.
      */
     public void stop() {
-        LOGGER.fine(() -> String.format("%s Requested to stop", topics));
+        LOGGER.log(Level.DEBUG, () -> String.format("%s Requested to stop", topics));
         if (kafkaConsumer != null) {
             // Stops pooling
             kafkaConsumer.wakeup();
@@ -255,14 +255,15 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             try {
                 taskLock.lock();
                 cleanResourcesIfTerminated(true);
-                LOGGER.fine(() -> String.format("%s Buffered events that were not processed %s", topics, backPressureBuffer));
+                LOGGER.log(Level.DEBUG, () -> String.format("%s Buffered events that were not processed %s", topics,
+                        backPressureBuffer));
                 emitter.complete();
             } catch (RuntimeException e) {
                 emitter.fail(e);
             } finally {
                 taskLock.unlock();
             }
-            LOGGER.fine(() -> "Closed");
+            LOGGER.log(Level.DEBUG, () -> "Closed");
         }
     }
 
@@ -275,7 +276,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     private void cleanResourcesIfTerminated(boolean isTerminated) {
         if (!stopped && isTerminated) {
             stopped = true;
-            LOGGER.fine(() -> String.format("%s Pending ACKs: %s", topics, pendingCommits.size()));
+            LOGGER.log(Level.DEBUG, () -> String.format("%s Pending ACKs: %s", topics, pendingCommits.size()));
             // Terminate waiting ACKs
             pendingCommits.values().stream().flatMap(List::stream)
             .forEach(message -> message.kafkaCommit()

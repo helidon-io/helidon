@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,14 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 /**
  * Exits JPA MP application after short delay.
  */
 public class ExitThread implements Runnable {
 
-    private static final Logger LOGGER = Logger.getLogger(ExitThread.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ExitThread.class.getName());
 
     /**
      * Starts application exit thread.
@@ -40,7 +39,7 @@ public class ExitThread implements Runnable {
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ie) {
-            LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
         } finally {
             System.exit(0);
         }

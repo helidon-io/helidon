@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.helidon.tracing.jaeger;
 
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -140,7 +140,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  */
 @Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
 public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
-    static final Logger LOGGER = Logger.getLogger(JaegerTracerBuilder.class.getName());
+    static final System.Logger LOGGER = System.getLogger(JaegerTracerBuilder.class.getName());
 
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
@@ -430,10 +430,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 GlobalOpenTelemetry.set(ot);
             }
 
-            LOGGER.info(() -> "Creating Jaeger tracer for '" + this.serviceName + "' configured with " + protocol
+            LOGGER.log(Level.INFO, () -> "Creating Jaeger tracer for '" + this.serviceName + "' configured with " + protocol
                     + "://" + host + ":" + port);
         } else {
-            LOGGER.info("Jaeger Tracer is explicitly disabled.");
+            LOGGER.log(Level.INFO, "Jaeger Tracer is explicitly disabled.");
             result = Tracer.noOp();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -52,7 +51,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @Counted
 public class HelloWorldResource {
 
-    private static final Logger LOGGER = Logger.getLogger(HelloWorldResource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HelloWorldResource.class.getName());
 
     static final String SLOW_RESPONSE = "At last";
 
@@ -151,13 +150,13 @@ public class HelloWorldResource {
                     throw new RuntimeException("Error resuming asynchronous response: not in suspended state");
                 }
                 long afterResume = inflightRequestsCount();
-                LOGGER.log(Level.FINE,
+                LOGGER.log(Level.DEBUG,
                         "inAsyncExec: " + inAsyncExec + ", afterResume: " + afterResume);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Async test /slow wait was interrupted", e);
             }
         });
-        LOGGER.log(Level.FINE, "uponEntry: " + uponEntry + ", beforeReturn: " + inflightRequestsCount());
+        LOGGER.log(Level.DEBUG, "uponEntry: " + uponEntry + ", beforeReturn: " + inflightRequestsCount());
     }
 
     @GET

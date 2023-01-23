@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.System.Logger.Level;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -57,7 +56,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * A CDI {@link Extension} to collect the classes that are of interest to Microprofile GraphQL.
  */
 public class GraphQlCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(GraphQlCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GraphQlCdiExtension.class.getName());
 
     /**
      * The {@link List} of collected API's.

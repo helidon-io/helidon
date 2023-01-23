@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
  * Coordinator client for coordinators using Narayana like API.
  */
 module io.helidon.lra.coordinator.client.narayana {
-    requires java.logging;
     requires microprofile.config.api;
     requires microprofile.lra.api;
     requires io.helidon.microprofile.config;

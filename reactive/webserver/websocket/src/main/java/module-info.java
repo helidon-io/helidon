@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ module io.helidon.reactive.webserver.websocket {
 
     exports io.helidon.reactive.webserver.websocket;
 
-    requires java.logging;
     requires transitive io.helidon.reactive.webserver;
     requires io.helidon.common.http;
     requires transitive jakarta.websocket;

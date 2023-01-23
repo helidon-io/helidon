@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package io.helidon.tests.integration.nativeimage.nima1;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
 class WebSocketEndpoint implements WsListener {
 
-    private static final Logger LOGGER = Logger.getLogger(WebSocketEndpoint.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(WebSocketEndpoint.class.getName());
     private final StringBuilder sb = new StringBuilder();
 
     @Override

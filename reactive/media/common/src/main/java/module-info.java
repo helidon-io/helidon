@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.helidon.reactive.media.common.spi.MediaSupportProvider;
  * @see io.helidon.reactive.media.common.ContentWriters
  */
 module io.helidon.reactive.media.common {
-    requires java.logging;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires io.helidon.common.http;

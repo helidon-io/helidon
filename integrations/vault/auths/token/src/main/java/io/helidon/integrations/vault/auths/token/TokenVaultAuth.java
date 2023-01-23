@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.integrations.vault.auths.token;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -35,7 +35,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class TokenVaultAuth implements VaultAuth {
-    private static final Logger LOGGER = Logger.getLogger(TokenVaultAuth.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TokenVaultAuth.class.getName());
     private final String token;
     private final String baseNamespace;
 
@@ -79,7 +79,7 @@ public class TokenVaultAuth implements VaultAuth {
         String address = vaultBuilder.address()
                 .orElseThrow(() -> new VaultApiException("Address is required when using token authentication"));
 
-        LOGGER.info("Authenticated Vault " + address + " using a token");
+        LOGGER.log(Level.INFO, "Authenticated Vault " + address + " using a token");
 
         return VaultRestApi.builder()
                 .webClientBuilder(builder -> {

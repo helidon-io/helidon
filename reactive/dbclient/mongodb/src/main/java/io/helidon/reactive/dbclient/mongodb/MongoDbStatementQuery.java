@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.reactive.dbclient.mongodb;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -35,7 +35,7 @@ import org.bson.Document;
  * Implementation of a query for MongoDB.
  */
 class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, Multi<DbRow>> implements DbStatementQuery {
-    private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MongoDbStatementQuery.class.getName());
 
     MongoDbStatementQuery(MongoDatabase db, DbStatementContext statementContext) {
         super(db, statementContext);
@@ -102,7 +102,7 @@ class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, Multi<DbR
                 .getCollection(mongoStmt.getCollection());
         final Document query = mongoStmt.getQuery();
         final Document projection = mongoStmt.getProjection();
-        LOGGER.fine(() -> String.format(
+        LOGGER.log(Level.DEBUG, () -> String.format(
                 "Query: %s, Projection: %s", query.toString(), (projection != null ? projection : "N/A")));
         FindPublisher<Document> publisher = noTx()
                 ? mc.find(query)

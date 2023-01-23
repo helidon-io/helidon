@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.security.providers.idcs.mapper;
 
+import java.lang.System.Logger.Level;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedList;
@@ -23,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -68,7 +68,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      */
     public static final String IDCS_SUBJECT_TYPE_CLIENT = "client";
 
-    private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProviderBase.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(IdcsRoleMapperProviderBase.class.getName());
 
     /**
      * Json key for group roles to be retrieved from IDCS response.
@@ -200,7 +200,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             JsonArray appRoles = jsonObject.getJsonArray("appRoles");
 
             if ((null == groups) && (null == appRoles)) {
-                LOGGER.finest(() -> "Neither groups nor app roles found for user " + subjectName);
+                LOGGER.log(Level.TRACE, () -> "Neither groups nor app roles found for user " + subjectName);
                 return Optional.empty();
             }
 
@@ -230,7 +230,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         } else {
             if (statusInfo.getStatusCode() == STATUS_NOT_AUTHENTICATED) {
                 // most likely not allowed to do this
-                LOGGER.warning("Cannot read groups for user \""
+                LOGGER.log(Level.WARNING, "Cannot read groups for user \""
                                        + subjectName
                                        + "\". Response code: "
                                        + groupResponse.getStatus()
@@ -239,7 +239,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                                        + ", entity: "
                                        + groupResponse.readEntity(String.class));
             } else {
-                LOGGER.warning("Cannot read groups for user \""
+                LOGGER.log(Level.WARNING, "Cannot read groups for user \""
                                        + subjectName
                                        + "\". Response code: "
                                        + groupResponse.getStatus()
@@ -435,13 +435,13 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             if (tokenResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
                 JsonObject response = tokenResponse.readEntity(JsonObject.class);
                 String accessToken = response.getString(ACCESS_TOKEN_KEY);
-                LOGGER.finest(() -> "Access token: " + accessToken);
+                LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
                 SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
 
                 this.tokenContent = Optional.of(accessToken);
                 this.appJwt = signedJwt.getJwt();
             } else {
-                LOGGER.severe("Failed to obtain access token for application to read groups"
+                LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read groups"
                                       + " from IDCS. Response code: " + tokenResponse.getStatus() + ", entity: "
                                       + tokenResponse.readEntity(String.class));
                 this.tokenContent = Optional.empty();

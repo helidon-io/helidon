@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package io.helidon.metrics.api;
 
+import java.lang.System.Logger.Level;
 import java.util.ServiceLoader;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -60,7 +59,7 @@ import io.helidon.metrics.api.spi.RegistryFactoryProvider;
  */
 class RegistryFactoryManager {
 
-    private static final Logger LOGGER = Logger.getLogger(RegistryFactoryManager.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(RegistryFactoryManager.class.getName());
 
     private static final LazyValue<RegistryFactoryProvider> LAZY_FACTORY_PROVIDER =
             LazyValue.create(RegistryFactoryManager::loadRegistryFactoryProvider);
@@ -82,7 +81,7 @@ class RegistryFactoryManager {
                 .build()
                 .asList()
                 .get(0);
-        LOGGER.log(Level.FINE, "Metrics registry factory provider: {0}", provider.getClass().getName());
+        LOGGER.log(Level.DEBUG, "Metrics registry factory provider: {0}", provider.getClass().getName());
         return provider;
     }
 

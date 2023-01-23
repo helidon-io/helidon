@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.annotation.Priority;
 import jakarta.interceptor.AroundInvoke;
@@ -31,7 +31,7 @@ import jakarta.interceptor.InvocationContext;
 @Priority(Interceptor.Priority.PLATFORM_AFTER + 10)
 class CommandInterceptor {
 
-    private static final Logger LOGGER = Logger.getLogger(CommandInterceptor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CommandInterceptor.class.getName());
 
     /**
      * Intercepts a call to bean method annotated by any of the fault tolerance
@@ -44,7 +44,7 @@ class CommandInterceptor {
     @AroundInvoke
     public Object interceptCommand(InvocationContext context) throws Throwable {
         try {
-            LOGGER.fine("Interceptor called for '" + context.getTarget().getClass()
+            LOGGER.log(Level.DEBUG, "Interceptor called for '" + context.getTarget().getClass()
                         + "::" + context.getMethod().getName() + "'");
 
             // Create method introspector and executer retrier
@@ -53,7 +53,7 @@ class CommandInterceptor {
             MethodInvoker runner = new MethodInvoker(context, introspector);
             return runner.get();
         } catch (Throwable t) {
-            LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");
+            LOGGER.log(Level.DEBUG, "Throwable caught by interceptor '" + t.getMessage() + "'");
             throw t;
         }
     }

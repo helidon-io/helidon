@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.graphql.server;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
@@ -49,7 +48,7 @@ import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static io.helidon.graphql.server.GraphQlConstants.PATH;
 
 class InvocationHandlerImpl implements InvocationHandler {
-    private static final Logger LOGGER = Logger.getLogger(InvocationHandlerImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(InvocationHandlerImpl.class.getName());
 
     private final String defaultErrorMessage;
     private final Set<String> exceptionDenySet = new HashSet<>();
@@ -76,7 +75,7 @@ class InvocationHandlerImpl implements InvocationHandler {
         try {
             return doExecute(query, operationName, variables);
         } catch (RuntimeException e) {
-            LOGGER.log(Level.FINE, "Failed to execute query " + query, e);
+            LOGGER.log(Level.DEBUG, "Failed to execute query " + query, e);
             Map<String, Object> result = new HashMap<>();
             addError(result, e, e.getMessage());
             return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.reactive.dbclient.jdbc;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -22,8 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Multi;
@@ -49,7 +48,7 @@ import io.helidon.reactive.dbclient.common.DbStatementContext;
 class JdbcDbClient implements DbClient {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(DbClient.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DbClient.class.getName());
 
     private final ExecutorService executorService;
     private final ConnectionPool connectionPool;
@@ -150,13 +149,9 @@ class JdbcDbClient implements DbClient {
 
         @Override
         public T apply(Throwable t) {
-            LOGGER.log(level,
-                    t,
-                    () -> String.format("Transaction rollback: %s", t.getMessage()));
+            LOGGER.log(level, () -> String.format("Transaction rollback: %s", t.getMessage()), t);
             execute.doRollback().exceptionally(t2 -> {
-                LOGGER.log(level,
-                        t2,
-                        () -> String.format("Transaction rollback failed: %s", t2.getMessage()));
+                LOGGER.log(level, () -> String.format("Transaction rollback failed: %s", t2.getMessage()), t2);
                 return null;
             });
             return null;
@@ -188,21 +183,21 @@ class JdbcDbClient implements DbClient {
         result = result.onComplete(() -> {
             execute.context().whenComplete()
                     .thenAccept(nothing -> {
-                        LOGGER.finest(() -> "Execution finished, closing connection");
+                        LOGGER.log(Level.TRACE, () -> "Execution finished, closing connection");
                         execute.close();
                     }).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING,
-                        throwable,
-                        () -> String.format("Execution failed: %s", throwable.getMessage()));
+                        () -> String.format("Execution failed: %s", throwable.getMessage()),
+                        throwable);
                 execute.close();
                 return null;
             });
         });
 
         result = result.onError(throwable -> {
-            LOGGER.log(Level.FINEST,
-                    throwable,
-                    () -> String.format("Execution failed: %s", throwable.getMessage()));
+            LOGGER.log(Level.TRACE,
+                    () -> String.format("Execution failed: %s", throwable.getMessage()),
+                    throwable);
             execute.close();
         });
 
@@ -380,7 +375,7 @@ class JdbcDbClient implements DbClient {
                         try {
                             conn.close();
                         } catch (SQLException e) {
-                            LOGGER.log(Level.WARNING, e, () -> String.format("Could not close connection: %s", e.getMessage()));
+                            LOGGER.log(Level.WARNING, () -> String.format("Could not close connection: %s", e.getMessage()), e);
                         }
                     });
         }

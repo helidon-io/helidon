@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.reactive.webserver.websocket.test;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
@@ -29,7 +29,7 @@ import static io.helidon.reactive.webserver.websocket.test.UppercaseCodec.isDeco
  * Class DoubleEchoEndpointProg. Using WebSocket programmatic API.
  */
 public class DoubleEchoEndpointProg extends Endpoint {
-    private static final Logger LOGGER = Logger.getLogger(DoubleEchoEndpointProg.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DoubleEchoEndpointProg.class.getName());
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
@@ -42,7 +42,7 @@ public class DoubleEchoEndpointProg extends Endpoint {
                 try {
                     session.getBasicRemote().sendObject(message + message);     // calls encoder
                 } catch (Exception e) {
-                    LOGGER.info(e.getMessage());
+                    LOGGER.log(Level.INFO, e.getMessage());
                 }
             }
         });

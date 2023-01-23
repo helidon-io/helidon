@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@ package io.helidon.tests.integration.tools.client;
 
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.System.Logger.Level;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.media.common.MessageBodyReadableContent;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
@@ -43,7 +42,7 @@ import org.junit.jupiter.api.Assertions;
  */
 public class TestClient {
 
-    private static final Logger LOGGER = Logger.getLogger(TestClient.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TestClient.class.getName());
 
     private static final String UTF_8_STR = StandardCharsets.UTF_8.toString();
 
@@ -79,12 +78,14 @@ public class TestClient {
         String logMsg = null;
         for (JsonObject trace : tracesList) {
             String message = trace.getString("message");
-            LOGGER.warning(() -> String.format("%s: %s", trace.getString("class"), trace.getString("message")));
+            LOGGER.log(Level.WARNING,
+                    () -> String.format("%s: %s", trace.getString("class"), trace.getString("message")));
             JsonArray lines = trace.getJsonArray("trace");
             List<JsonObject> linesList = lines.getValuesAs(JsonObject.class);
             linesList.forEach((line) -> {
-                LOGGER.warning(() -> String.format("    at %s$%s (%s:%d)",
-                        line.getString("class"), line.getString("method"), line.getString("file"), line.getInt("line")));
+                LOGGER.log(Level.WARNING, () -> String.format("    at %s$%s (%s:%d)",
+                        line.getString("class"),
+                        line.getString("method"), line.getString("file"), line.getInt("line")));
             });
             if (logMsg == null) {
                 logMsg = message;
@@ -208,11 +209,11 @@ public class TestClient {
                                     jsonContent.getValueType().name().toLowerCase()));
             }
         } catch (JsonException t) {
-            LOGGER.log(Level.WARNING, t,
+            LOGGER.log(Level.WARNING,
                     () -> String.format(
                             "Caught %s when parsing response: %s",
                             t.getClass().getSimpleName(),
-                            response));
+                            response), t);
             throw new HelidonTestException(
                     String.format(
                             "Caught %s when parsing response: %s",
