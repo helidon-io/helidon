@@ -15,12 +15,12 @@
  */
 package io.helidon.security.integration.jersey;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.uri.UriQuery;
@@ -184,7 +184,7 @@ abstract class SecurityFilterCommon {
             return;
         case FAILURE_FINISH:
             if (methodSecurity.authenticationOptional()) {
-                logger().finest("Authentication failed, but was optional, so assuming anonymous");
+                logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceSuccess(false);
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));
@@ -205,7 +205,7 @@ abstract class SecurityFilterCommon {
             return;
         case ABSTAIN:
             if (methodSecurity.authenticationOptional()) {
-                logger().finest("Authentication failed, but was optional, so assuming anonymous");
+                logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceSuccess(false);
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));
@@ -218,7 +218,7 @@ abstract class SecurityFilterCommon {
             return;
         case FAILURE:
             if (methodSecurity.authenticationOptional() && !methodSecurity.failOnFailureIfOptional()) {
-                logger().finest("Authentication failed, but was optional, so assuming anonymous");
+                logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));
                 context.setTraceThrowable(response.throwable().orElse(null));
@@ -240,7 +240,7 @@ abstract class SecurityFilterCommon {
         }
     }
 
-    protected abstract Logger logger();
+    protected abstract System.Logger logger();
 
     protected void authorize(FilterContext context,
                              SecurityContext securityContext,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -41,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import io.helidon.graphql.server.ExecutionContext;
 
@@ -70,7 +70,7 @@ class DataFetcherUtils {
     /**
      * Logger.
      */
-    private static final Logger LOGGER = Logger.getLogger(DataFetcherUtils.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DataFetcherUtils.class.getName());
 
     /**
      * Empty format.
@@ -116,7 +116,7 @@ class DataFetcherUtils {
                     sourceClazz = Class.forName(source);
                     listArgumentValues.add(sourceClazz.cast(environment.getSource()));
                 } catch (ClassNotFoundException e) {
-                    LOGGER.warning("Unable to find source class " + source);
+                    LOGGER.log(Level.WARNING, "Unable to find source class " + source);
                 }
             }
 
@@ -572,7 +572,7 @@ class DataFetcherUtils {
                 numberKey = (Number) constructor.newInstance(key);
             } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
                      | InvocationTargetException eIgnore) {
-                LOGGER.warning("Cannot find constructor with String arg for class " + originalType.getName());
+                LOGGER.log(Level.WARNING, "Cannot find constructor with String arg for class " + originalType.getName());
             }
         }
 

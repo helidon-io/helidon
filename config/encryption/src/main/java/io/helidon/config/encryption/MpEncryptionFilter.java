@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.config.encryption;
 
+import java.lang.System.Logger.Level;
 import java.security.PrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.mp.spi.MpConfigFilter;
 
@@ -60,7 +59,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
     private static final String PREFIX_LEGACY_RSA = "${RSA=";
     static final String PREFIX_GCM = "${GCM=";
     static final String PREFIX_RSA = "${RSA-P=";
-    private static final Logger LOGGER = Logger.getLogger(MpEncryptionFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MpEncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
     private static final String PREFIX_CLEAR = "${CLEAR=";
 
@@ -168,7 +167,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
             try {
                 return EncryptionUtil.decryptRsaLegacy(privateKey, b64Value);
             } catch (ConfigEncryptionException e) {
-                LOGGER.log(Level.FINEST, e, () -> "Failed to decrypt " + value);
+                LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
                 return value;
             }
         } else if (value.startsWith(PREFIX_RSA)) {
@@ -176,7 +175,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
             try {
                 return EncryptionUtil.decryptRsa(privateKey, b64Value);
             } catch (ConfigEncryptionException e) {
-                LOGGER.log(Level.FINEST, e, () -> "Failed to decrypt " + value);
+                LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
                 return value;
             }
         }
@@ -193,7 +192,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
             try {
                 return EncryptionUtil.decryptAesLegacy(masterPassword, b64Value);
             } catch (ConfigEncryptionException e) {
-                LOGGER.log(Level.FINEST, e, () -> "Failed to decrypt " + value);
+                LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
                 return value;
             }
         } else if (value.startsWith(PREFIX_GCM)) {
@@ -201,7 +200,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
             try {
                 return EncryptionUtil.decryptAes(masterPassword, b64Value);
             } catch (ConfigEncryptionException e) {
-                LOGGER.log(Level.FINEST, e, () -> "Failed to decrypt " + value);
+                LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
                 return value;
             }
         }

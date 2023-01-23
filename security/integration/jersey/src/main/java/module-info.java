@@ -28,7 +28,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.security.integration.jersey {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
     requires jakarta.annotation;
 
     requires transitive io.helidon.security;

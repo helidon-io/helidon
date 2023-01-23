@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package io.helidon.tests.integration.jpa.appl.test;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.json.stream.JsonParsingException;
 import jakarta.ws.rs.client.Client;
@@ -29,7 +28,7 @@ import jakarta.ws.rs.core.Response;
  */
 public class ClientUtils {
     
-    private static final Logger LOGGER = Logger.getLogger(ClientUtils.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ClientUtils.class.getName());
 
     private ClientUtils() {
         throw new UnsupportedOperationException("Instances of ClientUtils class are not allowed");
@@ -52,7 +51,7 @@ public class ClientUtils {
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
+            LOGGER.log(Level.ERROR, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr), t);
         }
     }
 
@@ -68,7 +67,7 @@ public class ClientUtils {
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
+            LOGGER.log(Level.ERROR, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr), t);
         }
     }
 

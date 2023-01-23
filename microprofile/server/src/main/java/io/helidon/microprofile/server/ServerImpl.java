@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.server;
 
+import java.lang.System.Logger.Level;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.logging.Logger;
 
 import io.helidon.microprofile.cdi.HelidonContainer;
 
@@ -30,9 +30,9 @@ import jakarta.enterprise.inject.spi.CDI;
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
-    private static final Logger LOGGER = Logger.getLogger(Server.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Server.class.getName());
 
-    private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
+    private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
 
     private final HelidonContainer helidonContainer = HelidonContainer.instance();
     private final SeContainer container;
@@ -43,7 +43,7 @@ public class ServerImpl implements Server {
 
     ServerImpl(Builder builder) {
         this.container = (SeContainer) CDI.current();
-        LOGGER.finest(() -> "Container context id: " + HelidonContainer.instance().context().id());
+        LOGGER.log(Level.TRACE, () -> "Container context id: " + HelidonContainer.instance().context().id());
 
         InetAddress listenHost;
         if (null == builder.host()) {
@@ -74,11 +74,11 @@ public class ServerImpl implements Server {
 
     @Override
     public Server start() {
-        STARTUP_LOGGER.entering(ServerImpl.class.getName(), "start");
+        STARTUP_LOGGER.log(Level.TRACE, ServerImpl.class.getName(), "start ENTRY");
 
         helidonContainer.start();
 
-        STARTUP_LOGGER.finest("Started up");
+        STARTUP_LOGGER.log(Level.TRACE, "Started up");
 
         this.port = serverExtension.port();
 

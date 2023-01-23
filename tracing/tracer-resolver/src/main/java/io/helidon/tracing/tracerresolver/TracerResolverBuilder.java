@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.tracing.tracerresolver;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.config.Config;
 import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
@@ -27,7 +27,7 @@ import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
 
 class TracerResolverBuilder implements OpenTracingTracerBuilder<TracerResolverBuilder> {
-    private static final Logger LOGGER = Logger.getLogger(TracerResolverBuilder.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TracerResolverBuilder.class.getName());
 
     private String helidonServiceName;
     private boolean enabled = true;
@@ -102,12 +102,13 @@ class TracerResolverBuilder implements OpenTracingTracerBuilder<TracerResolverBu
             tracer = TracerResolver.resolveTracer();
             if (null == tracer) {
                 tracer = NoopTracerFactory.create();
-                LOGGER.info("TracerResolver not configured, tracing is disabled");
+                LOGGER.log(Level.INFO, "TracerResolver not configured, tracing is disabled");
             } else {
-                LOGGER.info("Using resolved tracer (all Helidon specific configuration options ignored): " + tracer);
+                LOGGER.log(Level.INFO, "Using resolved tracer (all Helidon specific configuration options ignored): "
+                        + tracer);
             }
         } else {
-            LOGGER.info("TracerResolver tracer is explicitly disabled for " + helidonServiceName + ".");
+            LOGGER.log(Level.INFO, "TracerResolver tracer is explicitly disabled for " + helidonServiceName + ".");
             tracer = NoopTracerFactory.create();
         }
 

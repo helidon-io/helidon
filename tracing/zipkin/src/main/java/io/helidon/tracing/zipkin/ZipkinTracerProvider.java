@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.tracing.zipkin;
 
+import java.lang.System.Logger.Level;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -43,7 +43,7 @@ public class ZipkinTracerProvider implements OpenTracingProvider {
     // Envoy header
     static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
 
-    private static final Logger LOGGER = Logger.getLogger(ZipkinTracerProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ZipkinTracerProvider.class.getName());
 
     private static final List<String> TRACING_CONTEXT_PROPAGATION_HEADERS =
             List.of(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
@@ -100,7 +100,7 @@ public class ZipkinTracerProvider implements OpenTracingProvider {
         substitute(headers, split, X_B3_PARENT_SPAN_ID, 2);
 
         String result = String.join(";", split);
-        LOGGER.fine(() -> X_OT_SPAN_CONTEXT + " header fixed: " + value + " -> " + result);
+        LOGGER.log(Level.DEBUG, () -> X_OT_SPAN_CONTEXT + " header fixed: " + value + " -> " + result);
         headers.set(X_OT_SPAN_CONTEXT, result);
     }
 

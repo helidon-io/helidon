@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
@@ -25,7 +26,6 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -346,7 +346,7 @@ public final class OidcConfig extends TenantConfigImpl {
     static final String DEFAULT_COOKIE_NAME = "JSESSIONID";
     static final String DEFAULT_TENANT_COOKIE_NAME = "HELIDON_TENANT";
 
-    private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OidcConfig.class.getName());
 
     private final Map<String, TenantConfig> tenantConfigurations;
     private final String redirectUri;
@@ -415,7 +415,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.jaxrsClientBuilderSupplier = builder.jaxrsClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
 
-        LOGGER.finest(() -> "Redirect URI with host: " + frontendUri + redirectUri);
+        LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
 
     /**
@@ -1033,8 +1033,8 @@ public final class OidcConfig extends TenantConfigImpl {
                     if (frontendUri != null) {
                         String frontendHost = URI.create(frontendUri).getHost();
                         if (identityHost.equals(frontendHost)) {
-                            LOGGER.info("As frontend host and identity host are equal, setting Same-Site policy to Strict"
-                                                + " this can be overridden using configuration option of OIDC: "
+                            LOGGER.log(Level.INFO, "As frontend host and identity host are equal, setting Same-Site policy"
+                                                + " to Strict this can be overridden using configuration option of OIDC: "
                                                 + "\"cookie-same-site\"");
                             this.tenantCookieBuilder.sameSite(SetCookie.SameSite.STRICT);
                             this.tokenCookieBuilder.sameSite(SetCookie.SameSite.STRICT);

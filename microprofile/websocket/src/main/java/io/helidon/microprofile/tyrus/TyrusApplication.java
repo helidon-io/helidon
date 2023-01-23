@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.lang.System.Logger.Level;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.Extension;
@@ -91,7 +91,7 @@ public final class TyrusApplication {
      * Fluent API builder to create {@link TyrusApplication} instances.
      */
     public static class Builder {
-        private static final Logger LOGGER = Logger.getLogger(TyrusApplication.Builder.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(TyrusApplication.Builder.class.getName());
 
         private Class<? extends ServerApplicationConfig> applicationClass;
         private final Set<Class<?>> annotatedEndpoints = new HashSet<>();
@@ -106,7 +106,7 @@ public final class TyrusApplication {
          */
         Builder updateApplicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
             if (this.applicationClass != null) {
-                LOGGER.fine(() -> "Overriding websocket application using " + applicationClass);
+                LOGGER.log(Level.DEBUG, () -> "Overriding websocket application using " + applicationClass);
             }
             this.applicationClass = applicationClass;
             return this;

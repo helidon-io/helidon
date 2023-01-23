@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -24,8 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
@@ -36,7 +35,7 @@ import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.WatchableSource;
 
 class OverrideSourceRuntime {
-    private static final Logger LOGGER = Logger.getLogger(OverrideSourceRuntime.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OverrideSourceRuntime.class.getName());
 
     private final OverrideReloader reloader;
     private final Runnable changesRunnable;
@@ -181,7 +180,7 @@ class OverrideSourceRuntime {
 
         Runnable runnable = changeListener.get();
         if (null == runnable) {
-            LOGGER.finest("Wrong order - change triggered before a change listener is registered in "
+            LOGGER.log(Level.TRACE, "Wrong order - change triggered before a change listener is registered in "
                                   + OverrideSourceRuntime.class.getName());
         } else {
             runnable.run();
@@ -250,7 +249,7 @@ class OverrideSourceRuntime {
                             // this is a valid change
                             setData(lastData, overrideData, changeListener);
                         } else {
-                            LOGGER.info("Mandatory config source is not available, ignoring change.");
+                            LOGGER.log(Level.INFO, "Mandatory config source is not available, ignoring change.");
                         }
                         return ChangeEventType.DELETED;
                     } else {
@@ -312,18 +311,18 @@ class OverrideSourceRuntime {
                         // this is a valid change
                         setData(lastData, overrideData, changeListener);
                     } else {
-                        LOGGER.info("Mandatory config source is not available, ignoring change.");
+                        LOGGER.log(Level.INFO, "Mandatory config source is not available, ignoring change.");
                     }
                 } else {
                     setData(lastData, overrideData, changeListener);
                 }
             } catch (Exception e) {
-                LOGGER.info("Failed to reload config source "
+                LOGGER.log(Level.INFO, "Failed to reload config source "
                                     + source
                                     + ", exception available in finest log level. "
                                     + "Change that triggered this event: "
                                     + change);
-                LOGGER.log(Level.FINEST, "Failed to reload config source", e);
+                LOGGER.log(Level.TRACE, "Failed to reload config source", e);
             }
         }
     }

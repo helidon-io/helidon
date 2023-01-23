@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.integrations.micrometer.cdi;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.integrations.micrometer.MicrometerFeature;
@@ -62,7 +61,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  */
 public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFeature> {
 
-    private static final Logger LOGGER = Logger.getLogger(MicrometerCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MicrometerCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
             = Arrays.asList(Counted.class, Timed.class);
@@ -91,7 +90,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
         // Check for Interceptor. We have already checked developer-provided beans, but other extensions might have supplied
         // additional beans that we have not checked yet.
         if (type.isAnnotationPresent(Interceptor.class)) {
-            LOGGER.log(Level.FINE, "Ignoring objects defined on type " + clazz.getName()
+            LOGGER.log(Level.DEBUG, "Ignoring objects defined on type " + clazz.getName()
                     + " because a CDI portable extension added @Interceptor to it dynamically");
             return;
         }
@@ -138,7 +137,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
 
             if (annotation instanceof Counted) {
                 Counter counter = MeterProducer.produceCounter(meterRegistry, (Counted) annotation);
-                LOGGER.log(Level.FINE, () -> "Registered counter " + counter.getId()
+                LOGGER.log(Level.DEBUG, () -> "Registered counter " + counter.getId()
                         .toString());
                 newMeter = counter;
                 isOnlyOnException = ((Counted) annotation).recordFailuresOnly();
@@ -147,12 +146,12 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
                 if (timed.longTask()) {
                     LongTaskTimer longTaskTimer =
                             MeterProducer.produceLongTaskTimer(meterRegistry, timed);
-                    LOGGER.log(Level.FINE, () -> "Registered long task timer " + longTaskTimer.getId()
+                    LOGGER.log(Level.DEBUG, () -> "Registered long task timer " + longTaskTimer.getId()
                             .toString());
                     newMeter = longTaskTimer;
                 } else {
                     Timer timer = MeterProducer.produceTimer(meterRegistry, timed);
-                    LOGGER.log(Level.FINE, () -> "Registered timer " + timer.getId()
+                    LOGGER.log(Level.DEBUG, () -> "Registered timer " + timer.getId()
                             .toString());
                     newMeter = timer;
                 }
@@ -171,7 +170,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
      * @param discovery bean discovery event
      */
     protected void before(@Observes BeforeBeanDiscovery discovery) {
-        LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
+        LOGGER.log(Level.DEBUG, () -> "Before bean discovery " + discovery);
 
         // Register types manually
         discovery.addAnnotatedType(MeterRegistryProducer.class, MeterRegistryProducer.class.getName());
@@ -271,7 +270,7 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension<MicrometerFe
     }
 
     private void recordMeterToCreate(Annotation annotation, AnnotatedCallable<?> annotatedCallable) {
-        LOGGER.log(Level.FINE, () -> "Recording meter for deferred creation per annotation " + annotation);
+        LOGGER.log(Level.DEBUG, () -> "Recording meter for deferred creation per annotation " + annotation);
         annotationsForMeters.add(new DeferredMeterCreation(annotation, annotatedCallable));
     }
 

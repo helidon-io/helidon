@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import graphql.GraphQLException;
@@ -42,7 +42,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSa
  */
 class Schema implements ElementGenerator {
 
-    private static final Logger LOGGER = Logger.getLogger(Schema.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Schema.class.getName());
 
     /**
      * Default query name.
@@ -147,7 +147,7 @@ class Schema implements ElementGenerator {
             return new graphql.schema.idl.SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, getRuntimeWiring());
         } catch (Exception e) {
             String message = "Unable to parse the generated schema";
-            LOGGER.warning(message + "\n" + getSchemaAsString());
+            LOGGER.log(Level.WARNING, message + "\n" + getSchemaAsString());
             throw new GraphQLException(message, e);
         }
     }
@@ -244,7 +244,7 @@ class Schema implements ElementGenerator {
 
         // register the scalars
         getScalars().forEach(s -> {
-            LOGGER.finest("Register Scalar: " + s);
+            LOGGER.log(Level.TRACE, "Register Scalar: " + s);
             builder.scalar(s.graphQLScalarType());
         });
 

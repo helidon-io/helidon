@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.metrics.api.HelidonMetric;
 import io.helidon.microprofile.servicecommon.HelidonInterceptor;
@@ -38,7 +37,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  */
 abstract class InterceptorBase<M extends Metric> extends HelidonInterceptor.Base<BasicMetricWorkItem> {
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptorBase.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(InterceptorBase.class.getName());
 
     private final Class<? extends Annotation> annotationType;
     private final Class<M> metricType;
@@ -85,8 +84,8 @@ abstract class InterceptorBase<M extends Metric> extends HelidonInterceptor.Base
         if (HelidonMetric.isMarkedAsDeleted(metric)) {
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.metricID());
         }
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.log(Level.FINEST, String.format(
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, String.format(
                     "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
                     getClass().getSimpleName(),
                     actionType,

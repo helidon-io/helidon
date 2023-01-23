@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package io.helidon.reactive.media.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 
@@ -36,7 +36,7 @@ import io.helidon.common.http.DataChunk;
  * This implementation is documented here {@code /docs-internal/datachunkinputstream.md}.
  */
 public class DataChunkInputStream extends InputStream {
-    private static final Logger LOGGER = Logger.getLogger(DataChunkInputStream.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DataChunkInputStream.class.getName());
 
     private final Flow.Publisher<DataChunk> originalPublisher;
     private int bufferIndex;
@@ -82,7 +82,7 @@ public class DataChunkInputStream extends InputStream {
      */
     private static void releaseChunk(DataChunk chunk, Throwable th) {
         if (chunk != null && !chunk.isReleased()) {
-            LOGGER.finest(() -> "Releasing chunk: " + chunk.id());
+            LOGGER.log(Level.TRACE, () -> "Releasing chunk: " + chunk.id());
             chunk.release();
         }
     }
@@ -137,7 +137,7 @@ public class DataChunkInputStream extends InputStream {
             int count = 0;
             while (bufferIndex < currentBuffers.length) {
                 if (bufferIndex == 0 && currentBuffers[bufferIndex].position() == 0) {
-                    LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
+                    LOGGER.log(Level.TRACE, () -> "Reading chunk ID: " + chunk.id());
                 }
 
                 int rem = currentBuffers[bufferIndex].remaining();
@@ -193,7 +193,7 @@ public class DataChunkInputStream extends InputStream {
 
         @Override
         public void onNext(DataChunk item) {
-            LOGGER.finest(() -> "Processing chunk: " + item.id());
+            LOGGER.log(Level.TRACE, () -> "Processing chunk: " + item.id());
             if (item.remaining() > 0) {
                 CompletableFuture<DataChunk> prev = next;
                 next = new CompletableFuture<>();

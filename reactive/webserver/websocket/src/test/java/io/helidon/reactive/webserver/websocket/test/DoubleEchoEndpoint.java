@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.helidon.reactive.webserver.websocket.test;
 
 import java.io.IOException;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnError;
@@ -30,26 +30,26 @@ import jakarta.websocket.server.ServerEndpoint;
  */
 @ServerEndpoint("/doubleEcho")
 public class DoubleEchoEndpoint {
-    private static final Logger LOGGER = Logger.getLogger(DoubleEchoEndpoint.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DoubleEchoEndpoint.class.getName());
 
     @OnOpen
     public void onOpen(Session session) throws IOException {
-        LOGGER.info("OnOpen called");
+        LOGGER.log(Level.INFO, "OnOpen called");
     }
 
     @OnMessage
     public void echo(Session session, String message) throws Exception {
-        LOGGER.info("Endpoint OnMessage called '" + message + "'");
+        LOGGER.log(Level.INFO, "Endpoint OnMessage called '" + message + "'");
         session.getBasicRemote().sendObject(message + message);     // calls encoder
     }
 
     @OnError
     public void onError(Throwable t) {
-        LOGGER.info("OnError called");
+        LOGGER.log(Level.INFO, "OnError called");
     }
 
     @OnClose
     public void onClose(Session session) {
-        LOGGER.info("OnClose called");
+        LOGGER.log(Level.INFO, "OnClose called");
     }
 }

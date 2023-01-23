@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package io.helidon.reactive.webserver.websocket.test;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import jakarta.websocket.HandshakeResponse;
 import jakarta.websocket.OnClose;
@@ -42,7 +42,7 @@ import static io.helidon.reactive.webserver.websocket.test.UppercaseCodec.isDeco
         configurator = EchoEndpoint.ServerConfigurator.class
 )
 public class EchoEndpoint {
-    private static final Logger LOGGER = Logger.getLogger(EchoEndpoint.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EchoEndpoint.class.getName());
 
     static AtomicBoolean modifyHandshakeCalled = new AtomicBoolean(false);
 
@@ -53,10 +53,10 @@ public class EchoEndpoint {
      * @param logger A logger.
      * @throws IOException Exception during close.
      */
-    private static void verifyRunningThread(Session session, Logger logger) throws IOException {
+    private static void verifyRunningThread(Session session, System.Logger logger) throws IOException {
         Thread thread = Thread.currentThread();
         if (!thread.getName().contains("EventLoop")) {
-            logger.warning("Websocket handler running in incorrect thread " + thread);
+            logger.log(Level.WARNING, "Websocket handler running in incorrect thread " + thread);
             session.close();
         }
     }
@@ -68,13 +68,13 @@ public class EchoEndpoint {
      * @param logger A logger.
      * @throws IOException Exception during close.
      */
-    private static void verifyQueryParams(Session session, Logger logger) throws IOException {
+    private static void verifyQueryParams(Session session, System.Logger logger) throws IOException {
         if (!"user=Helidon".equals(session.getQueryString())) {
-            logger.warning("Websocket session does not include required query params");
+            logger.log(Level.WARNING, "Websocket session does not include required query params");
             session.close();
         }
         if (!session.getRequestParameterMap().get("user").get(0).equals("Helidon")) {
-            logger.warning("Websocket session does not include required query parameter map");
+            logger.log(Level.WARNING, "Websocket session does not include required query parameter map");
             session.close();
         }
     }
@@ -83,7 +83,7 @@ public class EchoEndpoint {
 
         @Override
         public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
-            LOGGER.info("ServerConfigurator called during handshake");
+            LOGGER.log(Level.INFO, "ServerConfigurator called during handshake");
             super.modifyHandshake(sec, request, response);
             EchoEndpoint.modifyHandshakeCalled.set(true);
         }
@@ -91,7 +91,7 @@ public class EchoEndpoint {
 
     @OnOpen
     public void onOpen(Session session) throws IOException {
-        LOGGER.info("OnOpen called");
+        LOGGER.log(Level.INFO, "OnOpen called");
         verifyRunningThread(session, LOGGER);
         verifyQueryParams(session, LOGGER);
         if (!modifyHandshakeCalled.get()) {
@@ -101,7 +101,7 @@ public class EchoEndpoint {
 
     @OnMessage
     public void echo(Session session, String message) throws Exception {
-        LOGGER.info("Endpoint OnMessage called '" + message + "'");
+        LOGGER.log(Level.INFO, "Endpoint OnMessage called '" + message + "'");
         verifyRunningThread(session, LOGGER);
         verifyQueryParams(session, LOGGER);
         if (!isDecoded(message)) {
@@ -112,13 +112,13 @@ public class EchoEndpoint {
 
     @OnError
     public void onError(Throwable t) {
-        LOGGER.info("OnError called");
+        LOGGER.log(Level.INFO, "OnError called");
         modifyHandshakeCalled.set(false);
     }
 
     @OnClose
     public void onClose(Session session) throws IOException {
-        LOGGER.info("OnClose called");
+        LOGGER.log(Level.INFO, "OnClose called");
         verifyRunningThread(session, LOGGER);
         verifyQueryParams(session, LOGGER);
         modifyHandshakeCalled.set(false);

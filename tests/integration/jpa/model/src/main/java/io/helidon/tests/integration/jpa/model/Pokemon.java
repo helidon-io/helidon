@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 package io.helidon.tests.integration.jpa.model;
 
 import java.io.Serializable;
+import java.lang.System.Logger.Level;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 import jakarta.persistence.*;
 
@@ -29,7 +29,7 @@ import jakarta.persistence.*;
 @Entity
 public class Pokemon implements Serializable {
 
-    private static final Logger LOGGER = Logger.getLogger(Pokemon.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Pokemon.class.getName());
 
     @Id
     @GeneratedValue(strategy = GenerationType.TABLE)
@@ -137,7 +137,7 @@ public class Pokemon implements Serializable {
                     && Objects.equals(trainer, ((Pokemon)oth).trainer)
                     && listEquals(((Pokemon)oth).types);
         }
-        LOGGER.warning(() -> String.format("Pokemon instanceof failed: %s", oth.getClass().getName()));
+        LOGGER.log(Level.WARNING, () -> String.format("Pokemon instanceof failed: %s", oth.getClass().getName()));
         return false;
     }
 

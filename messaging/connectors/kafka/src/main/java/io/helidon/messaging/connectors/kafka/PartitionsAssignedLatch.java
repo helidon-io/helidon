@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Logger;
 
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
@@ -28,7 +28,7 @@ import org.apache.kafka.common.TopicPartition;
  */
 class PartitionsAssignedLatch extends CountDownLatch implements ConsumerRebalanceListener {
 
-    private static final Logger LOGGER = Logger.getLogger(PartitionsAssignedLatch.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(PartitionsAssignedLatch.class.getName());
 
     PartitionsAssignedLatch() {
         super(1);
@@ -36,13 +36,13 @@ class PartitionsAssignedLatch extends CountDownLatch implements ConsumerRebalanc
 
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-        LOGGER.fine(() -> "Partitions revoked: " + partitions);
+        LOGGER.log(Level.DEBUG, () -> "Partitions revoked: " + partitions);
         // Do nothing
     }
 
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-        LOGGER.fine(() -> "Partitions assigned: " + partitions);
+        LOGGER.log(Level.DEBUG, () -> "Partitions assigned: " + partitions);
         this.countDown();
     }
 }

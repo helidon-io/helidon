@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.reactive.dbclient.mongodb;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -42,7 +42,7 @@ import static io.helidon.reactive.dbclient.mongodb.MongoDbStatement.READER_FACTO
 final class MongoDbCommandExecutor {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(MongoDbCommandExecutor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MongoDbCommandExecutor.class.getName());
 
     private MongoDbCommandExecutor() {
         throw new UnsupportedOperationException("Utility class MongoDbCommandExecutor instances are not allowed!");
@@ -89,7 +89,7 @@ final class MongoDbCommandExecutor {
 
         MongoDatabase db = dbStatement.db();
         Document command = mongoStmt.getQuery();
-        LOGGER.fine(() -> String.format("Command: %s", command.toString()));
+        LOGGER.log(Level.DEBUG, () -> String.format("Command: %s", command.toString()));
         Publisher<Document> publisher = dbStatement.noTx()
                 ? db.runCommand(command)
                 : db.runCommand(dbStatement.txManager().tx(), command);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.integration.nativeimage.mp1;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
-import java.util.logging.Logger;
 
 import jakarta.inject.Inject;
 import jakarta.json.Json;
@@ -44,7 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
  */
 @Path("/")
 public class JaxRsResource {
-    private static final Logger LOGGER = Logger.getLogger(JaxRsResource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JaxRsResource.class.getName());
 
     @Inject
     @ConfigProperty(name = "app.jaxrs.message")
@@ -119,7 +119,7 @@ public class JaxRsResource {
     @Produces(MediaType.TEXT_PLAIN)
     @APIResponse(name="hello", responseCode = "200", description = "Hello world message")
     public String hello() {
-        LOGGER.info("This message is here to make sure runtime logging configuration works");
+        LOGGER.log(Level.INFO, "This message is here to make sure runtime logging configuration works");
         return "Hello World " + uriInfo.getPath();
     }
 

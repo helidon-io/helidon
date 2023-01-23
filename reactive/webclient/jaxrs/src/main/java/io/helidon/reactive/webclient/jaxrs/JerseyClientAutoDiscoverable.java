@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.reactive.webclient.jaxrs;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.ConstrainedTo;
@@ -40,7 +40,7 @@ import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
 @ConstrainedTo(RuntimeType.CLIENT)
 @Priority(121)
 public class JerseyClientAutoDiscoverable implements AutoDiscoverable {
-    private static final Logger LOGGER = Logger.getLogger(JerseyClientAutoDiscoverable.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JerseyClientAutoDiscoverable.class.getName());
 
     @Override
     public void configure(FeatureContext context) {
@@ -52,7 +52,7 @@ public class JerseyClientAutoDiscoverable implements AutoDiscoverable {
 
             Object property = configuration.getProperty(PROVIDER_DEFAULT_DISABLE);
             if (null == property) {
-                LOGGER.fine("Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
+                LOGGER.log(Level.DEBUG, "Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
                                     + "XML Stream Source). You can enabled them by setting system property "
                                     + PROVIDER_DEFAULT_DISABLE + " to NONE");
                 configuration.property(PROVIDER_DEFAULT_DISABLE, "ALL");

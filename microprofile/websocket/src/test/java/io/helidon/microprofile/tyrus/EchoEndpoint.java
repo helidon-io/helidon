@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.tyrus;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnError;
@@ -27,26 +27,26 @@ import jakarta.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/echoAnnot")
 public class EchoEndpoint {
-    private static final Logger LOGGER = Logger.getLogger(EchoEndpoint.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EchoEndpoint.class.getName());
 
     @OnOpen
     public void onOpen(Session session) {
-        LOGGER.info("OnOpen called");
+        LOGGER.log(Level.INFO, "OnOpen called");
     }
 
     @OnMessage
     public void echo(Session session, String message) throws Exception {
-        LOGGER.info("OnMessage called '" + message + "'");
+        LOGGER.log(Level.INFO, "OnMessage called '" + message + "'");
         session.getBasicRemote().sendObject(message);
     }
 
     @OnError
     public void onError(Throwable t, Session session) {
-        LOGGER.info("OnError called");
+        LOGGER.log(Level.INFO, "OnError called");
     }
 
     @OnClose
     public void onClose(Session session) {
-        LOGGER.info("OnClose called");
+        LOGGER.log(Level.INFO, "OnClose called");
     }
 }

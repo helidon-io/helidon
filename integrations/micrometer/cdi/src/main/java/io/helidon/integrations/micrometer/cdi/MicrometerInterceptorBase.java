@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package io.helidon.integrations.micrometer.cdi;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension.MeterWorkItem;
 import io.helidon.microprofile.servicecommon.HelidonInterceptor;
@@ -44,7 +43,8 @@ import jakarta.interceptor.InvocationContext;
 abstract class MicrometerInterceptorBase<M extends Meter> extends HelidonInterceptor.Base<MeterWorkItem>
         implements HelidonInterceptor.WithPostCompletion<MeterWorkItem> {
 
-    private static final Logger LOGGER = Logger.getLogger(MicrometerInterceptorBase.class.getPackageName() + ".Interceptor*");
+    private static final System.Logger LOGGER = System.getLogger(MicrometerInterceptorBase.class.getPackageName()
+            + ".Interceptor*");
 
     private final Class<? extends Annotation> annotationType;
     private final Class<M> meterType;
@@ -106,7 +106,7 @@ abstract class MicrometerInterceptorBase<M extends Meter> extends HelidonInterce
                 .meter() == null) {
             throw new IllegalStateException("Attempt to use previously-removed metric" + workItem.meter().getId());
         }
-        LOGGER.log(Level.FINEST, () -> String.format(
+        LOGGER.log(Level.TRACE, () -> String.format(
                 "%s (%s) is accepting %s %s for processing on %s triggered by @%s",
                 getClass().getSimpleName(), actionType, workItem.meter().getClass().getSimpleName(), workItem.meter().getId(),
                 context.getMethod() != null ? context.getMethod() : context.getConstructor(), annotationType.getSimpleName()));

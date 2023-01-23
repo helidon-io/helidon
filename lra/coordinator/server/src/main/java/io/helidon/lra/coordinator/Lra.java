@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.lra.coordinator;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +28,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
@@ -48,7 +48,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVER
 
 class Lra {
 
-    private static final Logger LOGGER = Logger.getLogger(Lra.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Lra.class.getName());
     private final LazyValue<URI> coordinatorURL;
 
     private long timeout;
@@ -176,7 +176,7 @@ class Lra {
     void close() {
         Set<LRAStatus> allowedStatuses = Set.of(LRAStatus.Active, LRAStatus.Closing);
         if (LRAStatus.Closing != status.updateAndGet(old -> allowedStatuses.contains(old) ? LRAStatus.Closing : old)) {
-            LOGGER.warning("Can't close LRA, it's already " + status.get().name() + " " + this.lraId);
+            LOGGER.log(Level.WARNING, "Can't close LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
         lraLifeSpanTmr.close();
@@ -201,7 +201,7 @@ class Lra {
         Set<LRAStatus> allowedStatuses = Set.of(LRAStatus.Active, LRAStatus.Cancelling);
         if (LRAStatus.Cancelling != status.updateAndGet(old -> allowedStatuses.contains(old) ? LRAStatus.Cancelling : old)
                 && !isChild) { // nested can be compensated even if closed
-            LOGGER.warning("Can't cancel LRA, it's already " + status.get().name() + " " + this.lraId);
+            LOGGER.log(Level.WARNING, "Can't cancel LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
         lraLifeSpanTmr.close();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.messaging.MessagingException;
 
@@ -33,7 +32,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 
 class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
 
-    private static final Logger LOGGER = Logger.getLogger(OutgoingJmsMessage.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OutgoingJmsMessage.class.getName());
 
     private PAYLOAD payload;
     private JmsMessage.CustomMapper<PAYLOAD> mapper = null;
@@ -145,14 +144,14 @@ class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
         try {
             prop = supplier.accept();
         } catch (Throwable e) {
-            LOGGER.log(Level.FINE, e, () -> "Unable to retrieve JMS " + propName);
+            LOGGER.log(Level.DEBUG, () -> "Unable to retrieve JMS " + propName, e);
             return;
         }
 
         try {
             consumer.accept(prop);
         } catch (Throwable e) {
-            LOGGER.log(Level.FINE, e, () -> "Unable to set JMS " + propName);
+            LOGGER.log(Level.DEBUG, () -> "Unable to set JMS " + propName, e);
         }
     }
 }

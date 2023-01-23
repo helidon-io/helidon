@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package io.helidon.reactive.dbclient.jdbc;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class JdbcClientTest {
 
-    private static final Logger LOGGER = Logger.getLogger(JdbcClientTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JdbcClientTest.class.getName());
 
     private static final ConnectionPool POOL = Mockito.mock(ConnectionPool.class);
     private static final Connection CONN = Mockito.mock(Connection.class);
@@ -114,7 +114,7 @@ public class JdbcClientTest {
             PreparedStatement connection = future.await();
             fail("Unsupported unwrap call must throw UnsupportedOperationException");
         } catch (UnsupportedOperationException ex) {
-            LOGGER.fine(() -> String.format("Caught expected UnsupportedOperationException: %s", ex.getMessage()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Caught expected UnsupportedOperationException: %s", ex.getMessage()));
         }
     }
 
@@ -142,7 +142,8 @@ public class JdbcClientTest {
                 PreparedStatement connection = future.await();
                 fail("Unsupported unwrap call must throw UnsupportedOperationException");
             } catch (UnsupportedOperationException ex) {
-                LOGGER.fine(() -> String.format("Caught expected UnsupportedOperationException: %s", ex.getMessage()));
+                LOGGER.log(Level.DEBUG, () -> String.format("Caught expected UnsupportedOperationException: %s",
+                        ex.getMessage()));
             }
             return exec.query("{\"operation\": \"command\", \"query\": { ping: 1 }}");
         });

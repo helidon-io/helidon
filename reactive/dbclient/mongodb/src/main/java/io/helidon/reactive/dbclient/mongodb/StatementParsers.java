@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.reactive.dbclient.mongodb;
 
+import java.lang.System.Logger.Level;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 
 import jakarta.json.Json;
 
@@ -31,7 +31,7 @@ import jakarta.json.Json;
 final class StatementParsers {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(StatementParsers.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(StatementParsers.class.getName());
 
     static String toJson(Object value) {
         if ((value instanceof Integer)  || (value instanceof Short)  || (value instanceof Byte)){
@@ -428,7 +428,7 @@ final class StatementParsers {
                     break;
                 default:
             }
-            LOGGER.fine(() -> String.format("Named Statement %s", sb.toString()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Named Statement %s", sb.toString()));
             return sb.toString();
         }
 
@@ -545,7 +545,7 @@ final class StatementParsers {
                 ACTION[state.ordinal()][cl.ordinal()].process(this);
                 state = TRANSITION[state.ordinal()][cl.ordinal()];
             }
-            LOGGER.fine(() -> String.format("Indexed Statement %s", sb().toString()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Indexed Statement %s", sb().toString()));
             return sb().toString();
         }
 

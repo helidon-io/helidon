@@ -16,12 +16,11 @@
 
 package io.helidon.security.integration.jersey.client;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -54,7 +53,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 @Priority(Priorities.AUTHENTICATION)
 public class ClientSecurityFilter implements ClientRequestFilter {
 
-    private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ClientSecurityFilter.class.getName());
     private static final AtomicLong CONTEXT_COUNTER = new AtomicLong();
 
     /**
@@ -81,7 +80,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         if (securityContext.isPresent()) {
             outboundSecurity(requestContext, securityContext.get());
         } else {
-            LOGGER.finest("Security context not available, using empty one. You can define it using "
+            LOGGER.log(Level.TRACE, "Security context not available, using empty one. You can define it using "
                                   + "property \""
                                   + ClientSecurity.PROPERTY_CONTEXT + "\" on request");
 
@@ -102,7 +101,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                 Contexts.runInContext(context, () -> outboundSecurity(requestContext, newSecurityContext.get()));
             } else {
                 // we cannot do anything - security is not available in global or current context, cannot propagate
-                LOGGER.finest("Security is not available in global or current context, cannot propagate identity.");
+                LOGGER.log(Level.TRACE, "Security is not available in global or current context, cannot propagate identity.");
             }
         }
     }
@@ -161,11 +160,11 @@ public class ClientSecurityFilter implements ClientRequestFilter {
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
-            LOGGER.finest(() -> "Client filter header(s). SIZE: " + newHeaders.size());
+            LOGGER.log(Level.TRACE, () -> "Client filter header(s). SIZE: " + newHeaders.size());
 
             MultivaluedMap<String, Object> hdrs = requestContext.getHeaders();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-                LOGGER.finest(() -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                LOGGER.log(Level.TRACE, () -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
 
                 //replace existing
                 hdrs.remove(entry.getKey());

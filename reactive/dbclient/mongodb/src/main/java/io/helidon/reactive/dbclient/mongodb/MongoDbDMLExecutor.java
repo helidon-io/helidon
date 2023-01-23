@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.reactive.dbclient.mongodb;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbClientServiceContext;
 import io.helidon.reactive.dbclient.DbStatementType;
@@ -38,7 +38,7 @@ import org.reactivestreams.Subscription;
 final class MongoDbDMLExecutor {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(MongoDbDMLExecutor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MongoDbDMLExecutor.class.getName());
 
     private MongoDbDMLExecutor() {
         throw new UnsupportedOperationException("Utility class MongoDbDMLExecutor instances are not allowed!");
@@ -114,7 +114,7 @@ final class MongoDbDMLExecutor {
             if (dbStatement.txManager() != null) {
                 dbStatement.txManager().stmtFailed(dbStatement);
             }
-            LOGGER.fine(() -> String.format(
+            LOGGER.log(Level.DEBUG, () -> String.format(
                     "%s DML %s execution failed", dbStatementType.name(), dbStatement.statementName()));
         }
 
@@ -125,7 +125,7 @@ final class MongoDbDMLExecutor {
             if (dbStatement.txManager() != null) {
                 dbStatement.txManager().stmtFinished(dbStatement);
             }
-            LOGGER.fine(() -> String.format(
+            LOGGER.log(Level.DEBUG, () -> String.format(
                     "%s DML %s execution succeeded", dbStatementType.name(), dbStatement.statementName()));
         }
 

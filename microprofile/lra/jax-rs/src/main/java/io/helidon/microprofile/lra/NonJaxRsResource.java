@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package io.helidon.microprofile.lra;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.Reflected;
 import io.helidon.common.http.Http;
@@ -48,7 +47,7 @@ class NonJaxRsResource {
     static final String CONFIG_CONTEXT_PATH_KEY = CONFIG_CONTEXT_KEY + ".context-path";
     static final String CONTEXT_PATH_DEFAULT = "/lra-participant";
 
-    private static final Logger LOGGER = Logger.getLogger(NonJaxRsResource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(NonJaxRsResource.class.getName());
     private static final String LRA_PARTICIPANT = "lra-participant";
     private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
     private static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_ENDED_CONTEXT_HEADER);
@@ -89,8 +88,8 @@ class NonJaxRsResource {
     private void handleRequest(ServerRequest req, ServerResponse res) {
         HttpPrologue prologue = req.prologue();
 
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, "Non JAX-RS LRA resource " + prologue.method().text()
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Non JAX-RS LRA resource " + prologue.method().text()
                     + " " + req.path().absolute().path());
         }
         ServerRequestHeaders headers = req.headers();
@@ -149,7 +148,7 @@ class NonJaxRsResource {
                     () -> res.status(Http.Status.GONE_410).send());
         }
         default -> {
-            LOGGER.severe("Unexpected non Jax-Rs LRA compensation type "
+            LOGGER.log(Level.ERROR, "Unexpected non Jax-Rs LRA compensation type "
                     + type + ": " + req.path().absolute().path());
             res.status(Http.Status.NOT_FOUND_404).send();
         }
@@ -157,8 +156,8 @@ class NonJaxRsResource {
     }
 
     private void sendError(URI lraId, ServerRequest req, ServerResponse res, Throwable t) {
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, "Non Jax-Rs LRA participant resource "
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Non Jax-Rs LRA participant resource "
                                + req.path().absolute().path()
                                + " responds with error."
                                + "LRA id: " + lraId,

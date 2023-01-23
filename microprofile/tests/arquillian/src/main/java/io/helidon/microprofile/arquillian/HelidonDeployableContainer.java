@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.arquillian;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -42,8 +43,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.config.mp.MpConfigSources;
@@ -88,7 +87,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
  * and supplies to this class.
  */
 public class HelidonDeployableContainer implements DeployableContainer<HelidonContainerConfiguration> {
-    private static final Logger LOGGER = Logger.getLogger(HelidonDeployableContainer.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HelidonDeployableContainer.class.getName());
     // runnables that must be executed on stop
     private static final ConcurrentLinkedQueue<Runnable> STOP_RUNNABLES = new ConcurrentLinkedQueue<>();
 
@@ -169,7 +168,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             } else {
                 context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
             }
-            LOGGER.info("Running Arquillian tests in directory: " + context.deployDir.toAbsolutePath());
+            LOGGER.log(Level.INFO, "Running Arquillian tests in directory: " + context.deployDir.toAbsolutePath());
 
             copyArchiveToDeployDir(archive, context.deployDir);
 
@@ -405,7 +404,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         // Clean up contexts
         RunContext context = contexts.remove(archive.getId());
         if (null == context) {
-            LOGGER.severe("Undeploying an archive that was not deployed. ID: " + archive.getId());
+            LOGGER.log(Level.ERROR, "Undeploying an archive that was not deployed. ID: " + archive.getId());
             return;
         }
 
@@ -477,7 +476,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         } catch (IllegalStateException e) {
             // this may be a negative CDI test (e.g. when CDI is intended not to start)
             // in such cases, CDI will not be available
-            LOGGER.log(Level.FINE, "Unable to cleanup base metrics", e);
+            LOGGER.log(Level.DEBUG, "Unable to cleanup base metrics", e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.reactive.webserver.jersey;
 
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,8 +30,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
@@ -105,7 +104,7 @@ public class JerseySupport implements Service {
      */
     public static final String REQUEST_SPAN_CONTEXT = "request-span-context";
 
-    private static final Logger LOGGER = Logger.getLogger(JerseySupport.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JerseySupport.class.getName());
 
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
@@ -308,8 +307,8 @@ public class JerseySupport implements Service {
 
                         service.execute(() -> { // No need to use submit() since the future is not used.
                             try {
-                                if (LOGGER.isLoggable(Level.FINER)) {
-                                    LOGGER.finer("Handling in Jersey started for connection: "
+                                if (LOGGER.isLoggable(Level.TRACE)) {
+                                    LOGGER.log(Level.TRACE, "Handling in Jersey started for connection: "
                                                          + Contexts.context()
                                             .flatMap(ctx -> ctx.get(WebServer.class.getName() + ".connection",
                                                                     String.class))
@@ -361,8 +360,8 @@ public class JerseySupport implements Service {
                 appHandler.onShutdown(container);
             }
         } catch (IllegalStateException e) {
-            LOGGER.log(Level.FINEST, e, () -> "Exception during shutdown of Jersey");
-            LOGGER.warning(() -> "Exception while shutting down Jersey's application handler " + e.getMessage());
+            LOGGER.log(Level.TRACE, () -> "Exception during shutdown of Jersey", e);
+            LOGGER.log(Level.WARNING, () -> "Exception while shutting down Jersey's application handler " + e.getMessage());
         }
     }
 
@@ -496,7 +495,7 @@ public class JerseySupport implements Service {
 
             Object property = resourceConfig.getProperty(PROVIDER_DEFAULT_DISABLE);
             if (null == property) {
-                LOGGER.fine("Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
+                LOGGER.log(Level.DEBUG, "Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
                                     + "XML Stream Source). You can enabled them by setting system property "
                                     + PROVIDER_DEFAULT_DISABLE + " to NONE");
                 resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
@@ -505,7 +504,7 @@ public class JerseySupport implements Service {
             }
 
             if (null == resourceConfig.getProperty(WADL_FEATURE_DISABLE)) {
-                LOGGER.fine("Disabling Jersey WADL feature, you can enable it by setting system property "
+                LOGGER.log(Level.DEBUG, "Disabling Jersey WADL feature, you can enable it by setting system property "
                                     + WADL_FEATURE_DISABLE + " to false");
                 resourceConfig.property(WADL_FEATURE_DISABLE, "true");
             }
@@ -690,7 +689,7 @@ public class JerseySupport implements Service {
 
         @Override
         public Response toResponse(InternalServerErrorException e) {
-            LOGGER.log(Level.FINE, "Internal error thrown by Jersey", e);
+            LOGGER.log(Level.DEBUG, "Internal error thrown by Jersey", e);
             return Response.status(500).build();
         }
     }

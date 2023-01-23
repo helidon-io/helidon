@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package io.helidon.integrations.vault;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.http.Http;
@@ -118,7 +118,7 @@ public interface Vault {
      * Fluent API builder for {@link Vault}.
      */
     class Builder implements io.helidon.common.Builder<Builder, Vault> {
-        private static final Logger LOGGER = Logger.getLogger(Vault.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(Vault.class.getName());
 
         private final HelidonServiceLoader.Builder<VaultAuth> vaultAuths
                 = HelidonServiceLoader.builder(ServiceLoader.load(VaultAuth.class));
@@ -144,7 +144,7 @@ public interface Vault {
             for (VaultAuth vaultAuth : auths) {
                 Optional<RestApi> authenticate = vaultAuth.authenticate(config, this);
                 if (authenticate.isPresent()) {
-                    LOGGER.fine("Authenticated Vault " + address + " using " + vaultAuth.getClass().getName());
+                    LOGGER.log(Level.DEBUG, "Authenticated Vault " + address + " using " + vaultAuth.getClass().getName());
                     restAccess = authenticate.get();
                     authenticated = true;
                     break;

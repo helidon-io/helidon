@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.core;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -64,14 +63,14 @@ public class SafeStreamObserver<T>
     public void onError(Throwable thrown) {
         try {
             if (done) {
-                LOGGER.log(Level.SEVERE, checkNotNull(thrown), () -> "OnError called after StreamObserver was closed");
+                LOGGER.log(Level.ERROR, () -> "OnError called after StreamObserver was closed", checkNotNull(thrown));
             } else {
                 done = true;
                 delegate.onError(checkNotNull(thrown));
             }
         } catch (Throwable t) {
             throwIfFatal(t);
-            LOGGER.log(Level.SEVERE, t, () -> "Caught exception handling onError");
+            LOGGER.log(Level.ERROR, () -> "Caught exception handling onError", t);
         }
     }
 
@@ -85,7 +84,7 @@ public class SafeStreamObserver<T>
                 delegate.onCompleted();
             } catch (Throwable thrown) {
                 throwIfFatal(thrown);
-                LOGGER.log(Level.SEVERE, thrown, () -> "Caught exception handling onComplete");
+                LOGGER.log(Level.ERROR, () -> "Caught exception handling onComplete", thrown);
             }
         }
     }
@@ -153,7 +152,7 @@ public class SafeStreamObserver<T>
     /**
      * The {2link Logger} to use.
      */
-    private static final Logger LOGGER = Logger.getLogger(SafeStreamObserver.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SafeStreamObserver.class.getName());
 
     // ----- data members ---------------------------------------------------
 

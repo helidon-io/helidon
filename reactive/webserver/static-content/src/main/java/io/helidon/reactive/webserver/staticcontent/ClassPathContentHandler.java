@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.reactive.webserver.staticcontent;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -46,7 +46,7 @@ import io.helidon.reactive.webserver.ServerResponse;
  * Handles static content from the classpath.
  */
 class ClassPathContentHandler extends FileBasedContentHandler {
-    private static final Logger LOGGER = Logger.getLogger(ClassPathContentHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ClassPathContentHandler.class.getName());
 
     private final ClassLoader classLoader;
     private final String root;
@@ -90,7 +90,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
         String resource = requestedPath.isEmpty() ? root : (rootWithTrailingSlash + requestedPath);
 
-        LOGGER.finest(() -> "Requested class path resource: " + resource);
+        LOGGER.log(Level.TRACE, () -> "Requested class path resource: " + resource);
 
         // this MUST be done, so we do not escape the bounds of configured directory
         // We use multi-arg constructor so it performs url encoding
@@ -124,12 +124,12 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         if (url == null) {
-            LOGGER.fine(() -> "Requested resource " + resource + " does not exist");
+            LOGGER.log(Level.DEBUG, () -> "Requested resource " + resource + " does not exist");
             return false;
         }
 
         URL logUrl = url; // need to be effectively final to use in lambda
-        LOGGER.finest(() -> "Located resource url. Resource: " + resource + ", URL: " + logUrl);
+        LOGGER.log(Level.TRACE, () -> "Located resource url. Resource: " + resource + ", URL: " + logUrl);
 
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
         switch (url.getProtocol()) {
@@ -152,7 +152,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                     ServerRequest request,
                     ServerResponse response) {
 
-        LOGGER.fine(() -> "Sending static content from classpath: " + url);
+        LOGGER.log(Level.DEBUG, () -> "Sending static content from classpath: " + url);
 
         ExtractedJarEntry extrEntry = extracted
                 .compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
@@ -195,7 +195,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private void sendUrlStream(Http.Method method, URL url, ServerRequest request, ServerResponse response)
             throws IOException {
 
-        LOGGER.finest(() -> "Sending static content using stream from classpath: " + url);
+        LOGGER.log(Level.TRACE, () -> "Sending static content using stream from classpath: " + url);
 
         URLConnection urlConnection = url.openConnection();
         long lastModified = urlConnection.getLastModified();

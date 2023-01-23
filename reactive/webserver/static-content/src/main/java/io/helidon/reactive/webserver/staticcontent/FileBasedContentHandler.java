@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.reactive.webserver.staticcontent;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
@@ -39,7 +39,7 @@ import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 
 abstract class FileBasedContentHandler extends StaticContentHandler {
-    private static final Logger LOGGER = Logger.getLogger(FileBasedContentHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FileBasedContentHandler.class.getName());
     private static final MessageBodyWriter<Path> PATH_WRITER = DefaultMediaSupport.pathWriter();
 
     private final Map<String, MediaType> customMediaTypes;
@@ -134,7 +134,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                   String welcomePage)
             throws IOException {
 
-        LOGGER.fine(() -> "Sending static content from file: " + pathParam);
+        LOGGER.log(Level.DEBUG, () -> "Sending static content from file: " + pathParam);
 
         Path path = pathParam;
         // we know the file exists, though it may be a directory

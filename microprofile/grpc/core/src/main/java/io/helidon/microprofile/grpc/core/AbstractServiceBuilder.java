@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,8 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
@@ -40,7 +39,7 @@ import jakarta.inject.Singleton;
  */
 public abstract class AbstractServiceBuilder {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractServiceBuilder.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AbstractServiceBuilder.class.getName());
 
     private final Class<?> serviceClass;
     private final Class<?> annotatedServiceClass;
@@ -210,7 +209,7 @@ public abstract class AbstractServiceBuilder {
         } catch (NoSuchMethodException e) {
             LOGGER.log(Level.WARNING, () -> String.format("Annotation %s has no name() method", actualAnnotation));
         } catch (IllegalAccessException | InvocationTargetException e) {
-            LOGGER.log(Level.WARNING, e, () -> String.format("Error calling name() method on annotation %s", actualAnnotation));
+            LOGGER.log(Level.WARNING, () -> String.format("Error calling name() method on annotation %s", actualAnnotation), e);
         }
 
         if (name == null || name.trim().isEmpty()) {

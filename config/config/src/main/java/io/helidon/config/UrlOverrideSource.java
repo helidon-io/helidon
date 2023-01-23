@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package io.helidon.config;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
@@ -43,7 +43,7 @@ import io.helidon.config.spi.WatchableSource;
 public class UrlOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<Instant>, WatchableSource<URL> {
 
-    private static final Logger LOGGER = Logger.getLogger(UrlOverrideSource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(UrlOverrideSource.class.getName());
 
     private static final String GET_METHOD = "GET";
     private static final String URL_KEY = "url";
@@ -112,7 +112,7 @@ public class UrlOverrideSource extends AbstractSource
             Instant timestamp;
             if (connection.getLastModified() == 0) {
                 timestamp = Instant.now();
-                LOGGER.fine("Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
+                LOGGER.log(Level.DEBUG, "Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
                                     + timestamp + "' as a content timestamp.");
             } else {
                 timestamp = Instant.ofEpochMilli(connection.getLastModified());

@@ -15,6 +15,7 @@
  */
 package io.helidon.security.providers.idcs.mapper;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -26,8 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -91,7 +90,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
      * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
      */
     protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
-    private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperRxProviderBase.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(IdcsRoleMapperRxProviderBase.class.getName());
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
@@ -190,7 +189,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                                 entity,
                                 json -> processServerResponse(json, subjectName),
                                 (status, errorEntity) -> {
-                                    LOGGER.warning("Cannot read groups for user \""
+                                    LOGGER.log(Level.WARNING, "Cannot read groups for user \""
                                                            + subjectName
                                                            + "\". Response code: "
                                                            + status
@@ -233,7 +232,7 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
         JsonArray appRoles = jsonObject.getJsonArray("appRoles");
 
         if ((null == groups) && (null == appRoles)) {
-            LOGGER.finest(() -> "Neither groups nor app roles found for user " + subjectName);
+            LOGGER.log(Level.TRACE, () -> "Neither groups nor app roles found for user " + subjectName);
             return List.of();
         }
 
@@ -461,17 +460,17 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                              params,
                              json -> {
                                  String accessToken = json.getString(ACCESS_TOKEN_KEY);
-                                 LOGGER.finest(() -> "Access token: " + accessToken);
+                                 LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
                                  SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
                                  return new AppTokenData(accessToken, signedJwt.getJwt());
                              },
                              (status, message) -> {
-                                 LOGGER.log(Level.SEVERE, "Failed to obtain access token for application to read "
+                                 LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read "
                                          + "groups from IDCS. Status: " + status + ", error message: " + message);
                                  return Optional.of(new AppTokenData());
                              },
                              (t, message) -> {
-                                 LOGGER.log(Level.SEVERE, "Failed to obtain access token for application to read "
+                                 LOGGER.log(Level.ERROR, "Failed to obtain access token for application to read "
                                          + "groups from IDCS. Failed with exception: " + message, t);
                                  return Optional.of(new AppTokenData());
                              })

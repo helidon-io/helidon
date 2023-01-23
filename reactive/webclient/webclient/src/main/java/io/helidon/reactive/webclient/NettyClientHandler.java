@@ -16,6 +16,7 @@
 package io.helidon.reactive.webclient;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,8 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -63,7 +62,7 @@ import static io.helidon.reactive.webclient.WebClientRequestBuilderImpl.WILL_CLO
  */
 class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
-    private static final Logger LOGGER = Logger.getLogger(NettyClientHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(NettyClientHandler.class.getName());
 
     private static final AttributeKey<WebClientServiceResponse> SERVICE_RESPONSE = AttributeKey.valueOf("serviceResponse");
     /**
@@ -97,7 +96,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (!channel.attr(WILL_CLOSE).get()
                 && channel.hasAttr(RETURN)
                 && channel.attr(RETURN).get().compareAndSet(true, false)) {
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+            LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") "
                     + "Returning channel " + channel.hashCode() + " to the cache");
             channel.attr(IN_USE).get().set(false);
             responseCloser.cf.complete(null);
@@ -115,7 +114,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             channel.attr(RESPONSE_RECEIVED).set(true);
             WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
+            LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Initial http response message received");
 
             this.publisher = new HttpResponsePublisher(ctx);
             channel.attr(PUBLISHER).set(this.publisher);
@@ -160,7 +159,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     boolean continueAfter = !interceptor.continueAfterInterception();
                     if (continueAfter) {
-                        responseCloser.close().thenAccept(future -> LOGGER.finest(() -> "Response closed due to redirection"));
+                        responseCloser.close().thenAccept(future -> LOGGER.log(Level.TRACE,
+                                () -> "Response closed due to redirection"));
                     }
                     interceptor.handleInterception(response, clientRequest, channel.attr(RESULT).get());
                     if (continueAfter) {
@@ -196,7 +196,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                         if (shouldResponseAutomaticallyClose(clientResponse)) {
                             responseCloser.close()
                                     .thenAccept(aVoid -> {
-                                        LOGGER.finest(() -> "Response automatically closed. No entity expected");
+                                        LOGGER.log(Level.TRACE, () -> "Response automatically closed. No entity expected");
                                     });
                         }
                         responseFuture.complete(clientResponse);
@@ -212,12 +212,13 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (responseCloser.isClosed()) {
             if (!channel.attr(WILL_CLOSE).get() && channel.hasAttr(RETURN)) {
                 if (msg instanceof LastHttpContent) {
-                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Draining finished");
+                    LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Draining finished");
                     if (channel.isActive()) {
                         channel.attr(RETURN).get().set(true);
                     }
                 } else {
-                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Draining not finished, requesting new chunk");
+                    LOGGER.log(Level.TRACE,
+                            () -> "(client reqID: " + requestId + ") Draining not finished, requesting new chunk");
                 }
                 channel.read();
             }
@@ -231,7 +232,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") Last http content received");
+            LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Last http content received");
             if (channel.hasAttr(RETURN)) {
                 channel.attr(RETURN).get().set(true);
                 responseCloser.close();
@@ -343,7 +344,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
          */
         Single<Void> close() {
             if (closed.compareAndSet(false, true)) {
-                LOGGER.finest(() -> "(client reqID: " + requestId + ") Closing the response from the server");
+                LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Closing the response from the server");
                 Channel channel = ctx.channel();
                 WebClientServiceResponse clientServiceResponse = channel.attr(SERVICE_RESPONSE).get();
                 CompletableFuture<WebClientServiceResponse> requestComplete = channel.attr(COMPLETED).get();
@@ -352,19 +353,19 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     ctx.close()
                             .addListener(future -> {
                                 if (future.isSuccess()) {
-                                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Response from the server has been "
-                                            + "closed");
+                                    LOGGER.log(Level.TRACE,
+                                            () -> "(client reqID: " + requestId + ") Response from the server has been closed");
                                     cf.complete(null);
                                 } else {
-                                    LOGGER.log(Level.SEVERE,
-                                               future.cause(),
-                                               () -> "An exception occurred while closing the response");
+                                    LOGGER.log(Level.ERROR,
+                                            () -> "An exception occurred while closing the response",
+                                            future.cause());
                                     cf.completeExceptionally(future.cause());
                                 }
                             });
                     publisher.complete();
                 } else if (!channel.attr(RETURN).get().get()) {
-                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Drain possible remaining entity parts");
+                    LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Drain possible remaining entity parts");
                     channel.read();
                 }
             }

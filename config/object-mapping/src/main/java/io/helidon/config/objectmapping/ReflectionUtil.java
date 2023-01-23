@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.config.objectmapping;
 
+import java.lang.System.Logger.Level;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
@@ -38,8 +39,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -50,7 +49,7 @@ import io.helidon.config.ConfigMappingException;
  */
 final class ReflectionUtil {
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
-    private static final Logger LOGGER = Logger.getLogger(ReflectionUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ReflectionUtil.class.getName());
     private static final String METHOD_BUILDER = "builder";
     private static final String METHOD_BUILD = "build";
     private static final String CLASS_BUILDER = "Builder";
@@ -80,15 +79,15 @@ final class ReflectionUtil {
             if (checkMethod(method, true, type, methodName, parameterTypes.length > 0)) {
                 return Optional.of(HelidonMethodHandle.create(type, method));
             } else {
-                LOGGER.log(Level.FINEST,
+                LOGGER.log(Level.TRACE,
                            () -> "Class " + type.getName() + " method '" + methodName
                                    + "' with parameters " + Arrays.toString(parameterTypes) + " cannot be used.");
             }
         } catch (NoSuchMethodException ex) {
-            LOGGER.log(Level.FINEST,
-                       ex,
-                       () -> "Class " + type.getName() + " does not have a method named '" + methodName
-                               + "' with parameters " + Arrays.toString(parameterTypes) + ".");
+            LOGGER.log(Level.TRACE,
+                    () -> "Class " + type.getName() + " does not have a method named '" + methodName
+                            + "' with parameters " + Arrays.toString(parameterTypes) + ".",
+                    ex);
         }
         return Optional.empty();
     }
@@ -99,16 +98,16 @@ final class ReflectionUtil {
             if (checkConstructor(constructor, parameterTypes.length > 0)) {
                 return Optional.of(HelidonMethodHandle.create(type, constructor));
             } else {
-                LOGGER.log(Level.FINEST,
+                LOGGER.log(Level.TRACE,
                            () -> "Class " + type.getName() + " constructor with parameters "
                                    + Arrays.toString(parameterTypes)
                                    + " cannot be used.");
             }
         } catch (NoSuchMethodException ex) {
-            LOGGER.log(Level.FINEST,
-                       ex,
-                       () -> "Class " + type.getName() + " does not have a constructor with parameters "
-                               + Arrays.toString(parameterTypes) + ".");
+            LOGGER.log(Level.TRACE,
+                    () -> "Class " + type.getName() + " does not have a constructor with parameters "
+                            + Arrays.toString(parameterTypes) + ".",
+                    ex);
         }
         return Optional.empty();
     }
@@ -231,15 +230,15 @@ final class ReflectionUtil {
             if (checkMethod(method, isStatic, returnType, methodName, parameterTypes.length > 0)) {
                 return Optional.of(method);
             } else {
-                LOGGER.log(Level.FINEST,
+                LOGGER.log(Level.TRACE,
                            () -> "Class " + type.getName() + " method '" + methodName
                                    + "' with parameters " + Arrays.toString(parameterTypes) + " cannot be used.");
             }
         } catch (NoSuchMethodException ex) {
-            LOGGER.log(Level.FINEST,
-                       ex,
-                       () -> "Class " + type.getName() + " does not have a method named '" + methodName
-                               + "' with parameters " + Arrays.toString(parameterTypes) + ".");
+            LOGGER.log(Level.TRACE,
+                    () -> "Class " + type.getName() + " does not have a method named '" + methodName
+                            + "' with parameters " + Arrays.toString(parameterTypes) + ".",
+                    ex);
         }
         return Optional.empty();
     }
@@ -522,7 +521,7 @@ final class ReflectionUtil {
                 if (field.getAnnotation(Value.class) != null) {
                     PropertyAccessor<?> propertyAccessor = propertyAccessors.get(name);
                     if (propertyAccessor.hasValueAnnotation()) {
-                        LOGGER.fine(() -> "Annotation @Value on '" + name
+                        LOGGER.log(Level.DEBUG, () -> "Annotation @Value on '" + name
                                 + "' field is ignored because setter method already has one.");
                     } else {
                         propertyAccessor.setValueAnnotation(field.getAnnotation(Value.class));

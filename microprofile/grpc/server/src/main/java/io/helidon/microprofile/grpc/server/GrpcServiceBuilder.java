@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.grpc.server;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,8 +26,6 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
@@ -58,7 +57,7 @@ public class GrpcServiceBuilder
         extends AbstractServiceBuilder
         implements Builder<GrpcServiceBuilder, ServiceDescriptor> {
 
-    private static final Logger LOGGER = Logger.getLogger(GrpcServiceBuilder.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcServiceBuilder.class.getName());
 
     private final BeanManager beanManager;
 
@@ -218,7 +217,7 @@ public class GrpcServiceBuilder
             break;
         case UNKNOWN:
         default:
-            LOGGER.log(Level.SEVERE, () -> "Unrecognized method type " + annotation.type());
+            LOGGER.log(Level.ERROR, () -> "Unrecognized method type " + annotation.type());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.mp;
 
+import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -28,7 +29,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
@@ -46,7 +46,7 @@ import org.eclipse.microprofile.config.spi.Converter;
  * This class is an implementation of a java service obtained through ServiceLoader.
  */
 public class MpConfigProviderResolver extends ConfigProviderResolver {
-    private static final Logger LOGGER = Logger.getLogger(MpConfigProviderResolver.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MpConfigProviderResolver.class.getName());
     private static final Map<ClassLoader, ConfigDelegate> CONFIGS = new IdentityHashMap<>();
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
     // specific for native image - we want to replace config provided during build with runtime configuration
@@ -96,8 +96,8 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
             if (meta.isPresent()) {
                 builder.metaConfig(meta.get());
-                LOGGER.warning("You are using Helidon SE meta configuration in a Helidon MP application. Some features "
-                                       + "work differently, such as environment variable resolving, and mutability");
+                LOGGER.log(Level.WARNING, "You are using Helidon SE meta configuration in a Helidon MP application. Some "
+                        + "features work differently, such as environment variable resolving, and mutability");
             }
         } else {
             builder.mpMetaConfig(meta.get());

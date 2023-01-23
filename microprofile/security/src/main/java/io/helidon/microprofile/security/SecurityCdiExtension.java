@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package io.helidon.microprofile.security;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -51,7 +51,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Extension to register bean {@link SecurityProducer}.
  */
 public class SecurityCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(SecurityCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecurityCdiExtension.class.getName());
 
     private final AtomicReference<Security> security = new AtomicReference<>();
 
@@ -103,7 +103,7 @@ public class SecurityCdiExtension implements Extension {
                                   BeanManager bm) {
 
         if (securityBuilder.noProvider(AuthenticationProvider.class)) {
-            LOGGER.info(
+            LOGGER.log(Level.INFO,
                     "Authentication provider is missing from security configuration, but security extension for microprofile "
                             + "is enabled (requires providers configuration at key security.providers). "
                             + "Security will not have any valid authentication provider");
@@ -112,7 +112,7 @@ public class SecurityCdiExtension implements Extension {
         }
 
         if (securityBuilder.noProvider(AuthorizationProvider.class)) {
-            LOGGER.info(
+            LOGGER.log(Level.INFO,
                     "Authorization provider is missing from security configuration, but security extension for microprofile "
                             + "is enabled (requires providers configuration at key security.providers). "
                             + "ABAC provider is configured for authorization.");
@@ -125,7 +125,7 @@ public class SecurityCdiExtension implements Extension {
 
         if (!tmpSecurity.enabled()) {
             // security is disabled, we need to set up some basic stuff - injection, security context etc.
-            LOGGER.info("Security is disabled.");
+            LOGGER.log(Level.INFO, "Security is disabled.");
             tmpSecurity = Security.builder()
                     .enabled(false)
                     .build();
