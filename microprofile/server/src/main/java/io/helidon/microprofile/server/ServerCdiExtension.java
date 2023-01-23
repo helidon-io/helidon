@@ -80,6 +80,7 @@ public class ServerCdiExtension implements Extension {
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans = Collections.synchronizedMap(new IdentityHashMap<>());
     // build time
     private WebServer.Builder serverBuilder = WebServer.builder()
+            .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
             .port(7001);
 
     private HttpRouting.Builder routingBuilder = HttpRouting.builder();
