@@ -35,7 +35,6 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webserver.Routing;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 
@@ -53,9 +52,8 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 /**
  * OCI Metrics Support
  * <p>
- * Even though this service does not create an endpoint, a calling SE app should still register it by invoking
- * {@link Routing.Rules#register(io.helidon.webserver.Service...)}, as it should with any service it uses. That allows
- * this service to detect when the webserver shuts down so it can shut down as well.
+ * When used in a NIMA app, ensure that this HttpService implementation is registered on the default routing created via
+ * {@link io.helidon.nima.webserver.http.HttpRouting#builder()}.
  * </p>
  */
 public class OciMetricsSupport implements HttpService {
