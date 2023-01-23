@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,12 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 
-import io.helidon.media.jackson.JacksonSupport;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -64,7 +59,7 @@ public class MainTest {
 
         assertThat(message, is("Hello Eric"));
         double after = counter.getCount();
-        assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
+        assertThat("Difference in personalized greeting counter between successive calls", after - before, is(1d));
     }
 
     @Test
