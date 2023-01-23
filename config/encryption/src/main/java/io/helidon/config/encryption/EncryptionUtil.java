@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.encryption;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Key;
@@ -26,7 +27,6 @@ import java.security.spec.KeySpec;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
@@ -49,7 +49,7 @@ import io.helidon.config.mp.MpConfig;
  * Encryption utilities for secrets protection.
  */
 public final class EncryptionUtil {
-    private static final Logger LOGGER = Logger.getLogger(EncryptionUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EncryptionUtil.class.getName());
 
     // SecureRandom instances cannot be in memory when building native image
     private static final LazyValue<SecureRandom> SECURE_RANDOM = LazyValue.create(SecureRandom::new);
@@ -293,7 +293,7 @@ public final class EncryptionUtil {
                     Optional<String> value = config.getOptionalValue(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY, String.class);
                     if (value.isPresent()) {
                         if (requireEncryption) {
-                            LOGGER.warning(
+                            LOGGER.log(Level.WARNING,
                                     "Master password is configured as clear text in configuration when encryption is required. "
                                             + "This value will be ignored. System property or environment variable expected!!!");
                             return Optional.empty();
@@ -304,7 +304,8 @@ public final class EncryptionUtil {
                 .map(String::toCharArray);
 
         if (result.isEmpty()) {
-            LOGGER.fine("Securing properties using master password is not available, as master password is not configured");
+            LOGGER.log(Level.DEBUG, "Securing properties using master password is not available, as master password is not "
+                    + "configured");
         }
 
         return result;
@@ -316,7 +317,7 @@ public final class EncryptionUtil {
                     ConfigValue<String> value = config.get(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY).asString();
                     if (value.isPresent()) {
                         if (requireEncryption) {
-                            LOGGER.warning(
+                            LOGGER.log(Level.WARNING,
                                     "Master password is configured as clear text in configuration when encryption is required. "
                                             + "This value will be ignored. System property or environment variable expected!!!");
                             return Optional.empty();
@@ -327,7 +328,8 @@ public final class EncryptionUtil {
                 .map(String::toCharArray);
 
         if (!result.isPresent()) {
-            LOGGER.fine("Securing properties using master password is not available, as master password is not configured");
+            LOGGER.log(Level.DEBUG, "Securing properties using master password is not available, as master password is not "
+                    + "configured");
         }
 
         return result;
@@ -376,7 +378,8 @@ public final class EncryptionUtil {
                 .privateKey();
 
         if (!result.isPresent()) {
-            LOGGER.fine("Securing properties using asymmetric cipher is not available, as private key is not configured");
+            LOGGER.log(Level.DEBUG, "Securing properties using asymmetric cipher is not available, as private key is not "
+                    + "configured");
         }
 
         return result;

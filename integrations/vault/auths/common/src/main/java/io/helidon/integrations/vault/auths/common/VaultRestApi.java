@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package io.helidon.integrations.vault.auths.common;
 
+import java.lang.System.Logger.Level;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -39,7 +38,7 @@ import jakarta.json.JsonObject;
  * Uses the correct type for exception.
  */
 public class VaultRestApi extends RestApiBase {
-    private static final Logger LOGGER = Logger.getLogger(VaultRestApi.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(VaultRestApi.class.getName());
 
     protected VaultRestApi(BuilderBase<?> builder) {
         super(builder);
@@ -79,10 +78,10 @@ public class VaultRestApi extends RestApiBase {
                                 .build();
                     })
                     .onErrorResumeWithSingle(throwable -> {
-                        LOGGER.log(Level.FINEST,
-                                   throwable,
-                                   () -> "Failed to read response entity for status " + response.status() + ", ignoring for"
-                                           + " optional response");
+                        LOGGER.log(Level.TRACE,
+                                () -> "Failed to read response entity for status " + response.status() + ", ignoring for"
+                                        + " optional response",
+                                throwable);
                         return super.emptyResponse(path, request, method, requestId, response, responseBuilder);
                     });
         } else {
@@ -104,7 +103,7 @@ public class VaultRestApi extends RestApiBase {
         try {
             vaultErrors.addAll(VaultUtil.arrayToList(entity.getJsonArray("errors")));
         } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Failed to read error response", e);
+            LOGGER.log(Level.DEBUG, "Failed to read error response", e);
             vaultErrors.add("Failed to read errors, entity: " + entity);
         }
 

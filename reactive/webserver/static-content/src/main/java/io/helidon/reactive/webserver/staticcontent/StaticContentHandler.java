@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 package io.helidon.reactive.webserver.staticcontent;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
@@ -41,7 +40,7 @@ import static io.helidon.common.http.Http.Header.IF_NONE_MATCH;
  * Base implementation of static content support.
  */
 abstract class StaticContentHandler implements StaticContentSupport {
-    private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
 
     private final String welcomeFilename;
     private final Function<String, String> resolvePathFunction;
@@ -114,7 +113,7 @@ abstract class StaticContentHandler implements StaticContentSupport {
                 throw httpException;
             }
         } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Failed to access static resource", e);
+            LOGGER.log(Level.DEBUG, "Failed to access static resource", e);
             throw new HttpException("Cannot access static resource!", Http.Status.INTERNAL_SERVER_ERROR_500, e);
         }
     }

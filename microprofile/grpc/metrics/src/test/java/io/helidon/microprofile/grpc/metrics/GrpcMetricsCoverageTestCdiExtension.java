@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
  */
 package io.helidon.microprofile.grpc.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.microprofile.grpc.core.GrpcMethod;
@@ -40,7 +39,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
 
     private static final int OBSERVER_PRIORITY = Interceptor.Priority.APPLICATION;
 
-    private static final Logger LOGGER = Logger.getLogger(GrpcMetricsCoverageTestCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcMetricsCoverageTestCdiExtension.class.getName());
 
     private final Set<Class<? extends Annotation>> metricsAnnotationsUsed = new HashSet<>();
 
@@ -96,7 +95,7 @@ public class GrpcMetricsCoverageTestCdiExtension implements Extension {
                                     .collect(Collectors.toSet());
 
                     metricsAnnotationClassesForThisMethod.retainAll(MetricsConfigurer.METRIC_ANNOTATION_INFO.keySet());
-                    LOGGER.log(Level.FINE, () -> String.format("Recording annotation(s) %s on %s",
+                    LOGGER.log(Level.DEBUG, () -> String.format("Recording annotation(s) %s on %s",
                             metricsAnnotationClassesForThisMethod, m.getJavaMember().toString()));
                     metricsAnnotationsUsed.addAll(metricsAnnotationClassesForThisMethod);
                 });

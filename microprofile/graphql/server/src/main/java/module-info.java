@@ -31,7 +31,6 @@ import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 module io.helidon.microprofile.graphql.server {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
     requires java.desktop;
 
     requires jakarta.json.bind;

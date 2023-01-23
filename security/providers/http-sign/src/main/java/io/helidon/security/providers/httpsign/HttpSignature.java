@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpsign;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -34,8 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -48,7 +47,7 @@ import io.helidon.security.SecurityEnvironment;
  */
 class HttpSignature {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
-    private static final Logger LOGGER = Logger.getLogger(HttpSignature.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HttpSignature.class.getName());
     private static final List<String> DEFAULT_HEADERS = List.of("date");
     private static final byte[] EMPTY_BYTES = new byte[0];
 
@@ -130,7 +129,7 @@ class HttpSignature {
                 headers = Arrays.asList(unquotedValue.split(" "));
                 break;
             default:
-                LOGGER.finest(() -> "Invalid signature header field: " + name + ": \"" + unquotedValue + "\"");
+                LOGGER.log(Level.TRACE, () -> "Invalid signature header field: " + name + ": \"" + unquotedValue + "\"");
                 break;
 
             }
@@ -229,7 +228,7 @@ class HttpSignature {
         try {
             this.signatureBytes = Base64.getDecoder().decode(base64Signature);
         } catch (Exception e) {
-            LOGGER.log(Level.FINEST, "Cannot get bytes from base64: " + base64Signature, e);
+            LOGGER.log(Level.TRACE, "Cannot get bytes from base64: " + base64Signature, e);
             problems.add("cannot get bytes from base64 encoded signature: " + e.getMessage());
         }
 
@@ -297,13 +296,13 @@ class HttpSignature {
 
             return Optional.empty();
         } catch (NoSuchAlgorithmException e) {
-            LOGGER.log(Level.FINEST, "SHA256withRSA algorithm not found", e);
+            LOGGER.log(Level.TRACE, "SHA256withRSA algorithm not found", e);
             return Optional.of("SHA256withRSA algorithm not found: " + e.getMessage());
         } catch (InvalidKeyException e) {
-            LOGGER.log(Level.FINEST, "Invalid RSA key", e);
+            LOGGER.log(Level.TRACE, "Invalid RSA key", e);
             return Optional.of("Invalid RSA key: " + e.getMessage());
         } catch (SignatureException e) {
-            LOGGER.log(Level.FINEST, "Signature exception", e);
+            LOGGER.log(Level.TRACE, "Signature exception", e);
             return Optional.of("SignatureException: " + e.getMessage());
         }
     }
@@ -331,7 +330,7 @@ class HttpSignature {
             }
             return Optional.empty();
         } catch (SecurityException e) {
-            LOGGER.log(Level.FINEST, "Failed to validate hmac-sha256", e);
+            LOGGER.log(Level.TRACE, "Failed to validate hmac-sha256", e);
             return Optional.of("Failed to validate hmac-sha256: " + e.getMessage());
         }
     }
@@ -364,7 +363,7 @@ class HttpSignature {
                         headerValues = List.of(date);
                         newHeaders.put("date", headerValues);
 
-                        LOGGER.finest(() -> "Added date header to request: " + date);
+                        LOGGER.log(Level.TRACE, () -> "Added date header to request: " + date);
                     } else if ("host".equalsIgnoreCase(header)) {
                         URI uri = env.targetUri();
 
@@ -372,7 +371,7 @@ class HttpSignature {
                         headerValues = List.of(host);
                         newHeaders.put("host", headerValues);
 
-                        LOGGER.finest(() -> "Added host header to request: " + host);
+                        LOGGER.log(Level.TRACE, () -> "Added host header to request: " + host);
                     } else {
                         throw new HttpSignatureException("Header " + header + " is required for signature, yet not defined in "
                                                                  + "request");
@@ -391,8 +390,8 @@ class HttpSignature {
             toSign = toSign + "\n";
         }
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("Data to sign: " + toSign);
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Data to sign: " + toSign);
         }
 
         return toSign;

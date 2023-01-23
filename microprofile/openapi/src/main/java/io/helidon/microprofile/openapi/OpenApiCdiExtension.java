@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.System.Logger.Level;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -27,8 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
@@ -60,7 +59,7 @@ public class OpenApiCdiExtension implements Extension {
 
     private static final String INDEX_PATH = "META-INF/jandex.idx";
 
-    private static final Logger LOGGER = Logger.getLogger(OpenApiCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OpenApiCdiExtension.class.getName());
 
     private final String[] indexPaths;
     private final int indexURLCount;
@@ -161,7 +160,7 @@ public class OpenApiCdiExtension implements Extension {
          */
         for (URL indexURL : findIndexFiles(indexPaths)) {
             try (InputStream indexIS = indexURL.openStream()) {
-                LOGGER.log(Level.CONFIG, "Adding Jandex index at {0}", indexURL.toString());
+                LOGGER.log(Level.DEBUG, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (Exception ex) {
                 throw new IOException("Attempted to read from previously-located index file "
@@ -184,9 +183,9 @@ public class OpenApiCdiExtension implements Extension {
                 .filter(Optional::isPresent)
                 .forEach(appClassOpt -> addClassToIndexer(indexer, appClassOpt.get()));
 
-        LOGGER.log(Level.CONFIG, "Using internal Jandex index created from CDI bean discovery");
+        LOGGER.log(Level.DEBUG, "Using internal Jandex index created from CDI bean discovery");
         Index result = indexer.complete();
-        dumpIndex(Level.FINER, result);
+        dumpIndex(Level.TRACE, result);
         return result;
     }
 

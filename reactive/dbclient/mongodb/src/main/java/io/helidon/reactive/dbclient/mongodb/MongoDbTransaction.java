@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package io.helidon.reactive.dbclient.mongodb;
 
+import java.lang.System.Logger.Level;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbStatementDml;
 import io.helidon.reactive.dbclient.DbStatementGet;
@@ -37,7 +37,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 public class MongoDbTransaction extends MongoDbExecute implements DbTransaction {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(MongoDbTransaction.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MongoDbTransaction.class.getName());
 
     static final class TransactionManager {
 
@@ -78,7 +78,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.finest(() -> String.format("Transaction marked as failed"));
+            LOGGER.log(Level.TRACE, () -> String.format("Transaction marked as failed"));
         }
 
         /**
@@ -97,7 +97,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.finest(() -> String.format("Statement %s marked as finished in transaction", stmt.statementName()));
+            LOGGER.log(Level.TRACE, () -> String.format("Statement %s marked as finished in transaction", stmt.statementName()));
         }
 
         /**
@@ -118,7 +118,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.finest(() -> String.format("Statement %s marked as failed in transaction", stmt.statementName()));
+            LOGGER.log(Level.TRACE, () -> String.format("Statement %s marked as failed in transaction", stmt.statementName()));
         }
 
         /**
@@ -135,7 +135,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
             } finally {
                 lock.unlock();
             }
-            LOGGER.finest(() -> String.format("All statements are registered in current transaction"));
+            LOGGER.log(Level.TRACE, () -> String.format("All statements are registered in current transaction"));
         }
 
         /**

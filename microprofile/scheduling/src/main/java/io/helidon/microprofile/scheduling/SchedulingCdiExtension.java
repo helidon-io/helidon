@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -25,8 +26,6 @@ import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,7 +57,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  * Scheduling CDI Extension.
  */
 public class SchedulingCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(SchedulingCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SchedulingCdiExtension.class.getName());
     private static final Pattern CRON_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(?<key>[^\\}]+)\\}");
     private final Queue<AnnotatedMethod<?>> methods = new LinkedList<>();
     private final Map<AnnotatedMethod<?>, Bean<?>> beans = new HashMap<>();
@@ -144,7 +143,7 @@ public class SchedulingCdiExtension implements Extension {
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
                         .build();
 
-                LOGGER.log(Level.FINE, () -> String.format("Method %s#%s scheduled to be executed %s",
+                LOGGER.log(Level.DEBUG, () -> String.format("Method %s#%s scheduled to be executed %s",
                         aClass.getSimpleName(), method.getName(), task.description()));
 
             } else if (am.isAnnotationPresent(Scheduled.class)) {
@@ -163,7 +162,7 @@ public class SchedulingCdiExtension implements Extension {
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
                         .build();
 
-                LOGGER.log(Level.FINE, () -> String.format("Method %s#%s scheduled to be executed %s",
+                LOGGER.log(Level.DEBUG, () -> String.format("Method %s#%s scheduled to be executed %s",
                         aClass.getSimpleName(), method.getName(), task.description()));
             }
         }

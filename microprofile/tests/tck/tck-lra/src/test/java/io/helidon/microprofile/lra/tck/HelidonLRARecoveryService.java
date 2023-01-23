@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package io.helidon.microprofile.lra.tck;
 
 import java.io.StringReader;
+import java.lang.System.Logger.Level;
 import java.net.URI;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -33,7 +32,7 @@ import org.eclipse.microprofile.lra.tck.service.spi.LRARecoveryService;
 
 public class HelidonLRARecoveryService implements LRARecoveryService {
 
-    private static final Logger LOGGER = Logger.getLogger(HelidonLRARecoveryService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HelidonLRARecoveryService.class.getName());
 
     @Override
     public void waitForCallbacks(URI lraId) {
@@ -50,9 +49,9 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
 
         do {
             if (counter > 15) return;
-            LOGGER.info("Recovery attempt #" + ++counter + " of " + lraId);
+            LOGGER.log(Level.INFO, "Recovery attempt #" + ++counter + " of " + lraId);
         } while (!waitForEndPhaseReplay(lraId));
-        LOGGER.info("LRA " + lraId + " has finished the recovery");
+        LOGGER.log(Level.INFO, "LRA " + lraId + " has finished the recovery");
 
     }
 
@@ -61,7 +60,7 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
         Client client = ClientBuilder.newClient();
         String lraIdString = lraId.toASCIIString();
         URI coordinatorUri = coordinatorPath(lraId);
-        LOGGER.info("Coordinator url for " + lraIdString + " is " + coordinatorUri.toASCIIString());
+        LOGGER.log(Level.INFO, "Coordinator url for " + lraIdString + " is " + coordinatorUri.toASCIIString());
         try {
             Response response = client
                     .target(coordinatorUri)
@@ -81,7 +80,7 @@ public class HelidonLRARecoveryService implements LRARecoveryService {
                     JsonObject jsonLra = jval.asJsonObject();
                     if (lraIdString.equals(jsonLra.getString("lraId"))) {
                         boolean recovering = jsonLra.getBoolean("recovering");
-                        LOGGER.info("LRA " + lraIdString + " is recovering: " + recovering);
+                        LOGGER.log(Level.INFO, "LRA " + lraIdString + " is recovering: " + recovering);
                         return recovering;
                     }
                 }

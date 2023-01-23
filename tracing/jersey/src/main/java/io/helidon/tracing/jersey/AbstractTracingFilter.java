@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.tracing.jersey;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -50,7 +50,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
     private static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
     private static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
     private static final String SPAN_FINISHED_PROPERTY = AbstractTracingFilter.class.getName() + ".spanFinished";
-    private static final Logger LOGGER = Logger.getLogger(AbstractTracingFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AbstractTracingFilter.class.getName());
     private static final AtomicBoolean DOUBLE_FINISH_LOGGED = new AtomicBoolean();
 
     @Override
@@ -114,7 +114,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
         if (requestContext.getProperty(SPAN_FINISHED_PROPERTY) != null) {
             if (DOUBLE_FINISH_LOGGED.compareAndSet(false, true)) {
-                LOGGER.warning("Response filter called twice. Most likely a response with streaming output was"
+                LOGGER.log(Level.WARNING, "Response filter called twice. Most likely a response with streaming output was"
                                        + " returned, where response had 200 status code, but streaming failed with another "
                                        + "error. Status: " + responseContext.getStatusInfo());
             }

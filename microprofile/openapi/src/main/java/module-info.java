@@ -31,8 +31,6 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 module io.helidon.microprofile.openapi {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-    
     requires smallrye.open.api.core;
 
     requires microprofile.config.api;

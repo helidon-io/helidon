@@ -30,8 +30,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.metrics {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
     requires static jakarta.cdi;
     requires static jakarta.inject;
     requires static jakarta.annotation;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 
@@ -40,7 +39,7 @@ import org.reactivestreams.Subscription;
  */
 public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaSubscriber.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(KafkaSubscriber.class.getName());
     private static final String BACKPRESSURE_SIZE_KEY = "backpressure.size";
 
     private final long backpressure;
@@ -68,7 +67,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
                 subscription.cancel();
             }
         } catch (RuntimeException e) {
-            LOGGER.log(Level.SEVERE, "Cannot start the Kafka producer", e);
+            LOGGER.log(Level.ERROR, "Cannot start the Kafka producer", e);
             subscription.cancel();
         }
     }
@@ -125,13 +124,13 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
     @Override
     public void onError(Throwable t) {
         Objects.requireNonNull(t);
-        LOGGER.log(Level.SEVERE, "The Kafka subscription has failed", t);
+        LOGGER.log(Level.ERROR, "The Kafka subscription has failed", t);
         kafkaProducer.close();
     }
 
     @Override
     public void onComplete() {
-        LOGGER.fine(() -> "Subscriber has finished");
+        LOGGER.log(Level.DEBUG, () -> "Subscriber has finished");
         kafkaProducer.close();
     }
 

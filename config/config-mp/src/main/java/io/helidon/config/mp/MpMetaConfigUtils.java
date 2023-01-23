@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.config.mp;
 
+import java.lang.System.Logger.Level;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigValue;
@@ -34,7 +33,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * Utilities for Helidon MicroProfile Meta-Config implementation.
  */
 public class MpMetaConfigUtils {
-    private static final Logger LOGGER = Logger.getLogger(MpMetaConfig.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MpMetaConfig.class.getName());
 
     private MpMetaConfigUtils() {
     }
@@ -139,7 +138,7 @@ public class MpMetaConfigUtils {
         try {
             mainSource = fromUrl.apply(url);
             if (cause != null) {
-                LOGGER.log(Level.FINEST, "Failed to load profile URL resource, succeeded loading main from " + url, cause);
+                LOGGER.log(Level.TRACE, "Failed to load profile URL resource, succeeded loading main from " + url, cause);
             }
         } catch (ConfigException e) {
             if (cause != null) {
@@ -149,7 +148,7 @@ public class MpMetaConfigUtils {
                 if (profileSource == null) {
                     throw e;
                 } else {
-                    LOGGER.log(Level.FINEST, "Did not find main URL config source from " + url + ", have profile source", e);
+                    LOGGER.log(Level.TRACE, "Did not find main URL config source from " + url + ", have profile source", e);
                 }
             }
         }

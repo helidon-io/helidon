@@ -30,7 +30,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.tyrus {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
     requires java.net.http;
     requires jakarta.inject;
 

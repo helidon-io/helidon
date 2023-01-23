@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.integration.grpc;
 
+import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -25,8 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -105,7 +104,7 @@ import jakarta.annotation.Priority;
 @Priority(InterceptorPriorities.AUTHENTICATION)
 public final class GrpcSecurity
         implements ServerInterceptor, ServiceDescriptor.Configurer {
-    private static final Logger LOGGER = Logger.getLogger(GrpcSecurity.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcSecurity.class.getName());
 
     /**
      * Security can accept additional headers to be added to security request.
@@ -443,7 +442,7 @@ public final class GrpcSecurity
 
             return new ContextualizedServerCallListener<>(listener, context);
         } catch (Throwable throwable) {
-            LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", throwable);
+            LOGGER.log(Level.ERROR, "Unexpected exception during security processing", throwable);
             call.close(Status.INTERNAL, new Metadata());
             return new GrpcSecurityHandler.EmptyListener<>();
         }

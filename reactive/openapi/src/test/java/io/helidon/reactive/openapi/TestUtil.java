@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.reactive.openapi;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.CharBuffer;
@@ -26,8 +27,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
@@ -55,7 +54,7 @@ public class TestUtil {
     private static final JsonReaderFactory JSON_READER_FACTORY
             = Json.createReaderFactory(Collections.emptyMap());
 
-    private static final Logger LOGGER = Logger.getLogger(TestUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TestUtil.class.getName());
 
     /**
      * Starts the web server at an available port and sets up OpenAPI using the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package io.helidon.security.providers.httpauth;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Digest token parsing and processing.
  */
 class DigestToken {
-    private static final Logger LOGGER = Logger.getLogger(DigestToken.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DigestToken.class.getName());
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
     private String username;
@@ -54,7 +54,7 @@ class DigestToken {
                 String value = unquote(trimmed.substring(eq + 1).trim());
                 values.put(key, value);
             } else {
-                LOGGER.finest(() -> "Unrecognized digest header value: " + string);
+                LOGGER.log(Level.TRACE, () -> "Unrecognized digest header value: " + string);
             }
         }
 

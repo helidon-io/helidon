@@ -44,7 +44,6 @@ module io.helidon.microprofile.server {
     requires transitive jakarta.json;
     requires io.helidon.jersey.media.jsonp;
 
-    requires java.logging;
     requires io.helidon.nima.webserver.staticcontent;
     requires transitive io.helidon.nima.webserver.context;
 

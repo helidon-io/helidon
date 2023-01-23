@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -31,6 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
@@ -172,7 +177,11 @@ class LoomServer implements WebServer {
     }
 
     private void stopIt() {
-        parallel("stop", ServerListener::stop);
+        // We may be in a shutdown hook and new threads may not be created
+        for (ServerListener listener : listeners.values()) {
+            listener.stop();
+        }
+
         running.set(false);
 
         LOGGER.log(System.Logger.Level.INFO, "Níma server stopped all channels.");
@@ -210,13 +219,19 @@ class LoomServer implements WebServer {
 
     private void registerShutdownHook() {
         this.shutdownHook = new Thread(() -> {
+                    LOGGER.log(System.Logger.Level.INFO, "Shutdown requested by JVM shutting down");
                     listeners.values().forEach(ServerListener::stop);
                     if (startFutures != null) {
                         startFutures.forEach(future -> future.future().cancel(true));
                     }
-                }, "shutdown-hook");
+                    LOGGER.log(System.Logger.Level.INFO, "Shutdown finished");
+                }, "nima-shutdown-hook");
 
         Runtime.getRuntime().addShutdownHook(shutdownHook);
+        // we also need to keep the logging system active until the shutdown hook completes
+        // this introduces a hard dependency on JUL, as we cannot abstract this easily away
+        // this is to workaround https://bugs.openjdk.java.net/browse/JDK-8161253
+        keepLoggingActive(shutdownHook);
     }
 
     private void deregisterShutdownHook() {
@@ -255,6 +270,61 @@ class LoomServer implements WebServer {
         return result;
     }
 
+    private void keepLoggingActive(Thread shutdownHook) {
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        Handler[] handlers = rootLogger.getHandlers();
+
+        List<Handler> newHandlers = new ArrayList<>();
+
+        boolean added = false;
+        for (Handler handler : handlers) {
+            if (handler instanceof KeepLoggingActiveHandler) {
+                // we want to replace it with our current shutdown hook
+                newHandlers.add(new KeepLoggingActiveHandler(shutdownHook));
+                added = true;
+            } else {
+                newHandlers.add(handler);
+            }
+        }
+        if (!added) {
+            // out handler must be first, so other handlers are not closed before we finish shutdown hook
+            newHandlers.add(0, new KeepLoggingActiveHandler(shutdownHook));
+        }
+
+        for (Handler handler : handlers) {
+            rootLogger.removeHandler(handler);
+        }
+        for (Handler newHandler : newHandlers) {
+            rootLogger.addHandler(newHandler);
+        }
+    }
+
     private record ListenerFuture(ServerListener listener, Future<?> future) {
+    }
+
+    private static final class KeepLoggingActiveHandler extends Handler {
+        private final Thread shutdownHook;
+
+        private KeepLoggingActiveHandler(Thread shutdownHook) {
+            this.shutdownHook = shutdownHook;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            // noop
+        }
+
+        @Override
+        public void flush() {
+            // noop
+        }
+
+        @Override
+        public void close() {
+            try {
+                shutdownHook.join();
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 }

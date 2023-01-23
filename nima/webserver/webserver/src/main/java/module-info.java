@@ -41,6 +41,8 @@ module io.helidon.nima.webserver {
     requires io.helidon.pico.builder.config;
 
     requires java.management;
+    // only used to keep logging active until shutdown hook finishes
+    requires java.logging;
 
     requires jakarta.annotation;
     requires io.helidon.common.uri;

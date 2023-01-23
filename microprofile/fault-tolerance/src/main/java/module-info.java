@@ -30,7 +30,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.faulttolerance {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
     requires jakarta.annotation;
     requires jakarta.inject;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.lang.System.Logger.Level;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -24,8 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.NackHandler;
@@ -37,7 +36,7 @@ import jakarta.jms.Session;
 
 abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractJmsMessage.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AbstractJmsMessage.class.getName());
 
     private Executor executor;
     private SessionMetadata sharedSessionEntry;
@@ -108,7 +107,7 @@ abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
                 getJmsMessage().acknowledge();
                 acked = true;
             } catch (JMSException e) {
-                LOGGER.log(Level.SEVERE, e, () -> "Error during acknowledgement of JMS message");
+                LOGGER.log(Level.ERROR, () -> "Error during acknowledgement of JMS message", e);
             }
         };
         return Optional.ofNullable(executor)

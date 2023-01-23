@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.tools.client;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner.ExecType;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
  */
 public abstract class TestsLifeCycleExtension implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static final Logger LOGGER = Logger.getLogger(TestsLifeCycleExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TestsLifeCycleExtension.class.getName());
 
     private static final String STORE_KEY = TestsLifeCycleExtension.class.getName();
 
@@ -47,7 +47,7 @@ public abstract class TestsLifeCycleExtension implements BeforeAllCallback, Exte
         final Object resource = ec.getRoot().getStore(GLOBAL).get(STORE_KEY);
         if (resource == null) {
             LogConfig.configureRuntime();
-            LOGGER.finest("Running beforeAll lifecycle method for the first time, invoking setup()");
+            LOGGER.log(Level.TRACE, "Running beforeAll lifecycle method for the first time, invoking setup()");
             ec.getRoot().getStore(GLOBAL).put(STORE_KEY, this);
             check();
             runner = processRunner();
@@ -56,7 +56,7 @@ public abstract class TestsLifeCycleExtension implements BeforeAllCallback, Exte
             }
             setup();
         } else {
-            LOGGER.finest("Running beforeAll lifecycle method next time, skipping setup()");
+            LOGGER.log(Level.TRACE, "Running beforeAll lifecycle method next time, skipping setup()");
         }
     }
 

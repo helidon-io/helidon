@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package io.helidon.integrations.vault.auths.k8s;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -37,7 +37,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 50)
 public class K8sVaultAuth implements VaultAuth {
-    private static final Logger LOGGER = Logger.getLogger(K8sVaultAuth.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(K8sVaultAuth.class.getName());
 
     private final String serviceAccountToken;
     private final String tokenRole;
@@ -131,7 +131,7 @@ public class K8sVaultAuth implements VaultAuth {
                         .asString()
                         .orElse(K8sAuthRx.AUTH_METHOD.defaultPath()));
 
-        LOGGER.info("Authenticated Vault " + address + "/" + methodPath + " using k8s, role \"" + roleName + "\"");
+        LOGGER.log(Level.INFO, "Authenticated Vault " + address + "/" + methodPath + " using k8s, role \"" + roleName + "\"");
         return Optional.of(K8sRestApi.k8sBuilder()
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");

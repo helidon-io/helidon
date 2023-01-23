@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.providers.google.login;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.GeneralSecurityException;
@@ -30,8 +31,6 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -75,7 +74,7 @@ import com.google.api.client.json.gson.GsonFactory;
  * See google-login example.
  */
 public final class GoogleTokenProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    private static final Logger LOGGER = Logger.getLogger(GoogleTokenProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GoogleTokenProvider.class.getName());
     private static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
 
     static final long TIME_SKEW_SECONDS = TimeUnit.SECONDS.convert(5, TimeUnit.MINUTES);
@@ -209,7 +208,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
             // lowest allowed time
             long checkTime = currentTime + TIME_SKEW_SECONDS;
             if (issueTime > checkTime) {
-                LOGGER.log(Level.FINEST,
+                LOGGER.log(Level.TRACE,
                            () -> "Token pre-validation failed, issue time too late: " + issueTime + " for " + payload);
                 return false;
             }
@@ -218,7 +217,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
         if (null != expiryTime) {
             long checkTime = currentTime - TIME_SKEW_SECONDS;
             if (expiryTime < checkTime) {
-                LOGGER.log(Level.FINEST,
+                LOGGER.log(Level.TRACE,
                            () -> "Token pre-validation failed, expiration time too early: " + expiryTime + " for " + payload);
                 return false;
             }
@@ -303,7 +302,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
 
     private AuthenticationResponse failInvalidRequest(Exception e) {
         if (optional) {
-            LOGGER.log(Level.FINE, "Failed to authenticate Google token", e);
+            LOGGER.log(Level.DEBUG, "Failed to authenticate Google token", e);
             return AuthenticationResponse.abstain();
         }
         return AuthenticationResponse.builder()
@@ -317,7 +316,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
 
     private AuthenticationResponse failNoToken() {
         if (optional) {
-            LOGGER.log(Level.FINE, "Failed to authenticate Google token, token not present");
+            LOGGER.log(Level.DEBUG, "Failed to authenticate Google token, token not present");
             return AuthenticationResponse.abstain();
         }
 
@@ -331,7 +330,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
 
     private AuthenticationResponse fail(Throwable throwable) {
         if (optional) {
-            LOGGER.log(Level.FINE, "Failed to authenticate Google token", throwable);
+            LOGGER.log(Level.DEBUG, "Failed to authenticate Google token", throwable);
             return AuthenticationResponse.abstain();
         }
 

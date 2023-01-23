@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.security.integration.jersey;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.security.Security;
@@ -44,7 +44,7 @@ import org.glassfish.jersey.internal.util.collection.Ref;
 @Priority(Priorities.AUTHENTICATION)
 @ConstrainedTo(RuntimeType.SERVER)
 class SecurityPreMatchingFilter extends SecurityFilterCommon implements ContainerRequestFilter {
-    private static final Logger LOGGER = Logger.getLogger(SecurityPreMatchingFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecurityPreMatchingFilter.class.getName());
 
     private static final AtomicInteger CONTEXT_COUNTER = new AtomicInteger();
 
@@ -90,7 +90,7 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
         // when I reach this point, I am sure we should at least authenticate in prematching filter
         authenticate(filterContext, securityContext, tracing.atnTracing());
 
-        LOGGER.finest(() -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
+        LOGGER.log(Level.TRACE, () -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
 
         // authentication failed
         if (filterContext.isShouldFinish()) {
@@ -100,11 +100,11 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
         filterContext.clearTrace();
 
         if (featureConfig().shouldUsePrematchingAuthorization()) {
-            LOGGER.finest(() -> "Using pre-matching authorization");
+            LOGGER.log(Level.TRACE, () -> "Using pre-matching authorization");
             authorize(filterContext, securityContext, tracing.atzTracing());
         }
 
-        LOGGER.finest(() -> "Filter completed (after authorization)");
+        LOGGER.log(Level.TRACE, () -> "Filter completed (after authorization)");
     }
 
     @Override
@@ -123,7 +123,7 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
     }
 
     @Override
-    protected Logger logger() {
+    protected System.Logger logger() {
         return LOGGER;
     }
 }

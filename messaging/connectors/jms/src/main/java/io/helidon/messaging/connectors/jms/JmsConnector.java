@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
@@ -177,7 +176,7 @@ import org.reactivestreams.FlowAdapters;
         type = "properties")
 public class JmsConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
 
-    private static final Logger LOGGER = Logger.getLogger(JmsConnector.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JmsConnector.class.getName());
 
     /**
      * Microprofile messaging JMS connector name.
@@ -325,7 +324,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 executor.shutdownNow();
             }
         } catch (InterruptedException e) {
-            LOGGER.log(Level.SEVERE, e, () -> "Error when awaiting scheduler termination.");
+            LOGGER.log(Level.ERROR, () -> "Error when awaiting scheduler termination.", e);
             scheduler.shutdownNow();
             executor.shutdownNow();
         }
@@ -334,10 +333,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 e.session().close();
                 e.connection().close();
             } catch (JMSException jmsException) {
-                LOGGER.log(Level.SEVERE, jmsException, () -> "Error when stopping JMS sessions.");
+                LOGGER.log(Level.ERROR, () -> "Error when stopping JMS sessions.", jmsException);
             }
         }
-        LOGGER.info("JMS Connector gracefully stopped.");
+        LOGGER.log(Level.INFO, "JMS Connector gracefully stopped.");
     }
 
     /**
@@ -469,7 +468,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             sessionEntry.connection().start();
             return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emitter)));
         } catch (JMSException e) {
-            LOGGER.log(Level.SEVERE, e, () -> "Error during JMS publisher preparation");
+            LOGGER.log(Level.ERROR, () -> "Error during JMS publisher preparation", e);
             return ReactiveStreams.failed(e);
         }
     }
@@ -490,8 +489,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             AtomicReference<MessageMapper> mapper = new AtomicReference<>();
             return ReactiveStreams.<Message<?>>builder()
                     .flatMapCompletionStage(m -> consume(m, session, mapper, producer, config))
-                    .onError(t -> LOGGER.log(Level.SEVERE, t, () -> "Error intercepted from channel "
-                            + config.get(CHANNEL_NAME_ATTRIBUTE).asString().orElse("unknown")))
+                                  .onError(t -> LOGGER.log(Level.ERROR,
+                                          () -> "Error intercepted from channel " + config.get(CHANNEL_NAME_ATTRIBUTE)
+                                                                                           .asString()
+                                                                                           .orElse("unknown"), t))
                     .ignore();
         } catch (JMSException e) {
             throw new MessagingException("Error when creating JMS producer.", e);
@@ -548,7 +549,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             if (message == null) {
                 return Optional.empty();
             }
-            LOGGER.fine(() -> "Received message: " + message);
+            LOGGER.log(Level.DEBUG, () -> "Received message: " + message);
             JmsMessage<?> preparedMessage = createMessage(nackHandler, message, executor, sessionEntry);
             emitter.emit(preparedMessage);
             return Optional.of(preparedMessage);

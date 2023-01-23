@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.grpc.server;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -42,9 +42,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ContextIT {
 
     /**
-     * The {@link java.util.logging.Logger} to use for logging.
+     * The {@link System.Logger} to use for logging.
      */
-    private static final Logger LOGGER = Logger.getLogger(TracingIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TracingIT.class.getName());
 
     /**
      * The Helidon {@link io.helidon.grpc.server.GrpcServer} being tested.
@@ -115,7 +115,7 @@ public class ContextIT {
                         .toCompletableFuture()
                         .get(10, TimeUnit.SECONDS);
 
-        LOGGER.info("Started gRPC server at: localhost:" + grpcServer.port());
+        LOGGER.log(Level.INFO, "Started gRPC server at: localhost:" + grpcServer.port());
     }
 
 

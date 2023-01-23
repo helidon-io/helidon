@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@ package io.helidon.tests.integration.jpa.appl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -33,7 +33,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class JdbcApiIT {
 
-    private static final Logger LOGGER = Logger.getLogger(JdbcApiIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JdbcApiIT.class.getName());
 
     /* Database connection. */
     private static Connection conn = null;
@@ -50,7 +50,7 @@ public class JdbcApiIT {
         try (InputStream is = JdbcApiIT.class.getResourceAsStream("/META-INF/microprofile-config.properties")) {
             config.load(is);
         } catch (IOException ex) {
-            LOGGER.severe(() -> String.format("Could not load configuration properties: %s", ex.getMessage()));
+            LOGGER.log(Level.ERROR, () -> String.format("Could not load configuration properties: %s", ex.getMessage()));
         }
         final String dbUser = config.getProperty("javax.sql.DataSource.test.dataSource.user");
         final String dbPassword = config.getProperty("javax.sql.DataSource.test.dataSource.password");
@@ -67,7 +67,7 @@ public class JdbcApiIT {
         try {
             conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
         } catch (SQLException ex) {
-            LOGGER.info(() -> String.format("Could not open database connection: %s", ex.getMessage()));
+            LOGGER.log(Level.INFO, () -> String.format("Could not open database connection: %s", ex.getMessage()));
             conn = null;
         }
         return result;
@@ -107,7 +107,7 @@ public class JdbcApiIT {
                 result.assertEquals(1, value);
             }
         } catch (SQLException e) {
-            LOGGER.warning(() -> String.format("Simple ping query failed: ", e.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("Simple ping query failed: ", e.getMessage()));
             result.throwed(e);
         }
         return result;

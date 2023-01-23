@@ -37,7 +37,6 @@ module io.helidon.microprofile.lra {
     requires jakarta.ws.rs;
     requires microprofile.lra.api;
     requires org.jboss.jandex;
-    requires java.logging;
     requires jakarta.annotation;
     requires io.helidon.config;
     requires io.helidon.microprofile.config;

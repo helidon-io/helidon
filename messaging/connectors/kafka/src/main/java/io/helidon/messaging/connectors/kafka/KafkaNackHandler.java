@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.EmittingPublisher;
@@ -55,7 +54,7 @@ interface KafkaNackHandler<K, V> extends NackHandler<KafkaMessage<K, V>> {
         Log(Config config, Config logOnlyConfig) {
         }
 
-        private static final Logger LOGGER = Logger.getLogger(KafkaNackHandler.Log.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(KafkaNackHandler.Log.class.getName());
 
         @Override
         public Function<Throwable, CompletionStage<Void>> getNack(KafkaMessage<K, V> message) {
@@ -70,7 +69,7 @@ interface KafkaNackHandler<K, V> extends NackHandler<KafkaMessage<K, V>> {
 
     class KillChannel<K, V> implements KafkaNackHandler<K, V> {
 
-        private static final Logger LOGGER = Logger.getLogger(KafkaNackHandler.KillChannel.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(KafkaNackHandler.KillChannel.class.getName());
         private final EmittingPublisher<KafkaMessage<K, V>> emitter;
 
         KillChannel(EmittingPublisher<KafkaMessage<K, V>> emitter) {
@@ -83,7 +82,7 @@ interface KafkaNackHandler<K, V> extends NackHandler<KafkaMessage<K, V>> {
         }
 
         private CompletionStage<Void> nack(Throwable t, KafkaMessage<K, V> message) {
-            LOGGER.log(Level.SEVERE, messageToString("NACKED message - killing the channel", message), t);
+            LOGGER.log(Level.ERROR, messageToString("NACKED message - killing the channel", message), t);
             emitter.fail(t);
             return CompletableFuture.failedStage(t);
         }

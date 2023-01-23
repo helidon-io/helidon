@@ -28,8 +28,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.security {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
     requires transitive io.helidon.security;
     requires io.helidon.security.providers.abac;
     requires transitive io.helidon.security.integration.jersey;

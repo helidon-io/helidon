@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.microprofile.server;
 
+import java.lang.System.Logger.Level;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.metadata.Configured;
@@ -122,7 +122,7 @@ public interface Server {
      */
     @Configured(prefix = "server", description = "Configuration of Helidon Microprofile Server", root = true)
     final class Builder implements io.helidon.common.Builder<Builder, Server> {
-        private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
+        private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
@@ -164,7 +164,7 @@ public interface Server {
          */
         @Override
         public Server build() {
-            STARTUP_LOGGER.entering(Builder.class.getName(), "build");
+            STARTUP_LOGGER.log(Level.TRACE, Builder.class.getName() + " build ENTRY");
 
             // configuration must be initialized before we start the container
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -202,7 +202,7 @@ public interface Server {
                 server.basePath(basePath);
             }
 
-            STARTUP_LOGGER.finest("Configuration obtained");
+            STARTUP_LOGGER.log(Level.TRACE, "Configuration obtained");
 
             // explicit application configuration
             // if there are any resource classes explicitly added, create an application for them
@@ -232,7 +232,7 @@ public interface Server {
                 jaxRs.addSyntheticApplication(resourceClasses);
             }
 
-            STARTUP_LOGGER.finest("Jersey resource configuration");
+            STARTUP_LOGGER.log(Level.TRACE, "Jersey resource configuration");
 
             if (null == host) {
                 host = config.getOptionalValue("server.host", String.class).orElse("0.0.0.0");

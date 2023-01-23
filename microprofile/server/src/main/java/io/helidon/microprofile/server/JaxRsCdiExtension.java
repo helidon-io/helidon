@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.server;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,8 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.nima.webserver.http.ServerRequest;
 
@@ -53,7 +52,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Configure Jersey related things.
  */
 public class JaxRsCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(JaxRsCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JaxRsCdiExtension.class.getName());
 
     private final List<JaxRsApplication> applicationMetas = new LinkedList<>();
 
@@ -79,7 +78,7 @@ public class JaxRsCdiExtension implements Extension {
                 // we are only interested in classes - interface is most likely a REST client API
                 return;
             }
-            LOGGER.finest(() -> "Discovered resource class " + resourceClass.getName());
+            LOGGER.log(Level.TRACE, () -> "Discovered resource class " + resourceClass.getName());
             resources.add(resourceClass);
         }
     }
@@ -89,11 +88,11 @@ public class JaxRsCdiExtension implements Extension {
             Class<?> providerClass = processManagedBean.getAnnotatedBeanClass().getJavaClass();
             if (providerClass.isInterface()) {
                 // we are only interested in classes
-                LOGGER.finest(() -> "Discovered @Provider interface " + providerClass
+                LOGGER.log(Level.TRACE, () -> "Discovered @Provider interface " + providerClass
                         .getName() + ", ignored as we only support classes");
                 return;
             }
-            LOGGER.finest(() -> "Discovered @Provider class " + providerClass.getName());
+            LOGGER.log(Level.TRACE, () -> "Discovered @Provider class " + providerClass.getName());
             providers.add(providerClass);
         }
     }
@@ -295,7 +294,7 @@ public class JaxRsCdiExtension implements Extension {
             if (exception instanceof WebApplicationException) {
                 return ((WebApplicationException) exception).getResponse();
             } else {
-                LOGGER.log(Level.WARNING, exception, () -> "Internal server error");
+                LOGGER.log(Level.WARNING, () -> "Internal server error", exception);
                 return Response.serverError().build();
             }
         }

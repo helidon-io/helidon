@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.microprofile.grpc.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -56,7 +55,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 public class MetricsConfigurer
         implements AnnotatedServiceConfigurer {
 
-    private static final Logger LOGGER = Logger.getLogger(MetricsConfigurer.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MetricsConfigurer.class.getName());
 
     static final Map<Class<? extends Annotation>, MetricInfo> METRIC_ANNOTATION_INFO = Map.of(
             Counted.class, MetricInfo.create(GrpcMetrics::counted, Counter.class),
@@ -126,7 +125,7 @@ public class MetricsConfigurer
         if (rpcMethod != null) {
             String grpcMethodName = GrpcServiceBuilder.determineMethodName(annotatedMethod, rpcMethod);
 
-            LOGGER.log(Level.FINE, () -> String.format("Adding gRPC '%s' metric interceptor to service '%s' method '%s'",
+            LOGGER.log(Level.DEBUG, () -> String.format("Adding gRPC '%s' metric interceptor to service '%s' method '%s'",
                                                        annotation.annotationType().getSimpleName(),
                                                        builder.name(),
                                                        grpcMethodName));

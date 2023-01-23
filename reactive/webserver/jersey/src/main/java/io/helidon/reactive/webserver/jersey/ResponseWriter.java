@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.reactive.webserver.jersey;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -25,7 +26,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -49,7 +49,7 @@ import org.glassfish.jersey.server.spi.ContainerResponseWriter;
  * from Netty's pool.
  */
 class ResponseWriter implements ContainerResponseWriter {
-    private static final Logger LOGGER = Logger.getLogger(ResponseWriter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ResponseWriter.class.getName());
 
     private final ContainerRequest requestContext;
     private final ServerResponse res;
@@ -79,7 +79,7 @@ class ResponseWriter implements ContainerResponseWriter {
                 && requestContext.getUriInfo().getMatchedModelResource() == null) {
             // this should only get invoked when we get the default 404 (nothing invoked)
             whenHandleFinishes.thenRun(() -> {
-                LOGGER.finer("Skipping the handling and forwarding to downstream WebServer filters.");
+                LOGGER.log(Level.TRACE, "Skipping the handling and forwarding to downstream WebServer filters.");
                 req.next();
             });
             return new OutputStream() {
@@ -137,7 +137,7 @@ class ResponseWriter implements ContainerResponseWriter {
 
     @Override
     public void failure(Throwable error) {
-        LOGGER.finer(() -> "Jersey handling finished with an exception; message: " + error.getMessage());
+        LOGGER.log(Level.TRACE, () -> "Jersey handling finished with an exception; message: " + error.getMessage());
         req.next(error);
     }
 

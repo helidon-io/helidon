@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.lang.System.Logger.Level;
 import java.time.LocalTime;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class ScheduledBean {
 
-    private static final Logger LOGGER = Logger.getLogger(ScheduledBean.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ScheduledBean.class.getName());
 
     final CountDownLatch countDownLatch = new CountDownLatch(2);
 
@@ -46,7 +46,7 @@ public class ScheduledBean {
         duration = System.currentTimeMillis() - stamp;
         stamp = System.currentTimeMillis();
         countDownLatch.countDown();
-        LOGGER.fine(() -> "Executed at " + LocalTime.now().toString());
+        LOGGER.log(Level.DEBUG, () -> "Executed at " + LocalTime.now().toString());
     }
 
 }

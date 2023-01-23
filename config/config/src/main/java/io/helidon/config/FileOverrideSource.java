@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package io.helidon.config;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent;
@@ -41,7 +40,7 @@ import io.helidon.config.spi.WatchableSource;
 public final class FileOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<byte[]>, WatchableSource<Path> {
 
-    private static final Logger LOGGER = Logger.getLogger(FileOverrideSource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FileOverrideSource.class.getName());
 
     private final Path filePath;
 
@@ -63,7 +62,7 @@ public final class FileOverrideSource extends AbstractSource
 
     @Override
     public Optional<ConfigContent.OverrideContent> load() throws ConfigException {
-        LOGGER.log(Level.FINE, String.format("Getting content from '%s'.", filePath));
+        LOGGER.log(Level.DEBUG, String.format("Getting content from '%s'.", filePath));
 
         return FileSourceHelper.readDataAndDigest(filePath)
                 .map(dad -> ConfigContent.OverrideContent.builder()

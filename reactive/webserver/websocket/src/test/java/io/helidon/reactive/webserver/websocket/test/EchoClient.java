@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 package io.helidon.reactive.webserver.websocket.test;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.logging.Logger;
 
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason;
@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Class EchoClient.
  */
 public class EchoClient {
-    private static final Logger LOGGER = Logger.getLogger(EchoClient.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EchoClient.class.getName());
 
     private static final ClientManager client = ClientManager.createClient(JdkClientContainer.class.getName());
     private static final long TIMEOUT_SECONDS = 40;
@@ -78,7 +78,7 @@ public class EchoClient {
                     session.addMessageHandler(new MessageHandler.Whole<String>() {
                         @Override
                         public void onMessage(String message) {
-                            LOGGER.info("Client OnMessage called '" + message + "'");
+                            LOGGER.log(Level.INFO, "Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
                             assertTrue(equals.apply(messages[index], message));

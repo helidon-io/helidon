@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 package io.helidon.microprofile.lra;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ConstrainedTo;
@@ -34,7 +33,7 @@ import jakarta.ws.rs.core.Context;
 @ConstrainedTo(RuntimeType.SERVER)
 class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
-    private static final Logger LOGGER = Logger.getLogger(JaxRsServerFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JaxRsServerFilter.class.getName());
 
     @Context
     private ResourceInfo resourceInfo;
@@ -55,7 +54,7 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
             // Rethrow error responses
             throw e;
         } catch (Throwable e) {
-            LOGGER.log(Level.SEVERE, "Error when invoking LRA participant request", e);
+            LOGGER.log(Level.ERROR, "Error when invoking LRA participant request", e);
         }
     }
 
@@ -73,7 +72,7 @@ class JaxRsServerFilter implements ContainerRequestFilter, ContainerResponseFilt
                 handler.handleJaxRsAfter(requestContext, responseContext, resourceInfo);
             }
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "Error in after LRA filter", t);
+            LOGGER.log(Level.ERROR, "Error in after LRA filter", t);
         }
     }
 }

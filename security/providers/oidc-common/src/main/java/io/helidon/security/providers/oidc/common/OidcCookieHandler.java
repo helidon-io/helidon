@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -26,8 +27,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.reactive.Single;
@@ -36,7 +35,7 @@ import io.helidon.common.reactive.Single;
  * Handler of cookies used in OIDC.
  */
 public class OidcCookieHandler {
-    private static final Logger LOGGER = Logger.getLogger(OidcCookieHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OidcCookieHandler.class.getName());
 
     private final String createCookieOptions;
     private final List<Consumer<SetCookie.Builder>> removeCookieUpdaters = new LinkedList<>();
@@ -99,9 +98,9 @@ public class OidcCookieHandler {
             this.decryptFunction = Single::just;
         }
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest(() -> "OIDC Create cookie example: " + value);
-            LOGGER.finest(() -> "OIDC Remove cookie example: " + removeCookie().build());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, () -> "OIDC Create cookie example: " + value);
+            LOGGER.log(Level.TRACE, () -> "OIDC Remove cookie example: " + removeCookie().build());
         }
     }
 

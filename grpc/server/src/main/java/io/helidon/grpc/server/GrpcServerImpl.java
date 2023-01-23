@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.grpc.server;
 
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -29,8 +30,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
@@ -84,9 +83,9 @@ public class GrpcServerImpl implements GrpcServer {
     private CompletableFuture<GrpcServer> shutdownFuture = new CompletableFuture<>();
 
     /**
-     * The {@link Logger} to use.
+     * The {@link System.Logger} to use.
      */
-    private static final Logger LOGGER = Logger.getLogger(GrpcServerImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcServerImpl.class.getName());
 
     /**
      * Configuration values.
@@ -200,7 +199,7 @@ public class GrpcServerImpl implements GrpcServer {
             startFuture.complete(this);
         } catch (Throwable e) {
             e.printStackTrace();
-            LOGGER.log(Level.SEVERE, format("gRPC server [%s]: failed to start on port %d (TLS=%s)", sName, port, tls), e);
+            LOGGER.log(Level.ERROR, format("gRPC server [%s]: failed to start on port %d (TLS=%s)", sName, port, tls), e);
             startFuture.completeExceptionally(e);
         }
         return startFuture;
@@ -224,7 +223,7 @@ public class GrpcServerImpl implements GrpcServer {
                 shutdownFuture.complete(this);
             }
         } catch (Throwable e) {
-            LOGGER.log(Level.SEVERE, format("gRPC server [%s]: server failed to shut down", name), e);
+            LOGGER.log(Level.ERROR, format("gRPC server [%s]: server failed to shut down", name), e);
             shutdownFuture.completeExceptionally(e);
         }
 
@@ -279,7 +278,7 @@ public class GrpcServerImpl implements GrpcServer {
         // boolean useNative = config.useNativeTransport();
 
         if (channelType == null) {
-            LOGGER.log(Level.FINE, () -> "Using NIO transport");
+            LOGGER.log(Level.DEBUG, () -> "Using NIO transport");
             channelType = NioServerSocketChannel.class;
             boss = new NioEventLoopGroup(1);
             Executor executor = new ThreadPerTaskExecutor(new ContextAwareThreadFactory(NioEventLoopGroup.class));
@@ -317,7 +316,7 @@ public class GrpcServerImpl implements GrpcServer {
         mapServices.put(service.getClass().getName(), ssd);
         healthService.add(serviceName, serviceDescriptor.healthCheck());
 
-        LOGGER.info(() -> format("gRPC server [%s]: registered service [%s]",
+        LOGGER.log(Level.INFO, () -> format("gRPC server [%s]: registered service [%s]",
                                  serverName, serviceName));
 
         Iterator<String> methods = ssd.getMethods()
@@ -328,12 +327,12 @@ public class GrpcServerImpl implements GrpcServer {
                 .iterator();
 
         if (methods.hasNext()) {
-            LOGGER.info(() -> format("gRPC server [%s]:       with methods [%s]",
+            LOGGER.log(Level.INFO, () -> format("gRPC server [%s]:       with methods [%s]",
                                      serverName,
                                      methods.next()));
         }
         while (methods.hasNext()) {
-            LOGGER.info(() -> format("gRPC server [%s]:                    [%s]",
+            LOGGER.log(Level.INFO, () -> format("gRPC server [%s]:                    [%s]",
                                      serverName,
                                      methods.next()));
         }
@@ -358,7 +357,7 @@ public class GrpcServerImpl implements GrpcServer {
         handlerRegistry.removeService(ssd);
         mapServices.remove(serviceClassName);
 
-        LOGGER.info(() -> format("gRPC server [%s]: unregistered service [%s]",
+        LOGGER.log(Level.INFO, () -> format("gRPC server [%s]: unregistered service [%s]",
                                  sName,
                                  ssd.getServiceDescriptor().getName()));
     }

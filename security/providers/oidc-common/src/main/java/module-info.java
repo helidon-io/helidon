@@ -18,7 +18,6 @@
  * OIDC common classes.
  */
 module io.helidon.security.providers.oidc.common {
-    requires java.logging;
 
     // EncryptionProvider.EncryptionSupport is part of API
     requires transitive io.helidon.security;

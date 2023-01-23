@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.reactive.webclient;
 
+import java.lang.System.Logger.Level;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -44,7 +44,7 @@ import static io.helidon.reactive.webclient.WebClientRequestBuilderImpl.REQUEST_
  */
 class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
 
-    private static final Logger LOGGER = Logger.getLogger(RequestContentSubscriber.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(RequestContentSubscriber.class.getName());
     private static final LastHttpContent LAST_HTTP_CONTENT = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
     private static final Set<HttpMethod> EMPTY_CONTENT_LENGTH = Set.of(HttpMethod.PUT, HttpMethod.POST);
 
@@ -76,7 +76,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
         subscription.request(1);
-        LOGGER.finest(() -> "(client reqID: " + requestId + ") Writing sending request and its content to the server.");
+        LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Writing sending request and its content to the server.");
     }
 
     @Override
@@ -127,7 +127,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     @Override
     public void onComplete() {
         if (lengthOptimization) {
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+            LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") "
                     + "Message body contains only one data chunk. Setting chunked encoding to false.");
             HttpUtil.setTransferEncodingChunked(request, false);
             if (!HttpUtil.isContentLengthSet(request)) {
@@ -145,7 +145,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
             }
         }
         WebClientServiceRequest serviceRequest = channel.serviceRequest();
-        LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending last http content");
+        LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Sending last http content");
         channel.write(true, LAST_HTTP_CONTENT, f -> f
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") "
                                                                + "An exception occurred when writing last http content."))
@@ -153,19 +153,20 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 .addListener(future -> {
                     if (future.isSuccess()) {
                         sent.complete(serviceRequest);
-                        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
+                        LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Request sent");
                     }
                 }));
     }
 
     private void sendData(DataChunk data) {
-        LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending data chunk");
+        LOGGER.log(Level.TRACE, () -> "(client reqID: " + requestId + ") Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
         channel.write(true, httpContent, f -> f
                 .addListener(future -> {
                     data.release();
                     subscription.request(1);
-                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
+                    LOGGER.log(Level.TRACE,
+                            () -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
                 })
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") Failure when sending a content!"))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE));

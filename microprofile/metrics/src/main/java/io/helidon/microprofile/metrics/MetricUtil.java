@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +40,7 @@ import org.eclipse.microprofile.metrics.Tag;
  * Class MetricUtil.
  */
 final class MetricUtil {
-    private static final Logger LOGGER = Logger.getLogger(MetricUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MetricUtil.class.getName());
 
     private MetricUtil() {
     }
@@ -134,7 +134,7 @@ final class MetricUtil {
             } else {
                 // Absolute must be false at class level, issue warning here
                 if (absolute) {
-                    LOGGER.warning(() -> "Attribute 'absolute=true' in metric annotation ignored at class level");
+                    LOGGER.log(Level.WARNING, () -> "Attribute 'absolute=true' in metric annotation ignored at class level");
                 }
                 result = clazz.getPackage().getName() + '.' + explicitName
                         + '.' + getElementName(element, clazz);

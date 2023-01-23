@@ -16,11 +16,10 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -43,7 +42,7 @@ import static io.helidon.messaging.connectors.jms.JmsConnector.JNDI_PROPS_ATTRIB
  */
 public class ConnectionContext {
 
-    private static final Logger LOGGER = Logger.getLogger(ConnectionContext.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ConnectionContext.class.getName());
 
     private final Config config;
     private final InitialContext ctx;
@@ -111,7 +110,7 @@ public class ConnectionContext {
         try {
             return ctx.lookup(jndi);
         } catch (NamingException e) {
-            LOGGER.log(Level.WARNING, e, () -> "JNDI lookup of " + jndi + " failed");
+            LOGGER.log(Level.WARNING, () -> "JNDI lookup of " + jndi + " failed", e);
             return null;
         }
     }

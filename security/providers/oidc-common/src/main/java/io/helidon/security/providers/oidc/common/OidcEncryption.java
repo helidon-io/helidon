@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +26,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import io.helidon.common.Base64Value;
 import io.helidon.common.context.Contexts;
@@ -35,7 +35,7 @@ import io.helidon.security.Security;
 import io.helidon.security.spi.EncryptionProvider.EncryptionSupport;
 
 final class OidcEncryption {
-    private static final Logger LOGGER = Logger.getLogger(OidcEncryption.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OidcEncryption.class.getName());
 
     private OidcEncryption() {
     }
@@ -87,9 +87,9 @@ final class OidcEncryption {
             } catch (IOException e) {
                 throw new SecurityException("Failed to create OIDC secret " + path.toAbsolutePath(), e);
             }
-            LOGGER.warning("OIDC requires encryption configuration which was not provided. We will generate a password"
-                                   + " that will only work for the current service instance. To disable encryption, use"
-                                   + " cookie-encryption-enabled: false configuration, to configure master password, use"
+            LOGGER.log(Level.WARNING, "OIDC requires encryption configuration which was not provided. We will generate"
+                                   + " a password that will only work for the current service instance. To disable encryption,"
+                                   + " use cookie-encryption-enabled: false configuration, to configure master password, use"
                                    + " cookie-encryption-password: my-master-password (must be configured to same value on all"
                                    + " instances that share the cookie), to configure encryption using security"
                                    + " (support for vaults), use"
