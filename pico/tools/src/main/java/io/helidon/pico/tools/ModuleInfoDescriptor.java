@@ -209,7 +209,7 @@ public interface ModuleInfoDescriptor {
         Optional<ModuleInfoItem> existing = builder.first(target);
         if (existing.isEmpty()) {
             ModuleInfoItem item = Objects.requireNonNull(itemSupplier.get());
-            assert (target.equals(item.target()));
+            assert (target.equals(item.target())) : "target mismatch: " + target + " and " + item.target();
             builder.addItem(item);
             return true;
         }

@@ -35,8 +35,8 @@ class ModuleInfoDescriptorTest {
     void programmatic() {
         DefaultModuleInfoDescriptor.Builder builder = DefaultModuleInfoDescriptor.builder();
         assertThat(builder.build().contents(),
-                   equalTo("// @Generated({provider=oracle, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
+                   equalTo("// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module unnamed {\n"
                                    + "}"));
         builder.name("my.module");
@@ -46,8 +46,8 @@ class ModuleInfoDescriptorTest {
                    equalTo("/**\n"
                                    + " * comments here.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=oracle, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
+                                   + "// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
+                                           + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "}"));
@@ -57,8 +57,8 @@ class ModuleInfoDescriptorTest {
                    equalTo("/**\n"
                                    + " * comments here.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=oracle, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
+                                   + "// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
+                                           + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "    uses " + ExternalContracts.class.getName() + ";\n"
@@ -69,8 +69,8 @@ class ModuleInfoDescriptorTest {
                    equalTo("/**\n"
                                    + " * comments here.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=oracle, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
+                                   + "// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module my.module {\n"
                                    + "    requires transitive their.module;\n"
                                    + "    uses " + ExternalContracts.class.getName() + ";\n"
@@ -88,8 +88,8 @@ class ModuleInfoDescriptorTest {
                 .addItem(ModuleInfoDescriptor.exportsPackage("export2"))
                 .build();
         assertThat(descriptor.contents(),
-                   equalTo("// @Generated({provider=oracle, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
+                   equalTo("// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module test {\n"
                                    + "    provides cn2 with impl2;\n"
                                    + "    provides cn1;\n"
@@ -120,8 +120,8 @@ class ModuleInfoDescriptorTest {
                                  .build())
                 .build();
         assertThat(descriptor.contents(),
-                   equalTo("// @Generated({provider=oracle, generator=io.helidon.pico.tools"
-                                   + ".DefaultModuleInfoDescriptor, ver=1})\n"
+                   equalTo("// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
+                                   + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module test {\n"
                                    + "    provides cn1;\n"
                                    + "    provides cn2 with impl2;\n"

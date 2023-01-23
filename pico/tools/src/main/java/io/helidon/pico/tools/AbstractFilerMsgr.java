@@ -238,7 +238,7 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
                 throw new IllegalStateException(location + " is not supported for: " + relativeName);
             }
 
-            File outDir = new File(Objects.requireNonNull(paths.outputPath()));
+            File outDir = new File(paths.outputPath().orElseThrow());
             File resourceFile = new File(outDir, relativeName.toString());
             if (expectedToExist && !resourceFile.exists()) {
                 throw new NoSuchFileException(resourceFile.getPath());
@@ -275,9 +275,9 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
                 TypeName typeName) {
             String sourcePath;
             if (StandardLocation.SOURCE_PATH == location) {
-                sourcePath = paths.sourcePath();
+                sourcePath = paths.sourcePath().orElse(null);
             } else if (StandardLocation.SOURCE_OUTPUT == location) {
-                sourcePath = paths.generatedSourcesPath();
+                sourcePath = paths.generatedSourcesPath().orElse(null);
             } else {
                 throw new ToolsException("Unable to determine location of " + typeName + " with " + location);
             }

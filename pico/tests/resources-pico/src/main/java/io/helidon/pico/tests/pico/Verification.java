@@ -22,25 +22,33 @@ import java.util.Optional;
 
 import jakarta.inject.Provider;
 
+/**
+ * Pico Testing.
+ */
 public abstract class Verification {
 
+    /**
+     * Pico Testing.
+     *
+     * @param injectee injectee
+     * @param tag tag
+     * @param injectedCount injectedCount
+     * @param expected expected
+     * @param expectedType expectedType
+     */
     public static void verifyInjected(
             Optional<?> injectee,
             String tag,
             Integer injectedCount,
             boolean expected,
             Class<?> expectedType) {
-        if (Objects.isNull(injectee)) {
-            throw new AssertionError(tag + " was not injected");
-        }
-
         if (expected && injectee.isEmpty()) {
             throw new AssertionError(tag + " was expected to be present");
         } else if (!expected && injectee.isPresent()) {
             throw new AssertionError(tag + " was not expected to be present");
         }
 
-        if (expectedType != null && expected && !(expectedType.isInstance(injectee.get()))) {
+        if (expectedType != null && expected && !expectedType.isInstance(injectee.get())) {
             throw new AssertionError(tag + " was expected to be of type " + expectedType + " : " + injectee);
         }
 
@@ -50,6 +58,15 @@ public abstract class Verification {
         }
     }
 
+    /**
+     * Pico Testing.
+     *
+     * @param injectee injectee
+     * @param tag tag
+     * @param injectedCount injectedCount
+     * @param expectedSingleton expectedSingleton
+     * @param expectedType expectedType
+     */
     public static void verifyInjected(
             Provider<?> injectee,
             String tag,
@@ -57,9 +74,7 @@ public abstract class Verification {
             boolean expectedSingleton,
             Class<?> expectedType) {
         Objects.requireNonNull(injectee, tag + " was not injected");
-
-        Object provided = injectee.get();
-        Objects.requireNonNull(provided, tag + " was expected to be provided");
+        Object provided = Objects.requireNonNull(injectee.get(), tag + " was expected to be provided");
 
         if (expectedType != null && !expectedType.isInstance(provided)) {
             throw new AssertionError(tag + " was expected to be of type " + expectedType + " : " + provided);
@@ -69,17 +84,26 @@ public abstract class Verification {
         if (expectedSingleton && provided != provided2) {
             throw new AssertionError(tag + " was expected to be a singleton provided type");
         }
-        if (expectedType != null && !expectedType.isInstance(provided2)) {
+        if (expectedType != null && !(expectedType.isInstance(provided2))) {
             throw new AssertionError(tag + " was expected to be of type " + expectedType + " : " + provided2);
         }
 
-        if (injectedCount == 1 && injectedCount != 1) {
+        if (injectedCount != null && injectedCount != 1) {
             throw new AssertionError(tag
                                              + " was was expected to be injected 1 time; it was actually injected "
                                              + injectedCount + " times");
         }
     }
 
+    /**
+     * Pico Testing.
+     *
+     * @param injectee injectee
+     * @param tag tag
+     * @param injectedCount injectedCount
+     * @param expectedSize expectedSize
+     * @param expectedType expectedType
+     */
     public static void verifyInjected(
             List<?> injectee,
             String tag,

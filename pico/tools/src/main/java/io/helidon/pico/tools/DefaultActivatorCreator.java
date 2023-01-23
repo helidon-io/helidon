@@ -19,7 +19,6 @@ package io.helidon.pico.tools;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -371,7 +370,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
 
         try {
-            return req.filer().codegenModuleInfoFilerOut(descriptor, true).orElseThrow();
+            return req.filer().codegenModuleInfoFilerOut(descriptor, true).orElse(null);
         } finally {
             if (req.analysisOnly()) {
                 CodeGenFiler.filerEnabled(prev);
@@ -431,7 +430,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String postConstructMethodName = toPostConstructMethodName(serviceTypeName, codeGen);
         String preDestroyMethodName = toPreDestroyMethodName(serviceTypeName, codeGen);
         List<?> serviceTypeInjectionOrder = toServiceTypeHierarchy(serviceTypeName, codeGen, scan);
-        List<String> extraCodeGen = getExtraCodeGen(serviceTypeName, codeGen);
+        List<String> extraCodeGen = toExtraCodeGen(serviceTypeName, codeGen);
         boolean isProvider = toIsProvider(serviceTypeName, codeGen);
         boolean isConcrete = toIsConcrete(serviceTypeName, codeGen);
         boolean isSupportsJsr330InStrictMode = req.configOptions().isSupportsJsr330InStrictMode();
@@ -442,20 +441,20 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .template(template)
                 .serviceTypeName(serviceTypeName)
                 .activatorTypeName(activatorTypeName)
-                .activatorGenericDecl(activatorGenericDecl)
-                .parentTypeName(parentTypeName)
+                .activatorGenericDecl(Optional.ofNullable(activatorGenericDecl))
+                .parentTypeName(Optional.ofNullable(parentTypeName))
                 .scopeTypeNames(scopeTypeNames)
                 .description(description)
                 .serviceInfo(serviceInfo)
-                .dependencies(dependencies)
-                .parentDependencies(parentDependencies)
+                .dependencies(Optional.ofNullable(dependencies))
+                .parentDependencies(Optional.ofNullable(parentDependencies))
                 .injectionPointsSkippedInParent(injectionPointsSkippedInParent)
                 .serviceTypeInjectionOrder(serviceTypeInjectionOrder)
                 .generatedSticker(generatedSticker)
-                .weightedPriority(weightedPriority)
-                .runLevel(runLevel)
-                .postConstructMethodName(postConstructMethodName)
-                .preDestroyMethodName(preDestroyMethodName)
+                .weightedPriority(Optional.ofNullable(weightedPriority))
+                .runLevel(Optional.ofNullable(runLevel))
+                .postConstructMethodName(Optional.ofNullable(postConstructMethodName))
+                .preDestroyMethodName(Optional.ofNullable(preDestroyMethodName))
                 .extraCodeGen(extraCodeGen)
                 .concrete(isConcrete)
                 .provider(isProvider)
@@ -465,7 +464,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
 
         return DefaultActivatorCodeGenDetail.builder()
                 .serviceInfo(serviceInfo)
-                .dependencies(dependencies)
+                .dependencies(Optional.ofNullable(dependencies))
                 .serviceTypeName(toActivatorImplTypeName(activatorTypeName))
                 .body(activatorBody)
                 .build();
@@ -515,7 +514,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .serviceTypeToProviderForTypes(services.providerForTypeNames())
                 .serviceTypeQualifiers(services.qualifiers())
                 .modulesRequired(services.requiredModules())
-                .classPrefixName(services.lastKnownTypeSuffix())
+                .classPrefixName(Objects.nonNull(services.lastKnownTypeSuffix())
+                                         ? services.lastKnownTypeSuffix() : ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME)
                 .serviceTypeInterceptionPlan(services.interceptorPlans())
                 .extraCodeGen(services.extraCodeGen())
                 .build());
@@ -541,7 +541,6 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String packageName = servicesToProcess.determineGeneratedPackageName();
 
         CodeGenPaths codeGenPaths = createCodeGenPaths(servicesToProcess);
-
         return DefaultActivatorCreatorRequest.builder()
                 .serviceTypeNames(servicesToProcess.serviceTypeNames())
                 .codeGen(codeGen)
@@ -654,9 +653,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("classname", args.activatorTypeName().className());
         subst.put("flatclassname", toFlatName(args.activatorTypeName().className()));
         subst.put("packagename", args.activatorTypeName().packageName());
-        subst.put("activatorgenericdecl", args.activatorGenericDecl());
+        subst.put("activatorgenericdecl", args.activatorGenericDecl().orElse(null));
         subst.put("parent", toCodenParent(args.isSupportsJsr330InStrictMode(),
-                                          args.activatorTypeName(), args.parentTypeName()));
+                                          args.activatorTypeName(), args.parentTypeName().orElse(null)));
         subst.put("scopetypenames", args.scopeTypeNames());
         subst.put("description", args.description());
         subst.put("generatedanno", args.generatedSticker());
@@ -667,17 +666,17 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             subst.put("externalcontracts", ((ServiceInfo) args.serviceInfo()).externalContractsImplemented());
         }
         subst.put("qualifiers", toCodegenQualifiers(args.serviceInfo().qualifiers()));
-        subst.put("dependencies", toCodegenDependencies(args.dependencies()));
-        subst.put("weight", args.weightedPriority());
-        subst.put("isweightset", Objects.nonNull(args.weightedPriority()));
-        subst.put("runlevel", args.runLevel());
-        subst.put("isrunlevelset", Objects.nonNull(args.runLevel()));
-        subst.put("postconstruct", args.postConstructMethodName());
-        subst.put("predestroy", args.preDestroyMethodName());
-        subst.put("ctorarglist", toCodegenCtorArgList(args.dependencies()));
-        subst.put("ctorargs", toCodegenInjectCtorArgs(args.dependencies()));
-        subst.put("injectedfields", toCodegenInjectFields(args.dependencies()));
-        subst.put("injectedmethods", toCodegenInjectMethods(args.activatorTypeName(), args.dependencies()));
+        subst.put("dependencies", toCodegenDependencies(args.dependencies().orElse(null)));
+        subst.put("weight", args.weightedPriority().orElse(null));
+        subst.put("isweightset", args.weightedPriority().isPresent());
+        subst.put("runlevel", args.runLevel().orElse(null));
+        subst.put("isrunlevelset", args.runLevel().isPresent());
+        subst.put("postconstruct", args.postConstructMethodName().orElse(null));
+        subst.put("predestroy", args.preDestroyMethodName().orElse(null));
+        subst.put("ctorarglist", toCodegenCtorArgList(args.dependencies().orElse(null)));
+        subst.put("ctorargs", toCodegenInjectCtorArgs(args.dependencies().orElse(null)));
+        subst.put("injectedfields", toCodegenInjectFields(args.dependencies().orElse(null)));
+        subst.put("injectedmethods", toCodegenInjectMethods(args.activatorTypeName(), args.dependencies().orElse(null)));
         subst.put("injectedmethodsskippedinparent", args.injectionPointsSkippedInParent());
         subst.put("extracodegen", args.extraCodeGen());
         subst.put("injectionorder", args.serviceTypeInjectionOrder());
@@ -735,7 +734,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String elemName = Objects.requireNonNull(ipInfo.elementName());
         if (ipInfo.elementKind() == InjectionPointInfo.ElementKind.CONSTRUCTOR
                 && elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
-            elemName = "CTOR";
+            elemName = "CONSTRUCTOR";
         } else {
             elemName = "\"" + elemName + "\"";
         }
@@ -756,16 +755,16 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             builder.append(toCodegenQualifiers(qualifiers));
         }
         if (ipInfo.listWrapped()) {
-            builder.append(".setIsListWrapped()");
+            builder.append(".listWrapped()");
         }
         if (ipInfo.providerWrapped()) {
-            builder.append(".setIsProviderWrapped()");
+            builder.append(".providerWrapped()");
         }
         if (ipInfo.optionalWrapped()) {
-            builder.append(".setIsOptionalWrapped()");
+            builder.append(".optionalWrapped()");
         }
         if (ipInfo.staticDeclaration()) {
-            builder.append(".setIsStatic()");
+            builder.append(".staticDeclaration()");
         }
         return builder.toString();
     }
@@ -774,7 +773,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             Collection<QualifierAndValue> qualifiers) {
         StringBuilder builder = new StringBuilder();
         for (QualifierAndValue qualifier : qualifiers) {
-            builder.append(".qualifier(").append(toCodegenQualifiers(qualifier)).append(")");
+            builder.append(".addQualifier(").append(toCodegenQualifiers(qualifier)).append(")");
         }
         return builder.toString();
     }
@@ -861,14 +860,13 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         AtomicInteger count = new AtomicInteger();
         AtomicReference<String> nameRef = new AtomicReference<>();
         List<String> args = new LinkedList<>();
-        dependencies.allDependencies()
-                .forEach(dep1 -> dep1.injectionPointDependencies().stream()
-                        .filter(dep2 -> DefaultInjectionPointInfo.CONSTRUCTOR.equals(dep2.elementName()))
+        List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(DefaultInjectionPointInfo.CONSTRUCTOR);
+        allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies().stream()
                         .forEach(dep2 -> {
                             if (Objects.isNull(nameRef.get())) {
                                 nameRef.set(dep2.baseIdentity());
                             } else {
-                                assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 ctor can be injectable";
+                                assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 constructor can be injectable";
                             }
                             String cn = toCodegenDecl(dep1.dependencyTo(), dep2);
                             String argName = "c" + count.incrementAndGet();
@@ -982,7 +980,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             hierarchy = List.of(parent);
         }
         if (hierarchy == null) {
-            return null;
+            return List.of();
         }
 
         DependenciesInfo deps = codeGen.serviceTypeInjectionPointDependencies().get(serviceTypeName);
@@ -1002,7 +1000,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                     }
                 });
 
-        return (result.isEmpty()) ? null : result;
+        return result;
     }
 
     /**
@@ -1157,7 +1155,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     Set<String> toScopeTypeNames(
             TypeName serviceTypeName,
             ActivatorCreatorCodeGen codeGen) {
-        return codeGen.serviceTypeScopeNames().get(serviceTypeName);
+        Set<String> result = codeGen.serviceTypeScopeNames().get(serviceTypeName);
+        return (result == null) ? Set.of() : result;
     }
 
     /**
@@ -1212,7 +1211,8 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             return null;
         }
 
-        return codeGen.serviceTypeInjectionPointDependencies().get(serviceTypeName);
+        DependenciesInfo dependenciesInfo = codeGen.serviceTypeInjectionPointDependencies().get(serviceTypeName);
+        return dependenciesInfo;
     }
 
     String toPostConstructMethodName(
@@ -1234,19 +1234,19 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             LazyValue<ScanResult> scan) {
         Map<TypeName, List<TypeName>> map = codeGen.serviceTypeHierarchy();
         List<TypeName> order = (Objects.nonNull(map)) ? map.get(serviceTypeName) : null;
-        if (Objects.nonNull(order)) {
-            return (1 == order.size()) ? null : order;
+        if (order != null) {
+            return (1 == order.size()) ? List.of() : order;
         }
 
         return serviceTypeHierarchy(serviceTypeName, scan);
     }
 
-    List<String> getExtraCodeGen(
+    List<String> toExtraCodeGen(
             TypeName serviceTypeName,
             ActivatorCreatorCodeGen codeGen) {
         Map<TypeName, List<String>> map = codeGen.extraCodeGen();
-        List<String> extraCodeGen = (Objects.nonNull(map)) ? map.get(serviceTypeName) : null;
-        return Objects.isNull(extraCodeGen) ? Collections.emptyList() : extraCodeGen;
+        List<String> extraCodeGen = (map != null) ? map.get(serviceTypeName) : List.of();
+        return (extraCodeGen == null) ? List.of() : extraCodeGen;
     }
 
     static List<TypeName> serviceTypeHierarchy(
@@ -1254,11 +1254,11 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             LazyValue<ScanResult> scan) {
         List<TypeName> order = new LinkedList<>();
         ClassInfo classInfo = toClassInfo(serviceTypeName, scan);
-        while (Objects.nonNull(classInfo)) {
+        while (classInfo != null) {
             order.add(0, createTypeNameFromClassInfo(classInfo));
             classInfo = classInfo.getSuperclass();
         }
-        return (1 == order.size()) ? null : order;
+        return (1 == order.size()) ? List.of() : order;
     }
 
     ActivatorCreatorResponse handleError(

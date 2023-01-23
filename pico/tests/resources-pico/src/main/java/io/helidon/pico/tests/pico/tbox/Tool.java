@@ -19,9 +19,17 @@ package io.helidon.pico.tests.pico.tbox;
 import io.helidon.pico.Contract;
 import io.helidon.pico.Named;
 
+/**
+ * Pico Testing.
+ */
 @Contract
 public interface Tool extends Named {
 
+    /**
+     * Pico Testing.
+     *
+     * @return for testing
+     */
     default String name() {
         return named().orElseThrow();
     }

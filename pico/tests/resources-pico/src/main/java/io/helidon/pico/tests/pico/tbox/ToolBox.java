@@ -22,11 +22,24 @@ import io.helidon.pico.Contract;
 
 import jakarta.inject.Provider;
 
+/**
+ * Pico Testing.
+ */
 @Contract
 public interface ToolBox {
 
+    /**
+     * Pico Testing.
+     *
+     * @return for testing
+     */
     List<Provider<Tool>> toolsInBox();
 
+    /**
+     * Pico Testing.
+     *
+     * @return for testing
+     */
     Provider<Hammer> preferredHammer();
 
 }

@@ -47,6 +47,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
      * @deprecated
      */
     public DefaultPicoServicesProvider() {
+        int debugMe = 0;
     }
 
     @Override
@@ -59,6 +60,7 @@ public class DefaultPicoServicesProvider implements PicoServicesProvider, Reseta
         }
 
         if (INSTANCE.get().bootstrap().equals(bootstrap)) {
+            // the global one
             return INSTANCE.get();
         }
 

@@ -97,7 +97,7 @@ class TemplateHelperTest {
                                    + " * Description 1.\n"
                                    + " * Description 2.\n"
                                    + " */\n"
-                                   + "// @Generated({provider=oracle, generator=generator, ver=1})\n"
+                                   + "// @Generated({\"provider=oracle\", \"generator=generator\", \"version=1\"})\n"
                                    + "module my-module-name { \n"
                                    + "}\n"));
     }

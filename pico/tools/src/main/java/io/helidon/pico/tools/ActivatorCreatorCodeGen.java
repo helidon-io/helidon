@@ -36,6 +36,11 @@ import io.helidon.pico.types.TypeName;
 public interface ActivatorCreatorCodeGen {
 
     /**
+     * The default prefix for {@link #classPrefixName()}.
+     */
+    String DEFAULT_CLASS_PREFIX_NAME = "";
+
+    /**
      * Optionally, for each service type also provide its parent (super class) service type mapping.
      *
      * @return the service type to parent (super class) service type mapping
@@ -168,7 +173,7 @@ public interface ActivatorCreatorCodeGen {
      *
      * @return production or test scope
      */
-    @ConfiguredOption("")
+    @ConfiguredOption(DEFAULT_CLASS_PREFIX_NAME)
     String classPrefixName();
 
 }

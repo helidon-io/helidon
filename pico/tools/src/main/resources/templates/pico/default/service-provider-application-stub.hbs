@@ -22,8 +22,8 @@ package {{packagename}};
 
 import java.util.Optional;
 
-import io.helidon.pico.spi.Application;
-import io.helidon.pico.spi.ServiceInjectionPlanBinder;
+import io.helidon.pico.Application;
+import io.helidon.pico.ServiceInjectionPlanBinder;
 
 import jakarta.annotation.Generated;
 import jakarta.inject.Named;
@@ -43,7 +43,7 @@ public class {{classname}} implements Application {
     static final String NAME = "unnamed";{{/modulename}}
 
     @Override
-    public Optional<String> getName() {
+    public Optional<String> named() {
         return Optional.of(NAME);
     }
 

@@ -65,7 +65,8 @@ public class TemplateHelper {
      * @return the template helper initialized with the bootstrap configuration
      */
     public static TemplateHelper create() {
-        PicoServicesConfig cfg = PicoServices.picoServices().orElseThrow().config();
+        PicoServicesConfig cfg = PicoServices.picoServices()
+                .orElseThrow(() -> new ToolsException(PicoServicesConfig.NAME + " services not found")).config();
         return new TemplateHelper(cfg);
     }
 
@@ -79,9 +80,9 @@ public class TemplateHelper {
             String generatorClassTypeName) {
         return "{" + String.join(", ",
                                  List.of(
-                                         "provider=" + providerName,
-                                         "generator=" + generatorClassTypeName,
-                                         "ver=" + versionId))
+                                         "\"provider=" + providerName + "\"",
+                                         "\"generator=" + generatorClassTypeName + "\"",
+                                         "\"version=" + versionId + "\""))
                 + "}";
     }
 

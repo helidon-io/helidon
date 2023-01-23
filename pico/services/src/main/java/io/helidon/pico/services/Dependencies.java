@@ -210,7 +210,7 @@ public class Dependencies {
          */
         public BuilderContinuation elemOffset(
                 Integer offset) {
-            ipInfoBuilder.elementOffset(offset);
+            ipInfoBuilder.elementOffset(Optional.ofNullable(offset));
             return this;
         }
 
@@ -295,7 +295,7 @@ public class Dependencies {
          * @param val the qualifier
          * @return the builder
          */
-        public BuilderContinuation qualifier(
+        public BuilderContinuation addQualifier(
                 Class<? extends Annotation> val) {
             ipInfoBuilder.addQualifier(DefaultQualifierAndValue.create(val));
             return this;
@@ -307,7 +307,7 @@ public class Dependencies {
          * @param val the qualifier
          * @return the builder
          */
-        public BuilderContinuation qualifier(
+        public BuilderContinuation addQualifier(
                 QualifierAndValue val) {
             ipInfoBuilder.addQualifier(val);
             return this;

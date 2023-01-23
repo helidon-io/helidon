@@ -83,7 +83,7 @@ public interface GeneralCreatorRequest extends GeneralCodeGenNames {
      *
      * @return the generator name
      */
-    String generator();
+    Optional<String> generator();
 
     /**
      * The code gen filer to use.

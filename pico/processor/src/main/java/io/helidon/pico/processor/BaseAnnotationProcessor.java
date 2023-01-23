@@ -116,10 +116,24 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     static final String TARGET_DIR = "/target/";
     static final String SRC_MAIN_JAVA_DIR = "src/main/java";
 
-    private final ServicesToProcess services = ServicesToProcess.servicesInstance();
-    private final InterceptorCreator interceptorCreator = InterceptorCreatorProvider.instance();
+    private final ServicesToProcess services;
+    private final InterceptorCreator interceptorCreator;
     private RoundEnvironment roundEnv;
-    private ActivatorCreatorResponse result;
+
+    /**
+     * Constructor.
+     *
+     * @deprecated
+     */
+    protected BaseAnnotationProcessor() {
+        try {
+            this.services = ServicesToProcess.servicesInstance();
+            this.interceptorCreator = InterceptorCreatorProvider.instance();
+        } catch (Throwable t) {
+            logger().log(Level.ERROR, "failed to initialize: " + t.getMessage(), t);
+            throw new ToolsException("failed to initialize: " + t.getMessage(), t);
+        }
+    }
 
     @Override
     public void init(ProcessingEnvironment processingEnv) {
@@ -311,8 +325,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             TypeName serviceTypeName) {
         return DefaultServiceInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
-                .declaredWeight(services.weightedPriorities().get(serviceTypeName))
-                .declaredRunLevel(services.runLevels().get(serviceTypeName))
+                .declaredWeight(Optional.ofNullable(services.weightedPriorities().get(serviceTypeName)))
+                .declaredRunLevel(Optional.ofNullable(services.runLevels().get(serviceTypeName)))
                 .scopeTypeNames(services.scopeTypeNames().get(serviceTypeName))
                 .build();
     }
@@ -363,16 +377,16 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             }
         }
 
-        services.addServiceTypeHierarchy(serviceTypeName, toServiceTypeHierarchy(type, true));
-
-        TypeElement superTypeElement = TypeTools.toTypeElement(type.getSuperclass()).orElseThrow();
-        TypeName parentServiceTypeName = createTypeNameFromElement(superTypeElement).orElse(null);
+        TypeElement superTypeElement = TypeTools.toTypeElement(type.getSuperclass()).orElse(null);
+        TypeName parentServiceTypeName = (superTypeElement == null)
+                ? null : createTypeNameFromElement(superTypeElement).orElseThrow();
         services.addParentServiceType(serviceTypeName, parentServiceTypeName);
         services.addAccessLevel(serviceTypeName, toAccess(type));
         services.addIsAbstract(serviceTypeName, isAbstract(type));
+        services.addServiceTypeHierarchy(serviceTypeName, toServiceTypeHierarchy(type, true));
 
         RunLevel runLevel = type.getAnnotation(RunLevel.class);
-        if (Objects.nonNull(runLevel)) {
+        if (runLevel != null) {
             services.addDeclaredRunLevel(serviceTypeName, runLevel.value());
         }
 
@@ -554,7 +568,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         try {
             services.lastGeneratedPackageName(req.packageName().orElseThrow());
             ActivatorCreatorResponse res = creator.createModuleActivators(req);
-            this.result = res;
             if (!res.success()) {
                 throw new ToolsException("error during codegen", res.error().orElse(null));
             }

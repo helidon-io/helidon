@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.tests.pico.tbox;
-
 /**
  * Pico Testing.
  */
-// @Singleton -- intentionally not declared to be a contract
-public interface Lubricant {
-
-}
+package io.helidon.pico.tests.pico.tbox;

@@ -60,15 +60,76 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <compilerArgs>
+                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>
+                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Aio.helidon.pico.whiteListedInterceptorAnnotations=jakarta.inject.Named</arg>
+                        <arg>-Aio.helidon.pico.application.pre.create=true</arg>
+                        <arg>-Aio.helidon.pico.mapApplicationToSingletonScope=true</arg>
+                        <arg>-XprintProcessorInfo</arg>
+                        <arg>-XprintRounds</arg>
+                        <arg>-verbose</arg>
+                    </compilerArgs>
+                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <groupId>io.helidon.pico</groupId>
+                            <artifactId>helidon-pico-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+<!--                        <path>-->
+<!--                            <groupId>io.helidon.pico</groupId>-->
+<!--                            <artifactId>helidon-pico-services</artifactId>-->
+<!--                            <version>${helidon.version}</version>-->
+<!--                        </path>-->
+                        <!-- TODO -->
+<!--                        <path>-->
+<!--                            <groupId>io.helidon.pico</groupId>-->
+<!--                            <artifactId>helidon-pico-tests-resources-plain</artifactId>-->
+<!--                            <version>${helidon.version}</version>-->
+<!--                        </path>-->
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- TODO -->
+<!--            <plugin>-->
+<!--                <groupId>io.helidon.pico</groupId>-->
+<!--                <artifactId>helidon-pico-maven-plugin</artifactId>-->
+<!--                <version>${helidon.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>compile</id>-->
+<!--                        <phase>compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>application-create</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                    <execution>-->
+<!--                        <id>testCompile</id>-->
+<!--                        <phase>test-compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>test-application-create</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <compilerArgs>-->
+<!--                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>-->
+<!--                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>-->
+<!--                        <arg>-Aio.helidon.pico.application.pre.create=true</arg>-->
+<!--                        <arg>-XprintProcessorInfo</arg>-->
+<!--                        <arg>-XprintRounds</arg>-->
+<!--                        <arg>-verbose</arg>-->
+<!--                    </compilerArgs>-->
+<!--                    <permittedProviderTypes>NAMED</permittedProviderTypes>-->
+<!--                    <permittedProviderTypeNames>-->
+<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.provider.MyServices$MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>-->
+<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.provider.MyServices$MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>-->
+<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.tbox.impl.ASerialProviderImpl</permittedProviderTypeName>-->
+<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.tbox.impl.BladeProvider</permittedProviderTypeName>-->
+<!--                    </permittedProviderTypeNames>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

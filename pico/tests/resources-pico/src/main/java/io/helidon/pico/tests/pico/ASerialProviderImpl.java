@@ -25,6 +25,9 @@ import io.helidon.common.Weighted;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
+/**
+ * Pico Testing.
+ */
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
 @Singleton
 public class ASerialProviderImpl implements Provider<Serializable> {

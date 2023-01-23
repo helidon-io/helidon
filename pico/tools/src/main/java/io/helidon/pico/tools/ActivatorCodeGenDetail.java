@@ -16,6 +16,8 @@
 
 package io.helidon.pico.tools;
 
+import java.util.Optional;
+
 import io.helidon.builder.Builder;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.ServiceInfoBasics;
@@ -40,6 +42,6 @@ public interface ActivatorCodeGenDetail extends GeneralCodeGenDetail {
      *
      * @return additional meta-information describing what the generated service depends upon
      */
-    DependenciesInfo dependencies();
+    Optional<DependenciesInfo> dependencies();
 
 }

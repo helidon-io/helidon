@@ -18,6 +18,7 @@ package io.helidon.pico.tools;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
@@ -33,20 +34,20 @@ abstract class ActivatorCreatorArgs {
     abstract String template();
     abstract TypeName serviceTypeName();
     abstract TypeName activatorTypeName();
-    abstract String activatorGenericDecl();
-    abstract TypeName parentTypeName();
+    abstract Optional<String> activatorGenericDecl();
+    abstract Optional<TypeName> parentTypeName();
     abstract Set<String> scopeTypeNames();
     abstract List<String> description();
     abstract ServiceInfoBasics serviceInfo();
-    abstract DependenciesInfo dependencies();
-    abstract DependenciesInfo parentDependencies();
+    abstract Optional<DependenciesInfo> dependencies();
+    abstract Optional<DependenciesInfo> parentDependencies();
     abstract Collection<Object> injectionPointsSkippedInParent();
     abstract List<?> serviceTypeInjectionOrder();
     abstract String generatedSticker();
-    abstract Double weightedPriority();
-    abstract Integer runLevel();
-    abstract String postConstructMethodName();
-    abstract String preDestroyMethodName();
+    abstract Optional<Double> weightedPriority();
+    abstract Optional<Integer> runLevel();
+    abstract Optional<String> postConstructMethodName();
+    abstract Optional<String> preDestroyMethodName();
     abstract List<String> extraCodeGen();
     abstract boolean isConcrete();
     abstract boolean isProvider();

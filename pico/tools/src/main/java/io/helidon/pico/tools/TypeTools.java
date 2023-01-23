@@ -413,7 +413,7 @@ public class TypeTools extends BuilderTypeTools {
      */
     public static Set<QualifierAndValue> createQualifierAndValueSet(
             List<? extends AnnotationMirror> annoMirrors) {
-        Set<QualifierAndValue> qualifiers = null;
+        Set<QualifierAndValue> result = new LinkedHashSet<>();
 
         for (AnnotationMirror annoMirror : annoMirrors) {
             if (annoMirror.getAnnotationType().asElement().getAnnotation(Qualifier.class) != null) {
@@ -425,14 +425,16 @@ public class TypeTools extends BuilderTypeTools {
                         break;
                     }
                 }
-                if (qualifiers == null) {
-                    qualifiers = new LinkedHashSet<>();
+                DefaultQualifierAndValue.Builder qualifier = DefaultQualifierAndValue.builder();
+                qualifier.typeName(TypeTools.createTypeNameFromDeclaredType(annoMirror.getAnnotationType()).orElseThrow());
+                if (val != null) {
+                    qualifier.value(val);
                 }
-                qualifiers.add(DefaultQualifierAndValue.create(annoMirror.getAnnotationType().toString(), val));
+                result.add(qualifier.build());
             }
         }
 
-        if (qualifiers == null || qualifiers.isEmpty()) {
+        if (result.isEmpty()) {
             try {
                 Class<? extends Annotation> javaxQualifier = JavaxTypeTools.INSTANCE.get()
                         .loadAnnotationClass("javax.inject.Qualifier").orElse(null);
@@ -447,10 +449,7 @@ public class TypeTools extends BuilderTypeTools {
                                     break;
                                 }
                             }
-                            if (qualifiers == null) {
-                                qualifiers = new LinkedHashSet<>();
-                            }
-                            qualifiers.add(DefaultQualifierAndValue.create(annoMirror.getAnnotationType().toString(), val));
+                            result.add(DefaultQualifierAndValue.create(annoMirror.getAnnotationType().toString(), val));
                         }
                     }
                 }
@@ -459,7 +458,7 @@ public class TypeTools extends BuilderTypeTools {
             }
         }
 
-        return qualifiers;
+        return result;
     }
 
     /**

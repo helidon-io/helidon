@@ -23,11 +23,13 @@ package {{packagename}};
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 
-import io.helidon.pico.api.RunLevel;
-import io.helidon.pico.spi.DefaultServiceInfo;
-import io.helidon.pico.spi.PostConstructMethod;
-import io.helidon.pico.spi.PreDestroyMethod;
-import io.helidon.pico.spi.ext.Dependencies;
+import io.helidon.pico.DefaultDependenciesInfo;
+import io.helidon.pico.DefaultServiceInfo;
+import io.helidon.pico.DependenciesInfo;
+import io.helidon.pico.PostConstructMethod;
+import io.helidon.pico.PreDestroyMethod;
+import io.helidon.pico.RunLevel;
+import io.helidon.pico.services.Dependencies;
 
 import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
@@ -38,9 +40,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.helidon.pico.spi.InjectionPointInfo.Access;
-import static io.helidon.pico.spi.InjectionPointInfo.CTOR;
-import static io.helidon.pico.spi.InjectionPointInfo.ElementKind;
+import static io.helidon.pico.ElementInfo.Access;
+import static io.helidon.pico.ElementInfo.ElementKind;
+import static io.helidon.pico.InjectionPointInfo.CONSTRUCTOR;
 
 /**
  * {{#description}}{{.}}
@@ -54,23 +56,28 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} exte
     private static final DefaultServiceInfo serviceInfo =
         DefaultServiceInfo.builder()
             .serviceTypeName({{packagename}}.{{classname}}.class.getName()){{#contracts}}
-            .contractTypeImplemented({{.}}.class){{/contracts}}{{#externalcontracts}}
-            .externalContractTypeImplemented({{.}}.class){{/externalcontracts}}
-            .activatorType({{flatclassname}}{{activatorsuffix}}.class){{^isprovider}}{{#scopetypenames}}
-            .scopeType({{{.}}}.class){{/scopetypenames}}{{/isprovider}}{{#qualifiers}}
+            .addContractsImplemented({{.}}.class.getName()){{/contracts}}{{#externalcontracts}}
+            .addExternalContractsImplemented({{.}}.class.getName()){{/externalcontracts}}
+            .activatorTypeName({{flatclassname}}{{activatorsuffix}}.class.getName()){{^isprovider}}{{#scopetypenames}}
+            .addScopeTypeName({{{.}}}.class.getName()){{/scopetypenames}}{{/isprovider}}{{#qualifiers}}
             {{{.}}}
             {{/qualifiers}}{{#isweightset}}
-            .weight({{weight}}){{/isweightset}}{{#isrunlevelset}}
-            .runLevel({{runlevel}}){{/isrunlevelset}}
+            .declaredWeight({{weight}}){{/isweightset}}{{#isrunlevelset}}
+            .declaredRunLevel({{runlevel}}){{/isrunlevelset}}
             .build();
 
     public static final {{flatclassname}}{{activatorsuffix}} INSTANCE = new {{flatclassname}}{{activatorsuffix}}();
 
     protected {{flatclassname}}{{activatorsuffix}}() {
-        setServiceInfo(serviceInfo);
+        serviceInfo(serviceInfo);
     }
 
-    public Class<?> getServiceType() {
+    /**
+     * The service type of the managed service.
+     *
+     * @return the service type of the managed service
+     */
+    public Class<?> serviceType() {
         return {{packagename}}.{{classname}}.class;
     }
 {{#extracodegen}}{{{.}}}
@@ -86,17 +93,15 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} exte
     }
 {{/isprovider}}
     @Override
-    public Dependencies getDependencies() {
-        Dependencies deps = Dependencies.builder()
-                .forServiceTypeName({{packagename}}.{{classname}}.class.getName())
-                {{#dependencies}}{{{.}}}
-                {{/dependencies}}
-                .build().build();
-        return Dependencies.combine(super.getDependencies(), deps);
+    public DependenciesInfo dependencies() {
+        DependenciesInfo deps = Dependencies.builder({{packagename}}.{{classname}}.class.getName()){{#dependencies}}
+                {{{.}}}{{/dependencies}}
+                .build();
+        return Dependencies.combine(super.dependencies(), deps);
     }
 {{#isconcrete}}{{#if issupportsjsr330instrictmode}}{{#if injectionorder}}
     @Override
-    public List<String> getServiceTypeInjectionOrder() {
+    protected List<String> serviceTypeInjectionOrder() {
         List<String> order = new java.util.LinkedList<>();{{#injectionorder}}
         order.add("{{{.}}}");{{/injectionorder}}
         return order;
@@ -110,19 +115,16 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} exte
 {{#if injectedfields}}
     @Override
     protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) {
-        super.doInjectingFields(t, deps, injections, forServiceType);
-{{#if issupportsjsr330instrictmode}}
+        super.doInjectingFields(t, deps, injections, forServiceType);{{#if issupportsjsr330instrictmode}}
         if (Objects.nonNull(forServiceType) && !{{packagename}}.{{classname}}.class.getName().equals(forServiceType)) {
             return;
         }
 {{/if}}
-        {{classname}} target = ({{classname}}) t;
-{{#if issupportsjsr330instrictmode}}{{#injectedfields}}
+        {{classname}} target = ({{classname}}) t;{{#if issupportsjsr330instrictmode}}{{#injectedfields}}
         if (injections.add("{{{id}}}")) {
             target.{{{.}}};
         }{{/injectedfields}}{{else}}{{#injectedfields}}
-        target.{{{.}}};{{/injectedfields}}
-{{/if}}
+        target.{{{.}}};{{/injectedfields}}{{/if}}
     }
 {{/if}}{{#if injectedmethods}}
     @Override
@@ -141,20 +143,19 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} exte
         if (injections.add("{{{id}}}")) {
             target.{{{.}}};
         }{{/injectedmethods}}{{else}}{{#injectedmethods}}
-        target.{{{.}}};{{/injectedmethods}}
-{{/if}}
+        target.{{{.}}};{{/injectedmethods}}{{/if}}
     }
 {{/if}}{{#postconstruct}}
     @Override
-    public PostConstructMethod getPostConstructMethod() {
-        {{classname}} target = ({{classname}}) getServiceRef();
-        return target::{{.}};
+    public Optional<PostConstructMethod> postConstructMethod() {
+        {{classname}} target = ({{classname}}) serviceRef().orElseThrow();
+        return Optional.of(target::{{.}});
     }
 {{/postconstruct}}{{#predestroy}}
     @Override
-    public PreDestroyMethod getPreDestroyMethod() {
-        {{classname}} target = ({{classname}}) getServiceRef();
-        return target::{{.}};
+    public Optional<PreDestroyMethod> preDestroyMethod() {
+        {{classname}} target = ({{classname}}) serviceRef().orElseThrow();
+        return Optional.of(target::{{.}});
     }
 {{/predestroy}}
 }

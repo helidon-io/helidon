@@ -19,6 +19,7 @@ package io.helidon.pico.tools;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Applies only to the output paths that various {@code creators} will use (e.g., {@link ActivatorCreator}).
@@ -27,32 +28,39 @@ import io.helidon.builder.Builder;
 public interface CodeGenPaths {
 
     /**
+     * The default path for {@link #metaInfServicesPath()}.
+     *
+     */
+    String DEFAULT_META_INF_SERVICES_PATH = "META-INF/services";
+
+    /**
      * Identifies where the meta-inf services should be written.
      *
      * @return where should meta-inf services be written
      */
-    String metaInfServicesPath();
+    @ConfiguredOption(DEFAULT_META_INF_SERVICES_PATH)
+    Optional<String> metaInfServicesPath();
 
     /**
      * Identifies where is the source directory resides.
      *
      * @return the source directory
      */
-    String sourcePath();
+    Optional<String> sourcePath();
 
     /**
      * Identifies where the generated sources should be written.
      *
      * @return where should the generated sources be written
      */
-    String generatedSourcesPath();
+    Optional<String> generatedSourcesPath();
 
     /**
      * Identifies where the classes directory resides.
      *
      * @return the classes directory
      */
-    String outputPath();
+    Optional<String> outputPath();
 
     /**
      * Identifies where the module-info can be found.

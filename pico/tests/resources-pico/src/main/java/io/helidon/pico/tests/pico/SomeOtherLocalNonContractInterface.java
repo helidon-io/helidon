@@ -16,6 +16,9 @@
 
 package io.helidon.pico.tests.pico;
 
+/**
+ * Pico Testing.
+ */
 public interface SomeOtherLocalNonContractInterface {
 
 }

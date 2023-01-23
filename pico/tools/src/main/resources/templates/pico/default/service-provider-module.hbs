@@ -20,8 +20,8 @@
 */
 package {{packagename}};
 
-import io.helidon.pico.spi.Module;
-import io.helidon.pico.spi.ServiceBinder;
+import io.helidon.pico.Module;
+import io.helidon.pico.ServiceBinder;
 
 import jakarta.annotation.Generated;
 import jakarta.inject.Named;
@@ -41,7 +41,7 @@ public class {{classname}} implements Module {
     static final String NAME = "unnamed";{{/modulename}}
 
     @Override
-    public Optional<String> getName() {
+    public Optional<String> named() {
         return Optional.of(NAME);
     }
 

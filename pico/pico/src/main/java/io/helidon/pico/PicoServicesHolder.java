@@ -52,6 +52,11 @@ public abstract class PicoServicesHolder {
     static Optional<PicoServices> picoServices() {
         if (INSTANCE.get() == null) {
             INSTANCE.compareAndSet(null, new ProviderAndServicesTuple(load()));
+            if (INSTANCE.get().picoServices == null) {
+                System.getLogger(PicoServices.class.getName()).log(System.Logger.Level.WARNING,
+                                                         DefaultPicoServicesConfig.NAME
+                                                                 + " runtime services not detected on the classpath");
+            }
         }
         return Optional.ofNullable(INSTANCE.get().picoServices);
     }
@@ -85,7 +90,8 @@ public abstract class PicoServicesHolder {
     }
 
     private static Optional<PicoServicesProvider> load() {
-        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class))
+        return HelidonServiceLoader.create(ServiceLoader.load(PicoServicesProvider.class,
+                                                              PicoServicesProvider.class.getClassLoader()))
                 .asList()
                 .stream()
                 .findFirst();

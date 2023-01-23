@@ -30,6 +30,11 @@ import jakarta.inject.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Preferred {
 
+    /**
+     * Pico Testing.
+     *
+     * @return for testing
+     */
     String value() default "";
 
 }

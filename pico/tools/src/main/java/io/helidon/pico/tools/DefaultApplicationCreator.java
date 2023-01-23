@@ -362,7 +362,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         CodeGenFiler filer = createDirectCodeGenFiler(req.codeGenPaths(), req.analysisOnly());
         Path applicationJavaFilePath = filer.codegenJavaFilerOut(applicationTypeName, body).orElse(null);
 
-        String outputDirectory = req.codeGenPaths().outputPath();
+        String outputDirectory = req.codeGenPaths().outputPath().orElse(null);
         if (outputDirectory != null) {
             File outDir = new File(outputDirectory);
 

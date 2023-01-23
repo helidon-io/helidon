@@ -16,8 +16,13 @@
 
 package io.helidon.pico;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -56,6 +61,35 @@ public interface DependenciesInfo {
         serviceInfoDependencies().values()
                 .forEach(all::addAll);
         return all;
+    }
+
+    /**
+     * Represents the list of all dependencies for a given injection point element name ordered by the element position.
+     *
+     * @param elemName the element name of the injection point
+     * @return the list of all dependencies got a given element name of a given injection point
+     */
+    default List<DependencyInfo> allDependenciesFor(
+            String elemName) {
+        Objects.requireNonNull(elemName);
+        List<DependencyInfo> result = new ArrayList<>();
+        allDependencies().forEach(dep -> dep.injectionPointDependencies().stream()
+                .forEach(it -> {
+                    if (Objects.equals(elemName, it.elementName())) {
+                        result.add(DefaultDependencyInfo.toBuilder(dep).injectionPointDependencies(Set.of(it)).build());
+                    }
+                }));
+        if (result.size() > 1) {
+            Collections.sort(result, new Comparator<DependencyInfo>() {
+                @Override
+                public int compare(DependencyInfo o1, DependencyInfo o2) {
+                    int pos1 = o1.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
+                    int pos2 = o2.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
+                    return Integer.compare(pos1, pos2);
+                }
+            });
+        }
+        return result;
     }
 
 }

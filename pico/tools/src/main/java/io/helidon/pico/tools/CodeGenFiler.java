@@ -55,7 +55,7 @@ import io.helidon.pico.types.TypeName;
  * and resources, and instead will use the filer's messager to report what it would have performed (applicable for apt cases).
  */
 public class CodeGenFiler {
-    private static boolean filerWriteIsDisabled = true;
+    private static boolean filerWriteIsDisabled;
     private static final boolean FILER_WRITE_ONCE_PER_TYPE = true;
     private static final Set<TypeName> FILER_TYPES_FILED = new LinkedHashSet<>();
 
@@ -132,7 +132,8 @@ public class CodeGenFiler {
             String contract = e.getKey();
             Set<String> mergedSet = new LinkedHashSet<>(e.getValue());
             mergedMap.put(contract, mergedSet);
-            String outPath = new File(paths.metaInfServicesPath(), contract).getPath();
+            String outPath = new File(paths.metaInfServicesPath()
+                                              .orElse(CodeGenPaths.DEFAULT_META_INF_SERVICES_PATH), contract).getPath();
             try {
                 messager.debug("Reading " + outPath);
 
@@ -146,7 +147,7 @@ public class CodeGenFiler {
                 }
             } catch (FilerException | NoSuchFileException x) {
                 // don't show the exception in this case
-                messager.debug(getClass().getSimpleName() + ":" + x.getMessage(), null);
+                messager.debug(getClass().getSimpleName() + ":" + x.getMessage());
             } catch (Exception x) {
                 ToolsException te =
                         new ToolsException("Failed to find/load existing META-INF/services file: " + x.getMessage(), x);
@@ -156,7 +157,7 @@ public class CodeGenFiler {
 
         for (Map.Entry<String, Set<String>> e : mergedMap.entrySet()) {
             String contract = e.getKey();
-            String outPath = new File(paths.metaInfServicesPath(), contract).getPath();
+            String outPath = new File(paths.metaInfServicesPath().orElseThrow(), contract).getPath();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
                 for (String value : e.getValue()) {

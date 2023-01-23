@@ -429,6 +429,19 @@ public abstract class AbstractServiceProvider<T>
     }
 
     /**
+     * Called by the generated code when it is attempting to resolve a specific injection point dependency by id.
+     *
+     * @param deps  the entire map of resolved dependencies
+     * @param id    the id of the dependency to lookup
+     * @return      the resolved object
+     * @param <T> the type of the dependency
+     */
+    protected <T> T get(
+            Map<String, T> deps, String id) {
+        return Objects.requireNonNull(deps.get(id), "'" + id + "' expected to have been found in: " + deps.keySet());
+    }
+
+    /**
      * Will trigger an activation if the managed service is not yet active.
      *
      * @param ctx the context that triggered the activation
