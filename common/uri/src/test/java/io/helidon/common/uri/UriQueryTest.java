@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,5 +53,14 @@ class UriQueryTest {
         assertThat(uriQuery.all("e"), hasItems("f", "g"));
         assertThat(uriQuery.value("h"), is("xc#e<"));
         assertThat(uriQuery.value("a"), is("b&c=d"));
+    }
+    
+    @Test
+    void testEmptyQueryString() {
+        UriQuery uriQuery = UriQuery.create(null);
+        assertThat("Empty check with null", uriQuery.isEmpty(), is(true));
+
+        uriQuery = UriQuery.create("");
+        assertThat("Empty check with empty string", uriQuery.isEmpty(), is(true));
     }
 }
