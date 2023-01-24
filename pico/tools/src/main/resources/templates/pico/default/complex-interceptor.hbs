@@ -14,45 +14,50 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
-}}package {{packageName}};
+}}/**
+* {{#header}}{{.}}
+* {{/header}}
+*/
+package {{packageName}};
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.pico.spi.DefaultAnnotationAndValue;
-import io.helidon.pico.spi.DefaultTypeName;
-import io.helidon.pico.spi.DefaultTypedElementName;
-import io.helidon.pico.spi.Interceptor;
-import io.helidon.pico.spi.InvocationException;
-import io.helidon.pico.spi.ServiceProvider;
-import io.helidon.pico.spi.TypedElementName;
-
+import io.helidon.pico.DefaultInvocationContext;
+import io.helidon.pico.Interceptor;
+import io.helidon.pico.InvocationException;
+import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.pico.types.DefaultAnnotationAndValue;
+import io.helidon.pico.types.DefaultTypeName;
+import io.helidon.pico.types.DefaultTypedElementName;
 import io.helidon.pico.types.TypeName;
+import io.helidon.pico.types.TypedElementName;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.pico.spi.DefaultTypeName.create;
-import static io.helidon.pico.spi.ext.Invocation.createAndInvoke;
-import static io.helidon.pico.spi.ext.Invocation.createInvokeAndSupply;
-import static io.helidon.pico.spi.ext.Invocation.mergeAndCollapse;
+import static io.helidon.pico.types.DefaultTypeName.create;
+import static io.helidon.pico.services.Invocation.createAndInvoke;
+import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
+import static io.helidon.pico.services.Invocation.mergeAndCollapse;
 
-@jakarta.annotation.Generated({{{generatedanno}}})
 @io.helidon.common.Weight({{weight}})
-@io.helidon.pico.spi.Intercepted({{parent}}.class)
+@io.helidon.pico.Intercepted({{parent}}.class)
 @Singleton
 @SuppressWarnings("ALL")
+@jakarta.annotation.Generated({{{generatedanno}}})
 public class {{className}} extends {{parent}} {
     private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of({{#servicelevelannotations}}
             {{{.}}}{{#unless @last}},{{/unless}}{{/servicelevelannotations}});
 {{#interceptedmethoddecls}}
     private static final TypedElementName __{{id}} = DefaultTypedElementName.builder()
-            {{{.}}}.build();{{/interceptedmethoddecls}}
+            {{{.}}}
+            .build();{{/interceptedmethoddecls}}
 
     private final Provider<{{parent}}> __provider;
     private final ServiceProvider<{{parent}}> __sp;
@@ -61,7 +66,7 @@ public class {{className}} extends {{parent}} {
     private final List<Provider<Interceptor>> __{{{id}}}__interceptors;{{/interceptedmethods}}
 
     @Inject
-    public {{this.className}}({{#annotationtriggertypenames}}
+    {{this.className}}({{#annotationtriggertypenames}}
                 @Named("{{{.}}}") List<Provider<Interceptor>> {{id}},{{/annotationtriggertypenames}}
                 Provider<{{parent}}> provider) {
         this.__provider = Objects.requireNonNull(provider);
@@ -71,13 +76,15 @@ public class {{className}} extends {{parent}} {
         this.__{{{id}}}__interceptors = mergeAndCollapse({{interceptedTriggerTypeNames}});{{/interceptedmethods}}
 
         Supplier<{{parent}}> call = __provider::get;
-        {{parent}} result = createInvokeAndSupply(call,
-                                         __ctor__interceptors,
-                                         __sp,
-                                         __serviceTypeName,
-                                         __serviceLevelAnnotations,
-                                         __ctor,
-                                         null);
+        {{parent}} result = createInvokeAndSupply(
+                DefaultInvocationContext.builder()
+                    .rootServiceProvider(__sp)
+                    .serviceTypeName(__serviceTypeName)
+                    .classAnnotations(__serviceLevelAnnotations)
+                    .elementInfo(__ctor)
+                    .interceptors(__ctor__interceptors)
+                    /*.build()*/,
+                call);
         this.__impl = Objects.requireNonNull(result);
     }
 {{#interceptedmethods}}

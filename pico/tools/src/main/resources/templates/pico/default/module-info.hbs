@@ -15,9 +15,9 @@ limitations under the License.
 }}{{#header}}{{{.}}}{{/header}}
 {{#hasdescription}}/**{{#description}}
  * {{{.}}}{{/description}}
- */{{/hasdescription}}{{#generatedanno}}
-// @Generated({{{generatedanno}}}){{/generatedanno}}
+ */{{/hasdescription}}
+{{#generatedanno}}// @Generated({{{generatedanno}}}){{/generatedanno}}
 module {{name}} { {{#items}}{{#precomments}}
-    {{.}}{{/precomments}}
+    {{{.}}}{{/precomments}}
     {{{contents}}};{{/items}}
 }

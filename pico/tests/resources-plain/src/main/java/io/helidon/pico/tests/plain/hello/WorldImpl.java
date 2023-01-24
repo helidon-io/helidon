@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-/**
- * Pico Test Resources.
- */
-module io.helidon.pico.tests.pico {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
+package io.helidon.pico.tests.plain.hello;
 
-    requires io.helidon.common;
-    requires io.helidon.pico;
-    requires io.helidon.pico.services;
-    requires io.helidon.pico.types;
-    requires io.helidon.pico.tests.plain;
+import java.io.Serializable;
 
-    exports io.helidon.pico.tests.pico;
-    exports io.helidon.pico.tests.pico.interceptor;
-    exports io.helidon.pico.tests.pico.stacking;
-    exports io.helidon.pico.tests.pico.tbox;
+import io.helidon.pico.ExternalContracts;
+
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
+
+@ExternalContracts(value = World.class, moduleNames = "AnotherModule")
+@Named("unknown")
+@Singleton
+public class WorldImpl implements World, SomeOtherLocalNonContractInterface2, Serializable {
+    private final String name;
+
+    WorldImpl() {
+        this("unknown");
+    }
+
+    WorldImpl(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
 }

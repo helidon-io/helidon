@@ -35,8 +35,7 @@ import java.util.Optional;
 @Generated({{{generatedanno}}})
 @Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
 public class {{classname}} implements Module {
-{{#modulename}}
-    static final String NAME = "{{{.}}}";
+{{#modulename}}static final String NAME = "{{{.}}}";
 {{/modulename}}{{^modulename}}
     static final String NAME = "unnamed";{{/modulename}}
 

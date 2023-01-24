@@ -932,9 +932,9 @@ public class TypeTools extends BuilderTypeTools {
         List<ElementInfo> parameters = createParameterInfo(serviceTypeName, ee);
         return DefaultMethodElementInfo.builder()
                 .serviceTypeName(serviceTypeName.name())
-                .elementName(ee.getKind() == ElementKind.CONSTRUCTOR
+                .elementName((ee.getKind() == ElementKind.CONSTRUCTOR)
                                      ? InjectionPointInfo.CONSTRUCTOR : ee.getSimpleName().toString())
-                .elementKind(ee.getKind() == ElementKind.CONSTRUCTOR
+                .elementKind((ee.getKind() == ElementKind.CONSTRUCTOR)
                                      ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
                 .elementTypeName(elemType)
                 .elementArgs(ee.getParameters().size())

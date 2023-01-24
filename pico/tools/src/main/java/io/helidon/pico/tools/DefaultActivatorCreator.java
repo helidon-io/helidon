@@ -731,13 +731,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             InjectionPointInfo ipInfo) {
         StringBuilder builder = new StringBuilder();
         //.add("world", World.class, InjectionPointInfo.ElementKind.FIELD, InjectionPointInfo.Access.PACKAGE_PRIVATE)
-        String elemName = Objects.requireNonNull(ipInfo.elementName());
-        if (ipInfo.elementKind() == InjectionPointInfo.ElementKind.CONSTRUCTOR
-                && elemName.equals(InjectionPointInfo.CONSTRUCTOR)) {
-            elemName = "CONSTRUCTOR";
-        } else {
-            elemName = "\"" + elemName + "\"";
-        }
+        String elemName = CodeGenUtils.elementNameKindRef(ipInfo.elementName(), ipInfo.elementKind());
         builder.append(".add(").append(elemName).append(", ");
         builder.append(Objects.requireNonNull(componentTypeNameOf(first(dependencyTo.contractsImplemented(), true))))
                 .append(".class, ");

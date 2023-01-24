@@ -43,7 +43,13 @@ class IdAndToString {
         this.toString = toString;
     }
 
-    String getId() {
+    /**
+     * Returns the id.
+     *
+     * @return the id
+     */
+    // note that this is called from Mustache, so it needs to be bean-style named!
+    public String getId() {
         return id;
     }
 

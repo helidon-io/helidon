@@ -33,25 +33,21 @@
     <description>a jar that offers contracts and other artifacts but is not a native Pico module (e.g., no Pico APT)</description>
 
     <dependencies>
-
+        <!-- note: this module should not have more than pico dependency - to just pick up annotations and types -->
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
-
-<!--    <build>-->
-<!--        <plugins>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-compiler-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <annotationProcessorPaths>-->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.builder</groupId>-->
-<!--                            <artifactId>helidon-builder-processor</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
-<!--                    </annotationProcessorPaths>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
-<!--        </plugins>-->
-<!--    </build>-->
 
 </project>

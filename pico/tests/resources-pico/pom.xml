@@ -34,9 +34,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-processor</artifactId>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-processor</artifactId>
             <scope>provided</scope> <!-- reactor dependency ordering only -->
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico.tests</groupId>
+            <artifactId>helidon-pico-tests-resources-plain</artifactId>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -77,17 +82,11 @@
                             <artifactId>helidon-pico-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico</groupId>-->
-<!--                            <artifactId>helidon-pico-services</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
-                        <!-- TODO -->
-<!--                        <path>-->
-<!--                            <groupId>io.helidon.pico</groupId>-->
-<!--                            <artifactId>helidon-pico-tests-resources-plain</artifactId>-->
-<!--                            <version>${helidon.version}</version>-->
-<!--                        </path>-->
+                        <path>
+                            <groupId>io.helidon.pico.tests</groupId>
+                            <artifactId>helidon-pico-tests-resources-plain</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>

@@ -204,7 +204,9 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
     }
 
     @Override
-    public void doInner(TypeElement type, Dependencies.BuilderContinuation builder) {
+    public void doInner(
+            TypeElement type,
+            Dependencies.BuilderContinuation builder) {
         throw new IllegalStateException();  // should never be here
     }
 

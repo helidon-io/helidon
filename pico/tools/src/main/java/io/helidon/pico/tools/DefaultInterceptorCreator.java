@@ -42,6 +42,7 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
+import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InterceptedTrigger;
@@ -174,7 +175,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
             ClassInfo classInfo = scan.getClassInfo(annoTypeName);
             if (Objects.isNull(classInfo)) {
                 try {
-                    Class<? extends Annotation> annotationType = (Class) Class.forName(annoTypeName);
+                    Class<? extends Annotation> annotationType = (Class<? extends Annotation>) Class.forName(annoTypeName);
                     return createAnnotationAndValueListFromAnnotations(annotationType.getAnnotations());
                 } catch (ClassNotFoundException e) {
                     throw new ToolsException(e.getMessage(), e);
@@ -786,9 +787,9 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
     private static String typeNameElementNameAnnotations(
             ElementInfo ei) {
         StringBuilder builder = new StringBuilder(".typeName(create(" + ei.elementTypeName() + ".class))");
-        builder.append("\n\t\t\t.elementName(\"").append(ei.elementName()).append("\")");
+        builder.append("\n\t\t\t.elementName(").append(CodeGenUtils.elementNameRef(ei.elementName())).append(")");
         for (AnnotationAndValue anno : ei.annotations()) {
-            builder.append("\n\t\t\t.annotation(").append(toDecl(anno)).append(")");
+            builder.append("\n\t\t\t.addAnnotation(").append(toDecl(anno)).append(")");
         }
         return builder.toString();
     }
@@ -873,7 +874,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                    "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
                                    "\t\t\t}\n" +
                                    "\t\t};\n");
-            builder.append("\t\t" + supplierType + " result = createInvokeAndSupply(call,\n");
+            builder.append("\t\t" + supplierType + " result = createInvokeAndSupply(\n");
         } else {
             builder.append("\t\tRunnable call = () -> {\n" +
                                    "\t\t\ttry {\n" +
@@ -884,20 +885,21 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                    "\t\t\t\tthrow new InvocationException(t.getMessage(), t, __sp);\n" +
                                    "\t\t\t}\n" +
                                    "\t\t};\n");
-            builder.append("\t\tcreateAndInvoke(call,\n");
+            builder.append("\t\tcreateAndInvoke(\n");
         }
-        builder.append("\t\t\t__" + mi.elementName() + "__interceptors,\n" +
-                                    "\t\t\t__sp,\n" +
-                                    "\t\t\t__serviceTypeName,\n" +
-                                    "\t\t\t__serviceLevelAnnotations,\n" +
-                                    "\t\t\t__" + mi.elementName());
-        builder.append(",\n");
-        builder.append("\t\t\t" + (hasArgs ? "args" : null));
+        builder.append("\t\t\t").append(DefaultInvocationContext.class.getName()).append(".builder()\n");
+        builder.append("\t\t\t\t.rootServiceProvider(__sp)\n");
+        builder.append("\t\t\t\t.serviceTypeName(__serviceTypeName)\n");
+        builder.append("\t\t\t\t.classAnnotations(__serviceLevelAnnotations)\n");
+        builder.append("\t\t\t\t.interceptors(__").append(mi.elementName()).append("__interceptors)\n");
+        builder.append("\t\t\t\t.elementInfo(__").append(mi.elementName()).append(")\n");
         if (hasArgs) {
-            builder.append(",\n");
-            builder.append("\t\t\t" + typedElementArgs);
+            builder.append("\t\t\t\t.elementArgInfo(new TypedElementName[]{" + typedElementArgs + "})\n");
+            builder.append("\t\t\t\t.elementArgs(args)\n");
         }
-        builder.append(");\n");
+        builder.append("\t\t\t/*.build()*/,\n");
+        builder.append("\t\t\tcall);\n");
+
         if (hasReturn) {
             builder.append("\t\treturn result;\n");
         }

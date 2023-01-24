@@ -31,7 +31,6 @@ import io.helidon.pico.PreDestroyMethod;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.services.Dependencies;
 
-import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -48,10 +47,10 @@ import static io.helidon.pico.InjectionPointInfo.CONSTRUCTOR;
  * {{#description}}{{.}}
  * {{/description}}
  */
-@Generated({{{generatedanno}}})
 // @Singleton{{#weight}}
 @Weight({{{.}}}){{/weight}} {{#isrunlevelset}}@RunLevel({{runlevel}}){{/isrunlevelset}}
 @SuppressWarnings("unchecked")
+@jakarta.annotation.Generated({{{generatedanno}}})
 public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} extends {{{parent}}} {
     private static final DefaultServiceInfo serviceInfo =
         DefaultServiceInfo.builder()
@@ -66,6 +65,9 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} exte
             .declaredRunLevel({{runlevel}}){{/isrunlevelset}}
             .build();
 
+    /**
+     * The global singleton instance for this service provider activator.
+     */
     public static final {{flatclassname}}{{activatorsuffix}} INSTANCE = new {{flatclassname}}{{activatorsuffix}}();
 
     protected {{flatclassname}}{{activatorsuffix}}() {

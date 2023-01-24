@@ -19,13 +19,13 @@ package io.helidon.pico.tests.pico.tbox.impl;
 import java.io.Serializable;
 import java.util.Optional;
 
-import io.helidon.pico.tests.pico.SomeOtherLocalNonContractInterface;
+import io.helidon.pico.tests.pico.SomeOtherLocalNonContractInterface1;
 import io.helidon.pico.tests.pico.tbox.Tool;
 
 import jakarta.inject.Singleton;
 
 @Singleton
-public class Screwdriver implements Tool, SomeOtherLocalNonContractInterface, Serializable {
+public class Screwdriver implements Tool, SomeOtherLocalNonContractInterface1, Serializable {
 
     @Override
     public Optional<String> named() {

@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * Pico Test Resources.
- */
-module io.helidon.pico.tests.pico {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
+package io.helidon.pico.tests.pico.stacking;
 
-    requires io.helidon.common;
-    requires io.helidon.pico;
-    requires io.helidon.pico.services;
-    requires io.helidon.pico.types;
-    requires io.helidon.pico.tests.plain;
+import java.util.Optional;
 
-    exports io.helidon.pico.tests.pico;
-    exports io.helidon.pico.tests.pico.interceptor;
-    exports io.helidon.pico.tests.pico.stacking;
-    exports io.helidon.pico.tests.pico.tbox;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
+@Singleton
+@Weight(Weighted.DEFAULT_WEIGHT + 2)
+public class MostOuterInterceptedImpl extends OuterInterceptedImpl {
+
+    @Inject
+    public MostOuterInterceptedImpl(
+            Optional<Intercepted> inner) {
+        super(inner);
+    }
+
 }

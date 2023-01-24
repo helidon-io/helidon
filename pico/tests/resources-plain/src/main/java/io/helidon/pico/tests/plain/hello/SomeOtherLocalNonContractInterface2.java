@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * Pico Test Resources.
- */
-module io.helidon.pico.tests.pico {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
+package io.helidon.pico.tests.plain.hello;
 
-    requires io.helidon.common;
-    requires io.helidon.pico;
-    requires io.helidon.pico.services;
-    requires io.helidon.pico.types;
-    requires io.helidon.pico.tests.plain;
+public interface SomeOtherLocalNonContractInterface2 {
 
-    exports io.helidon.pico.tests.pico;
-    exports io.helidon.pico.tests.pico.interceptor;
-    exports io.helidon.pico.tests.pico.stacking;
-    exports io.helidon.pico.tests.pico.tbox;
 }
