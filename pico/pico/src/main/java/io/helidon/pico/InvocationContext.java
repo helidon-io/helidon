@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,17 @@ package io.helidon.pico;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.builder.Builder;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
+import jakarta.inject.Provider;
+
 /**
  * Used by {@link Interceptor}.
  */
+@Builder
 public interface InvocationContext {
 
     /**
@@ -69,6 +73,13 @@ public interface InvocationContext {
      * @return the read/write method/element arguments
      */
     Object[] elementArgs();
+
+    /**
+     * The interceptor chain.
+     *
+     * @return the interceptor chain
+     */
+    List<Provider<Interceptor>> interceptors();
 
     /**
      * The contextual info that can be shared between interceptors.
