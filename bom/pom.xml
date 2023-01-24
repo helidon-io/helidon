@@ -1039,6 +1039,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci.metrics</groupId>
+                <artifactId>helidon-integrations-oci-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci.metrics</groupId>
+                <artifactId>helidon-integrations-oci-metrics-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.vault</groupId>
                 <artifactId>helidon-integrations-vault</artifactId>
                 <version>${helidon.version}</version>
