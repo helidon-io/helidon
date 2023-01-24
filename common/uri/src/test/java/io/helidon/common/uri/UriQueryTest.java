@@ -26,11 +26,12 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryTest {
     @Test
     void sanityParse() {
-        UriQuery uriQuery = UriQuery.create(URI.create("http://foo/bar?a=b&c=d&a=e").getRawQuery());
+        UriQuery uriQuery = UriQuery.create(URI.create("http://foo/bar?a=b&c=d&a=e"));
 
         assertThat(uriQuery.all("a"), hasItems("b", "e"));
         assertThat(uriQuery.all("c"), hasItems("d"));
@@ -57,10 +58,18 @@ class UriQueryTest {
     
     @Test
     void testEmptyQueryString() {
-        UriQuery uriQuery = UriQuery.create(null);
-        assertThat("Empty check with null", uriQuery.isEmpty(), is(true));
-
-        uriQuery = UriQuery.create("");
+        UriQuery uriQuery = UriQuery.create("");
         assertThat("Empty check with empty string", uriQuery.isEmpty(), is(true));
+    }
+
+    @Test
+    void testNullQueryFails() {
+        assertThrows(NullPointerException.class, () -> UriQuery.create((String) null));
+
+    }
+
+    @Test
+    void testNullUriFails() {
+        assertThrows(NullPointerException.class, () -> UriQuery.create((URI) null));
     }
 }
