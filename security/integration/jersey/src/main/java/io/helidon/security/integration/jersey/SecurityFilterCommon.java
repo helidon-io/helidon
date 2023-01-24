@@ -376,7 +376,7 @@ abstract class SecurityFilterCommon {
         context.setHeaders(requestContext.getHeaders());
         context.setTargetUri(requestContext.getUriInfo().getRequestUri());
         context.setResourcePath(context.getTargetUri().getPath());
-        context.setQueryParams(UriQuery.create(uriInfo.getRequestUri().getQuery()));
+        context.setQueryParams(UriQuery.create(uriInfo.getRequestUri()));
 
         context.setJerseyRequest((ContainerRequest) requestContext);
 

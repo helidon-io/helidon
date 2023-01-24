@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.common.uri;
 
+import java.net.URI;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import io.helidon.common.parameters.Parameters;
 
@@ -34,6 +36,12 @@ public interface UriQuery extends Parameters {
      * @return HTTP query instance
      */
     static UriQuery create(String query) {
+        Objects.requireNonNull(query, "Raw query string cannot be null, use create(URI) or empty()");
+
+        if (query.isEmpty()) {
+            return empty();
+        }
+
         return new UriQueryImpl(query);
     }
 
@@ -44,6 +52,20 @@ public interface UriQuery extends Parameters {
      */
     static UriQuery empty() {
         return UriQueryEmpty.INSTANCE;
+    }
+
+    /**
+     * Create URI query from a URI instance.
+     *
+     * @param uri URI to use as the source of this query
+     * @return HTTP query instance either empty (if query section of the provided URI is {@code null})
+     *          or {@link #create(String)} with the raw query
+     */
+    static UriQuery create(URI uri) {
+        Objects.requireNonNull(uri, "URI cannot be null, use empty()");
+
+        String rawQuery = uri.getRawQuery();
+        return (rawQuery == null) ? empty() : create(rawQuery);
     }
 
     /**
