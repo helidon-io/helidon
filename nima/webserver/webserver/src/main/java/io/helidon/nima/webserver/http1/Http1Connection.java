@@ -39,11 +39,11 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.InterruptableTask;
 import io.helidon.nima.webserver.http.DirectTransportRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.webserver.InterruptableTask;
 
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
@@ -51,7 +51,7 @@ import static java.lang.System.Logger.Level.WARNING;
 /**
  * HTTP/1.1 server connection.
  */
-public class Http1Connection implements ServerConnection, InterruptableTask {
+public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
 
     private final ConnectionContext ctx;
