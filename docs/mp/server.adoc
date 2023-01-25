@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,18 +29,25 @@ include::{rootdir}/includes/mp.adoc[]
 == Content
 
 - <<Overview, Overview>>
-- <<Maven-Coordinates, Maven Coordinates>>
+- <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<API, API>>
 - <<Configuration, Configuration>>
+** <<Configuration options, Configuration Options>>
 - <<Examples, Examples>>
+** <<Configuring Access Logs, Access Logs>>
+** <<Configuring TLS, TLS>>
+** <<Configuring additional ports, Additional Ports>>
+** <<Configuring A Reactive Route, Reactive Route>>
+** <<Customizing the MP Server at Startup, Customize Server at Startup>>
+** <<Serving Static Content, Serving Static Content>>
 - <<Reference, Reference>>
 
 == Overview
 
 Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server`) that encapsulates the Helidon WebServer.
 
-== Maven-Coordinates
+== Maven Coordinates
 
 To enable MicroProfile Server add the helidon-microprofile-core bundle dependency to your project's `pom.xml`
 (see xref:../about/managing-dependencies.adoc[Managing Dependencies]).
@@ -111,7 +118,7 @@ include::{rootdir}/config/io_helidon_webserver_WebServer.adoc[leveloffset=+1,tag
 
 == Examples
 
-=== Access Log
+=== Configuring Access Logs
 
 Access logging in Helidon is done by a dedicated module that can be
 added to Maven and configured.
@@ -223,6 +230,13 @@ health:
 
 === Configuring A Reactive Route
 
+- <<Customizing the reactive service, Customizing the reactive service>>
+- <<Assigning a reactive service to named ports, Assigning a reactive service to named ports>>
+- <<Configuring a reactive service path, Configuring a reactive service path>>
+
+
+
+
 Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.Service`
 interface and configure them with the underlying WebServer.
 
@@ -234,6 +248,8 @@ only once during the boot of the `Server`.
 The bean will support injection of `ApplicationScoped` and `Dependent` scoped beans.
 You cannot inject `RequestScoped` beans. Please use WebServer features to handle request
 related objects.
+
+
 
 ==== Customizing the reactive service
 The service can be customized using annotations and/or configuration to be
@@ -310,6 +326,65 @@ routing path to `/management`:
 io.helidon.examples.AdminService:
   routing-path:
     path: "/management"
+----
+
+=== Customizing MP Server at Startup
+
+In the sections above you learned how to configure the WebServer using configuration options and annotations. There are some functions that cannot be handled using the standard configuration options and, instead, must be handled programmatically. 
+
+For example, if you wanted to run code when a CDI container starts, then you would have to write a particular kind of _observer method_ in an enabled CDI-managed bean that observes the initialization of the application scope, as shown in the example below:
+
+
+[source, java]
+.Example: run code when a CDI container starts
+----
+
+private void thisIsAnExampleMethodFromTheHelidonMPFAQ(@Observes @Initialized(ApplicationScoped.class) final Object ignoredEvent) {
+  // code you put here will be invoked when the CDI container starts, more specifically
+  // when CDI's application scope is initialized
+}
+----
+
+Or, you can use `ServerCdiExtension` to handle bad requests for illegal characters in URI as shown in the example below:
+
+`ServerCdiExtension`
+
+[source, java]
+----
+@ApplicationScoped
+public class BadRequestDirectHandler implements DirectHandler {
+
+    private void beforeStart(
+            @Observes
+            @Priority(PLATFORM_AFTER)
+            @Initialized(ApplicationScoped.class) Object ignoredEvent, ServerCdiExtension server) {
+
+        server.serverBuilder().directHandler(this, EventType.BAD_REQUEST);
+    }
+
+    @Override
+    public TransportResponse handle(TransportRequest request,
+                                    EventType eventType,
+                                    Http.ResponseStatus defaultStatus,
+                                    Throwable throwable) {
+
+        // Special handling goes here...
+        return handle(request, eventType, defaultStatus, throwable.getMessage());
+    }
+
+    @Override
+    public TransportResponse handle(TransportRequest request,
+                                    EventType eventType,
+                                    Http.ResponseStatus defaultStatus,
+                                    String message) {
+
+        TransportResponse.Builder builder = TransportResponse.builder().status(defaultStatus);
+        if (!message.isEmpty()) {
+            builder.entity(message);
+        }
+        return builder.build();
+    }
+}
 ----
 
 === Serving Static Content
