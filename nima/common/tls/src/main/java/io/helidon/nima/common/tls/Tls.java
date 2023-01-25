@@ -192,6 +192,11 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
         return sslParameters;
     }
 
+    /**
+     * Reload reloadable TLS components with the new configuration.
+     *
+     * @param tls new TLS configuration
+     */
     public void reload(Tls tls) {
         for (TlsReloadableComponent reloadableComponent : reloadableComponents) {
             reloadableComponent.reload(tls);
