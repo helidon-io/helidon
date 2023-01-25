@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,13 @@ import io.helidon.webserver.WebServer;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MicrostreamExampleGreetingsSeTest {
 
@@ -64,7 +67,7 @@ public class MicrostreamExampleGreetingsSeTest {
                 .request(JsonObject.class)
                 .await(10, TimeUnit.SECONDS);
 
-        Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"));
+        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
 
         JsonArray jsonArray = webClient
                 .get()
@@ -72,7 +75,7 @@ public class MicrostreamExampleGreetingsSeTest {
                 .request(JsonArray.class)
                 .await(10, TimeUnit.SECONDS);
 
-        Assertions.assertEquals("Joe", jsonArray.get(0).asJsonObject().getString("name"));
-        Assertions.assertNotNull(jsonArray.get(0).asJsonObject().getString("time"));
+        assertThat(jsonArray.get(0).asJsonObject().getString("name"), is("Joe"));
+        assertThat(jsonArray.get(0).asJsonObject().getString("time"), notNullValue());
     }
 }
