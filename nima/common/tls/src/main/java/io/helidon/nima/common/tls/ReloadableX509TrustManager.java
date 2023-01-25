@@ -27,7 +27,7 @@ class ReloadableX509TrustManager implements X509TrustManager, TlsReloadableCompo
 
     private volatile X509TrustManager trustManager;
 
-    public ReloadableX509TrustManager(X509TrustManager trustManager) {
+    ReloadableX509TrustManager(X509TrustManager trustManager) {
         this.trustManager = trustManager;
     }
 

@@ -296,7 +296,7 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
         /*
          * TLS reloading
          */
-        public List<TlsReloadableComponent> reloadableComponents = new ArrayList<>();
+        private final List<TlsReloadableComponent> reloadableComponents = new ArrayList<>();
         private X509TrustManager originalTrustManager;
         private X509KeyManager originalKeyManager;
 

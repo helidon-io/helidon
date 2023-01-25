@@ -29,7 +29,7 @@ class ReloadableX509KeyManager implements X509KeyManager, TlsReloadableComponent
 
     private volatile X509KeyManager keyManager;
 
-    public ReloadableX509KeyManager(X509KeyManager keyManager) {
+    ReloadableX509KeyManager(X509KeyManager keyManager) {
         this.keyManager = keyManager;
     }
 

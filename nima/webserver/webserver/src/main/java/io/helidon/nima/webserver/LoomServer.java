@@ -40,8 +40,6 @@ import java.util.logging.Logger;
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
