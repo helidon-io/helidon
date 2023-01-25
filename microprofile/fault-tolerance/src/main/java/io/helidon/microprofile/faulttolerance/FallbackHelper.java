@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Unmanaged;
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
@@ -33,6 +35,23 @@ class FallbackHelper {
     private final InvocationContext context;
 
     private final Throwable throwable;
+
+    private final ExecutionContext executionContext = new ExecutionContext() {
+        @Override
+        public Method getMethod() {
+            return context.getMethod();
+        }
+
+        @Override
+        public Object[] getParameters() {
+            return context.getParameters();
+        }
+
+        @Override
+        public Throwable getFailure() {
+            return throwable;
+        }
+    };
 
     private Class<? extends FallbackHandler<?>> handlerClass;
 
@@ -80,25 +99,23 @@ class FallbackHelper {
         try {
             if (handlerClass != null) {
                 // Instantiate handler using CDI
-                FallbackHandler<?> handler = CDI.current().select(handlerClass).get();
-                result = handler.handle(
-                        new ExecutionContext() {
-                            @Override
-                            public Method getMethod() {
-                                return context.getMethod();
-                            }
-
-                            @Override
-                            public Object[] getParameters() {
-                                return context.getParameters();
-                            }
-
-                            @Override
-                            public Throwable getFailure() {
-                                return throwable;
-                            }
-                        }
-                );
+                Instance<? extends FallbackHandler> instance = CDI.current().select(handlerClass);
+                if (instance.isResolvable()) {
+                    FallbackHandler<?> handler = instance.get();
+                    result = handler.handle(executionContext);
+                } else {
+                    // It is not required that FallbackHandler is a bean. TCKs will fail otherwise
+                    Unmanaged<FallbackHandler<?>> unmanaged = new Unmanaged<>(CDI.current().getBeanManager(),
+                            (Class<FallbackHandler<?>>) handlerClass);
+                    Unmanaged.UnmanagedInstance<FallbackHandler<?>> unmanagedInstance = unmanaged.newInstance();
+                    FallbackHandler<?> handler = unmanagedInstance.produce().inject().postConstruct().get();
+                    try {
+                        result = handler.handle(executionContext);
+                    } finally {
+                        // The instance exists to service a single invocation only
+                        unmanagedInstance.preDestroy().dispose();
+                    }
+                }
             } else {
                 result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
             }

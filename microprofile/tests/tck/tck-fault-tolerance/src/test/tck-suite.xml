@@ -25,14 +25,7 @@
       -->
     <test name="microprofile-fault-tolerance 4.0 TCK">
         <packages>
-            <package name="org.eclipse.microprofile.fault.tolerance.tck.*">
-                <!-- 
-                    Currently failing because requires this PR:
-                    https://github.com/eclipse/microprofile-fault-tolerance/pull/614
-                    Ignoring meanwhile microprofile-fault-tolerance 4.1 is not released
-                -->
-                <exclude name="org.eclipse.microprofile.fault.tolerance.tck.config"></exclude>
-            </package>
+            <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
     </test>
 </suite>
