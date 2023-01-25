@@ -36,6 +36,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.logging.LogLevel;
@@ -178,7 +179,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         // Enable compression via "Accept-Encoding" header if configured
         if (serverConfig.enableCompression()) {
             log("Compression negotiation enabled (gzip, deflate)", ch);
-            p.addLast(new HttpContentCompressor());
+            p.addLast(new HttpContentCompressor((CompressionOptions[]) null));
         }
 
         RequestRouting requestRouting = router.routing(RequestRouting.class, null);
