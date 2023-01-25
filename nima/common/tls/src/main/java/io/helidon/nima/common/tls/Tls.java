@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,13 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -44,7 +46,10 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
@@ -74,6 +79,9 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
     private final SSLParameters sslParameters;
     private final SSLSocketFactory sslSocketFactory;
     private final SSLServerSocketFactory sslServerSocketFactory;
+    private final List<TlsReloadableComponent> reloadableComponents;
+    private final X509TrustManager originalTrustManager;
+    private final X509KeyManager originalKeyManager;
     private final boolean enabled;
 
     private Tls(Builder builder) {
@@ -82,6 +90,9 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
         this.sslSocketFactory = sslContext.getSocketFactory();
         this.sslServerSocketFactory = sslContext.getServerSocketFactory();
         this.enabled = builder.enabled;
+        this.reloadableComponents = List.copyOf(builder.reloadableComponents);
+        this.originalTrustManager = builder.originalTrustManager;
+        this.originalKeyManager = builder.originalKeyManager;
     }
 
     /**
@@ -181,6 +192,20 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
         return sslParameters;
     }
 
+    public void reload(Tls tls) {
+        for (TlsReloadableComponent reloadableComponent : reloadableComponents) {
+            reloadableComponent.reload(tls);
+        }
+    }
+
+    X509TrustManager originalTrustManager() {
+        return originalTrustManager;
+    }
+
+    X509KeyManager originalKeyManager() {
+        return originalKeyManager;
+    }
+
     /**
      * Whether this TLS configuration is enabled or not.
      *
@@ -262,6 +287,13 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
         private SSLParameters sslParameters;
         private String endpointIdentificationAlgorithm = ENDPOINT_IDENTIFICATION_HTTPS;
         private boolean enabled = true;
+
+        /*
+         * TLS reloading
+         */
+        public List<TlsReloadableComponent> reloadableComponents = new ArrayList<>();
+        private X509TrustManager originalTrustManager;
+        private X509KeyManager originalKeyManager;
 
         private Builder() {
         }
@@ -666,8 +698,8 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
                 sslContext = SSLContext.getInstance(protocol, provider);
             }
 
-            sslContext.init(kmf == null ? null : kmf.getKeyManagers(),
-                            tmf == null ? null : tmf.getTrustManagers(),
+            sslContext.init(kmf == null ? null : wrapX509KeyManagers(kmf.getKeyManagers()),
+                            tmf == null ? null : wrapX509TrustManagers(tmf.getTrustManagers()),
                             secureRandom);
 
             SSLSessionContext serverSessionContext = sslContext.getServerSessionContext();
@@ -678,6 +710,40 @@ public abstract sealed class Tls permits Tls.ExplicitContextTlsConfig, Tls.TlsCo
             }
 
             return sslContext;
+        }
+
+        private TrustManager[] wrapX509TrustManagers(TrustManager[] trustManagers) {
+            TrustManager[] toReturn = new TrustManager[trustManagers.length];
+            System.arraycopy(trustManagers, 0, toReturn, 0, toReturn.length);
+            for (int i = 0; i < trustManagers.length; i++) {
+                TrustManager trustManager = trustManagers[i];
+                if (trustManager instanceof X509TrustManager x509TrustManager) {
+                    originalTrustManager = x509TrustManager;
+                    var wrappedTrustManager = new ReloadableX509TrustManager(x509TrustManager);
+                    reloadableComponents.add(wrappedTrustManager);
+                    toReturn[i] = wrappedTrustManager;
+                    return toReturn;
+                }
+            }
+            reloadableComponents.add(new ReloadableX509TrustManager.NotReloadableTrustManager());
+            return toReturn;
+        }
+
+        private KeyManager[] wrapX509KeyManagers(KeyManager[] keyManagers) {
+            KeyManager[] toReturn = new KeyManager[keyManagers.length];
+            System.arraycopy(keyManagers, 0, toReturn, 0, toReturn.length);
+            for (int i = 0; i < keyManagers.length; i++) {
+                KeyManager keyManager = keyManagers[i];
+                if (keyManager instanceof X509KeyManager x509KeyManager) {
+                    originalKeyManager = x509KeyManager;
+                    ReloadableX509KeyManager wrappedKeyManager = new ReloadableX509KeyManager(x509KeyManager);
+                    reloadableComponents.add(wrappedKeyManager);
+                    toReturn[i] = wrappedKeyManager;
+                    return toReturn;
+                }
+            }
+            reloadableComponents.add(new ReloadableX509KeyManager.NotReloadableKeyManager());
+            return toReturn;
         }
 
         private void sessionTimeoutSeconds(int seconds) {

@@ -131,6 +131,23 @@ public interface WebServer {
     boolean hasTls(String socketName);
 
     /**
+     * Reload TLS keystore and truststore configuration for the default socket.
+     *
+     * @param tls new TLS configuration
+     */
+    default void reloadTls(Tls tls) {
+        reloadTls(DEFAULT_SOCKET_NAME, tls);
+    }
+
+    /**
+     * Reload TLS keystore and truststore configuration for the named socket.
+     *
+     * @param socketName socket name to reload TLS configuration on
+     * @param tls new TLS configuration
+     */
+    void reloadTls(String socketName, Tls tls);
+
+    /**
      * Fluent API builder for {@link WebServer}.
      */
     class Builder implements io.helidon.common.Builder<Builder, WebServer>, Router.RouterBuilder<Builder> {

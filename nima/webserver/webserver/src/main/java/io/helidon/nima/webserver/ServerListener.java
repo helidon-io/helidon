@@ -195,6 +195,21 @@ class ServerListener {
         serverThread.start();
     }
 
+    boolean hasTls() {
+        return listenerConfig.hasTls();
+    }
+
+    void reloadTls(Tls tls) {
+        if (!listenerConfig.hasTls()) {
+            throw new UnsupportedOperationException("TLS is not enabled on the socket " + socketName
+                                                            + " and therefore cannot be reloaded");
+        }
+        if (!tls.enabled()) {
+            throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
+        }
+        listenerConfig.tls().reload(tls);
+    }
+
     private void debugTls(String serverChannelId, Tls tls) {
         SSLParameters sslParameters = tls.newEngine()
                 .getSSLParameters();

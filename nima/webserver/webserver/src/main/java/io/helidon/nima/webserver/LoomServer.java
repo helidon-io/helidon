@@ -39,6 +39,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.Version;
 import io.helidon.common.context.Context;
+import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
@@ -168,7 +171,19 @@ class LoomServer implements WebServer {
 
     @Override
     public boolean hasTls(String socketName) {
-        return false;
+        ServerListener listener = listeners.get(socketName);
+        return listener != null && listener.hasTls();
+    }
+
+    @Override
+    public void reloadTls(String socketName, Tls tls) {
+        ServerListener listener = listeners.get(socketName);
+        if (listener == null) {
+            LOGGER.log(System.Logger.Level.WARNING, "Cannot reload TLS on socket " + socketName
+                    + " since this socket does not exist");
+        } else {
+            listener.reloadTls(tls);
+        }
     }
 
     @Override
