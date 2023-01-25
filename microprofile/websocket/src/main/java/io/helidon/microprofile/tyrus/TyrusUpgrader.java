@@ -58,8 +58,7 @@ import org.glassfish.tyrus.spi.WebSocketEngine;
 public class TyrusUpgrader extends WsUpgrader {
     private static final System.Logger LOGGER = System.getLogger(TyrusUpgrader.class.getName());
 
-    private String path;
-    private String queryString;
+    // there is a single instance of an upgrader used by all connections, do not store request related information in a field
     private final TyrusRouting tyrusRouting;
     private final WebSocketEngine engine;
 
@@ -100,14 +99,8 @@ public class TyrusUpgrader extends WsUpgrader {
         }
 
         // Initialize path and queryString
-        path = prologue.uriPath().path();
-        int k = path.indexOf('?');
-        if (k > 0) {
-            this.path = path.substring(0, k);
-            this.queryString = path.substring(k + 1);
-        } else {
-            this.queryString = "";
-        }
+        String path = prologue.uriPath().path();
+        UriQuery query = prologue.query();
 
         // Check if this a Tyrus route exists
         TyrusRoute route = ctx.router()
@@ -131,7 +124,7 @@ public class TyrusUpgrader extends WsUpgrader {
         }
 
         // Protocol handshake with Tyrus
-        WebSocketEngine.UpgradeInfo upgradeInfo = protocolHandshake(headers);
+        WebSocketEngine.UpgradeInfo upgradeInfo = protocolHandshake(headers, query, path);
 
         // todo support subprotocols (must be provided by route)
         // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
@@ -197,18 +190,18 @@ public class TyrusUpgrader extends WsUpgrader {
         return tyrusServerContainer;
     }
 
-    WebSocketEngine.UpgradeInfo protocolHandshake(WritableHeaders<?> headers) {
+    WebSocketEngine.UpgradeInfo protocolHandshake(WritableHeaders<?> headers, UriQuery uriQuery, String path) {
         LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake with Tyrus...");
 
         // Create Tyrus request context, copy request headers and query params
         Map<String, String[]> paramsMap = new HashMap<>();
-        UriQuery uriQuery = UriQuery.create(queryString);
+
         for (String name : uriQuery.names()) {
             paramsMap.put(name, uriQuery.all(name).toArray(new String[0]));
         }
         RequestContext requestContext = RequestContext.Builder.create()
                 .requestURI(URI.create(path))      // excludes context path
-                .queryString(queryString)
+                .queryString(uriQuery.value())
                 .parameterMap(paramsMap)
                 .build();
         headers.forEach(e -> requestContext.getHeaders().put(e.name(), List.of(e.values())));

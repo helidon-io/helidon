@@ -121,7 +121,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
                     .headers(requestContext.getStringHeaders())
-                    .queryParams(UriQuery.create(requestContext.getUri().getQuery()));
+                    .queryParams(UriQuery.create(requestContext.getUri()));
 
             EndpointConfig.Builder outboundEp = securityContext.endpointConfig().derive();
 
