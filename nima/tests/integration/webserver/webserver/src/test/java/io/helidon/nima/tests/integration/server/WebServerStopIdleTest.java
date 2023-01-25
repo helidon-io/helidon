@@ -17,39 +17,31 @@
 package io.helidon.nima.tests.integration.server;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThan;
 
-@ServerTest
 class WebServerStopIdleTest {
-
-    private final Http1Client client;
-    private final WebServer webServer;
-
-    WebServerStopIdleTest(Http1Client client, WebServer webServer) {
-        this.client = client;
-        this.webServer = webServer;
-    }
-
-    @SetUpRoute
-    static void router(HttpRouting.Builder router) {
-        router.get("ok", (req, res) -> res.send("ok"));
-    }
 
     @Test
     void stopWhenIdleExpectTimelyStop() {
+        WebServer webServer = WebServer.builder()
+                .routing(router -> router.get("ok", (req, res) -> res.send("ok")))
+                .build();
+        webServer.start();
+
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .build();
         try (var response = client.get("/ok").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.entity().as(String.class), is("ok"));
         }
+
         long startMillis = System.currentTimeMillis();
         webServer.stop();
         int stopExecutionTimeInMillis = (int) (System.currentTimeMillis() - startMillis);

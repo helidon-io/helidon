@@ -16,33 +16,25 @@
 
 package io.helidon.nima.tests.integration.server;
 
-import java.util.concurrent.TimeUnit;
-
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
-@ServerTest
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
+
 class WebServerStopOnlyTest {
 
-    private final WebServer webServer;
-
-    WebServerStopOnlyTest(Http1Client client, WebServer webServer) {
-        this.webServer = webServer;
-    }
-
-    @SetUpRoute
-    static void router(HttpRouting.Builder router) {
-        router.get("ok", (req, res) -> res.send("ok"));
-    }
-
     @Test
-    @Timeout(value = 500, unit = TimeUnit.MILLISECONDS)
     void stoWhenNoRequestsExpectTimelyStop() {
+        WebServer webServer = WebServer.builder()
+                .routing(router -> router.get("ok", (req, res) -> res.send("ok")))
+                .build();
+        webServer.start();
+
+        long startMillis = System.currentTimeMillis();
         webServer.stop();
+        int stopExecutionTimeInMillis = (int) (System.currentTimeMillis() - startMillis);
+        assertThat(stopExecutionTimeInMillis, is(lessThan(500)));
     }
 }
