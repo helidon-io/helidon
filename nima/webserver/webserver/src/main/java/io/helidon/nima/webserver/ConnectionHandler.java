@@ -30,7 +30,6 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
-import io.helidon.nima.webserver.task.spi.InterruptableTask;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;

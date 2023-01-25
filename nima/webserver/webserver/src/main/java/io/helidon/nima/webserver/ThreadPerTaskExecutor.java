@@ -30,9 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import io.helidon.nima.webserver.task.spi.HelidonTaskExecutor;
-import io.helidon.nima.webserver.task.spi.InterruptableTask;
-
 /**
  * An implementation of {@link HelidonTaskExecutor}. Implementation is a simplified
  * version of ThreadPerTaskExecutor in the JDK library. Upon termination, this
@@ -55,7 +52,7 @@ class ThreadPerTaskExecutor implements HelidonTaskExecutor {
         this.factory = Objects.requireNonNull(factory);
     }
 
-    public static HelidonTaskExecutor create(ThreadFactory factory) {
+    static HelidonTaskExecutor create(ThreadFactory factory) {
         return new ThreadPerTaskExecutor(factory);
     }
 

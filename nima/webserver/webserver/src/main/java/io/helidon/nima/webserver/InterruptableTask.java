@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver.task.spi;
+package io.helidon.nima.webserver;
 
 import java.util.concurrent.Callable;
 

@@ -43,7 +43,7 @@ import io.helidon.nima.webserver.http.DirectTransportRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
 import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.webserver.task.spi.InterruptableTask;
+import io.helidon.nima.webserver.InterruptableTask;
 
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
@@ -113,7 +113,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask {
             while (true) {
                 // prologue (first line of request)
                 currentlyReadingPrologue = true;
-                // prologue (first line of request)
                 HttpPrologue prologue = http1prologue.readPrologue();
                 currentlyReadingPrologue = false;
                 recvListener.prologue(ctx, prologue);
