@@ -454,13 +454,13 @@ Config config = Config.create(
         ConfigSources.classpath("application.yaml")
                 .parserMapping(                                           // <1>
                         key -> "app".equals(key.toString())               // <2>
-                                ? HoconConfigParserBuilder.buildDefault()
-                                : null));
+                                ? Optional.of(HoconConfigParser.create())
+                                : Optional.empty()));
 ----
 
 <1> Uses the `parserMapping` method to map keys to parser instances.
 <2> Tells the config system to use the HOCON parser for translating the `String`
-value of the `app` key. (HCON is a superset of JSON.)
+value of the `app` key. (HOCON is a superset of JSON.)
 
 As before, the config system replaces the value node in the
 containing config tree with the config tree resulting from the additional parse.
