@@ -60,6 +60,9 @@ public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
 
     /**
      * Enables/disables HOCON resolving substitutions support. Default is {@code false}.
+     * <p>
+     * Note: Even if you disable substitution at HOCON parsing time, values can still be resolved at a later time by the
+     * Helidon Config system.
      *
      * @param enabled use to enable or disable substitution
      * @return modified builder instance
