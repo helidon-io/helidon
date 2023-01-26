@@ -103,7 +103,7 @@ public abstract class AbstractCreator {
     String toGeneratedSticker(
             GeneralCreatorRequest req) {
         String generator = (null == req) ? null : req.generator().orElse(null);
-        return templateHelper.defaultGeneratedStickerFor((generator != null) ? generator : getClass().getName());
+        return templateHelper.generatedStickerFor((generator != null) ? generator : getClass().getName());
     }
 
     /**
@@ -155,7 +155,7 @@ public abstract class AbstractCreator {
 
     ModuleInfoDescriptor createModuleInfo(
             ModuleInfoCreatorRequest req) {
-        String generator = templateHelper.defaultGeneratedStickerFor(getClass().getName());
+        String generator = templateHelper.generatedStickerFor(getClass().getName());
         String moduleInfoPath = req.moduleInfoPath().orElse(null);
         String moduleName = req.name().orElse(null);
         TypeName moduleTypeName = req.moduleTypeName();
@@ -179,7 +179,7 @@ public abstract class AbstractCreator {
             moduleName = descriptorBuilder.name();
         } else {
             descriptorBuilder = DefaultModuleInfoDescriptor.builder().name(moduleName);
-            descriptorBuilder.headerComment("// @Generated(" + templateHelper.defaultGeneratedStickerFor(generator) + ")");
+            descriptorBuilder.headerComment("// @Generated(" + templateHelper.generatedStickerFor(generator) + ")");
         }
 
         boolean isTestModule = ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX.equals(classPrefixName);

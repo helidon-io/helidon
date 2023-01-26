@@ -31,6 +31,7 @@ import io.helidon.pico.PreDestroyMethod;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.services.Dependencies;
 
+import jakarta.annotation.Generated;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -50,7 +51,7 @@ import static io.helidon.pico.InjectionPointInfo.CONSTRUCTOR;
 // @Singleton{{#weight}}
 @Weight({{{.}}}){{/weight}} {{#isrunlevelset}}@RunLevel({{runlevel}}){{/isrunlevelset}}
 @SuppressWarnings("unchecked")
-@jakarta.annotation.Generated({{{generatedanno}}})
+@Generated({{{generatedanno}}})
 public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} extends {{{parent}}} {
     private static final DefaultServiceInfo serviceInfo =
         DefaultServiceInfo.builder()
@@ -59,8 +60,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} exte
             .addExternalContractsImplemented({{.}}.class.getName()){{/externalcontracts}}
             .activatorTypeName({{flatclassname}}{{activatorsuffix}}.class.getName()){{^isprovider}}{{#scopetypenames}}
             .addScopeTypeName({{{.}}}.class.getName()){{/scopetypenames}}{{/isprovider}}{{#qualifiers}}
-            {{{.}}}
-            {{/qualifiers}}{{#isweightset}}
+            {{{.}}}{{/qualifiers}}{{#isweightset}}
             .declaredWeight({{weight}}){{/isweightset}}{{#isrunlevelset}}
             .declaredRunLevel({{runlevel}}){{/isrunlevelset}}
             .build();

@@ -664,7 +664,12 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("isconcrete", args.isConcrete());
         subst.put("contracts", args.serviceInfo().contractsImplemented());
         if (args.serviceInfo() instanceof ServiceInfo) {
-            subst.put("externalcontracts", ((ServiceInfo) args.serviceInfo()).externalContractsImplemented());
+            ServiceInfo serviceInfo = ((ServiceInfo) args.serviceInfo());
+            Set<String> extContracts = serviceInfo.externalContractsImplemented();
+            subst.put("externalcontracts", extContracts);
+            // there is no need to list these twice, since external contracts will implicitly back-full into contracts
+            subst.put("contracts", args.serviceInfo().contractsImplemented().stream()
+                    .filter(it -> !extContracts.contains(it)).collect(Collectors.toList()));
         }
         subst.put("qualifiers", toCodegenQualifiers(args.serviceInfo().qualifiers()));
         subst.put("dependencies", toCodegenDependencies(args.dependencies().orElse(null)));

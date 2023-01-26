@@ -463,7 +463,7 @@ public interface ModuleInfoDescriptor {
         if (wantAnnotation) {
             subst.put("generatedanno",
                       (Ordering.NATURAL_PRESERVE_COMMENTS == ordering() || headerComment().isPresent())
-                              ? null : helper.defaultGeneratedStickerFor(getClass().getName()));
+                              ? null : helper.generatedStickerFor(getClass().getName()));
         }
         headerComment().ifPresent(it -> subst.put("header", it));
         descriptionComment().ifPresent(it -> subst.put("description", it));

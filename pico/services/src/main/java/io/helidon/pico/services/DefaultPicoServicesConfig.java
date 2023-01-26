@@ -33,7 +33,7 @@ class DefaultPicoServicesConfig {
     static io.helidon.pico.DefaultPicoServicesConfig.Builder createDefaultConfigBuilder() {
         return io.helidon.pico.DefaultPicoServicesConfig.builder()
                 .providerName(PROVIDER)
-                .providerVersion(Versions.CURRENT_VERSION);
+                .providerVersion(Versions.CURRENT_PICO_VERSION);
     }
 
 }

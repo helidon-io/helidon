@@ -193,7 +193,7 @@ class DefaultTemplateHelperTools implements TemplateHelperTools {
             TypeName generatedType,
             Function<Map<String, Object>, Map<String, Object>> propertiesFn) {
         Map<String, Object> substitutions = new HashMap<>();
-        substitutions.put("generatedSticker", templateHelper.defaultGeneratedStickerFor(generator.getName()));
+        substitutions.put("generatedSticker", templateHelper.generatedStickerFor(generator.getName()));
         substitutions.put("annoTypeName", req.annoTypeName());
         substitutions.put("generatedTypeName", generatedType);
         substitutions.put("packageName", generatedType.packageName());

@@ -18,13 +18,13 @@ package io.helidon.pico.tools;
 
 import java.io.IOException;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 
@@ -76,14 +76,9 @@ public class TemplateHelper {
      * @param generatorClassTypeName the generator class type name
      * @return the generated sticker
      */
-    public String defaultGeneratedStickerFor(
+    public String generatedStickerFor(
             String generatorClassTypeName) {
-        return "{" + String.join(", ",
-                                 List.of(
-                                         "\"provider=" + providerName + "\"",
-                                         "\"generator=" + generatorClassTypeName + "\"",
-                                         "\"version=" + versionId + "\""))
-                + "}";
+        return BuilderTypeTools.generatedStickerFor(generatorClassTypeName, versionId);
     }
 
     /**

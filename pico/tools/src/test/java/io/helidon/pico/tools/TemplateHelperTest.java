@@ -86,7 +86,7 @@ class TemplateHelperTest {
         subst.put("description", List.of("Description 1.", "Description 2."));
         subst.put("hasdescription", true);
         subst.put("header", "/*\n  Header Line 1\n  Header Line 2\n */");
-        subst.put("generatedanno", helper.defaultGeneratedStickerFor("generator"));
+        subst.put("generatedanno", helper.generatedStickerFor("generator"));
         codegen = helper.applySubstitutions(template, subst, true);
         assertThat(codegen,
                    equalTo("/*\n"
@@ -97,7 +97,7 @@ class TemplateHelperTest {
                                    + " * Description 1.\n"
                                    + " * Description 2.\n"
                                    + " */\n"
-                                   + "// @Generated({\"provider=oracle\", \"generator=generator\", \"version=1\"})\n"
+                                   + "// @Generated(value = \"generator\", comments = \"version=1\")\n"
                                    + "module my-module-name { \n"
                                    + "}\n"));
     }
