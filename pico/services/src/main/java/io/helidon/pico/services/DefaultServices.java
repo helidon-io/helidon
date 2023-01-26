@@ -53,7 +53,7 @@ import jakarta.inject.Provider;
 /**
  * The default reference implementation of {@link io.helidon.pico.Services}.
  */
-class DefaultServices implements Services, Resetable {
+class DefaultServices implements Services, ServiceBinder, Resetable {
     private static final ServiceProviderComparator COMPARATOR = new ServiceProviderComparator();
 
     private final ConcurrentHashMap<String, ServiceProvider<?>> servicesByTypeName = new ConcurrentHashMap<>();
@@ -343,8 +343,10 @@ class DefaultServices implements Services, Resetable {
         bind(createServiceProvider(module, moduleName, picoServices));
     }
 
-    void bind(
+    @Override
+    public void bind(
             ServiceProvider<?> serviceProvider) {
+        assertPermitsDynamic(cfg);
         ServiceInfo serviceInfo = toValidatedServiceInfo(serviceProvider);
         String serviceTypeName = serviceInfo.serviceTypeName();
 
@@ -406,7 +408,7 @@ class DefaultServices implements Services, Resetable {
 
     static void assertPermitsDynamic(PicoServicesConfig cfg) {
         if (!cfg.permitsDynamic()) {
-            throw new IllegalStateException("services are configured to not permit dynamic");
+            throw new IllegalStateException("services are configured to not prevent dynamic updates");
         }
     }
 

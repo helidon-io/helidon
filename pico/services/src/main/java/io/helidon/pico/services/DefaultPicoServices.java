@@ -214,7 +214,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
             }
 
             // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
-            List<ServiceProvider<?>> serviceProviders = services.lookupAll(DefaultServiceInfoCriteria.builder().build());
+            List<ServiceProvider<?>> serviceProviders = services.lookupAll(DefaultServiceInfoCriteria.builder().build(), false);
             serviceProviders = serviceProviders.stream()
                     .filter((sp) -> sp.currentActivationPhase().eligibleForDeactivation())
                     .collect(Collectors.toList());
@@ -256,8 +256,8 @@ class DefaultPicoServices implements PicoServices, Resetable {
     @Override
     public boolean reset(
             boolean deep) {
-        boolean result = deep;
         DefaultServices.assertPermitsDynamic(cfg);
+        boolean result = deep;
 
         DefaultServices prev = services.get();
         if (prev != null) {
@@ -282,7 +282,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         return result;
     }
 
-    private void initializeServices() {
+    private synchronized void initializeServices() {
         if (services.get() == null) {
             services.set(new DefaultServices(cfg));
         }
@@ -373,7 +373,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     protected void bindApplications(
             DefaultServices services,
             Collection<Application> apps) {
-        if (!cfg.usesCompileTime()) {
+        if (!cfg.usesCompileTimeApplications()) {
             LOGGER.log(System.Logger.Level.DEBUG, "application binding is disabled");
             return;
         }
@@ -393,6 +393,11 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private void bindModules(
             DefaultServices services,
             Collection<io.helidon.pico.Module> modules) {
+        if (!cfg.usesCompileTimeModules()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "module binding is disabled");
+            return;
+        }
+
         if (modules.isEmpty()) {
             LOGGER.log(System.Logger.Level.WARNING, "no " + io.helidon.pico.Module.class.getName() + " was found.");
         } else {

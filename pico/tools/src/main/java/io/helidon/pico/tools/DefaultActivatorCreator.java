@@ -43,6 +43,7 @@ import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.Module;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.ServiceInfo;
@@ -514,7 +515,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 .serviceTypeToProviderForTypes(services.providerForTypeNames())
                 .serviceTypeQualifiers(services.qualifiers())
                 .modulesRequired(services.requiredModules())
-                .classPrefixName(Objects.nonNull(services.lastKnownTypeSuffix())
+                .classPrefixName((services.lastKnownTypeSuffix() != null)
                                          ? services.lastKnownTypeSuffix() : ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME)
                 .serviceTypeInterceptionPlan(services.interceptorPlans())
                 .extraCodeGen(services.extraCodeGen())
@@ -741,9 +742,10 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         }
         builder.append("Access.").append(Objects.requireNonNull(ipInfo.access())).append(")");
         Integer elemPos = ipInfo.elementArgs().orElse(null);
+        Integer elemOffset = ipInfo.elementOffset().orElse(null);
         Set<QualifierAndValue> qualifiers = ipInfo.qualifiers();
         if (elemPos != null) {
-            builder.append(".elemOffset(").append(elemPos).append(")");
+            builder.append(".elemOffset(").append(elemOffset).append(")");
         }
         if (!qualifiers.isEmpty()) {
             builder.append(toCodegenQualifiers(qualifiers));

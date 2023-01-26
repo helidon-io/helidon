@@ -1,0 +1,353 @@
+/**
+*
+*/
+package io.helidon.pico.tests.pico.interceptor;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
+
+import io.helidon.pico.DefaultInvocationContext;
+import io.helidon.pico.Interceptor;
+import io.helidon.pico.InvocationException;
+import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.pico.types.DefaultAnnotationAndValue;
+import io.helidon.pico.types.DefaultTypeName;
+import io.helidon.pico.types.DefaultTypedElementName;
+import io.helidon.pico.types.TypeName;
+import io.helidon.pico.types.TypedElementName;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+
+import static io.helidon.pico.types.DefaultTypeName.create;
+import static io.helidon.pico.services.Invocation.createAndInvoke;
+import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
+import static io.helidon.pico.services.Invocation.mergeAndCollapse;
+
+@io.helidon.common.Weight(100.001)
+@io.helidon.pico.Intercepted(io.helidon.pico.tests.pico.interceptor.XImpl.class)
+@Singleton
+@SuppressWarnings("ALL")
+@jakarta.annotation.Generated({"provider=oracle", "generator=io.helidon.pico.tools.DefaultInterceptorCreator", "version=1"})
+public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.interceptor.XImpl {
+    private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of(
+            DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class),
+            DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")));
+
+    private static final TypedElementName __ctor = DefaultTypedElementName.builder()
+            .typeName(create(void.class))
+			.elementName(io.helidon.pico.ElementInfo.CONSTRUCTOR)
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodIA1 = DefaultTypedElementName.builder()
+            .typeName(create(void.class))
+			.elementName("methodIA1")
+			.addAnnotation(DefaultAnnotationAndValue.create(java.lang.Override.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodIA2 = DefaultTypedElementName.builder()
+            .typeName(create(void.class))
+			.elementName("methodIA2")
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IA2")))
+			.addAnnotation(DefaultAnnotationAndValue.create(java.lang.Override.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodIB = DefaultTypedElementName.builder()
+            .typeName(create(void.class))
+			.elementName("methodIB")
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "methodIB")))
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class, Map.of("value", "IBSubAnno")))
+			.addAnnotation(DefaultAnnotationAndValue.create(java.lang.Override.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodIB__p1 = DefaultTypedElementName.builder()
+            .typeName(create(java.lang.String.class))
+			.elementName("p1")
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "arg1")))
+            .build();
+    private static final TypedElementName __close = DefaultTypedElementName.builder()
+            .typeName(create(void.class))
+			.elementName("close")
+			.addAnnotation(DefaultAnnotationAndValue.create(io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(java.lang.Override.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodX = DefaultTypedElementName.builder()
+            .typeName(create(long.class))
+			.elementName("methodX")
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodX__p1 = DefaultTypedElementName.builder()
+            .typeName(create(java.lang.String.class))
+			.elementName("p1")
+            .build();
+    private static final TypedElementName __methodX__p2 = DefaultTypedElementName.builder()
+            .typeName(create(int.class))
+			.elementName("p2")
+            .build();
+    private static final TypedElementName __methodX__p3 = DefaultTypedElementName.builder()
+            .typeName(create(boolean.class))
+			.elementName("p3")
+            .build();
+    private static final TypedElementName __methodY = DefaultTypedElementName.builder()
+            .typeName(create(java.lang.String.class))
+			.elementName("methodY")
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __methodZ = DefaultTypedElementName.builder()
+            .typeName(create(java.lang.String.class))
+			.elementName("methodZ")
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+    private static final TypedElementName __throwRuntimeException = DefaultTypedElementName.builder()
+            .typeName(create(void.class))
+			.elementName("throwRuntimeException")
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class))
+			.addAnnotation(DefaultAnnotationAndValue.create(jakarta.inject.Named.class, Map.of("value", "ClassX")))
+            .build();
+
+    private final Provider<io.helidon.pico.tests.pico.interceptor.XImpl> __provider;
+    private final ServiceProvider<io.helidon.pico.tests.pico.interceptor.XImpl> __sp;
+    private final io.helidon.pico.tests.pico.interceptor.XImpl __impl;
+    private final TypeName __serviceTypeName;
+    private final List<Provider<Interceptor>> __methodIA1__interceptors;
+    private final List<Provider<Interceptor>> __methodIA2__interceptors;
+    private final List<Provider<Interceptor>> __methodIB__interceptors;
+    private final List<Provider<Interceptor>> __close__interceptors;
+    private final List<Provider<Interceptor>> __methodX__interceptors;
+    private final List<Provider<Interceptor>> __methodY__interceptors;
+    private final List<Provider<Interceptor>> __methodZ__interceptors;
+    private final List<Provider<Interceptor>> __throwRuntimeException__interceptors;
+
+    @Inject
+    XImpl$$picoInterceptor(
+                @Named("io.helidon.pico.tests.plain.interceptor.InterceptorBasedAnno") List<Provider<Interceptor>> io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno,
+                @Named("jakarta.inject.Named") List<Provider<Interceptor>> jakarta_inject_Named,
+                Provider<io.helidon.pico.tests.pico.interceptor.XImpl> provider) {
+        this.__provider = Objects.requireNonNull(provider);
+        this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<io.helidon.pico.tests.pico.interceptor.XImpl>) __provider : null;
+        this.__serviceTypeName = DefaultTypeName.create(io.helidon.pico.tests.pico.interceptor.XImpl.class);
+        List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno, jakarta_inject_Named);
+        this.__methodIA1__interceptors = mergeAndCollapse();
+        this.__methodIA2__interceptors = mergeAndCollapse();
+        this.__methodIB__interceptors = mergeAndCollapse();
+        this.__close__interceptors = mergeAndCollapse();
+        this.__methodX__interceptors = mergeAndCollapse();
+        this.__methodY__interceptors = mergeAndCollapse();
+        this.__methodZ__interceptors = mergeAndCollapse();
+        this.__throwRuntimeException__interceptors = mergeAndCollapse();
+
+        Supplier<io.helidon.pico.tests.pico.interceptor.XImpl> call = __provider::get;
+        io.helidon.pico.tests.pico.interceptor.XImpl result = createInvokeAndSupply(
+                DefaultInvocationContext.builder()
+                    .rootServiceProvider(__sp)
+                    .serviceTypeName(__serviceTypeName)
+                    .classAnnotations(__serviceLevelAnnotations)
+                    .elementInfo(__ctor)
+                    .interceptors(__ctor__interceptors)
+                    /*.build()*/,
+                call);
+        this.__impl = Objects.requireNonNull(result);
+    }
+
+    @Override
+    public void methodIA1() {
+		Runnable call = () -> {
+			try {
+				__impl.methodIA1();
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		createAndInvoke(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__methodIA1__interceptors)
+				.elementInfo(__methodIA1)
+			/*.build()*/,
+			call);
+	}
+
+    @Override
+    public void methodIA2() {
+		Runnable call = () -> {
+			try {
+				__impl.methodIA2();
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		createAndInvoke(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__methodIA2__interceptors)
+				.elementInfo(__methodIA2)
+			/*.build()*/,
+			call);
+	}
+
+    @Override
+    public void methodIB(java.lang.String p1) {
+		Object[] args = new Object[] {p1};
+		Runnable call = () -> {
+			try {
+				__impl.methodIB((java.lang.String) args[0]);
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		createAndInvoke(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__methodIB__interceptors)
+				.elementInfo(__methodIB)
+				.elementArgInfo(new TypedElementName[]{__methodIB__p1})
+				.elementArgs(args)
+			/*.build()*/,
+			call);
+	}
+
+    @Override
+    public void close() throws java.io.IOException, java.lang.RuntimeException {
+		Runnable call = () -> {
+			try {
+				__impl.close();
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		createAndInvoke(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__close__interceptors)
+				.elementInfo(__close)
+			/*.build()*/,
+			call);
+	}
+
+    @Override
+    public long methodX(java.lang.String p1, int p2, boolean p3) throws java.io.IOException, java.lang.RuntimeException, java.lang.AssertionError {
+		Object[] args = new Object[] {p1, p2, p3};
+		Supplier<java.lang.Long> call = () -> {
+			try {
+				return __impl.methodX((java.lang.String) args[0], (java.lang.Integer) args[1], (java.lang.Boolean) args[2]);
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		java.lang.Long result = createInvokeAndSupply(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__methodX__interceptors)
+				.elementInfo(__methodX)
+				.elementArgInfo(new TypedElementName[]{__methodX__p1,
+			__methodX__p2,
+			__methodX__p3})
+				.elementArgs(args)
+			/*.build()*/,
+			call);
+		return result;
+	}
+
+    @Override
+    public java.lang.String methodY() {
+		Supplier<java.lang.String> call = () -> {
+			try {
+				return __impl.methodY();
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		java.lang.String result = createInvokeAndSupply(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__methodY__interceptors)
+				.elementInfo(__methodY)
+			/*.build()*/,
+			call);
+		return result;
+	}
+
+    @Override
+    public java.lang.String methodZ() {
+		Supplier<java.lang.String> call = () -> {
+			try {
+				return __impl.methodZ();
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		java.lang.String result = createInvokeAndSupply(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__methodZ__interceptors)
+				.elementInfo(__methodZ)
+			/*.build()*/,
+			call);
+		return result;
+	}
+
+    @Override
+    public void throwRuntimeException() {
+		Runnable call = () -> {
+			try {
+				__impl.throwRuntimeException();
+			} catch (RuntimeException e) {
+				throw e;
+			} catch (Throwable t) {
+				throw new InvocationException(t.getMessage(), t, __sp);
+			}
+		};
+		createAndInvoke(
+			io.helidon.pico.DefaultInvocationContext.builder()
+				.rootServiceProvider(__sp)
+				.serviceTypeName(__serviceTypeName)
+				.classAnnotations(__serviceLevelAnnotations)
+				.interceptors(__throwRuntimeException__interceptors)
+				.elementInfo(__throwRuntimeException)
+			/*.build()*/,
+			call);
+	}
+
+}

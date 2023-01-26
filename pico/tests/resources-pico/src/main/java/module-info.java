@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// TODO: ideally this and tests should share the same package name. ServiceLoader not working with picoModule and picoApplication
+
 /**
  * Pico Test Resources.
  */

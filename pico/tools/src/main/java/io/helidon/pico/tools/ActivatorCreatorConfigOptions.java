@@ -29,7 +29,7 @@ import io.helidon.pico.PicoServicesConfig;
 public interface ActivatorCreatorConfigOptions {
 
     /**
-     * This option (use -A at compile time) should be set to opt-in to {@link io.helidon.pico.Application} stub
+     * This option (use -A at compile time) should be set to opt into {@link io.helidon.pico.Application} stub
      * creation.
      */
     String TAG_APPLICATION_PRE_CREATE = PicoServicesConfig.FQN + ".application.pre.create";

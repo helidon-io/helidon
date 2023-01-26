@@ -85,7 +85,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
         }
 
         if (query.expected() && result.isEmpty()) {
-            throw new AssertionError();
+            throw new AssertionError("expected to match: " + criteria);
         }
 
         return result;

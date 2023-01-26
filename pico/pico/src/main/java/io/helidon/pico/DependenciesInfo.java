@@ -56,6 +56,7 @@ public interface DependenciesInfo {
      *
      * @return the flattened set of all dependencies
      */
+    // note to self: dependencies should be ordered by injection point info
     default Set<DependencyInfo> allDependencies() {
         Set<DependencyInfo> all = new LinkedHashSet<>();
         serviceInfoDependencies().values()

@@ -41,6 +41,11 @@ public interface ActivatorCreatorCodeGen {
     String DEFAULT_CLASS_PREFIX_NAME = "";
 
     /**
+     * The default prefix for {@link #classPrefixName()} for tests/testing.
+     */
+    String DEFAULT_TEST_CLASS_PREFIX_NAME = ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX;
+
+    /**
      * Optionally, for each service type also provide its parent (super class) service type mapping.
      *
      * @return the service type to parent (super class) service type mapping

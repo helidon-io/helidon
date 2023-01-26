@@ -16,12 +16,28 @@
 
 package io.helidon.pico.testing;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.pico.DefaultBootstrap;
+import io.helidon.pico.PicoServices;
+import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.PicoServicesHolder;
+import io.helidon.pico.ServiceBinder;
+import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.Services;
 
 /**
  * Supporting helper utilities unit-testing Pico services.
  */
 public class PicoTestingSupport {
+    private static LazyValue<PicoServices> instance = lazyCreate(basicTesableConfig());
 
     private PicoTestingSupport() {
     }
@@ -30,13 +46,99 @@ public class PicoTestingSupport {
      * Resets all internal Pico configuration instances, JVM global singletons, service registries, etc.
      */
     public static void resetAll() {
-        Holder.reset();
+        Internal.reset();
     }
 
-    private static class Holder extends PicoServicesHolder {
+    /**
+     * Provides a means to bind a service provider into the {@link io.helidon.pico.Services} registry.
+     *
+     * @param services the services registry to bind into
+     * @param serviceProvider the service provider to bind
+     */
+    public static void bind(
+            Services services,
+            ServiceProvider<?> serviceProvider) {
+        if (!(services instanceof ServiceBinder)) {
+            throw new IllegalStateException("unable to find into the service registry - is this a testableServices() registry?");
+        }
+
+        ((ServiceBinder) services).bind(serviceProvider);
+    }
+
+    /**
+     * Creates a {@link io.helidon.pico.PicoServices} interface more conducive to unit and integration testing.
+     *
+     * @return testable services instance
+     */
+    public static PicoServices testableServices() {
+        return instance.get();
+    }
+
+    /**
+     * Creates a {@link io.helidon.pico.PicoServices} interface more conducive to unit and integration testing.
+     *
+     * @param config the config to use
+     * @return testable services instance
+     * @see io.helidon.pico.PicoServicesConfig
+     */
+    public static PicoServices testableServices(
+            Config config) {
+        return lazyCreate(config).get();
+    }
+
+    /**
+     * Basic testable configuration.
+     *
+     * @return testable config
+     */
+    public static Config basicTesableConfig() {
+        return Config.create(
+                    ConfigSources.create(
+                            Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"));
+    }
+
+    /**
+     * Describe the provided instance or provider.
+     *
+     * @param providerOrInstance the instance to provider
+     * @return the description of the instance
+     */
+    public static String toDescription(
+            Object providerOrInstance) {
+        if (providerOrInstance instanceof Optional) {
+            providerOrInstance = ((Optional<?>) providerOrInstance).orElse(null);
+        }
+
+        if (providerOrInstance instanceof ServiceProvider) {
+            return ((ServiceProvider<?>) providerOrInstance).description();
+        }
+        return String.valueOf(providerOrInstance);
+    }
+
+    /**
+     * Describe the provided instance or provider collection.
+     *
+     * @param coll the instance to provider collection
+     * @return the description of the instance
+     */
+    public static List<String> toDescriptions(
+            Collection<?> coll) {
+        return coll.stream().map(PicoTestingSupport::toDescription).collect(Collectors.toList());
+    }
+
+    private static class Internal extends PicoServicesHolder {
         public static void reset() {
             PicoServicesHolder.reset();
+            instance = lazyCreate(basicTesableConfig());
         }
+    }
+
+    private static LazyValue<PicoServices> lazyCreate(
+            Config config) {
+        return LazyValue.create(() -> {
+            PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+            return PicoServices.picoServices().orElseThrow();
+        });
     }
 
 }

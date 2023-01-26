@@ -313,8 +313,8 @@ public interface ModuleInfoDescriptor {
 
         boolean firstLine = true;
         Map<String, TypeName> importAliases = new LinkedHashMap<>();
+        String line = null;
         try (BufferedReader reader = new BufferedReader(new StringReader(clean))) {
-            String line;
             while (null != (line = cleanLine(reader, comments, importAliases))) {
                 if (firstLine && (comments != null) && comments.size() > 0) {
                     descriptor.headerComment(String.join("\n", comments));
@@ -357,6 +357,9 @@ public interface ModuleInfoDescriptor {
                             .provides(true)
                             .target(resolve(split[1], importAliases))
                             .precomments((comments != null) ? comments : List.of());
+                    if (split.length < 3) {
+                        throw new ToolsException("unable to process module-info's use of: " + line);
+                    }
                     if (split[2].equals("with")) {
                         for (int i = 3; i < split.length; i++) {
                             provides.addWithOrTo(resolve(cleanLine(split[i]), importAliases));
@@ -373,8 +376,14 @@ public interface ModuleInfoDescriptor {
                     comments = new ArrayList<>();
                 }
             }
-        } catch (IOException e) {
-            throw new ToolsException("unable to load module-info", e);
+        } catch (ToolsException e) {
+            throw e;
+        } catch (Exception e) {
+            if (line != null) {
+                throw new ToolsException("failed on line: " + line + ";\n"
+                                                 + "unable to load or parse module-info: " + moduleInfo, e);
+            }
+            throw new ToolsException("unable to load or parse module-info: " + moduleInfo, e);
         }
 
         return descriptor.build();
@@ -495,39 +504,6 @@ public interface ModuleInfoDescriptor {
     static ModuleInfoItem usesExternalContract(
             String externalContract) {
         return DefaultModuleInfoItem.builder().uses(true).target(externalContract).build();
-    }
-
-    /**
-     * Creates a new item declaring a {@code provides} contract from this module descriptor.
-     *
-     * @param contract the contract definition being provided
-     * @return the item created
-     */
-    static ModuleInfoItem providesContract(
-            Class<?> contract) {
-        return providesContract(contract.getName());
-    }
-
-    /**
-     * Creates a new item declaring a {@code provides} contract from this module descriptor.
-     *
-     * @param contract the contract definition being provided
-     * @return the item created
-     */
-    static ModuleInfoItem providesContract(
-            TypeName contract) {
-        return providesContract(contract.name());
-    }
-
-    /**
-     * Creates a new item declaring a {@code provides} contract from this module descriptor.
-     *
-     * @param contract the contract definition being provided
-     * @return the item created
-     */
-    static ModuleInfoItem providesContract(
-            String contract) {
-        return DefaultModuleInfoItem.builder().provides(true).target(contract).build();
     }
 
     /**

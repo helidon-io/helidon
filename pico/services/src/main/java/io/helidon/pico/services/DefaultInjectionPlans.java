@@ -165,8 +165,7 @@ class DefaultInjectionPlans {
                                 .injectionPointQualifiedServiceProviders(serviceProviders)
                                 .serviceProvider(self)
                                 .wasResolved(resolveIps)
-                                .resolved(
-                                        (resolved instanceof Optional<?> && ((Optional<?>) resolved).isEmpty())
+                                .resolved((resolved instanceof Optional<?> && ((Optional<?>) resolved).isEmpty())
                                                 ? Optional.empty() : Optional.ofNullable(resolved))
                                 .build();
                         Object prev = result.put(id, plan);

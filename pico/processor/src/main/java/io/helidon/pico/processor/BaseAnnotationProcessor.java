@@ -544,7 +544,8 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         Map<TypeName, InterceptionPlan> interceptionPlanMap = services.interceptorPlans();
         if (!interceptionPlanMap.isEmpty()) {
-            GeneralCreatorRequest req = DefaultGeneralCreatorRequest.builder().filer(filer);
+            GeneralCreatorRequest req = DefaultGeneralCreatorRequest.builder()
+                    .filer(filer);
             creator.codegenInterceptors(req, interceptionPlanMap);
             services.clearInterceptorPlans();
         }

@@ -66,7 +66,7 @@ public interface Services {
      * Retrieve the "first" named service that implements a given contract type with the expectation that there is a match
      * available.
      *
-     * @param type the type to find
+     * @param type the type criteria to find
      * @param name the name for the service
      * @param <T> the type of the service
      * @return the best service provider matching the criteria
@@ -82,7 +82,7 @@ public interface Services {
      * Retrieve the "first" service that implements a given contract type with no expectation that there is a match available
      * unless {@code expected = true}.
      *
-     * @param type the criteria to find
+     * @param type the type criteria to find
      * @param expected indicates whether the provider should throw if a match is not found
      * @param <T> the type of the service
      * @return the best service provider matching the criteria, or {@code empty} if (@code expected = false) and no match found
@@ -96,7 +96,7 @@ public interface Services {
      * Retrieve the "first" service that implements a given contract type with no expectation that there is a match available
      * unless {@code expected = true}.
      *
-     * @param type the criteria to find
+     * @param type the type criteria to find
      * @param name the name for the service
      * @param expected indicates whether the provider should throw if a match is not found
      * @param <T> the type of the service
@@ -155,9 +155,28 @@ public interface Services {
     }
 
     /**
+     * Retrieves the first match based upon the passed service info criteria.
+     * <p>
+     * This is the same as calling the following:
+     * <pre>
+     *     lookupFirst(criteria, true).orElseThrow();
+     * </pre>
+     *
+     * @param type the type criteria to find
+     * @param <T> the type of the service
+     * @return the best service provider matching the criteria
+     * @throws io.helidon.pico.PicoException if resolution fails to resolve a match
+     */
+    @SuppressWarnings("unchecked")
+    default <T> ServiceProvider<T> lookupFirst(
+            Class<T> type) {
+        return lookupFirst(type, true).orElseThrow();
+    }
+
+    /**
      * Retrieve all services that implement a given contract type.
      *
-     * @param type the criteria to find
+     * @param type the type criteria to find
      * @param <T> the type of the service being managed
      * @return the list of service providers matching criteria
      */
@@ -168,11 +187,13 @@ public interface Services {
      * Retrieve all services that match the criteria.
      *
      * @param criteria the criteria to find
+     * @param <T> the type of the service
      * @return the list of service providers matching criteria
      */
-    default List<ServiceProvider<?>> lookupAll(
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    default <T> List<ServiceProvider<T>> lookupAll(
             ServiceInfoCriteria criteria) {
-        return lookupAll(criteria, false);
+        return (List) lookupAll(criteria, false);
     }
 
     /**

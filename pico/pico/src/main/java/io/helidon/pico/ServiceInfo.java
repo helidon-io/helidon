@@ -173,88 +173,28 @@ public interface ServiceInfo extends ServiceInfoBasics {
         return (srcWeight.compareTo(criteria.weight().get()) <= 0);
     }
 
-    // note to self: review the need for this
+    /**
+     * Creates a builder from a {@link io.helidon.pico.ServiceInfoBasics} instance.
+     *
+     * @param val the instance to copy
+     * @return the fluent builder
+     */
+    // note to self: the builders framework should probably code-generate this automatically
+    static DefaultServiceInfo.Builder toBuilder(
+            ServiceInfoBasics val) {
+        if (val instanceof ServiceInfo) {
+            return DefaultServiceInfo.toBuilder((ServiceInfo) val);
+        }
 
-//    /**
-//     * Determines whether this matches the given contract.
-//     *
-//     * @param contract the contract
-//     * @return true if the service type name or the set of contracts implemented equals the provided contract
-//     */
-//    default boolean matchesContract(
-//            String contract) {
-//        return contract.equals(serviceTypeName()) || contractsImplemented().contains(contract);
-//    }
+        DefaultServiceInfo.Builder result = DefaultServiceInfo.builder();
+        result.serviceTypeName(val.serviceTypeName());
+        result.scopeTypeNames(val.scopeTypeNames());
+        result.qualifiers(val.qualifiers());
+        result.contractsImplemented(val.contractsImplemented());
+        result.declaredRunLevel(val.declaredRunLevel());
+        result.declaredWeight(val.declaredWeight());
 
-//    /**
-//     * Converts this service info into search criteria.
-//     *
-//     * @param includeServiceTypeName true if the specific service type name should be given as criteria,
-//     *                               thereby requiring an exact match on the implementation type
-//     * @return search criteria based upon the current service info.
-//     */
-//    default ServiceInfoCriteria toCriteria(
-//            boolean includeServiceTypeName) {
-//        DefaultServiceInfoCriteria.Builder builder = DefaultServiceInfoCriteria.builder()
-//                .contractsImplemented(contractsImplemented())
-//                .qualifiers(qualifiers())
-//                .runLevel(runLevel())
-//                .weight(weight())
-//                .scopeTypeNames(scopeTypeNames());
-//        if (includeServiceTypeName) {
-//            builder.serviceTypeName(serviceTypeName());
-//        }
-//        moduleName().ifPresent(builder::moduleName);
-//        // technically the builder IS-A the same return type, so we can avoid the build() step here
-//        return builder;
-//    }
-
-//    /**
-//     * Constructs an instance of {@link ServiceInfo} given a service type class and some
-//     * basic information that describes the service type.
-//     *
-//     * @param serviceType   the service type
-//     * @param optSiBasics   optionally, the basic information that describes the service type
-//     * @return an instance of {@link ServiceInfo}
-//     */
-//    static ServiceInfo create(
-//            Class<?> serviceType,
-//            Optional<ServiceInfoBasics> optSiBasics) {
-//        ServiceInfoBasics siBasics = optSiBasics.orElse(null);
-//        if (siBasics instanceof DefaultServiceInfo) {
-//            assert (serviceType.getName().equals(siBasics.serviceTypeName()));
-//            return (DefaultServiceInfo) siBasics;
-//        }
-//
-//        if (siBasics == null) {
-//            return DefaultServiceInfo.builder()
-//                    .serviceTypeName(serviceType.getName())
-//                    .build();
-//        }
-//
-//        return DefaultServiceInfo.builder()
-//                .serviceTypeName(serviceType.getName())
-//                .scopeTypeNames(siBasics.scopeTypeNames())
-//                .contractsImplemented(siBasics.contractsImplemented())
-//                .qualifiers(siBasics.qualifiers())
-//                .runLevel(siBasics.runLevel())
-//                .weight(siBasics.weight())
-//                .build();
-//    }
-
-//    /**
-//     * Converts the array of contract types to their respective contract names.
-//     *
-//     * @param contractTypes the class types to convert
-//     *
-//     * @return the set of contract names
-//     */
-//    default Set<String> toContractNames(Class<?>... contractTypes) {
-//        Set<String> result = new LinkedHashSet<>();
-//        for (Class<?> clazz : contractTypes) {
-//            result.add(clazz.getName());
-//        }
-//        return result;
-//    }
+        return result;
+    }
 
 }

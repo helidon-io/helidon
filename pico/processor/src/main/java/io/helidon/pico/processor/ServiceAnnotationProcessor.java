@@ -102,7 +102,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             RoundEnvironment roundEnv) {
         try {
             if (!roundEnv.processingOver()
-                    && servicesToProcess().moduleName() != null) {
+                    && (servicesToProcess().moduleName() == null)) {
                 AtomicReference<String> typeSuffix = new AtomicReference<>();
                 AtomicReference<File> moduleInfoFile = new AtomicReference<>();
                 AtomicReference<File> srcPath = new AtomicReference<>();
@@ -230,10 +230,8 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                     srcPath.set(parent.toFile());
                 }
                 if (typeSuffix != null) {
-                    String type = ModuleUtils.inferSourceOrTest(parent).orElse(null);
-                    if (type != null) {
-                        typeSuffix.set(type);
-                    }
+                    String type = ModuleUtils.inferSourceOrTest(parent);
+                    typeSuffix.set(type);
                 }
                 if (filePath.toFile().exists()) {
                     if (moduleInfoFile != null) {

@@ -39,6 +39,11 @@
             <scope>provided</scope> <!-- reactor dependency ordering only -->
         </dependency>
         <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-maven-plugin</artifactId>
+            <scope>provided</scope> <!-- reactor dependency ordering only -->
+        </dependency>
+        <dependency>
             <groupId>io.helidon.pico.tests</groupId>
             <artifactId>helidon-pico-tests-resources-plain</artifactId>
             <version>${helidon.version}</version>
@@ -56,6 +61,17 @@
         <dependency>
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-services</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+<!--            <version>${version.lib.jakarta.cdi-api}</version>-->
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -90,45 +106,44 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <!-- TODO -->
-<!--            <plugin>-->
-<!--                <groupId>io.helidon.pico</groupId>-->
-<!--                <artifactId>helidon-pico-maven-plugin</artifactId>-->
-<!--                <version>${helidon.version}</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>compile</id>-->
-<!--                        <phase>compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>application-create</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                    <execution>-->
-<!--                        <id>testCompile</id>-->
-<!--                        <phase>test-compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>test-application-create</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--                <configuration>-->
-<!--                    <compilerArgs>-->
-<!--                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>-->
-<!--                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>-->
-<!--                        <arg>-Aio.helidon.pico.application.pre.create=true</arg>-->
-<!--                        <arg>-XprintProcessorInfo</arg>-->
-<!--                        <arg>-XprintRounds</arg>-->
-<!--                        <arg>-verbose</arg>-->
-<!--                    </compilerArgs>-->
-<!--                    <permittedProviderTypes>NAMED</permittedProviderTypes>-->
-<!--                    <permittedProviderTypeNames>-->
-<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.provider.MyServices$MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>-->
-<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.provider.MyServices$MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>-->
-<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.tbox.impl.ASerialProviderImpl</permittedProviderTypeName>-->
-<!--                        <permittedProviderTypeName>io.helidon.pico.testsubjects.ext.tbox.impl.BladeProvider</permittedProviderTypeName>-->
-<!--                    </permittedProviderTypeNames>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
+            <plugin>
+                <groupId>io.helidon.pico</groupId>
+                <artifactId>helidon-pico-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>testCompile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Aio.helidon.pico.debugAnnoProcessor=true</arg>
+                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+                        <arg>-Aio.helidon.pico.application.pre.create=true</arg>
+                        <arg>-XprintProcessorInfo</arg>
+                        <arg>-XprintRounds</arg>
+                        <arg>-verbose</arg>
+                    </compilerArgs>
+                    <permittedProviderTypes>NAMED</permittedProviderTypes>
+                    <permittedProviderTypeNames>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.provider.MyServices$MyConcreteClassContractPerRequestIPProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.provider.MyServices$MyConcreteClassContractPerRequestProvider</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.ASerialProviderImpl</permittedProviderTypeName>
+                        <permittedProviderTypeName>io.helidon.pico.tests.pico.tbox.impl.BladeProvider</permittedProviderTypeName>
+                    </permittedProviderTypeNames>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

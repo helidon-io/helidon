@@ -35,6 +35,7 @@ import io.helidon.pico.Application;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
+import io.helidon.pico.Module;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceInfoCriteria;
@@ -84,14 +85,13 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     @Override
     public ApplicationCreatorResponse createApplication(
             ApplicationCreatorRequest req) {
-        DefaultApplicationCreatorResponse.Builder builder =
-                DefaultApplicationCreatorResponse.builder();
+        DefaultApplicationCreatorResponse.Builder builder = DefaultApplicationCreatorResponse.builder();
 
-        if (Objects.isNull(req.serviceTypeNames())) {
+        if (req.serviceTypeNames() == null) {
             return handleError(req, new ToolsException("ServiceTypeNames is required to be passed"), builder);
         }
 
-        if (Objects.isNull(req.codeGen())) {
+        if (req.codeGen() == null) {
             return handleError(req, new ToolsException("CodeGenPaths are required"), builder);
         }
 
@@ -196,9 +196,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         List<TypeName> serviceTypeNames = new LinkedList<>();
         List<String> serviceTypeBindings = new ArrayList<>();
         for (TypeName serviceTypeName : req.serviceTypeNames()) {
-            String injectionPlan = toServiceTypeInjectionPlan(picoServices,
-                                                              serviceTypeName,
-                                                              serviceTypeBindingTemplate);
+            String injectionPlan = toServiceTypeInjectionPlan(picoServices, serviceTypeName, serviceTypeBindingTemplate);
             if (injectionPlan == null) {
                 continue;
             }
@@ -246,7 +244,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
     static String toApplicationClassName(
             String modulePrefix) {
-        modulePrefix = (modulePrefix == null) ? "" : modulePrefix;
+        modulePrefix = (modulePrefix == null) ? ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME : modulePrefix;
         return NAME + modulePrefix + "Application";
     }
 
@@ -285,7 +283,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             subst.put("servicetypename", serviceTypeName.name());
             subst.put("activator", activator);
             subst.put("injectionplan", toInjectionPlanBindings(sp));
-            subst.put("modulename", sp.serviceInfo().moduleName());
+            subst.put("modulename", sp.serviceInfo().moduleName().orElse(null));
 
             return templateHelper().applySubstitutions(serviceTypeBindingTemplate, subst, true);
         }

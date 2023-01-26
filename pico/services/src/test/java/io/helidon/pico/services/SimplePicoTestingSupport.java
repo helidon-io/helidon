@@ -21,7 +21,7 @@ import io.helidon.pico.PicoServicesHolder;
 /**
  * Supporting helper utilities unit-testing Pico services.
  */
-class PicoTestingSupport {
+class SimplePicoTestingSupport {
 
     /**
      * Resets all internal Pico configuration instances, JVM global singletons, service registries, etc.

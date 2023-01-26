@@ -129,7 +129,7 @@ public interface ServiceInfoCriteria {
                 && ServiceInfo.matchesQualifiers(qualifiers(), criteria.qualifiers())
                 && matches(activatorTypeName(), criteria.activatorTypeName())
                 && matches(runLevel(), criteria.runLevel())
-//                && matchesWeight(this, criteria)
+//                && matchesWeight(this, criteria) -- intentionally not checking weight here!
                 && matches(moduleName(), criteria.moduleName());
     }
 

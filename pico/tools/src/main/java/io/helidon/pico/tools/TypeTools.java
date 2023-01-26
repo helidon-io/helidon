@@ -100,7 +100,7 @@ public class TypeTools extends BuilderTypeTools {
      * @param typeName the type name to evaluate
      * @return the file path expression where dots are translated to file separators
      */
-    static String toFilePath(
+    public static String toFilePath(
             TypeName typeName) {
         return toFilePath(typeName, ".java");
     }

@@ -37,8 +37,7 @@ import jakarta.inject.Singleton;
 @Singleton {{#modulename}}@Named({{classname}}.NAME){{/modulename}}
 public class {{classname}} implements Application {
 {{#modulename}}
-    static final String NAME = "{{{.}}}";
-{{/modulename}}{{^modulename}}
+    static final String NAME = "{{{.}}}";{{/modulename}}{{^modulename}}
     static final String NAME = "unnamed";{{/modulename}}
     static boolean enabled = true;
 

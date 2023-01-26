@@ -51,12 +51,12 @@
         <module>pico</module>
         <module>tools</module>
         <module>processor</module>
+        <module>maven-plugin</module>
         <module>testing</module>
         <module>services</module>
         <module>tests</module>
 <!--        <module>config</module>-->
 <!--        <module>tck</module>-->
-<!--        <module>maven-plugin</module>-->
 <!--        <module>test-support</module>-->
 <!--        <module>test-extended-resources</module>-->
 <!--        <module>test-tck-jsr330</module>-->

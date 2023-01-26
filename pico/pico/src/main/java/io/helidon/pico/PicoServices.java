@@ -138,9 +138,9 @@ public interface PicoServices {
      * order of {@link RunLevel} from the highest value down to the lowest value. If two services share
      * the same {@link RunLevel} value then the ordering will be based upon the implementation's comparator.
      * <p>
-     * When shutdown returns, it is guaranteed that all services were shutdown, or failed to shutdown.
+     * When shutdown returns, it is guaranteed that all services were shutdown, or failed to achieve shutdown.
      *
-     * @return a map of all managed service types deactivated to results of deactivation
+     * @return a map of all managed service types deactivated to results of deactivation, or empty if shutdown is not supported
      */
     Optional<Map<String, ActivationResult>> shutdown();
 

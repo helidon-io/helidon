@@ -417,8 +417,13 @@ public class CodeGenFiler {
     Optional<ModuleInfoDescriptor> readModuleInfo(
             String name) {
         Objects.requireNonNull(name);
-        CharSequence body = readResourceAsString(name);
-        return Optional.ofNullable((body == null) ? null : ModuleInfoDescriptor.create(body.toString()));
+
+        try {
+            CharSequence body = readResourceAsString(name);
+            return Optional.ofNullable((body == null) ? null : ModuleInfoDescriptor.create(body.toString()));
+        } catch (Exception e) {
+            throw new ToolsException("failed to read module-info: " + name, e);
+        }
     }
 
     /**
@@ -467,10 +472,14 @@ public class CodeGenFiler {
             String name) {
         if (filer instanceof AbstractFilerMsgr.DirectFilerMsgr) {
             TypeName typeName = DefaultTypeName.createFromTypeName(name);
-            return Optional.of(((AbstractFilerMsgr.DirectFilerMsgr) filer).toSourcePath(StandardLocation.SOURCE_PATH, typeName));
+            Optional<Path> path = Optional.ofNullable(((AbstractFilerMsgr.DirectFilerMsgr) filer)
+                                               .toSourcePath(StandardLocation.SOURCE_PATH, typeName));
+            if (path.isPresent()) {
+                return path;
+            }
         }
 
-        messager().debug("unable to determine source location for : " + name);
+        messager().warn(CodeGenFiler.class.getSimpleName() + ": unable to determine source location for: " + name);
         return Optional.empty();
     }
 

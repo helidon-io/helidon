@@ -51,7 +51,8 @@ class DefaultPicoConfigTest {
         assertThat(cfg.supportsJsr330Privates(), equalTo(Boolean.FALSE));
         assertThat(cfg.usesJsr330(), equalTo(Boolean.FALSE));
         assertThat(cfg.supportsCompileTime(), equalTo(Boolean.TRUE));
-        assertThat(cfg.usesCompileTime(), equalTo(Boolean.TRUE));
+        assertThat(cfg.usesCompileTimeApplications(), equalTo(Boolean.TRUE));
+        assertThat(cfg.usesCompileTimeModules(), equalTo(Boolean.TRUE));
         assertThat(cfg.supportsContextualLookup(), equalTo(Boolean.FALSE));
         assertThat(cfg.providerName(), isEmptyOrNullString());
         assertThat(cfg.providerVersion(), isEmptyOrNullString());
@@ -79,7 +80,8 @@ class DefaultPicoConfigTest {
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_REFLECTION, "true",
                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_JSR330, "true",
-                               PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_COMPILE_TIME, "false"
+                               PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS, "false",
+                               PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES, "false"
                         ), "config-1"));
         DefaultBootstrap bootstrap = DefaultBootstrap.builder()
                 .config(config)
@@ -100,7 +102,8 @@ class DefaultPicoConfigTest {
         assertThat(cfg.supportsJsr330Privates(), equalTo(Boolean.FALSE));
         assertThat(cfg.usesJsr330(), equalTo(Boolean.TRUE));
         assertThat(cfg.supportsCompileTime(), equalTo(Boolean.TRUE));
-        assertThat(cfg.usesCompileTime(), equalTo(Boolean.FALSE));
+        assertThat(cfg.usesCompileTimeApplications(), equalTo(Boolean.FALSE));
+        assertThat(cfg.usesCompileTimeModules(), equalTo(Boolean.FALSE));
         assertThat(cfg.supportsContextualLookup(), equalTo(Boolean.FALSE));
         assertThat(cfg.providerName(), isEmptyOrNullString());
         assertThat(cfg.providerVersion(), isEmptyOrNullString());

@@ -18,6 +18,7 @@
  * Pico Testing Support Module.
  */
 module io.helidon.pico.testing {
+    requires io.helidon.config;
     requires transitive io.helidon.pico.services;
 
     exports io.helidon.pico.testing;

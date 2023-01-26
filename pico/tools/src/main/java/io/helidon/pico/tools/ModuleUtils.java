@@ -78,7 +78,7 @@ public class ModuleUtils {
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
      */
-    static String toSuggestedGeneratedPackageName(
+    public static String toSuggestedGeneratedPackageName(
             ModuleInfoDescriptor descriptor,
             Collection<TypeName> typeNames,
             String defaultPackageName) {
@@ -168,7 +168,7 @@ public class ModuleUtils {
      * @return the module name suggested to use, most appropriate for the name of {@link
      *         io.helidon.pico.Application} or {@link io.helidon.pico.Module}
      */
-    static Optional<String> toSuggestedModuleName(
+    public static Optional<String> toSuggestedModuleName(
             Path basePath,
             Path sourcePath,
             boolean defaultToUnnamed) {
@@ -203,9 +203,9 @@ public class ModuleUtils {
             return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths);
         }
 
-        // if we did not find it, then there is a chance we are in the tests directory; try to infer the module name
+        // if we did not find it, then there is a chance we are in the test directory; try to infer the module name
         if (typeSuffix != null) {
-            typeSuffix.set(inferSourceOrTest(basePath, sourcePath).orElse(null));
+            typeSuffix.set(inferSourceOrTest(basePath, sourcePath));
         }
         if (!basePath.equals(sourcePath)) {
             Path parent = sourcePath.getParent();
@@ -237,33 +237,33 @@ public class ModuleUtils {
     }
 
     /**
-     * Attempts to infer 'test' or base (null) given the path.
+     * Attempts to infer 'test' or base '' given the path.
      *
      * @param path the path
      * @return 'test' or empty (for base)
      */
-    public static Optional<String> inferSourceOrTest(
+    public static String inferSourceOrTest(
             Path path) {
         Objects.requireNonNull(path);
         Path parent = path.getParent();
         if (parent == null) {
-            return Optional.empty();
+            return "";
         }
         Path gparent = parent.getParent();
         if (gparent == null) {
-            return Optional.empty();
+            return "";
         }
         return inferSourceOrTest(gparent, path);
     }
 
     /**
-     * If the relative path contains "/test/" then returns "test" else returns null.
+     * If the relative path contains "/test/" then returns "test" else returns "".
      *
      * @param basePath   the base path to start the search
      * @param sourcePath the source path, assumed a child of the base path
-     * @return 'test' or null (for base)
+     * @return 'test' or ''
      */
-    static Optional<String> inferSourceOrTest(
+    static String inferSourceOrTest(
             Path basePath,
             Path sourcePath) {
         // create a relative path from the two paths
@@ -273,10 +273,10 @@ public class ModuleUtils {
             path = "/" + path;
         }
         if (path.contains("/test/") || path.contains("/generated-test-sources/") || path.contains("/test-classes/")) {
-            return Optional.of(ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
+            return ActivatorCreatorCodeGen.DEFAULT_TEST_CLASS_PREFIX_NAME;
         }
 
-        return Optional.empty();
+        return ActivatorCreatorCodeGen.DEFAULT_CLASS_PREFIX_NAME;
     }
 
     /**

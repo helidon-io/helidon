@@ -208,7 +208,7 @@ public final class CommonUtils {
 
     static boolean hasValue(
             String str) {
-        return (null != str && !str.isBlank());
+        return (str != null && !str.isBlank());
     }
 
     /**

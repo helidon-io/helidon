@@ -83,7 +83,7 @@ class ModuleInfoDescriptorTest {
         ModuleInfoDescriptor descriptor = DefaultModuleInfoDescriptor.builder()
                 .name("test")
                 .addItem(ModuleInfoDescriptor.providesContract("cn2", "impl2"))
-                .addItem(ModuleInfoDescriptor.providesContract("cn1"))
+                .addItem(ModuleInfoDescriptor.providesContract("cn1", "impl1"))
                 .addItem(ModuleInfoDescriptor.exportsPackage("export1", "private.module.name"))
                 .addItem(ModuleInfoDescriptor.exportsPackage("export2"))
                 .build();
@@ -92,7 +92,7 @@ class ModuleInfoDescriptorTest {
                                    + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module test {\n"
                                    + "    provides cn2 with impl2;\n"
-                                   + "    provides cn1;\n"
+                                   + "    provides cn1 with impl1;\n"
                                    + "    exports export1 to private.module.name;\n"
                                    + "    exports export2;\n"
                                    + "}"));
@@ -109,23 +109,23 @@ class ModuleInfoDescriptorTest {
                 .ordering(ModuleInfoDescriptor.Ordering.SORTED)
                 .name("test")
                 .addItem(ModuleInfoDescriptor.providesContract("cn2", "impl2"))
-                .addItem(ModuleInfoDescriptor.providesContract("cn1"))
+                .addItem(ModuleInfoDescriptor.providesContract("cn1", "impl1"))
                 .addItem(ModuleInfoDescriptor.exportsPackage("export2"))
                 .addItem(DefaultModuleInfoItem.builder()
                                  .exports(true)
                                  .target("export1")
                                  .addWithOrTo("private.module.name")
                                  .addWithOrTo("another.private.module.name")
-                                 .addPrecomment("// this is an export1 comment.")
+                                 .addPrecomment("// this is an export1 comment")
                                  .build())
                 .build();
         assertThat(descriptor.contents(),
                    equalTo("// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools"
                                    + ".DefaultModuleInfoDescriptor\", \"version=1\"})\n"
                                    + "module test {\n"
-                                   + "    provides cn1;\n"
+                                   + "    provides cn1 with impl1;\n"
                                    + "    provides cn2 with impl2;\n"
-                                   + "    // this is an export1 comment.\n"
+                                   + "    // this is an export1 comment\n"
                                    + "    exports export1 to another.private.module.name,\n"
                                    + "\t\t\tprivate.module.name;\n"
                                    + "    exports export2;\n"

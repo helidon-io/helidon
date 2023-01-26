@@ -63,7 +63,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 /**
- * Sanity ttype tests only. The "real" testing is in the tests submodules.
+ * Sanity type tests only. The "real" testing is in the tests submodules.
  */
 class HelloPicoWorldSanityTest {
     private static final int EXPECTED_MODULES = 2;
@@ -80,7 +80,7 @@ class HelloPicoWorldSanityTest {
     @AfterEach
     void tearDown() {
         HelloPicoApplication.ENABLED = true;
-        PicoTestingSupport.resetAll();
+        SimplePicoTestingSupport.resetAll();
     }
 
     @Test

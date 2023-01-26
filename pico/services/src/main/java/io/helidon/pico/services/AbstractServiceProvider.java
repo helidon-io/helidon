@@ -123,6 +123,7 @@ public abstract class AbstractServiceProvider<T>
         this.serviceInfo = DefaultServiceInfo.toBuilder(serviceInfo).build();
         this.picoServices = Objects.requireNonNull(picoServices);
         this.log = picoServices.activationLog().orElseThrow();
+        onInitialized();
     }
 
     @Override
@@ -173,7 +174,7 @@ public abstract class AbstractServiceProvider<T>
     protected void serviceInfo(
             ServiceInfo serviceInfo) {
         Objects.requireNonNull(serviceInfo);
-        if (picoServices != null) {
+        if (this.picoServices != null) {
             throw alreadyInitialized();
         }
         this.serviceInfo = serviceInfo;
@@ -243,6 +244,9 @@ public abstract class AbstractServiceProvider<T>
         }
 
         this.picoServices = picoServices.orElse(null);
+        if (this.picoServices != null) {
+            onInitialized();
+        }
     }
 
     @Override
@@ -268,12 +272,10 @@ public abstract class AbstractServiceProvider<T>
     public void interceptor(
             ServiceProvider<?> interceptor) {
         Objects.requireNonNull(interceptor);
-        if (this.picoServices != null) {
+        if (this.interceptor != null || activationSemaphore.availablePermits() == 0 || phase != Phase.INIT) {
             throw alreadyInitialized();
         }
-        if (interceptor != this.interceptor) {
-            this.interceptor = interceptor;
-        }
+        this.interceptor = interceptor;
     }
 
     @Override
@@ -587,6 +589,13 @@ public abstract class AbstractServiceProvider<T>
             Event event,
             Phase phase) {
         // NOP
+        int debugMe = 0;
+    }
+
+    private void onInitialized() {
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG, this + " initialized.");
+        }
     }
 
     private void doStartingLifecycle(
@@ -699,12 +708,12 @@ public abstract class AbstractServiceProvider<T>
                 if (!idToIpInfo.isEmpty()) {
                     throw new InjectionException("missing injection bindings for "
                                                          + idToIpInfo + " in "
-                                                         + description(), null, self);
+                                                         + this, null, self);
                 }
 
                 if ((self.injectionPlan != null) && !self.injectionPlan.equals(injectionPlan)) {
                     throw new InjectionException("injection plan has already been bound for "
-                                                         + description(), null, self);
+                                                         + this, null, self);
                 }
                 self.injectionPlan = injectionPlan;
             }
@@ -713,12 +722,13 @@ public abstract class AbstractServiceProvider<T>
                 InjectionPointInfo ipInfo = idToIpInfo.remove(id);
                 if (Objects.isNull(ipInfo)) {
                     throw new InjectionException("expected to find a dependency for '" + id + "' from "
-                                                         + description() + " in " + idToIpInfo, null, self);
+                                                         + this + " in " + idToIpInfo, null, self);
                 }
                 return ipInfo;
             }
 
-            private DefaultInjectionPlan.Builder createBuilder(String id) {
+            private DefaultInjectionPlan.Builder createBuilder(
+                    String id) {
                 ipInfo = safeGetIpInfo(id);
                 return DefaultInjectionPlan.builder()
                         .injectionPointInfo(ipInfo)
@@ -768,29 +778,48 @@ public abstract class AbstractServiceProvider<T>
     }
 
     @Override
-    public boolean reset(boolean deep) {
+    public boolean reset(
+            boolean deep) {
         Object service = serviceRef.get();
-        boolean result = (service != null);
-        if (service != null) {
-            LOGGER.log(System.Logger.Level.INFO, "resetting " + this);
-            if (service instanceof Resetable) {
-                try {
-                    result = ((Resetable) service).reset(deep);
-                } catch (Throwable t) {
-                    LOGGER.log(System.Logger.Level.WARNING, "unable to reset: " + this, t);
+        boolean result = false;
+        boolean didAcquire = false;
+        try {
+            didAcquire = activationSemaphore.tryAcquire(1, TimeUnit.MILLISECONDS);
+
+            if (service != null) {
+                LOGGER.log(System.Logger.Level.INFO, "resetting " + this);
+                if (deep && service instanceof Resetable) {
+                    try {
+                        if (((Resetable) service).reset(deep)) {
+                            result = true;
+                        }
+                    } catch (Throwable t) {
+                        LOGGER.log(System.Logger.Level.WARNING, "unable to reset: " + this, t); // eat it
+                    }
                 }
+            }
+
+            if (deep) {
+                injectionPlan = null;
+                interceptor = null;
+                picoServices = null;
+                serviceRef.set(null);
+                phase = Phase.INIT;
+
+                result = true;
+            }
+        } catch (Exception e) {
+            if (didAcquire) {
+                throw new PicoServiceProviderException("unable to reset", e, this);
+            } else {
+                throw new PicoServiceProviderException("unable to reset during activation", e, this);
+            }
+        } finally {
+            if (didAcquire) {
+                activationSemaphore.release();
             }
         }
 
-        if (deep) {
-            injectionPlan = null;
-            interceptor = null;
-            picoServices = null;
-            result = true;
-        }
-
-        serviceRef.set(null);
-        phase = Phase.INIT;
         return result;
     }
 
@@ -1125,7 +1154,7 @@ public abstract class AbstractServiceProvider<T>
 
     private PicoServiceProviderException unableToActivate(
             Throwable cause) {
-        return new PicoServiceProviderException("unable to activate: " + description(), cause, this);
+        return new PicoServiceProviderException("unable to activate: " + this, cause, this);
     }
 
     private PicoServiceProviderException alreadyInitialized() {

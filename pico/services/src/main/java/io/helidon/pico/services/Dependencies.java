@@ -45,39 +45,6 @@ public class Dependencies {
     private Dependencies() {
     }
 
-    // note to self: review the need for this
-
-//    /**
-//     * Remove a dependency from the list.
-//     *
-//     * @param serviceTypeName the service type to dependency to remove
-//     * @return the new set of dependencies
-//     */
-//    public Dependencies removeDependency(String serviceTypeName) {
-//        Map<ServiceInfo, Set<io.helidon.pico.spi.ext.Dependency<Object>>> serviceInfoDependencies
-//              = new LinkedHashMap<>(this.serviceInfoDependencies);
-//        List<io.helidon.pico.spi.ext.Dependency<Object>> dependencies = new LinkedList<>(this.dependencies);
-//
-//        this.serviceInfoDependencies.forEach((serviceInfo, value) -> {
-//            if (serviceInfo.matchesContract(serviceTypeName)) {
-//                Object removed = serviceInfoDependencies.remove(serviceInfo);
-//                assert (Objects.nonNull(removed));
-//            }
-//        });
-//
-//        this.dependencies.forEach(dep -> {
-//            ServiceInfo serviceInfo = dep.getDependencyTo();
-//            if (serviceInfo.matchesContract(serviceTypeName)) {
-//                boolean removed = dependencies.remove(dep);
-//                assert (removed);
-//            }
-//        });
-//
-//        return new Dependencies(getForServiceTypeName(),
-//                                                new LinkedHashMap<>(serviceInfoDependencies),
-//                                                new LinkedList<>(dependencies));
-//    }
-
     /**
      * Creates a builder.
      *

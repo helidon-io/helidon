@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.pico.RunLevel;
-import io.helidon.pico.tests.pico.tbox.Hammer;
-import io.helidon.pico.tests.pico.tbox.Preferred;
 import io.helidon.pico.tests.pico.tbox.Tool;
 import io.helidon.pico.tests.pico.tbox.ToolBox;
+import io.helidon.pico.tests.pico.tbox.Hammer;
+import io.helidon.pico.tests.pico.tbox.Preferred;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

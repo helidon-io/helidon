@@ -41,12 +41,12 @@ public class TemplateHelper {
     /**
      * The tag that us used to represent the template name to use.
      */
-    static final String TAG_TEMPLATE_NAME = PicoServicesConfig.FQN + ".template.name";
+    public static final String TAG_TEMPLATE_NAME = PicoServicesConfig.FQN + ".template.name";
 
     /**
      * The default template name to use.
      */
-    static final String DEFAULT_TEMPLATE_NAME = "default";
+    public static final String DEFAULT_TEMPLATE_NAME = "default";
 
     private static final System.Logger LOGGER = System.getLogger(TemplateHelper.class.getName());
 
