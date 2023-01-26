@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
+// note: runtime retention needed for cases when derived builders are inherited across modules
+@Retention(RetentionPolicy.RUNTIME)
 @BuilderTrigger
 public @interface Builder {
 
@@ -66,6 +67,11 @@ public @interface Builder {
      * The default value for {@link #allowNulls()}.
      */
     boolean DEFAULT_ALLOW_NULLS = false;
+
+    /**
+     * The default value for {@link #includeGeneratedAnnotation()}.
+     */
+    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = false;
 
     /**
      * The default list type used for the generated class implementation for any references to {@link java.util.List} is found
@@ -179,6 +185,14 @@ public @interface Builder {
      * @return true to allow for the possibility of nullable non-Optional values to be present
      */
     boolean allowNulls() default DEFAULT_ALLOW_NULLS;
+
+    /**
+     * Should the code generated types included the {@code Generated} annotation. Including this annotation will require an
+     * additional module dependency on your modules to include {@code jakarta.annotation-api}.
+     *
+     * @return true to include the Generated annotation
+     */
+    boolean includeGeneratedAnnotation() default DEFAULT_INCLUDE_GENERATED_ANNOTATION;
 
     /**
      * The interceptor implementation type. See {@link BuilderInterceptor} for further details. Any interceptor applied will be called

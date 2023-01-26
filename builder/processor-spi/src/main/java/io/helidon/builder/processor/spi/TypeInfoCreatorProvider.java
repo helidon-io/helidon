@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Optional;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
 
-import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.TypeName;
 
 /**
@@ -34,13 +33,13 @@ public interface TypeInfoCreatorProvider {
     /**
      * Creates a {@link TypeInfo}.
      *
-     * @param annotation    the annotation that triggered the creation
+     * @param annoTypeName  the annotation type name that triggered the creation
      * @param typeName      the type name that is being processed that is annotated with the triggering annotation
      * @param element       the element representative of the typeName
      * @param processingEnv the processing environment
      * @return the type info associated with the arguments being processed, or empty if not able to process the type
      */
-    Optional<TypeInfo> createTypeInfo(AnnotationAndValue annotation,
+    Optional<TypeInfo> createTypeInfo(TypeName annoTypeName,
                                       TypeName typeName,
                                       TypeElement element,
                                       ProcessingEnvironment processingEnv);

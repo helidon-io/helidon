@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,6 +198,8 @@ class DefaultTypeNameTest {
                 .toBuilder()
                 .typeArguments(Collections.singletonList(DefaultTypeName.create(String.class)))
                 .build();
+        assertThat(typeName.fqName(),
+                   is("java.util.List<java.lang.String>"));
         assertThat(typeName.toString(),
                                  is("java.util.List<java.lang.String>"));
         assertThat(typeName.name(),
@@ -205,6 +207,8 @@ class DefaultTypeNameTest {
 
         typeName = DefaultTypeName.createFromTypeName("? extends pkg.Something");
         assertThat(typeName.wildcard(), is(true));
+        assertThat(typeName.fqName(),
+                   is("? extends pkg.Something"));
         assertThat(typeName.toString(),
                                  is("? extends pkg.Something"));
         assertThat(typeName.name(),
@@ -213,6 +217,19 @@ class DefaultTypeNameTest {
                                  is("pkg"));
         assertThat(typeName.className(),
                                  is("Something"));
+
+        typeName = DefaultTypeName.createFromTypeName("?");
+        assertThat(typeName.wildcard(), is(true));
+        assertThat(typeName.fqName(),
+                   is("?"));
+        assertThat(typeName.toString(),
+                   is("?"));
+        assertThat(typeName.name(),
+                   is(Object.class.getName()));
+        assertThat(typeName.packageName(),
+                   is(Object.class.getPackageName()));
+        assertThat(typeName.className(),
+                   is(Object.class.getSimpleName()));
 
         typeName = DefaultTypeName.create(List.class)
                 .toBuilder()

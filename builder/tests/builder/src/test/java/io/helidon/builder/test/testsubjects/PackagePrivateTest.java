@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Builder Test module.
- */
-module io.helidon.builder.test.builder {
-    requires static jakarta.annotation;
-    requires static com.fasterxml.jackson.annotation;
-    requires static io.helidon.config.metadata;
+package io.helidon.builder.test.testsubjects;
 
-    requires io.helidon.common;
-    requires io.helidon.builder;
+import org.junit.jupiter.api.Test;
+
+class PackagePrivateTest {
+
+    @Test
+    void testIt() {
+
+    }
+
 }

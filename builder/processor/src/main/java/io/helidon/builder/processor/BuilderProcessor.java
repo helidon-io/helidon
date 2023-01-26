@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,8 @@ public class BuilderProcessor extends AbstractProcessor {
         AnnotationAndValue builderAnnotation = BuilderTypeTools
                 .createAnnotationAndValueFromMirror(am, elementUtils).get();
         TypeName typeName = BuilderTypeTools.createTypeNameFromElement(element).orElse(null);
-        Optional<TypeInfo> typeInfo = tools.createTypeInfo(builderAnnotation, typeName, (TypeElement) element, processingEnv);
+        Optional<TypeInfo> typeInfo = tools
+                .createTypeInfo(builderAnnotation.typeName(), typeName, (TypeElement) element, processingEnv);
         if (typeInfo.isEmpty()) {
             String msg = "Nothing to process, skipping: " + element;
             LOGGER.log(System.Logger.Level.WARNING, msg);

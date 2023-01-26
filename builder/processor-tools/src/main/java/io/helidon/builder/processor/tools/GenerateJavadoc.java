@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.builder.processor.tools;
 
+import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 final class GenerateJavadoc {
@@ -120,29 +121,26 @@ final class GenerateJavadoc {
     }
 
     static void setter(StringBuilder builder,
-                       String beanAttributeName,
-                       TypedElementName method) {
+                       String beanAttributeName) {
         builder.append("\t\t/**\n");
         builder.append("\t\t * Setter for '").append(beanAttributeName).append("'.\n");
         builder.append("\t\t *\n");
         builder.append("\t\t * @param val the new value\n");
         builder.append("\t\t * @return this fluent builder\n");
-        builder.append("\t\t * @see #").append(method.elementName()).append("()\n");
         builder.append("\t\t */\n");
     }
 
     static void singularSetter(StringBuilder builder,
-                               TypedElementName method,
+                               TypeName methodTypeName,
                                String beanAttributeName) {
         builder.append("\t\t/**\n");
-        builder.append("\t\t * Singular setter for '").append(beanAttributeName).append("'.\n");
+        builder.append("\t\t * Setter for '").append(beanAttributeName).append("'.\n");
         builder.append("\t\t *\n");
-        if (method.typeName().isMap()) {
+        if (methodTypeName.isMap()) {
             builder.append("\t\t * @param key the key\n");
         }
         builder.append("\t\t * @param val the new value\n");
         builder.append("\t\t * @return this fluent builder\n");
-        builder.append("\t\t * @see #").append(method.elementName()).append("()\n");
         builder.append("\t\t */\n");
     }
 

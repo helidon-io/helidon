@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,12 @@ import io.helidon.pico.types.TypedElementName;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
 public class BuilderTypeTools implements TypeInfoCreatorProvider {
-
     private static final boolean ACCEPT_ABSTRACT_CLASS_TARGETS = true;
 
     /**
-     * Default constructor.
+     * Default constructor. Service loaded.
+     *
+     * @deprecated
      */
     // note: this needs to remain public since it will be resolved via service loader ...
     @Deprecated
@@ -74,20 +75,18 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     @Override
-    public Optional<TypeInfo> createTypeInfo(AnnotationAndValue annotation,
-                                             TypeName typeName,
-                                             TypeElement element,
-                                             ProcessingEnvironment processingEnv) {
-        Objects.requireNonNull(annotation);
-        Objects.requireNonNull(annotation.typeName());
-        Objects.requireNonNull(typeName);
-
+    public Optional<TypeInfo> createTypeInfo(
+            TypeName annotationTypeName,
+            TypeName typeName,
+            TypeElement element,
+            ProcessingEnvironment processingEnv) {
+        Objects.requireNonNull(annotationTypeName);
         if (typeName.name().equals(Annotation.class.getName())) {
             return Optional.empty();
         }
 
         if (!isAcceptableBuilderTarget(element)) {
-            String msg = annotation.typeName() + " is not intended to be targeted to this type: " + element;
+            String msg = annotationTypeName + " is not intended to be targeted to this type: " + element;
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
             throw new IllegalStateException(msg);
         }
@@ -106,6 +105,10 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
 
         Collection<TypedElementName> elementInfo = toElementInfo(element, processingEnv, true);
         Collection<TypedElementName> otherElementInfo = toElementInfo(element, processingEnv, false);
+        Set<String> modifierNames = element.getModifiers().stream()
+                .map(Modifier::toString)
+                .map(String::toUpperCase)
+                .collect(Collectors.toSet());
         return Optional.of(DefaultTypeInfo.builder()
                                    .typeName(typeName)
                                    .typeKind(String.valueOf(element.getKind()))
@@ -114,7 +117,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                                                                                          processingEnv.getElementUtils()))
                                    .elementInfo(elementInfo)
                                    .otherElementInfo(otherElementInfo)
-                                   .update(it -> toTypeInfo(annotation, element, processingEnv).ifPresent(it::superTypeInfo))
+                                   .modifierNames(modifierNames)
+                                   .update(it -> toTypeInfo(annotationTypeName, element, processingEnv)
+                                           .ifPresent(it::superTypeInfo))
                                    .build());
     }
 
@@ -122,10 +127,11 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * Determines if the target element with the {@link io.helidon.builder.Builder} annotation is an acceptable element type.
      * If it is not acceptable then the caller is expected to throw an exception or log an error, etc.
      *
-     * @param element   the element
+     * @param element the element
      * @return true if the element is acceptable
      */
-    protected boolean isAcceptableBuilderTarget(Element element) {
+    protected boolean isAcceptableBuilderTarget(
+            Element element) {
         final ElementKind kind = element.getKind();
         final Set<Modifier> modifiers = element.getModifiers();
         boolean isAcceptable = (kind == ElementKind.INTERFACE
@@ -143,9 +149,10 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param wantWhatWeCanAccept   pass true to get the elements we can accept to process, false for the other ones
      * @return the collection of typed elements
      */
-    protected Collection<TypedElementName> toElementInfo(TypeElement element,
-                                                         ProcessingEnvironment processingEnv,
-                                                         boolean wantWhatWeCanAccept) {
+    protected Collection<TypedElementName> toElementInfo(
+            TypeElement element,
+            ProcessingEnvironment processingEnv,
+            boolean wantWhatWeCanAccept) {
         return element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
@@ -161,14 +168,16 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param ee the executable element
      * @return true if not able to accept
      */
-    protected boolean canAccept(ExecutableElement ee) {
+    protected boolean canAccept(
+            ExecutableElement ee) {
         Set<Modifier> mods = ee.getModifiers();
         return mods.contains(Modifier.ABSTRACT);
     }
 
-    private Optional<TypeInfo> toTypeInfo(AnnotationAndValue annotation,
-                                          TypeElement element,
-                                          ProcessingEnvironment processingEnv) {
+    private Optional<TypeInfo> toTypeInfo(
+            TypeName annotationTypeName,
+            TypeElement element,
+            ProcessingEnvironment processingEnv) {
         List<? extends TypeMirror> ifaces = element.getInterfaces();
         if (ifaces.size() > 1) {
             processingEnv.getMessager()
@@ -182,7 +191,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             return Optional.empty();
         }
 
-        return createTypeInfo(annotation,
+        return createTypeInfo(annotationTypeName,
                               createTypeNameFromElement(parent.orElseThrow()).orElseThrow(),
                               parent.orElseThrow(),
                               processingEnv);
@@ -194,7 +203,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param typeMirror the type mirror
      * @return the type element
      */
-    public static Optional<TypeElement> toTypeElement(TypeMirror typeMirror) {
+    public static Optional<TypeElement> toTypeElement(
+            TypeMirror typeMirror) {
         if (TypeKind.DECLARED == typeMirror.getKind()) {
             TypeElement te = (TypeElement) ((DeclaredType) typeMirror).asElement();
             return (te.toString().equals(Object.class.getName())) ? Optional.empty() : Optional.of(te);
@@ -203,12 +213,24 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     /**
+     * Creates a name from a declared type during annotation processing.
+     *
+     * @param type the element type
+     * @return the associated type name instance
+     */
+    public static Optional<DefaultTypeName> createTypeNameFromDeclaredType(
+            DeclaredType type) {
+        return createTypeNameFromElement(type.asElement());
+    }
+
+    /**
      * Creates a name from an element type during annotation processing.
      *
      * @param type the element type
      * @return the associated type name instance
      */
-    public static Optional<DefaultTypeName> createTypeNameFromElement(Element type) {
+    public static Optional<DefaultTypeName> createTypeNameFromElement(
+            Element type) {
         if (type instanceof VariableElement) {
             return createTypeNameFromMirror(type.asType());
         }
@@ -238,7 +260,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param typeMirror the type mirror
      * @return the type name associated with the type mirror, or empty for generic type variables
      */
-    public static Optional<DefaultTypeName> createTypeNameFromMirror(TypeMirror typeMirror) {
+    public static Optional<DefaultTypeName> createTypeNameFromMirror(
+            TypeMirror typeMirror) {
         TypeKind kind = typeMirror.getKind();
         if (kind.isPrimitive()) {
             Class<?> type;
@@ -315,8 +338,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param ams            the collection to search through
      * @return the annotation mirror, or empty if not found
      */
-    public static Optional<? extends AnnotationMirror> findAnnotationMirror(String annotationType,
-                                                                            Collection<? extends AnnotationMirror> ams) {
+    public static Optional<? extends AnnotationMirror> findAnnotationMirror(
+            String annotationType,
+            Collection<? extends AnnotationMirror> ams) {
         return ams.stream()
                 .filter(it -> annotationType.equals(it.getAnnotationType().toString()))
                 .findFirst();
@@ -329,8 +353,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param elements the elements
      * @return the new instance or empty if the annotation mirror passed is invalid
      */
-    public static Optional<AnnotationAndValue> createAnnotationAndValueFromMirror(AnnotationMirror am,
-                                                                                  Elements elements) {
+    public static Optional<AnnotationAndValue> createAnnotationAndValueFromMirror(
+            AnnotationMirror am,
+            Elements elements) {
         Optional<DefaultTypeName> val = createTypeNameFromMirror(am.getAnnotationType());
 
         return val.map(it -> DefaultAnnotationAndValue.create(it, extractValues(am, elements)));
@@ -343,8 +368,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param elements the elements
      * @return the list of annotations extracted from the element
      */
-    public static List<AnnotationAndValue> createAnnotationAndValueListFromElement(Element e,
-                                                                                   Elements elements) {
+    public static List<AnnotationAndValue> createAnnotationAndValueListFromElement(
+            Element e,
+            Elements elements) {
         return e.getAnnotationMirrors().stream().map(it -> createAnnotationAndValueFromMirror(it, elements))
                 .filter(Optional::isPresent)
                 .map(Optional::orElseThrow)
@@ -358,8 +384,9 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param elements the optional elements
      * @return the extracted values
      */
-    public static Map<String, String> extractValues(AnnotationMirror am,
-                                                    Elements elements) {
+    public static Map<String, String> extractValues(
+            AnnotationMirror am,
+            Elements elements) {
         return extractValues(elements.getElementValuesWithDefaults(am));
     }
 
@@ -369,7 +396,8 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param values the element values
      * @return the extracted values
      */
-    public static Map<String, String> extractValues(Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
+    public static Map<String, String> extractValues(
+            Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
         Map<String, String> result = new LinkedHashMap<>();
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
@@ -382,19 +410,21 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
     }
 
     /**
-     * Creates an instance of a {@link TypedElementName} given its type and variable element from
+     * Creates an instance of a {@link io.helidon.pico.types.TypedElementName} given its type and variable element from
      * annotation processing.
      *
      * @param v        the element (from annotation processing)
      * @param elements the elements
      * @return the created instance
      */
-    public static TypedElementName createTypedElementNameFromElement(Element v,
-                                                                     Elements elements) {
-        final TypeName type = createTypeNameFromElement(v).orElse(null);
+    public static TypedElementName createTypedElementNameFromElement(
+            Element v,
+            Elements elements) {
+        TypeName type = createTypeNameFromElement(v).orElse(null);
         List<TypeName> componentTypeNames = null;
         String defaultValue = null;
-        List<AnnotationAndValue> elementTypeAnnotations = Collections.emptyList();
+        List<AnnotationAndValue> elementTypeAnnotations = List.of();
+        Set<String> modifierNames = Set.of();
         if (v instanceof ExecutableElement) {
             ExecutableElement ee = (ExecutableElement) v;
             TypeMirror returnType = ee.getReturnType();
@@ -417,16 +447,21 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
                                                      .mapBlankArrayToNull(true)
                                                      .mapEmptyStringToNull(true)
                                                      .mapToSourceDeclaration(true), null);
+            modifierNames = ee.getModifiers().stream()
+                    .map(Modifier::toString)
+                    .collect(Collectors.toSet());
         }
-        componentTypeNames = componentTypeNames == null ? List.of() : componentTypeNames;
+        componentTypeNames = (componentTypeNames == null) ? List.of() : componentTypeNames;
 
         return DefaultTypedElementName.builder()
                 .typeName(type)
                 .componentTypeNames(componentTypeNames)
                 .elementName(v.getSimpleName().toString())
+                .elementKind(v.getKind().name())
                 .defaultValue(defaultValue)
                 .annotations(createAnnotationAndValueListFromElement(v, elements))
                 .elementTypeAnnotations(elementTypeAnnotations)
+                .modifierNames(modifierNames)
                 .build();
     }
 
@@ -436,8 +471,22 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param val the value to check
      * @return true if the value provided is non-null and non-blank.
      */
-    static boolean hasNonBlankValue(String val) {
-        return Objects.nonNull(val) && !val.isBlank();
+    static boolean hasNonBlankValue(
+            String val) {
+        return (val != null) && !val.isBlank();
     }
 
+    /**
+     * Produces the generated sticker annotation attribute contents.
+     *
+     * @param generatorClassTypeName the generator class type name
+     * @param versionId              the generator version identifier
+     * @return the generated sticker
+     */
+    public static String generatedStickerFor(
+            String generatorClassTypeName,
+            String versionId) {
+        return "value = \"" + Objects.requireNonNull(generatorClassTypeName)
+                + "\", comments = \"version=" + versionId + "\"";
+    }
 }

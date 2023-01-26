@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.builder.Builder;
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.DefaultAnnotationAndValue;
@@ -33,7 +34,6 @@ import io.helidon.pico.types.TypeName;
 import io.helidon.pico.types.TypedElementName;
 
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
-import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_ALLOW_NULLS;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_LIST_TYPE;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_MAP_TYPE;
@@ -63,6 +63,7 @@ public class BodyContext {
     private final boolean requireLibraryDependencies;
     private final boolean beanStyleRequired;
     private final boolean allowNulls;
+    private final boolean includeGeneratedAnnotation;
     private final String listType;
     private final String mapType;
     private final String setType;
@@ -73,6 +74,7 @@ public class BodyContext {
     private final String genericBuilderClassDecl;
     private final String genericBuilderAliasDecl;
     private final String genericBuilderAcceptAliasDecl;
+    private final String publicOrPackagePrivateDecl;
     private final TypeName interceptorTypeName;
     private final String interceptorCreateMethod;
 
@@ -85,9 +87,9 @@ public class BodyContext {
      * @param builderTriggerAnnotation the builder annotation
      */
     BodyContext(boolean doingConcreteType,
-                          TypeName implTypeName,
-                          TypeInfo typeInfo,
-                          AnnotationAndValue builderTriggerAnnotation) {
+                TypeName implTypeName,
+                TypeInfo typeInfo,
+                AnnotationAndValue builderTriggerAnnotation) {
         this.doingConcreteType = doingConcreteType;
         this.implTypeName = implTypeName;
         this.typeInfo = typeInfo;
@@ -98,6 +100,7 @@ public class BodyContext {
         this.requireLibraryDependencies = toRequireLibraryDependencies(builderTriggerAnnotation, typeInfo);
         this.beanStyleRequired = toRequireBeanStyle(builderTriggerAnnotation, typeInfo);
         this.allowNulls = toAllowNulls(builderTriggerAnnotation, typeInfo);
+        this.includeGeneratedAnnotation = toIncludeGeneratedAnnotation(builderTriggerAnnotation, typeInfo);
         this.listType = toListImplType(builderTriggerAnnotation, typeInfo);
         this.mapType = toMapImplType(builderTriggerAnnotation, typeInfo);
         this.setType = toSetImplType(builderTriggerAnnotation, typeInfo);
@@ -124,6 +127,9 @@ public class BodyContext {
                 searchForBuilderAnnotation("interceptorCreateMethod", builderTriggerAnnotation, typeInfo);
         this.interceptorCreateMethod = (interceptorCreateMethod == null || interceptorCreateMethod.isEmpty())
                 ? null : interceptorCreateMethod;
+        this.publicOrPackagePrivateDecl = (typeInfo.typeKind().equals("INTERFACE")
+                                                   || typeInfo.modifierNames().isEmpty()
+                                                   || typeInfo.modifierNames().contains("PUBLIC")) ? "public " : "";
     }
 
     /**
@@ -267,6 +273,16 @@ public class BodyContext {
     }
 
     /**
+     * Returns true if {@code jakarta.annotations.Generated} annotation should be generated.
+     * See {@link io.helidon.builder.Builder#includeGeneratedAnnotation()}.
+     *
+     * @return true if the Generated annotation should be generated on the target beans
+     */
+    protected boolean includeGeneratedAnnotation() {
+        return includeGeneratedAnnotation;
+    }
+
+    /**
      * Returns the list type generated.
      * See {@link io.helidon.builder.Builder#listImplType()}.
      *
@@ -360,6 +376,14 @@ public class BodyContext {
     }
 
     /**
+     * Returns "public" or "" for public or package private declaration, accordingly.
+     *
+     * @return the modifier declaration
+     */
+    public String publicOrPackagePrivateDecl() {
+        return publicOrPackagePrivateDecl;
+    }
+    /**
      * Returns the interceptor implementation type name.
      * See {@link io.helidon.builder.Builder#interceptor()}.
      *
@@ -435,7 +459,7 @@ public class BodyContext {
     private static boolean toIncludeMetaAttributes(AnnotationAndValue builderTriggerAnnotation,
                                                    TypeInfo typeInfo) {
         String val = searchForBuilderAnnotation("includeMetaAttributes", builderTriggerAnnotation, typeInfo);
-        return val == null ? DEFAULT_INCLUDE_META_ATTRIBUTES : Boolean.parseBoolean(val);
+        return (val == null) ? DEFAULT_INCLUDE_META_ATTRIBUTES : Boolean.parseBoolean(val);
     }
 
     /**
@@ -444,7 +468,7 @@ public class BodyContext {
     private static boolean toRequireLibraryDependencies(AnnotationAndValue builderTriggerAnnotation,
                                                         TypeInfo typeInfo) {
         String val = searchForBuilderAnnotation("requireLibraryDependencies", builderTriggerAnnotation, typeInfo);
-        return val == null ? DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES : Boolean.parseBoolean(val);
+        return (val == null) ? DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES : Boolean.parseBoolean(val);
     }
 
     /**
@@ -457,12 +481,21 @@ public class BodyContext {
     }
 
     /**
-     * In support of {@link io.helidon.builder.Builder#allowNulls()} ()}.
+     * In support of {@link io.helidon.builder.Builder#allowNulls()}.
      */
     private static boolean toAllowNulls(AnnotationAndValue builderTriggerAnnotation,
                                         TypeInfo typeInfo) {
         String val = searchForBuilderAnnotation("allowNulls", builderTriggerAnnotation, typeInfo);
-        return val == null ? DEFAULT_ALLOW_NULLS : Boolean.parseBoolean(val);
+        return (val == null) ? Builder.DEFAULT_ALLOW_NULLS : Boolean.parseBoolean(val);
+    }
+
+    /**
+     * In support of {@link io.helidon.builder.Builder#includeGeneratedAnnotation()}.
+     */
+    private static boolean toIncludeGeneratedAnnotation(AnnotationAndValue builderTriggerAnnotation,
+                                                        TypeInfo typeInfo) {
+        String val = searchForBuilderAnnotation("includeGeneratedAnnotation", builderTriggerAnnotation, typeInfo);
+        return (val == null) ? Builder.DEFAULT_INCLUDE_GENERATED_ANNOTATION : Boolean.parseBoolean(val);
     }
 
     /**
@@ -475,7 +508,7 @@ public class BodyContext {
     }
 
     /**
-     * In support of {@link io.helidon.builder.Builder#mapImplType()} ()}.
+     * In support of {@link io.helidon.builder.Builder#mapImplType()}.
      */
     private static String toMapImplType(AnnotationAndValue builderTriggerAnnotation,
                                         TypeInfo typeInfo) {
@@ -528,7 +561,7 @@ public class BodyContext {
             }
 
             if (Objects.isNull(ctx.parentTypeName.get())
-                    && superTypeInfo.typeKind().equals("INTERFACE")) {
+                    && superTypeInfo.typeKind().equals(DefaultBuilderCreatorProvider.INTERFACE)) {
                 ctx.parentTypeName.set(superTypeInfo.typeName());
             } else if (Objects.isNull(ctx.parentAnnotationType.get())
                     && superTypeInfo.typeKind().equals("ANNOTATION_TYPE")) {
