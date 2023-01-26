@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-ALPHA4-SNAPSHOT</version>
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-examples-grpc-microprofile-client</artifactId>

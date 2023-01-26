@@ -26,7 +26,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>3.0.1</version>
+        <version>4.0.0-ALPHA4-SNAPSHOT</version>
         <relativePath/>
     </parent>
     <artifactId>openapi-mp-client</artifactId>
