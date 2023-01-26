@@ -11,6 +11,37 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0-ALPHA4]
+
+This is the fourth Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
+
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a [ground up webserver implementation based on JDK Project Loom virtual threads](https://medium.com/helidon/helidon-n%C3%ADma-helidon-on-virtual-threads-130bb2ea2088). 
+
+Helidon 4.0.0 is a major release that includes significant new features and fixes. As a major release it also includes some backward incompatible API changes.
+
+Java 19 or newer is required to use Heldon 4.0.0-ALPHA4.
+
+### MicroProfile Support
+
+4.0.0-ALPHA4 now supports MicroProfile 5 running on Nima WebServer. Please give it a try! If you are upgrading an existing Helidon 3.x MicroProfile application and run into an error concerning `io.common.HelidonConsoleHandler` then change `logging.properties` to use `io.helidon.logging.jul.HelidonConsoleHandler` instead.
+
+### CHANGES
+
+- Logging: Change JUL to System.Logger in most modules  [5936](https://github.com/helidon-io/helidon/pull/5936)
+- Messaging: WLS JMS Object-Based Security [5852](https://github.com/helidon-io/helidon/pull/5852)
+- MicroProfile: Deprecate MicroProfile Tracing [5909](https://github.com/helidon-io/helidon/pull/5909)
+- OCI: Replace OCI Java SDK shaded jar with v3 for OCI integration [5908](https://github.com/helidon-io/helidon/pull/5908)
+- OCI: helidon metrics to oci integration [5945](https://github.com/helidon-io/helidon/pull/5945)
+- Security: Default tenant is not included for propagation [5900](https://github.com/helidon-io/helidon/pull/5900)
+- Security: Oidc tenant name now properly escaped [5873](https://github.com/helidon-io/helidon/pull/5873)
+- Tests: Dbclient Integration Tests Fixed [4860](https://github.com/helidon-io/helidon/pull/4860)
+- WebServer: Shutdown hook alignment Níma and MP. [5913](https://github.com/helidon-io/helidon/pull/5913)
+- WebSocket: UriQuery should not support null parameters. [5950](https://github.com/helidon-io/helidon/pull/5950)
+- WebSocket: client and testing update [5831](https://github.com/helidon-io/helidon/pull/5831)
+- Dependencies: Upgrade OCI SDK to 3.2.1 [5956](https://github.com/helidon-io/helidon/pull/5956)
+- Examples: examples missing helidon-config-yaml dependency [5919](https://github.com/helidon-io/helidon/pull/5919)
+- HTTP/2: Configurable protocols [5883](https://github.com/helidon-io/helidon/pull/5883)
+
 ## [4.0.0-ALPHA3]
 
 This is the third Alpha build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
@@ -242,6 +273,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
 
+[4.0.0-ALPHA4]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA3...4.0.0-ALPHA4
 [4.0.0-ALPHA3]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA2...4.0.0-ALPHA3
 [4.0.0-ALPHA2]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA1...4.0.0-ALPHA2
 [4.0.0-ALPHA1]: https://github.com/oracle/helidon/compare/main...4.0.0-ALPHA1
