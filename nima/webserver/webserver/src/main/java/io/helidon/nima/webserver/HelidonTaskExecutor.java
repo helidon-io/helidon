@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * executor will query the thread and interrupt it if possible. It is important
  * to efficiently shut down the Nima webserver in certain environments.
  */
-public interface HelidonTaskExecutor extends Closeable {
+interface HelidonTaskExecutor extends Closeable {
 
     /**
      * Executes a task.
