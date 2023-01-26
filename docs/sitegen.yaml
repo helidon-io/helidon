@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -132,6 +132,24 @@ backend:
                 glyph:
                   type: "icon"
                   value: "storage"
+              - type: "PAGE"
+                title: "Fault Tolerance"
+                source: "fault-tolerance.adoc"
+                glyph:
+                  type: "icon"
+                  value: "warning"
+              - type: "PAGE"
+                title: "GraalVM Native Image"
+                source: "aot.adoc"
+                glyph:
+                  type: "icon"
+                  value: "save"
+              - type: "PAGE"
+                title: "GraphQL Server"
+                source: "graphql.adoc"
+                glyph:
+                  type: "icon"
+                  value: "graphic_eq"
               - type: "MENU"
                 title: "gRPC"
                 dir: "grpc"
@@ -142,17 +160,21 @@ backend:
                   - "server.adoc"
                   - "client.adoc"
               - type: "PAGE"
-                title: "GraphQL server"
-                source: "graphql.adoc"
-                glyph:
-                  type: "icon"
-                  value: "graphic_eq"
-              - type: "PAGE"
                 title: "Health Checks"
                 source: "health.adoc"
                 glyph:
                   type: "icon"
                   value: "favorite_outline"
+              - type: "MENU"
+                title: "Integrations"
+                dir: "integrations"
+                glyph:
+                  type: "icon"
+                  value: "filter_drama"
+                sources:
+                  - "oci.adoc"
+                  - "hcv.adoc"
+                  - "neo4j.adoc"                                                     
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -174,16 +196,12 @@ backend:
                   - "openapi.adoc"
                   - "openapi-generator.adoc"
                   - "openapi-ui.adoc"
-              - type: "MENU"
-                title: "Integrations"
-                dir: "integrations"
+              - type: "PAGE"
+                title: "Reactive Messaging"
+                source: "reactive-messaging.adoc"
                 glyph:
                   type: "icon"
-                  value: "filter_drama"
-                sources:
-                  - "oci.adoc"
-                  - "hcv.adoc"
-                  - "neo4j.adoc"
+                  value: "message"
               - type: "MENU"
                 title: "Reactive Streams"
                 dir: "reactivestreams"
@@ -194,17 +212,17 @@ backend:
                   - "engine.adoc"
                   - "rsoperators.adoc"
               - type: "PAGE"
-                title: "Reactive Messaging"
-                source: "reactive-messaging.adoc"
-                glyph:
-                  type: "icon"
-                  value: "message"
-              - type: "PAGE"
                 title: "Reactive Webserver"
                 source: "webserver.adoc"
                 glyph:
                   type: "icon"
                   value: "settings_ethernet"
+              - type: "PAGE"
+                title: "Scheduling"
+                source: "scheduling.adoc"
+                glyph:
+                  type: "icon"
+                  value: "access_alarm"
               - type: "MENU"
                 title: "Security"
                 dir: "security"
@@ -218,12 +236,6 @@ backend:
                   - "tools.adoc"
                   - "extensibility.adoc"
                   - "jep-290.adoc"
-              - type: "PAGE"
-                title: "Scheduling"
-                source: "scheduling.adoc"
-                glyph:
-                  type: "icon"
-                  value: "access_alarm"
               - type: "PAGE"
                 title: "Tracing"
                 source: "tracing.adoc"
@@ -242,18 +254,6 @@ backend:
                 glyph:
                   type: "icon"
                   value: "timeline"
-              - type: "PAGE"
-                title: "AOT"
-                source: "aot.adoc"
-                glyph:
-                  type: "icon"
-                  value: "save"
-              - type: "PAGE"
-                title: "Fault Tolerance"
-                source: "fault-tolerance.adoc"
-                glyph:
-                  type: "icon"
-                  value: "warning"
           - type: "GROUP"
             title: "Helidon MP"
             dir: "mp"
@@ -316,6 +316,18 @@ backend:
                 glyph:
                   type: "icon"
                   value: "warning"
+              - type: "PAGE"
+                title: "GraalVM Native Image"
+                source: "aot.adoc"
+                glyph:
+                  type: "icon"
+                  value: "save"             
+              - type: "PAGE"
+                title: "GraphQL Server"
+                source: "graphql.adoc"
+                glyph:
+                  type: "icon"
+                  value: "graphic_eq"                                   
               - type: "MENU"
                 title: "gRPC"
                 dir: "grpc"
@@ -326,17 +338,22 @@ backend:
                   - "server.adoc"
                   - "client.adoc"
               - type: "PAGE"
-                title: "GraphQL"
-                source: "graphql.adoc"
-                glyph:
-                  type: "icon"
-                  value: "graphic_eq"
-              - type: "PAGE"
                 title: "Health Checks"
                 source: "health.adoc"
                 glyph:
                   type: "icon"
                   value: "favorite_outline"
+              - type: "MENU"
+                title: "Integrations"
+                dir: "integrations"
+                glyph:
+                  type: "icon"
+                  value: "filter_drama"
+                sources:
+                  - "oci.adoc"
+                  - "hcv.adoc"
+                  - "jedis.adoc"
+                  - "neo4j.adoc"                                                           
               - type: "MENU"
                 title: "JAX-RS/Jersey"
                 dir: "jaxrs"
@@ -348,23 +365,17 @@ backend:
                   - "jaxrs-applications.adoc"
                   - "jaxrs-client.adoc"
               - type: "PAGE"
-                title: "Persistence"
-                source: "persistence.adoc"
-                glyph:
-                  type: "icon"
-                  value: "dns"
-              - type: "PAGE"
                 title: "JWT"
                 source: "jwt.adoc"
                 glyph:
                   type: "icon"
-                  value: "verified_user"
+                  value: "verified_user"    
               - type: "PAGE"
                 title: "Long Running Actions (LRA)"
                 source: "lra.adoc"
                 glyph:
                   type: "icon"
-                  value: "pending_actions"
+                  value: "pending_actions"                 
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -385,27 +396,13 @@ backend:
                 sources:
                   - "openapi.adoc"
                   - "openapi-generator.adoc"
-                  - "openapi-ui.adoc"
-              - type: "MENU"
-                title: "Integrations"
-                dir: "integrations"
+                  - "openapi-ui.adoc"                                    
+              - type: "PAGE"
+                title: "Persistence"
+                source: "persistence.adoc"
                 glyph:
                   type: "icon"
-                  value: "filter_drama"
-                sources:
-                  - "oci.adoc"
-                  - "hcv.adoc"
-                  - "jedis.adoc"
-                  - "neo4j.adoc"
-              - type: "MENU"
-                title: "Reactive Streams"
-                dir: "reactivestreams"
-                glyph:
-                  type: "icon"
-                  value: "waves"
-                sources:
-                  - "engine.adoc"
-                  - "rsoperators.adoc"
+                  value: "dns"
               - type: "MENU"
                 title: "Reactive Messaging"
                 dir: "reactivemessaging"
@@ -419,12 +416,27 @@ backend:
                   - "aq.adoc"
                   - "weblogic.adoc"
                   - "mock.adoc"
+              - type: "MENU"
+                title: "Reactive Streams"
+                dir: "reactivestreams"
+                glyph:
+                  type: "icon"
+                  value: "waves"
+                sources:
+                  - "engine.adoc"
+                  - "rsoperators.adoc"
               - type: "PAGE"
                 title: "REST Client"
                 source: "restclient.adoc"
                 glyph:
                   type: "icon"
                   value: "airplay"
+              - type: "PAGE"
+                title: "Scheduling"
+                source: "scheduling.adoc"
+                glyph:
+                  type: "icon"
+                  value: "access_alarm"                                                     
               - type: "MENU"
                 title: "Security"
                 dir: "security"
@@ -437,11 +449,19 @@ backend:
                   - "configuration-secrets.adoc"
                   - "jep-290.adoc"
               - type: "PAGE"
-                title: "Scheduling"
-                source: "scheduling.adoc"
+                title: "Server"
+                source: "server.adoc"
                 glyph:
                   type: "icon"
-                  value: "access_alarm"
+                  value: "settings_ethernet"                  
+              - type: "MENU"
+                title: "Testing"
+                glyph:
+                  type: "icon"
+                  value: "thumbs_up_down"
+                sources:
+                  - "testing.adoc"
+                  - "testing-ng.adoc"
               - type: "PAGE"
                 title: "Tracing"
                 source: "tracing.adoc"
@@ -454,26 +474,6 @@ backend:
                 glyph:
                   type: "icon"
                   value: "sync_alt"
-              - type: "PAGE"
-                title: "Server"
-                source: "server.adoc"
-                glyph:
-                  type: "icon"
-                  value: "settings_ethernet"
-              - type: "PAGE"
-                title: "AOT"
-                source: "aot.adoc"
-                glyph:
-                  type: "icon"
-                  value: "save"
-              - type: "MENU"
-                title: "Testing"
-                glyph:
-                  type: "icon"
-                  value: "thumbs_up_down"
-                sources:
-                  - "testing.adoc"
-                  - "testing-ng.adoc"
         - type: "HEADER"
           title: "Additional resources"
         - type: "LINK"
