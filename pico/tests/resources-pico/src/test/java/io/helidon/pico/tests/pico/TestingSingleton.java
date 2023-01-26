@@ -36,7 +36,7 @@ import jakarta.inject.Singleton;
 /**
  * @deprecated
  */
-@RunLevel(1)
+@RunLevel(RunLevel.STARTUP)
 @Singleton
 @Named("testing")
 @Weight(Weighted.DEFAULT_WEIGHT - 1000)

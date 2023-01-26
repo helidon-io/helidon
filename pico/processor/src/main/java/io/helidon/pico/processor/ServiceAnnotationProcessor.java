@@ -161,9 +161,9 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                                                               typeSuffix,
                                                               moduleInfoFile,
                                                               srcPath);
-        if (descriptor != null) {
+        if (descriptor == null) {
             descriptor = tryFindModuleInfo(StandardLocation.SOURCE_PATH, typeSuffix, moduleInfoFile, srcPath);
-            if (descriptor != null) {
+            if (descriptor == null) {
                 // attempt to retrieve from src/main/java if we can't recover to this point
                 descriptor = getThisModuleDescriptorFromSourceMain(moduleInfoFile, srcPath);
             }

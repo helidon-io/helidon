@@ -116,7 +116,7 @@ class ModuleInfoDescriptorTest {
                                  .target("export1")
                                  .addWithOrTo("private.module.name")
                                  .addWithOrTo("another.private.module.name")
-                                 .addPrecomment("// this is an export1 comment")
+                                 .addPrecomment("    // this is an export1 comment")
                                  .build())
                 .build();
         assertThat(descriptor.contents(),
@@ -224,13 +224,13 @@ class ModuleInfoDescriptorTest {
                                          () -> DefaultModuleInfoItem.builder()
                                                  .uses(true)
                                                  .target("external")
-                                                 .addPrecomment("// 1")
+                                                 .addPrecomment("    // 1")
                                                  .build());
         ModuleInfoDescriptor.addIfAbsent(builder, "external",
                                                    () -> DefaultModuleInfoItem.builder()
                                                            .uses(true)
                                                            .target("external")
-                                                           .addPrecomment("// 2")
+                                                           .addPrecomment("    // 2")
                                                            .build());
         ModuleInfoDescriptor descriptor = builder.build();
         assertThat(descriptor.contents(false),

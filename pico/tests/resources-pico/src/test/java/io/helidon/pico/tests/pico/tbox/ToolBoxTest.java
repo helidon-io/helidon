@@ -33,7 +33,6 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
 import io.helidon.pico.tests.pico.ASerialProviderImpl;
-import io.helidon.pico.tests.pico.TestUtils;
 import io.helidon.pico.tests.pico.TestingSingleton;
 import io.helidon.pico.tests.pico.provider.FakeConfig;
 import io.helidon.pico.tests.pico.provider.FakeServer;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
+import static io.helidon.pico.tests.pico.TestUtils.loadStringFromFile;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -124,22 +124,21 @@ class ToolBoxTest {
         assertThat(hammer.get(), notNullValue());
         assertThat(hammer.get(), is(hammer.get()));
         assertThat(BigHammer.class, equalTo(hammer.get().getClass()));
-        desc = allToolBoxes.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        desc = allTools.stream().map(Object::toString).collect(Collectors.toList());
         assertThat(desc,
                    contains("SledgeHammer:INIT",
                             "BigHammer:ACTIVE",
                             "TableSaw:INIT",
-                            "Awl:INIT",
+                            "AwlImpl:INIT",
                             "HandSaw:INIT",
-                            "HandSaw:INIT",
-                            "LittleHammer:ACTIVE",
+                            "LittleHammer:INIT",
                             "Screwdriver:ACTIVE"));
 
         desc = (((MainToolBox) toolBox).allHammers()).stream().map(Object::toString).collect(Collectors.toList());
         assertThat(desc,
                    contains("SledgeHammer:INIT",
                             "BigHammer:ACTIVE",
-                            "LittleHammer:ACTIVE"));
+                            "LittleHammer:INIT"));
         assertThat(((ServiceProvider<?>) ((MainToolBox) toolBox).bigHammer()).description(),
                 equalTo("BigHammer:ACTIVE"));
     }
@@ -183,7 +182,7 @@ class ToolBoxTest {
                 .sorted()
                 .map(m -> m.get().named().orElse(m.get().getClass().getSimpleName() + ":null")).collect(Collectors.toList());
         assertThat(names,
-                   contains("io.helidon.pico.test.pico", "io.helidon.pico.test.pico/test"));
+                   contains("io.helidon.pico.tests.pico", "io.helidon.pico.tests.pico/test"));
     }
 
     /**
@@ -191,7 +190,7 @@ class ToolBoxTest {
      */
     @Test
     void moduleInfo() {
-        assertThat(TestUtils.loadStringFromFile("target/classes/module-info.java.pico"),
+        assertThat(loadStringFromFile("target/classes/module-info.java.pico"),
                    equalTo("/*\n"
                              + " * Copyright (c) 2022 Oracle and/or its affiliates.\n"
                              + " *\n"
@@ -250,7 +249,7 @@ class ToolBoxTest {
      */
     @Test
     void testModuleInfo() {
-        assertThat(TestUtils.loadStringFromFile("target/test-classes/module-info.java.pico"),
+        assertThat(loadStringFromFile("target/test-classes/module-info.java.pico"),
                    equalTo("// @Generated({\"provider=oracle\", \"generator=io.helidon.pico.tools."
                              + ".DefaultActivatorCreator\", \"version=1\"})\n"
                              + "module io.helidon.pico.test.pico/test {\n"
@@ -300,24 +299,25 @@ class ToolBoxTest {
     }
 
     /**
-     * This assumes the presence of module(s) + application(s) to handle all bindings, with effectively no lookups!
+     * This tests the presence of module(s) + application(s) to handle all bindings, with effectively no lookups.
      */
     @Test
     void runlevel() {
+        // we start with 1 because we are looking for applications (or modules) at startup
         assertThat(picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), equalTo(1));
         List<ServiceProvider<?>> runLevelServices = services
                 .lookupAll(DefaultServiceInfoCriteria.builder().runLevel(RunLevel.STARTUP).build(), true);
         List<String> desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
         // note that order matters here
         assertThat(desc,
-                contains("MainToolBox:INIT"));
+                contains("TestingSingleton:INIT"));
 
-        runLevelServices.forEach(sp -> assertThat(sp.get().toString(), equalTo("activation")));
+        runLevelServices.forEach(sp -> Objects.requireNonNull(sp.get(), sp.toString() + " failed on get()"));
         assertThat("activation should not have triggered any lookups",
                    picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), equalTo(1));
         desc = runLevelServices.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat(desc,
-                contains("MainToolBox:ACTIVE"));
+                contains("TestingSingleton:ACTIVE"));
     }
 
     /**

@@ -372,7 +372,7 @@ public interface ModuleInfoDescriptor {
                     throw new ToolsException("unable to process module-info's use of: " + line);
                 }
 
-                if ((comments != null)) {
+                if (comments != null) {
                     comments = new ArrayList<>();
                 }
             }
