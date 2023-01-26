@@ -30,17 +30,17 @@
 
 == Contents
 
-- <<Overview, Overview>>
-- <<Maven Coordinates, Maven Coordinates>>
-- <<Usage, Usage>>
-- <<API, API>>
-- <<Configuration, Configuration>>
-- <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Usage, Usage>>
+* <<API, API>>
+* <<Configuration, Configuration>>
+* <<Examples, Examples>>
+* <<Additional Information, Additional Information>>
 ** <<Coordinator, Coordinator>>
 ** <<Helidon LRA Coordinator, Helidon LRA Coordinator>>
 ** <<Narayana, Narayana>>
-- <<Reference, Reference>>
+* <<Reference, Reference>>
 
 == Overview
 
@@ -405,7 +405,7 @@ In addition, participant also keeps track of timeouts, retries participant calls
 * Helidon LRA coordinator
 * https://narayana.io/lra[Narayana coordinator].
 
-=== Helidon LRA coordinator
+=== Helidon LRA Coordinator
 
 CAUTION: Experimental tool, usage in production is not advised.
 

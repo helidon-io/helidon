@@ -34,7 +34,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 ** <<{spec-name} Features, {spec-name} Features>>
-** <<Helidon MicrcoProfile Config Features, Helidon MicroProfile Config Features>>
+** <<Helidon {spec-name} Features, Helidon {spec-name} Features>>
 - <<Configuration, Configuration>>
 - <<Reference, Reference>>
 
