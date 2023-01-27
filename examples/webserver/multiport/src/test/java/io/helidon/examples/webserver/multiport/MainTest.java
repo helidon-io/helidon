@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,13 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MainTest {
 
@@ -96,7 +98,7 @@ public class MainTest {
                 .uri("http://localhost:" + params.port)
                 .path(params.path)
                 .request()
-                .thenAccept(response -> Assertions.assertEquals(params.httpStatus, response.status()))
+                .thenAccept(response -> assertThat(response.status(), is(params.httpStatus)))
                 .toCompletableFuture()
                 .get();
     }
@@ -108,7 +110,7 @@ public class MainTest {
                 .uri("http://localhost:" + publicPort)
                 .path("/hello")
                 .request(String.class)
-                .thenAccept(s -> Assertions.assertEquals("Public Hello!!", s))
+                .thenAccept(s -> assertThat(s, is("Public Hello!!")))
                 .toCompletableFuture()
                 .get();
 
@@ -116,7 +118,7 @@ public class MainTest {
                 .uri("http://localhost:" + privatePort)
                 .path("/private/hello")
                 .request(String.class)
-                .thenAccept(s -> Assertions.assertEquals("Private Hello!!", s))
+                .thenAccept(s -> assertThat(s, is("Private Hello!!")))
                 .toCompletableFuture()
                 .get();
     }
