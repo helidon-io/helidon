@@ -44,6 +44,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
@@ -57,7 +58,7 @@ class ServerListener {
     private final String socketName;
     private final ListenerConfiguration listenerConfig;
     private final Router router;
-    private final ExecutorService readerExecutor;
+    private final HelidonTaskExecutor readerExecutor;
     private final ExecutorService sharedExecutor;
     private final Thread serverThread;
     private final DirectHandlers simpleHandlers;
@@ -93,7 +94,7 @@ class ServerListener {
                 .name("server-" + socketName + "-listener")
                 .unstarted(this::listen);
         this.simpleHandlers = simpleHandlers;
-        this.readerExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
@@ -131,11 +132,30 @@ class ServerListener {
         }
         running = false;
         try {
-            // Attempt to wait until existing channels finish execution
-            shutdownExecutor(readerExecutor);
-            shutdownExecutor(sharedExecutor);
-
+            // Stop listening for connections
             serverSocket.close();
+
+            // Shutdown reader executor
+            readerExecutor.terminate(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+            if (!readerExecutor.isTerminated()) {
+                LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
+                readerExecutor.forceTerminate();
+            }
+
+            // Shutdown shared executor
+            try {
+                sharedExecutor.shutdown();
+                boolean done = sharedExecutor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+                if (!done) {
+                    List<Runnable> running = sharedExecutor.shutdownNow();
+                    if (!running.isEmpty()) {
+                        LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
+                    }
+                }
+            } catch (InterruptedException e) {
+                // falls through
+            }
+
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
@@ -252,7 +272,7 @@ class ServerListener {
                                                     listenerConfig.maxPayloadSize(),
                                                     simpleHandlers);
 
-                    readerExecutor.submit(handler);
+                    readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
@@ -276,24 +296,5 @@ class ServerListener {
 
         LOGGER.log(INFO, String.format("[%s] %s socket closed.", serverChannelId, socketName));
         closeFuture.complete(null);
-    }
-
-    /**
-     * Shutdown an executor by waiting for a period of time.
-     *
-     * @param executor executor to shut down
-     */
-    static void shutdownExecutor(ExecutorService executor) {
-        try {
-            boolean terminate = executor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
-            if (!terminate) {
-                List<Runnable> running = executor.shutdownNow();
-                if (!running.isEmpty()) {
-                    LOGGER.log(INFO, running.size() + " channel tasks did not terminate gracefully");
-                }
-            }
-        } catch (InterruptedException e) {
-           LOGGER.log(INFO, "InterruptedException caught while shutting down channel tasks");
-        }
     }
 }

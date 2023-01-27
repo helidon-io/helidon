@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,5 +66,17 @@ public class MatcherWithRetry {
         matcher.describeMismatch(actual, description);
 
         throw new AssertionError(description.toString());
+    }
+
+    /**
+     * Checks the matcher, possibly multiple times after configured delays, invoking the supplier of the matched value each time,
+     * until either the matcher passes or the maximum retry expires.
+     * @param actualSupplier {@code Supplier} that furnishes the value to submit to the matcher
+     * @param matcher Hamcrest matcher which evaluates the supplied value
+     * @return the supplied value
+     * @param <T> type of the supplied value
+     */
+    public static <T> T assertThatWithRetry(Supplier<T> actualSupplier, Matcher<? super T> matcher) {
+        return assertThatWithRetry("", actualSupplier, matcher);
     }
 }
