@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.nima</groupId>
         <artifactId>helidon-nima-project</artifactId>
-        <version>4.0.0-ALPHA4-SNAPSHOT</version>
+        <version>4.0.0-ALPHA4</version>
     </parent>
 
     <groupId>io.helidon.nima.grpc</groupId>

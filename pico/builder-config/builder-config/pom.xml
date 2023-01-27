@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.pico.builder.config</groupId>
         <artifactId>helidon-pico-builder-config-project</artifactId>
-        <version>4.0.0-ALPHA4-SNAPSHOT</version>
+        <version>4.0.0-ALPHA4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

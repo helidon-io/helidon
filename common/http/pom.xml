@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-common-project</artifactId>
         <groupId>io.helidon.common</groupId>
-        <version>4.0.0-ALPHA4-SNAPSHOT</version>
+        <version>4.0.0-ALPHA4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-common-http</artifactId>
