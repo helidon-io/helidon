@@ -31,6 +31,8 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,18 +46,7 @@ class ConnectionConfigTest {
 
         // This will pick up application.yaml from the classpath as default configuration file
         Config config = Config.create();
-
-        // Builds LoomServer instance including connectionProviders list.
-        WebServer.Builder wsBuilder = WebServer.builder()
-                .config(config.get("server"));
-
-        // Call wsBuilder.connectionProviders() trough reflection
-        Method connectionProviders
-                = WebServer.Builder.class.getDeclaredMethod("connectionProviders", (Class<?>[]) null);
-        connectionProviders.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        List<ServerConnectionSelector> providers
-                = (List<ServerConnectionSelector>) connectionProviders.invoke(wsBuilder, (Object[]) null);
+        List<ServerConnectionSelector> providers = getProviders(WebServer.builder().config(config.get("server")));
 
         // Check whether at least one Http2ConnectionProvider was found
         boolean haveHttp2Provider = false;
@@ -81,12 +72,11 @@ class ConnectionConfigTest {
 
         Http2ConnectionSelector provider = (Http2ConnectionSelector) Http2ConnectionProvider.builder()
                 .http2Config(DefaultHttp2Config.builder()
-                                     .maxFrameSize(4096L)
-                                     .maxHeaderListSize(2048L)
-                                     .build())
+                        .maxFrameSize(4096L)
+                        .maxHeaderListSize(2048L)
+                        .build())
                 .build()
                 .create(it -> Config.empty());
-
 
         Http2Connection conn = (Http2Connection) provider.connection(mockContext());
         // Verify values to be updated from configuration file
@@ -95,6 +85,65 @@ class ConnectionConfigTest {
         // Verify Http2Settings values to be updated from configuration file
         assertThat(conn.serverSettings().value(Http2Setting.MAX_FRAME_SIZE), is(4096L));
         assertThat(conn.serverSettings().value(Http2Setting.MAX_HEADER_LIST_SIZE), is(2048L));
+    }
+
+    // Verify that HTTP/2 MAX_CONCURRENT_STREAMS is properly configured from builder
+    @Test
+    void testConfigMaxConcurrentStreams()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        // This will pick up application.yaml from the classpath as default configuration file
+        Config config = Config.create();
+        List<ServerConnectionSelector> providers = getProviders(WebServer.builder().config(config.get("server")));
+
+        // Check whether at least one Http2ConnectionProvider was found
+        Http2ConnectionSelector selector = null;
+
+        for (ServerConnectionSelector provider : providers) {
+            if (provider instanceof Http2ConnectionSelector) {
+                selector = (Http2ConnectionSelector) provider;
+            }
+        }
+        assertThat(selector, is(not(nullValue())));
+        Http2Connection conn = (Http2Connection) selector.connection(mockContext());
+        // Verify value to be updated from configuration file
+        assertThat(conn.config().maxConcurrentStreams(), is(16384L));
+        // Verify Http2Settings value to be updated from configuration file
+        assertThat(conn.serverSettings().value(Http2Setting.MAX_CONCURRENT_STREAMS), is(16384L));
+    }
+
+    // Verify that HTTP/2 validatePath is properly configured from builder
+    @Test
+    void testConfigValidatePath()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        // This will pick up application.yaml from the classpath as default configuration file
+        Config config = Config.create();
+        List<ServerConnectionSelector> providers = getProviders(WebServer.builder().config(config.get("server")));
+
+        // Check whether at least one Http2ConnectionProvider was found
+        Http2ConnectionSelector selector = null;
+
+        for (ServerConnectionSelector provider : providers) {
+            if (provider instanceof Http2ConnectionSelector) {
+                selector = (Http2ConnectionSelector) provider;
+                break;
+            }
+        }
+        assertThat(selector, is(not(nullValue())));
+        Http2Connection conn = (Http2Connection) selector.connection(mockContext());
+        // Verify value to be updated from configuration file
+        assertThat(conn.config().validatePath(), is(false));
+    }
+
+    // Retrieve ServerConnectionSelector instances from WebServer.Builder
+    @SuppressWarnings("unchecked")
+    private List<ServerConnectionSelector> getProviders(WebServer.Builder wsBuilder)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method connectionProviders
+                = WebServer.Builder.class.getDeclaredMethod("connectionProviders", (Class<?>[]) null);
+        connectionProviders.setAccessible(true);
+        return (List<ServerConnectionSelector>) connectionProviders.invoke(wsBuilder, (Object[]) null);
     }
 
     private static ConnectionContext mockContext() {

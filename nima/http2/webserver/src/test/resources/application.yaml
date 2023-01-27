@@ -22,3 +22,5 @@ server:
     http_2:
       max-frame-size: 8192
       max-header-list-size: 4096
+      max-concurrent-streams: 16384
+      validate-path: false

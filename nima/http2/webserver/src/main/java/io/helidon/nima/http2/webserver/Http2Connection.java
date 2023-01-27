@@ -104,6 +104,7 @@ public class Http2Connection implements ServerConnection {
     private int continuationExpectedStreamId;
     private int lastStreamId;
     private long maxClientFrameSize;
+    private long maxClientConcurrentStreams;
     private int streamInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
 
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
@@ -121,6 +122,7 @@ public class Http2Connection implements ServerConnection {
         this.reader = ctx.dataReader();
         this.sendErrorDetails = http2Config.sendErrorDetails();
         this.maxClientFrameSize = http2Config.maxClientFrameSize();
+        this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
     }
 
     @Override
@@ -207,6 +209,7 @@ public class Http2Connection implements ServerConnection {
     private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
         applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
         applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
+        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
     }
 
     // Add value to the builder only when differs from default
@@ -421,6 +424,21 @@ public class Http2Connection implements ServerConnection {
                         + maxClientFrameSize);
             }
 
+            // Set server MAX_CONCURRENT_STREAMS limit when client sends number lower than hard limit
+            // from configuration. Refuse settings if client sends larger number than is configured.
+            this.clientSettings.presentValue(Http2Setting.MAX_CONCURRENT_STREAMS)
+                    .ifPresent(it -> {
+                        if (http2Config.maxConcurrentStreams() >= it) {
+                            maxClientConcurrentStreams = it;
+                        } else {
+                            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL,
+                                    "Value of maximum concurrent streams limit " + it
+                                          + " exceeded hard limit value " + http2Config.maxConcurrentStreams());
+                            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+
+                        }
+                    });
+
             // TODO for each
             //        Http2Setting.MAX_CONCURRENT_STREAMS;
             //        Http2Setting.MAX_HEADER_LIST_SIZE;
@@ -523,7 +541,7 @@ public class Http2Connection implements ServerConnection {
 
         receiveFrameListener.headers(ctx, headers);
         headers.validateRequest();
-        // todo configure path validation
+        // todo configure path validation - done
         String path = headers.path();
         Http.Method method = headers.method();
         HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
@@ -531,7 +549,7 @@ public class Http2Connection implements ServerConnection {
                                                         PROTOCOL_VERSION,
                                                         method,
                                                         path,
-                                                        true);
+                                                        http2Config.validatePath());
         stream.prologue(httpPrologue);
         stream.headers(headers, endOfStream);
         state = State.READ_FRAME;
@@ -655,6 +673,12 @@ public class Http2Connection implements ServerConnection {
                 }
             }
 
+            // MAX_CONCURRENT_STREAMS limit check - according to RFC 9113 section 5.1.2 endpoint MUST treat this
+            // as a stream error (section 5.4.2) of type PROTOCOL_ERROR or REFUSED_STREAM.
+            if (streams.size() > maxClientConcurrentStreams) {
+                throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
+                        "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
+            }
             streamContext = new StreamContext(streamId,
                                               new Http2Stream(ctx,
                                                               routing,
