@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.tools.BodyContext;
+import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -85,6 +86,16 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 //        assertNoAnnotation(ConfiguredBy.class.getName(), typeInfo);
         assertNoAnnotation(jakarta.inject.Singleton.class.getName(), typeInfo);
         assertNoAnnotation("javax.inject.Singleton", typeInfo);
+
+        if (!typeInfo.typeKind().equals("INTERFACE")) {
+            throw new IllegalStateException("@" + builderAnnotation.typeName().className()
+                                                    + " is only supported on interface types: " + typeInfo.typeName());
+        }
+    }
+
+    @Override
+    protected String generatedStickerFor(BodyContext ctx) {
+        return BuilderTypeTools.generatedStickerFor(getClass().getName(), Versions.CURRENT_PICO_CONFIG_BUILDER_VERSION);
     }
 
     @Override
@@ -113,7 +124,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
 
         builder.append("import ").append(Config.class.getName()).append(";\n");
         builder.append("import ").append(ConfigResolver.class.getName()).append(";\n");
-        builder.append("import ").append(ConfigBeanBuilderValidator.class.getName()).append(";\n");
+        builder.append("import ").append(ConfigBeanBuilderValidator.class.getName()).append(";\n\n");
     }
 
     @Override

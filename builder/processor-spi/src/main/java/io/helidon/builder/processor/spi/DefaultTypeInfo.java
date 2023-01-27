@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package io.helidon.builder.processor.spi;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.pico.types.AnnotationAndValue;
 import io.helidon.pico.types.TypeName;
@@ -36,6 +38,7 @@ public class DefaultTypeInfo implements TypeInfo {
     private final List<TypedElementName> elementInfo;
     private final List<TypedElementName> otherElementInfo;
     private final TypeInfo superTypeInfo;
+    private final Set<String> modifierNames;
 
     /**
      * Default constructor taking the builder as an argument.
@@ -50,6 +53,7 @@ public class DefaultTypeInfo implements TypeInfo {
         this.elementInfo = List.copyOf(b.elementInfo);
         this.otherElementInfo = List.copyOf(b.otherElementInfo);
         this.superTypeInfo = b.superTypeInfo;
+        this.modifierNames = Set.copyOf(b.modifierNames);
     }
 
     /**
@@ -92,6 +96,11 @@ public class DefaultTypeInfo implements TypeInfo {
     }
 
     @Override
+    public Set<String> modifierNames() {
+        return modifierNames;
+    }
+
+    @Override
     public String toString() {
         return getClass().getSimpleName() + "(" + toStringInner() + ")";
     }
@@ -105,7 +114,8 @@ public class DefaultTypeInfo implements TypeInfo {
         return "typeName=" + typeName()
                 + ", elementInfo=" + elementInfo()
                 + ", annotations=" + annotations()
-                + ", superTypeInfo=" + superTypeInfo();
+                + ", superTypeInfo=" + superTypeInfo()
+                + ", modifierNames=" + modifierNames();
     }
 
     /**
@@ -115,6 +125,7 @@ public class DefaultTypeInfo implements TypeInfo {
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<TypedElementName> elementInfo = new ArrayList<>();
         private final List<TypedElementName> otherElementInfo = new ArrayList<>();
+        private final Set<String> modifierNames = new LinkedHashSet<>();
         private TypeName typeName;
         private String typeKind;
 
@@ -229,7 +240,32 @@ public class DefaultTypeInfo implements TypeInfo {
          */
         public Builder addOtherElementInfo(TypedElementName val) {
             Objects.requireNonNull(val);
-            otherElementInfo.add(Objects.requireNonNull(val));
+            otherElementInfo.add(val);
+            return this;
+        }
+
+        /**
+         * Sets the modifiers to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder modifierNames(Collection<String> val) {
+            Objects.requireNonNull(val);
+            this.modifierNames.clear();
+            this.modifierNames.addAll(val);
+            return this;
+        }
+
+        /**
+         * Adds a single modifier val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addModifierName(String val) {
+            Objects.requireNonNull(val);
+            modifierNames.add(val);
             return this;
         }
 

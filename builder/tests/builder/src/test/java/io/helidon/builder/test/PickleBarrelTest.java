@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,6 @@ class PickleBarrelTest {
 
         PickleBarrel pickleBarrel = pickleBarrelBuilder.addPickle(pickle).id("123").build();
         assertThat(pickleBarrel.toString(),
-               equalTo("PickleBarrel(id=123, type=Optional.empty, pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
+               equalTo("PickleBarrel(id=123, type=Optional[PLASTIC], pickles=[Pickle(type=DILL, size=Optional[MEDIUM])])"));
     }
 }

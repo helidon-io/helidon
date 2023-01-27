@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package io.helidon.pico.types;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Default implementation for {@link io.helidon.pico.types.TypedElementName}.
@@ -28,12 +31,14 @@ public class DefaultTypedElementName implements TypedElementName {
     private final TypeName typeName;
     private final List<TypeName> componentTypeNames;
     private final String elementName;
+    private final String elementKind;
     private final String defaultValue;
     private final List<AnnotationAndValue> annotations;
     private final List<AnnotationAndValue> elementTypeAnnotations;
+    private final Set<String> modifierNames;
 
     /**
-     * Ctor.
+     * Constructor taking the fluent builder.
      *
      * @param b the builder
      * @see #builder()
@@ -42,9 +47,11 @@ public class DefaultTypedElementName implements TypedElementName {
         this.typeName = b.typeName;
         this.componentTypeNames = List.copyOf(b.componentTypeNames);
         this.elementName = b.elementName;
+        this.elementKind = b.elementKind;
         this.defaultValue = b.defaultValue;
         this.annotations = List.copyOf(b.annotations);
         this.elementTypeAnnotations = List.copyOf(b.elementTypeAnnotations);
+        this.modifierNames = Set.copyOf(b.modifierNames);
     }
 
     @Override
@@ -55,6 +62,11 @@ public class DefaultTypedElementName implements TypedElementName {
     @Override
     public String elementName() {
         return elementName;
+    }
+
+    @Override
+    public String elementKind() {
+        return elementKind;
     }
 
     @Override
@@ -72,13 +84,14 @@ public class DefaultTypedElementName implements TypedElementName {
         return elementTypeAnnotations;
     }
 
-    /**
-     * Returns the component type names describing the element.
-     *
-     * @return the component type names of the element
-     */
+    @Override
     public List<TypeName> componentTypeNames() {
         return componentTypeNames;
+    }
+
+    @Override
+    public Set<String> modifierNames() {
+        return modifierNames;
     }
 
     @Override
@@ -95,6 +108,7 @@ public class DefaultTypedElementName implements TypedElementName {
         TypedElementName other = (TypedElementName) another;
         return Objects.equals(typeName(), other.typeName())
                 && Objects.equals(elementName(), other.elementName())
+                && Objects.equals(elementKind(), other.elementKind())
                 && Objects.equals(annotations(), other.annotations());
     }
 
@@ -130,13 +144,15 @@ public class DefaultTypedElementName implements TypedElementName {
         private final List<TypeName> componentTypeNames = new ArrayList<>();
         private final List<AnnotationAndValue> annotations = new ArrayList<>();
         private final List<AnnotationAndValue> elementTypeAnnotations = new ArrayList<>();
+        private final Set<String> modifierNames = new LinkedHashSet<>();
 
         private TypeName typeName;
         private String elementName;
+        private String elementKind;
         private String defaultValue;
 
         /**
-         * Default ctor.
+         * Default Constructor.
          */
         protected Builder() {
         }
@@ -187,6 +203,17 @@ public class DefaultTypedElementName implements TypedElementName {
         }
 
         /**
+         * Set the element kind.
+         *
+         * @param val   the element kind value
+         * @return this fluent builder
+         */
+        public Builder elementKind(String val) {
+            this.elementKind = val;
+            return this;
+        }
+
+        /**
          * Set the default value.
          *
          * @param val   the default value
@@ -232,6 +259,31 @@ public class DefaultTypedElementName implements TypedElementName {
             Objects.requireNonNull(val);
             this.elementTypeAnnotations.clear();
             this.elementTypeAnnotations.addAll(val);
+            return this;
+        }
+
+        /**
+         * Sets the modifiers to val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder modifierNames(Collection<String> val) {
+            Objects.requireNonNull(val);
+            this.modifierNames.clear();
+            this.modifierNames.addAll(val);
+            return this;
+        }
+
+        /**
+         * Adds a single modifier val.
+         *
+         * @param val the value
+         * @return this fluent builder
+         */
+        public Builder addModifierName(String val) {
+            Objects.requireNonNull(val);
+            modifierNames.add(val);
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.builder.processor.tools;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -57,9 +58,9 @@ import static io.helidon.builder.processor.tools.BodyContext.toBeanAttributeName
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
 public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
+    static final String INTERFACE = "INTERFACE";
     static final boolean DEFAULT_INCLUDE_META_ATTRIBUTES = true;
     static final boolean DEFAULT_REQUIRE_LIBRARY_DEPENDENCIES = true;
-    static final boolean DEFAULT_ALLOW_NULLS = false;
     static final String DEFAULT_IMPL_PREFIX = Builder.DEFAULT_IMPL_PREFIX;
     static final String DEFAULT_ABSTRACT_IMPL_PREFIX = Builder.DEFAULT_ABSTRACT_IMPL_PREFIX;
     static final String DEFAULT_SUFFIX = Builder.DEFAULT_SUFFIX;
@@ -339,6 +340,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         builder.append("import java.util.Map;\n");
         builder.append("import java.util.Set;\n");
         builder.append("import java.util.Objects;\n\n");
+        if (ctx.includeGeneratedAnnotation()) {
+            builder.append("import jakarta.annotation.Generated;\n\n");
+        }
         appendExtraImports(builder, ctx);
 
         builder.append("/**\n");
@@ -346,10 +350,15 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         builder.append(" * ").append(type).append(" implementation w/ builder for {@link ");
         builder.append(ctx.typeInfo().typeName()).append("}.\n");
         builder.append(" */\n");
-        builder.append(BuilderTemplateHelper.getDefaultGeneratedSticker(getClass().getSimpleName())).append("\n");
+        if (!ctx.includeGeneratedAnnotation()) {
+            builder.append("// ");
+        }
+        builder.append("@Generated(")
+                .append(generatedStickerFor(ctx))
+                .append(")\n");
         builder.append("@SuppressWarnings(\"unchecked\")\t\n");
         appendAnnotations(builder, ctx.typeInfo().annotations(), "");
-        builder.append("public ");
+        builder.append(ctx.publicOrPackagePrivateDecl());
         if (!ctx.doingConcreteType()) {
             builder.append("abstract ");
         }
@@ -388,6 +397,16 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         }
 
         builder.append(" {\n");
+    }
+
+    /**
+     * Returns the {@code Generated} sticker to be added.
+     *
+     * @param ctx   the context
+     * @return the generated sticker.
+     */
+    protected String generatedStickerFor(BodyContext ctx) {
+        return BuilderTypeTools.generatedStickerFor(getClass().getName(), Versions.CURRENT_BUILDER_VERSION);
     }
 
     /**
@@ -733,8 +752,11 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                              String beanAttributeName,
                                              boolean isList, boolean isMap, boolean isSet) {
         String singularVal = toValue(Singular.class, method, false, false).orElse(null);
-        if (Objects.nonNull(singularVal) && (isList || isMap || isSet)) {
-            char[] methodName = reverseBeanName(singularVal.isBlank() ? maybeSingularFormOf(beanAttributeName) : singularVal);
+        if ((singularVal != null) && (isList || isMap || isSet)) {
+            char[] methodName = reverseBeanName(beanAttributeName);
+            appendSetter(builder, ctx, beanAttributeName, new String(methodName), method, false, GenerateMethod.SINGULAR_PREFIX);
+
+            methodName = reverseBeanName(singularVal.isBlank() ? maybeSingularFormOf(beanAttributeName) : singularVal);
             GenerateMethod.singularSetter(builder, ctx, method, beanAttributeName, methodName);
         }
     }
@@ -767,6 +789,16 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                 String beanAttributeName,
                                 String methodName,
                                 TypedElementName method) {
+        appendSetter(mainBuilder, ctx, beanAttributeName, methodName, method, true, "");
+    }
+
+    private void appendSetter(StringBuilder mainBuilder,
+                              BodyContext ctx,
+                              String beanAttributeName,
+                              String methodName,
+                              TypedElementName method,
+                              boolean doClear,
+                              String prefixName) {
         TypeName typeName = method.typeName();
         boolean isList = typeName.isList();
         boolean isMap = !isList && typeName.isMap();
@@ -774,28 +806,38 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         boolean upLevel = isSet || isList;
 
         StringBuilder builder = new StringBuilder();
-        GenerateJavadoc.setter(builder, beanAttributeName, method);
-        builder.append("\t\tpublic ").append(ctx.genericBuilderAliasDecl()).append(" ").append(methodName).append("(")
+        GenerateJavadoc.setter(builder, beanAttributeName);
+        builder.append("\t\tpublic ").append(ctx.genericBuilderAliasDecl()).append(" ")
+                .append(prefixName)
+                .append(methodName).append("(")
                 .append(toGenerics(method, upLevel)).append(" val) {\n");
 
         /*
          Assign field, or update collection
          */
-        builder.append("\t\t\tthis.")
-                .append(beanAttributeName);
+        if (doClear) {
+            builder.append("\t\t\tthis.")
+                    .append(beanAttributeName);
+        }
 
         if (isList) {
-            builder.append(".clear();\n");
+            if (doClear) {
+                builder.append(".clear();\n");
+            }
             builder.append("\t\t\tthis.")
                     .append(beanAttributeName)
                     .append(".addAll(").append(maybeRequireNonNull(ctx, "val")).append(");\n");
         } else if (isMap) {
-            builder.append(".clear();\n");
+            if (doClear) {
+                builder.append(".clear();\n");
+            }
             builder.append("\t\t\tthis.")
                     .append(beanAttributeName)
                     .append(".putAll(").append(maybeRequireNonNull(ctx, "val")).append(");\n");
         } else if (isSet) {
-            builder.append(".clear();\n");
+            if (doClear) {
+                builder.append(".clear();\n");
+            }
             builder.append("\t\t\tthis.")
                     .append(beanAttributeName)
                     .append(".addAll(").append(maybeRequireNonNull(ctx, "val")).append(");\n");
@@ -817,7 +859,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         mainBuilder.append(builder);
 
-        if (typeName.isOptional() && !typeName.typeArguments().isEmpty()) {
+        if (prefixName.isBlank() && typeName.isOptional() && !typeName.typeArguments().isEmpty()) {
             TypeName genericType = typeName.typeArguments().get(0);
             appendDirectNonOptionalSetter(mainBuilder, ctx, beanAttributeName, method, methodName, genericType);
         }
@@ -969,7 +1011,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                      boolean upLevelToCollection,
                                      int depth) {
         if (typeName.typeArguments().isEmpty()) {
-            return (typeName.array() || Optional.class.getName().equals(typeName.name()))
+            return (typeName.array()
+                            || Optional.class.getName().equals(typeName.name())
+                            || (typeName.wildcard() && depth > 0))
                     ? typeName.fqName() : typeName.name();
         }
 
@@ -1275,7 +1319,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     private void appendBuilderHeader(StringBuilder builder,
                                      BodyContext ctx) {
         GenerateJavadoc.builderClass(builder, ctx);
-        builder.append("\tpublic ");
+        builder.append("\t").append(ctx.publicOrPackagePrivateDecl());
         if (!ctx.doingConcreteType()) {
             builder.append("abstract ");
         }
@@ -1479,7 +1523,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                 builder.append("\t\tboolean equals = true;\n");
             }
             for (TypedElementName method : ctx.allTypeInfos()) {
-                builder.append("\t\tequals &= Objects.equals(").append(method.elementName()).append("(), other.")
+                String equalsClass = method.typeName().array() ? Arrays.class.getName() : "Objects";
+                builder.append("\t\tequals &= ").append(equalsClass).append(".equals(")
+                        .append(method.elementName()).append("(), other.")
                         .append(method.elementName()).append("());\n");
             }
             builder.append("\t\treturn equals;\n");
@@ -1570,6 +1616,8 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
         boolean isCharArr = type.fqName().equals("char[]");
         if ((isString || isCharArr) && !defaultVal.startsWith("\"")) {
             builder.append("\"");
+        } else if (!type.primitive() && !type.name().startsWith("java.")) {
+            builder.append(type.name()).append(".");
         }
 
         builder.append(defaultVal);
