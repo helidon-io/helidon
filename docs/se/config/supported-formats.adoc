@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -172,14 +172,14 @@ The same module and parser supports file type `.json` and the media type
 .HOCON parser specified - no file type on source
 ----
 Config config = Config.create(classpath("my-config")                                     // <1>
-                                    .parser(HoconConfigParserBuilder.buildDefault())); // <2>
+                                    .parser(HoconConfigParser.create()));                // <2>
 ----
 
-<1> the media type of the source `my-config`is unknown, so the config system cannot
+<1> the media type of the source `my-config` is unknown, so the config system cannot
 choose a parser automatically.
 <2> The config system will parse the resource `my-config` using the HOCON parser created
-by the link:{config-javadoc-base-url}/io/helidon/config/hocon/HoconConfigParserBuilder.html[HoconConfigParserBuilder].
-The `buildDefault()` method creates a config parser with default behavior.
+by the link:{config-javadoc-base-url}.hocon/io/helidon/config/hocon/HoconConfigParser.html[HoconConfigParser].
+The `create()` method creates a config parser with default behavior.
 
 [source,java]
 .Media type specified
@@ -199,7 +199,7 @@ type.
 ----
 Config config = Config.builder(classpath("application.conf"))
         .disableParserServices()                                  // <1>
-        .addParser(HoconConfigParserBuilder.buildDefault())       // <2>
+        .addParser(HoconConfigParser.create())                    // <2>
         .build();
 ----
 
@@ -211,8 +211,8 @@ Config config = Config.builder(classpath("application.conf"))
 ----
 Config config = Config.builder(classpath("application.conf"))
         .disableParserServices()
-        .addParser(HoconConfigParserBuilder.create()              // <1>
-                           .disableResolving()                    // <2>
+        .addParser(HoconConfigParser.builder()                    // <1>
+                           .resolvingEnabled(false)               // <2>
                            .build())                              // <3>
         .build();
 ----
@@ -224,7 +224,7 @@ Config config = Config.builder(classpath("application.conf"))
 
 You can also specify
 link:https://github.com/lightbend/config/blob/master/config/src/main/java/com/typesafe/config/ConfigResolveOptions.java[`ConfigResolveOptions`]
-using the `HoconConfigParserBuilder.resolveOptions` method.
+using the `HoconConfigParser.builder().resolveOptions` method.
 
 == Additional Config Source Types
 
