@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,8 +29,19 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+** <<Client Implementation Basics, Client Implementation Basics>>
+** <<Creating gRPC Clients From protoc Generated Artifacts, Creating gRPC Clients From protoc Generated Artifacts>>
+** <<Invoking a Server Streaming Method on the StringService (Generated from protoc), Invoking a Server Streaming Method on the StringService (Generated from protoc)>>
+** <<Invoking a Bi-Directional Streaming Method on the StringService (Generated from protoc), Invoking a Bi-Directional Streaming Method on the StringService (Generated from protoc)>>
+** <<Programmatically Creating ClientServiceDescriptor for StringService, Programmatically Creating ClientServiceDescriptor for StringService>>
+** <<Creating gRPC Clients for Non-Protobuf Services, Creating gRPC Clients for Non-Protobuf Services>>
+** <<Marshalling, Marshalling>>
 - <<Configuration, Configuration>>
+** <<Configuring the ClientServiceDescriptor, Configuring the ClientServiceDescriptor>>
+** <<Configuring the gRPC Channel, Configuring the gRPC Channel>>
 - <<Examples, Examples>>
+** <<Quick Start, Quick Start>>
+** <<Additional gRPC Client Examples, Additional gRPC Client Examples>>
 
 == Overview
 
@@ -79,7 +90,11 @@ available to the client.
 . The next step is to create a gRPC `Channel` to use to communicate with the server.
 . Finally, we create an instance of `GrpcServiceClient` passing the `ClientMethodDescriptor` and the `Channel` instances.
 
-=== Creating gRPC clients from `protoc` generated artifacts
+=== Creating gRPC Clients From protoc Generated Artifacts
+- <<Creating and Initializing a ClientServiceDescriptor for StringService (Generated from protoc), Creating and Initializing a ClientServiceDescriptor for StringService (Generated from protoc)>>
+- <<Invoking a Unary Method on the StringService, Invoking a Unary Method on the StringService>>
+- <<Invoking a Client Streaming Method on the StringService, Invoking a Client Streaming Method on the StringService>>
+
 
 As mentioned above, the easiest way to create a `ClientServiceDescriptor` is to create it from an `io.grpc.ServiceDescriptor` or
 from a `io.grpc.BindableService`. It is fairly trivial to obtain these from a service generated from artifacts generated
@@ -109,7 +124,7 @@ If you run it through `protoc`, it will generate a class (among other things) ca
 Assuming that the `StringService` server is running on port 1408, here is how you can create a Helidon gRPC
 Client that uses the Client Framework to invoke various types of gRPC methods.
 
-==== Creating and initializing a ClientServiceDescriptor for StringService (generated from `protoc`)
+==== Creating and Initializing a ClientServiceDescriptor for StringService (Generated from protoc)
 
 Let's build a class called `ProtoBasedStringServiceClient` that invokes the various types of
 gRPC methods that our `StringService` offers.
@@ -167,7 +182,7 @@ and `Channel`. This `client` reference will be used to invoke various gRPC metho
 of this class can be used wherever a `io.grpc.StreamObserver` is required (like server streaming,
 bi-directional streaming methods).
 
-==== Invoking a unary method on the StringService
+==== Invoking a Unary Method on the StringService
 
 The Client Framework provides many helper methods to invoke gRPC unary methods.
 
@@ -202,7 +217,7 @@ as its response thus allowing the client to obtain the result asynchronously.
 <3> Here, we invoke the `unary` method by passing the `StringMessageStream` whose `onNext` method
 will be called (once) when the result is available.
 
-==== Invoking a client streaming method on the StringService
+==== Invoking a Client Streaming Method on the StringService
 
 Let's invoke the `Join` method which causes the server to return a single result *after* the client
 has streamed the request values to the server. The gRPC API expects the client application to provide
@@ -264,7 +279,7 @@ stream.
 <5> When all values have been stream, the client invokes the `onCompleted()` method signal that all values
 have been streamed from the client.
 
-=== Invoking a server streaming method on the StringService (generated from `protoc`)
+=== Invoking a Server Streaming Method on the StringService (Generated from protoc)
 
 Let's invoke the "Split" method which causes the server to stream the results back.
 
@@ -295,7 +310,7 @@ public class ProtoBasedStringServiceClient {
 The server sends a stream of words by calling the `onNext()` method on the `StringMessageStream` for
 each word.
 
-=== Invoking a bi-directional streaming method on the StringService (generated from `protoc`)
+=== Invoking a Bi-Directional Streaming Method on the StringService (Generated from protoc)
 
 Now let's invoke the `Echo` method in which both the client and the server have to stream
 the request and response.
@@ -336,7 +351,7 @@ server.
 <4> We call the `onCompleted()` method on the `clientStream` to signal that the client has
 streamed all its values.
 
-=== Programmatically creating ClientServiceDescriptor for StringService
+=== Programmatically Creating ClientServiceDescriptor for StringService
 
 Assuming that the service is still running on port 1408, let's see how to create our Client
 without using the ``StringService``'s proto `ServiceDescriptor`.
@@ -420,7 +435,7 @@ At this point the `client` object can be used to invoke any of the four types of
 earlier sections.
 
 
-=== Creating gRPC clients for non-protobuf services
+=== Creating gRPC Clients for Non-Protobuf Services
 
 If your service is *not* using protobuf for serialization, then the client framework allows
 you to programmatically initialize `ClientMethodDescriptor` and create clients to invoke
@@ -535,7 +550,7 @@ a client that can be used to define the set of methods described by the specifie
 <6> Invoke the `SayHello` method which returns a `CompletionStage<String>`.
 <7> Print the result.
 
-=== Additional gRPC client examples
+=== Additional gRPC Client Examples
 A set of gRPC client examples for Helidon SE can be found in the following links:
 
 * link:{helidon-github-tree-url}/examples/grpc/client-standalone[Basic gRPC Standalone Client]

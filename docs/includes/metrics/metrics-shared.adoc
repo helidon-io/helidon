@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ Later sections of this document describe how to do
 ifdef::mp-flavor[each of these.]
 ifdef::se-flavor[this.]
 
-=== Categorizing Types of Metrics
+=== Categorizing the Types of Metrics
 Helidon distinguishes among three general _types_, or scopes, of metrics, as described in the link:{microprofile-metrics-spec-url}[MP metrics specification].
 
 .Types (scopes) of metrics
@@ -76,7 +76,7 @@ A _metric registry_ collects registered metrics of a given type. Helidon support
 
 When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then registers the metric with that registry.
 
-=== Retrieving Metrics Reports from your Service
+=== Retrieving Metrics Reports From Your Service
 When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/metrics` which responds with a report of the registered metrics and their values.
 
 Clients can request a particular output format.
@@ -134,7 +134,7 @@ metrics of interest such as system and VM information.
 // end::usage-body[]
 
 // tag::metric-registry-api[]
-=== The `MetricRegistry` API
+=== The MetricRegistry API
 To register or look up metrics programmatically, your service code uses one of the three  link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/MetricRegistry.html[`MetricRegistry`] instances (base, vendor, and application) which Helidon furnishes automatically.
 
 ifdef::mp-flavor[]

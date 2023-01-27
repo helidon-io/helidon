@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,8 +29,20 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+** <<gRPC Server Routing, gRPC Server Routing>>
+** <<Service Implementation, Service Implementation>>
+** <<Interceptors, Interceptors>>
+** <<Service Health Checks, Service Health Checks>>
+** <<Service Metrics, Service Metrics>>
+** <<Security, Security>>
+** <<Marshalling, Marshalling>>
 - <<Configuration, Configuration>>
+** <<Configuring the gRPC Server in the Code, Configuring the gRPC Server in the Code>>
+** <<Configuring the gRPC Server in a Configuration File, Configuring the gRPC Server in a Configuration File>>
+** <<Configuration Options, Configuration Options>> 
 - <<Examples, Examples>>
+** <<Quick Start, Quick Start>>
+** <<Additional gRPC Server Examples, Additional gRPC Server Examples>>
 
 == Overview
 The Helidon gRPC server provides a framework for creating link:http://grpc.io/[gRPC] applications.
@@ -78,6 +90,8 @@ If `gRPC server security` is required as described in the <<Security>> section, 
 
 == Usage
 === gRPC Server Routing
+- <<Customizing Service Definitions, Customizing Service Definitions>>
+- <<Specifying Global Interceptors, Specifying Global Interceptors>>
 
 Unlike the webserver, which allows you to route requests based on path expression
 and the HTTP verb, the gRPC server always routes requests based on the service and
@@ -471,6 +485,12 @@ All gRPC health checks will now be available via the `/health` REST endpoint, in
 addition to the standard gRPC `HealthService`
 
 === Service Metrics
+- <<Enabling Metrics Capture, Enabling Metrics Capture>>
+- <<Overriding Metrics Capture, Overriding Metrics Capture>>
+- <<Exposing Metrics Externally, Exposing Metrics Externally>>
+- <<Specifying Metric Metadata, Specifying Metric Metadata>>
+- <<Overriding the Metric Name, Overriding the Metric Name>>
+
 The Helidon gRPC server has built-in support for metrics capture, which allows
 service developers to easily enable application-level metrics for their services.
 
@@ -848,9 +868,9 @@ include::{rootdir}/includes/grpc-marshalling.adoc[leveloffset=2]
 Configure the gRPC server using the Helidon configuration framework, either programmatically
 or via a configuration file.
 
-=== Configuring the gRPC server in your code
+=== Configuring the gRPC Server in the Code
 
-The easiest way to configure the gRPC server is in your application code.
+The easiest way to configure the gRPC server is in the application code.
 
 [source,java]
 ----
@@ -863,7 +883,7 @@ GrpcServer grpcServer = GrpcServer.create(configuration, routing);
 See all configuration options
 link:{javadoc-base-url}/io.helidon.grpc/GrpcServerConfiguration.html[here].
 
-=== Configuring the gRPC server in a configuration file
+=== Configuring the gRPC Server in a Configuration File
 
 You can also define the gRPC server configuration in a file.
 
@@ -925,7 +945,7 @@ static class HelloService implements GrpcService { // <5>
 <6> Specify a custom marshaller using the built-in JsonB marshaller to marshall requests and responses.
 <7> Add unary method `HelloService/SayHello` to the service definition.
 
-=== Additional gRPC server examples
+=== Additional gRPC Server Examples
 A set of gRPC server examples for Helidon SE can be found in the following links:
 
 * link:{helidon-github-tree-url}/examples/grpc/basics[Basic gRPC Server]

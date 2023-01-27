@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,9 +27,16 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
+** <<Registering and Updating Meters, Registering and Updating Meters>>
+** <<Accessing the Helidon Micrometer Endpoint, Accessing the Helidon Micrometer Endpoint>>
 - <<API, API>>
+** <<The Helidon Micrometer API, The Helidon Micrometer API>>
+** <<The Micrometer API, The Micrometer API>>
 - <<Configuration, Configuration>>
+** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
+** <<Add Micrometer Annotations, Add Micrometer Annotations>>
+** <<Using the Helidon-Provided Micrometer MeterRegistry from Code>>
 - <<Additional Information, Additional Information>>
 
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=intro]
@@ -69,11 +76,12 @@ include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=use-micrometer-ap
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=configuring-endpoint]
 
 == Examples
+
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=example-apps]
 
 The examples below take you step-by-step through the process of enhancing the Helidon MP QuickStart application to track (by time and invocation count) all `GET` methods and to count all requests for a personalized greeting.
 
-=== Add Micrometer annotations
+=== Add Micrometer Annotations
 
 [source,java]
 .Adding Micrometer annotations to JAX-RS resource `GET` methods
@@ -106,7 +114,7 @@ import io.micrometer.core.annotation.Timed;
 <2> Use `@Timed` to time and count both `GET` methods.
 <3> Use `@Counted` to count the accesses to the `GET` method that returns a personalized greeting.
 
-=== Using the Helidon-provided Micrometer `MeterRegistry` from Code
+=== Using the Helidon-Provided Micrometer MeterRegistry from Code
 
 In addition to annotating your methods, you can create, look up, and update metrics explicitly in your code.
 

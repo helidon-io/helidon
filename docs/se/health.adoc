@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,8 +29,13 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
+** <<Built-In Health Checks, Built-In Health Checks>>
+** <<Kubernetes Probes, Kubernetes Probes>>
+** <<Troubleshooting Probes, Troubleshooting Probes>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
+** <<JSON Response Example,JSON Response Example>>
+** <<Kubernetes Example, Kubernetes Example>>
 - <<Additional Information, Additional Information>>
 
 == Overview
@@ -45,10 +50,10 @@ application if the health check fails.
 A typical health check combines the statuses of all the dependencies that
 affect availability and the ability to perform correctly:
 
-* network latency
-* storage
-* database
-* other services used by your application
+* Network Latency
+* Storage
+* Database
+* Other Services (used by the application)
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -192,7 +197,7 @@ checks
 | Builder class to create `HealthSupport` instances
 |=======
 
-=== Built-in health checks
+=== Built-In Health Checks
 
 You can use Helidon-provided health checks to report various
 common health check statuses:
@@ -249,7 +254,10 @@ Follow the JavaDoc links in the <<built-in-health-checks-table,table>> above.
 
 * Using configuration as explained in <<Configuration>>.
 
-=== Kubernetes probes
+=== Kubernetes Probes
+* <<Liveness Probe, Liveness Probe>>
+* <<Readiness Probe, Readiness Probe>>
+* <<Startup Probe, Startup Probe>>
 
 Probes is the term used by Kubernetes to describe health checks for containers
 (link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes[Kubernetes documentation]).
@@ -292,7 +300,7 @@ Minimum value is 1
 Minimum: 1.
 |=======
 
-==== Liveness probe
+==== Liveness Probe
 
 The liveness probe is used to verify the container has become unresponsive.
 For example, it can be used to detect deadlocks or analyze heap usage. When
@@ -309,7 +317,7 @@ We recommend the following:
 * Set `timeoutSeconds` to avoid excessive probe failures.
 * Acknowledge startup times with `initialDelaySeconds`.
 
-==== Readiness probe
+==== Readiness Probe
 
 The readiness probe is used to avoid routing requests to the pod until it is
 ready to accept traffic. When Kubernetes gives up on a readiness probe, the
@@ -327,13 +335,13 @@ We recommend the following:
 * Set `failureThreshold` according to `periodSeconds` in order to accommodate
 temporary errors.
 
-==== Startup probe
+==== Startup Probe
 
 The startup probe prevents Kubernetes from prematurely checking the other probes if the application takes a long time to start.
 Otherwise, Kubernetes might misinterpret a failed liveness or readiness probe and shut down the container when, in fact, the application is still coming up.
 
 
-=== Troubleshooting probes
+=== Troubleshooting Probes
 
 Failed probes are recorded as events associated with their corresponding pods.
 The event message contains only the status code.
@@ -361,7 +369,7 @@ health checks by setting the configuration item
 
 == Examples
 
-=== JSON response example
+=== JSON Response Example
 
 Accessing the Helidon-provided `/health` endpoint reports the health of your application
 as shown below:
@@ -404,7 +412,7 @@ as shown below:
 }
 ----
 
-=== Kubernetes example
+=== Kubernetes Example
 
 This example shows the usage of the Helidon health API in an application that
 implements health endpoints for the liveness and readiness probes. Note that

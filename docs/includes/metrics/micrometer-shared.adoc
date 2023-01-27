@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ configuration to set them up as you wish.
 // end::prereq[]
 
 // tag::overriding-intro[]
-==== Overriding Defaults for Built-in Meter Registry Types
+==== Overriding Defaults for Built-In Meter Registry Types
 Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer meter registry.
 For example, Helidon configures the built-in Prometheus registry using `PrometheusConfig.DEFAULT`.
 

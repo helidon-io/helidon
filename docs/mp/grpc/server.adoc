@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,10 +31,16 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
 - <<Usage, Usage>>
+** <<Defining a Service, Defining a Service>>
+** <<Service Name, Service Name>>
+** <<Defining Service Methods, Defining Service Methods>>
+** <<Deploying Protobuf Services, Deploying Protobuf Services>>
+** <<Marshalling, Marshalling>>
 - <<Configuration, Configuration>>
+** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
 
-== Overview
+== Overview 
 The gRPC Microprofile APIs are an extension to xref:{rootdir}/mp/introduction.adoc[Helidon MP] to allow building
 of gRPC services and clients that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
 and clients an easier process compared to the traditional approach using Protobuf files and code generation. Services can be built
@@ -61,12 +67,12 @@ The following annotations are used to implement Helidon MP gRPC Services:
 * `@Grpc` - an annotation used to mark a class as representing a gRPC service.
 * `@GrpcMarshaller` -  an annotation used to annotate a type or method to specify the named marshaller supplier to use for rpc method calls.
 
-gRPC method types:
+gRPC Method Types:
 
 * <<Unary Methods, `@Unary`>> - a simple method with at most a single request value and returning at most a single response value.
-* <<ServerStreaming Methods, `@ServerStreaming`>> -  a method that takes at most a single request value but may return zero or more response values.
-* <<ClientStreaming Methods, `@ClientStreaming`>> - a request that takes one or more request values and returns at most one response value.
-* <<Bi-Directional Streaming Methods, `@Bidirectional`>> - a method that can take one or more request values and return zero or more response values.
+* <<Server Streaming Methods, `@ServerStreaming`>> -  A method that takes at most a single request value but may return zero or more response values.
+* <<Client Streaming Methods, `@Client Streaming`>> - A request that takes one or more request values and returns at most one response value.
+* <<Bi-Directional Streaming Methods, `@Bidirectional`>> - A method that can take one or more request values and return zero or more response values.
 
 
 == Usage
@@ -129,6 +135,13 @@ public class StringService {
 
 
 === Defining Service Methods
+
+- <<Request and Response Types, Request and Response Types>>
+- <<Unary Methods, Unary Methods>>
+- <<Server Streaming Methods, Server Streaming Methods>>
+- <<Client Streaming Methods, Client Streaming Methods>>
+- <<Bi-Directional Streaming Methods, Bi-Directional Streaming Methods>>
+
 Once a class is properly annotated to make it a gRPC MP service, it needs to have service methods that implement the
 application business logic. In gRPC there are four different types of method:
 
@@ -210,7 +223,7 @@ The various signatures supported above allow the service developer to choose the
 application business logic without needing to worry about handling standard gRPC Java requests and StreamObservers. The
 standard gRPC Java method signature is in the list above so it can still be used if required.
 
-==== ServerStreaming Methods
+==== Server Streaming Methods
 A server streaming method receives a requests from the client and when the request stream is complete, it sends back a stream
 of response values. A traditional gRPC Java server streaming method takes two parameters, the request and a `StreamObserver`
 that is used to send back the single response in the same way that a unary method sends a response. As with unary methods,
@@ -240,7 +253,7 @@ public Stream<ResponseType> invoke(RequestType req)
 As with unary methods, the Helidon gRPC MP API supports multiple different method signatures for implementing server streaming
 methods.
 
-==== ClientStreaming Methods
+==== Client Streaming Methods
 A client streaming method receives a stream of requests from the client and when the request stream is complete, it sends back a
 response. A traditional gRPC Java client streaming method takes two `StreamObserver` parameters, one is the stream of client
 requests and the other is used to send back the single response in the same way that a unary method sends a response. As with
@@ -259,9 +272,8 @@ public StreamObserver<RequestType> invoke(CompletableFuture<ResponseType> observ
 
 ----
 
-
 ==== Bi-Directional Streaming Methods
-A bidirectional streaming method is a method that is a constant stream of client requests and server responses. Other than
+A bi-directional streaming method is a method that is a constant stream of client requests and server responses. Other than
 the standard gRPC Java `StreamObserver`, there are no other built-in types that make sense to use to implement
 different method signatures for a bidirectional method so the only supported signature is the standard gRPC Java method.
 
@@ -272,6 +284,10 @@ public StreamObserver<RequestType> invoke(StreamObserver<ResponseType> observer)
 ----
 
 === Deploying Protobuf Services
+
+- <<Annotate the Service Implementation, Annotate the Service Implementation>>
+- <<Implement a GrpcMpExtension, Implement a GrpcMpExtension>>
+ 
 The examples above show how simple it is to write gRPC services with basic POJOs. There may be cases, however, where there is a
 requirement to deploy services built the traditional way using gRPC Java generated classes or built as
 xref:{rootdir}/se/grpc/server.adoc#_service_implementation[non-microprofile Helidon gRPC services].
@@ -325,6 +341,7 @@ of the service implementations.
 include::{rootdir}/includes/grpc-marshalling.adoc[leveloffset=2]
 
 == Configuration
+
 Configure the gRPC server using the Helidon microprofile configuration framework by which the ConfigSource defaults to
 `microprofile-config.properties`. Alternatively, you can also use other ConfigSources such as `application.yaml`.
 Refer to xref:{rootdir}/mp/config/introduction.adoc[MicroProfile Config] for more details about the different options for
