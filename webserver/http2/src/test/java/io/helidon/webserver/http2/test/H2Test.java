@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,11 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http2.Http2Route;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import static io.helidon.common.http.Http.Method.GET;
 
@@ -76,38 +78,38 @@ class H2Test {
 
     @Test
     void genericHttp20() throws IOException, InterruptedException {
-        Assertions.assertEquals("HTTP Version V2_0", httpClientGet("/", HttpClient.Version.HTTP_2).body());
-        Assertions.assertEquals("HTTP Version V2_0", webClientGet("/", Http.Version.V2_0).content().as(String.class).await());
+        assertThat(httpClientGet("/", HttpClient.Version.HTTP_2).body(), is("HTTP Version V2_0"));
+        assertThat(webClientGet("/", Http.Version.V2_0).content().as(String.class).await(), is("HTTP Version V2_0"));
     }
 
     @Test
     void genericHttp11() throws IOException, InterruptedException {
-        Assertions.assertEquals("HTTP Version V1_1", httpClientGet("/", HttpClient.Version.HTTP_1_1).body());
-        Assertions.assertEquals("HTTP Version V1_1", webClientGet("/", Http.Version.V1_1).content().as(String.class).await());
+        assertThat(httpClientGet("/", HttpClient.Version.HTTP_1_1).body(), is("HTTP Version V1_1"));
+        assertThat(webClientGet("/", Http.Version.V1_1).content().as(String.class).await(), is("HTTP Version V1_1"));
     }
 
     @Test
     void versionSpecificHttp11() throws IOException, InterruptedException {
-        Assertions.assertEquals("HTTP/1.1 route", httpClientGet("/versionspecific", HttpClient.Version.HTTP_1_1).body());
-        Assertions.assertEquals("HTTP/1.1 route", webClientGet("/versionspecific", Http.Version.V1_1).content().as(String.class).await());
+        assertThat(httpClientGet("/versionspecific", HttpClient.Version.HTTP_1_1).body(), is("HTTP/1.1 route"));
+        assertThat(webClientGet("/versionspecific", Http.Version.V1_1).content().as(String.class).await(), is("HTTP/1.1 route"));
     }
 
     @Test
     void versionSpecificHttp20() throws IOException, InterruptedException {
-        Assertions.assertEquals("HTTP/2 route", httpClientGet("/versionspecific", HttpClient.Version.HTTP_2).body());
-        Assertions.assertEquals("HTTP/2 route", webClientGet("/versionspecific", Http.Version.V2_0).content().as(String.class).await());
+        assertThat(httpClientGet("/versionspecific", HttpClient.Version.HTTP_2).body(), is("HTTP/2 route"));
+        assertThat(webClientGet("/versionspecific", Http.Version.V2_0).content().as(String.class).await(), is("HTTP/2 route"));
     }
 
     @Test
     void versionSpecificHttp11Negative() throws IOException, InterruptedException {
-        Assertions.assertEquals(404, httpClientGet("/versionspecific1", HttpClient.Version.HTTP_2).statusCode());
-        Assertions.assertEquals(404, webClientGet("/versionspecific1", Http.Version.V2_0).status().code());
+        assertThat(httpClientGet("/versionspecific1", HttpClient.Version.HTTP_2).statusCode(), is(404));
+        assertThat(webClientGet("/versionspecific1", Http.Version.V2_0).status().code(), is(404));
     }
 
     @Test
     void versionSpecificHttp20Negative() throws IOException, InterruptedException {
-        Assertions.assertEquals(404, httpClientGet("/versionspecific2", HttpClient.Version.HTTP_1_1).statusCode());
-        Assertions.assertEquals(404, webClientGet("/versionspecific2", Http.Version.V1_1).status().code());
+        assertThat(httpClientGet("/versionspecific2", HttpClient.Version.HTTP_1_1).statusCode(), is(404));
+        assertThat(webClientGet("/versionspecific2", Http.Version.V1_1).status().code(), is(404));
     }
 
 
