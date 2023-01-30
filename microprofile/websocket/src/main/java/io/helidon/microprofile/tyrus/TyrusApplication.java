@@ -17,6 +17,7 @@
 package io.helidon.microprofile.tyrus;
 
 import java.lang.System.Logger.Level;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -30,13 +31,13 @@ import jakarta.websocket.server.ServerApplicationConfig;
  */
 public final class TyrusApplication {
 
-    private final Class<? extends ServerApplicationConfig> applicationClass;
+    private Set<Class<? extends ServerApplicationConfig>> applicationClasses;
     private final Set<Class<?>> annotatedEndpoints;
     private final Set<Class<? extends Endpoint>> programmaticEndpoints;
     private final Set<Extension> extensions;
 
     private TyrusApplication(Builder builder) {
-        this.applicationClass = builder.applicationClass;
+        this.applicationClasses = builder.applicationClasses;
         this.annotatedEndpoints = builder.annotatedEndpoints;
         this.programmaticEndpoints = builder.programmaticEndpoints;
         this.extensions = builder.extensions;
@@ -57,7 +58,16 @@ public final class TyrusApplication {
      * @return Application class optional.
      */
     public Optional<Class<? extends ServerApplicationConfig>> applicationClass() {
-        return Optional.ofNullable(applicationClass);
+        return applicationClasses.isEmpty() ? Optional.empty() : Optional.of(applicationClasses.iterator().next());
+    }
+
+    /**
+     * Get access to all application classes. Possibly an empty set.
+     *
+     * @return Immutable set of application classes.
+     */
+    public Set<Class<? extends ServerApplicationConfig>> applicationClasses() {
+        return Collections.unmodifiableSet(applicationClasses);
     }
 
     /**
@@ -93,7 +103,7 @@ public final class TyrusApplication {
     public static class Builder {
         private static final System.Logger LOGGER = System.getLogger(TyrusApplication.Builder.class.getName());
 
-        private Class<? extends ServerApplicationConfig> applicationClass;
+        private final Set<Class<? extends ServerApplicationConfig>> applicationClasses = new HashSet<>();
         private final Set<Class<?>> annotatedEndpoints = new HashSet<>();
         private final Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
         private final Set<Extension> extensions = new HashSet<>();
@@ -105,10 +115,11 @@ public final class TyrusApplication {
          * @return The builder.
          */
         Builder updateApplicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-            if (this.applicationClass != null) {
-                LOGGER.log(Level.DEBUG, () -> "Overriding websocket application using " + applicationClass);
+            if (!applicationClasses.isEmpty()) {
+                LOGGER.log(Level.DEBUG, () -> "Overriding websocket applications using " + applicationClass);
             }
-            this.applicationClass = applicationClass;
+            applicationClasses.clear();
+            applicationClasses.add(applicationClass);
             return this;
         }
 
@@ -119,10 +130,7 @@ public final class TyrusApplication {
          * @return The builder.
          */
         public Builder applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-            if (this.applicationClass != null) {
-                throw new IllegalStateException("At most one subclass of ServerApplicationConfig is permitted");
-            }
-            this.applicationClass = applicationClass;
+            applicationClasses.add(applicationClass);
             return this;
         }
 

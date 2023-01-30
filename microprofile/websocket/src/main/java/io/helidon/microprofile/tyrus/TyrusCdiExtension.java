@@ -133,59 +133,54 @@ public class TyrusCdiExtension implements Extension {
     private void registerWebSockets() {
         try {
             TyrusApplication app = appBuilder.build();
-
-            // If application present call its methods
             TyrusRouting.Builder tyrusRoutingBuilder = TyrusRouting.builder();
-            Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
 
-            Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
-            Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
-            boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
-
-            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
-
-            LOGGER.log(Level.INFO, "Registering websocket application at " + rootPath);
-
-            if (appClass.isPresent()) {
-                Class<? extends ServerApplicationConfig> c = appClass.get();
-
-                // Attempt to instantiate via CDI
-                ServerApplicationConfig instance = null;
-                try {
-                    instance = CDI.current().select(c).get();
-                } catch (UnsatisfiedResolutionException e) {
-                    // falls through
-                }
-
-                // Otherwise, we create instance directly
-                if (instance == null) {
-                    try {
-                        instance = c.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Unable to instantiate websocket application " + c, e);
-                    }
-                }
-
-                // Call methods in application class
-                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
-                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
-
-                // Register classes and configs
-                endpointClasses.forEach(cl -> tyrusRoutingBuilder.endpoint(rootPath, cl));
-                endpointConfigs.forEach(cf -> tyrusRoutingBuilder.endpoint(rootPath, cf));
-
-                // Create routing wsRoutingBuilder
-                tyrusRouting = tyrusRoutingBuilder.build();
-                addWsRouting(tyrusRouting, namedRouting, routingNameRequired, c.getName());
-            } else {
+            Set<Class<? extends ServerApplicationConfig>> appClasses = app.applicationClasses();
+            if (appClasses.isEmpty()) {
                 // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(cl -> tyrusRoutingBuilder.endpoint(rootPath, cl));
-                app.programmaticEndpoints().forEach(ep -> tyrusRoutingBuilder.endpoint(rootPath, ep));
+                app.annotatedEndpoints().forEach(aClass -> tyrusRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, aClass));
+                app.programmaticEndpoints().forEach(wsCfg -> tyrusRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, wsCfg));
                 app.extensions().forEach(tyrusRoutingBuilder::extension);
 
-                // Create routing wsRoutingBuilder
+                // Create routing
                 tyrusRouting = tyrusRoutingBuilder.build();
                 serverCdiExtension.serverBuilder().addRouting(tyrusRouting);
+            } else {
+                appClasses.forEach(appClass -> {
+                    Optional<String> contextRoot = findContextRoot(config, appClass);
+                    String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
+                    Optional<String> namedRouting = findNamedRouting(config, appClass);
+                    boolean routingNameRequired = isNamedRoutingRequired(config, appClass);
+
+                    // Attempt to instantiate via CDI
+                    ServerApplicationConfig instance = null;
+                    try {
+                        instance = CDI.current().select(appClass).get();
+                    } catch (UnsatisfiedResolutionException e) {
+                        // falls through
+                    }
+
+                    // Otherwise, we create instance directly
+                    if (instance == null) {
+                        try {
+                            instance = appClass.getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
+                            throw new RuntimeException("Unable to instantiate websocket application " + appClass, e);
+                        }
+                    }
+
+                    // Call methods in application class
+                    Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
+                    Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
+
+                    // Register classes and configs
+                    endpointClasses.forEach(aClass -> tyrusRoutingBuilder.endpoint(rootPath, aClass));
+                    endpointConfigs.forEach(wsCfg -> tyrusRoutingBuilder.endpoint(rootPath, wsCfg));
+
+                    // Create routing
+                    tyrusRouting = tyrusRoutingBuilder.build();
+                    addWsRouting(tyrusRouting, namedRouting, routingNameRequired, appClass.getName());
+                });
             }
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to load WebSocket extension", e);
