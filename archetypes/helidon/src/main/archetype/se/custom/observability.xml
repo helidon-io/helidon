@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,34 +21,21 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
         <model if="${tracing}">
+            <list key="Main-helidon-imports">
+                <value>io.helidon.tracing.TracerBuilder</value>
+            </list>
+            <list key="Main-serverBuilder">
+                <value>                .tracer(TracerBuilder.create(config.get("tracing")).build())</value>
+            </list>
             <list key="application-yaml-entries">
                 <value if="${tracing.provider} == 'jaeger'"><![CDATA[
 tracing:
     service: "helidon-full-http"
-    protocol: "https"     # JAEGER_ENDPOINT (if not udp, http is expected and endpoint is filled)
-    host: "192.168.1.3"   # JAEGER_ENDPOINT
-    port: 14240           # JAEGER_ENDPOINT
-    path: "/api/traces/mine"   # JAEGER_ENDPOINT
-    token: "token"        # JAEGER_AUTH_TOKEN
-    # Either token or username/password
-    #username:  "user"     # JAEGER_USER
-    #password: "pass"      # JAEGER_PASSWORD
-    propagation: "jaeger" # JAEGER_PROPAGATION either "jaeger" or "b3"
-    log-spans: false      # JAEGER_REPORTER_LOG_SPANS
-    max-queue-size: 42    # JAEGER_REPORTER_MAX_QUEUE_SIZE
-    flush-interval-ms: 10001 # JAEGER_REPORTER_FLUSH_INTERVAL
-    sampler-type: "remote"# JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
+    host: "localhost"     # JAEGER_ENDPOINT
+    port: 14250           # JAEGER_ENDPOINT
+    sampler-type: "ratio" # JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
     sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
-    sampler-manager: "localhost:47877" # JAEGER_SAMPLER_MANAGER_HOST_PORT
-    tags:
-      tag1: "tag1-value"  # JAEGER_TAGS
-      tag2: "tag2-value"  # JAEGER_TAGS
-    boolean-tags:
-      tag3: true          # JAEGER_TAGS
-      tag4: false         # JAEGER_TAGS
-    int-tags:
-      tag5: 145           # JAEGER_TAGS
-      tag6: 741           # JAEGER_TAGS]]></value>
+]]></value>
                 <value if="${tracing.provider} == 'zipkin'"><![CDATA[
 tracing:
   zipkin:
@@ -68,6 +55,13 @@ tracing:
     int-tags:
       tag5: 145
       tag6: 741]]></value>
+            </list>
+            <list key="config-test">
+                <value><![CDATA[
+tracing:
+  service: "testing-service"
+  global: false
+                ]]></value>
             </list>
         </model>
     </output>
