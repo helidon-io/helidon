@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,35 @@
 
 package io.helidon.microprofile.tyrus;
 
-import java.net.URI;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static jakarta.ws.rs.client.Entity.text;
 import static org.hamcrest.CoreMatchers.is;
 
-@HelidonTest
-@AddBean(EchoEndpoint.class)
-@AddBean(EchoEndpointRestTest.EchoResource.class)
-class EchoEndpointRestTest extends EchoEndpointBaseTest {
+/**
+ * A test that mixes Websocket endpoints and REST resources in the same
+ * application.
+ */
+@AddBean(WebSocketRestEndpointTest.EchoResource.class)
+public class WebSocketRestEndpointTest extends WebSocketBaseTest {
 
     @Test
-    public void testEchoRest() throws Exception {
-        // Test REST endpoint
-        String restUri = "http://localhost:" + serverPort() + "/echoRest";
-        Client restClient = ClientBuilder.newClient();
-        String echo = restClient.target(restUri)
+    public void testEchoRest() {
+        String echo = target()
+                .path("echoRest")
                 .request("text/plain")
                 .post(text("echo"), String.class);
         MatcherAssert.assertThat(echo, is("echo"));
-
-        // Test WS endpoint
-        String echoUri = "ws://localhost:" + serverPort() + "/echoAnnot";
-        EchoClient echoClient = new EchoClient(URI.create(echoUri));
-        echoClient.echo("hi", "how are you?");
     }
 
     @Path("/echoRest")
     public static class EchoResource {
-
         @POST
         @Produces("text/plain")
         @Consumes("text/plain")
