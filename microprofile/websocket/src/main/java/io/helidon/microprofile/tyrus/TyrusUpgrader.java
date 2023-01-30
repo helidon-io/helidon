@@ -66,7 +66,7 @@ public class TyrusUpgrader extends WsUpgrader {
         super(origins);
         TyrusCdiExtension extension = CDI.current().select(TyrusCdiExtension.class).get();
         Objects.requireNonNull(extension);
-        this.tyrusRouting = extension.tyrusRouting();       // TODO which port?
+        this.tyrusRouting = extension.tyrusRouting();
         TyrusServerContainer tyrusServerContainer = initializeTyrus();
         this.engine = tyrusServerContainer.getWebSocketEngine();
     }
