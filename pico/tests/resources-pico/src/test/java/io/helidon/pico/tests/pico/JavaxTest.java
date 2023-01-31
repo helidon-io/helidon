@@ -17,12 +17,14 @@
 package io.helidon.pico.tests.pico;
 
 import io.helidon.config.Config;
+import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Singleton;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -66,9 +69,9 @@ class JavaxTest {
     void applicationScopeToSingletonScopeTranslation() {
         ServiceProvider<AnApplicationScopedService> sp = services.lookupFirst(AnApplicationScopedService.class);
         assertThat(sp.toString(),
-                   equalTo("AnApplicationScopedService$$picoActivator:io.helidon.pico.testsubjects.ext.unsupported.AnApplicationScopedService:INIT"));
-        assertThat(sp.serviceInfo().qualifiers().toString(),
-                   equalTo("[DefaultQualifierAndValue(typeName=jakarta.enterprise.inject.Default)]"));
+                   equalTo("AnApplicationScopedService:INIT"));
+        assertThat(sp.serviceInfo().qualifiers(),
+                   contains(DefaultQualifierAndValue.create(Default.class)));
         assertThat(sp.serviceInfo().scopeTypeNames(),
                    containsInAnyOrder(Singleton.class.getName(), ApplicationScoped.class.getName()));
     }

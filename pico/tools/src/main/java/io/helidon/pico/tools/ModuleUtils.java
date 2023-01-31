@@ -120,11 +120,12 @@ public class ModuleUtils {
         if (moduleName == null) {
             moduleName = (defaultName == null) ? ModuleInfoDescriptor.DEFAULT_MODULE_NAME : defaultName;
         }
-        return (typeSuffix == null) ? moduleName : moduleName + normalizedModuleNameTypeSuffix(typeSuffix);
+        String suffix = normalizedModuleNameTypeSuffix(typeSuffix);
+        return (typeSuffix == null || moduleName.endsWith(suffix)) ? moduleName : moduleName + suffix;
     }
 
     /**
-     * Returns the module's {@link io.helidon.pico.Named} name.
+     * Returns the module's name.
      *
      * @param typeSuffix the type suffix.
      * @return the module name suffix
@@ -192,23 +193,37 @@ public class ModuleUtils {
         Objects.requireNonNull(basePath);
         Objects.requireNonNull(sourcePath);
         // if we found a module-info in the source path, then that has to be the module to use
-        Set<Path> moduleInfoPaths = findFile(sourcePath, ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
+        Set<Path> moduleInfoPaths = findFile(sourcePath, REAL_MODULE_INFO_JAVA_NAME);
         if (1 == moduleInfoPaths.size()) {
-            return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths);
+            return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths, REAL_MODULE_INFO_JAVA_NAME);
         }
 
         // if we did not find it, then there is a chance we are in the test directory; try to infer the module name
+        String suffix = inferSourceOrTest(basePath, sourcePath);
         if (typeSuffix != null) {
-            typeSuffix.set(inferSourceOrTest(basePath, sourcePath));
+            typeSuffix.set(suffix);
         }
         if (!basePath.equals(sourcePath)) {
             Path parent = sourcePath.getParent();
-            moduleInfoPaths = findFile(parent, basePath, ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
+            moduleInfoPaths = findFile(parent, basePath, REAL_MODULE_INFO_JAVA_NAME);
             if (1 == moduleInfoPaths.size()) {
                 // looks to be a potential test module, get the base name from the source tree...
-                return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths);
+                return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths, REAL_MODULE_INFO_JAVA_NAME);
             } else if (moduleInfoPaths.size() > 0) {
                 LOGGER.log(System.Logger.Level.WARNING, "ambiguous which module-info to select: " + moduleInfoPaths);
+            }
+        }
+
+        // if we get to here then there was no "real" module-info file found anywhere in the target build directories
+        // plan b: look for the pico generated files to infer the name
+        Path parent = sourcePath.getParent();
+        if (parent != null) {
+            String fileName = String.valueOf(sourcePath.getFileName());
+            Path scratch = parent.resolve(PicoServicesConfig.NAME).resolve(fileName);
+            moduleInfoPaths = findFile(scratch, scratch, PICO_MODULE_INFO_JAVA_NAME);
+            if (1 == moduleInfoPaths.size()) {
+                // looks to be a potential test module, get the base name from the source tree...
+                return finishModuleInfoDescriptor(moduleInfoPath, srcPath, moduleInfoPaths, PICO_MODULE_INFO_JAVA_NAME);
             }
         }
 
@@ -218,9 +233,9 @@ public class ModuleUtils {
     private static Optional<ModuleInfoDescriptor> finishModuleInfoDescriptor(
             AtomicReference<File> moduleInfoPath,
             AtomicReference<File> srcPath,
-            Set<Path> moduleInfoPaths) {
-        File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(),
-                                       ModuleUtils.REAL_MODULE_INFO_JAVA_NAME);
+            Set<Path> moduleInfoPaths,
+            String moduleInfoName) {
+        File moduleInfoFile = new File(first(moduleInfoPaths, false).toFile(), moduleInfoName);
         if (moduleInfoPath != null) {
             moduleInfoPath.set(moduleInfoFile);
         }

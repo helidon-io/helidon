@@ -18,14 +18,14 @@ package io.helidon.pico.tests.pico.tbox.impl;
 
 import java.util.Optional;
 
-import io.helidon.pico.Named;
+import io.helidon.pico.OptNamed;
 import io.helidon.pico.tests.pico.tbox.Awl;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
-public class AwlImpl implements Awl, Named {
+public class AwlImpl implements Awl, OptNamed {
 
     @Inject
     AwlImpl() {

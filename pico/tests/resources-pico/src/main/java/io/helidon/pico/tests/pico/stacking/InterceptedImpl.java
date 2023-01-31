@@ -16,7 +16,6 @@
 
 package io.helidon.pico.tests.pico.stacking;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
@@ -28,7 +27,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT)
+@Weight(Weighted.DEFAULT_WEIGHT + 1)
 //@MyCompileTimeInheritableTestQualifier(value = "InterceptedImpl")
 @RunLevel(1)
 @Named("InterceptedImpl")
@@ -51,7 +50,7 @@ public class InterceptedImpl implements Intercepted {
 //    @MyCompileTimeInheritableTestQualifier(value = "InterceptedImpl method", extendedValue = "ev derived method")
     public String sayHello(
             String arg) {
-        return getClass().getSimpleName() + ":" + (Objects.nonNull(inner) ? inner.sayHello(arg) : arg);
+        return getClass().getSimpleName() + ":" + (inner != null ? inner.sayHello(arg) : arg);
     }
 
 }

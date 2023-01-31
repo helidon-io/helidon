@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Module;
+import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
@@ -193,16 +194,36 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return Objects.requireNonNull(packageName);
     }
 
+    static boolean isUnnamed(
+            String moduleName) {
+        return !hasValue(moduleName)
+                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
+                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME + "/" + ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
+    }
+
+    static PicoException noModuleFoundError() {
+        return new PicoException("unnamed to determine the name for the current module - was APT run?");
+    }
+
+    static PicoException noModuleFoundError(
+            String moduleName) {
+        return new PicoException("no pico module named '" + moduleName + "' found in the current module - was APT run?");
+    }
+
     String getThisModuleName() {
-        return ModuleUtils
+        String moduleName = ModuleUtils
                 .toSuggestedModuleName(Paths.get("."),
                                        Path.of(getProject().getBuild().getSourceDirectory()), true).orElseThrow();
+        if (isUnnamed(moduleName)) {
+            throw noModuleFoundError();
+        }
+        return moduleName;
     }
 
     ServiceProvider<Module> getThisModule(
             String name,
             Services services) {
-        return services.lookupFirst(Module.class, name, false).orElseThrow();
+        return services.lookupFirst(Module.class, name, false).orElseThrow(() -> noModuleFoundError(name));
     }
 
     String getClassPrefixName() {
@@ -376,9 +397,9 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .throwIfError(isFailOnError())
                     .generator(getClass().getName())
                     .templateName(getTemplateName());
-            if (Utils.hasValue(moduleName)) {
+            if (hasValue(moduleName)) {
                 reqBuilder.moduleName(moduleName);
-            } else if (Utils.hasValue(moduleInfoPath) && !moduleInfoPath.startsWith(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)) {
+            } else if (!isUnnamed(moduleInfoModuleName)) {
                 reqBuilder.moduleName(moduleInfoModuleName);
             }
             ApplicationCreatorRequest req = reqBuilder.build();

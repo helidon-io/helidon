@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.pico.DefaultContextualServiceQuery;
+import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InjectionPointProvider;
 import io.helidon.pico.ServiceProvider;
@@ -130,7 +131,11 @@ public class HandSaw extends AbstractSaw {
         verifyInjected(setterInjectedAllProviderListInSubClass, getClass() +
                  ".setAllBlades(List<AbstractBlade> blades)", setterInjectedAllProviderListInSubClassInjectedCount, 1, ServiceProvider.class);
         List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.get(0)
-                .list(DefaultContextualServiceQuery.builder().build());
+                .list(DefaultContextualServiceQuery.builder()
+                              .serviceInfoCriteria(DefaultServiceInfoCriteria.builder()
+                                                           .addContractImplemented(AbstractBlade.class.getName())
+                                                           .build())
+                              .build());
         verifyInjected(blades, getClass() +
                 "<all blades>", null, 3, AbstractBlade.class);
 

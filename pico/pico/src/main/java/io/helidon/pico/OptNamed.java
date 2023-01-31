@@ -19,11 +19,11 @@ package io.helidon.pico;
 import java.util.Optional;
 
 /**
- * Provides a means to identify if the instance is named.
+ * Provides a means to identify if the instance is optionally named.
  *
  * @see jakarta.inject.Named
  */
-public interface Named {
+public interface OptNamed {
 
     /**
      * The optional name for this instance.

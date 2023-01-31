@@ -24,6 +24,7 @@ import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
+import io.helidon.pico.types.DefaultTypeName;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,17 +71,15 @@ class InterceptorStackingTest {
 
         List<String> injections = allIntercepted.stream().map(sp -> {
             Intercepted inner = sp.get().getInner();
-            return sp.serviceInfo().serviceTypeName() + " injected with "
-                    + (inner == null ? null : inner.getClass());
+            return DefaultTypeName.createFromTypeName(sp.serviceInfo().serviceTypeName()).className() + " injected with "
+                    + (inner == null ? null : inner.getClass().getSimpleName());
         }).collect(Collectors.toList());
         // order matters here
         assertThat(injections,
-                   contains("io.helidon.pico.testsubjects.ext.stacking.MostOuterInterceptedImpl injected with class io.helidon"
-                        + ".pico.testsubjects.ext.stacking.OuterInterceptedImpl, io.helidon.pico.testsubjects.ext"
-                        + ".stacking.OuterInterceptedImpl injected with class io.helidon.pico.testsubjects.ext"
-                        + ".stacking.InterceptedImpl, io.helidon.pico.testsubjects.ext.stacking.InterceptedImpl "
-                        + "injected with null, io.helidon.pico.testsubjects.ext.tbox.TestingSingleton injected with "
-                        + "class io.helidon.pico.testsubjects.ext.stacking.MostOuterInterceptedImpl]"));
+                   contains("MostOuterInterceptedImpl injected with OuterInterceptedImpl",
+                            "OuterInterceptedImpl injected with InterceptedImpl",
+                            "InterceptedImpl injected with null",
+                            "TestingSingleton injected with MostOuterInterceptedImpl"));
         assertThat(services.lookup(Intercepted.class).get().sayHello("arg"),
                    equalTo("MostOuterInterceptedImpl:OuterInterceptedImpl:InterceptedImpl:arg"));
     }

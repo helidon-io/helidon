@@ -29,9 +29,8 @@ import io.helidon.pico.DefaultBootstrap;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.PicoServicesHolder;
-import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.Services;
+import io.helidon.pico.services.DefaultServiceBinder;
 
 /**
  * Supporting helper utilities unit-testing Pico services.
@@ -52,17 +51,15 @@ public class PicoTestingSupport {
     /**
      * Provides a means to bind a service provider into the {@link io.helidon.pico.Services} registry.
      *
-     * @param services the services registry to bind into
+     * @param picoServices the pico services instance to bind into
      * @param serviceProvider the service provider to bind
+     * @see io.helidon.pico.ServiceBinder
      */
     public static void bind(
-            Services services,
+            PicoServices picoServices,
             ServiceProvider<?> serviceProvider) {
-        if (!(services instanceof ServiceBinder)) {
-            throw new IllegalStateException("unable to find into the service registry - is this a testableServices() registry?");
-        }
-
-        ((ServiceBinder) services).bind(serviceProvider);
+        DefaultServiceBinder binder = DefaultServiceBinder.create(picoServices, PicoTestingSupport.class.getSimpleName());
+        binder.bind(serviceProvider);
     }
 
     /**

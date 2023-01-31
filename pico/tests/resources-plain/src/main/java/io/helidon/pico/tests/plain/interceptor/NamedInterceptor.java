@@ -26,7 +26,6 @@ import io.helidon.pico.types.TypedElementName;
 
 @SuppressWarnings({"ALL", "unchecked"})
 public class NamedInterceptor implements Interceptor {
-
     public static final AtomicInteger ctorCount = new AtomicInteger();
 
     public NamedInterceptor() {
@@ -34,11 +33,13 @@ public class NamedInterceptor implements Interceptor {
     }
 
     @Override
-    public <V> V proceed(InvocationContext ctx, Chain<V> chain) {
+    public <V> V proceed(
+            InvocationContext ctx,
+            Chain<V> chain) {
         assert (Objects.nonNull(ctx));
 
         TypedElementName methodInfo = ctx.elementInfo();
-        if (Objects.nonNull(methodInfo) && methodInfo.typeName().equals(DefaultTypeName.create(long.class))) {
+        if (methodInfo != null && methodInfo.typeName().equals(DefaultTypeName.create(long.class))) {
             V result = chain.proceed();
             long longResult = (Long) result;
             Object interceptedResult = (longResult * 2);

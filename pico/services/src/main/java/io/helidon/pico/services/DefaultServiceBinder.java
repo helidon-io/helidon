@@ -19,26 +19,42 @@ package io.helidon.pico.services;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceBinder;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.ServiceProviderBindable;
+import io.helidon.pico.Services;
 
 /**
  * The default implementation for {@link ServiceBinder}.
  */
 public class DefaultServiceBinder implements ServiceBinder {
     private final PicoServices picoServices;
-    private final DefaultServices serviceRegistry;
+    private final ServiceBinder serviceRegistry;
     private final String moduleName;
 
-    DefaultServiceBinder(
+    private DefaultServiceBinder(
             PicoServices picoServices,
-            DefaultServices serviceRegistry,
             String moduleName) {
         this.picoServices = picoServices;
-        this.serviceRegistry = serviceRegistry;
+        this.serviceRegistry = (ServiceBinder) picoServices.services();
         this.moduleName = moduleName;
+    }
+
+    /**
+     * Creates an instance of the default services binder.
+     *
+     * @param picoServices the pico services instance
+     * @param moduleName the module name
+     * @return the newly created service binder
+     */
+    public static DefaultServiceBinder create(
+            PicoServices picoServices,
+            String moduleName) {
+        Objects.requireNonNull(picoServices);
+        Objects.requireNonNull(moduleName);
+        return new DefaultServiceBinder(picoServices, moduleName);
     }
 
     @Override
@@ -50,6 +66,15 @@ public class DefaultServiceBinder implements ServiceBinder {
 
         if (moduleName != null) {
             bindableSp.ifPresent(it -> it.moduleName(moduleName));
+        }
+
+        Services services = picoServices.services();
+        if (services instanceof DefaultServices && sp instanceof ServiceProviderBindable) {
+            Phase currentPhase = ((DefaultServices) services).currentPhase();
+            if (currentPhase.ordinal() >= Phase.SERVICES_READY.ordinal()) {
+                // deferred binding (e.g., to allow PicoTestSupport to programmatically register/bind service providers
+                ((ServiceProviderBindable) sp).picoServices(Optional.of(picoServices));
+            }
         }
 
         serviceRegistry.bind(sp);

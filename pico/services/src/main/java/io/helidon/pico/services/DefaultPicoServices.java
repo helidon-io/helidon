@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.pico.ActivationLog;
 import io.helidon.pico.ActivationLogEntry;
+import io.helidon.pico.ActivationLogQuery;
 import io.helidon.pico.ActivationPhaseReceiver;
 import io.helidon.pico.ActivationResult;
 import io.helidon.pico.ActivationStatus;
@@ -44,6 +46,7 @@ import io.helidon.pico.Application;
 import io.helidon.pico.Bootstrap;
 import io.helidon.pico.DefaultActivationLogEntry;
 import io.helidon.pico.DefaultActivationResult;
+import io.helidon.pico.DefaultMetrics;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Event;
 import io.helidon.pico.Injector;
@@ -72,6 +75,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
     private final PicoServicesConfig cfg;
     private final boolean isGlobal;
     private final DefaultActivationLog log;
+    private final State state = State.create(Phase.INIT);
     private CountDownLatch initializedServices = new CountDownLatch(1);
 
     /**
@@ -113,14 +117,19 @@ class DefaultPicoServices implements PicoServices, Resetable {
 
     @Override
     public Optional<Metrics> metrics() {
-        return Optional.of(services.get().metrics());
+        DefaultServices thisServices = services.get();
+        if (thisServices == null) {
+            // never has been any lookup yet
+            return Optional.of(DefaultMetrics.builder().build());
+        }
+        return Optional.of(thisServices.metrics());
     }
 
     @Override
     public Optional<ServiceBinder> createServiceBinder(
             io.helidon.pico.Module module) {
         DefaultServices.assertPermitsDynamic(cfg);
-        return Optional.of(new DefaultServiceBinder(this, services(), module.named().orElse(null)));
+        return Optional.of(DefaultServiceBinder.create(this, module.named().orElse(module.getClass().getName())));
     }
 
     @Override
@@ -131,30 +140,42 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 initializedServices.countDown();
             } catch (Throwable t) {
                 initializingServices.set(false);
+                state.lastError(t);
                 if (t instanceof PicoException) {
                     throw (PicoException) t;
                 } else {
                     throw new PicoException("failed to initialize: " + t.getMessage(), t);
                 }
+            } finally {
+                state.finished(true);
             }
         }
 
-        return services.get();
+        DefaultServices thisServices = services.get();
+        if (thisServices == null) {
+            throw new PicoException("must reset() after shutdown()");
+        }
+        return thisServices;
     }
 
     @Override
     public Optional<Map<String, ActivationResult>> shutdown() {
-        Map<String, ActivationResult> result = null;
+        Map<String, ActivationResult> result = Map.of();
         DefaultServices current = services.get();
-        if (services.compareAndSet(current, null)) {
+        if (services.compareAndSet(current, null) && current != null) {
+            State currentState = state.clone().currentPhase(Phase.PRE_DESTROYING);
             log("started shutdown");
-            result = doShutdown();
+            result = doShutdown(current, currentState);
             log("finished shutdown");
         }
         return Optional.ofNullable(result);
     }
 
-    private Map<String, ActivationResult> doShutdown() {
+    private Map<String, ActivationResult> doShutdown(
+            DefaultServices services,
+            State state) {
+        long start = System.currentTimeMillis();
+
         ThreadFactory threadFactory = r -> {
             Thread thread = new Thread(r);
             thread.setDaemon(false);
@@ -163,16 +184,21 @@ class DefaultPicoServices implements PicoServices, Resetable {
             return thread;
         };
 
-        Shutdown shutdown = new Shutdown();
+        Shutdown shutdown = new Shutdown(services, state);
         ExecutorService es = Executors.newSingleThreadExecutor(threadFactory);
+        long finish;
         try {
             return es.submit(shutdown)
                     .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
-            errorLog("error during shutdown", t);
+            finish = System.currentTimeMillis();
+            errorLog("error during shutdown (elapsed = " + (finish - start) + " ms)", t);
             throw new PicoException("error during shutdown", t);
         } finally {
             es.shutdown();
+            state.finished(true);
+            finish = System.currentTimeMillis();
+            log("finished shutdown (elapsed = " + (finish - start) + " ms)");
         }
     }
 
@@ -181,36 +207,46 @@ class DefaultPicoServices implements PicoServices, Resetable {
      */
     private class Shutdown implements Callable<Map<String, ActivationResult>> {
         private final DefaultServices services;
+        private final State state;
         private final ActivationLog log;
         private final Injector injector;
         private final InjectorOptions opts = InjectorOptions.DEFAULT.get();
         private final Map<String, ActivationResult> map = new LinkedHashMap<>();
 
-        Shutdown() {
-            this.services = services();
+        Shutdown(
+                DefaultServices services,
+                State state) {
+            this.services = Objects.requireNonNull(services);
+            this.state = Objects.requireNonNull(state);
             this.injector = injector().orElseThrow();
             this.log = activationLog().orElseThrow();
         }
 
         @Override
         public Map<String, ActivationResult> call() {
-            List<ActivationLogEntry> fullyActivationLog = log.toQuery().orElseThrow().fullActivationLog();
-            if (!fullyActivationLog.isEmpty()) {
-                LinkedHashSet<ServiceProvider<?>> serviceProviderActivations = new LinkedHashSet<>();
+            state.currentPhase(Phase.DESTROYED);
 
-                Collections.reverse(fullyActivationLog);
-                fullyActivationLog.stream()
-                        .map(ActivationLogEntry::serviceProvider)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
-                        .forEach(serviceProviderActivations::add);
+            ActivationLogQuery query = log.toQuery().orElse(null);
+            if (query != null) {
+                // we can lean on the log entries in order to shut down in reverse chronological order
+                List<ActivationLogEntry> fullyActivationLog = query.fullActivationLog();
+                if (!fullyActivationLog.isEmpty()) {
+                    LinkedHashSet<ServiceProvider<?>> serviceProviderActivations = new LinkedHashSet<>();
 
-                // prepare for the shutdown log event sequence
-                log.toQuery().ifPresent(it -> it.reset(false));
+                    Collections.reverse(fullyActivationLog);
+                    fullyActivationLog.stream()
+                            .map(ActivationLogEntry::serviceProvider)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
+                            .forEach(serviceProviderActivations::add);
 
-                // shutdown using the reverse chronological ordering in the log for starters
-                doShutdown(serviceProviderActivations);
+                    // prepare for the shutdown log event sequence
+                    log.toQuery().ifPresent(it -> it.reset(false));
+
+                    // shutdown using the reverse chronological ordering in the log for starters
+                    doShutdown(serviceProviderActivations);
+                }
             }
 
             // next get all services that are beyond INIT state, and sort by runlevel order, and shut those down also
@@ -277,6 +313,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 services.set(new DefaultServices(cfg));
             }
             initializingServices.set(false);
+            state.reset(true);
         }
 
         return result;
@@ -287,43 +324,58 @@ class DefaultPicoServices implements PicoServices, Resetable {
             services.set(new DefaultServices(cfg));
         }
 
+        DefaultServices thisServices = services.get();
+        thisServices.state(state);
+        state.currentPhase(Phase.ACTIVATION_STARTING);
+
         if (isGlobal) {
             // iterate over all modules, binding to each one's set of services, but with NO activations
             List<io.helidon.pico.Module> modules = findModules(true);
             try {
                 isBinding.set(true);
-                bindModules(services.get(), modules);
+                bindModules(thisServices, modules);
             } finally {
                 isBinding.set(false);
             }
         }
 
+        state.currentPhase(Phase.GATHERING_DEPENDENCIES);
+
         if (isGlobal) {
             // look for the literal injection plan
             // typically only be one Application in non-testing runtimes
             List<Application> apps = findApplications(true);
-            bindApplications(services.get(), apps);
+            bindApplications(thisServices, apps);
         }
 
+        state.currentPhase(Phase.POST_BIND_ALL_MODULES);
+
         if (isGlobal) {
-            services.get().allServiceProviders(false).stream()
+            // only the global services registry gets eventing (no particular reason though)
+            thisServices.allServiceProviders(false).stream()
                     .filter(sp -> sp instanceof ActivationPhaseReceiver)
                     .map(sp -> (ActivationPhaseReceiver) sp)
                     .forEach(sp -> sp.onPhaseEvent(Event.STARTING, Phase.POST_BIND_ALL_MODULES));
         }
 
+        state.currentPhase(Phase.FINAL_RESOLVE);
+
         if (isGlobal || cfg.supportsCompileTime()) {
-            services.get().allServiceProviders(false).stream()
+            thisServices.allServiceProviders(false).stream()
                     .filter(sp -> sp instanceof ActivationPhaseReceiver)
                     .map(sp -> (ActivationPhaseReceiver) sp)
                     .forEach(sp -> sp.onPhaseEvent(Event.STARTING, Phase.FINAL_RESOLVE));
         }
 
+        state.currentPhase(Phase.SERVICES_READY);
+
         // notify interested service providers of "readiness"...
-        services.get().allServiceProviders(false).stream()
+        thisServices.allServiceProviders(false).stream()
                 .filter(sp -> sp instanceof ActivationPhaseReceiver)
                 .map(sp -> (ActivationPhaseReceiver) sp)
                 .forEach(sp -> sp.onPhaseEvent(Event.STARTING, Phase.SERVICES_READY));
+
+        state.finished(true);
     }
 
     private List<Application> findApplications(

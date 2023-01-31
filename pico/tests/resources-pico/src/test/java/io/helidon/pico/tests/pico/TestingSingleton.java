@@ -19,8 +19,6 @@ package io.helidon.pico.tests.pico;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.spi.Resetable;
 import io.helidon.pico.tests.pico.stacking.Intercepted;
@@ -31,6 +29,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
@@ -39,12 +38,11 @@ import jakarta.inject.Singleton;
 @RunLevel(RunLevel.STARTUP)
 @Singleton
 @Named("testing")
-@Weight(Weighted.DEFAULT_WEIGHT - 1000)
 public class TestingSingleton extends InterceptedImpl implements Resetable {
-    static AtomicInteger postConstructCount = new AtomicInteger();
-    static AtomicInteger preDestroyCount = new AtomicInteger();
+    final static AtomicInteger postConstructCount = new AtomicInteger();
+    final static AtomicInteger preDestroyCount = new AtomicInteger();
 
-    @Inject Awl awl;
+    @Inject Provider<Awl> awlProvider;
 
     @Inject
     TestingSingleton(

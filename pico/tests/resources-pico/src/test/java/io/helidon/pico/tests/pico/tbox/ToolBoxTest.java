@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.pico.ActivationResult;
-import io.helidon.pico.ActivationStatus;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Module;
+import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.RunLevel;
 import io.helidon.pico.ServiceProvider;
@@ -56,8 +56,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Expectation here is that the annotation processor ran, and we can use standard injection and pico-di registry services, etc.
@@ -295,39 +296,49 @@ class ToolBoxTest {
         assertThat(TestingSingleton.postConstructCount(), equalTo(0));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
 
+        TestingSingleton testingSingletonFromLookup = picoServices.services().lookup(TestingSingleton.class).get();
+        assertThat(testingSingletonFromLookup, notNullValue());
+        assertThat(TestingSingleton.postConstructCount(), equalTo(1));
+        assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
+
         Map<String, ActivationResult> map = picoServices.shutdown().orElseThrow();
-        assertThat(map + " : expected 5 modules to be present", map.size(), equalTo(5));
-        map.entrySet().forEach((e) -> {
-            assertThat(e.getValue().serviceProvider().serviceInfo().contractsImplemented().contains(Module.class.getName()), is(true));
-        });
+        Map<String, String> report = map.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                                          e -> e.getValue().startingActivationPhase().toString()
+                                                  + "->" + e.getValue().finishingActivationPhase()));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picoApplication", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picoModule", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picotestApplication", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.picotestModule", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.MostOuterInterceptedImpl", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.OuterInterceptedImpl", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.stacking.InterceptedImpl", "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry("io.helidon.pico.tests.pico.TestingSingleton", "ACTIVE->DESTROYED"));
+        assertThat(report + " : expected 8 services to be present", report.size(), equalTo(8));
 
-        List<ServiceProvider<Intercepted>> allInterceptedAfter = services.lookupAll(Intercepted.class);
-        assertThat("should be empty until after reset", allInterceptedAfter.size(), equalTo(0));
-        List<ServiceProvider<Object>> allServices = services.lookupAll(DefaultServiceInfoCriteria.builder().build());
-        assertThat("should be empty until after reset", allServices.size(), equalTo(0));
+        assertThat(TestingSingleton.postConstructCount(), equalTo(1));
+        assertThat(TestingSingleton.preDestroyCount(), equalTo(1));
 
-        // reset everything
+        assertThat(picoServices.metrics().orElseThrow().lookupCount().orElse(0), equalTo(0));
+
+        PicoException e = assertThrows(PicoException.class, () -> picoServices.services());
+        assertThat(e.getMessage(), equalTo("must reset() after shutdown()"));
+
         tearDown();
-
-        allInterceptedAfter = services.lookupAll(Intercepted.class);
-
-        // things should look basically the same now
-        assertThat(allInterceptedAfter.toString(), equalTo("allInterceptedBefore"));
-
-        TestingSingleton singleton = Objects.requireNonNull(services.lookupFirst(TestingSingleton.class).get());
-        assertThat(1, equalTo(TestingSingleton.postConstructCount()));
-        assertThat(0, equalTo(TestingSingleton.preDestroyCount()));
+        setUp();
+        TestingSingleton testingSingletonFromLookup2 = picoServices.services().lookup(TestingSingleton.class).get();
+        assertThat(testingSingletonFromLookup2, not(testingSingletonFromLookup));
 
         map = picoServices.shutdown().orElseThrow();
-        // TODO:
-        assertTrue(map.size() > 1, map + " was expected to have just " + TestingSingleton.class);
-        assertTrue(map.get(TestingSingleton.class.getName()).finishingStatus().orElseThrow() == ActivationStatus.SUCCESS,
-                   map + " was expected to have just " + TestingSingleton.class);
-        assertThat(1, equalTo(TestingSingleton.postConstructCount()));
-        assertThat(1, equalTo(TestingSingleton.preDestroyCount()));
+        report = map.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                                          e2 -> e2.getValue().startingActivationPhase().toString()
+                                                  + "->" + e2.getValue().finishingActivationPhase()));
+        assertThat(report.toString(), report.size(), is(8));
 
+        tearDown();
         map = picoServices.shutdown().orElseThrow();
-        assertThat("nothing left to shutdown", map.size(), equalTo(0));
+        assertThat(map.toString(), map.size(), is(0));
     }
 
     @Test

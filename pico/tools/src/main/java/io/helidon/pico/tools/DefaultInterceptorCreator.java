@@ -852,7 +852,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                        .collect(Collectors.toList()));
             typedElementArgs = CommonUtils.toString(mi.parameterInfo().stream()
                                        .map((ei) -> "__" + mi.elementName() + "__" + ei.elementName())
-                                       .collect(Collectors.toList()), null, ",\n\t\t\t");
+                                       .collect(Collectors.toList()), null, ",\n\t\t\t\t\t");
         }
         boolean hasReturn = !mi.elementTypeName().equals(void.class.getName());
         builder.append(argDecls);
@@ -896,7 +896,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         builder.append("\t\t\t\t.interceptors(__").append(mi.elementName()).append("__interceptors)\n");
         builder.append("\t\t\t\t.elementInfo(__").append(mi.elementName()).append(")\n");
         if (hasArgs) {
-            builder.append("\t\t\t\t.elementArgInfo(new TypedElementName[]{" + typedElementArgs + "})\n");
+            builder.append("\t\t\t\t.elementArgInfo(new TypedElementName[] {" + typedElementArgs + "})\n");
             builder.append("\t\t\t\t.elementArgs(args)\n");
         }
         builder.append("\t\t\t/*.build()*/,\n");
@@ -941,7 +941,8 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
                                                                 (str) -> str.replace(".", "_"), null);
         }
 
-        String interceptedTriggerTypeNames() {
+        // note: this needs to stay as a public getXXX() method to support Mustache
+        public String getInterceptedTriggerTypeNames() {
             return interceptedTriggerTypeNames;
         }
     }

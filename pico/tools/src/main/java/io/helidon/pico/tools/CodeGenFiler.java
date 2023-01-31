@@ -189,8 +189,10 @@ public class CodeGenFiler {
         try {
             Path path = Path.of(f.toUri());
             Path parent = path.getParent();
-            this.targetOutputPath = parent.getParent();
-            this.scratchPathName = parent.getFileName().toString();
+            Path gparent = (parent == null) ? null : parent.getParent();
+            this.targetOutputPath = gparent;
+            Path scratchName = (parent == null) ? null : parent.getFileName();
+            this.scratchPathName = (scratchName == null) ? null : scratchName.toString();
         } catch (Exception e) {
             int debugMe = 0;
         }
@@ -257,7 +259,10 @@ public class CodeGenFiler {
                 Path originalPath = Path.of(f.toUri());
                 Path newPath = toScratchPath().resolve(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME);
                 if (originalPath.toFile().exists()) {
-                    Files.createDirectories(newPath.getParent());
+                    Path parent = newPath.getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
                     Files.move(originalPath, newPath);
                     return Optional.of(newPath);
                 } else {

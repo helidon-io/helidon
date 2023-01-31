@@ -140,14 +140,14 @@ public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.intercept
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<io.helidon.pico.tests.pico.interceptor.XImpl>) __provider : null;
         this.__serviceTypeName = DefaultTypeName.create(io.helidon.pico.tests.pico.interceptor.XImpl.class);
         List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno, jakarta_inject_Named);
-        this.__methodIA1__interceptors = mergeAndCollapse();
-        this.__methodIA2__interceptors = mergeAndCollapse();
-        this.__methodIB__interceptors = mergeAndCollapse();
-        this.__close__interceptors = mergeAndCollapse();
-        this.__methodX__interceptors = mergeAndCollapse();
-        this.__methodY__interceptors = mergeAndCollapse();
-        this.__methodZ__interceptors = mergeAndCollapse();
-        this.__throwRuntimeException__interceptors = mergeAndCollapse();
+        this.__methodIA1__interceptors = mergeAndCollapse(jakarta_inject_Named);
+        this.__methodIA2__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno, jakarta_inject_Named);
+        this.__methodIB__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno, jakarta_inject_Named);
+        this.__close__interceptors = mergeAndCollapse(io_helidon_pico_tests_plain_interceptor_InterceptorBasedAnno, jakarta_inject_Named);
+        this.__methodX__interceptors = mergeAndCollapse(jakarta_inject_Named);
+        this.__methodY__interceptors = mergeAndCollapse(jakarta_inject_Named);
+        this.__methodZ__interceptors = mergeAndCollapse(jakarta_inject_Named);
+        this.__throwRuntimeException__interceptors = mergeAndCollapse(jakarta_inject_Named);
 
         Supplier<io.helidon.pico.tests.pico.interceptor.XImpl> call = __provider::get;
         io.helidon.pico.tests.pico.interceptor.XImpl result = createInvokeAndSupply(
@@ -225,7 +225,7 @@ public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.intercept
 				.classAnnotations(__serviceLevelAnnotations)
 				.interceptors(__methodIB__interceptors)
 				.elementInfo(__methodIB)
-				.elementArgInfo(new TypedElementName[]{__methodIB__p1})
+				.elementArgInfo(new TypedElementName[] {__methodIB__p1})
 				.elementArgs(args)
 			/*.build()*/,
 			call);
@@ -272,9 +272,9 @@ public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.intercept
 				.classAnnotations(__serviceLevelAnnotations)
 				.interceptors(__methodX__interceptors)
 				.elementInfo(__methodX)
-				.elementArgInfo(new TypedElementName[]{__methodX__p1,
-			__methodX__p2,
-			__methodX__p3})
+				.elementArgInfo(new TypedElementName[] {__methodX__p1,
+					__methodX__p2,
+					__methodX__p3})
 				.elementArgs(args)
 			/*.build()*/,
 			call);

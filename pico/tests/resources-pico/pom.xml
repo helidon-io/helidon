@@ -32,6 +32,10 @@
     <name>Helidon Pico Test Pico Resources</name>
     <description>a jar that offers contracts and other artifacts and is a native Pico module (e.g., uses Pico APT)</description>
 
+    <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico</groupId>

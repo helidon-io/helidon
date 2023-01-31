@@ -28,7 +28,6 @@ import java.util.Optional;
  */
 public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable<AnnotationAndValue> {
     private final TypeName typeName;
-    private final String value;
     private final Map<String, String> values;
 
     /**
@@ -38,18 +37,23 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
      * @see #builder()
      */
     protected DefaultAnnotationAndValue(Builder b) {
+        LinkedHashMap<String, String> map = new LinkedHashMap<>(b.values);
+        if (b.value != null) {
+            String prev = map.put("value", b.value);
+            assert (prev == null || prev.equals(b.value));
+        }
         this.typeName = b.typeName;
-        this.value = b.value;
-        this.values = Map.copyOf(b.values);
+        this.values = Map.copyOf(map);
     }
 
     @Override
     public String toString() {
         String result = getClass().getSimpleName() + "(typeName=" + typeName();
-        if (values != null && !values.isEmpty()) {
+        Optional<String> value = value();
+        if (!values.isEmpty() && value.isEmpty()) {
             result += ", values=" + values();
-        } else if (value != null) {
-            result += ", value=" + value().orElse(null);
+        } else if (value.isPresent()) {
+            result += ", value=" + value.orElse(null);
         }
         return result + ")";
     }
@@ -67,15 +71,10 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
         if (!Objects.equals(typeName(), ((AnnotationAndValue) another).typeName())) {
             return false;
         }
-        if (Objects.nonNull(values) && (another instanceof DefaultAnnotationAndValue)
-                && Objects.equals(values(), ((DefaultAnnotationAndValue) another).values())) {
-            return true;
-        } else if (Objects.nonNull(values) && values.size() > 1) {
+        if (!Objects.equals(values, ((DefaultAnnotationAndValue) another).values())) {
             return false;
         }
-        String thisValue = value().orElse("");
-        String anotherValue = ((AnnotationAndValue) another).value().orElse("");
-        return thisValue.equals(anotherValue);
+        return true;
     }
 
     @Override
@@ -85,15 +84,12 @@ public class DefaultAnnotationAndValue implements AnnotationAndValue, Comparable
 
     @Override
     public Optional<String> value() {
-        if (Objects.nonNull(value)) {
-            return Optional.of(value);
-        }
         return value("value");
     }
 
     @Override
     public Optional<String> value(String name) {
-        return Objects.isNull(values) ? Optional.empty() : Optional.ofNullable(values.get(name));
+        return Optional.ofNullable(values.get(name));
     }
 
     @Override

@@ -36,6 +36,7 @@ import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.InjectionException;
 import io.helidon.pico.Intercepted;
 import io.helidon.pico.Metrics;
+import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
@@ -63,6 +64,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     private final AtomicInteger lookupCount = new AtomicInteger();
     private final AtomicInteger cacheLookupCount = new AtomicInteger();
     private final AtomicInteger cacheHitCount = new AtomicInteger();
+    private State stateWatchOnly; // we are watching and not mutating this state - owned by DefaultPicoServices
 
     /**
      * The constructor taking a configuration.
@@ -72,6 +74,15 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     DefaultServices(
             PicoServicesConfig cfg) {
         this.cfg = Objects.requireNonNull(cfg);
+    }
+
+    void state(
+            State state) {
+        this.stateWatchOnly = Objects.requireNonNull(state);
+    }
+
+    Phase currentPhase() {
+        return (stateWatchOnly == null) ? Phase.INIT : stateWatchOnly.currentPhase();
     }
 
     /**
@@ -323,7 +334,8 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
             PicoServices picoServices,
             DefaultServices services,
             String moduleName) {
-        return new DefaultServiceBinder(picoServices, services, moduleName);
+        assert (picoServices.services() == services);
+        return DefaultServiceBinder.create(picoServices, moduleName);
     }
 
     void bind(

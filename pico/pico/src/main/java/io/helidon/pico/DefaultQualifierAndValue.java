@@ -25,6 +25,8 @@ import io.helidon.pico.types.DefaultAnnotationAndValue;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
+import jakarta.inject.Named;
+
 /**
  * Describes a {@link jakarta.inject.Qualifier} type annotation associated with a service being provided or dependant upon.
  * In Pico these are generally determined at compile time to avoid any use of reflection at runtime.

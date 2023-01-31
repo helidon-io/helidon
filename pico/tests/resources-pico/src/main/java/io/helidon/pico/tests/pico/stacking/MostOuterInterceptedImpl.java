@@ -25,7 +25,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT + 2)
+@Weight(Weighted.DEFAULT_WEIGHT + 3)
 public class MostOuterInterceptedImpl extends OuterInterceptedImpl {
 
     @Inject

@@ -29,7 +29,7 @@ import java.util.Optional;
  * @see Application
  */
 @Contract
-public interface Module extends Named {
+public interface Module extends OptNamed {
 
     /**
      * Called by the provider implementation at bootstrapping time to bind all services / service providers to the

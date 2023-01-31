@@ -59,7 +59,7 @@ public class BasicSingletonServiceProvider<T> extends AbstractServiceProvider<T>
      * @param <T> the class of the service type
      *
      * @return the service provider capable of being bound to the services registry
-     * @see io.helidon.pico.testing.PicoTestingSupport#bind(io.helidon.pico.Services, io.helidon.pico.ServiceProvider)
+     * @see io.helidon.pico.testing.PicoTestingSupport#bind(io.helidon.pico.PicoServices, io.helidon.pico.ServiceProvider)
      */
     public static <T> BasicSingletonServiceProvider<T> create(
             Class<T> serviceType,

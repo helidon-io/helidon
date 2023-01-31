@@ -17,13 +17,13 @@
 package io.helidon.pico.tests.pico.tbox;
 
 import io.helidon.pico.Contract;
-import io.helidon.pico.Named;
+import io.helidon.pico.OptNamed;
 
 /**
  * Pico Testing.
  */
 @Contract
-public interface Hammer extends Tool, Named {
+public interface Hammer extends Tool, OptNamed {
 
     @Override
     default String name() {

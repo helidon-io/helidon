@@ -40,7 +40,7 @@ module io.helidon.pico.tests.pico {
     uses io.helidon.pico.tests.plain.interceptor.IA;
     uses io.helidon.pico.tests.plain.interceptor.IB;
     uses io.helidon.pico.InjectionPointProvider;
-    uses io.helidon.pico.Named;
+    uses io.helidon.pico.OptNamed;
     // pico contract usage - Generated(value = "io.helidon.pico.tools.DefaultActivatorCreator", comments = "version=1")
     exports io.helidon.pico.tests.pico.provider;
 }

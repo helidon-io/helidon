@@ -16,11 +16,11 @@
 
 package io.helidon.pico.tests.pico.tbox;
 
-import io.helidon.pico.Named;
+import io.helidon.pico.OptNamed;
 
 import jakarta.inject.Inject;
 
-public abstract class AbstractBlade implements Named {
+public abstract class AbstractBlade implements OptNamed {
 
     // intended to be a void injection point
     @Inject

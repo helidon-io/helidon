@@ -26,19 +26,18 @@ import io.helidon.config.ConfigSources;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.Interceptor;
-import io.helidon.pico.Named;
 import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.BasicSingletonServiceProvider;
-import io.helidon.pico.testing.PicoTestingSupport;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.NamedInterceptor;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
+import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +46,8 @@ import static io.helidon.pico.PicoServicesConfig.KEY_PERMITS_DYNAMIC;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_APPLICATIONS;
 import static io.helidon.pico.PicoServicesConfig.KEY_USES_COMPILE_TIME_MODULES;
 import static io.helidon.pico.PicoServicesConfig.NAME;
+import static io.helidon.pico.testing.PicoTestingSupport.basicTesableConfig;
+import static io.helidon.pico.testing.PicoTestingSupport.bind;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static io.helidon.pico.testing.PicoTestingSupport.toDescriptions;
@@ -60,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ComplexInterceptorTest {
 
-    Config config = PicoTestingSupport.basicTesableConfig();
+    Config config = basicTesableConfig();
     PicoServices picoServices;
     Services services;
 
@@ -125,23 +126,22 @@ class ComplexInterceptorTest {
                 ConfigSources.create(
                         Map.of(NAME + "." + KEY_PERMITS_DYNAMIC, "true",
                                NAME + "." + KEY_USES_COMPILE_TIME_APPLICATIONS, "false",
-                                    NAME + "." + KEY_USES_COMPILE_TIME_MODULES, "false"),
+                               NAME + "." + KEY_USES_COMPILE_TIME_MODULES, "true"),
                         "config-1"));
         tearDown();
         setUp(config);
-        PicoTestingSupport.bind(services, BasicSingletonServiceProvider
+        bind(picoServices, BasicSingletonServiceProvider
                               .create(NamedInterceptor.class,
                                       DefaultServiceInfo.builder()
                                               .serviceTypeName(NamedInterceptor.class.getName())
                                               .addQualifier(DefaultQualifierAndValue.createNamed(Named.class.getName()))
                                               .addExternalContractsImplemented(Interceptor.class.getName())
                                               .build()));
-
         assertThat(NamedInterceptor.ctorCount.get(), equalTo(0));
 
         List<ServiceProvider<IA>> iaProviders = picoServices.services().lookupAll(IA.class);
         assertThat(toDescriptions(iaProviders),
-                   contains("XImpl$$picoInterceptor$$picoActivator:INIT", "XImpl$$picoActivator:INIT"));
+                   contains("XImpl$$picoInterceptor:INIT", "XImpl:INIT"));
 
         List<ServiceProvider<IB>> ibProviders = services.lookupAll(IB.class);
         assertThat(iaProviders, equalTo(ibProviders));
@@ -162,8 +162,7 @@ class ComplexInterceptorTest {
         assertThat(xIntercepted.methodZ(), equalTo("methodZ"));
         PicoException pe = assertThrows(PicoException.class, xIntercepted::close);
         assertThat(pe.getMessage(),
-                   equalTo("forced: service provider: XImpl$$picoActivator:io.helidon.pico.testsubjects.ext.interceptor"
-                                   + ".XImpl:ACTIVE"));
+                   equalTo("forced: service provider: XImpl:ACTIVE"));
         RuntimeException re = assertThrows(RuntimeException.class, xIntercepted::throwRuntimeException);
         assertThat(re.getMessage(), equalTo("forced"));
 

@@ -33,9 +33,9 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
 
     @Override
     public Binder bindTo(
-            ServiceProvider<?> untrustedServiceProvider) {
+            ServiceProvider<?> untrustedSp) {
         // don't trust what we get, but instead lookup the service provider that we carry in our services registry
-        ServiceProvider<?> serviceProvider = services.serviceProviderFor(untrustedServiceProvider.serviceInfo().serviceTypeName());
+        ServiceProvider<?> serviceProvider = services.serviceProviderFor(untrustedSp.serviceInfo().serviceTypeName());
         Optional<ServiceProviderBindable<?>> bindable = DefaultServiceBinder.toBindableProvider(serviceProvider);
         Optional<Binder> binder = (bindable.isPresent()) ? bindable.get().injectionPlanBinder() : Optional.empty();
         if (binder.isEmpty()) {
