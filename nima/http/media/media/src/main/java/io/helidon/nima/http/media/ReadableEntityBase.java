@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -38,6 +39,8 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private final Runnable entityProcessedRunnable;
 
     private final AtomicBoolean entityProcessed = new AtomicBoolean();
+    private final AtomicBoolean entityRequested = new AtomicBoolean();
+    private final Consumer<Boolean> entityRequestedCallback;
     private InputStream inputStream;
 
     /**
@@ -51,6 +54,17 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     protected ReadableEntityBase(Function<InputStream, InputStream> decoder,
                                  Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable) {
+        this.decoder = decoder;
+        this.entityRequestedCallback = d -> {};
+        this.readEntityFunction = readEntityFunction;
+        this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
+    }
+
+    protected ReadableEntityBase(Consumer<Boolean> entityRequestedCallback,
+                                 Function<InputStream, InputStream> decoder,
+                                 Function<Integer, BufferData> readEntityFunction,
+                                 Runnable entityProcessedRunnable) {
+        this.entityRequestedCallback = entityRequestedCallback;
         this.decoder = decoder;
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
@@ -68,6 +82,10 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     @Override
     public InputStream inputStream() {
         if (consumed.compareAndSet(false, true)) {
+            if (!entityRequested.getAndSet(true)) {
+                entityRequestedCallback.accept(false);
+            }
+
             this.inputStream = decoder.apply(new RequestingInputStream(readEntityFunction, entityProcessedRunnable));
             return inputStream;
         } else {
@@ -107,6 +125,9 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     public void consume() {
         if (consumed()) {
             return;
+        }
+        if (!entityRequested.getAndSet(true)) {
+            entityRequestedCallback.accept(true);
         }
         InputStream theStream;
         if (inputStream == null) {

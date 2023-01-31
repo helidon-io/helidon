@@ -83,6 +83,15 @@ public interface Http1Config {
     boolean sendLog();
 
     /**
+     * When true WebServer answers to expect continue with 100 continue immediately,
+     * not waiting for user to actually request the data.
+     *
+     * @return if {@code true} answer with 100 continue immediately after expect continue
+     */
+    @ConfiguredOption("false")
+    boolean continueImmediately();
+
+    /**
      * Connection send event listeners for HTTP/1.1.
      *
      * @return send event listeners
