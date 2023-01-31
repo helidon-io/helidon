@@ -71,6 +71,7 @@
         <dependency>
             <groupId>io.helidon.lra</groupId>
             <artifactId>helidon-lra-coordinator-server</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
