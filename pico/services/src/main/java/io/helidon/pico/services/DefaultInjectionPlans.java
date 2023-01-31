@@ -258,15 +258,13 @@ class DefaultInjectionPlans {
 
                 if (ipInfo.optionalWrapped()) {
                     Optional<?> optVal;
-
                     try {
-                        Optional<?> val = serviceProvider.first(ContextualServiceQuery.create(ipInfo, false));
-                        optVal = Optional.ofNullable(val);
+                        optVal = Objects.requireNonNull(
+                                serviceProvider.first(ContextualServiceQuery.create(ipInfo, false)));
                     } catch (InjectionException e) {
                         logger.log(System.Logger.Level.WARNING, e.getMessage(), e);
                         optVal = Optional.empty();
                     }
-
                     return optVal;
                 }
 

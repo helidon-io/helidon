@@ -37,11 +37,13 @@
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-processor</artifactId>
             <scope>provided</scope> <!-- reactor dependency ordering only -->
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico</groupId>
             <artifactId>helidon-pico-maven-plugin</artifactId>
             <scope>provided</scope> <!-- reactor dependency ordering only -->
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.tests</groupId>
@@ -70,7 +72,6 @@
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
-<!--            <version>${version.lib.jakarta.cdi-api}</version>-->
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -97,6 +98,13 @@
                             <groupId>io.helidon.pico</groupId>
                             <artifactId>helidon-pico-processor</artifactId>
                             <version>${helidon.version}</version>
+                        </path>
+                        <!-- note to self: needs some consideration, since we would like to just process jakarta annotations
+                            like ApplicationScoped, but yet we don't want to force it on the classpath as we do here -->
+                        <path>
+                            <groupId>jakarta.enterprise</groupId>
+                            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                            <version>${version.lib.jakarta.cdi-api}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.pico.tests</groupId>

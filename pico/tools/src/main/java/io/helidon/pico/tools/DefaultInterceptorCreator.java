@@ -40,6 +40,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
+import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
 import io.helidon.pico.DefaultInvocationContext;
@@ -740,6 +741,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         subst.put("packageName", interceptorTypeName.packageName());
         subst.put("className", interceptorTypeName.className());
         subst.put("parent", parent);
+        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("generatedanno", toGeneratedSticker(null));
         subst.put("weight", interceptorWeight(plan.interceptedService().declaredWeight()));
         subst.put("interceptedmethoddecls", toInterceptedMethodDecls(plan));

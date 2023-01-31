@@ -71,7 +71,7 @@ public @interface Builder {
     /**
      * The default value for {@link #includeGeneratedAnnotation()}.
      */
-    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = false;
+    boolean DEFAULT_INCLUDE_GENERATED_ANNOTATION = true;
 
     /**
      * The default value for {@link #defineDefaultMethods()}.

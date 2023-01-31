@@ -47,8 +47,14 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
             <version>${javax.annotations.version}</version>
-            <scope>provided</scope>
+            <scope>provided</scope> <!-- don't force the use of javax on customers, but we can process it -->
             <optional>true</optional>
+        </dependency>
+        <!-- only needed for compilation, not required in runtime -->
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope> <!-- don't force the use of enterprise on customers, but we can process it -->
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>

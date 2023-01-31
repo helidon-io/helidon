@@ -25,6 +25,8 @@ import io.helidon.pico.Contract;
 
 /**
  * Handles {@code @Contract} annotations.
+ *
+ * @deprecated
  */
 public class ContractAnnotationProcessor extends BaseAnnotationProcessor<Void> {
 

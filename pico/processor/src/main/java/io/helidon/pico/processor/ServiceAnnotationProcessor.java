@@ -33,17 +33,21 @@ import javax.tools.StandardLocation;
 import io.helidon.pico.ExternalContracts;
 import io.helidon.pico.Intercepted;
 import io.helidon.pico.tools.CommonUtils;
+import io.helidon.pico.tools.JakartaEnterpriseTypeTools;
 import io.helidon.pico.tools.JavaxTypeTools;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.ToolsException;
-import io.helidon.pico.tools.TypeTools;
 
 import jakarta.inject.Singleton;
 
+import static io.helidon.pico.tools.TypeTools.oppositeOf;
+
 /**
  * Processor for @{@link jakarta.inject.Singleton} type annotations.
+ *
+ * @deprecated
  */
 public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     private static final Set<Class<? extends Annotation>> SUPPORTED_TARGETS;
@@ -53,7 +57,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
         SUPPORTED_TARGETS.add(Singleton.class);
         SUPPORTED_TARGETS.add(ExternalContracts.class);
         SUPPORTED_TARGETS.add(Intercepted.class);
-        addJavaxTypes(SUPPORTED_TARGETS);
+        addJavaxAndJakartaTypes(SUPPORTED_TARGETS);
     }
 
     /**
@@ -64,25 +68,29 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     public ServiceAnnotationProcessor() {
     }
 
-    private static void addJavaxTypes(
+    private static void addJavaxAndJakartaTypes(
             Set<Class<? extends Annotation>> supportedTargets) {
-        if (javaxSingletonType != null) {
-            return;
-        }
-
-        try {
-            javaxSingletonType = JavaxTypeTools.INSTANCE.get()
-                    .loadAnnotationClass(TypeTools.oppositeOf(Singleton.class.getName())).orElse(null);
+        JavaxTypeTools javaxTools = JavaxTypeTools.INSTANCE.get();
+        if (javaxTools != null) {
+            javaxSingletonType = javaxTools.loadAnnotationClass(oppositeOf(Singleton.class.getName())).orElse(null);
             if (javaxSingletonType != null) {
                 supportedTargets.add(javaxSingletonType);
             }
-            Class<? extends Annotation> applicationScoped = JavaxTypeTools.INSTANCE.get()
-                    .loadAnnotationClass(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME).orElse(null);
+
+            Class<? extends Annotation> applicationScoped = javaxTools
+                    .loadAnnotationClass(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX).orElse(null);
             if (applicationScoped != null) {
                 supportedTargets.add(applicationScoped);
             }
-        } catch (Throwable t) {
-            // normal
+        }
+
+        JakartaEnterpriseTypeTools jakartaTools = JakartaEnterpriseTypeTools.INSTANCE.get();
+        if (jakartaTools != null) {
+            Class<? extends Annotation> applicationScoped = jakartaTools
+                    .loadAnnotationClass(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAKARTA).orElse(null);
+            if (applicationScoped != null) {
+                supportedTargets.add(applicationScoped);
+            }
         }
     }
 

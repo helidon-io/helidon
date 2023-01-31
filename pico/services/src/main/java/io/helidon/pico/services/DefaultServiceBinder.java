@@ -16,6 +16,7 @@
 
 package io.helidon.pico.services;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.pico.PicoServices;
@@ -63,7 +64,11 @@ public class DefaultServiceBinder implements ServiceBinder {
      */
     public static Optional<ServiceProviderBindable<?>> toBindableProvider(
             ServiceProvider<?> sp) {
-        return Optional.ofNullable((sp instanceof ServiceProviderBindable) ? (ServiceProviderBindable<?>) sp : null);
+        Objects.requireNonNull(sp);
+        if (sp instanceof ServiceProviderBindable) {
+            return Optional.of((ServiceProviderBindable<?>) sp);
+        }
+        return Optional.of((ServiceProviderBindable<?>) sp.serviceProviderBindable());
     }
 
     /**

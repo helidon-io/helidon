@@ -16,12 +16,15 @@
 
 package io.helidon.pico.processor;
 
+import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -106,6 +109,8 @@ import static javax.tools.Diagnostic.Kind;
  * Abstract base for all Helidon Pico annotation processing.
  *
  * @param <B> the type handled by this anno processor
+ *
+ * @deprecated
  */
 //@SuppressWarnings("checkstyle:VisibilityModifier")
 abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements Msgr {
@@ -119,6 +124,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
     private RoundEnvironment roundEnv;
+    private Map<Path, Path> deferredMoves = new LinkedHashMap<>();
 
     /**
      * Constructor.
@@ -392,8 +398,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         List<String> scopeAnnotations = annotationsWithAnnotationOf(type, Scope.class);
         scopeAnnotations.forEach(scope -> services.addScopeTypeName(serviceTypeName, scope));
-        if (scopeAnnotations.contains(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME)
-                    && Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
+        if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)
+                && (scopeAnnotations.contains(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAVAX)
+                    || scopeAnnotations.contains(UnsupportedConstructsProcessor.APPLICATION_SCOPED_TYPE_NAME_JAKARTA))) {
             services.addScopeTypeName(serviceTypeName, Singleton.class.getName());
         }
 
@@ -572,6 +579,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             if (!res.success()) {
                 throw new ToolsException("error during codegen", res.error().orElse(null));
             }
+            deferredMoves.putAll(filer.deferredMoves());
         } catch (Exception te) {
             Object hierarchy = codeGen.serviceTypeHierarchy();
             if (hierarchy == null) {
@@ -585,6 +593,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             error(revisedTe.getMessage(), revisedTe);
         } finally {
             if (isProcessingOver) {
+                handleDeferredMoves();
                 processingEnv.getMessager().printMessage(Kind.NOTE, getClass().getSimpleName()
                         + ": processing is over - resetting");
                 services.reset(false);
@@ -593,6 +602,18 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
         // allow other processors to also process these same annotations?
         return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
+    }
+
+    private void handleDeferredMoves() {
+        try {
+            for (Map.Entry<Path, Path> e : deferredMoves.entrySet()) {
+                Files.move(e.getKey(), e.getValue());
+            }
+        } catch (IOException e) {
+            throw new ToolsException(e.getMessage(), e);
+        }
+
+        deferredMoves.clear();
     }
 
     Set<TypeName> toContracts(

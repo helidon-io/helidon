@@ -46,6 +46,7 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
+import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
@@ -55,17 +56,21 @@ import io.helidon.pico.types.TypeName;
  * and resources, and instead will use the filer's messager to report what it would have performed (applicable for apt cases).
  */
 public class CodeGenFiler {
-    private static boolean filerWriteIsDisabled;
+    private static final boolean FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR = true;
     private static final boolean FILER_WRITE_ONCE_PER_TYPE = true;
     private static final Set<TypeName> FILER_TYPES_FILED = new LinkedHashSet<>();
+    private static boolean filerWriteIsDisabled;
 
     private final AbstractFilerMsgr filer;
     private final Boolean enabled;
+    private final Map<Path, Path> deferredMoves = new LinkedHashMap<>();
+    private Path targetOutputPath;
+    private String scratchPathName;
 
     /**
      * Constructor.
      *
-     * @param filer the filer to use for creating resources.
+     * @param filer the filer to use for creating resources
      */
     public CodeGenFiler(
             AbstractFilerMsgr filer) {
@@ -75,7 +80,7 @@ public class CodeGenFiler {
     /**
      * Constructor.
      *
-     * @param filer the filer to use for creating resources.
+     * @param filer the filer to use for creating resources
      * @param enabled true if forcing enablement, false if forcing disablement, null for using defaults
      */
     CodeGenFiler(
@@ -89,7 +94,7 @@ public class CodeGenFiler {
      * Provides the ability to disable actual file writing (convenient for unit testing). The default is true for
      * enabled.
      *
-     * @param enabled if disabled, pass false.
+     * @param enabled if disabled, pass false
      * @return the previous value of this setting
      */
     static boolean filerEnabled(
@@ -112,9 +117,19 @@ public class CodeGenFiler {
     }
 
     /**
+     * This map represents any move operations that were not capable at the time of code generation, that must be deferred
+     * until after the annotation processor has completed its round.
+     *
+     * @return map of deferred moves from source to target path locations
+     */
+    public Map<Path, Path> deferredMoves() {
+        return Map.copyOf(deferredMoves);
+    }
+
+    /**
      * Generate the meta-inf services given the provided map.
      *
-     * @param paths           paths to where code should be written.
+     * @param paths           paths to where code should be written
      * @param metaInfServices the meta-inf services mapping
      */
     public void codegenMetaInfServices(
@@ -136,7 +151,6 @@ public class CodeGenFiler {
                                               .orElse(CodeGenPaths.DEFAULT_META_INF_SERVICES_PATH), contract).getPath();
             try {
                 messager.debug("Reading " + outPath);
-
                 FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", outPath);
                 try (InputStream is = f.openInputStream();
                         BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
@@ -145,6 +159,7 @@ public class CodeGenFiler {
                         mergedSet.add(line);
                     }
                 }
+                targetOutputPath(f);
             } catch (FilerException | NoSuchFileException x) {
                 // don't show the exception in this case
                 messager.debug(getClass().getSimpleName() + ":" + x.getMessage());
@@ -167,6 +182,24 @@ public class CodeGenFiler {
 
             codegenResourceFilerOut(outPath, baos.toString(Charset.defaultCharset()), Optional.empty());
         }
+    }
+
+    private void targetOutputPath(
+            FileObject f) {
+        try {
+            Path path = Path.of(f.toUri());
+            Path parent = path.getParent();
+            this.targetOutputPath = parent.getParent();
+            this.scratchPathName = parent.getFileName().toString();
+        } catch (Exception e) {
+            int debugMe = 0;
+        }
+    }
+
+    private Path toScratchPath() {
+        Objects.requireNonNull(targetOutputPath);
+        Objects.requireNonNull(scratchPathName);
+        return targetOutputPath.resolve(PicoServicesConfig.NAME).resolve(scratchPathName);
     }
 
     /**
@@ -215,6 +248,21 @@ public class CodeGenFiler {
             FileObject f = filer.createResource(StandardLocation.CLASS_OUTPUT, "", outPath);
             try (Writer os = f.openWriter()) {
                 os.write(body);
+            }
+            targetOutputPath(f);
+
+            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && outPath.equals(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME)
+                    && targetOutputPath != null) {
+                // hack: physically relocate it elsewhere
+                Path originalPath = Path.of(f.toUri());
+                Path newPath = toScratchPath().resolve(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME);
+                if (originalPath.toFile().exists()) {
+                    Files.createDirectories(newPath.getParent());
+                    Files.move(originalPath, newPath);
+                    return Optional.of(newPath);
+                } else {
+                    deferredMoves.put(originalPath, newPath);
+                }
             }
 
             return ModuleUtils.toPath(f.toUri());
@@ -360,7 +408,6 @@ public class CodeGenFiler {
             try (Writer os = javaSrc.openWriter()) {
                 os.write(body);
             }
-
             return ModuleUtils.toPath(javaSrc.toUri());
         } catch (FilerException x) {
             messager.log("Failed to write java file: " + x);
@@ -372,7 +419,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Code generate the module-info descriptor.
+     * Code generate the module-info.java.
      *
      * @param newDeltaDescriptor      the descriptor
      * @param overwriteTargetIfExists should the file be overwritten if it already exists
@@ -397,8 +444,8 @@ public class CodeGenFiler {
             return newDescriptor.contents();
         };
 
-        Optional<Path> filePath = codegenResourceFilerOut(typeName,
-                                                          newDeltaDescriptor.contents(), Optional.of(moduleInfoUpdater));
+        Optional<Path> filePath
+                = codegenResourceFilerOut(typeName, newDeltaDescriptor.contents(), Optional.of(moduleInfoUpdater));
         if (filePath.isPresent()) {
             messager.debug("Wrote module-info: " + filePath.get());
         } else if (overwriteTargetIfExists) {
@@ -411,7 +458,7 @@ public class CodeGenFiler {
     /**
      * Reads in the module-info if it exists, or returns null if it doesn't exist.
      *
-     * @param name the name to the module-info file.
+     * @param name the name to the module-info file
      * @return the module-info descriptor, or empty if it doesn't exist
      */
     Optional<ModuleInfoDescriptor> readModuleInfo(
@@ -436,8 +483,22 @@ public class CodeGenFiler {
             String name) {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
+            targetOutputPath(f);
             return f.getCharContent(true);
         } catch (IOException e) {
+            if (FORCE_MODULE_INFO_PICO_INTO_SCRATCH_DIR && name.equals(ModuleUtils.PICO_MODULE_INFO_JAVA_NAME)
+                    && targetOutputPath != null) {
+                // hack: physically read it from its relocated location
+                File newPath = new File(targetOutputPath.toFile().getAbsolutePath(), name);
+                if (newPath.exists()) {
+                    try {
+                        return Files.readString(newPath.toPath());
+                    } catch (IOException e2) {
+                        throw new ToolsException(e2.getMessage(), e2);
+                    }
+                }
+            }
+
             messager().debug("unable to load resource: " + name);
             return null;
         }
@@ -453,6 +514,7 @@ public class CodeGenFiler {
             String name) {
         try {
             FileObject f = filer.getResource(StandardLocation.CLASS_OUTPUT, "", name);
+            targetOutputPath(f);
             return ModuleUtils.toPath(f.toUri());
         } catch (IOException e) {
             messager().debug("unable to load resource: " + name);

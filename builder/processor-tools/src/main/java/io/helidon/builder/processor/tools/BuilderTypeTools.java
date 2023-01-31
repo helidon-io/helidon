@@ -506,4 +506,17 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
         return "value = \"" + Objects.requireNonNull(generatorClassTypeName)
                 + "\", comments = \"version=" + versionId + "\"";
     }
+
+    /**
+     * Produces the generated copy right header on code generated artifacts.
+     *
+     * @param ignoredGeneratorClassTypeName the generator class type name
+     * @return the generated comments
+     */
+    public static String copyrightHeaderFor(
+            String ignoredGeneratorClassTypeName) {
+        return "// This is a generated file (powered by Helidon). "
+                    + "Do not edit or extend from this artifact as it is subject to change at any time!";
+    }
+
 }

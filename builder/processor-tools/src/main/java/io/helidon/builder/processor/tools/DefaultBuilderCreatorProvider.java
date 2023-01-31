@@ -335,6 +335,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      */
     protected void appendHeader(StringBuilder builder,
                                 BodyContext ctx) {
+        builder.append(generatedCopyrightHeaderFor(ctx)).append("\n");
         builder.append("package ").append(ctx.implTypeName().packageName()).append(";\n\n");
         builder.append("import java.util.Collections;\n");
         builder.append("import java.util.List;\n");
@@ -401,10 +402,20 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
     }
 
     /**
+     * Returns the copyright level header comment.
+     *
+     * @param ctx   the context
+     * @return the copyright level header
+     */
+    protected String generatedCopyrightHeaderFor(BodyContext ctx) {
+        return BuilderTypeTools.copyrightHeaderFor(getClass().getName());
+    }
+
+    /**
      * Returns the {@code Generated} sticker to be added.
      *
      * @param ctx   the context
-     * @return the generated sticker.
+     * @return the generated sticker
      */
     protected String generatedStickerFor(BodyContext ctx) {
         return BuilderTypeTools.generatedStickerFor(getClass().getName(), Versions.CURRENT_BUILDER_VERSION);

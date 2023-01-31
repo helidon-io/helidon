@@ -48,11 +48,6 @@ import io.helidon.pico.types.TypeName;
 public interface ModuleInfoDescriptor {
 
     /**
-     * The tag used to represent the module name.
-     */
-    String TAG_MODULE_NAME = "module_name";
-
-    /**
      * The default module name (i.e., "unnamed").
      */
     String DEFAULT_MODULE_NAME = "unnamed";
@@ -72,11 +67,6 @@ public interface ModuleInfoDescriptor {
      * The java module-info name.
      */
     String DEFAULT_MODULE_INFO_JAVA_NAME = MODULE_INFO_NAME + ".java";
-
-    /**
-     * The resource providing the module-info template.
-     */
-    String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
 
 
     /**
@@ -185,7 +175,8 @@ public interface ModuleInfoDescriptor {
             if (itemHere.isPresent()) {
                 int index = newOne.items.indexOf(itemHere.get());
                 newOne.items.remove(index);
-                newOne.items.add(index, itemHere.get().mergeCreate(itemThere));
+                ModuleInfoItem mergedItem = itemHere.get().mergeCreate(itemThere);
+                newOne.items.add(index, mergedItem);
             } else {
                 newOne.addItem(itemThere);
             }
@@ -468,7 +459,7 @@ public interface ModuleInfoDescriptor {
         headerComment().ifPresent(it -> subst.put("header", it));
         descriptionComment().ifPresent(it -> subst.put("description", it));
         subst.put("hasdescription", descriptionComment().isPresent());
-        String template = helper.safeLoadTemplate(templateName(), SERVICE_PROVIDER_MODULE_INFO_HBS);
+        String template = helper.safeLoadTemplate(templateName(), ModuleUtils.SERVICE_PROVIDER_MODULE_INFO_HBS);
         String contents = helper.applySubstitutions(template, subst, true).trim();
         return CommonUtils.trimLines(contents);
     }

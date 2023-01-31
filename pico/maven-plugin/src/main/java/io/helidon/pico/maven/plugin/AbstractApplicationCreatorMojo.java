@@ -157,10 +157,10 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             ServiceProvider<Module> moduleSp,
             Collection<TypeName> typeNames,
             ModuleInfoDescriptor descriptor) {
-        final File packageFileName = new File(getPicoScratchDir(), APPLICATION_PACKAGE_FILE_NAME);
+        File packageFileName = new File(getPicoScratchDir(), APPLICATION_PACKAGE_FILE_NAME);
 
         String packageName = getPackageName();
-        if (Objects.isNull(packageName)) {
+        if (packageName == null) {
             // check for the existence of the file...
 
             if (packageFileName.exists()) {
@@ -365,7 +365,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             String moduleName = getModuleName();
             AbstractFilerMsgr directFiler = AbstractFilerMsgr.createDirectFiler(codeGenPaths, getLogger());
             CodeGenFiler codeGenFiler = new CodeGenFiler(directFiler);
-            ApplicationCreatorRequest req = DefaultApplicationCreatorRequest.builder()
+            DefaultApplicationCreatorRequest.Builder reqBuilder = DefaultApplicationCreatorRequest.builder()
                     .codeGen(applicationCodeGen)
                     .messager(new Messager2LogAdapter())
                     .filer(codeGenFiler)
@@ -375,9 +375,13 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .compilerOptions(compilerOptions)
                     .throwIfError(isFailOnError())
                     .generator(getClass().getName())
-                    .templateName(getTemplateName())
-                    .moduleName(Utils.hasValue(moduleName) ? moduleName : moduleInfoModuleName)
-                    .build();
+                    .templateName(getTemplateName());
+            if (Utils.hasValue(moduleName)) {
+                reqBuilder.moduleName(moduleName);
+            } else if (Utils.hasValue(moduleInfoPath) && !moduleInfoPath.startsWith(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)) {
+                reqBuilder.moduleName(moduleInfoModuleName);
+            }
+            ApplicationCreatorRequest req = reqBuilder.build();
             ApplicationCreatorResponse res = creator.createApplication(req);
             if (res.success()) {
                 getLog().debug("processed service type names: " + res.serviceTypeNames());

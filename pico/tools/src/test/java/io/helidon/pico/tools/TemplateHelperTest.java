@@ -85,7 +85,7 @@ class TemplateHelperTest {
         subst.put("name", "my-module-name");
         subst.put("description", List.of("Description 1.", "Description 2."));
         subst.put("hasdescription", true);
-        subst.put("header", "/*\n  Header Line 1\n  Header Line 2\n */");
+        subst.put("header", "/*\n  Header Line 1\n  Header Line 2\n */\n");
         subst.put("generatedanno", helper.generatedStickerFor("generator"));
         codegen = helper.applySubstitutions(template, subst, true);
         assertThat(codegen,

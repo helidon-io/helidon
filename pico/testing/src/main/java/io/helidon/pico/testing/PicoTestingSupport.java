@@ -94,7 +94,10 @@ public class PicoTestingSupport {
     public static Config basicTesableConfig() {
         return Config.create(
                     ConfigSources.create(
-                            Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true"), "config-1"));
+                            Map.of(
+                                    PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
+                                    PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true"),
+                            "config-1"));
     }
 
     /**

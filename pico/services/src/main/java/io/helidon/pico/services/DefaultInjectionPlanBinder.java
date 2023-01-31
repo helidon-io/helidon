@@ -33,16 +33,23 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
 
     @Override
     public Binder bindTo(
-            ServiceProvider<?> serviceProvider) {
+            ServiceProvider<?> untrustedServiceProvider) {
         // don't trust what we get, but instead lookup the service provider that we carry in our services registry
-        serviceProvider = services.serviceProviderFor(serviceProvider.serviceInfo().serviceTypeName());
+        ServiceProvider<?> serviceProvider = services.serviceProviderFor(untrustedServiceProvider.serviceInfo().serviceTypeName());
         Optional<ServiceProviderBindable<?>> bindable = DefaultServiceBinder.toBindableProvider(serviceProvider);
         Optional<Binder> binder = (bindable.isPresent()) ? bindable.get().injectionPlanBinder() : Optional.empty();
         if (binder.isEmpty()) {
+            // basically this means this service will not support compile-time injection
             DefaultPicoServices.LOGGER.log(System.Logger.Level.WARNING,
                        "service provider is not capable of being bound to injection points: " + serviceProvider);
+            return this;
+        } else {
+            if (DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                DefaultPicoServices.LOGGER.log(System.Logger.Level.DEBUG, "binding injection plan to " + binder.get());
+            }
         }
-        return this;
+
+        return binder.get();
     }
 
     @Override
@@ -79,6 +86,7 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
     @Override
     public void commit() {
         // NOP
+        int debugMe = 0;
     }
 
 }

@@ -1,6 +1,5 @@
-/**
-*
-*/
+// This is a generated file (powered by Helidon). Do not edit or extend from this artifact as it is subject to change at any time!
+
 package io.helidon.pico.tests.pico.interceptor;
 
 import java.util.List;
@@ -33,7 +32,7 @@ import static io.helidon.pico.services.Invocation.mergeAndCollapse;
 @io.helidon.pico.Intercepted(io.helidon.pico.tests.pico.interceptor.XImpl.class)
 @Singleton
 @SuppressWarnings("ALL")
-@jakarta.annotation.Generated({"provider=oracle", "generator=io.helidon.pico.tools.DefaultInterceptorCreator", "version=1"})
+@jakarta.annotation.Generated(value = "io.helidon.pico.tools.DefaultInterceptorCreator", comments = "version=1")
 public class XImpl$$picoInterceptor extends io.helidon.pico.tests.pico.interceptor.XImpl {
     private static final List<AnnotationAndValue> __serviceLevelAnnotations = List.of(
             DefaultAnnotationAndValue.create(jakarta.inject.Singleton.class),

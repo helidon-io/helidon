@@ -47,25 +47,19 @@ public class ModuleUtils {
     static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());
 
     /**
+     * The resource providing the module-info template.
+     */
+    static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
+
+    /**
      * The "real" module-info.java file name.
      */
     public static final String REAL_MODULE_INFO_JAVA_NAME = ModuleInfoDescriptor.DEFAULT_MODULE_INFO_JAVA_NAME;
 
     /**
-     * The pico generated module-info.java.pico file name.
+     * The pico generated (e.g., module-info.java.pico) file name.
      */
     static final String PICO_MODULE_INFO_JAVA_NAME = REAL_MODULE_INFO_JAVA_NAME + "." + PicoServicesConfig.NAME;
-
-    /**
-     * The tag for the module name.
-     */
-    // the standard java module-info's name
-    static final String TAG_MODULE_NAME = ModuleInfoDescriptor.TAG_MODULE_NAME;
-
-    /**
-     * The tag fpr the pico module name.
-     */
-    static final String TAG_PICO_MODULE_NAME = PicoServicesConfig.FQN + "." + TAG_MODULE_NAME;
 
     private ModuleUtils() {
     }

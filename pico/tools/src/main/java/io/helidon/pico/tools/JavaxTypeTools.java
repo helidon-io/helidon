@@ -31,6 +31,10 @@ import io.helidon.pico.types.TypeName;
  * Conditionally based upon classpath, will handle {@code javax.inject} and {@code javax.annotation}. If class support is not on
  * the classpath then there will be no service implementations available and will only resolve to this abstract class. If javax
  * is on the runtime classpath then the implementation will resolve.
+ *
+ * @see JakartaEnterpriseTypeTools
+ *
+ * @deprecated
  */
 public interface JavaxTypeTools {
 
@@ -39,8 +43,9 @@ public interface JavaxTypeTools {
      */
     LazyValue<JavaxTypeTools> INSTANCE = LazyValue.create(() -> {
        try {
-           return HelidonServiceLoader.create(ServiceLoader.load(JavaxTypeTools.class,
-                                                                 JavaxTypeTools.class.getClassLoader())).iterator().next();
+           return HelidonServiceLoader.create(
+                   ServiceLoader.load(JavaxTypeTools.class,
+                                      JavaxTypeTools.class.getClassLoader())).iterator().next();
        } catch (Throwable t) {
            return null;
        }

@@ -29,7 +29,7 @@ import javax.lang.model.type.DeclaredType;
 import io.helidon.pico.types.TypeName;
 
 /**
- * Will load only if supporting (javax) types are on the classpath.
+ * This class will load only if supporting (javax) types are on the classpath.
  *
  * @deprecated
  */
@@ -111,6 +111,7 @@ public class JavaxTypeToolsImpl implements JavaxTypeTools {
             return Optional.of((Class<? extends Annotation>) Class.forName(annotationTypeName));
         } catch (Throwable t) {
             // expected in most circumstances
+            Throwable debugMe = t;
         }
         return Optional.empty();
     }

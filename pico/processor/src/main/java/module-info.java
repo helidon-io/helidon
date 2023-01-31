@@ -20,6 +20,7 @@
 module io.helidon.pico.processor {
     requires static jakarta.inject;
     requires static jakarta.annotation;
+    requires static jakarta.cdi;
     requires static jdk.jfr;
 
     requires jdk.compiler;

@@ -16,7 +16,6 @@
 
 package io.helidon.pico.tools;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,7 +39,7 @@ public interface ModuleInfoItem {
      * @return pre-comments
      */
     @Singular
-    List<String> precomments();
+    Set<String> precomments();
 
     /**
      * The target class name, package name, or module name this item applies to.
@@ -152,7 +151,7 @@ public interface ModuleInfoItem {
             assert (!opens());
             assert (!exports());
             if (builder.length() > 0) {
-                builder.append(target()).append(";\n    ");
+                builder.append(target()).append(";");
             }
             builder.append("provides ");
             if (!withOrTo().isEmpty()) {
@@ -217,9 +216,10 @@ public interface ModuleInfoItem {
         DefaultModuleInfoItem.Builder newOne = DefaultModuleInfoItem.toBuilder(another);
         another.precomments().forEach(newOne::addPrecomment);
         newOne.requires(requires() || another.requires());
+        newOne.uses(uses() || another.uses());
         newOne.transitiveUsed(isTransitiveUsed() || another.isTransitiveUsed());
         newOne.staticUsed(isStaticUsed() || another.isStaticUsed());
-        newOne.requires(exports() || another.exports());
+        newOne.exports(exports() || another.exports());
         newOne.opens(opens() || another.opens());
         newOne.provides(opens() || another.provides());
         another.withOrTo().forEach(newOne::addWithOrTo);

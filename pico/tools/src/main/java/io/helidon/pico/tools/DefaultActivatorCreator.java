@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -615,6 +616,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("packagename", applicationTypeName.packageName());
         subst.put("description", null);
         subst.put("generatedanno", toGeneratedSticker(req));
+        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("modulename", moduleName);
 
         return templateHelper().applySubstitutions(template, subst, true).trim();
@@ -633,6 +635,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         subst.put("packagename", packageName);
         subst.put("description", null);
         subst.put("generatedanno", toGeneratedSticker(req));
+        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("modulename", moduleName);
         subst.put("activators", activatorTypeNames);
 
@@ -650,6 +653,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     private String toActivatorBody(
             ActivatorCreatorArgs args) {
         Map<String, Object> subst = new HashMap<>();
+        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("activatorsuffix", INNER_ACTIVATOR_CLASS_NAME);
         subst.put("classname", args.activatorTypeName().className());
         subst.put("flatclassname", toFlatName(args.activatorTypeName().className()));

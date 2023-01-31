@@ -50,6 +50,7 @@ class VoidServiceProvider extends AbstractServiceProvider<Void> {
     @Override
     protected Void createServiceProvider(
             Map<String, Object> resolvedDeps) {
+        // this must return null by definition
         return null;
     }
 

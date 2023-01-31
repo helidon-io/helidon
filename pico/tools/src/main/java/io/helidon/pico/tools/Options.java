@@ -57,7 +57,12 @@ public class Options {
     /**
      * Identify the module name being processed or the desired target module name.
      */
-    public static final String TAG_MODULE_NAME = ModuleUtils.TAG_MODULE_NAME;
+    public static final String TAG_MODULE_NAME = "module_name";
+
+    /**
+     * Identify the pico sidecar (module-info.java.pico) file name.
+     */
+    public static final String TAG_PICO_MODULE_NAME = PicoServicesConfig.FQN + "." + TAG_MODULE_NAME;
 
     /**
      * Identify the additional annotation type names that will trigger interception.
@@ -76,11 +81,6 @@ public class Options {
      */
     public static final String TAG_IGNORE_UNSUPPORTED_ANNOTATIONS = PicoServicesConfig.FQN
             + ".ignoreUnsupportedAnnotations";
-
-    /**
-     * Identify the pico sidecar module-info.java file name.
-     */
-    private static final String TAG_PICO_MODULE_NAME = ModuleUtils.TAG_PICO_MODULE_NAME;
 
     private static final Map<String, String> OPTS = new HashMap<>();
 

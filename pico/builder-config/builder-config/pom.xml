@@ -43,6 +43,11 @@
             <scope>provided</scope> <!-- force reactor -->
         </dependency>
         <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope> <!-- to support the Generated annotation -->
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
         </dependency>

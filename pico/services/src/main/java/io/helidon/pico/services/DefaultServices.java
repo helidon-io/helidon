@@ -330,17 +330,32 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
             PicoServices picoServices,
             DefaultInjectionPlanBinder binder,
             Application app) {
+        String appName = app.named().orElse(app.getClass().getName());
+        boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.INFO);
+        if (isLoggable) {
+            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "starting binding application: " + appName);
+        }
         app.configure(binder);
         bind(createServiceProvider(app, picoServices));
+        if (isLoggable) {
+            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "finished binding application: " + appName);
+        }
     }
 
     void bind(
             PicoServices picoServices,
             io.helidon.pico.Module module) {
-        String moduleName = module.named().orElse(null);
+        String moduleName = module.named().orElse(module.getClass().getName());
+        boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.INFO);
+        if (isLoggable) {
+            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "starting binding module: " + moduleName);
+        }
         ServiceBinder moduleServiceBinder = createServiceBinder(picoServices, this, moduleName);
         module.configure(moduleServiceBinder);
         bind(createServiceProvider(module, moduleName, picoServices));
+        if (isLoggable) {
+            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "finished binding module: " + moduleName);
+        }
     }
 
     @Override
@@ -367,11 +382,11 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
                 .filter((q) -> q.typeName().name().equals(Intercepted.class.getName()))
                 .findFirst();
         if (interceptedQualifier.isPresent()) {
-            // assumption: expected that the root service provider is registered prior to any interceptors ...
+            // assumption: expected that the root service provider is registered prior to any interceptors
             String interceptedServiceTypeName = Objects.requireNonNull(interceptedQualifier.get().value().orElseThrow());
             ServiceProvider<?> interceptedSp = lookupFirst(DefaultServiceInfoCriteria.builder()
                                                                    .serviceTypeName(interceptedServiceTypeName)
-                                                                   .build(), false).orElse(null);
+                                                                   .build(), true).orElse(null);
             if (interceptedSp instanceof ServiceProviderBindable) {
                 ((ServiceProviderBindable<?>) interceptedSp).interceptor(serviceProvider);
             }

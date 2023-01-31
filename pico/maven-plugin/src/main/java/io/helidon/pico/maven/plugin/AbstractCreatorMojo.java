@@ -24,8 +24,8 @@ import java.util.Objects;
 
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.tools.AbstractCreator;
-import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.Msgr;
+import io.helidon.pico.tools.Options;
 import io.helidon.pico.tools.TemplateHelper;
 
 import org.apache.maven.artifact.Artifact;
@@ -67,7 +67,7 @@ public abstract class AbstractCreatorMojo extends AbstractMojo {
     /**
      * The module name to apply. If not found the module name will be inferred.
      */
-    @Parameter(property = ModuleInfoDescriptor.TAG_MODULE_NAME, readonly = true)
+    @Parameter(property = Options.TAG_MODULE_NAME, readonly = true)
     private String moduleName;
 
     // ----------------------------------------------------------------------

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.pico.Application;
@@ -213,6 +214,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         subst.put("classname", application.className());
         subst.put("packagename", application.packageName());
         subst.put("description", null);
+        subst.put("header", BuilderTypeTools.copyrightHeaderFor(getClass().getName()));
         subst.put("generatedanno", toGeneratedSticker(req));
         subst.put("modulename", moduleName);
         subst.put("servicetypebindings", serviceTypeBindings);

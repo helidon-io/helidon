@@ -45,11 +45,14 @@ import jakarta.inject.Singleton;
  *  <li>Any scopes from jakarta.enterprise api module(s) other than ApplicationScoped, which can optionally be mapped to
  *      Singleton scope.
  * </ul>
+ *
+ * @deprecated
  */
 public class UnsupportedConstructsProcessor extends AbstractProcessor {
     private static final System.Logger LOGGER = System.getLogger(UnsupportedConstructsProcessor.class.getName());
 
-    static final String APPLICATION_SCOPED_TYPE_NAME = "jakarta.enterprise.context.ApplicationScoped";
+    static final String APPLICATION_SCOPED_TYPE_NAME_JAKARTA = "jakarta.enterprise.context.ApplicationScoped";
+    static final String APPLICATION_SCOPED_TYPE_NAME_JAVAX = "javax.enterprise.context.ApplicationScoped";
 
     private static final Set<String> UNSUPPORTED_TARGETS;
     static {
@@ -57,7 +60,8 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
         UNSUPPORTED_TARGETS.add(ManagedBean.class.getName());
         UNSUPPORTED_TARGETS.add(Resource.class.getName());
         UNSUPPORTED_TARGETS.add(Resources.class.getName());
-        UNSUPPORTED_TARGETS.add(APPLICATION_SCOPED_TYPE_NAME);
+        UNSUPPORTED_TARGETS.add(APPLICATION_SCOPED_TYPE_NAME_JAKARTA);
+        UNSUPPORTED_TARGETS.add(APPLICATION_SCOPED_TYPE_NAME_JAVAX);
         UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.BeforeDestroyed");
         UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.ConversationScoped");
         UNSUPPORTED_TARGETS.add("jakarta.enterprise.context.Dependent");
@@ -114,7 +118,8 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
         if (!annotations.isEmpty()) {
             Set<String> annotationTypeNames = annotations.stream().map(Object::toString).collect(Collectors.toSet());
             if (Options.isOptionEnabled(Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE)) {
-                annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME);
+                annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME_JAKARTA);
+                annotationTypeNames.remove(APPLICATION_SCOPED_TYPE_NAME_JAVAX);
             }
 
             if (!annotationTypeNames.isEmpty()) {
@@ -127,8 +132,10 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
 
                 String msg = "This module contains unsupported annotations for " + PicoServicesConfig.NAME
                                 + " to process: " + annotationTypeNames + ".\n";
-                if (annotationTypeNames.contains(APPLICATION_SCOPED_TYPE_NAME)) {
-                    msg += "'" + APPLICATION_SCOPED_TYPE_NAME + "' can be optionally mapped to '" + Singleton.class.getName()
+                if (annotationTypeNames.contains(APPLICATION_SCOPED_TYPE_NAME_JAKARTA)
+                        || annotationTypeNames.contains(APPLICATION_SCOPED_TYPE_NAME_JAVAX)) {
+                    msg += "'" + APPLICATION_SCOPED_TYPE_NAME_JAKARTA + "' can be optionally mapped to '"
+                            + Singleton.class.getName()
                                 + "' scope by passing -A" + Options.TAG_MAP_APPLICATION_TO_SINGLETON_SCOPE + "=true.\n";
                 }
                 msg += "Use -A" + Options.TAG_IGNORE_UNSUPPORTED_ANNOTATIONS + "=true to ignore all unsupported annotations.";

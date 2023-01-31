@@ -37,6 +37,8 @@ import static io.helidon.pico.tools.TypeTools.oppositeOf;
 
 /**
  * Handling for {@link jakarta.annotation.PostConstruct} and {@link jakarta.annotation.PreDestroy}.
+ *
+ * @deprecated
  */
 public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     private static final Set<Class<? extends Annotation>> SUPPORTED_TARGETS;
