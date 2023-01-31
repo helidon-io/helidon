@@ -244,8 +244,8 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
                 return createProxyName(bean, typeInfo);
             } else {
                 //interface only bean.
-            final StringBuilder name = new StringBuilder();
-            holder = createCompoundProxyName(contextId, bean, typeInfo, name);
+                final StringBuilder name = new StringBuilder();
+                holder = createCompoundProxyName(contextId, bean, typeInfo, name);
             }
         } else {
             boolean typeModified = false;
