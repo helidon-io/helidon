@@ -678,12 +678,6 @@
                 <artifactId>helidon-dbclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- db client examples -->
-            <dependency>
-                <groupId>io.helidon.examples.dbclient</groupId>
-                <artifactId>helidon-examples-dbclient-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- tracing -->
             <dependency>
@@ -1035,11 +1029,6 @@
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>
                 <artifactId>helidon-microprofile-tests-junit5</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.tests</groupId>
-                <artifactId>helidon-microprofile-tests-testng</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
