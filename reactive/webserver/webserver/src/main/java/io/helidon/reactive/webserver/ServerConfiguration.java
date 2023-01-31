@@ -553,6 +553,21 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * When true WebServer answers to expect continue with 100 continue immediately,
+         * not waiting for user to actually request the data.
+         * <p>
+         * Default is {@code false}
+         *
+         * @param continueImmediately , answer with 100 continue immediately after expect continue, default is false
+         * @return this builder
+         */
+        @Override
+        public Builder continueImmediately(boolean continueImmediately) {
+            defaultSocketBuilder().continueImmediately(continueImmediately);
+            return this;
+        }
+
+        /**
          * Set a maximum length of the content of an upgrade request.
          * <p>
          * Default is {@code 64*1024}

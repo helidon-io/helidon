@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,6 +59,7 @@ public class SocketHttpClient implements AutoCloseable {
 
     private Socket socket;
     private boolean connected;
+    private BufferedReader socketReader;
 
     protected SocketHttpClient(String host, int port, Duration timeout) {
         this.host = host;
@@ -321,6 +323,45 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Execute immediately given consumer with this
+     * socket client as an argument.
+     *
+     * @param exec consumer to execute
+     * @return this http client
+     */
+    public SocketHttpClient then(Consumer<SocketHttpClient> exec){
+        exec.accept(this);
+        return this;
+    }
+
+    /**
+     * Wait for text coming from socket.
+     *
+     * @param expectedStartsWith expected beginning
+     * @param expectedEndsWith expected end
+     * @return this http client
+     */
+    public SocketHttpClient awaitResponse(String expectedStartsWith, String expectedEndsWith) {
+        StringBuilder sb = new StringBuilder();
+        String t;
+        while (true) {
+            try {
+                t = socketReader.readLine();
+                if (t == null) {
+                    break;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            sb.append(t).append("\n");
+            if (sb.toString().startsWith(expectedStartsWith) && sb.toString().endsWith(expectedEndsWith)) {
+                break;
+            }
+        }
+        return this;
+    }
+
+    /**
      * Sends a request to the server.
      *
      * @param method the http method
@@ -449,6 +490,7 @@ public class SocketHttpClient implements AutoCloseable {
         try {
             socket = new Socket(host, port);
             socket.setSoTimeout((int) timeout.toMillis());
+            socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             connected = true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -462,6 +504,41 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public boolean connected() {
         return connected;
+    }
+
+    /**
+     * Send supplied text manually to socket.
+     *
+     * @param formatString text to send
+     * @param args format arguments
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient manualRequest(String formatString, Object... args) throws IOException {
+        if (socket == null) {
+            connect();
+        }
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        pw.printf(formatString.replaceAll("\\n", EOL), args);
+        pw.flush();
+        return this;
+    }
+
+
+    /**
+     * Continue sending more to text to socket.
+     * @param payload text to be sent
+     * @return this http client
+     * @throws IOException
+     */
+    public SocketHttpClient continuePayload(String payload)
+            throws IOException {
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        if (payload != null) {
+            pw.print(payload);
+        }
+        pw.flush();
+        return this;
     }
 
     /**
