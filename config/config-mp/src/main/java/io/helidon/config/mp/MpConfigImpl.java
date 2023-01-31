@@ -340,7 +340,7 @@ class MpConfigImpl implements Config {
                         .map(it -> resolveReferences(propertyName, it))
                         .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
             } catch (NoSuchElementException e) {
-                // Property does not exist, but we don't fail.
+                // Property expression does not resolve
                 return Optional.empty();
             }
         }
