@@ -84,6 +84,7 @@ public class CoordinatorService implements HttpService {
     private final Config config;
     private Task recoveryTask;
     private Task persistTask = null;
+    private volatile boolean shuttingDown = false;
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Supplier<URI> coordinatorUriSupplier, Config config) {
         this.lraPersistentRegistry = lraPersistentRegistry;
@@ -95,7 +96,7 @@ public class CoordinatorService implements HttpService {
     private void init() {
         lraPersistentRegistry.load(this);
         recoveryTask = Scheduling.fixedRateBuilder()
-                .delay(config.get("recovery-interval").asLong().orElse(300L))
+                .delay(config.get("recovery-interval").asLong().orElse(200L))
                 .initialDelay(200)
                 .timeUnit(TimeUnit.MILLISECONDS)
                 .task(this::tick)
@@ -115,6 +116,7 @@ public class CoordinatorService implements HttpService {
      * Gracefully shutdown coordinator.
      */
     public void shutdown() {
+        shuttingDown = true;
         Stream.of(recoveryTask, persistTask)
                 .filter(Objects::nonNull)
                 .forEach(task -> {
@@ -309,6 +311,7 @@ public class CoordinatorService implements HttpService {
                     JsonObject json = JSON.createObjectBuilder()
                             .add("lraId", lra.lraId())
                             .add("status", lra.status().get().name())
+                            .add("recovering", Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get()))
                             .build();
                     res.status(OK_200).send(json);
                 } else {
@@ -355,7 +358,13 @@ public class CoordinatorService implements HttpService {
     }
 
     private void tick(FixedRateInvocation inv) {
+        if (shuttingDown) {
+            return;
+        }
         lraPersistentRegistry.stream().forEach(lra -> {
+            if (shuttingDown) {
+                return;
+            }
             if (lra.isReadyToDelete()) {
                 lraPersistentRegistry.remove(lra.lraId());
             } else {

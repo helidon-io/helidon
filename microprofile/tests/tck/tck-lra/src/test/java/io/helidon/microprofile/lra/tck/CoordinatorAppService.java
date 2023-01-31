@@ -28,11 +28,14 @@ import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Destroyed;
+import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
+
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 @ApplicationScoped
 public class CoordinatorAppService {
@@ -75,7 +78,7 @@ public class CoordinatorAppService {
         return coordinatorService.get();
     }
 
-    private void whenApplicationTerminates(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
+    private void whenApplicationTerminates(@Observes @Priority(PLATFORM_BEFORE - 10) @BeforeDestroyed(ApplicationScoped.class) final Object event) {
         coordinatorService.get().shutdown();
     }
 }
