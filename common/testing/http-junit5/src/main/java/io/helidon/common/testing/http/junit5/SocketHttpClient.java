@@ -276,14 +276,14 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public String receive() {
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            BufferedReader br = socketReader;
             StringBuilder sb = new StringBuilder();
             String t;
             boolean ending = false;
             int contentLength = -1;
             while ((t = br.readLine()) != null) {
 
-                LOGGER.log(System.Logger.Level.TRACE, "Received: " + t);
+                LOGGER.log(System.Logger.Level.TRACE, "< " + t);
 
                 if (t.toLowerCase().startsWith("content-length")) {
                     int k = t.indexOf(':');
@@ -353,6 +353,7 @@ public class SocketHttpClient implements AutoCloseable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            LOGGER.log(System.Logger.Level.TRACE, "< " + t);
             sb.append(t).append("\n");
             if (sb.toString().startsWith(expectedStartsWith) && sb.toString().endsWith(expectedEndsWith)) {
                 break;
@@ -519,6 +520,12 @@ public class SocketHttpClient implements AutoCloseable {
             connect();
         }
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+
+        LOGGER.log(System.Logger.Level.TRACE, () -> {
+            String msg = "\n> " + formatString.replaceAll("\\n", EOL + "> ");
+            return String.format(msg.substring(0, msg.length() - "> ".length()), args);
+        });
+
         pw.printf(formatString.replaceAll("\\n", EOL), args);
         pw.flush();
         return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,17 +31,31 @@ import io.helidon.nima.webserver.http.ServerRequestEntity;
 
 final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private final LazyValue<ReadableEntity> entity;
+    private final ConnectionContext ctx;
+    private final Http1Connection connection;
+    private final boolean expectContinue;
+    private final boolean continueImmediately;
+
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
-                                 HttpSecurity security, HttpPrologue prologue,
+                                 Http1Connection connection,
+                                 Http1Config http1Config,
+                                 HttpSecurity security,
+                                 HttpPrologue prologue,
                                  ServerRequestHeaders headers,
                                  ContentDecoder decoder,
                                  int requestId,
+                                 boolean expectContinue,
                                  CountDownLatch entityReadLatch,
                                  Supplier<BufferData> readEntityFromPipeline) {
         super(ctx, security, prologue, headers, requestId);
+        this.ctx = ctx;
+        this.connection = connection;
+        this.expectContinue = expectContinue;
+        this.continueImmediately = http1Config.continueImmediately();
         // we need the same entity instance every time the entity() method is called
-        this.entity = LazyValue.create(() -> ServerRequestEntity.create(decoder,
+        this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
+                                                                        decoder,
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
                                                                         headers,
@@ -51,6 +65,18 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     @Override
     public ReadableEntity content() {
         return entity.get();
+    }
 
+    @Override
+    public void reset() {
+        if (!continueImmediately && expectContinue) {
+            connection.reset();
+        }
+    }
+
+    private void trySend100(boolean drain) {
+        if (!continueImmediately && expectContinue && !drain) {
+            ctx.dataWriter().writeNow(BufferData.create(Http1Connection.CONTINUE_100));
+        }
     }
 }

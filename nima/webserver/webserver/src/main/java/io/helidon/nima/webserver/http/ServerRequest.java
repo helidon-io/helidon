@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,12 @@ import io.helidon.nima.webserver.ServerContext;
  * HTTP server request.
  */
 public interface ServerRequest extends HttpRequest {
+
+    /**
+     * Reset request related state on the connection if any.
+     */
+    void reset();
+
     /**
      * Whether this request was over a secure protocol (TLS).
      *

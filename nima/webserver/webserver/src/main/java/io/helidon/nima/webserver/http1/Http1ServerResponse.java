@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,6 +132,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         byte[] entity = entityBytes(bytes);
         BufferData bufferData = responseBuffer(entity);
         entitySize = bufferData.available();
+        request.reset();
         dataWriter.write(bufferData);
         afterSend();
     }
@@ -150,6 +151,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             throw new IllegalStateException("OutputStream already obtained");
         }
         streamingEntity = true;
+
+        request.reset();
 
         this.outputStream = new BlockingOutputStream(headers,
                                                      trailers,

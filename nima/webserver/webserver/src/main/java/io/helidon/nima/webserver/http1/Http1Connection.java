@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver.http1;
 
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -53,6 +54,11 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
+
+    static final byte[] CONTINUE_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] UNSUPPORTED_EXPECT_417 =
+            "HTTP/1.1 417 Unsupported-Expect\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
     private final ConnectionContext ctx;
     private final Http1Config http1Config;
@@ -258,16 +264,14 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             return;
         }
 
-        // todo we may want to send continue only when we find a route - this is probably too early
-        // if we do not find a route, we should just return (maybe even wait for user to actually request the entity)
+        boolean expectContinue = false;
+
         // Expect: 100-continue
-        if (headers.contains(Http.Header.EXPECT)) {
-            if (headers.contains(HeaderValues.EXPECT_100)) {
-                writer.write(BufferData.create("HTTP/1.1 100 Continue\r\n"));
-            } else {
-                writer.write(BufferData.create("HTTP/1.1 417 Unsupported-Expect\r\n"));
-                // TODO and terminate the connection?
+        if (headers.contains(HeaderValues.EXPECT_100)) {
+            if (this.http1Config.continueImmediately()) {
+                writer.writeNow(BufferData.create(CONTINUE_100));
             }
+            expectContinue = true;
         }
 
         ContentDecoder decoder;
@@ -294,11 +298,14 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
         CountDownLatch entityReadLatch = new CountDownLatch(1);
         Http1ServerRequest request = Http1ServerRequest.create(ctx,
+                                                               this,
+                                                               http1Config,
                                                                routing.security(),
                                                                prologue,
                                                                ServerRequestHeaders.create(headers),
                                                                decoder,
                                                                requestId,
+                                                               expectContinue,
                                                                entityReadLatch,
                                                                () -> this.readEntityFromPipeline(prologue, headers));
         Http1ServerResponse response = new Http1ServerResponse(ctx,
@@ -377,4 +384,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return http1Config;
     }
 
+    void reset() {
+        currentEntitySize = 0;
+        currentEntitySizeRead = 0;
+    }
 }
