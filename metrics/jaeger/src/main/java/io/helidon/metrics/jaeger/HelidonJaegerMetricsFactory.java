@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@
  */
 package io.helidon.metrics.jaeger;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -28,6 +31,7 @@ import io.jaegertracing.internal.metrics.Timer;
 import io.jaegertracing.spi.MetricsFactory;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -40,6 +44,8 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
 
     private final LazyValue<MetricRegistry> vendorRegistry = LazyValue.create(() -> RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.VENDOR));
+
+    private final Map<org.eclipse.microprofile.metrics.Gauge<?>, Gauge> jaegerGauges = new HashMap<>();
 
     @Override
     public Counter createCounter(String name, Map<String, String> jaegerTags) {
@@ -79,22 +85,28 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
 
     @Override
     public Gauge createGauge(String name, Map<String, String> jaegerTags) {
-        return new Gauge() {
+        // Reusability does not apply to gauges, so explicitly check for a pre-existing gauge before registering a new one.
+        return existingGauge(name, jaegerTags)
+                .orElseGet(() ->
+                                   new Gauge() {
 
-            private final JaegerGauge gauge = new JaegerGauge();
+                                       private final JaegerGauge gauge = new JaegerGauge();
 
-            {
-                Metadata metadata = metadata(name, MetricType.GAUGE, MetricUnits.NONE);
-                vendorRegistry.get().register(metadata,
-                        gauge,
-                        convertTags(jaegerTags));
-            }
+                                       {
+                                           Metadata metadata = metadata(name, MetricType.GAUGE, MetricUnits.NONE);
+                                           // Register the new Helidon gauge and also add an entry in the
+                                           // Helidon-gauge-to-Jaeger-gauge map.
+                                           jaegerGauges.put(vendorRegistry.get().register(metadata,
+                                                                                          gauge,
+                                                                                          convertTags(jaegerTags)),
+                                                            this);
+                                       }
 
-            @Override
-            public void update(long amount) {
-                gauge.update(amount);
-            }
-        };
+                                       @Override
+                                       public void update(long amount) {
+                                           gauge.update(amount);
+                                       }
+                                   });
     }
 
     private org.eclipse.microprofile.metrics.Counter counter(Metadata metadata, Tag[] tags) {
@@ -152,5 +164,21 @@ public class HelidonJaegerMetricsFactory implements MetricsFactory {
                 .stream()
                 .map(e -> new Tag(e.getKey(), e.getValue()))
                 .toArray(Tag[]::new);
+    }
+
+    private Optional<Gauge> existingGauge(String name, Map<String, String> jaegerTags) {
+        SortedMap<MetricID, org.eclipse.microprofile.metrics.Gauge> existingGauges =
+                vendorRegistry.get()
+                        .getGauges((metricID, metric) -> metricID.getName().equals(name)
+                                && tagsMatch(metricID, jaegerTags));
+
+        return existingGauges.isEmpty()
+                ? Optional.empty()
+                : Optional.of(jaegerGauges.get(existingGauges.values().iterator().next()));
+    }
+
+    private static boolean tagsMatch(MetricID metricID, Map<String, String> jaegerTags) {
+        return jaegerTags == null && metricID.getTags().isEmpty()
+                || metricID.getTags().equals(jaegerTags);
     }
 }
