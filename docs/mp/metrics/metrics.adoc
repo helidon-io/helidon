@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,23 +28,11 @@ include::{rootdir}/includes/mp.adoc[]
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
-** <<Other Packaging Options, Other Packaging Options>>
 - <<Usage, Usage>>
-** <<Instrumenting Your Service, Instrumenting Your Service>>
-** <<Categorizing the Types of Metrics, Categorizing the Types of Metrics>>
-** <<Metric Registries, Metric Registries>>
-** <<Retrieving Metrics Reports From Your Service, Retrieving Metrics Reports From Your Service>>
 - <<API, API>>
-** <<Metrics Annotations, Metrics Annotations>>
-** <<The MetricRegistry API, The MetricRegistry API>>
 - <<Configuration, Configuration>>
-** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
-** <<Example Application Code, Example Application Code>>
-** <<Example Configuration, Example Configuration>>
 - <<Additional Information, Additional Information>>
-** <<Integration with Kubernetes and Prometheus, Integration with Kubernetes and Prometheus>>
-** <<References, References>>
 
 == Overview
 Helidon MP metrics implements the MicroProfile Metrics specification, providing:
@@ -63,7 +51,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 Adding this dependency packages the full-featured metrics implementation with your service.
 
-=== Other Packaging Options
+=== Other packaging options
 Helidon gives you flexibility in how you make metrics available to your service. xref:{rootdir}/mp/metrics/metrics-capable-components.adoc[This document] explains your options.
 
 == Usage
@@ -76,12 +64,9 @@ include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 The link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/package-summary.html[MicroProfile Metrics API] prescribes all the standard interfaces related to metrics. This section summarizes a few key points about using that API and explains some Helidon-specific interfaces.
 
 === Metrics Annotations
-** <<Metric-Defining Annotations, Metric-Defining Annotations>>
-** <<Metric-Referencing Annotations, Metric-Referencing Annotations>>
-
 You can very easily instrument your service and refer to registered metrics by annotating methods to be measured and injecting metrics which your code needs to observe.
 
-==== Metric-Defining Annotations
+==== Metric-defining Annotations
 The MicroProfile Metrics specification describes several metric types you can create using annotations, summarized in the following table:
 
 .Metrics Annotations
@@ -111,7 +96,7 @@ The MicroProfile Metrics specification describes several metric types you can cr
 
 Place annotations on constructors or methods to measure those specific executables. If you annotate the class instead, Helidon applies that annotation to all constructors and methods which the class declares.
 
-==== Metric-Referencing Annotations
+==== Metric-referencing Annotations
 To get a reference to a specific metric, use a metric-referencing annotation in any bean, including your REST resource classes.
 
 You can `@Inject` a field of the correct type. Helidon uses the MicroProfile Metrics naming conventions to select which specific metric to inject. Use the link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/annotation/Metric.html[`@Metric`] annotation to control that selection.
@@ -132,15 +117,13 @@ link:{helidon-github-tree-url}/examples/metrics/filtering/mp[enabling/disabling 
 
 The rest of this section contains other examples of working with metrics:
 
+* <<example-application-code,Example Application Code>>
+* <<example-configuration,Example Configuration>>
+
 [#example-application-code]
 === Example Application Code
-- <<Adding Method-Level Annotations, Adding Method-Level Annotations>>
-- <<Additional Method-Level Metrics, Additional Method-Level Metrics>>
-- <<Class-Level Metrics, Class-Level Metrics>>
-- <<Field-Level Metrics, Field-Level Metrics>>
-- <<Gauge Metric, Gauge Metric>>
 
-==== Adding Method-Level Annotations
+==== Adding Method-level Annotations
 The following example adds a new resource class, `GreetingCards`, to the Helidon MP QuickStart example. It shows how to use the `@Counted` annotation to track the number of times
 the `/cards` endpoint is called.
 
@@ -222,7 +205,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 NOTE: Notice the counter name is fully qualified with the class and method names.  You can remove the prefix by using the `absolute=true` field in the `@Counted` annotation.
 You must use  `absolute=false` (the default) for class-level annotations.
 
-==== Additional Method-Level Metrics
+==== Additional Method-level Metrics
 
 The `@ConcurrentGauge`, @Timed`, `@Metered`, and `@SimplyTimed` annotations can also be used with a method.  For the following example.
 you can just annotate the same method with `@Metered` and `@Timed`. These metrics collect significant
@@ -314,7 +297,7 @@ include::metrics.adoc[tag=build-and-access-cards-example]
 <2> The `Timer` metric includes the `Meter` fields (it is a superset of `Meter`).
 
 
-==== Class-Level Metrics
+==== Class-level Metrics
 
 You can collect metrics at the class-level to aggregate data from all methods in that class using the same metric.
 The following example introduces a metric to count all card queries.  In the following example, the method-level metrics are not
@@ -389,7 +372,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 fully qualified.
 
 
-==== Field-Level Metrics
+==== Field Level Metrics
 
 Field level metrics can be injected into managed objects, but they need to be updated by the application code.
 This annotation can be used on fields of type `Meter`, `Timer`, `Counter`, and `Histogram`.

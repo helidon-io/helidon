@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,15 +31,9 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Overview, Overview>>
 - <<Maven-Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-** <<Understanding Concepts, Understanding Concepts>>
 - <<Rest-Endpoints, REST Endpoints>>
 - <<Configuration, Configuration>>
-** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
-** <<Using the Built-In Health Checks, Using the Built-In Health Checks>>
-** <<Custom Liveness Health Checks, Custom Liveness Health Checks>>
-** <<Custom Readiness Health Checks, Custom Readiness Health Checks>>
-** <<Custom Startup Health Checks, Custom Startup Health Checks>>
 - <<Reference, Reference>>
 
 == Overview
@@ -100,7 +94,7 @@ Helidon implements link:{microprofile-health-spec-url}[MicroProfile Health] Spec
 The spec prescribes how external tools probe a service's health checks and how you
 implement health checks as part of your microservice that are specific to your service's needs.
 
-=== Understanding Concepts
+=== Concepts - Liveness, Readiness, and Startup Checks
 
 MicroProfile Health supports three types of health checks:
 
