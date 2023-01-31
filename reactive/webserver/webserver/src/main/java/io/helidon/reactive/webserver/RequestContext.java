@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,18 @@ class RequestContext {
     private final HttpRequestScopedPublisher publisher;
     private final HttpRequest request;
     private final Context scope;
+    private final SocketConfiguration socketConfiguration;
     private volatile boolean responseCompleted;
     private volatile boolean emitted;
 
-    RequestContext(HttpRequestScopedPublisher publisher, HttpRequest request, Context scope) {
+    RequestContext(HttpRequestScopedPublisher publisher,
+                   HttpRequest request,
+                   Context scope,
+                   SocketConfiguration socketConfiguration) {
         this.publisher = publisher;
         this.request = request;
         this.scope = scope;
+        this.socketConfiguration = socketConfiguration;
     }
 
     Multi<DataChunk> publisher() {
@@ -123,5 +128,9 @@ class RequestContext {
 
     boolean responseCompleted() {
         return responseCompleted;
+    }
+
+    SocketConfiguration socketConfiguration() {
+        return socketConfiguration;
     }
 }

@@ -186,6 +186,17 @@ public interface SocketConfiguration {
     }
 
     /**
+     * When true WebServer answers with 100 continue immediately,
+     * not waiting for user to actually request the data.
+     * False is default value.
+     *
+     * @return strategy identifier for applying backpressure
+     */
+    default boolean continueImmediately() {
+        return false;
+    }
+
+    /**
      * Initial size of the buffer used to parse HTTP line and headers.
      *
      * @return initial size of the buffer
@@ -412,6 +423,18 @@ public interface SocketConfiguration {
         B backpressureStrategy(BackpressureStrategy backpressureStrategy);
 
         /**
+         * When true WebServer answers to expect continue with 100 continue immediately,
+         * not waiting for user to actually request the data.
+         * <p>
+         * Default is {@code false}
+         *
+         * @param continueImmediately , answer with 100 continue immediately after expect continue, default is false
+         * @return this builder
+         */
+        @ConfiguredOption("false")
+        B continueImmediately(boolean continueImmediately);
+
+        /**
          * Set a maximum length of the content of an upgrade request.
          * <p>
          * Default is {@code 64*1024}
@@ -502,6 +525,7 @@ public interface SocketConfiguration {
         private boolean enableCompression = false;
         private long maxPayloadSize = -1;
         private BackpressureStrategy backpressureStrategy = BackpressureStrategy.AUTO_FLUSH;
+        private boolean continueImmediately = false;
         private int maxUpgradeContentLength = 64 * 1024;
         private long maxBufferSize = 5 * 1024 * 1024;
 
@@ -690,6 +714,12 @@ public interface SocketConfiguration {
         }
 
         @Override
+        public Builder continueImmediately(boolean continueImmediately) {
+            this.continueImmediately = continueImmediately;
+            return this;
+        }
+
+        @Override
         public Builder maxUpgradeContentLength(int size) {
             this.maxUpgradeContentLength = size;
             return this;
@@ -847,6 +877,10 @@ public interface SocketConfiguration {
 
         BackpressureStrategy backpressureStrategy() {
             return backpressureStrategy;
+        }
+
+        boolean continueImmediately() {
+            return continueImmediately;
         }
 
         int maxUpgradeContentLength() {

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.reactive.webserver.SocketConfiguration
 include::{rootdir}/includes/attributes.adoc[]
 
-= SocketConfiguration (webserver) Configuration
+= SocketConfiguration (reactive.webserver) Configuration
 
 // tag::config[]
 
@@ -55,8 +55,22 @@ Type: link:{javadoc-base-url}/io.helidon.reactive.webserver/io/helidon/reactive/
  socket.
 
  Default value is #DEFAULT_BACKLOG_SIZE.
+|`backpressure-buffer-size` |long |{nbsp} |Maximum length of the response data sending buffer can keep without flushing.
+ Depends on `backpressure-policy` what happens if max buffer size is reached.
+|`backpressure-strategy` |BackpressureStrategy (LINEAR, AUTO_FLUSH, PREFETCH, UNBOUNDED) |`LINEAR` |Sets a backpressure strategy for the server to apply against user provided response upstream.
+
+- LINEAR - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
+- AUTO_FLUSH - Data are requested one-by-one, in case buffer reaches watermark, no other data is requested.
+- PREFETCH - After first data chunk arrives, probable number of chunks needed to fill the buffer up to watermark is calculated and requested.
+- NONE - No backpressure is applied, Long.MAX_VALUE(unbounded) is requested from upstream.
+
+
 |[.line-through]#`bind-address`# |string |{nbsp} |*Deprecated* Configures local address where the server listens on with the server socket.
  If not configured, then listens an all local addresses.
+|`continue-immediately` |boolean |`false` |When true WebServer answers to expect continue with 100 continue immediately,
+ not waiting for user to actually request the data.
+
+ Default is `false`
 |`enable-compression` |boolean |`false` |Enable negotiation for gzip/deflate content encodings. Clients can
  request compression using the "Accept-Encoding" header.
 
@@ -66,7 +80,7 @@ Type: link:{javadoc-base-url}/io.helidon.reactive.webserver/io/helidon/reactive/
  io.helidon.common.http.Http.Status#BAD_REQUEST_400
  is returned.
 
- Default is `8192`
+ Default is `16384`
 |`max-initial-line-length` |int |`4096` |Maximal number of characters in the initial HTTP line.
 
  Default is `4096`
