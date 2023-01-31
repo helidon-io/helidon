@@ -39,6 +39,7 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.InterruptableTask;
 import io.helidon.nima.webserver.http.DirectTransportRequest;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
@@ -50,7 +51,7 @@ import static java.lang.System.Logger.Level.WARNING;
 /**
  * HTTP/1.1 server connection.
  */
-public class Http1Connection implements ServerConnection {
+public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
 
     private final ConnectionContext ctx;
@@ -72,6 +73,8 @@ public class Http1Connection implements ServerConnection {
     private int requestId;
     private long currentEntitySize;
     private long currentEntitySizeRead;
+
+    private volatile boolean currentlyReadingPrologue;
 
     /**
      * Create a new connection.
@@ -99,12 +102,19 @@ public class Http1Connection implements ServerConnection {
     }
 
     @Override
+    public boolean canInterrupt() {
+        return currentlyReadingPrologue;
+    }
+
+    @Override
     public void handle() throws InterruptedException {
         try {
             // handle connection until an exception (or explicit connection close)
             while (true) {
                 // prologue (first line of request)
+                currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
+                currentlyReadingPrologue = false;
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;

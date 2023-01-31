@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ import io.helidon.microprofile.server.Server;
 import jakarta.ws.rs.core.Application;
 import org.yaml.snakeyaml.Yaml;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -126,8 +127,8 @@ public class TestUtil {
      */
     public static String stringYAMLFromResponse(HttpURLConnection cnx) throws IOException {
         HttpMediaType returnedMediaType = mediaTypeFromResponse(cnx);
-        assertTrue(HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(returnedMediaType),
-                "Unexpected returned media type");
+        assertThat("Unexpected returned media type",
+                HttpMediaType.create(MediaTypes.APPLICATION_OPENAPI_YAML).test(returnedMediaType), is(true));
         return stringFromResponse(cnx, returnedMediaType);
     }
 

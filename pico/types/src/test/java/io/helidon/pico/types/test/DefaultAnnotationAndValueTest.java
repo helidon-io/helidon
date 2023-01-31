@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package io.helidon.pico.types.test;
 
+import java.util.Map;
+
 import io.helidon.pico.types.DefaultAnnotationAndValue;
 
+import jakarta.inject.Named;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -29,12 +32,21 @@ class DefaultAnnotationAndValueTest {
     @Test
     void sanity() {
         DefaultAnnotationAndValue val1 = DefaultAnnotationAndValue.create(Test.class);
-        assertThat(val1.typeName().toString(), equalTo("org.junit.jupiter.api.Test"));
-        assertThat(val1.toString(), equalTo("DefaultAnnotationAndValue(typeName=org.junit.jupiter.api.Test, values={})"));
+        assertThat(val1.typeName().toString(), equalTo(Test.class.getName()));
+        assertThat(val1.toString(),
+                   equalTo("DefaultAnnotationAndValue(typeName=" + Test.class.getName() + ")"));
 
         DefaultAnnotationAndValue val2 = DefaultAnnotationAndValue.create(Test.class);
         assertThat(val2, equalTo(val1));
         assertThat(val2.compareTo(val1), is(0));
+
+        DefaultAnnotationAndValue val3 = DefaultAnnotationAndValue.create(Named.class, "name");
+        assertThat(val3.toString(),
+                   equalTo("DefaultAnnotationAndValue(typeName=jakarta.inject.Named, value=name)"));
+
+        DefaultAnnotationAndValue val4 = DefaultAnnotationAndValue.create(Test.class, Map.of("a", "1"));
+        assertThat(val4.toString(),
+                   equalTo("DefaultAnnotationAndValue(typeName=" + Test.class.getName() + ", values={a=1})"));
     }
 
 }
