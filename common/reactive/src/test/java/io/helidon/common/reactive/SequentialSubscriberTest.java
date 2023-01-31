@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SequentialSubscriberTest {
@@ -99,7 +99,7 @@ public class SequentialSubscriberTest {
         } catch (InterruptedException e) {
             executorService.shutdownNow();
         }
-        assertThat(errorFound.orElse(""), errorFound.isPresent(), is(false));
+        assertThat(errorFound, optionalEmpty());
     }
 
     private void sleep(long millis) {
