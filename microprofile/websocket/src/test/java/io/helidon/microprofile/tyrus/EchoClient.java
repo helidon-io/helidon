@@ -92,7 +92,7 @@ class EchoClient {
                             LOGGER.log(Level.INFO, "Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertThat(messages[index] +":"+message, equals.apply(messages[index], message), is(true));
+                            assertThat(messages[index] + ":" + message, equals.apply(messages[index], message), is(true));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {
