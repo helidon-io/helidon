@@ -229,8 +229,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
     /**
      * JMS acknowledge mode.
-     * <ul>
+     * <p>
      * Possible values are:
+     * </p>
+     * <ul>
      * <li>AUTO_ACKNOWLEDGE - session automatically acknowledges a client’s receipt of a message,
      * <li>CLIENT_ACKNOWLEDGE - receipt of a message is acknowledged only when Message.ack() is called manually,
      * <li>DUPS_OK_ACKNOWLEDGE - session lazily acknowledges the delivery of messages.
