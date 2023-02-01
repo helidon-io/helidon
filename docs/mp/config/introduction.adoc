@@ -33,8 +33,6 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-** <<{spec-name} Features, {spec-name} Features>>
-** <<Helidon {spec-name} Features, Helidon {spec-name} Features>>
 - <<Configuration, Configuration>>
 - <<Reference, Reference>>
 
