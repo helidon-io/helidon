@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,33 +21,28 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.common</groupId>
+        <artifactId>helidon-common-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.common</groupId>
-    <artifactId>helidon-common-project</artifactId>
-    <packaging>pom</packaging>
-    <name>Helidon Common Project</name>
+    <artifactId>helidon-common-task</artifactId>
+    <name>Helidon Common Task</name>
 
-    <modules>
-        <module>common</module>
-        <module>reactive</module>
-        <module>config</module>
-        <module>configurable</module>
-        <module>key-util</module>
-        <module>http</module>
-        <module>context</module>
-        <module>mapper</module>
-        <module>media-type</module>
-        <module>crypto</module>
-        <module>parameters</module>
-        <module>buffers</module>
-        <module>socket</module>
-        <module>uri</module>
-        <module>security</module>
-        <module>testing</module>
-        <module>features</module>
-        <module>task</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

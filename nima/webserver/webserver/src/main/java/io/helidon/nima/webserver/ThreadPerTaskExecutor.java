@@ -30,6 +30,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import io.helidon.common.task.HelidonTaskExecutor;
+import io.helidon.common.task.InterruptableTask;
+
 /**
  * An implementation of {@link HelidonTaskExecutor}. Implementation is a simplified
  * version of ThreadPerTaskExecutor in the JDK library. Upon termination, this
