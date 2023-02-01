@@ -59,6 +59,8 @@ public interface Http2Config {
      * permits the receiver to create.
      * It is recommended that this value be no smaller than 100 to not unnecessarily limit parallelism
      * See RFC 9113 section 6.5.2 for details.
+     *
+     * @return maximal number of concurrent streams
      */
     @ConfiguredOption("8192")
     long maxConcurrentStreams();

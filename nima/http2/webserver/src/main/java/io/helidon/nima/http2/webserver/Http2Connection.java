@@ -434,7 +434,9 @@ public class Http2Connection implements ServerConnection {
                             Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL,
                                     "Value of maximum concurrent streams limit " + it
                                           + " exceeded hard limit value " + http2Config.maxConcurrentStreams());
-                            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
+                            connectionWriter.write(
+                                    frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()),
+                                    FlowControl.NOOP);
 
                         }
                     });
@@ -541,7 +543,6 @@ public class Http2Connection implements ServerConnection {
 
         receiveFrameListener.headers(ctx, headers);
         headers.validateRequest();
-        // todo configure path validation - done
         String path = headers.path();
         Http.Method method = headers.method();
         HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
