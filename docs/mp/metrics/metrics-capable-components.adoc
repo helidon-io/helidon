@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ When your MP application code uses `@Inject` for either a `RegistryFactory` or a
 
 By choosing and injecting the appropriate implementation, Helidon allows you to write your code without concern for which implementation is available at runtime.
 
-==== Packaging a Metrics-capable Helidon MP _Application_
+==== Packaging a Metrics-Capable Helidon MP _Application_
 
 The Helidon MP metrics implementation depends on the metrics and metrics service APIs as well as `helidon-metrics` which contains the full implementation of each.
 Therefore, by default, Helidon MP applications have full-featured metrics and endpoint support.

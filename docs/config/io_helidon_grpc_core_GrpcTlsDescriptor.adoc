@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ Type: link:{javadoc-base-url}/io.helidon.grpc.core/io/helidon/grpc/core/GrpcTlsD
 
 
 
-== Configuration options
+== Configuration Options
 
 
 
-.Optional configuration options
+.Optional Configuration Options
 [cols="3,3a,2,5a"]
 
 |===

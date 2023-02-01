@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,8 +30,18 @@ ifndef::h1-prefix[:h1-prefix: SE]
 == Contents
 
 - <<Overview, Overview>>
+** <<APIs, APIs>>
+** <<Implementations of the APIs, Implementations of the APIs>>
 - <<Usage, Usage>>
+** <<Categorizing Metrics Usage, Categorizing Metrics Usage>>
+** <<Understanding the Two Metrics Implementations, Understanding the Two Metrics Implementations>>
+** <<Understanding the Two Metrics Service Implementations>>
+** <<Enabling and Disabling Metrics, Enabling and Disabling Metrics>>
+** <<Designing and Writing Metrics-Capable Applications and Components, Designing and Writing Metrics-Capable Applications and Components>>
+** <<Writing Metrics-Capable Code, Writing Metrics-Capable Code>>
 - <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+** <<Advantages of Writing Metrics-Capable Modules, Advantages of Writing Metrics-Capable Modules>>
 
 == Overview
 This document explains Helidon {h1-prefix} metrics-capable components and applications and describes how to create and control them.
@@ -160,7 +170,7 @@ provided they are in the runtime path.
 Further, users can set `component-name.metrics.enabled` to `false` which disables metrics for just that component
 so long as the component was written to check that setting and act on it accordingly.
 
-=== Designing and Writing Metrics-capable Applications and Components
+=== Designing and Writing Metrics-Capable Applications and Components
 Whoever packages and deploys your application or component can control what code will be on the runtime path and whether metrics
 is enabled or not.
 As a result, wherever possible, construct your modules which use metrics so that they do not make decisions based on the values of metrics;
@@ -213,7 +223,7 @@ implementation:
 // tag::writing-code-beginning[]
 
 // tag::writing-code-intro[]
-=== Writing Metrics-capable Code
+=== Writing Metrics-Capable Code
 The way you write a metrics-capable module depends on whether it is a _component_
 (that is, _not_ an application) or an _application_.
 
@@ -221,7 +231,7 @@ The way you write a metrics-capable module depends on whether it is a _component
 
 // tag::writing-component[]
 
-==== Writing a _Non-application Component_
+==== Writing a _Non-Application Component_
 Write your _non-application_ component to accept component-specific configuration that includes an optional `metrics` section
 which can include an optional `enabled` setting. Helidon defaults the value to `true`.
 The following example shows one way to accomplish this:
@@ -309,7 +319,7 @@ which all use a single version of your metrics-capable app or component which ru
 // tag::wrap-up[]
 == Additional Information
 
-=== Advantages of Writing Metrics-capable Modules
+=== Advantages of Writing Metrics-Capable Modules
 By writing a metrics-capable app or component, you give packagers and deployers of your code the flexibility to include or exclude
 the full metrics implementation at runtime as they see fit.
 
