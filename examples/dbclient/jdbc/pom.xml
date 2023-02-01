@@ -107,6 +107,7 @@
         <dependency>
             <groupId>io.helidon.examples.dbclient</groupId>
             <artifactId>helidon-examples-dbclient-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
