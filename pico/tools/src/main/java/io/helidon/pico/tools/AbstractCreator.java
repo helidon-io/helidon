@@ -171,10 +171,7 @@ public abstract class AbstractCreator {
         if (moduleInfoPath != null) {
             descriptorBuilder = DefaultModuleInfoDescriptor
                     .toBuilder(ModuleInfoDescriptor.create(Paths.get(moduleInfoPath)));
-            if (hasValue(moduleName)
-                    && (ModuleInfoDescriptor.DEFAULT_MODULE_NAME.equals(descriptorBuilder.name())
-                        || (ModuleInfoDescriptor.DEFAULT_MODULE_NAME + "/" + ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX)
-                                .equals(descriptorBuilder.name()))) {
+            if (hasValue(moduleName) && ModuleUtils.isUnnamedModuleName(descriptorBuilder.name())) {
                 descriptorBuilder.name(moduleName);
             }
             assert (descriptorBuilder.name().equals(moduleName) || (!hasValue(moduleName)))

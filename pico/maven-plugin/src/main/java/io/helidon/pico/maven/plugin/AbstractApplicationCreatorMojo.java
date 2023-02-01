@@ -22,7 +22,6 @@ import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,11 +60,11 @@ import io.helidon.pico.tools.DefaultApplicationCreatorRequest;
 import io.helidon.pico.tools.DefaultCodeGenPaths;
 import io.helidon.pico.tools.DefaultCompilerOptions;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
-import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.types.DefaultTypeName;
 import io.helidon.pico.types.TypeName;
 
+import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -75,6 +74,11 @@ import static io.helidon.pico.maven.plugin.Utils.hasValue;
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
 import static io.helidon.pico.maven.plugin.Utils.toDescriptions;
 import static io.helidon.pico.tools.ApplicationCreatorConfigOptions.PermittedProviderType;
+import static io.helidon.pico.tools.ModuleUtils.REAL_MODULE_INFO_JAVA_NAME;
+import static io.helidon.pico.tools.ModuleUtils.isUnnamedModuleName;
+import static io.helidon.pico.tools.ModuleUtils.toBasePath;
+import static io.helidon.pico.tools.ModuleUtils.toSuggestedGeneratedPackageName;
+import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 
 /**
  * Abstract base for pico maven plugins responsible for creating application and test application's.
@@ -154,7 +158,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return packageName;
     }
 
-    String getThisPackageName(
+    String determinePackageName(
             ServiceProvider<Module> moduleSp,
             Collection<TypeName> typeNames,
             ModuleInfoDescriptor descriptor) {
@@ -179,7 +183,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             if (moduleSp != null) {
                 packageName = DefaultTypeName.createFromTypeName(moduleSp.serviceInfo().serviceTypeName()).packageName();
             } else {
-                packageName = ModuleUtils.toSuggestedGeneratedPackageName(descriptor, typeNames, PicoServicesConfig.NAME);
+                packageName = toSuggestedGeneratedPackageName(descriptor, typeNames, PicoServicesConfig.NAME);
             }
         }
 
@@ -194,13 +198,6 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return Objects.requireNonNull(packageName);
     }
 
-    static boolean isUnnamed(
-            String moduleName) {
-        return !hasValue(moduleName)
-                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
-                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME + "/" + ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
-    }
-
     static PicoException noModuleFoundError() {
         return new PicoException("unnamed to determine the name for the current module - was APT run?");
     }
@@ -211,16 +208,16 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     }
 
     String getThisModuleName() {
-        String moduleName = ModuleUtils
-                .toSuggestedModuleName(Paths.get("."),
-                                       Path.of(getProject().getBuild().getSourceDirectory()), true).orElseThrow();
-        if (isUnnamed(moduleName)) {
+        Build build = getProject().getBuild();
+        Path basePath = toBasePath(build.getSourceDirectory());
+        String moduleName = toSuggestedModuleName(basePath, Path.of(build.getSourceDirectory()), true).orElseThrow();
+        if (isUnnamedModuleName(moduleName)) {
             throw noModuleFoundError();
         }
         return moduleName;
     }
 
-    ServiceProvider<Module> getThisModule(
+    ServiceProvider<Module> lookupThisModule(
             String name,
             Services services) {
         return services.lookupFirst(Module.class, name, false).orElseThrow(() -> noModuleFoundError(name));
@@ -262,7 +259,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
     boolean hasModuleInfo() {
         return getSourceRootPaths().stream()
-                .anyMatch(p -> new File(p.toFile(), ModuleUtils.REAL_MODULE_INFO_JAVA_NAME).exists());
+                .anyMatch(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME).exists());
     }
 
     /**
@@ -274,14 +271,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
     ModuleInfoDescriptor getAnyModuleInfo(
             AtomicReference<File> location) {
         File file = getNonTestSourceRootPaths().stream()
-                .map(p -> new File(p.toFile(), ModuleUtils.REAL_MODULE_INFO_JAVA_NAME))
+                .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
                 .filter(File::exists)
                 .findFirst()
                 .orElse(null);
 
         if (file == null) {
             file = getTestSourceRootPaths().stream()
-                    .map(p -> new File(p.toFile(), ModuleUtils.REAL_MODULE_INFO_JAVA_NAME))
+                    .map(p -> new File(p.toFile(), REAL_MODULE_INFO_JAVA_NAME))
                     .filter(File::exists)
                     .findFirst()
                     .orElse(null);
@@ -350,14 +347,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             serviceTypeNames.removeAll(serviceNamesForExclusion);
 
             String moduleInfoModuleName = getThisModuleName();
-            ServiceProvider<Module> moduleSp = getThisModule(moduleInfoModuleName, services);
+            ServiceProvider<Module> moduleSp = lookupThisModule(moduleInfoModuleName, services);
             String typeSuffix = getClassPrefixName();
             AtomicReference<File> moduleInfoPathRef = new AtomicReference<>();
             ModuleInfoDescriptor descriptor = getAnyModuleInfo(moduleInfoPathRef);
             String moduleInfoPath = (moduleInfoPathRef.get() != null)
                     ? moduleInfoPathRef.get().getPath()
                     : null;
-            String packageName = getThisPackageName(moduleSp, serviceTypeNames, descriptor);
+            String packageName = determinePackageName(moduleSp, serviceTypeNames, descriptor);
 
             CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
@@ -399,7 +396,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .templateName(getTemplateName());
             if (hasValue(moduleName)) {
                 reqBuilder.moduleName(moduleName);
-            } else if (!isUnnamed(moduleInfoModuleName)) {
+            } else if (!isUnnamedModuleName(moduleInfoModuleName)) {
                 reqBuilder.moduleName(moduleInfoModuleName);
             }
             ApplicationCreatorRequest req = reqBuilder.build();

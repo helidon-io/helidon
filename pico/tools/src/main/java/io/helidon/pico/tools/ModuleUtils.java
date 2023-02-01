@@ -42,14 +42,11 @@ import static io.helidon.pico.tools.CommonUtils.hasValue;
 
 /**
  * Module specific utils.
+ *
+ * @deprecated
  */
 public class ModuleUtils {
     static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());
-
-    /**
-     * The resource providing the module-info template.
-     */
-    static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
 
     /**
      * The "real" module-info.java file name.
@@ -59,7 +56,11 @@ public class ModuleUtils {
     /**
      * The pico generated (e.g., module-info.java.pico) file name.
      */
-    static final String PICO_MODULE_INFO_JAVA_NAME = REAL_MODULE_INFO_JAVA_NAME + "." + PicoServicesConfig.NAME;
+    public static final String PICO_MODULE_INFO_JAVA_NAME = REAL_MODULE_INFO_JAVA_NAME + "." + PicoServicesConfig.NAME;
+
+    static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
+    static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
+    static final String SRC_TEST_JAVA_DIR = "/src/test/java";
 
     private ModuleUtils() {
     }
@@ -249,7 +250,7 @@ public class ModuleUtils {
      * Attempts to infer 'test' or base '' given the path.
      *
      * @param path the path
-     * @return 'test' or empty (for base)
+     * @return 'test' or '' (for base non-test)
      */
     public static String inferSourceOrTest(
             Path path) {
@@ -289,20 +290,6 @@ public class ModuleUtils {
     }
 
     /**
-     * Will return non-empty File if the uri represents a local file on the fs.
-     *
-     * @param uri the uri of the artifact
-     * @return the file instance, or empty if not local.
-     */
-    public static Optional<Path> toPath(
-            URI uri) {
-        if (uri.getHost() != null) {
-            return Optional.empty();
-        }
-        return Optional.of(Paths.get(uri));
-    }
-
-    /**
      * Translates to the source path coordinate given a source file and type name.
      * Only available during annotation processing.
      *
@@ -323,6 +310,52 @@ public class ModuleUtils {
             return Optional.of(filePath.resolveSibling(typePath));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Returns the base module path given its source path.
+     *
+     * @param sourcePath the source path
+     * @return the base path
+     */
+    public static Path toBasePath(
+            String sourcePath) {
+        int pos = sourcePath.lastIndexOf(SRC_MAIN_JAVA_DIR);
+        if (pos < 0) {
+            pos = sourcePath.lastIndexOf(SRC_TEST_JAVA_DIR);
+        }
+        if (pos < 0) {
+            throw new ToolsException("invalid source path: " + sourcePath);
+        }
+        Path path = Path.of(sourcePath.substring(0, pos));
+        return Objects.requireNonNull(path);
+    }
+
+    /**
+     * Will return non-empty File if the uri represents a local file on the fs.
+     *
+     * @param uri the uri of the artifact
+     * @return the file instance, or empty if not local
+     */
+    public static Optional<Path> toPath(
+            URI uri) {
+        if (uri.getHost() != null) {
+            return Optional.empty();
+        }
+        return Optional.of(Paths.get(uri));
+    }
+
+    /**
+     * Returns true if the given module name is unnamed.
+     *
+     * @param moduleName the module name to check
+     * @return true if the provided module name is unnamed
+     */
+    public static boolean isUnnamedModuleName(
+            String moduleName) {
+        return !hasValue(moduleName)
+                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME)
+                || moduleName.equals(ModuleInfoDescriptor.DEFAULT_MODULE_NAME + "/" + ModuleInfoDescriptor.DEFAULT_TEST_SUFFIX);
     }
 
     private static Set<Path> findFile(

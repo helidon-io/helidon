@@ -119,7 +119,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     static final boolean MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR = false;
     static final String CONFIGURED_BY_TYPENAME = "io.helidon.pico.config.api.ConfiguredBy";
     static final String TARGET_DIR = "/target/";
-    static final String SRC_MAIN_JAVA_DIR = "src/main/java";
+    static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
 
     private final ServicesToProcess services;
     private final InterceptorCreator interceptorCreator;
@@ -605,6 +605,10 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     }
 
     private void handleDeferredMoves() {
+        if (logger.isLoggable(Level.INFO) && !deferredMoves.isEmpty()) {
+            logger.log(Level.INFO, "handling deferred moves: " + deferredMoves);
+        }
+
         try {
             for (Map.Entry<Path, Path> e : deferredMoves.entrySet()) {
                 Files.move(e.getKey(), e.getValue());
@@ -612,7 +616,6 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         } catch (IOException e) {
             throw new ToolsException(e.getMessage(), e);
         }
-
         deferredMoves.clear();
     }
 
@@ -780,7 +783,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             String message,
             Throwable t) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
+            if (logger.isLoggable(loggerLevel())) {
+                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message, t);
+            }
         }
         if (processingEnv != null && processingEnv.getMessager() != null) {
             processingEnv.getMessager().printMessage(Kind.OTHER, message);
@@ -791,7 +796,9 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     public void debug(
             String message) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG)) {
-            logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
+            if (logger.isLoggable(loggerLevel())) {
+                logger.log(loggerLevel(), getClass().getSimpleName() + ": Debug: " + message);
+            }
         }
         if (processingEnv != null && processingEnv.getMessager() != null) {
             processingEnv.getMessager().printMessage(Kind.OTHER, message);
@@ -812,7 +819,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
             String message,
             Throwable t) {
         if (Options.isOptionEnabled(Options.TAG_DEBUG) && t != null) {
-            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message);
+            logger.log(Level.WARNING, getClass().getSimpleName() + ": Warning: " + message, t);
             t.printStackTrace();
         }
         if (processingEnv != null && processingEnv.getMessager() != null) {

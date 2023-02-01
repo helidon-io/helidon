@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -263,7 +264,7 @@ public class CodeGenFiler {
                     if (parent != null) {
                         Files.createDirectories(parent);
                     }
-                    Files.move(originalPath, newPath);
+                    Files.move(originalPath, newPath, StandardCopyOption.REPLACE_EXISTING);
                     return Optional.of(newPath);
                 } else {
                     deferredMoves.put(originalPath, newPath);

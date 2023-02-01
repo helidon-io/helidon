@@ -219,6 +219,7 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             }
         }
 
+        debug("unable to find module-info.java from: " + srcPath);
         return null;
     }
 

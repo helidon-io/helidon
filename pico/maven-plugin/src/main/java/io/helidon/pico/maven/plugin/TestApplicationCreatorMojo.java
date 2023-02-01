@@ -19,7 +19,6 @@ package io.helidon.pico.maven.plugin;
 import java.io.File;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,10 +29,10 @@ import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
-import io.helidon.pico.tools.ModuleUtils;
 import io.helidon.pico.types.TypeName;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Build;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -41,6 +40,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import static io.helidon.pico.maven.plugin.Utils.picoServices;
+import static io.helidon.pico.tools.ModuleUtils.toBasePath;
+import static io.helidon.pico.tools.ModuleUtils.toSuggestedModuleName;
 
 /**
  * A mojo wrapper to {@link io.helidon.pico.tools.ApplicationCreator} for test specific types.
@@ -105,10 +106,9 @@ public class TestApplicationCreatorMojo extends AbstractApplicationCreatorMojo {
 
     @Override
     String getThisModuleName() {
-        MavenProject project = getProject();
-        String moduleName = ModuleUtils.toSuggestedModuleName(Paths.get("."),
-                                                              Path.of(project.getBuild().getTestOutputDirectory()),
-                                                              true).orElseThrow();
+        Build build = getProject().getBuild();
+        Path basePath = toBasePath(build.getTestSourceDirectory());
+        String moduleName = toSuggestedModuleName(basePath, Path.of(build.getTestOutputDirectory()), true).orElseThrow();
         return moduleName;
     }
 
