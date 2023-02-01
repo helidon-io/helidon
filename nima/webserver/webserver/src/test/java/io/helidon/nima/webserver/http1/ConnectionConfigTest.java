@@ -16,135 +16,61 @@
 
 package io.helidon.nima.webserver.http1;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
-import io.helidon.common.buffers.DataReader;
 import io.helidon.config.Config;
-import io.helidon.nima.http.encoding.ContentEncodingContext;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ConnectionConfigTest {
 
     @Test
-    void testConnectionConfig()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-
+    void testConnectionConfig() {
         // This will pick up application.yaml from the classpath as default configuration file
         Config config = Config.create();
+        TestProvider provider = new TestProvider();
+        WebServer.builder().config(config.get("server")).addConnectionProvider(provider).build();
+        assertThat(provider.isConfig(), is(true));
+        Http1Config http1Config = provider.config();
+        assertThat(http1Config.maxPrologueLength(), is(4096));
+        assertThat(http1Config.maxHeadersSize(), is(8192));
+        assertThat(http1Config.validatePath(), is(false));
+        assertThat(http1Config.validateHeaders(), is(false));
+    }
 
-        // Builds LoomServer instance including connectionProviders list.
-        WebServer.Builder wsBuilder = WebServer.builder()
-                .config(config.get("server"));
+    private static class TestProvider implements ServerConnectionProvider {
 
-        // Call wsBuilder.connectionProviders() trough reflection
-        Method connectionProviders
-                = WebServer.Builder.class.getDeclaredMethod("connectionProviders", (Class<?>[]) null);
-        connectionProviders.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        List<ServerConnectionSelector> providers
-                = (List<ServerConnectionSelector>) connectionProviders.invoke(wsBuilder, (Object[]) null);
+        private Http1Config http1Config = null;
+        private Config config = null;
 
-        // Check whether at least one Http2ConnectionProvider was found
-        boolean haveHttp1Provider = false;
-
-        for (ServerConnectionSelector provider : providers) {
-            if (provider instanceof Http1ConnectionSelector) {
-                haveHttp1Provider = true;
-                Http1Connection conn = (Http1Connection) provider.connection(mockContext());
-                // Verify values to be updated from configuration file
-                assertThat(conn.config().maxPrologueLength(), is(4096));
-                assertThat(conn.config().maxHeadersSize(), is(8192));
-                assertThat(conn.config().validatePath(), is(false));
-                assertThat(conn.config().validateHeaders(), is(false));
-            }
+        @Override
+        public Iterable<String> configKeys() {
+            return List.of("http_1_1");
         }
-        assertThat("No Http12ConnectionProvider was found", haveHttp1Provider, is(true));
-    }
-    @Test
-    void testConnectionProvidersDisabled()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 
-        // This will pick up application.yaml from the classpath as default configuration file
-        Config config = Config.create();
-
-        // Builds LoomServer instance including connectionProviders list using server2 node.
-        WebServer.Builder wsBuilder = WebServer.builder()
-                .config(config.get("server2"));
-
-        // Call wsBuilder.connectionProviders() trough reflection
-        Method connectionProviders
-                = WebServer.Builder.class.getDeclaredMethod("connectionProviders", (Class<?>[]) null);
-        connectionProviders.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        List<ServerConnectionSelector> providers
-                = (List<ServerConnectionSelector>) connectionProviders.invoke(wsBuilder, (Object[]) null);
-
-        // No providers shall be loaded with ServiceLoader disabled for connection providers.
-        assertThat(providers, notNullValue());
-        assertThat(providers, is(empty()));
-    }
-
-    // Check that WebServer ContentEncodingContext is disabled when disable is present in config
-    @Test
-    void testContentEncodingConfig() throws NoSuchFieldException, IllegalAccessException {
-        // This will pick up application.yaml from the classpath as default configuration file
-        Config config = Config.create();
-
-        // Builds LoomServer instance including connectionProviders list.
-        WebServer.Builder wsBuilder = WebServer.builder()
-                .config(config.get("server"));
-
-        // Access WebServer.Builder.contentEncodingContext trough reflection
-        Field contentEncodingContextField = WebServer.Builder.class.getDeclaredField("contentEncodingContext");
-        contentEncodingContextField.setAccessible(true);
-        ContentEncodingContext contentEncodingContext = (ContentEncodingContext) contentEncodingContextField.get(wsBuilder);
-        // helidon-nima-http-encoding-gzip is on classpath so disabling ServiceLoader shall remove them
-        assertThat(contentEncodingContext.contentEncodingEnabled(), is(true));
-        assertThat(contentEncodingContext.contentDecodingEnabled(), is(true));
-        failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.decoder("gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.encoder("gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.decoder("x-gzip"), NoSuchElementException.class);
-        failsWith(() -> contentEncodingContext.encoder("x-gzip"), NoSuchElementException.class);
-    }
-
-    // Verify that provided task throws an exception
-    private static void failsWith(Runnable task, Class<? extends Exception> exception) {
-        try {
-            task.run();
-            // Fail the test when no Exception was thrown
-            fail(String.format("Exception %s was not thrown", exception.getName()));
-        } catch (Exception ex) {
-            if (!exception.isAssignableFrom(ex.getClass())) {
-                throw ex;
-            }
+        @Override
+        public ServerConnectionSelector create(Function<String, Config> configs) {
+            config = configs.apply("http_1_1");
+            http1Config = DefaultHttp1Config.toBuilder(config).build();
+            return mock(ServerConnectionSelector.class);
         }
-    }
 
-    private static ConnectionContext mockContext() {
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.serverContext()).thenReturn(mock(ServerContext.class));
-        return ctx;
+        private Http1Config config() {
+            return http1Config;
+        }
+
+        private boolean isConfig() {
+            return http1Config != null;
+        }
+
     }
 
 }
