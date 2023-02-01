@@ -132,7 +132,8 @@ public class OciMetricsSupportTest {
                 .initialDelay(1L)
                 .delay(2L)
                 .descriptionEnabled(false)
-                .monitoringClient(monitoringClient);
+                .monitoringClient(monitoringClient)
+                .enabled(true);
 
         Routing routing = createRouting(ociMetricsSupportBuilder);
 
@@ -143,6 +144,7 @@ public class OciMetricsSupportTest {
         countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
 
         // Test the 1st and 2nd metric counter updates
+        assertThat(ociMetricsSupportBuilder.enabled(), is(true));
         assertThat(testMetricUpdateCounterValue[0].intValue(), is(equalTo(1)));
         assertThat(testMetricUpdateCounterValue[1].intValue(), is(equalTo(2)));
 
@@ -187,6 +189,7 @@ public class OciMetricsSupportTest {
         // Wait for metrics to be posted
         countDownLatch1.await(10, java.util.concurrent.TimeUnit.SECONDS);
 
+        assertThat(ociMetricsSupportBuilder.enabled(), is(true));
         // Verify that telemetry-ingestion endpoint is properly set during postin
         assertThat(postingEndPoint, startsWith("https://telemetry-ingestion."));
         // Verify that original endpoint is restored after metric posting
@@ -349,6 +352,7 @@ public class OciMetricsSupportTest {
         delay(1000L);
 
         webServer.shutdown().await(10, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(ociMetricsSupportBuilder.enabled(), is(false));
         // metric count should remain 0 as metrics is disabled
         assertThat(testMetricCount, is(equalTo(0)));
     }
