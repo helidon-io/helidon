@@ -20,10 +20,9 @@ import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.tracing.WebClientTracing;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.reactive.webclient.WebClient;
+import io.helidon.reactive.webclient.tracing.WebClientTracing;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
@@ -39,11 +38,8 @@ public class OffendingExtension implements Extension {
     private void configure(@Observes @RuntimeStart @Priority(PLATFORM_BEFORE + 2) Config config) {
         // start a local server and connect to it (random port)
         WebServer ws = WebServer.builder()
-                .routing(Routing.builder()
-                        .get("/", (req, res) -> res.send("Hello")))
-                .build()
-                .start()
-                .await(TIMEOUT);
+                .routing(it -> it.get("/", (req, res) -> res.send("Hello")))
+                .start();
 
         WebClient wc = WebClient.builder()
                 // explicitly add tracing, so we need tracer at this moment
