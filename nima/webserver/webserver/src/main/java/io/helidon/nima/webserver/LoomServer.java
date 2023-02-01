@@ -177,8 +177,8 @@ class LoomServer implements WebServer {
     public void reloadTls(String socketName, Tls tls) {
         ServerListener listener = listeners.get(socketName);
         if (listener == null) {
-            LOGGER.log(System.Logger.Level.WARNING, "Cannot reload TLS on socket " + socketName
-                    + " since this socket does not exist");
+            throw new IllegalArgumentException("Cannot reload TLS on socket " + socketName
+                                                       + " since this socket does not exist");
         } else {
             listener.reloadTls(tls);
         }

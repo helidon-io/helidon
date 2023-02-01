@@ -20,6 +20,7 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 
 import javax.net.ssl.X509KeyManager;
 
@@ -65,9 +66,7 @@ class ReloadableX509KeyManager implements X509KeyManager, TlsReloadableComponent
 
     @Override
     public void reload(Tls tls) {
-        if (tls.originalKeyManager() == null) {
-            throw new UnsupportedOperationException("Cannot unset key manager");
-        }
+        Objects.requireNonNull(tls.originalKeyManager(), "Cannot unset key manager");
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
         }

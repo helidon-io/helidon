@@ -201,7 +201,7 @@ class ServerListener {
 
     void reloadTls(Tls tls) {
         if (!listenerConfig.hasTls()) {
-            throw new UnsupportedOperationException("TLS is not enabled on the socket " + socketName
+            throw new IllegalArgumentException ("TLS is not enabled on the socket " + socketName
                                                             + " and therefore cannot be reloaded");
         }
         if (!tls.enabled()) {

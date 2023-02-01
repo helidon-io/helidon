@@ -18,6 +18,7 @@ package io.helidon.nima.common.tls;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -48,9 +49,7 @@ class ReloadableX509TrustManager implements X509TrustManager, TlsReloadableCompo
 
     @Override
     public void reload(Tls tls) {
-        if (tls.originalTrustManager() == null) {
-            throw new UnsupportedOperationException("Cannot unset trust store");
-        }
+        Objects.requireNonNull(tls.originalKeyManager(), "Cannot unset trust store");
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
         }
