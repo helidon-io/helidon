@@ -252,9 +252,8 @@ public interface WebServer {
                     });
             // Configure content encoding
             config.get("content-encoding")
-                    .asNode()
-                    .ifPresent(encodingConfig ->
-                            contentEncodingContext(ContentEncodingContext.builder().config(encodingConfig).build()));
+                    .as(ContentEncodingContext::create)
+                    .ifPresent(this::contentEncodingContext);
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
             return this;

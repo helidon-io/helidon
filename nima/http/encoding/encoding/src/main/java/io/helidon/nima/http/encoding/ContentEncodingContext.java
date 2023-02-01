@@ -42,6 +42,16 @@ public interface ContentEncodingContext {
     }
 
     /**
+     * Create a new encoding support and apply provided configuration.
+     *
+     * @param config configuration to use
+     * @return content encoding support
+     */
+    static ContentEncodingContext create(Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
      * There is at least one content encoder.
      *
      * @return whether there is at least one content encoder
@@ -132,7 +142,7 @@ public interface ContentEncodingContext {
         }
 
         /**
-         * Disable content encoding support.
+         * Whether Java Service Loader should be used to load {@link ContentEncodingProvider}.
          *
          * @return updated builder
          */
