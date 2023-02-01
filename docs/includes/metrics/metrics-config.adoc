@@ -41,9 +41,8 @@ include::{rootdir}/config/io_helidon_metrics_serviceapi_MetricsSupport.adoc[tag=
 - <<Collecting Basic and Extended Key Performance Indicator (KPI) Metrics, Collecting Basic and Extended Key Performance Indicator (KPI) Metrics>>
 
 Metrics configuration is quite extensive and powerful and, therefore, a bit complicated.
-The rest of this section illustrates some of the most common scenarios:
+The rest of this section illustrates some of the most common scenarios.
 
-endif::[]
 [#config-disable]
 ==== Disable Metrics Subsystem
 
