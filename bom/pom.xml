@@ -490,11 +490,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.bundles</groupId>
-                <artifactId>internal-test-libs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile</groupId>
                 <artifactId>helidon-microprofile-security</artifactId>
                 <version>${helidon.version}</version>
@@ -753,12 +748,6 @@
                 <artifactId>helidon-reactive-dbclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- db client examples -->
-            <dependency>
-                <groupId>io.helidon.examples.dbclient</groupId>
-                <artifactId>helidon-examples-dbclient-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- tracing -->
             <dependency>
@@ -876,11 +865,6 @@
                 <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.lra</groupId>
-                <artifactId>helidon-lra-coordinator-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- integrations -->
             <dependency>
@@ -891,56 +875,6 @@
             <dependency>
                 <groupId>io.helidon.integrations.db</groupId>
                 <artifactId>h2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-config-source</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-system-kubernetes</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-system-oracle-accs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-ucp-accs</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-ucp-localhost</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.serviceconfiguration</groupId>
-                <artifactId>helidon-serviceconfiguration-ucp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1230,17 +1164,6 @@
                 <groupId>io.helidon.microprofile.bean-validation</groupId>
                 <artifactId>helidon-microprofile-bean-validation</artifactId>
                 <version>${helidon.version}</version>
-            </dependency>
-            <!-- Helidon tests tools -->
-            <dependency>
-                <groupId>io.helidon.tests.integration.tools</groupId>
-                <artifactId>helidon-tests-integration-tools-service</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.tests.integration.tools</groupId>
-                <artifactId>helidon-tests-integration-tools-client</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <!-- Microstream -->
             <dependency>
