@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver;
+package io.helidon.common.task;
 
 import java.io.Closeable;
 import java.util.concurrent.Future;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * executor will query the thread and interrupt it if possible. It is important
  * to efficiently shut down the Nima webserver in certain environments.
  */
-interface HelidonTaskExecutor extends Closeable {
+public interface HelidonTaskExecutor extends Closeable {
 
     /**
      * Executes a task.

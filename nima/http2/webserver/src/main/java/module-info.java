@@ -33,6 +33,7 @@ module io.helidon.nima.http2.webserver {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.common.socket;
+    requires transitive io.helidon.common.task;
     requires transitive io.helidon.nima.webserver;
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.nima.http2;

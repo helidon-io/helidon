@@ -27,6 +27,7 @@ import io.helidon.common.http.HttpException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;

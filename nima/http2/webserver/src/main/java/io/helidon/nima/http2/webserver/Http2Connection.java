@@ -29,6 +29,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
 import io.helidon.nima.http2.Http2ErrorCode;
@@ -67,7 +68,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * A single connection is created between a client and a server.
  * A single connection serves multiple streams.
  */
-public class Http2Connection implements ServerConnection {
+public class Http2Connection implements ServerConnection, InterruptableTask<Void> {
     static final String FULL_PROTOCOL = "HTTP/2.0";
     static final String PROTOCOL = "HTTP";
     static final String PROTOCOL_VERSION = "2.0";
@@ -189,6 +190,11 @@ public class Http2Connection implements ServerConnection {
      */
     public void expectPreface() {
         this.expectPreface = true;
+    }
+
+    @Override
+    public boolean canInterrupt() {
+        return streams.isEmpty();
     }
 
     @Override

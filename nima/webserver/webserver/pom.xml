@@ -53,6 +53,10 @@
             <artifactId>helidon-common-security</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-task</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.common</groupId>
             <artifactId>helidon-nima-common-tls</artifactId>
         </dependency>
