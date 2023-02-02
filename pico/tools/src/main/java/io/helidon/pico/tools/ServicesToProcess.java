@@ -151,7 +151,7 @@ public class ServicesToProcess implements Resetable {
     public boolean addParentServiceType(
             TypeName serviceTypeName,
             TypeName parentServiceTypeName) {
-        return addParentServiceType(serviceTypeName, parentServiceTypeName, null);
+        return addParentServiceType(serviceTypeName, parentServiceTypeName, Optional.empty());
     }
 
     /**
@@ -159,12 +159,13 @@ public class ServicesToProcess implements Resetable {
      *
      * @param serviceTypeName the service type name
      * @param parentServiceTypeName the parent for this service type name
+     * @param lockParent flag indicating whether the parent should be locked
      * @return flag indicating whether the parent was accepted
      */
-    boolean addParentServiceType(
+    public boolean addParentServiceType(
             TypeName serviceTypeName,
             TypeName parentServiceTypeName,
-            Boolean lockParent) {
+            Optional<Boolean> lockParent) {
         if (parentServiceTypeName == null) {
             return false;
         }
@@ -178,14 +179,14 @@ public class ServicesToProcess implements Resetable {
                 }
                 return true;
             } else {
-                servicesToLockParentServiceTypeName.put(serviceTypeName, lockParent);
+                servicesToLockParentServiceTypeName.put(serviceTypeName, lockParent.orElse(null));
             }
         }
 
         addServiceTypeName(serviceTypeName);
         servicesToParentServiceTypeNames.put(serviceTypeName, parentServiceTypeName);
-        if (lockParent != null) {
-            servicesToLockParentServiceTypeName.put(serviceTypeName, lockParent);
+        if (lockParent.isPresent()) {
+            servicesToLockParentServiceTypeName.put(serviceTypeName, lockParent.get());
         }
 
         return true;
@@ -200,13 +201,12 @@ public class ServicesToProcess implements Resetable {
 
     /**
      * Introduce the activator generic portion of the declaration (e.g., the "CB extends MySingletonConfig" portion of
-     * MyService$$picoActivator<CB extends MySingletonConfig>).
+     * {@code MyService$$picoActivator<CB extends MySingletonConfig>)}.
      *
      * @param serviceTypeName the service type name
      * @param activatorGenericDecl the generics portion of the class decl
-     * @return flag indicating whether the parent was accepted
      */
-    void addActivatorGenericDecl(
+    public void addActivatorGenericDecl(
             TypeName serviceTypeName,
             String activatorGenericDecl) {
         addServiceTypeName(serviceTypeName);
@@ -382,7 +382,7 @@ public class ServicesToProcess implements Resetable {
      * @param serviceTypeName the service type name
      * @param codeGen the extra code gen to tack onto the activation implementation
      */
-    void addExtraCodeGen(
+    public void addExtraCodeGen(
             TypeName serviceTypeName,
             String codeGen) {
         Objects.requireNonNull(codeGen);

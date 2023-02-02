@@ -44,6 +44,7 @@
 
     <modules>
         <module>configbean</module>
+        <module>configuredby</module>
     </modules>
 
 </project>

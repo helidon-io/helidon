@@ -24,6 +24,8 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.pico.builder.config.spi.BasicConfigResolver;
 import io.helidon.pico.builder.config.spi.ConfigBeanInfo;
 import io.helidon.pico.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.pico.builder.config.spi.ConfigResolverMapRequest;
@@ -54,7 +56,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(request);
         Objects.requireNonNull(meta);
-        Class<T> componentType = toComponentType(meta, request.attributeName());
+        Class<T> componentType = toComponentType(meta, request).orElse(null);
 
         // check the config bean registry to see if we know of anything by this key
         List<?> matches = findInConfigBeanRegistryAsList(ctx, meta, request);
@@ -81,7 +83,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(request);
         Objects.requireNonNull(meta);
-        Class<T> componentType = toComponentType(meta, request.attributeName());
+        Class<T> componentType = toComponentType(meta, request).orElse(null);
 
         // check the config bean registry to see if we know of anything by this key
         List<?> matches = findInConfigBeanRegistryAsList(ctx, meta, request);
@@ -108,7 +110,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(request);
         Objects.requireNonNull(meta);
-        Class<V> componentType = toComponentType(meta, request.attributeName());
+        Class<V> componentType = toComponentType(meta, request).orElse(null);
 
         // check the config bean registry to see if we know of anything by this key
         Map<String, V> matches = findInConfigBeanRegistryAsMap(ctx, meta, request);
@@ -136,6 +138,9 @@ class DefaultConfigResolver extends BasicConfigResolver {
             Class<?> componentType) {
         // check the default values...
         String defaultVal = (String) meta.get("value");
+        if (defaultVal != null && defaultVal.equals(ConfiguredOption.UNCONFIGURED)) {
+            defaultVal = null;
+        }
         Optional result = parse(defaultVal, attrName, type, componentType);
         if (result.isPresent()) {
             return result;
@@ -151,7 +156,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
         return Optional.empty();
     }
 
-    static <T, V> Class<T> validatedTypeForConfigBeanRegistry(
+    static <T> Class<T> validatedTypeForConfigBeanRegistry(
             String attrName,
             Class<T> type,
             Class<?> cbType) {
@@ -191,7 +196,6 @@ class DefaultConfigResolver extends BasicConfigResolver {
             Map<String, Map<String, Object>> meta,
             ConfigResolverRequest<V> request) {
         Class<?> type = validatedTypeForConfigBeanRegistry(request.attributeName(), request.valueType(), ctx.configBeanType());
-        type = validatedTypeForConfigBeanRegistry(request.attributeName(), request.valueType(), ctx.configBeanType());
         if (type == null) {
             return Map.of();
         }
@@ -309,7 +313,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
     static String configKeyOf(
             Map<String, Map<String, Object>> metaAttributes) {
         MetaConfigBeanInfo cbi = configBeanInfoOf(metaAttributes);
-        return validatedConfigKey(cbi);
+        return (null == cbi) ? null : validatedConfigKey(cbi);
     }
 
 }

@@ -48,7 +48,8 @@ import static io.helidon.pico.InjectionPointInfo.CONSTRUCTOR;
 @Weight({{{.}}}){{/weight}} {{#isrunlevelset}}@RunLevel({{runlevel}}){{/isrunlevelset}}
 @SuppressWarnings("unchecked")
 @Generated({{{generatedanno}}})
-public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}} extends {{{parent}}} {
+public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
+            extends {{{parent}}} {
     private static final DefaultServiceInfo serviceInfo =
         DefaultServiceInfo.builder()
             .serviceTypeName({{packagename}}.{{classname}}.class.getName()){{#contracts}}

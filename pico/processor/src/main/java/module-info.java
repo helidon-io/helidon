@@ -29,9 +29,11 @@ module io.helidon.pico.processor {
     requires io.helidon.common;
     requires io.helidon.builder.processor.spi;
     requires transitive io.helidon.pico.tools;
+    requires io.helidon.builder.processor;
 
     exports io.helidon.pico.processor;
 
+    uses io.helidon.builder.processor.BuilderProcessor;
     uses io.helidon.pico.tools.InterceptorCreator;
     uses io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 

@@ -15,9 +15,10 @@
  */
 
 /**
- * Helidon Pico ConfigBean Builder Processor (Tools) module.
+ * Helidon Pico ConfigBean Builder Processor module.
  */
 module io.helidon.pico.builder.config.processor {
+    requires java.compiler;
     requires jakarta.inject;
     requires io.helidon.common;
     requires io.helidon.common.config;
@@ -28,9 +29,13 @@ module io.helidon.pico.builder.config.processor {
     requires io.helidon.builder.processor.tools;
     requires io.helidon.pico.types;
     requires io.helidon.pico;
+    requires io.helidon.pico.config.services;
+    requires transitive io.helidon.pico.processor;
 
     exports io.helidon.pico.builder.config.processor;
 
     provides io.helidon.builder.processor.spi.BuilderCreatorProvider
             with io.helidon.pico.builder.config.processor.ConfigBeanBuilderCreator;
+    provides javax.annotation.processing.Processor with
+            io.helidon.pico.builder.config.processor.ConfiguredByProcessor;
 }

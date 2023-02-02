@@ -86,12 +86,6 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
             return Optional.empty();
         }
 
-        if (!isAcceptableBuilderTarget(element)) {
-            String msg = annotationTypeName + " is not intended to be targeted to this type: " + element;
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg);
-            throw new IllegalStateException(msg);
-        }
-
         List<ExecutableElement> problems = element.getEnclosedElements().stream()
                 .filter(it -> it.getKind() == ElementKind.METHOD)
                 .map(ExecutableElement.class::cast)
@@ -131,7 +125,7 @@ public class BuilderTypeTools implements TypeInfoCreatorProvider {
      * @param element the element
      * @return true if the element is acceptable
      */
-    protected boolean isAcceptableBuilderTarget(
+    public static boolean isAcceptableBuilderTarget(
             Element element) {
         final ElementKind kind = element.getKind();
         final Set<Modifier> modifiers = element.getModifiers();

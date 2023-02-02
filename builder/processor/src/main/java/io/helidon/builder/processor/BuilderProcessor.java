@@ -41,14 +41,10 @@ import javax.tools.JavaFileObject;
 
 import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 import io.helidon.builder.processor.spi.TypeAndBody;
-import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 /**
  * The processor for handling any annotation having a {@link io.helidon.builder.BuilderTrigger}.

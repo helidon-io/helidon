@@ -437,7 +437,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         assert (config == null || DEFAULT_INSTANCE_ID.equals(key) || (config.key().toString().equals(key)))
                 : key + " and " + config.key().toString();
 
-        AttributeVisitor<?> visitor = new AttributeVisitor<Object>() {
+        AttributeVisitor<Object> visitor = new AttributeVisitor<Object>() {
             @Override
             public void visit(String attrName,
                               Supplier<Object> valueSupplier,
@@ -473,8 +473,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                     }
                 }
 
-                // note to self: _todo_: allowed values check needed here ...
-
+                // note to self: _todo_: "allowed values" check needed here also!
             }
         };
 
@@ -558,7 +557,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             // default config beans should not be validated against any config, even if we have it available
             config = null;
         } else {
-            Optional<io.helidon.config.Config> beanConfig = csp.rawConfig();
+            Optional<Config> beanConfig = csp.rawConfig();
             if (beanConfig.isPresent()) {
                 // prefer to use the bean's config over ours if it has it
                 config = beanConfig.get();

@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.AttributeVisitor;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.Phase;
@@ -114,7 +114,7 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
     }
 
     @Override
-    public Optional<Config> rawConfig() {
+    public Optional<io.helidon.common.config.Config> rawConfig() {
         return delegate.rawConfig();
     }
 
@@ -131,14 +131,14 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
 
     @Override
     public CB toConfigBean(
-            Config cfg) {
+            io.helidon.common.config.Config cfg) {
         return delegate.toConfigBean(cfg);
     }
 
     @Override
     public <R> void visitAttributes(
             CB configBean,
-            AttributeVisitor<?> visitor,
+            AttributeVisitor<Object> visitor,
             R userDefinedContext) {
         delegate.visitAttributes(configBean, visitor, userDefinedContext);
     }

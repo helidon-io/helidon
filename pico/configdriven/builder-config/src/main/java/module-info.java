@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.pico.builder.config.spi.BasicConfigResolver;
+
 /**
  * The Helidon Pico Config Builder API / SPI
  */
@@ -33,5 +35,5 @@ module io.helidon.pico.builder.config {
     exports io.helidon.pico.builder.config.spi;
 
     provides io.helidon.pico.builder.config.spi.ConfigResolverProvider
-            with io.helidon.pico.builder.config.spi.DefaultConfigResolver;
+            with BasicConfigResolver;
 }

@@ -94,6 +94,7 @@ import jakarta.inject.Scope;
 import jakarta.inject.Singleton;
 
 import static io.helidon.builder.processor.tools.BuilderTypeTools.createTypeNameFromElement;
+import static io.helidon.pico.processor.Utils.nonNull;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromElement;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
@@ -168,14 +169,14 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
      *
      * @return annotation types we handle
      */
-    abstract Set<Class<? extends Annotation>> annoTypes();
+    protected abstract Set<Class<? extends Annotation>> annoTypes();
 
     /**
      * If these annotation type names are found on the target then do not process.
      *
      * @return the set of annotation type names that should result in skipped processing for this processor type
      */
-    Set<String> contraAnnotations() {
+    protected Set<String> contraAnnotations() {
         return Set.of();
     }
 
@@ -296,7 +297,13 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
         }
     }
 
-    void processServiceType(
+    /**
+     * Called to process the service type definition to add the basic service info constructs.
+     *
+     * @param serviceTypeName the service type name
+     * @param type the type element
+     */
+    protected void processServiceType(
             TypeName serviceTypeName,
             TypeElement type) {
         maybeSetBasicsForServiceType(serviceTypeName, type);
@@ -333,7 +340,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
                 .serviceTypeName(serviceTypeName.name())
                 .declaredWeight(Optional.ofNullable(services.weightedPriorities().get(serviceTypeName)))
                 .declaredRunLevel(Optional.ofNullable(services.runLevels().get(serviceTypeName)))
-                .scopeTypeNames(services.scopeTypeNames().get(serviceTypeName))
+                .scopeTypeNames(nonNull(services.scopeTypeNames().get(serviceTypeName)))
                 .build();
     }
 

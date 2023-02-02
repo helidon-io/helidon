@@ -95,12 +95,12 @@ public class ServiceAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     }
 
     @Override
-    Set<Class<? extends Annotation>> annoTypes() {
+    protected Set<Class<? extends Annotation>> annoTypes() {
         return Set.copyOf(SUPPORTED_TARGETS);
     }
 
     @Override
-    Set<String> contraAnnotations() {
+    protected Set<String> contraAnnotations() {
         return Set.of(CONFIGURED_BY_TYPENAME);
     }
 

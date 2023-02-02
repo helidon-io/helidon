@@ -28,11 +28,13 @@ import io.helidon.common.config.ConfigValue;
 import jakarta.inject.Singleton;
 
 /**
- * The default implementation of {@link ConfigResolver} simply resolves against {@link io.helidon.common.config.Config} directly.
+ * The basic implementation of {@link ConfigResolver} simply resolves against {@link io.helidon.common.config.Config} directly,
+ * not "full" Helidon config.
  */
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 1)   // allow all other creators to take precedence over us...
-public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProvider {
+@SuppressWarnings({"unchecked", "rawtypes"})
+public class BasicConfigResolver implements ConfigResolver, ConfigResolverProvider {
 
     /**
      * Tag that represents meta information about the attribute. Used in the maps for various methods herein.
@@ -40,10 +42,15 @@ public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProv
     public static final String TAG_META = "__meta";
 
     /**
+     * Tag that represents the component type.
+     */
+    static final String TAG_COMPONENT_TYPE = "componentType";
+
+    /**
      * Default constructor, service loader invoked.
      */
     @Deprecated
-    public DefaultConfigResolver() {
+    public BasicConfigResolver() {
     }
 
     @Override
@@ -52,38 +59,39 @@ public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProv
     }
 
     @Override
-    public <T> Optional<T> of(ResolutionContext ctx,
-                              Map<String, Map<String, Object>> meta,
-                              ConfigResolverRequest<T> request) {
+    public <T> Optional<T> of(
+            ResolutionContext ctx,
+            Map<String, Map<String, Object>> meta,
+            ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> Optional<Collection<T>> ofCollection(ResolutionContext ctx,
-                                                    Map<String, Map<String, Object>> meta,
-                                                    ConfigResolverRequest<T> request) {
+    public <T> Optional<Collection<T>> ofCollection(
+            ResolutionContext ctx,
+            Map<String, Map<String, Object>> meta,
+            ConfigResolverRequest<T> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? (Optional<Collection<T>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <K, V> Optional<Map<K, V>> ofMap(ResolutionContext ctx,
-                                            Map<String, Map<String, Object>> meta,
-                                            ConfigResolverMapRequest<K, V> request) {
+    public <K, V> Optional<Map<K, V>> ofMap(
+            ResolutionContext ctx,
+            Map<String, Map<String, Object>> meta,
+            ConfigResolverMapRequest<K, V> request) {
         Config attrCfg = ctx.config().get(request.configKey());
         return attrCfg.exists()
                 ? (Optional<Map<K, V>>) optionalWrappedConfig(attrCfg, meta, request) : Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> Optional<T> optionalWrappedConfig(Config attrCfg,
-                                                  Map<String, Map<String, Object>> meta,
-                                                  ConfigResolverRequest<T> request) {
+    private <T> Optional<T> optionalWrappedConfig(
+            Config attrCfg,
+            Map<String, Map<String, Object>> meta,
+            ConfigResolverRequest<T> request) {
         Class<?> componentType = request.valueComponentType().orElse(null);
         Class<?> type = request.valueType();
         final boolean isOptional = Optional.class.equals(type);
@@ -112,8 +120,25 @@ public class DefaultConfigResolver implements ConfigResolver, ConfigResolverProv
         }
     }
 
-    private static String toTypeNameDescription(Class<?> type,
-                                         Class<?> componentType) {
+    /**
+     * Extracts the component type from the meta attributes provided for a particular bean attribute name.
+     *
+     * @param request   the request
+     * @param meta      the meta attributes
+     * @param <T> the attribute value type being resolved in the request
+     * @return the component type
+     */
+    public static <T> Optional<Class<T>> toComponentType(
+            Map<String, Map<String, Object>> meta,
+            ConfigResolverRequest<T> request) {
+        Map<String, Object> thisMeta = meta.get(request.attributeName());
+        return Optional.ofNullable((Class<T>) (thisMeta == null
+                                                       ? request.valueComponentType() : thisMeta.get(TAG_COMPONENT_TYPE)));
+    }
+
+    private static String toTypeNameDescription(
+            Class<?> type,
+            Class<?> componentType) {
         return type.getTypeName() + "<" + componentType.getTypeName() + ">";
     }
 

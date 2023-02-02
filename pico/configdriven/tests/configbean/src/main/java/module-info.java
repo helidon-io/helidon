@@ -15,17 +15,19 @@
  */
 
 /**
- * Pico ConfigBean Builder test module.
+ * Pico ConfigBean Builder basic test module (i.e., only common config and basic pico w/o config-driven services).
  */
 module io.helidon.pico.builder.config.tests.test.config {
     requires static jakarta.inject;
     requires static jakarta.annotation;
-
     requires static io.helidon.config.metadata;
+    requires static io.helidon.pico;
+    requires io.helidon.common.config;
 
     requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.pico;
     requires io.helidon.pico.builder.config;
     requires io.helidon.builder;
+//    requires io.helidon.pico.services;
+
+    exports io.helidon.pico.builder.config.testsubjects;
 }

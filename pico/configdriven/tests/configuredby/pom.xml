@@ -17,7 +17,7 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.helidon.pico.configdriven.tests</groupId>
         <artifactId>helidon-pico-configdriven-tests-project</artifactId>
@@ -26,9 +26,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-pico-configdriven-tests-test-configbean</artifactId>
-    <name>Helidon Pico Config-Driven ConfigBean Builder Tests</name>
-    <description>tests only the config bean basics (i.e., only common config, and no config-driven services)</description>
+    <artifactId>helidon-pico-configdriven-tests-test-configuredby</artifactId>
+    <name>Helidon Pico Config-Driven ConfiguredBy Svcs Tests</name>
+    <description>tests the fuller config-driven services (i.e., full config not just common and with config-driven services)</description>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -46,25 +46,17 @@
             <artifactId>helidon-pico-configdriven-builder-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
+            <groupId>io.helidon.pico.configdriven.tests</groupId>
+            <artifactId>helidon-pico-configdriven-tests-test-configbean</artifactId>
+            <version>4.0.0-SNAPSHOT</version>
         </dependency>
-        <!-- IMPORTANT: this entire suite tests the basic functionality, w/o full config or config-driven services -->
-        <!-- here we are using full config only to set up the unit testing -->
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
         </dependency>
-<!--        &lt;!&ndash; ideally we would have this next dependency on compile but not test scope &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.pico</groupId>-->
-<!--            <artifactId>helidon-pico-services</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico</artifactId>
+            <artifactId>helidon-pico-services</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -76,13 +68,11 @@
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
-<!--        &lt;!&ndash; IMPORTANT: this entire suite tests the basic functionality, w/o full config or config-driven services &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.pico.configdriven</groupId>-->
-<!--            <artifactId>helidon-pico-configdriven-processor</artifactId>-->
-<!--            <scope>provided</scope> &lt;!&ndash; force reactor dependencies &ndash;&gt;-->
-<!--            <optional>true</optional>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.pico.configdriven</groupId>
+            <artifactId>helidon-pico-configdriven-processor</artifactId>
+            <scope>provided</scope> <!-- force reactor dependencies -->
+        </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>

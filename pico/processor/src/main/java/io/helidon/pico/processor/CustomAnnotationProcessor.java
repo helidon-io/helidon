@@ -145,8 +145,8 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
             return;
         }
 
-        final TypeName annoTypeName = DefaultTypeName.create(annoType);
-        final Collection<CustomAnnotationTemplateCreator> producers = producersForType(annoTypeName);
+        TypeName annoTypeName = DefaultTypeName.create(annoType);
+        Collection<CustomAnnotationTemplateCreator> producers = producersForType(annoTypeName);
         if (producers.isEmpty()) {
             return;
         }
@@ -235,7 +235,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
                 .findFirst()
                 .orElse(null);
         TypeInfo enclosingClassTypeInfo = tools
-                .createTypeInfo(annoTypeName, enclosingClassTypeName, (TypeElement) typeToProcess, processingEnv).orElseThrow();
+                .createTypeInfo(annoTypeName, enclosingClassTypeName, enclosingClassType, processingEnv).orElseThrow();
         Elements elements = processingEnv.getElementUtils();
         return DefaultCustomAnnotationTemplateRequest.builder()
                 .filerEnabled(true)

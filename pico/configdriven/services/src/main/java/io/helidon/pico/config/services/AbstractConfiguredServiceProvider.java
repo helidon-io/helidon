@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.pico.ContextualServiceQuery;
 import io.helidon.pico.DefaultContextualServiceQuery;
 import io.helidon.pico.DefaultQualifierAndValue;
@@ -71,6 +71,7 @@ import static io.helidon.pico.config.services.Utils.isBlank;
  * @param <T> the type of the service this provider manages
  * @param <CB> the type of config beans that this service is configured by
  */
+// special note: many of these methods are referenced in code generated code!
 public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractServiceProvider<T>
         implements ConfiguredServiceProvider<T, CB>,
                    ServiceProviderProvider,
@@ -177,7 +178,8 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param isRootProvider    true if an asserting is being made to claim root or claim managed slave
      * @param expectSet         true if this is a strong assertion, and if not claimed an exception will be thrown
      */
-    void assertIsRootProvider(
+    // special note: this is referred to in code generated code!
+    protected void assertIsRootProvider(
             boolean isRootProvider,
             boolean expectSet) {
         boolean set = this.isRootProvider.compareAndSet(null, isRootProvider);
@@ -334,7 +336,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      *
      * @return the backing config of this configured service instance
      */
-    abstract Optional<Config> rawConfig();
+    protected abstract Optional<io.helidon.common.config.Config> rawConfig();
 
     /**
      * Resolves this configured service's configuration bean from the provided config and resolver.
@@ -344,7 +346,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param resolver  the resolver
      */
     public abstract void resolveFrom(
-            io.helidon.config.Config config,
+            io.helidon.common.config.Config config,
             ConfigResolver resolver);
 
     @Override
@@ -611,7 +613,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
                 io.helidon.common.config.Config commonConfig = PicoServices.realizedGlobalBootStrap().config()
                         .orElseThrow(this::expectedConfigurationSetGlobally);
-                csp.resolveFrom(Utils.safeDowncastOf(commonConfig), resolver);
+                csp.resolveFrom(commonConfig, resolver);
             } catch (Throwable t) {
                 csp.onFailedFinish(logEntryAndResult, t, true);
             }
@@ -732,6 +734,16 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      */
     static Comparator<String> configBeanComparator() {
         return BEAN_INSTANCE_ID_COMPARATOR;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <C extends Config, CB> Optional<CB> toConfigBean(
+            C config,
+            Class<CB> configBeanType) {
+        CB configBean = (CB) toConfigBean(config);
+        assert (configBeanType.isInstance(configBean)) : configBean;
+        return Optional.of(configBean);
     }
 
     /**

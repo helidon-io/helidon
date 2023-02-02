@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.config.fakes;
+package io.helidon.pico.builder.configuredby.testsubjects;
 
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.pico.builder.config.ConfiguredBy;
+import io.helidon.pico.builder.config.testsubjects.fakes.FakeServerConfig;
+import io.helidon.pico.builder.config.testsubjects.fakes.FakeTracer;
+import io.helidon.pico.builder.config.testsubjects.fakes.WebServer;
+
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
-//@ConfiguredBy(FakeServerConfig.class)
+@ConfiguredBy(FakeServerConfig.class)
 public class FakeWebServer implements WebServer {
 
     private FakeServerConfig cfg;
     private boolean running;
 
     @Inject
-    FakeWebServer(FakeServerConfig cfg, Optional<FakeTracer> tracer) {
+    FakeWebServer(FakeServerConfig cfg,
+                  Optional<FakeTracer> tracer) {
         this.cfg = Objects.requireNonNull(cfg);
     }
 
@@ -44,6 +51,11 @@ public class FakeWebServer implements WebServer {
         running = true;
     }
 
+    @PreDestroy
+    public void shutdown() {
+        running = false;
+    }
+
     @Override
     public FakeServerConfig configuration() {
         return cfg;
@@ -53,4 +65,5 @@ public class FakeWebServer implements WebServer {
     public boolean isRunning() {
         return running;
     }
+
 }

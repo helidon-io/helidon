@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.pico.builder.config.test;
+package io.helidon.pico.builder.configuredby;
 
 import java.util.List;
 import java.util.Map;
@@ -29,44 +29,33 @@ import io.helidon.pico.builder.config.testsubjects.ServerConfig;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
-import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class BasicConfigBeanTest {
-
-    @Test
-    void acceptConfig() {
-        Config cfg = Config.create(
-                ConfigSources.create(
-                        Map.of("name", "server",
-                               "port", "8080",
-                               "description", "test",
-                               "pwd", "pwd1"
-//                               , "cipher-suites", "a,b,c" // no List mapper available --- todo: discuss w/ tlanger
-                        ),
-                        "my-simple-config-1"));
-        ServerConfig serverConfig = DefaultServerConfig.toBuilder(cfg).build();
-
-        assertThat(serverConfig.description(), optionalValue(equalTo("test")));
-        assertThat(serverConfig.name(), equalTo("server"));
-        assertThat(serverConfig.port(), equalTo(8080));
-        assertThat(new String(serverConfig.pwd()), equalTo("pwd1"));
-        assertThat(serverConfig.toString(),
-                   startsWith("ServerConfig"));
-        assertThat(serverConfig.toString(),
-                   endsWith("(name=server, port=8080, cipherSuites=[], pwd=not-null, description=Optional[test])"));
-    }
+/**
+ * See {@code BasicConfigBeanTest}, this repeats some of that with a fuller classpath with config-driven-services and full config
+ * enabled.  This means that extra validation (e.g., required config attributes, etc.) will be tested here.
+ */
+class DefaultConfigBeanTest {
 
     @Test
     void emptyConfig() {
         Config cfg = Config.create();
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> DefaultServerConfig.toBuilder(cfg).build());
+        assertThat(e.getMessage(), equalTo("'port' is a required attribute and cannot be null"));
+    }
+
+    @Test
+    void minimalConfig() {
+        Config cfg = Config.create(
+                ConfigSources.create(
+                        Map.of("port", "8080"),
+                        "my-simple-config-1"));
         ServerConfig serverConfig = DefaultServerConfig.toBuilder(cfg).build();
         assertThat(serverConfig.description(), optionalEmpty());
         assertThat(serverConfig.name(), equalTo("default"));
-        assertThat(serverConfig.port(), equalTo(0));
+        assertThat(serverConfig.port(), equalTo(8080));
     }
 
     /**

@@ -71,7 +71,7 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      * @return the generated config bean instance
      */
     CB toConfigBean(
-            io.helidon.config.Config cfg);
+            io.helidon.common.config.Config cfg);
 
     /**
      * The mapper associated with this service's config bean types.
@@ -92,7 +92,7 @@ public interface ConfiguredServiceProvider<T, CB> extends ServiceProvider<T>, Co
      */
     <R> void visitAttributes(
             CB configBean,
-            AttributeVisitor<?> visitor,
+            AttributeVisitor<Object> visitor,
             R userDefinedContext);
 
     /**

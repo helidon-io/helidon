@@ -1,2 +1,2 @@
 # pico-configdriven-test-configbean
-Tests for <b>ConfigBean</b>-generated builder types.
+Tests for basic <b>ConfigBean</b>-generated builder types.
