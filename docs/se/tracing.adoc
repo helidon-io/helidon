@@ -149,7 +149,7 @@ The following configuration should be supported by all tracer implementations (i
 
 include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=1]
 
-=== Traced spans configuration
+=== Traced Spans Configuration
 
 Each component and its spans can be configured using Config.
 The traced configuration has the following layers:
@@ -203,9 +203,9 @@ tracing:
 routing.register(WebTracingConfig.create(config.get("tracing")));
 ----
 
-==== Path based configuration in Helidon Web Server
+==== Path-based configuration in Helidon Web Server
 
-For Web Server we have a path based support for configuring tracing, in addition
+For Web Server we have a path-based support for configuring tracing, in addition
 to the configuration described above.
 
 Configuration of path can use any path string supported by the
