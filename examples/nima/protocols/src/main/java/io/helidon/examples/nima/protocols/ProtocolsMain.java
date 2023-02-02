@@ -59,6 +59,7 @@ public class ProtocolsMain {
         Tls tls = Tls.builder()
                 .privateKey(privateKeyConfig.privateKey().get())
                 .privateKeyCertChain(privateKeyConfig.certChain())
+                .trustCertificates(privateKeyConfig.certChain())
                 .build();
 
         WebServer.builder()
@@ -109,11 +110,14 @@ public class ProtocolsMain {
     }
 
     private static KeyConfig privateKey() {
-        String password = "helidon";
+        String password = "password";
 
         return KeyConfig.keystoreBuilder()
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase(password)
+                .keystore(Resource.create("server.p12"))
+                .keystorePassphrase(password).trustStore()
+                .trustStore()
+                .keystore(Resource.create("server.p12"))
+                .keystorePassphrase(password).trustStore()
                 .build();
     }
 }

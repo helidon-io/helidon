@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,62 +17,42 @@
 
 -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.helidon.security.providers</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
+        <groupId>io.helidon.security.providers</groupId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>helidon-security-providers-oidc</artifactId>
-    <name>Helidon Security Providers OIDC</name>
+    <artifactId>helidon-security-providers-oidc-reactive</artifactId>
+    <name>Helidon Security Providers OIDC Reactive</name>
 
     <description>
-        OIDC (Open ID Connect) security provider
+        OIDC (Open ID Connect) security provider for reactive server
     </description>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-crypto</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security-jwt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-oidc-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.abac</groupId>
-            <artifactId>helidon-security-abac-scope</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-nima</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.helidon.nima.webserver</groupId>
             <artifactId>helidon-nima-webserver-cors</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-oidc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.reactive.webserver</groupId>
+            <artifactId>helidon-reactive-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.reactive.webserver</groupId>
+            <artifactId>helidon-reactive-webserver-cors</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.reactive.webclient</groupId>
@@ -91,27 +71,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.bundles</groupId>
-            <artifactId>helidon-bundles-config</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-client</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-media-jsonp</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -125,11 +84,6 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -150,4 +104,6 @@
             </plugin>
         </plugins>
     </build>
+
+
 </project>

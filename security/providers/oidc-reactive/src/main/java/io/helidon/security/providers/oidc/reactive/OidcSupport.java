@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.providers.oidc;
+package io.helidon.security.providers.oidc.reactive;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
@@ -53,6 +53,7 @@ import io.helidon.reactive.webserver.Service;
 import io.helidon.reactive.webserver.cors.CorsSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.providers.oidc.OidcProviderService;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.security.providers.oidc.common.Tenant;
@@ -192,7 +193,7 @@ public final class OidcSupport implements Service {
     /**
      * Load OIDC support for webserver from {@link OidcConfig} instance.
      * When programmatically configuring your environment, this is the best approach, to share configuration
-     * between this class and {@link OidcProvider}.
+     * between this class and {@link io.helidon.security.providers.oidc.OidcProvider}.
      *
      * @param oidcConfig configuration of OIDC integration
      * @return OIDC webserver integration based on the configuration
@@ -377,7 +378,10 @@ public final class OidcSupport implements Service {
                 .uri(tenant.tokenEndpointUri())
                 .accept(HttpMediaType.APPLICATION_JSON);
 
-        OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
+        if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_POST) {
+            form.add("client_id", tenantConfig.clientId());
+            form.add("client_secret", tenantConfig.clientSecret());
+        }
 
         OidcConfig.postJsonResponse(post,
                                     form.build(),
@@ -553,7 +557,7 @@ public final class OidcSupport implements Service {
     }
 
     /**
-     * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcSupport}.
+     * A fluent API builder for {@link OidcSupport}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, OidcSupport> {
 
@@ -631,7 +635,7 @@ public final class OidcSupport implements Service {
          * Config located either at the configuration root, or at the provider node.
          *
          * @param config configuration to use
-         * @param providerName name of the security provider used for the {@link io.helidon.security.providers.oidc.OidcSupport}
+         * @param providerName name of the security provider used for the {@link OidcSupport}
          *                     configuration
          * @return updated builder instance
          */

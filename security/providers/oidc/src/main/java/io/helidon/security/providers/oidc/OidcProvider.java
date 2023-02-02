@@ -241,7 +241,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     /**
-     * Builder for {@link io.helidon.security.providers.oidc.OidcProvider}.
+     * Builder for {@link OidcProvider}.
      */
     @Configured(prefix = OidcProviderService.PROVIDER_CONFIG_KEY,
                 description = "Open ID Connect security provider",
