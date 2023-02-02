@@ -38,7 +38,7 @@
                                     <list key="dependencies" if="${flavor} == 'se'">
                                         <map>
                                             <value key="groupId">io.helidon.security.providers</value>
-                                            <value key="artifactId">helidon-security-providers-oidc</value>
+                                            <value key="artifactId">helidon-security-providers-oidc-reactive</value>
                                         </map>
                                     </list>
                                     <list key="dependencies" if="${flavor} == 'mp'">
