@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "OIDC",
         description = "Security provider for Open ID Connect authentication",
-        in = {HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.NIMA},
         path = {"Security", "OIDC"}
 )
 module io.helidon.security.providers.oidc {

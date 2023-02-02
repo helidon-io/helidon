@@ -45,7 +45,7 @@ public final class OidcCdiExtension implements Extension {
             // only configure if security is enabled
             ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 
-            OidcFeature.create(config).setup(server.serverRoutingBuilder());
+            server.serverRoutingBuilder().addFeature(OidcFeature.create(config));
         }
     }
 }

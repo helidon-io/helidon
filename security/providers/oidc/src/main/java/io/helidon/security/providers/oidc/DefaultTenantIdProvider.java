@@ -31,7 +31,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
 /**
  * This is the default tenant id provider.
  */
-@Weight(100000)
+@Weight(1)
 class DefaultTenantIdProvider implements TenantIdProvider {
 
     static final String DEFAULT_TENANT_ID_STYLE = "host-header";
