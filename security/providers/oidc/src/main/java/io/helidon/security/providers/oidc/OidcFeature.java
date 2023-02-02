@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weight;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -135,6 +136,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  * </tr>
  * </table>
  */
+@Weight(800)
 public final class OidcFeature implements HttpFeature {
     private static final System.Logger LOGGER = System.getLogger(OidcFeature.class.getName());
     private static final String CODE_PARAM_NAME = "code";
