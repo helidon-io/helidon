@@ -39,15 +39,18 @@ public class OciMetricsBean {
     // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
     void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
                             Config config, Monitoring monitoringClient) {
-        Config helidonConfig =  config.get("ocimetrics");
-        if (helidonConfig.exists()) {
-            OciMetricsSupport.Builder builder = OciMetricsSupport.builder()
-                    .config(helidonConfig)
-                    .monitoringClient(monitoringClient);
-
-            RoutingBuilders.create(helidonConfig)
-                    .routingBuilder()
-                    .register(builder.build());
+        Config ocimetrics = config.get("ocimetrics");
+        OciMetricsSupport.Builder builder = OciMetricsSupport.builder()
+                .config(ocimetrics)
+                .monitoringClient(monitoringClient);
+        if (builder.enabled()) {
+            activateOciMetricsSupport(ocimetrics, builder);
         }
+    }
+
+    void activateOciMetricsSupport(Config ocimetrics, OciMetricsSupport.Builder builder) {
+        RoutingBuilders.create(ocimetrics)
+                .routingBuilder()
+                .register(builder.build());
     }
 }

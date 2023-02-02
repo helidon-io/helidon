@@ -525,6 +525,16 @@ public class OciMetricsSupport implements HttpService {
             return this;
         }
 
+        /**
+         * Returns boolean value to indicate whether OciMetricsSupport service will be activated or not.
+         *
+         * @return {@code true} if OciMetricsSupport service will be activated or
+         *         {@code false} if it not
+         */
+        public boolean enabled() {
+            return this.enabled;
+        }
+
         private static Type[] getAllMetricScopes() {
             return new ArrayList<>(SCOPE_TYPES.values()).toArray(new Type[SCOPE_TYPES.size()]);
         }
