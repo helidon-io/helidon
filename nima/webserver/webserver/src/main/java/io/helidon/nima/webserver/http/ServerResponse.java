@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.common.uri.UriQuery;
 /**
  * Http server response.
  */
-public interface ServerResponse {
+public interface ServerResponse extends AutoCloseable {
     /**
      * Status of the response.
      *
@@ -106,6 +106,27 @@ public interface ServerResponse {
      */
     default void send(Optional<?> entity) {
         send(entity.orElseThrow(() -> new NotFoundException("")));
+    }
+
+    /**
+     * Sends an SSE event. Content type for the response must already be set to
+     * {@link Http.HeaderValues#CONTENT_TYPE_EVENT_STREAM} before this method is called.
+     *
+     * @param sseEvent the SSE event to send
+     * @return this response
+     * @throws IllegalStateException if content type not set to "text/event-stream"
+     */
+    default ServerResponse send(SseEvent sseEvent) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    /**
+     * Closes this response to finalize an SSE event stream after calling
+     * {@link #send(SseEvent)} zero or more times. Has no effect if content type
+     * is not "text/event-stream".
+     */
+    @Override
+    default void close() {
     }
 
     /**

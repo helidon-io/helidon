@@ -30,11 +30,13 @@ import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
+import io.helidon.nima.webserver.http.SseEvent;
 
 /*
 HTTP/1.1 200 OK
@@ -213,6 +215,38 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
+        }
+    }
+
+    @Override
+    public ServerResponse send(SseEvent sseEvent) {
+        ensureSseContentType();
+        if (outputStream == null) {
+            outputStream();
+        }
+        // TODO optimize data buffers here
+        try {
+            outputStream.write("data:".getBytes(StandardCharsets.UTF_8));
+            outputStream.write(sseEvent.data().getBytes(StandardCharsets.UTF_8));
+            outputStream.write("\n\n".getBytes(StandardCharsets.UTF_8));
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
+    @Override
+    public void close() {
+        if (outputStream != null) {
+            outputStream.commit();
+        }
+    }
+
+    private void ensureSseContentType() {
+        HttpMediaType mt = headers.contentType().orElse(null);
+        if (mt == null || !mt.type().equals("text") || !mt.subtype().equals("event-stream")) {
+            throw new IllegalStateException("Content-type must be set to 'text/event-stream");
         }
     }
 
