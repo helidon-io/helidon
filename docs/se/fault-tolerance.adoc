@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,7 +30,19 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
+** <<Asynchronous, Asynchronous>>
+** <<Retries, Retries>>
+** <<Timeouts, Timeouts>>
+** <<Fallbacks, Fallbacks>>
+** <<Circuit Breakers, Circuit Breakers>>
+** <<Bulkheads, Bulkheads>>
+** <<Handler Composition, Handler Composition>>
+** <<Revisiting the Multi Method, Revisiting the Multi Method>>
 - <<Configuration, Configuration>>
+** <<Timeout, Timeout>>
+** <<Circuit Breaker, Circuit Breaker>>
+** <<Bulkhead, Bulkhead>>
+** <<Retry, Retry>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 
@@ -308,7 +320,7 @@ and bulkhead is the last one (the first to be executed once a value is returned)
 NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
 in Helidon when a method is decorated with multiple annotations.
 
-=== Revisiting Multi's
+=== Revisiting the Multi Method
 
 All the examples presented so far have focused on invocations returning
 a single value of type `Single<T>`. If the invocation in question can return
@@ -419,6 +431,8 @@ Default is `true`.
 |===
 
 === Retry
+* <<Delaying the Retry Policy, Delaying the Retry Policy>>
+* <<Jitter Retry Policy, Jitter Retry Policy>>
 
 [cols="2,2,6", role="flex, sm7"]
 |===
@@ -431,7 +445,7 @@ Default is `true`.
 Default is `true`.
 |===
 
-==== Delaying Retry Policy
+==== Delaying the Retry Policy
 
 [cols="2,2,6", role="flex, sm7"]
 |===

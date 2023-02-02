@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,7 +31,12 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
 - <<Configuration, Configuration>>
+** <<Configuration Options, Configuration Options>>
+** <<Configuring TLS, Configuring TLS>>
 - <<Usage, Usage>>
+** <<Using Channels, Using Channels>>
+** <<Using the Client Interface in an Application, Using the Client Interface in an Application>>
+** <<Building a gRPC Client, Building a gRPC Client>>
 - <<Examples, Examples>>
 
 == Overview
@@ -59,15 +64,14 @@ The following annotations are used to work with Helidon MP gRPC clients:
 * `@Grpc` - an annotation used to mark a class as representing a gRPC service.
 
 == Configuration
-For a gRPC client to connect to a server, it requires a Channel. The Helidon MP gRPC APIs provide a way to inject channels into
-CDI beans that require them.
+For a gRPC client to connect to a server, it requires a Channel. The Helidon MP gRPC APIs provide a way to inject channels into CDI beans that require them.
 
 include::{rootdir}/config/io_helidon_grpc_client_GrpcChannelDescriptor.adoc[leveloffset=1, tag=config]
 
 Channels are configured in the `grpc` section of the Helidon application configuration. The examples below use an `application.yaml`
 file but there are many other ways to use and override xref:{rootdir}/mp/config/introduction.adoc[configuration in Helidon]
 
-.General form of a gRPC channels configuration
+.General Form of a gRPC Channels Configuration
 [source,yaml]
 ----
 grpc:
@@ -84,7 +88,7 @@ grpc:
 While most client application only connect to a single server, it is possible to configure multiple named channels if the client
 needs to connect to multiple servers.
 
-.Multiple gRPC Channels configuration example
+.Multiple gRPC Channels Configuration Example
 [source,yaml]
 ----
 grpc:
@@ -103,7 +107,7 @@ It is also possible to configure a Channel to use TLS if the server is using TLS
 
 include::{rootdir}/config/io_helidon_grpc_core_GrpcTlsDescriptor.adoc[leveloffset=3]
 
-.TLS on gRPC Channels configuration example
+.TLS on gRPC Channels Configuration Example
 [source,yaml]
 ----
 grpc:

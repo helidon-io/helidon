@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,17 +36,13 @@ include::{rootdir}/config/io_helidon_metrics_serviceapi_MetricsSupport.adoc[tag=
 // tag::config-examples[]
 [#example-configuration]
 === Example Configuration
+- <<Disable Metrics Subsystem, Disable Metrics Subsystem>>
+- <<Disable Selected Metrics, Disable Selected Metrics>>
+- <<Collecting Basic and Extended Key Performance Indicator (KPI) Metrics, Collecting Basic and Extended Key Performance Indicator (KPI) Metrics>>
 
 Metrics configuration is quite extensive and powerful and, therefore, a bit complicated.
-The rest of this section illustrates some of the most common scenarios:
+The rest of this section illustrates some of the most common scenarios.
 
-* <<config-disable,Disable metrics entirely.>>
-* <<config-selective,Selectively enable or disable metrics by metric registry type and, within type, by name.>>
-* <<config-kpi,Choose whether to collect extended key performance indicator metrics.>>
-ifdef::mp-flavor[]
-* <<config-rest-request,Control `REST.request` metrics collection.>>
-
-endif::[]
 [#config-disable]
 ==== Disable Metrics Subsystem
 
@@ -150,7 +146,7 @@ endif::[]
 
 [#config-rest-request]
 ifdef::mp-flavor[]
-==== Enable `REST.request` Metrics
+==== Enable REST.request Metrics
 
 .Controlling REST request metrics
 [source,properties]

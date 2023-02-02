@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -427,6 +427,10 @@ You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 // tag::k8s-and-prometheus-integration[]
 
 === Integration with Kubernetes and Prometheus
+- <<Kubernetes Integration, Kubernetes Integration>>
+- <<Prometheus Integration, Prometheus Integration>>
+- <<Final Cleanup, Final Cleanup>>
+
 ==== Kubernetes Integration
 The following example shows how to integrate the Helidon {h1-prefix} application with Kubernetes.
 
