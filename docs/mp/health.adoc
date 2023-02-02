@@ -47,7 +47,7 @@ include::{rootdir}/includes/mp.adoc[]
 Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)
 can monitor each service and take action, such as restarting a service instance if it has failed
 or temporarily shunting traffic away from the instance if the service is unable to process
-incoming requests normally.
+the incoming requests normally.
 
 
 == Maven Coordinates [[Maven-Coordinates]]
