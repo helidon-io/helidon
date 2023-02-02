@@ -54,6 +54,18 @@ public interface Http2Config {
     int maxClientFrameSize();
 
     /**
+     * Maximum number of concurrent streams that the server will allow.
+     * Defaults to {@code 8192}. This limit is directional: it applies to the number of streams that the sender
+     * permits the receiver to create.
+     * It is recommended that this value be no smaller than 100 to not unnecessarily limit parallelism
+     * See RFC 9113 section 6.5.2 for details.
+     *
+     * @return maximal number of concurrent streams
+     */
+    @ConfiguredOption("8192")
+    long maxConcurrentStreams();
+
+    /**
      * Whether to send error message over HTTP to client.
      * Defaults to {@code false}, as exception message may contain internal information that could be used as an
      * attack vector. Use with care and in cases where both server and clients are under your full control (such as for
@@ -63,4 +75,13 @@ public interface Http2Config {
      */
     @ConfiguredOption("false")
     boolean sendErrorDetails();
+
+    /**
+     * If set to false, any path is accepted (even containing illegal characters).
+     *
+     * @return whether to validate path
+     */
+    @ConfiguredOption("true")
+    boolean validatePath();
+
 }
