@@ -119,6 +119,9 @@ The following table summarizes the metric types.
 | link:{microprofile-metrics-javadoc-metric-url}/Gauge.html[`Gauge`]
 | Access to a value managed by other code in the service.
 
+|link:{microprofile-metrics-javadoc-metric-url}/Histogram.html[`Histogram`]
+|Calculates the distribution of a value.
+
 | link:{microprofile-metrics-javadoc-metric-url}/Meter.html[`Meter`]
 | Count of invocations and how frequently invocations have occurred.
 
