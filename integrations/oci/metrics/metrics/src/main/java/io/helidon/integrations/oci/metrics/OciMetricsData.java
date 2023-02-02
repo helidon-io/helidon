@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import com.oracle.bmc.monitoring.model.Datapoint;
@@ -41,9 +40,6 @@ import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
 class OciMetricsData {
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(OciMetricsData.class.getName());
-
     private static final UnitConverter STORAGE_UNIT_CONVERTER = UnitConverter.storageUnitConverter();
     private static final UnitConverter TIME_UNIT_CONVERTER = UnitConverter.timeUnitConverter();
     private static final List<UnitConverter> UNIT_CONVERTERS = List.of(STORAGE_UNIT_CONVERTER, TIME_UNIT_CONVERTER);
@@ -204,13 +200,6 @@ class OciMetricsData {
         Map<String, String> dimensions = dimensions(metricId, metricRegistry);
         List<Datapoint> datapoints = datapoints(metadata, value);
         String metricName = nameFormatter.format(metricId, suffix, metadata);
-        LOGGER.finest(String.format(
-                "Metric details: name=%s, namespace=%s, dimensions=%s, datapoints.timestamp=%s datapoints.value=%f",
-                metricName,
-                namespace,
-                dimensions,
-                datapoints.get(0).getTimestamp(),
-                datapoints.get(0).getValue()));
         return MetricDataDetails.builder()
                 .compartmentId(compartmentId)
                 .name(metricName)
@@ -247,7 +236,11 @@ class OciMetricsData {
 
     private Map<String, String> ociMetadata(Metadata metadata) {
         return (descriptionEnabled && metadata.getDescription().isPresent())
-                ? Collections.singletonMap("description", metadata.getDescription().get())
+                ? Collections.singletonMap("description",
+                                           metadata.getDescription().get().length() <= 256
+                                                   ? metadata.getDescription().get()
+                                                   // trim metadata value as oci metadata.value has a maximum of 256 characters
+                                                   : metadata.getDescription().get().substring(0, 256))
                 : null;
     }
 }

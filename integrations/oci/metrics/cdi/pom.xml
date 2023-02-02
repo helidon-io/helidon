@@ -34,10 +34,6 @@
             <artifactId>helidon-integrations-oci-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
