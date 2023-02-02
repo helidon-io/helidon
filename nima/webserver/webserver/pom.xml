@@ -92,6 +92,12 @@
             <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Put gzip content encoder on test classpath to see whether it's loaded or not. -->
+        <dependency>
+            <artifactId>helidon-nima-http-encoding-gzip</artifactId>
+            <groupId>io.helidon.nima.http.encoding</groupId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

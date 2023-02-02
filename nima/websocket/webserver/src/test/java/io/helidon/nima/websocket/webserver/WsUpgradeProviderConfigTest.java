@@ -22,108 +22,27 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
+
+import org.junit.jupiter.api.Test;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.socket.PeerInfo;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http1.Http1Connection;
 import io.helidon.nima.webserver.http1.Http1ConnectionSelector;
 import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
-
-import org.junit.jupiter.api.Test;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class WsUpgradeProviderConfigTest {
-
-    // ConnectionContext mockup
-    private static class TestContext implements ConnectionContext {
-
-        @Override
-        public PeerInfo remotePeer() {
-            return null;
-        }
-
-        @Override
-        public PeerInfo localPeer() {
-            return null;
-        }
-
-        @Override
-        public boolean isSecure() {
-            return false;
-        }
-
-        @Override
-        public String socketId() {
-            return null;
-        }
-
-        @Override
-        public String childSocketId() {
-            return null;
-        }
-
-        @Override
-        public ServerContext serverContext() {
-            return null;
-        }
-
-        @Override
-        public ExecutorService sharedExecutor() {
-            return null;
-        }
-
-        @Override
-        public DataWriter dataWriter() {
-            return null;
-        }
-
-        @Override
-        public DataReader dataReader() {
-            return new DataReader(() -> new byte[0]);
-        }
-
-        @Override
-        public Router router() {
-            return new Router() {
-                @Override
-                public <T extends Routing> T routing(Class<T> routingType, T defaultValue) {
-                    return null;
-                }
-
-                @Override
-                public void afterStop() {
-                }
-
-                @Override
-                public void beforeStart() {
-                }
-            };
-        }
-
-        @Override
-        public long maxPayloadSize() {
-            return 0;
-        }
-
-        @Override
-        public DirectHandlers directHandlers() {
-            return null;
-        }
-
-    }
 
     // Verify that WsUpgrader is properly configured from config file
     @Test
@@ -147,7 +66,7 @@ public class WsUpgradeProviderConfigTest {
 
         for (ServerConnectionSelector provider : providers) {
             if (provider instanceof Http1ConnectionSelector) {
-                Http1Connection conn = (Http1Connection) provider.connection(new TestContext());
+                Http1Connection conn = (Http1Connection) provider.connection(mockContext());
                 assertThat(conn, notNullValue());
 
                 // Retrieve private upgradeProviderMap from Http1Connection trough reflection
@@ -175,6 +94,14 @@ public class WsUpgradeProviderConfigTest {
 
         Set<String> origins = upgrader.origins();
         assertThat(origins, containsInAnyOrder("bOrigin1", "bOrigin2"));
+    }
+
+    private static ConnectionContext mockContext() {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.serverContext()).thenReturn(mock(ServerContext.class));
+        return ctx;
     }
 
 }

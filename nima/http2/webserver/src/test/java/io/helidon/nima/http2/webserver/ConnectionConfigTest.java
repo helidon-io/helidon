@@ -19,22 +19,16 @@ package io.helidon.nima.http2.webserver;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
-import io.helidon.common.buffers.DataReader;
-import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.socket.PeerInfo;
+import org.junit.jupiter.api.Test;
+
 import io.helidon.config.Config;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.DirectHandlers;
-
-import org.junit.jupiter.api.Test;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -106,6 +100,8 @@ class ConnectionConfigTest {
     private static ConnectionContext mockContext() {
         ConnectionContext ctx = mock(ConnectionContext.class);
         when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.serverContext()).thenReturn(mock(ServerContext.class));
         return ctx;
     }
+
 }

@@ -250,9 +250,12 @@ public interface WebServer {
                             connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
                         });
                     });
+            // Configure content encoding
+            config.get("content-encoding")
+                    .as(ContentEncodingContext::create)
+                    .ifPresent(this::contentEncodingContext);
             // Store providers config node for later usage.
             providersConfig = config.get("connection-providers");
-
             return this;
         }
 
@@ -503,6 +506,7 @@ public interface WebServer {
         }
 
         List<ServerConnectionSelector> connectionProviders() {
+            providersConfig.get("discover-services").asBoolean().ifPresent(connectionProviders::useSystemServiceLoader);
             List<ServerConnectionProvider> providers = connectionProviders.build().asList();
             // Send configuration nodes to providers
             return providers.stream()

@@ -68,8 +68,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final boolean canUpgrade;
     private final Http1Headers http1headers;
     private final Http1Prologue http1prologue;
-    // todo pass from server config
-    private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+    private final ContentEncodingContext contentEncodingContext;
     private final HttpRouting routing;
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
@@ -103,6 +102,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.reader.listener(recvListener, ctx);
         this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateHeaders());
         this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
+        this.contentEncodingContext = ctx.serverContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.maxPayloadSize();
     }

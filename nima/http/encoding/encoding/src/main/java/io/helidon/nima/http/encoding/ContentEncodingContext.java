@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,17 @@
 
 package io.helidon.nima.http.encoding;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
+import java.util.Set;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Headers;
+import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
 
 /**
  * Content encoding support to obtain encoders and decoders.
@@ -30,7 +38,17 @@ public interface ContentEncodingContext {
      * @return content encoding support
      */
     static ContentEncodingContext create() {
-        return new ContentEncodingSupportImpl();
+        return builder().build();
+    }
+
+    /**
+     * Create a new encoding support and apply provided configuration.
+     *
+     * @param config configuration to use
+     * @return content encoding support
+     */
+    static ContentEncodingContext create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -88,4 +106,97 @@ public interface ContentEncodingContext {
      * @return content encoder to use
      */
     ContentEncoder encoder(Headers headers);
+
+    /**
+     * Builder to set up this encoding support content.
+     *
+     * @return a new builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Fluent API builder for {@link ContentEncodingContext}.
+     */
+    class Builder implements io.helidon.common.Builder<Builder, ContentEncodingContext> {
+
+        private static final String IDENTITY_ENCODING = "identity";
+
+        private final HelidonServiceLoader.Builder<ContentEncodingProvider> encodingProviders
+                = HelidonServiceLoader.builder(ServiceLoader.load(ContentEncodingProvider.class));
+
+        /**
+         * Update this builder from configuration.
+         * <p>
+         * Configuration:<ul>
+         *     <li><b>disable: true</b>  - to disable content encoding support</li>
+         * </ul>
+         *
+         * @param config configuration to use
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
+            return this;
+        }
+
+        /**
+         * Whether Java Service Loader should be used to load {@link ContentEncodingProvider}.
+         *
+         * @return updated builder
+         */
+        public Builder discoverServices(boolean discoverServices) {
+            this.encodingProviders.useSystemServiceLoader(discoverServices);
+            return this;
+        }
+
+        /**
+         * Configure content encoding provider.
+         * This instance has priority over provider(s) discovered by service loader.
+         *
+         * @param encodingProvider explicit content encoding provider
+         * @return updated builder
+         */
+        public Builder addEncodingProvider(ContentEncodingProvider encodingProvider) {
+            encodingProviders.addService(encodingProvider);
+            return this;
+        }
+
+        @Override
+        public ContentEncodingContext build() {
+            List<ContentEncodingProvider> providers = encodingProviders.build().asList();
+            Map<String, ContentEncoder> encoders = new HashMap<>();
+            Map<String, ContentDecoder> decoders = new HashMap<>();
+            ContentEncoder firstEncoder = null;
+
+            for (ContentEncodingProvider provider : providers) {
+                Set<String> ids = provider.ids();
+
+                if (provider.supportsEncoding()) {
+                    for (String id : ids) {
+                        ContentEncoder encoder = provider.encoder();
+                        if (firstEncoder == null) {
+                            firstEncoder = encoder;
+                        }
+                        encoders.putIfAbsent(id, encoder);
+                    }
+                }
+
+                if (provider.supportsDecoding()) {
+                    for (String id : ids) {
+                        decoders.putIfAbsent(id, provider.decoder());
+                    }
+                }
+
+            }
+
+            encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
+            decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
+
+            return new ContentEncodingSupportImpl(Map.copyOf(encoders), Map.copyOf(decoders), firstEncoder);
+        }
+
+    }
+
 }
