@@ -114,6 +114,18 @@
             <artifactId>zipkin-junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Dependency convergence for junit:junit from io.zipkin.zipkin2:zipkin-junit -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>com.oracle.bedrock</groupId>
             <artifactId>bedrock-testing-support</artifactId>
