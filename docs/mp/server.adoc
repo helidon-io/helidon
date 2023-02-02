@@ -332,7 +332,13 @@ io.helidon.examples.AdminService:
 
 In the sections above you learned how to configure the WebServer using configuration options and annotations. There are some functions that cannot be handled using the standard configuration options and, instead, must be handled programmatically. 
 
-For example, if you wanted to run code when a CDI container starts, then you would have to write a particular kind of _observer method_ in an enabled CDI-managed bean that observes the initialization of the application scope, as shown in the example below:
+For example, if you wanted to run code when a CDI container starts, then you would have to write a particular kind of _observer method_ in an enabled CDI-managed bean that observes the initialization of the application scope. 
+
+The method can be named anything you choose and it can be `public`, package-protected, `protected` or `private`. The method returns `void` and must take at least one parameter that is annotated with `@Observes @Initialized(ApplicationScoped.class)`. 
+
+This parameter is simply an `Object` that you can ignore since the specification does not mandate what it must be. Any other parameter is treated as an injection point, so you can also receive dependencies for your method to work with.
+
+The example below shows an application scope initialization observer method. Note that it must be declared in a class that is an enabled CDI managed bean:
 
 
 [source, java]
@@ -345,11 +351,14 @@ private void thisIsAnExampleMethodFromTheHelidonMPFAQ(@Observes @Initialized(App
 }
 ----
 
-Or, you can use `ServerCdiExtension` to handle bad requests for illegal characters in URI as shown in the example below:
+You can combine the the observer method with `ServerCdiExtension` customize the underlying WebServer without configuration.
 
-`ServerCdiExtension`
+You can also use  `ServerCdiExtension` to handle bad requests for illegal characters in URI as shown in the example below:
+
+
 
 [source, java]
+.Example: request handler for illegal characters
 ----
 @ApplicationScoped
 public class BadRequestDirectHandler implements DirectHandler {
