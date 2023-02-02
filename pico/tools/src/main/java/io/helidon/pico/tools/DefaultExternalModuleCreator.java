@@ -181,7 +181,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
         services.addParentServiceType(serviceTypeName, createTypeNameFromClassInfo(classInfo.getSuperclass()));
         List<TypeName> hierarchy = DefaultActivatorCreator.serviceTypeHierarchy(serviceTypeName, scan);
         services.addServiceTypeHierarchy(serviceTypeName, hierarchy);
-        if (Objects.nonNull(hierarchy)) {
+        if (hierarchy != null) {
             hierarchy.stream()
                     .filter((parentTypeName) -> !parentTypeName.equals(serviceTypeName))
                     .forEach((parentTypeName) -> services.addTypeForContract(serviceTypeName, parentTypeName, false));
@@ -199,7 +199,7 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             }
             if (firstRound) {
                 String cn = providesContractType(classInfo);
-                if (Objects.nonNull(cn)) {
+                if (cn != null) {
                     TypeName contract = createFromTypeName(cn);
                     services.addTypeForContract(serviceTypeName, contract, true);
                     services.addProviderFor(serviceTypeName, Collections.singleton(contract));

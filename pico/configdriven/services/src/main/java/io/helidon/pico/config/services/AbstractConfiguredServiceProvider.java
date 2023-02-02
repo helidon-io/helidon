@@ -17,9 +17,9 @@
 package io.helidon.pico.config.services;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -476,7 +476,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                         .collect(Collectors.toList());
 
                 if (rootQualifies) {
-                    List<ServiceProvider<?>> result = new LinkedList<>();
+                    List<ServiceProvider<?>> result = new ArrayList<>();
                     if (thisAlreadyMatches || serviceInfo().matches(criteria)) {
                         result.add(this);
                     }
@@ -672,7 +672,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             String instanceId,
             Object configBean) {
         return managedConfiguredServicesMap.compute(instanceId, (id, existing) -> {
-            if (Objects.nonNull(existing) && existing.isPresent()) {
+            if (existing != null && existing.isPresent()) {
                 return existing;
             }
             return innerPreActivateManagedService(instanceId, configBean);

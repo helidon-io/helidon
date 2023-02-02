@@ -17,7 +17,7 @@
 package io.helidon.pico.tools;
 
 import java.lang.annotation.Annotation;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,7 +78,7 @@ public class JavaxTypeToolsImpl implements JavaxTypeTools {
         }
 
         try {
-            List<String> result = new LinkedList<>();
+            List<String> result = new ArrayList<>();
             type.getAnnotationMirrors().forEach(am -> {
                 DeclaredType annoType = am.getAnnotationType();
                 for (AnnotationMirror metaAm : annoType.asElement().getAnnotationMirrors()) {

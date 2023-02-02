@@ -100,7 +100,7 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         boolean isStatic = false;
         InjectionPointInfo.Access access = InjectionPointInfo.Access.PACKAGE_PRIVATE;
         Set<Modifier> modifiers = method.getModifiers();
-        if (Objects.nonNull(modifiers)) {
+        if (modifiers != null) {
             for (Modifier modifier : modifiers) {
                 if (Modifier.PUBLIC == modifier) {
                     access = InjectionPointInfo.Access.PUBLIC;
@@ -135,7 +135,7 @@ public class PostConstructPreDestroyAnnotationProcessor extends BaseAnnotationPr
         if (method.getAnnotation(PostConstruct.class) != null) {
             servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                             method.getSimpleName().toString());
-        } else if (Objects.nonNull(javaxPostConstructType) && Objects.nonNull(method.getAnnotation(javaxPostConstructType))) {
+        } else if (javaxPostConstructType != null && Objects.nonNull(method.getAnnotation(javaxPostConstructType))) {
             servicesToProcess().addPostConstructMethod(createTypeNameFromElement(method.getEnclosingElement()).orElseThrow(),
                                             method.getSimpleName().toString());
         }

@@ -150,8 +150,8 @@ public class InjectAnnotationProcessor extends BaseAnnotationProcessor<Dependenc
             isStatic = isStatic(varType);
         }
 
-        serviceTypeName = (Objects.nonNull(serviceTypeName)) ? serviceTypeName : varType.getEnclosingElement().toString();
-        elemName = Objects.nonNull(elemName) ? elemName : varType.getSimpleName().toString();
+        serviceTypeName = (serviceTypeName != null) ? serviceTypeName : varType.getEnclosingElement().toString();
+        elemName = (elemName != null) ? elemName : varType.getSimpleName().toString();
 
         AtomicReference<Boolean> isProvider = new AtomicReference<>();
         AtomicReference<Boolean> isOptional = new AtomicReference<>();

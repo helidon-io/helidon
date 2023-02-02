@@ -19,7 +19,6 @@ package io.helidon.pico.types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -139,7 +138,7 @@ public class DefaultTypeName implements TypeName {
         // a.b.c.SomeClass
         // a.b.c.SomeClass.InnerClass.Builder
         String className = typeName;
-        List<String> packageElements = new LinkedList<>();
+        List<String> packageElements = new ArrayList<>();
 
         while (true) {
             if (Character.isUpperCase(className.charAt(0))) {

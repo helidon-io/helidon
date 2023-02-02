@@ -101,7 +101,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
 {{#isconcrete}}{{#if issupportsjsr330instrictmode}}{{#if injectionorder}}
     @Override
     protected List<String> serviceTypeInjectionOrder() {
-        List<String> order = new java.util.LinkedList<>();{{#injectionorder}}
+        List<String> order = new java.util.ArrayList<>();{{#injectionorder}}
         order.add("{{{.}}}");{{/injectionorder}}
         return order;
     }
@@ -115,7 +115,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
     @Override
     protected void doInjectingFields(Object t, Map<String, Object> deps, Set<String> injections, String forServiceType) {
         super.doInjectingFields(t, deps, injections, forServiceType);{{#if issupportsjsr330instrictmode}}
-        if (Objects.nonNull(forServiceType) && !{{packagename}}.{{classname}}.class.getName().equals(forServiceType)) {
+        if (forServiceType != null && !{{packagename}}.{{classname}}.class.getName().equals(forServiceType)) {
             return;
         }
 {{/if}}
@@ -133,7 +133,7 @@ public class {{flatclassname}}{{activatorsuffix}}{{{activatorgenericdecl}}}
         }{{/if}}
         super.doInjectingMethods(t, deps, injections, forServiceType);
 {{#if issupportsjsr330instrictmode}}
-        if (Objects.nonNull(forServiceType) && !{{packagename}}.{{classname}}.class.getName().equals(forServiceType)) {
+        if (forServiceType != null && !{{packagename}}.{{classname}}.class.getName().equals(forServiceType)) {
             return;
         }
 {{/if}}

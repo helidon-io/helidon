@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -837,7 +836,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
 
         AtomicInteger count = new AtomicInteger();
         AtomicReference<String> nameRef = new AtomicReference<>();
-        List<String> args = new LinkedList<>();
+        List<String> args = new ArrayList<>();
         dependencies.allDependencies()
                 .forEach(dep1 -> dep1.injectionPointDependencies()
                         .stream()
@@ -863,7 +862,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
 
         AtomicInteger count = new AtomicInteger();
         AtomicReference<String> nameRef = new AtomicReference<>();
-        List<String> args = new LinkedList<>();
+        List<String> args = new ArrayList<>();
         List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(DefaultInjectionPointInfo.CONSTRUCTOR);
         allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies().stream()
                         .forEach(dep2 -> {
@@ -889,7 +888,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             return null;
         }
 
-        List<Object> fields = new LinkedList<>();
+        List<Object> fields = new ArrayList<>();
         dependencies.allDependencies()
                 .forEach(dep1 -> dep1.injectionPointDependencies().stream()
                         .filter(dep2 -> InjectionPointInfo.ElementKind.FIELD
@@ -917,7 +916,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             return null;
         }
 
-        List<Object> methods = new LinkedList<>();
+        List<Object> methods = new ArrayList<>();
         String lastElemName = null;
         String lastId = null;
         List<String> compositeSetter = null;
@@ -933,7 +932,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 int elemArgs = ipInfo.elementArgs().orElse(0);
                 String cn = toCodegenDecl(dep1.dependencyTo(), ipInfo);
 
-                if (Objects.nonNull(lastId) && !lastId.equals(id) && Objects.nonNull(compositeSetter)) {
+                if (lastId != null && !lastId.equals(id) && Objects.nonNull(compositeSetter)) {
                     IdAndToString setter = new IdAndToString(lastId, lastElemName + "("
                             + CommonUtils.toString(compositeSetter, null, ",\n\t\t\t\t")
                             + ")");
@@ -1056,7 +1055,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                     continue;
                 }
                 if (removeList == null) {
-                    removeList = new LinkedList<>();
+                    removeList = new ArrayList<>();
                 }
                 removeList.add(e.getKey());
             }
@@ -1237,7 +1236,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             ActivatorCreatorCodeGen codeGen,
             LazyValue<ScanResult> scan) {
         Map<TypeName, List<TypeName>> map = codeGen.serviceTypeHierarchy();
-        List<TypeName> order = (Objects.nonNull(map)) ? map.get(serviceTypeName) : null;
+        List<TypeName> order = (map != null) ? map.get(serviceTypeName) : null;
         if (order != null) {
             return (1 == order.size()) ? List.of() : order;
         }
@@ -1256,7 +1255,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
     static List<TypeName> serviceTypeHierarchy(
             TypeName serviceTypeName,
             LazyValue<ScanResult> scan) {
-        List<TypeName> order = new LinkedList<>();
+        List<TypeName> order = new ArrayList<>();
         ClassInfo classInfo = toClassInfo(serviceTypeName, scan);
         while (classInfo != null) {
             order.add(0, createTypeNameFromClassInfo(classInfo));

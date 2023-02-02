@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -283,7 +282,7 @@ class DefaultInjectionPlans {
     private static List<ServiceProvider<?>> toIpQualified(
             Object target) {
         if (target instanceof Collection) {
-            List<ServiceProvider<?>> result = new LinkedList<>();
+            List<ServiceProvider<?>> result = new ArrayList<>();
             ((Collection<?>) target).stream()
                     .map(DefaultInjectionPlans::toIpQualified)
                     .forEach(result::addAll);
@@ -298,7 +297,7 @@ class DefaultInjectionPlans {
     private static List<?> toIpUnqualified(
             Object target) {
         if (target instanceof Collection) {
-            List<Object> result = new LinkedList<>();
+            List<Object> result = new ArrayList<>();
             ((Collection<?>) target).stream()
                     .map(DefaultInjectionPlans::toIpUnqualified)
                     .forEach(result::addAll);

@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -444,7 +443,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
     List<TypeName> toServiceTypeHierarchy(
             TypeElement type,
             boolean includeSelf) {
-        List<TypeName> result = new LinkedList<>();
+        List<TypeName> result = new ArrayList<>();
         if (!includeSelf) {
             TypeMirror mirror = type.getSuperclass();
             type = TypeTools.toTypeElement(mirror).orElse(null);

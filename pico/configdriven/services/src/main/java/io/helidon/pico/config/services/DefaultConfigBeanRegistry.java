@@ -204,7 +204,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 String key = config.name();
 
                 List<ConfiguredServiceProvider<?, ?>> csps = configuredServiceProvidersByConfigKey.get(key);
-                if (Objects.nonNull(csps) && !csps.isEmpty()) {
+                if (csps != null && !csps.isEmpty()) {
                     csps.forEach(configuredServiceProvider -> {
                         ConfigBeanInfo metaConfigBeanInfo =
                                 Objects.requireNonNull(configuredServiceProviderMetaConfigBeanMap.get(configuredServiceProvider));
@@ -301,7 +301,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                     configBeans.forEach((k, v) -> {
                         if (Objects.isNull(fullConfigKey) || fullConfigKey.equals(k)) {
                             Object prev = result.put(k, (CB) v);
-                            if (Objects.nonNull(prev) && prev != v) {
+                            if (prev != null && prev != v) {
                                 throw new IllegalStateException("had two entries with the same key: " + prev + " and " + v);
                             }
                         }
@@ -320,7 +320,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                     Map<String, ?> configBeans = csp.configBeanMap();
                     configBeans.forEach((key1, value1) -> {
                         Object prev = result.put(key1, (CB) value1);
-                        if (Objects.nonNull(prev) && prev != value1) {
+                        if (prev != null && prev != value1) {
                             throw new IllegalStateException("had two entries with the same key: " + prev + " and " + value1);
                         }
                     });

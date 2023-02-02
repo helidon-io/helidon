@@ -284,7 +284,7 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
                 }
                 if (isMap) {
                     builder.append(".keyType(").append(Objects.requireNonNull(mapKeyType)).append(".class)");
-                    if (Objects.nonNull(mapKeyComponentType)) {
+                    if (mapKeyComponentType != null) {
                         builder.append(".keyComponentType(").append(mapKeyComponentType.name()).append(".class)");
                     }
                 }

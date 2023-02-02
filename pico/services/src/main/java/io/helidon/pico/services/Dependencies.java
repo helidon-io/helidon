@@ -472,7 +472,7 @@ public class Dependencies {
 
     private static String toPackageName(
             TypeName typeName) {
-        return Objects.nonNull(typeName) ? typeName.packageName() : null;
+        return (typeName != null) ? typeName.packageName() : null;
     }
 
     /**

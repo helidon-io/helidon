@@ -17,8 +17,8 @@
 package io.helidon.pico.types.test;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -152,7 +152,7 @@ class DefaultTypeNameTest {
     }
 
     @Test
-    public void nonPrimitiveUsages() {
+    void nonPrimitiveUsages() {
         assertThat(create(Boolean.class).toString(), is("java.lang.Boolean"));
         assertThat(create(Long.class).toString(), is("java.lang.Long"));
         assertThat(create(Object.class).toString(), is("java.lang.Object"));
@@ -193,7 +193,7 @@ class DefaultTypeNameTest {
     }
 
     @Test
-    public void typeArguments() {
+    void typeArguments() {
         DefaultTypeName typeName = DefaultTypeName.create(List.class)
                 .toBuilder()
                 .typeArguments(Collections.singletonList(DefaultTypeName.create(String.class)))
@@ -245,19 +245,19 @@ class DefaultTypeNameTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void declaredName() {
-        List<Optional<char[]>> list = new LinkedList<>();
+    void declaredName() {
+        List<Optional<char[]>> list = new ArrayList<>();
         List<Optional<char[]>>[] arrayOfLists = new List[] {};
 
         assertThat(DefaultTypeName.create(char.class).declaredName(), equalTo("char"));
         assertThat(DefaultTypeName.create(char[].class).declaredName(), equalTo("char[]"));
-        assertThat(DefaultTypeName.create(list.getClass()).declaredName(), equalTo("java.util.LinkedList"));
+        assertThat(DefaultTypeName.create(list.getClass()).declaredName(), equalTo("java.util.ArrayList"));
         assertThat(DefaultTypeName.create(arrayOfLists.getClass()).declaredName(), equalTo("java.util.List[]"));
         assertThat(DefaultTypeName.create(List[].class).declaredName(), equalTo("java.util.List[]"));
     }
 
     @Test
-    public void genericDecl() {
+    void genericDecl() {
         DefaultTypeName genericTypeName = DefaultTypeName.createFromGenericDeclaration("CB");
         assertThat(genericTypeName.name(), equalTo("CB"));
         assertThat(genericTypeName.fqName(), equalTo("CB"));

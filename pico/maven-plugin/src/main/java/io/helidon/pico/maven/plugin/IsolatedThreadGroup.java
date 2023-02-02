@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +77,7 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
         if (t instanceof ThreadDeath) {
             return; // harmless
         }
-        if (Objects.nonNull(uncaughtThrowable)) {
+        if (uncaughtThrowable != null) {
             // we will only handle 0..1 errors
             return;
         }
@@ -104,7 +103,7 @@ class IsolatedThreadGroup extends ThreadGroup implements Closeable {
      * If anything was caught, will throw an error immediately.
      */
     public void throwAnyUncaughtErrors() {
-        if (Objects.nonNull(uncaughtThrowable)) {
+        if (uncaughtThrowable != null) {
             ToolsException e = new ToolsException("uncaught error", uncaughtThrowable);
             uncaughtThrowable = null;
             throw e;

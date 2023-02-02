@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -388,7 +387,7 @@ public class ServicesToProcess implements Resetable {
         Objects.requireNonNull(codeGen);
         extraCodeGen.compute(serviceTypeName, (key, val) -> {
             if (val == null) {
-                val = new LinkedList<>();
+                val = new ArrayList<>();
             }
             val.add(codeGen);
             return val;

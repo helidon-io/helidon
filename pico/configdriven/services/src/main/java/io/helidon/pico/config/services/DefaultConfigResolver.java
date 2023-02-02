@@ -242,7 +242,7 @@ class DefaultConfigResolver extends BasicConfigResolver {
             Class<T> componentType) {
         if (type.isInstance(Objects.requireNonNull(configBean))
                 || (Optional.class.equals(type)
-                        && Objects.nonNull(componentType) && componentType.isInstance(configBean))) {
+                        && (componentType != null) && componentType.isInstance(configBean))) {
             if (Optional.class.equals(type)) {
                 return Optional.of((T) Optional.of(configBean));
             }

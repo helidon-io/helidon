@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -125,7 +124,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
             return List.of();
         }
 
-        List<TypeName> providersInUseThatAreNotAllowed = new LinkedList<>();
+        List<TypeName> providersInUseThatAreNotAllowed = new ArrayList<>();
         for (TypeName typeName : req.serviceTypeNames()) {
             if (!isWhiteListedProviderName(req.configOptions(), typeName)
                     && isProvider(typeName, services)
@@ -193,7 +192,7 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         String serviceTypeBindingTemplate = templateHelper()
                 .safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_SERVICETYPEBINDING_HBS);
 
-        List<TypeName> serviceTypeNames = new LinkedList<>();
+        List<TypeName> serviceTypeNames = new ArrayList<>();
         List<String> serviceTypeBindings = new ArrayList<>();
         for (TypeName serviceTypeName : req.serviceTypeNames()) {
             String injectionPlan = toServiceTypeInjectionPlan(picoServices, serviceTypeName, serviceTypeBindingTemplate);

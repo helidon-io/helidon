@@ -236,7 +236,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         if (cfg.serviceLookupCaching()) {
             result = cache.get(criteria);
             cacheLookupCount.incrementAndGet();
-            if (Objects.nonNull(result)) {
+            if (result != null) {
                 cacheHitCount.incrementAndGet();
                 return (List) result;
             }
@@ -296,7 +296,7 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
                 if (s instanceof ServiceProviderProvider) {
                     List<? extends ServiceProvider<?>> subList = ((ServiceProviderProvider) s)
                             .serviceProviders(criteria, true, true);
-                    if (Objects.nonNull(subList) && !subList.isEmpty()) {
+                    if (subList != null && !subList.isEmpty()) {
                         subList.stream().filter(Objects::nonNull).forEach(result::add);
                     }
                 } else {

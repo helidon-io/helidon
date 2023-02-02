@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -632,7 +631,7 @@ public class TypeTools extends BuilderTypeTools {
                 result.add(DefaultAnnotationAndValue.create(annotationType, strVals));
             } else {
                 Object value = values.get(0).getValue();
-                String strValue = Objects.nonNull(value) ? String.valueOf(value) : null;
+                String strValue = (value != null) ? String.valueOf(value) : null;
                 result.add(DefaultAnnotationAndValue.create(annotationType, strValue));
             }
         }
@@ -743,9 +742,7 @@ public class TypeTools extends BuilderTypeTools {
         ToolsException firstTe = null;
         while (nxt != null) {
             ClassTypeSignature sig = nxt.getTypeSignature();
-            List<ClassRefTypeSignature> superInterfaces = Objects.nonNull(sig)
-                    ? sig.getSuperinterfaceSignatures()
-                    : null;
+            List<ClassRefTypeSignature> superInterfaces = (sig != null) ? sig.getSuperinterfaceSignatures() : null;
             if (superInterfaces != null) {
                 for (ClassRefTypeSignature superInterface : superInterfaces) {
                     if (!isProviderType(superInterface)) {
@@ -843,7 +840,7 @@ public class TypeTools extends BuilderTypeTools {
         AtomicReference<Boolean> isProviderWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isListWrapped = new AtomicReference<>();
         AtomicReference<Boolean> isOptionalWrapped = new AtomicReference<>();
-        if (Objects.nonNull(elemOffset)) {
+        if (elemOffset != null) {
             MethodParameterInfo paramInfo = elemInfo.getParameterInfo()[elemOffset - 1];
             elemType = extractInjectionPointTypeInfo(paramInfo, isProviderWrapped, isListWrapped, isOptionalWrapped);
             qualifiers = createQualifierAndValueSet(paramInfo.getAnnotationInfo());
@@ -886,7 +883,7 @@ public class TypeTools extends BuilderTypeTools {
         String elemType = methodInfo.getTypeDescriptor().getResultType().toString();
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(methodInfo);
         Set<AnnotationAndValue> annotations = createAnnotationAndValueSet(methodInfo.getAnnotationInfo());
-        if (Objects.nonNull(serviceLevelAnnos)) {
+        if (serviceLevelAnnos != null) {
             annotations.addAll(serviceLevelAnnos);
         }
         List<String> throwables = extractThrowableTypeNames(methodInfo);
@@ -989,7 +986,7 @@ public class TypeTools extends BuilderTypeTools {
     private static List<ElementInfo> createParameterInfo(
             TypeName serviceTypeName,
             MethodInfo methodInfo) {
-        List<ElementInfo> result = new LinkedList<>();
+        List<ElementInfo> result = new ArrayList<>();
         int count = 0;
         for (MethodParameterInfo ignore : methodInfo.getParameterInfo()) {
             count++;
@@ -1008,7 +1005,7 @@ public class TypeTools extends BuilderTypeTools {
     private static List<ElementInfo> createParameterInfo(
             TypeName serviceTypeName,
             ExecutableElement methodInfo) {
-        List<ElementInfo> result = new LinkedList<>();
+        List<ElementInfo> result = new ArrayList<>();
         int count = 0;
         for (VariableElement ignore : methodInfo.getParameters()) {
             count++;
@@ -1261,7 +1258,7 @@ public class TypeTools extends BuilderTypeTools {
         boolean isList = false;
         String varTypeName = declaredTypeMirror.toString();
         boolean handled = false;
-        if (Objects.nonNull(declaredClassType)) {
+        if (declaredClassType != null) {
             handled = declaredTypeMirror.getTypeArguments().isEmpty();
             if (1 == declaredTypeMirror.getTypeArguments().size()) {
                 isProvider = isProviderType(declaredClassType);

@@ -19,6 +19,7 @@ package io.helidon.pico.tools;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -564,7 +565,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         @Override
         protected List<InterceptedElement> getInterceptedElements(
                 Set<String> interceptorAnnotationTriggers) {
-            List<InterceptedElement> result = new LinkedList<>();
+            List<InterceptedElement> result = new ArrayList<>();
             Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
             serviceTypeElement.getEnclosedElements().stream()
                     .filter((e) -> e.getKind() == ElementKind.METHOD || e.getKind() == ElementKind.CONSTRUCTOR)
@@ -622,7 +623,7 @@ public class DefaultInterceptorCreator extends AbstractCreator implements Interc
         @Override
         protected List<InterceptedElement> getInterceptedElements(
                 Set<String> interceptorAnnotationTriggers) {
-            List<InterceptedElement> result = new LinkedList<>();
+            List<InterceptedElement> result = new ArrayList<>();
             Set<AnnotationAndValue> serviceLevelAnnos = getServiceLevelAnnotations();
             classInfo.getMethodAndConstructorInfo()
                     .filter((m) -> isProcessed(toKind(m),
