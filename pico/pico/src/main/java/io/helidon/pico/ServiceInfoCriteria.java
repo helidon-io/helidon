@@ -116,6 +116,24 @@ public interface ServiceInfoCriteria {
     // ServiceInfoCriteria.matches(criteria).
     default boolean matches(
             ServiceInfoCriteria criteria) {
+        return matchesContracts(criteria)
+                && scopeTypeNames().containsAll(criteria.scopeTypeNames())
+                && ServiceInfo.matchesQualifiers(qualifiers(), criteria.qualifiers())
+                && matches(activatorTypeName(), criteria.activatorTypeName())
+                && matches(runLevel(), criteria.runLevel())
+//                && matchesWeight(this, criteria) -- intentionally not checking weight here!
+                && matches(moduleName(), criteria.moduleName());
+    }
+
+    /**
+     * Determines whether the provided criteria matches just the contracts portion of the provided criteria. Note that
+     * it is expected any external contracts have been consolidated into the regular contract section.
+     *
+     * @param criteria the criteria to compare against
+     * @return true if the criteria provided matches this instance from only the contracts point of view
+     */
+    default boolean matchesContracts(
+            ServiceInfoCriteria criteria) {
         if (criteria == PicoServices.EMPTY_CRITERIA) {
             return true;
         }
@@ -124,13 +142,7 @@ public interface ServiceInfoCriteria {
         if (matches && criteria.serviceTypeName().isEmpty()) {
             matches = contractsImplemented().containsAll(criteria.contractsImplemented());
         }
-        return matches
-                && scopeTypeNames().containsAll(criteria.scopeTypeNames())
-                && ServiceInfo.matchesQualifiers(qualifiers(), criteria.qualifiers())
-                && matches(activatorTypeName(), criteria.activatorTypeName())
-                && matches(runLevel(), criteria.runLevel())
-//                && matchesWeight(this, criteria) -- intentionally not checking weight here!
-                && matches(moduleName(), criteria.moduleName());
+        return matches;
     }
 
     private static boolean matches(

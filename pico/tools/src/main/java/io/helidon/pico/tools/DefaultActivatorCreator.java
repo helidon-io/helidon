@@ -88,9 +88,8 @@ import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
  * @deprecated
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 1)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultActivatorCreator extends AbstractCreator implements ActivatorCreator, Weighted {
-
     /**
      * The suffix name for the service type activator class.
      */

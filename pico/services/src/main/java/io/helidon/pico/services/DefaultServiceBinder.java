@@ -37,7 +37,7 @@ public class DefaultServiceBinder implements ServiceBinder {
     private DefaultServiceBinder(
             PicoServices picoServices,
             String moduleName) {
-        this.picoServices = picoServices;
+        this.picoServices = Objects.requireNonNull(picoServices);
         this.serviceRegistry = (ServiceBinder) picoServices.services();
         this.moduleName = moduleName;
     }
@@ -73,12 +73,12 @@ public class DefaultServiceBinder implements ServiceBinder {
             Phase currentPhase = ((DefaultServices) services).currentPhase();
             if (currentPhase.ordinal() >= Phase.SERVICES_READY.ordinal()) {
                 // deferred binding (e.g., to allow PicoTestSupport to programmatically register/bind service providers
-                ((ServiceProviderBindable) sp).picoServices(Optional.of(picoServices));
+                ((ServiceProviderBindable<?>) sp).picoServices(Optional.of(picoServices));
             }
         }
 
         serviceRegistry.bind(sp);
-        bindableSp.ifPresent(it -> it.picoServices(Optional.ofNullable(picoServices)));
+        bindableSp.ifPresent(it -> it.picoServices(Optional.of(picoServices)));
     }
 
     /**
@@ -87,13 +87,14 @@ public class DefaultServiceBinder implements ServiceBinder {
      * @param sp the service provider
      * @return the bindable service provider if available, otherwise empty
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static Optional<ServiceProviderBindable<?>> toBindableProvider(
             ServiceProvider<?> sp) {
         Objects.requireNonNull(sp);
         if (sp instanceof ServiceProviderBindable) {
             return Optional.of((ServiceProviderBindable<?>) sp);
         }
-        return Optional.of((ServiceProviderBindable<?>) sp.serviceProviderBindable());
+        return (Optional) sp.serviceProviderBindable();
     }
 
     /**

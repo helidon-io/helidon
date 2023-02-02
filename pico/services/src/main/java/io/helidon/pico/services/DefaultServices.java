@@ -55,7 +55,7 @@ import jakarta.inject.Provider;
  * The default reference implementation of {@link io.helidon.pico.Services}.
  */
 class DefaultServices implements Services, ServiceBinder, Resetable {
-    private static final ServiceProviderComparator COMPARATOR = new ServiceProviderComparator();
+    private static final ServiceProviderComparator COMPARATOR = ServiceProviderComparator.create();
 
     private final ConcurrentHashMap<String, ServiceProvider<?>> servicesByTypeName = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<ServiceProvider<?>>> servicesByContract = new ConcurrentHashMap<>();

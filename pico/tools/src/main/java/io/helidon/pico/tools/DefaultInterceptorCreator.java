@@ -42,6 +42,7 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.ElementInfo;
@@ -74,6 +75,7 @@ import static io.helidon.pico.types.DefaultAnnotationAndValue.create;
  * @deprecated
  */
 @Singleton
+@Weight(Weighted.DEFAULT_WEIGHT)
 @SuppressWarnings("unchecked")
 public class DefaultInterceptorCreator extends AbstractCreator implements InterceptorCreator, Resetable {
     private static final LazyValue<ScanResult> SCAN = LazyValue.create(ReflectionHandler.INSTANCE::scan);

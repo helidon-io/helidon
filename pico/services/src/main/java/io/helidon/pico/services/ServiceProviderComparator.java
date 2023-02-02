@@ -29,10 +29,25 @@ import jakarta.inject.Provider;
  * A comparator appropriate for service providers, first using its {@link io.helidon.common.Weight} and then service type name
  * to determine its natural ordering.
  */
-class ServiceProviderComparator implements Comparator<Provider<?>>, Serializable {
+public class ServiceProviderComparator implements Comparator<Provider<?>>, Serializable {
+    private static final ServiceProviderComparator INSTANCE = new ServiceProviderComparator();
+
+    private ServiceProviderComparator() {
+    }
+
+    /**
+     * Returns a service provider comparator.
+     *
+     * @return the service provider comparator
+     */
+    public static ServiceProviderComparator create() {
+        return INSTANCE;
+    }
 
     @Override
-    public int compare(Provider<?> p1, Provider<?> p2) {
+    public int compare(
+            Provider<?> p1,
+            Provider<?> p2) {
         if (p1 == p2) {
             return 0;
         }

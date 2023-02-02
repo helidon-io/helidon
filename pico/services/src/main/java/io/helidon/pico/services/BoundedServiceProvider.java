@@ -32,6 +32,7 @@ import io.helidon.pico.PostConstructMethod;
 import io.helidon.pico.PreDestroyMethod;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceProvider;
+import io.helidon.pico.ServiceProviderBindable;
 
 /**
  * A service provider that is bound to a particular injection point context.
@@ -166,8 +167,8 @@ class BoundedServiceProvider<T> implements ServiceProvider<T> {
     }
 
     @Override
-    public ServiceProvider<T> serviceProviderBindable() {
-        return binding;
+    public Optional<ServiceProviderBindable<T>> serviceProviderBindable() {
+        return Optional.of((ServiceProviderBindable<T>) binding);
     }
 
 }

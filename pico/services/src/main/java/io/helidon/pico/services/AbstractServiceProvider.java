@@ -81,8 +81,8 @@ public abstract class AbstractServiceProvider<T>
                    DeActivator<T>,
                    ActivationPhaseReceiver,
                    Resetable {
-    private static final System.Logger LOGGER = System.getLogger(AbstractServiceProvider.class.getName());
     private static final DependenciesInfo NO_DEPS = DefaultDependenciesInfo.builder().build();
+    private static final System.Logger LOGGER = System.getLogger(AbstractServiceProvider.class.getName());
 
     private final Semaphore activationSemaphore = new Semaphore(1);
     private final AtomicReference<T> serviceRef = new AtomicReference<>();
@@ -126,6 +126,15 @@ public abstract class AbstractServiceProvider<T>
         onInitialized();
     }
 
+    /**
+     * The logger.
+     *
+     * @return the logger
+     */
+    protected System.Logger logger() {
+        return LOGGER;
+    }
+
     @Override
     public Optional<Activator<T>> activator() {
         return Optional.of(this);
@@ -137,8 +146,8 @@ public abstract class AbstractServiceProvider<T>
     }
 
     @Override
-    public ServiceProviderBindable<T> serviceProviderBindable() {
-        return this;
+    public Optional<ServiceProviderBindable<T>> serviceProviderBindable() {
+        return Optional.of(this);
     }
 
     @Override
@@ -209,10 +218,16 @@ public abstract class AbstractServiceProvider<T>
         return phase;
     }
 
-    boolean isAlreadyAtTargetPhase(
-            Phase ultimateTargetPhase) {
-        Objects.requireNonNull(ultimateTargetPhase);
-        return (currentActivationPhase() == ultimateTargetPhase);
+    /**
+     * Returns true if the current activation phase has reached the given target phase.
+     *
+     * @param targetPhase the target phase
+     * @return true if the targetPhase has been reached
+     */
+    protected boolean isAlreadyAtTargetPhase(
+            Phase targetPhase) {
+        Objects.requireNonNull(targetPhase);
+        return (currentActivationPhase() == targetPhase);
     }
 
     /**
@@ -220,7 +235,7 @@ public abstract class AbstractServiceProvider<T>
      *
      * @return the pico services assigned to this service provider
      */
-    protected PicoServices picoServices() {
+    public PicoServices picoServices() {
         return Objects.requireNonNull(picoServices);
     }
 
@@ -353,7 +368,7 @@ public abstract class AbstractServiceProvider<T>
     protected ActivationLog activationLog() {
         assert (picoServices != null) : "not initialized";
         if (log == null) {
-            log = picoServices.activationLog().orElse(DefaultActivationLog.createUnretainedLog(LOGGER));
+            log = picoServices.activationLog().orElse(DefaultActivationLog.createUnretainedLog(logger()));
         }
         return log;
     }
@@ -524,8 +539,10 @@ public abstract class AbstractServiceProvider<T>
                     && (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase())) {
                 doActivationActive(logEntryAndResult);
             }
+
+            onFinished(logEntryAndResult);
         } catch (Throwable t) {
-            failedFinish(logEntryAndResult, t, req.throwIfError());
+            onFailedFinish(logEntryAndResult, t, req.throwIfError());
         } finally {
             this.lastActivationThreadId = 0;
             activationSemaphore.release();
@@ -546,7 +563,7 @@ public abstract class AbstractServiceProvider<T>
 
         // fail fast if we are in a recursive situation on this thread...
         if (logEntryAndResult.logEntry.threadId() == lastActivationThreadId && lastActivationThreadId > 0) {
-            failedFinish(logEntryAndResult, recursiveActivationInjectionError(logEntryAndResult.logEntry), req.throwIfError());
+            onFailedFinish(logEntryAndResult, recursiveActivationInjectionError(logEntryAndResult.logEntry), req.throwIfError());
             return logEntryAndResult;
         }
 
@@ -556,7 +573,9 @@ public abstract class AbstractServiceProvider<T>
             // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)
             if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't get semaphore than we (or someone else) is busy activating this services, or we deadlocked
-                failedFinish(logEntryAndResult, timedOutActivationInjectionError(logEntryAndResult.logEntry), req.throwIfError());
+                onFailedFinish(logEntryAndResult,
+                               timedOutActivationInjectionError(logEntryAndResult.logEntry),
+                               req.throwIfError());
                 return logEntryAndResult;
             }
             didAcquire = true;
@@ -578,7 +597,7 @@ public abstract class AbstractServiceProvider<T>
             }
 
             InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
-            failedFinish(logEntryAndResult, e, req.throwIfError());
+            onFailedFinish(logEntryAndResult, e, req.throwIfError());
         }
 
         return logEntryAndResult;
@@ -593,9 +612,20 @@ public abstract class AbstractServiceProvider<T>
     }
 
     private void onInitialized() {
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG, this + " initialized.");
+        if (logger().isLoggable(System.Logger.Level.DEBUG)) {
+            logger().log(System.Logger.Level.DEBUG, this + " initialized.");
         }
+    }
+
+    /**
+     * Called on a successful finish of activation.
+     *
+     * @param logEntryAndResult the record holding the result
+     * @see #onFailedFinish(io.helidon.pico.services.AbstractServiceProvider.LogEntryAndResult, Throwable, boolean)
+     */
+    protected void onFinished(
+            LogEntryAndResult logEntryAndResult) {
+        // NOP;
     }
 
     private void doStartingLifecycle(
@@ -618,7 +648,7 @@ public abstract class AbstractServiceProvider<T>
         }
 
         if (injectionPlan != null) {
-            LOGGER.log(System.Logger.Level.WARNING,
+            logger().log(System.Logger.Level.WARNING,
                        "this service provider already has an injection plan (which is unusual here): " + this);
         }
 
@@ -770,7 +800,7 @@ public abstract class AbstractServiceProvider<T>
         }
 
         final Map<String, InjectionPlan> plan =
-                DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, LOGGER);
+                DefaultInjectionPlans.createInjectionPlans(picoServices(), this, dependencies, resolveIps, logger());
         assert (this.injectionPlan == null);
         this.injectionPlan = Objects.requireNonNull(plan);
 
@@ -787,14 +817,14 @@ public abstract class AbstractServiceProvider<T>
             didAcquire = activationSemaphore.tryAcquire(1, TimeUnit.MILLISECONDS);
 
             if (service != null) {
-                LOGGER.log(System.Logger.Level.INFO, "resetting " + this);
+                logger().log(System.Logger.Level.INFO, "resetting " + this);
                 if (deep && service instanceof Resetable) {
                     try {
                         if (((Resetable) service).reset(deep)) {
                             result = true;
                         }
                     } catch (Throwable t) {
-                        LOGGER.log(System.Logger.Level.WARNING, "unable to reset: " + this, t); // eat it
+                        logger().log(System.Logger.Level.WARNING, "unable to reset: " + this, t); // eat it
                     }
                 }
             }
@@ -851,7 +881,7 @@ public abstract class AbstractServiceProvider<T>
                         && !value.unqualifiedProviders().isEmpty()) {
                     resolved = Collections.emptyList(); // deferred...
                 } else {
-                    resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, LOGGER);
+                    resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, logger());
                 }
                 result.put(key, resolved);
             }
@@ -868,7 +898,12 @@ public abstract class AbstractServiceProvider<T>
         return result;
     }
 
-    private void doConstructing(
+    /**
+     * Called during construction phase.
+     *
+     * @param logEntryAndResult the record that holds the results
+     */
+    protected void doConstructing(
             LogEntryAndResult logEntryAndResult) {
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.CONSTRUCTING);
 
@@ -1013,7 +1048,7 @@ public abstract class AbstractServiceProvider<T>
                 // if we couldn't grab the semaphore than we (or someone else) is busy activating this services, or
                 // we deadlocked.
                 InjectionException e = timedOutDeActivationInjectionError(logEntryAndResult.logEntry);
-                failedFinish(logEntryAndResult, e, req.throwIfError());
+                onFailedFinish(logEntryAndResult, e, req.throwIfError());
                 return logEntryAndResult.activationResult.build();
             }
             didAcquire = true;
@@ -1027,7 +1062,7 @@ public abstract class AbstractServiceProvider<T>
             }
         } catch (Throwable t) {
             InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
-            failedFinish(logEntryAndResult, e, req.throwIfError());
+            onFailedFinish(logEntryAndResult, e, req.throwIfError());
         } finally {
             lastActivationThreadId = 0;
             //            res.setFinished(true);
@@ -1060,15 +1095,23 @@ public abstract class AbstractServiceProvider<T>
         finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
-    private void failedFinish(
+    /**
+     * Called on a failed finish of activation.
+     *
+     * @param logEntryAndResult the log entry holding the result
+     * @param t the error that was observed
+     * @param throwOnError the flag indicating whether we should throw on error
+     * @see #onFinished(io.helidon.pico.services.AbstractServiceProvider.LogEntryAndResult)
+     */
+    protected void onFailedFinish(
             LogEntryAndResult logEntryAndResult,
             Throwable t,
             boolean throwOnError) {
         this.lastActivationThreadId = 0;
-        failedFinish(logEntryAndResult, t, throwOnError, activationLog());
+        onFailedFinish(logEntryAndResult, t, throwOnError, activationLog());
     }
 
-    void failedFinish(
+    void onFailedFinish(
             LogEntryAndResult logEntryAndResult,
             Throwable t,
             boolean throwOnError,
@@ -1139,7 +1182,13 @@ public abstract class AbstractServiceProvider<T>
                 .activationLog(activationLog());
     }
 
-    private InjectionException expectedQualifiedServiceError(
+    /**
+     * Creates an injection exception appropriate when there are no matching qualified services for the context provided.
+     *
+     * @param ctx the context
+     * @return the injection exception
+     */
+    protected InjectionException expectedQualifiedServiceError(
             ContextualServiceQuery ctx) {
         return new InjectionException("expected to return a non-null instance for: " + ctx.injectionPointInfo()
                                               + "; with criteria matching: " + ctx.serviceInfoCriteria(), this)
@@ -1175,11 +1224,17 @@ public abstract class AbstractServiceProvider<T>
                                .message(message)
                                .build());
         } else {
-            LOGGER.log(System.Logger.Level.DEBUG, message);
+            logger().log(System.Logger.Level.DEBUG, message);
         }
     }
 
-    LogEntryAndResult createLogEntryAndResult(
+    /**
+     * Creates a log entry result based upon the target phase provided.
+     *
+     * @param targetPhase the target phase
+     * @return a new log entry and result record
+     */
+    protected LogEntryAndResult createLogEntryAndResult(
             Phase targetPhase) {
         Phase currentPhase = currentActivationPhase();
         DefaultActivationResult.Builder activationResult = DefaultActivationResult.builder()
@@ -1202,9 +1257,16 @@ public abstract class AbstractServiceProvider<T>
         finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
-    void startTransitionCurrentActivationPhase(
+    /**
+     * Starts transitioning to a new phase.
+     *
+     * @param logEntryAndResult the record that will hold the state of the transition
+     * @param newPhase the target new phase
+     */
+    protected void startTransitionCurrentActivationPhase(
             LogEntryAndResult logEntryAndResult,
             Phase newPhase) {
+        Objects.requireNonNull(logEntryAndResult);
         Objects.requireNonNull(newPhase);
         logEntryAndResult.activationResult
                 .finishingActivationPhase(newPhase);
@@ -1247,8 +1309,13 @@ public abstract class AbstractServiceProvider<T>
         return Optional.of((AbstractServiceProvider<T>) sp);
     }
 
+    /**
+     * Represents a result of a phase transition.
+     *
+     * @see #createLogEntryAndResult(io.helidon.pico.Phase)
+     */
     // note that for one result, there may be N logEntry records we will build and write to the log
-    static class LogEntryAndResult {
+    protected static class LogEntryAndResult {
         private final DefaultActivationResult.Builder activationResult;
         private final DefaultActivationLogEntry.Builder logEntry;
 

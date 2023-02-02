@@ -31,7 +31,8 @@ import io.helidon.pico.Phase;
  */
 class NonSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
 
-    private NonSingletonServiceProvider(AbstractServiceProvider<T> parent) {
+    private NonSingletonServiceProvider(
+            AbstractServiceProvider<T> parent) {
         picoServices(Optional.of(parent.picoServices()));
         serviceInfo(parent.serviceInfo());
         dependencies(parent.dependencies());

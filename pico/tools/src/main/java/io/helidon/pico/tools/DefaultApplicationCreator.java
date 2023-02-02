@@ -54,15 +54,14 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * The default reference implementation for {@link ApplicationCreator}.
+ * The default implementation for {@link ApplicationCreator}.
  *
  * @deprecated
  */
 @Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 1)
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultApplicationCreator extends AbstractCreator implements ApplicationCreator {
     static final String NAME = PicoServicesConfig.NAME;
-
     static final String SERVICE_PROVIDER_APPLICATION_SERVICETYPEBINDING_HBS
             = "service-provider-application-servicetypebinding.hbs";
     static final String SERVICE_PROVIDER_APPLICATION_HBS

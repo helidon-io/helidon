@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
@@ -65,6 +67,7 @@ import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
  * @deprecated
  */
 @Singleton
+@Weight(Weighted.DEFAULT_WEIGHT)
 public class DefaultExternalModuleCreator extends AbstractCreator implements ExternalModuleCreator {
     private final LazyValue<ScanResult> scan = LazyValue.create(ReflectionHandler.INSTANCE.scan());
     private final ServicesToProcess services = ServicesToProcess.servicesInstance();

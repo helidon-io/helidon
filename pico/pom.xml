@@ -47,7 +47,7 @@
     <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
         <module>types</module>
-        <module>builder-config</module>
+        <module>configdriven</module>
         <module>pico</module>
         <module>tools</module>
         <module>processor</module>
