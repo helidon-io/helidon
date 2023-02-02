@@ -31,8 +31,8 @@ import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider;
 import io.helidon.security.providers.oidc.OidcProvider;
-import io.helidon.security.providers.oidc.reactive.OidcSupport;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.reactive.OidcSupport;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;

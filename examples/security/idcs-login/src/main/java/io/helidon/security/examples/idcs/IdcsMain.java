@@ -28,7 +28,6 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.security.providers.oidc.OidcFeature;
 import io.helidon.security.providers.oidc.reactive.OidcSupport;
 
 import static io.helidon.config.ConfigSources.classpath;
