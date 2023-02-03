@@ -19,7 +19,7 @@ mvn clean install  -Darchetype.test.skip=true
 
 ## Test
 
-Archetypes build generates `cli-data` that you can provide to installed [Helidon CLI](https://helidon.io/docs/latest/#/about/cli).
+Archetypes build generates `cli-data` that you can provide to installed [Helidon CLI](../README.md#helidon-cli).
 
 ```bash
 helidon init --reset --url file:///<path-to>/helidon/archetypes/helidon/target/cli-data
