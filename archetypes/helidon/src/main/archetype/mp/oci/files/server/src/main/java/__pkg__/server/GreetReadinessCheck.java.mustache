@@ -14,7 +14,7 @@ import org.eclipse.microprofile.health.Readiness;
 @Readiness
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
-    private final AtomicLong readyTime = new AtomicLong(0);
+    private AtomicLong readyTime = new AtomicLong(0);
 
 
     @Override
