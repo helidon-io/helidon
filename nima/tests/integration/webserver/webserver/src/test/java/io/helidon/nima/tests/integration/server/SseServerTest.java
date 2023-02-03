@@ -43,10 +43,11 @@ class SseServerTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/sse", SseServerTest::sseHandler);
+        rules.get("/sse1", SseServerTest::sse1Handler);
+        rules.get("/sse2", SseServerTest::sse2Handler);
     }
 
-    private static void sseHandler(ServerRequest req, ServerResponse res) {
+    private static void sse1Handler(ServerRequest req, ServerResponse res) {
         try (res) {
             res.status(Http.Status.OK_200)
                     .header(CONTENT_TYPE_EVENT_STREAM)      // required
@@ -55,11 +56,29 @@ class SseServerTest {
         }
     }
 
+    private static void sse2Handler(ServerRequest req, ServerResponse res) throws InterruptedException {
+        res.status(Http.Status.OK_200)
+                .header(CONTENT_TYPE_EVENT_STREAM);         // required
+        for (int i = 1; i <= 3; i++) {
+            res.send(SseEvent.create(Integer.toString(i)));
+            Thread.sleep(50);      // simulates messages over time
+        }
+        res.close();
+    }
+
     @Test
-    void testSse() {
-        try (Http1ClientResponse response = client.get("/sse").request()) {
+    void testSse1() {
+        try (Http1ClientResponse response = client.get("/sse1").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("data:hello\n\ndata:world\n\n"));
+        }
+    }
+
+    @Test
+    void testSse2() {
+        try (Http1ClientResponse response = client.get("/sse2").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is("data:1\n\ndata:2\n\ndata:3\n\n"));
         }
     }
 }
