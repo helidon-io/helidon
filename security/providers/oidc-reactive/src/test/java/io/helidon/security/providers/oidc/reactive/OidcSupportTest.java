@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.providers.oidc;
+package io.helidon.security.providers.oidc.reactive;
 
 import java.net.URI;
 import java.util.List;
@@ -33,6 +33,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
+import io.helidon.security.providers.oidc.OidcProvider;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
 import org.junit.jupiter.api.Test;

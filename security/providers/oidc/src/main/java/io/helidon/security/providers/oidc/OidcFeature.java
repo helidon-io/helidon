@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weight;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -43,14 +44,13 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.webserver.cors.CorsSupport;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.HttpFeature;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.reactive.webclient.WebClient;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 import io.helidon.security.Security;
-import io.helidon.security.SecurityException;
 import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
@@ -136,8 +136,9 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  * </tr>
  * </table>
  */
-public final class OidcService implements HttpService {
-    private static final System.Logger LOGGER = System.getLogger(OidcService.class.getName());
+@Weight(800)
+public final class OidcFeature implements HttpFeature {
+    private static final System.Logger LOGGER = System.getLogger(OidcFeature.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
@@ -150,7 +151,7 @@ public final class OidcService implements HttpService {
     private final boolean enabled;
     private final CorsSupport corsSupport;
 
-    private OidcService(Builder builder) {
+    private OidcFeature(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
         this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
@@ -170,7 +171,7 @@ public final class OidcService implements HttpService {
      * @param providerName name of the node that contains OIDC configuration
      * @return OIDC webserver integration based on the config
      */
-    public static OidcService create(Config config, String providerName) {
+    public static OidcFeature create(Config config, String providerName) {
         return builder()
                 .config(config, providerName)
                 .build();
@@ -185,7 +186,7 @@ public final class OidcService implements HttpService {
      * @param config Config instance on expected node
      * @return OIDC webserver integration based on the config
      */
-    public static OidcService create(Config config) {
+    public static OidcFeature create(Config config) {
         return builder()
                 .config(config, OidcProviderService.PROVIDER_CONFIG_KEY)
                 .build();
@@ -199,7 +200,7 @@ public final class OidcService implements HttpService {
      * @param oidcConfig configuration of OIDC integration
      * @return OIDC webserver integration based on the configuration
      */
-    public static OidcService create(OidcConfig oidcConfig) {
+    public static OidcFeature create(OidcConfig oidcConfig) {
         return builder()
                 .config(oidcConfig)
                 .build();
@@ -215,19 +216,19 @@ public final class OidcService implements HttpService {
     }
 
     @Override
-    public void routing(HttpRules rules) {
+    public void setup(HttpRouting.Builder routing) {
         if (enabled) {
             if (corsSupport != null) {
-                rules.any(oidcConfig.redirectUri(), corsSupport);
+                routing.any(oidcConfig.redirectUri(), corsSupport);
             }
-            rules.get(oidcConfig.redirectUri(), this::processOidcRedirect);
+            routing.get(oidcConfig.redirectUri(), this::processOidcRedirect);
             if (oidcConfig.logoutEnabled()) {
                 if (corsSupport != null) {
-                    rules.any(oidcConfig.logoutUri(), corsSupport);
+                    routing.any(oidcConfig.logoutUri(), corsSupport);
                 }
-                rules.get(oidcConfig.logoutUri(), this::processLogout);
+                routing.get(oidcConfig.logoutUri(), this::processLogout);
             }
-            rules.any(this::addRequestAsHeader);
+            routing.any(this::addRequestAsHeader);
         }
     }
 
@@ -552,9 +553,9 @@ public final class OidcService implements HttpService {
     }
 
     /**
-     * A fluent API builder for {@link io.helidon.security.providers.oidc.OidcService}.
+     * A fluent API builder for {@link OidcFeature}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, OidcService> {
+    public static class Builder implements io.helidon.common.Builder<Builder, OidcFeature> {
 
         private static final int BUILDER_WEIGHT = 50000;
         private static final int DEFAULT_WEIGHT = 100000;
@@ -586,14 +587,14 @@ public final class OidcService implements HttpService {
         }
 
         @Override
-        public OidcService build() {
+        public OidcFeature build() {
             if (enabled && (oidcConfig == null)) {
                 throw new IllegalStateException("When OIDC and security is enabled, OIDC configuration must be provided");
             }
             tenantConfigFinders = tenantConfigProviders.build().asList().stream()
                     .map(provider -> provider.createTenantConfigFinder(config))
                     .collect(Collectors.toList());
-            return new OidcService(this);
+            return new OidcFeature(this);
         }
 
         /**
@@ -627,7 +628,7 @@ public final class OidcService implements HttpService {
          * Config located either at the configuration root, or at the provider node.
          *
          * @param config configuration to use
-         * @param providerName name of the security provider used for the {@link io.helidon.security.providers.oidc.OidcService}
+         * @param providerName name of the security provider used for the {@link OidcFeature}
          *                     configuration
          * @return updated builder instance
          */

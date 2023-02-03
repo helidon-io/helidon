@@ -19,20 +19,19 @@ package io.helidon.security.providers.oidc;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
 import io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
 import io.helidon.security.util.TokenHandler;
 
-import jakarta.annotation.Priority;
-
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
  * This is the default tenant id provider.
  */
-@Priority(100000)
+@Weight(1)
 class DefaultTenantIdProvider implements TenantIdProvider {
 
     static final String DEFAULT_TENANT_ID_STYLE = "host-header";

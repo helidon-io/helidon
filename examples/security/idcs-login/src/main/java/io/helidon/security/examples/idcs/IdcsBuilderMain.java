@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider;
 import io.helidon.security.providers.oidc.OidcProvider;
-import io.helidon.security.providers.oidc.OidcSupport;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.reactive.OidcSupport;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;

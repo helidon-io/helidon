@@ -19,7 +19,7 @@ package io.helidon.microprofile.oidc;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.security.providers.oidc.OidcService;
+import io.helidon.security.providers.oidc.OidcFeature;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -45,7 +45,7 @@ public final class OidcCdiExtension implements Extension {
             // only configure if security is enabled
             ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 
-            server.serverRoutingBuilder().register(OidcService.create(config));
+            server.serverRoutingBuilder().addFeature(OidcFeature.create(config));
         }
     }
 }
