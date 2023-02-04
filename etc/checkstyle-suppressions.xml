@@ -96,6 +96,8 @@
             checks="MethodName"/>
 
     <!-- pico tests need to violate to check different user scenarios -->
+    <suppress files="builder/tests/"
+            checks=".*"/>
     <suppress files="pico/tests/"
             checks=".*"/>
     <suppress files="pico/configdriven/tests/"
