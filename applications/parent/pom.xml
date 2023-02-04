@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,31 +18,24 @@
 -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-dependencies</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../dependencies/pom.xml</relativePath>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-applications-project</artifactId>
+        <version>3.1.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.applications</groupId>
-    <artifactId>helidon-applications-project</artifactId>
+    <artifactId>helidon-applications</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Applications Project</name>
+    <name>Helidon Applications Parent</name>
     <description>Maven boilerplate for Helidon applications</description>
-
-    <modules>
-        <module>parent</module>
-        <module>nima</module>
-        <module>se</module>
-        <module>mp</module>
-    </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>19</maven.compiler.source>
+        <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
@@ -54,7 +47,7 @@
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.nativeimage>0.9.16</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
-        <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
+        <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
     </properties>
@@ -84,7 +77,6 @@
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
-                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -94,7 +86,6 @@
                     <configuration>
                         <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -166,9 +157,6 @@
                             <version>${helidon.version}</version>
                         </dependency>
                     </dependencies>
-                   <configuration>
-                       <defaultJvmOptions>--enable-preview</defaultJvmOptions>
-                   </configuration>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
@@ -213,7 +201,6 @@
                                 <buildArgs>
                                     <!-- Some native image features use the svm dependencies which require additional exports -->
                                     <arg>--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.configure=ALL-UNNAMED</arg>
-                                    <arg>--enable-preview</arg>
                                 </buildArgs>
                             </configuration>
                         </execution>

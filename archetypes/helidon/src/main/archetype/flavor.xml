@@ -20,6 +20,10 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
+    <variables>
+        <text path="module-dir"><![CDATA[]]></text>
+        <boolean path="multi-module">false</boolean>
+    </variables>
     <step name="Helidon Flavor" optional="true">
         <inputs>
             <enum id="flavor"
