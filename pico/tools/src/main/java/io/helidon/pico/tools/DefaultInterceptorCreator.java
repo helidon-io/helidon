@@ -42,6 +42,9 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -52,15 +55,13 @@ import io.helidon.pico.InterceptedTrigger;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.spi.Resetable;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.MethodInfo;
 import io.github.classgraph.ScanResult;
 import jakarta.inject.Singleton;
 
+import static io.helidon.builder.types.DefaultAnnotationAndValue.create;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueFromMirror;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueListFromAnnotations;
 import static io.helidon.pico.tools.TypeTools.createAnnotationAndValueSet;
@@ -68,7 +69,6 @@ import static io.helidon.pico.tools.TypeTools.createMethodElementInfo;
 import static io.helidon.pico.tools.TypeTools.gatherAllAnnotationsUsedOnPublicNonStaticMethods;
 import static io.helidon.pico.tools.TypeTools.toKind;
 import static io.helidon.pico.tools.TypeTools.toObjectTypeName;
-import static io.helidon.pico.types.DefaultAnnotationAndValue.create;
 
 /**
  * The default interceptor creator strategy in use.

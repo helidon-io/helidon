@@ -37,6 +37,9 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.spi.TypeInfo;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.tools.AbstractFilerMsgr;
@@ -50,9 +53,6 @@ import io.helidon.pico.tools.DefaultActivatorCreator;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.ToolsException;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
 
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromElement;
 import static io.helidon.pico.tools.TypeTools.createTypedElementNameFromElement;

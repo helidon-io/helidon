@@ -39,7 +39,7 @@ module io.helidon.nima.webserver {
     requires transitive io.helidon.common.security;
     requires io.helidon.logging.common;
     requires io.helidon.builder;
-    requires io.helidon.pico.builder.config;
+    requires io.helidon.builder.config;
     requires io.helidon.common.task;
 
     requires java.management;

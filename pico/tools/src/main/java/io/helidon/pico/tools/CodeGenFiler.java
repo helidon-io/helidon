@@ -47,9 +47,9 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.PicoServicesConfig;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 /**
  * This class is used to generate the source and resources originating from either annotation processing or maven-plugin

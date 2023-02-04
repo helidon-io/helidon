@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 
 final class GenerateMethod {
     static final String SINGULAR_PREFIX = "add";

@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.DefaultDependenciesInfo;
 import io.helidon.pico.DefaultDependencyInfo;
 import io.helidon.pico.DefaultInjectionPointInfo;
@@ -33,8 +35,6 @@ import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.ServiceInfoCriteria;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 /**
  * This is the class the code-generator will target that will be used at runtime for a service provider to build up its

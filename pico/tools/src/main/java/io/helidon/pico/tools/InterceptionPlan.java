@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.types.AnnotationAndValue;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.types.AnnotationAndValue;
 
 /**
  * Once a service type qualifies for interception, the interception plan will be created describing how the service type

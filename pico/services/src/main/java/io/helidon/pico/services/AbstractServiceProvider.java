@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.types.DefaultTypeName;
 import io.helidon.pico.ActivationLog;
 import io.helidon.pico.ActivationPhaseReceiver;
 import io.helidon.pico.ActivationRequest;
@@ -64,7 +65,6 @@ import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.ServiceProviderBindable;
 import io.helidon.pico.spi.InjectionResolver;
 import io.helidon.pico.spi.Resetable;
-import io.helidon.pico.types.DefaultTypeName;
 
 import jakarta.inject.Provider;
 

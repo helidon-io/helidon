@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.pico.types.TypeName;
+import io.helidon.builder.types.TypeName;
 
 /**
  * Tools to assist with {@link CustomAnnotationTemplateCreator}'s.

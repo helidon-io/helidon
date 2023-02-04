@@ -21,7 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.builder.types.AnnotationAndValue;
 
 /**
  * Abstractly describes method or field elements of a managed service type (i.e., fields, constructors, injectable methods, etc.).

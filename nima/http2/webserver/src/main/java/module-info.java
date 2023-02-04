@@ -39,8 +39,8 @@ module io.helidon.nima.http2.webserver {
     requires transitive io.helidon.nima.http2;
     requires transitive io.helidon.nima.http.encoding;
     requires transitive io.helidon.nima.http.media;
-    requires io.helidon.pico.builder.config;
     requires io.helidon.builder;
+    requires io.helidon.builder.config;
 
     exports io.helidon.nima.http2.webserver;
     exports io.helidon.nima.http2.webserver.spi;

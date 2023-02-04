@@ -22,8 +22,8 @@ import java.util.Optional;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
+import io.helidon.builder.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.types.TypeName;
 
 /**
  * General base interface for any codegen-related create activity.

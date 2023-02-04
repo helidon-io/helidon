@@ -20,7 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.types.TypeName;
+import io.helidon.builder.types.TypeName;
 
 /**
  * Configuration directives and options optionally provided to the {@link ApplicationCreator}.

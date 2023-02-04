@@ -50,6 +50,12 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultAnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.DefaultTypedElementName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 import io.helidon.pico.DefaultElementInfo;
 import io.helidon.pico.DefaultInjectionPointInfo;
 import io.helidon.pico.DefaultQualifierAndValue;
@@ -58,12 +64,6 @@ import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InjectionPointProvider;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultAnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.DefaultTypedElementName;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
 
 import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.AnnotationInfoList;
@@ -186,7 +186,7 @@ public class TypeTools extends BuilderTypeTools {
     }
 
     /**
-     * Creates a collection of {@link io.helidon.pico.types.TypedElementName} instances given a method definition.
+     * Creates a collection of {@link TypedElementName} instances given a method definition.
      *
      * @param m the method definition (from introspection)
      * @return the created instance

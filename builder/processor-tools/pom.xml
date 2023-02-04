@@ -41,8 +41,8 @@
             <artifactId>helidon-builder-processor-spi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico-types</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>

@@ -19,12 +19,12 @@ package io.helidon.pico.tests.pico.stacking;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.types.DefaultTypeName;
 import io.helidon.config.Config;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.testing.PicoTestingSupport;
-import io.helidon.pico.types.DefaultTypeName;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

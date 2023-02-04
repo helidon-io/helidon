@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.tools.CommonUtils;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
@@ -31,8 +33,6 @@ import io.helidon.pico.tools.Msgr;
 import io.helidon.pico.tools.TemplateHelper;
 import io.helidon.pico.tools.TemplateHelperTools;
 import io.helidon.pico.tools.ToolsException;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 /**
  * Default implementation for {@link io.helidon.pico.tools.TemplateHelperTools}.

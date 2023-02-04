@@ -43,6 +43,9 @@ import io.helidon.builder.processor.spi.BuilderCreatorProvider;
 import io.helidon.builder.processor.spi.TypeAndBody;
 import io.helidon.builder.processor.spi.TypeInfoCreatorProvider;
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weights;
 

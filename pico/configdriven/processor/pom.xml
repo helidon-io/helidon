@@ -33,8 +33,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-builder-config</artifactId>
+            <artifactId>helidon-pico-configdriven</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.pico</groupId>
+            <artifactId>helidon-pico</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.pico.configdriven</groupId>
@@ -49,12 +57,8 @@
             <artifactId>helidon-builder-processor</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico-types</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.pico</groupId>
-            <artifactId>helidon-pico</artifactId>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>

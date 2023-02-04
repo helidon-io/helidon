@@ -35,6 +35,8 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Module;
 import io.helidon.pico.PicoException;
@@ -61,8 +63,6 @@ import io.helidon.pico.tools.DefaultCodeGenPaths;
 import io.helidon.pico.tools.DefaultCompilerOptions;
 import io.helidon.pico.tools.ModuleInfoDescriptor;
 import io.helidon.pico.tools.ToolsException;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;

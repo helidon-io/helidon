@@ -44,8 +44,8 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 
 /**
  * Used to abstract processor based filer from direct filer (the later used via maven plugin and other tooling).

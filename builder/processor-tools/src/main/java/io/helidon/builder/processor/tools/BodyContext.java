@@ -27,11 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.processor.spi.TypeInfo;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultAnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultAnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.BUILDER_ANNO_TYPE_NAME;
 import static io.helidon.builder.processor.tools.DefaultBuilderCreatorProvider.DEFAULT_INCLUDE_META_ATTRIBUTES;

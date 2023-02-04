@@ -29,13 +29,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-pico-configdriven-services</artifactId>
-
     <name>Helidon Pico Config-Driven Services</name>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-builder-config</artifactId>
+            <artifactId>helidon-pico-configdriven</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -96,7 +95,7 @@
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <artifactId>helidon-builder-config-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>

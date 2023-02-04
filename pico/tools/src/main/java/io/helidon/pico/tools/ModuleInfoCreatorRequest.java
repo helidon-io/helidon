@@ -22,8 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.types.TypeName;
 
 /**
  * Used to represent the parameters that feed into the code generation of a module-info file specifically for Pico in that

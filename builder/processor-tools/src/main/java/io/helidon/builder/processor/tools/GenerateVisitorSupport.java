@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ final class GenerateVisitorSupport {
     private GenerateVisitorSupport() {
     }
 
-    static void appendExtraInnerClasses(StringBuilder builder,
-                                        BodyContext ctx) {
+    static void appendExtraInnerClasses(
+            StringBuilder builder,
+            BodyContext ctx) {
         if (ctx.doingConcreteType()) {
             return;
         }
@@ -115,4 +116,5 @@ final class GenerateVisitorSupport {
                                    + "\t}\n");
         }
     }
+
 }

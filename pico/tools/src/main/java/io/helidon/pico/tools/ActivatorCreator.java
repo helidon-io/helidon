@@ -18,8 +18,8 @@ package io.helidon.pico.tools;
 
 import java.util.Map;
 
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.Contract;
-import io.helidon.pico.types.TypeName;
 
 /**
  * Implementors of this contract are responsible for code-generating the Pico

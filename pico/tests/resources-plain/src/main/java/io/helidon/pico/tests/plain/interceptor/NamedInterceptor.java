@@ -19,10 +19,10 @@ package io.helidon.pico.tests.plain.interceptor;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypedElementName;
 import io.helidon.pico.Interceptor;
 import io.helidon.pico.InvocationContext;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypedElementName;
 
 @SuppressWarnings({"ALL", "unchecked"})
 public class NamedInterceptor implements Interceptor {

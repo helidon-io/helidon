@@ -48,6 +48,7 @@
     <modules>
         <module>builder</module>
         <module>nodeps</module>
+        <module>configbean</module>
     </modules>
 
 </project>

@@ -21,9 +21,9 @@ module io.helidon.pico.services {
     requires static jakarta.inject;
     requires static jakarta.annotation;
     requires io.helidon.builder;
+    requires io.helidon.builder.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
-    requires io.helidon.pico.types;
     requires transitive io.helidon.pico;
 
     exports io.helidon.pico.services;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 module io.helidon.builder.processor.spi {
     requires java.compiler;
     requires io.helidon.builder;
-    requires io.helidon.pico.types;
+    requires io.helidon.builder.types;
     requires io.helidon.common;
 
     exports io.helidon.builder.processor.spi;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.pico.types.AnnotationAndValue;
+import io.helidon.builder.types.AnnotationAndValue;
 
 /**
  * Java {@link java.util.ServiceLoader} provider interface used to discover builder creators.
@@ -53,6 +53,8 @@ public interface BuilderCreatorProvider {
      * @return the list of TypeAndBody sources to code-generate (tooling will handle the actual code generation aspects), or empty
      *         list to signal that the target type is not handled
      */
-    List<TypeAndBody> create(TypeInfo typeInfo, AnnotationAndValue builderAnnotation);
+    List<TypeAndBody> create(
+            TypeInfo typeInfo,
+            AnnotationAndValue builderAnnotation);
 
 }

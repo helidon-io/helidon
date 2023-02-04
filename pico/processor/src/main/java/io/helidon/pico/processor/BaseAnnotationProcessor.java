@@ -50,6 +50,10 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultAnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.common.Weight;
 import io.helidon.pico.Contract;
 import io.helidon.pico.DefaultServiceInfo;
@@ -80,10 +84,6 @@ import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeTools;
 import io.helidon.pico.tools.spi.ActivatorCreatorProvider;
 import io.helidon.pico.tools.spi.InterceptorCreatorProvider;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultAnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;

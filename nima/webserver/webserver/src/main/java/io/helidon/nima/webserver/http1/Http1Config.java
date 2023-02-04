@@ -19,9 +19,9 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
+import io.helidon.builder.config.ConfigBean;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.builder.config.ConfigBean;
 
 /**
  * HTTP/1.1 server configuration.

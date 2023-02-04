@@ -20,8 +20,8 @@ import java.util.Map;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.Singular;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 
 /**
  * The response from {@link CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.

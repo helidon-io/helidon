@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.builder.Builder;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 
 import jakarta.inject.Provider;
 

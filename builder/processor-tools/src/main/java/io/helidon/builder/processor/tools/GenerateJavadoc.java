@@ -16,8 +16,8 @@
 
 package io.helidon.builder.processor.tools;
 
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 
 final class GenerateJavadoc {
     private GenerateJavadoc() {

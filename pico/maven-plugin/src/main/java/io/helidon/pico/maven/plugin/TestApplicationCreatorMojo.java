@@ -23,13 +23,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.tools.ActivatorCreatorCodeGen;
-import io.helidon.pico.types.TypeName;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Build;

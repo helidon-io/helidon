@@ -58,7 +58,7 @@ The result of this will create (under ./target/generated-sources/annotations):
 
 ## Customizations
 To implement your own custom <i>Builder</i>:
-* See [pico/builder-config](../pico/builder-config) for an example.
+* See [builder-config](../builder-config) for an example.
 
 ## Usage
 See [tests/builder](./tests/builder) for usage examples.

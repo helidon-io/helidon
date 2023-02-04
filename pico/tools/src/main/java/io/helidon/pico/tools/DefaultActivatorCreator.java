@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.builder.types.TypeName;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -51,7 +52,6 @@ import io.helidon.pico.ServiceInfoBasics;
 import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.Dependencies;
-import io.helidon.pico.types.TypeName;
 
 import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.ClassInfo;
@@ -61,6 +61,8 @@ import io.github.classgraph.ScanResult;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import static io.helidon.builder.types.DefaultTypeName.create;
+import static io.helidon.builder.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.pico.tools.CommonUtils.first;
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.CommonUtils.toFlatName;
@@ -68,8 +70,6 @@ import static io.helidon.pico.tools.CommonUtils.toSet;
 import static io.helidon.pico.tools.TypeTools.componentTypeNameOf;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromClassInfo;
 import static io.helidon.pico.tools.TypeTools.isPackagePrivate;
-import static io.helidon.pico.types.DefaultTypeName.create;
-import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
 
 /**
  * Responsible for building all pico-di related collateral for a module, including:

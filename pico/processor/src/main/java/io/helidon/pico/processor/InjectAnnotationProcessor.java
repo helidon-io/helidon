@@ -30,6 +30,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.DependencyInfo;
 import io.helidon.pico.InjectionPointInfo;
@@ -38,7 +39,6 @@ import io.helidon.pico.services.Dependencies;
 import io.helidon.pico.tools.JavaxTypeTools;
 import io.helidon.pico.tools.ToolsException;
 import io.helidon.pico.tools.TypeTools;
-import io.helidon.pico.types.TypeName;
 
 import jakarta.inject.Inject;
 

@@ -42,10 +42,13 @@
     </properties>
 
     <modules>
+        <module>types</module>
         <module>builder</module>
         <module>processor-spi</module>
         <module>processor-tools</module>
         <module>processor</module>
+        <module>builder-config</module>
+        <module>builder-config-processor</module>
         <module>tests</module>
     </modules>
 

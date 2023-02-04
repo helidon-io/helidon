@@ -16,7 +16,7 @@
 
 package io.helidon.pico.tools;
 
-import io.helidon.pico.types.TypeName;
+import io.helidon.builder.types.TypeName;
 
 /**
  * Centralized utility to help callers determine what is and is not supported.

@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.types.TypeName;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -33,7 +34,6 @@ import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.services.Dependencies;
-import io.helidon.pico.types.TypeName;
 
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
@@ -48,6 +48,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import static io.helidon.builder.types.DefaultTypeName.createFromTypeName;
 import static io.helidon.pico.tools.TypeTools.createInjectionPointInfo;
 import static io.helidon.pico.tools.TypeTools.createQualifierAndValueSet;
 import static io.helidon.pico.tools.TypeTools.createTypeNameFromClassInfo;
@@ -59,7 +60,6 @@ import static io.helidon.pico.tools.TypeTools.isStatic;
 import static io.helidon.pico.tools.TypeTools.methodsAnnotatedWith;
 import static io.helidon.pico.tools.TypeTools.providesContractType;
 import static io.helidon.pico.tools.TypeTools.toAccess;
-import static io.helidon.pico.types.DefaultTypeName.createFromTypeName;
 
 /**
  * The default implementation of {@link ExternalModuleCreator}.

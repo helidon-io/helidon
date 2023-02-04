@@ -25,7 +25,7 @@ import io.helidon.builder.Singular;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
- * Used for demonstrating and testing the Pico Builder.
+ * Used for demonstrating and testing the Builder.
  */
 @Builder(includeMetaAttributes = false)
 public interface EdgeCases {

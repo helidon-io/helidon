@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.DefaultQualifierAndValue;
@@ -34,8 +36,6 @@ import io.helidon.pico.testing.BasicSingletonServiceProvider;
 import io.helidon.pico.tests.plain.interceptor.IA;
 import io.helidon.pico.tests.plain.interceptor.IB;
 import io.helidon.pico.tests.plain.interceptor.NamedInterceptor;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterEach;

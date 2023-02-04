@@ -23,13 +23,13 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.builder.processor.spi.TypeInfo;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.processor.testsubjects.ExtensibleGET;
 import io.helidon.pico.tools.CustomAnnotationTemplateCreator;
 import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.TemplateHelperTools;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 /**
  * For Testing (service loaded).

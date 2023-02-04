@@ -15,33 +15,34 @@
  */
 
 /**
- * Pico config-driven-services module.
+ * Pico Config-Driven Services Module.
  */
 module io.helidon.pico.config.services {
     requires static jakarta.inject;
     requires static jakarta.annotation;
     requires static io.helidon.config.metadata;
+    requires static io.helidon.pico.configdriven;
 
+    requires transitive io.helidon.builder;
+    requires transitive io.helidon.builder.config;
+    requires transitive io.helidon.builder.types;
     requires transitive io.helidon.config;
-    requires transitive io.helidon.pico.builder.config;
     requires transitive io.helidon.pico;
     requires transitive io.helidon.pico.services;
-    requires transitive io.helidon.pico.types;
-    requires transitive io.helidon.builder;
 
-    exports io.helidon.pico.config.services;
+    exports io.helidon.pico.configdriven.services;
 
-    uses io.helidon.pico.builder.config.spi.ConfigBeanRegistryProvider;
-    uses io.helidon.pico.builder.config.spi.StringValueParserProvider;
-    uses io.helidon.pico.builder.config.spi.ConfigBeanMapperProvider;
-    uses io.helidon.pico.builder.config.spi.ConfigResolverProvider;
+    uses io.helidon.builder.config.spi.ConfigBeanRegistryProvider;
+    uses io.helidon.builder.config.spi.StringValueParserProvider;
+    uses io.helidon.builder.config.spi.ConfigBeanMapperProvider;
+    uses io.helidon.builder.config.spi.ConfigResolverProvider;
 
-    provides io.helidon.pico.builder.config.spi.ConfigBeanRegistryProvider
-            with io.helidon.pico.config.services.DefaultConfigBeanRegistryProvider;
-    provides io.helidon.pico.builder.config.spi.ConfigResolverProvider
-            with io.helidon.pico.config.services.DefaultConfigResolverProvider;
-    provides io.helidon.pico.builder.config.spi.StringValueParserProvider
-            with io.helidon.pico.config.services.DefaultStringValueParserProvider;
-    provides io.helidon.pico.builder.config.spi.ConfigBeanBuilderValidatorProvider
-            with io.helidon.pico.config.services.DefaultConfigBeanBuilderValidatorProvider;
+    provides io.helidon.builder.config.spi.ConfigBeanBuilderValidatorProvider
+            with io.helidon.pico.configdriven.services.DefaultConfigBeanBuilderValidatorProvider;
+    provides io.helidon.builder.config.spi.ConfigBeanRegistryProvider
+            with io.helidon.pico.configdriven.services.DefaultConfigBeanRegistryProvider;
+    provides io.helidon.builder.config.spi.ConfigResolverProvider
+            with io.helidon.pico.configdriven.services.DefaultConfigResolverProvider;
+    provides io.helidon.builder.config.spi.StringValueParserProvider
+            with io.helidon.pico.configdriven.services.DefaultStringValueParserProvider;
 }

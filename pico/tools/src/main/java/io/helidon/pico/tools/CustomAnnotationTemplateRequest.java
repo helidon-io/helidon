@@ -20,11 +20,11 @@ import java.util.List;
 
 import io.helidon.builder.Builder;
 import io.helidon.builder.processor.spi.TypeInfo;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
 
 /**
  * The request will be generated internally and then passed to the appropriate

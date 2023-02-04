@@ -22,9 +22,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.ServiceInfoBasics;
-import io.helidon.pico.types.TypeName;
 
 /**
  * See {@link DefaultActivatorCreator}.

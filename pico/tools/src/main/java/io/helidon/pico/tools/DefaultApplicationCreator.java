@@ -29,6 +29,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.processor.tools.BuilderTypeTools;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.pico.Application;
@@ -45,9 +48,6 @@ import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.services.InjectionPlan;
 import io.helidon.pico.services.Utils;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
 
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;

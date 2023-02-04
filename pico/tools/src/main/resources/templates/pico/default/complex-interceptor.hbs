@@ -21,23 +21,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultAnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.DefaultTypedElementName;
+import io.helidon.builder.types.TypeName;
+import io.helidon.builder.types.TypedElementName;
 import io.helidon.pico.DefaultInvocationContext;
 import io.helidon.pico.Interceptor;
 import io.helidon.pico.InvocationException;
 import io.helidon.pico.ServiceProvider;
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultAnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.DefaultTypedElementName;
-import io.helidon.pico.types.TypeName;
-import io.helidon.pico.types.TypedElementName;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
-import static io.helidon.pico.types.DefaultTypeName.create;
+import static io.helidon.builder.types.DefaultTypeName.create;
 import static io.helidon.pico.services.Invocation.createAndInvoke;
 import static io.helidon.pico.services.Invocation.createInvokeAndSupply;
 import static io.helidon.pico.services.Invocation.mergeAndCollapse;

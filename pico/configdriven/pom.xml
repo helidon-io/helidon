@@ -34,7 +34,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>builder-config</module>
+        <module>configdriven</module>
         <module>processor</module>
         <module>services</module>
         <module>tests</module>

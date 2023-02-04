@@ -20,10 +20,10 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Objects;
 
-import io.helidon.pico.types.AnnotationAndValue;
-import io.helidon.pico.types.DefaultAnnotationAndValue;
-import io.helidon.pico.types.DefaultTypeName;
-import io.helidon.pico.types.TypeName;
+import io.helidon.builder.types.AnnotationAndValue;
+import io.helidon.builder.types.DefaultAnnotationAndValue;
+import io.helidon.builder.types.DefaultTypeName;
+import io.helidon.builder.types.TypeName;
 
 import jakarta.inject.Named;
 
@@ -131,7 +131,7 @@ public class DefaultQualifierAndValue extends DefaultAnnotationAndValue
     }
 
     /**
-     * Converts from an {@link io.helidon.pico.types.AnnotationAndValue} to a {@link QualifierAndValue}.
+     * Converts from an {@link AnnotationAndValue} to a {@link QualifierAndValue}.
      *
      * @param annotationAndValue the annotation and value
      * @return the qualifier and value equivalent

@@ -43,7 +43,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>configbean</module>
         <module>configuredby</module>
     </modules>
 

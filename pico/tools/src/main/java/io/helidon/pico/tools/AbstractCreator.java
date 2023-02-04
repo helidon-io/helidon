@@ -25,12 +25,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.types.TypeName;
 import io.helidon.pico.Application;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
-import io.helidon.pico.types.TypeName;
 
 import static io.helidon.pico.tools.CommonUtils.hasValue;
 import static io.helidon.pico.tools.TypeTools.needToDeclareModuleUsage;

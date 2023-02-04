@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
+import io.helidon.builder.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.QualifierAndValue;
-import io.helidon.pico.types.TypeName;
 
 /**
  * Codegen request options applicable as part of the overall {@link ActivatorCreatorRequest}.
