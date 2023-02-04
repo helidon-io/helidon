@@ -39,11 +39,26 @@
                     <list key="readme-sections">
                     <value order="50" template="mustache">
                         <![CDATA[
-## Deploy the application to Kubernetes
+## Run the application in Kubernetes
+
+If you don’t have access to a Kubernetes cluster, you can [install one](https://helidon.io/docs/latest/#/about/kubernetes) on your desktop.
+
+### Verify connectivity to cluster
 
 ```
 kubectl cluster-info                        # Verify which cluster
 kubectl get pods                            # Verify connectivity to cluster
+```
+{{#k8s-readme-sections}}
+{{#first}}
+
+{{/first}}
+{{.}}
+{{/k8s-readme-sections}}
+
+### Deploy the application to Kubernetes
+
+```
 kubectl create -f app.yaml                  # Deploy application
 kubectl get pods                            # Wait for quickstart pod to be RUNNING
 kubectl get service  {{artifactId}}         # Get service info

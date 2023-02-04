@@ -70,6 +70,12 @@ backend:
           glyph:
             type: "icon"
             value: "terminal"
+        - type: "PAGE"
+          title: "Helidon Application Bootstraping"
+          source: "about/archetype.adoc"
+          glyph:
+            type: "icon"
+            value: "terminal"
         - type: "GROUPS"
           items:
           - type: "GROUP"

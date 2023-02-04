@@ -1,0 +1,61 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Application Bootstrapping
+:description: Helidon Application Bootstrapping
+:keywords: helidon archetypes
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/attributes.adoc[]
+
+== Introduction
+
+xref:cli.adoc[Helidon CLI] provides a convenient way to bootstrap Helidon applications. It allows you to choose from a set of archetypes i.e. application with pre-defined feature sets and lets you customize it by providing a host of options.
+
+== Archetypes
+
+Helidon provides the following set of archetypes to bootstrap your application development journey.
+
+=== QuickStart
+This option creates a Helidon project that includes multiple REST operations along with default observability setup and a set of dependencies to enable ease of development e.g. in case of Helidon MP, it uses `helidon-microprofile` bundle instead of minimal `helidon-microprofile-core` bundle.
+
+=== Database
+This option builds on `QuickStart` to demonstrate how to integrate with database (in-memory H2, by default). In case of, Helidon SE that uses the DbClient API while for Helidon MP that uses JPA.
+
+=== OCI
+This option builds on `QuickStart` to demonstrate integration with Oracle Cloud Infrastructure (OCI) services using the OCI SDK. Generated project showcases OpenApi-driven development approach where the practice of designing and building APIs is done first, then creating the rest of an application around them is implemented next. This is available for Helidon MP only.
+
+=== Custom
+This option enables user to create Helidon project of their choice, suitable to start from scratch i.e. bare minimum, if default values are chosen Or choose from many options available.
+
+== Generated Application Structure
+
+User can scaffold a new Maven project based on these archetypes. See xref:cli.adoc[Helidon CLI] and our xref:../se/guides/quickstart.adoc[Helidon SE QuickStart Guide] or xref:../mp/guides/quickstart.adoc[Helidon MP QuickStart Guide] for details on usage.
+
+Once the archetype is selected the other options have defaults and the project is generated in a directory named after the `artifactId` value. It mainly contains the following:
+
+- Maven structure
+- skeletal application code
+- associated unit test code
+- example Dockerfile files
+- application configuration file(s)
+- instructions to build and run application/test
+
+== Using Generated Application
+
+The easiest way to get started is follow instructions in README file and familiarize with layout and features provided to build upon them esp. look at the pom.xml. You will find the suitable Helidon parent pom, enabling the use of the different dependencies managed/provided by Helidon.
