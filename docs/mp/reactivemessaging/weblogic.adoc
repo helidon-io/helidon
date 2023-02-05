@@ -74,6 +74,8 @@ Connector name: `helidon-weblogic-jms`
 `CLIENT_ACKNOWLEDGE` - receipt of a message is acknowledged only when `Message.ack()` is called manually,
 `DUPS_OK_ACKNOWLEDGE` - session lazily acknowledges the delivery of messages. Default value: `AUTO_ACKNOWLEDGE`
 |`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
+|`batch-size` | Size of the batch in which are messages being received before emitting to downstream.
+Larger batch usually performs better but takes more memory. Default value: `10`
 |`message-selector` | JMS API message selector expression based on a subset of the SQL92.
 Expression can only access headers and properties, not the payload.
 |`client-id` | Client identifier for JMS connection.
@@ -117,17 +119,26 @@ mp:
         destination: ./TestJMSModule!TestQueue
 ----
 
-When configuring destination with WebLogic CDI, the following syntax needs to be applied:
+== Destination
+When configuring destination https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/jmspg/lookup.html#GUID-184B8BA2-C18C-41B7-B3D3-EFC6F47E6D7A[WebLogic CDI(Create Destination Identifier)] syntax needs to be applied.
 
-.Non-Distributed Destinations
+=== Non-Distributed Destinations
 `jms-server-name/jms-module-name!destination-name`
 
 In our example we are replacing jms-server-name with `.` as we don’t have to look up the server we are connected to.
 
-.Uniform Distributed Destinations (UDDs)
-`jms-server-name/jms-module-name!jms-server-name@udd-name`
+=== Uniform Distributed Destinations (UDDs)
+`jms-module-name!udd-name`
 
 Destination for UDD doesn't have `./` prefix, because distributed destinations can be served by multiple servers within a cluster.
+
+- Direct connection to UDD member
+When UDD member is named according to convention `jms-server-name@udd-name`.
+
+image::msg/udd_members.png[UDD members]
+
+Member can be accessed directly as non-distributed destination on particular JMS server:
+`jms-server-name/jms-module-name!jms-server-name@udd-name`
 
 == Usage
 
