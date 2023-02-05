@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,11 +157,11 @@ public class WeblogicConnector extends JmsConnector {
     }
 
     @Override
-    protected CompletionStage<?> consumeAsync(Message<?> m,
-                                              Session session,
-                                              AtomicReference<MessageMapper> mapper,
-                                              MessageProducer producer,
-                                              Config config) {
-        return executeInIsolation(() -> super.consumeAsync(m, session, mapper, producer, config));
+    protected CompletionStage<?> sendToJmsAsync(Message<?> m,
+                                                Session session,
+                                                AtomicReference<MessageMapper> mapper,
+                                                MessageProducer producer,
+                                                Config config) {
+        return executeInIsolation(() -> super.sendToJmsAsync(m, session, mapper, producer, config));
     }
 }

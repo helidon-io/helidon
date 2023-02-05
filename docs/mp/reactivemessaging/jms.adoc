@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ Connector name: `helidon-jms`
 
 .Attributes
 |===
-|`username` | User name used to connect JMS session
+|`username` | Username used to connect JMS session
 |`password` | Password to connect JMS session
 |`type` | Possible values are: `queue`, `topic`
 |`destination` | Queue or topic name
@@ -54,6 +54,8 @@ Connector name: `helidon-jms`
 `CLIENT_ACKNOWLEDGE` - receipt of a message is acknowledged only when `Message.ack()` is called manually,
 `DUPS_OK_ACKNOWLEDGE` - session lazily acknowledges the delivery of messages. Default value: `AUTO_ACKNOWLEDGE`
 |`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
+|`batch-size` | Size of the batch in which are messages being received before emitting to downstream.
+Larger batch usually performs better but takes more memory. Default value: `10`
 |`message-selector` | JMS API message selector expression based on a subset of the SQL92.
 Expression can only access headers and properties, not the payload.
 |`client-id` | Client identifier for JMS connection.

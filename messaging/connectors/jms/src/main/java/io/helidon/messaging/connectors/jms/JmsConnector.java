@@ -18,8 +18,10 @@ package io.helidon.messaging.connectors.jms;
 
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -116,6 +118,13 @@ import org.reactivestreams.FlowAdapters;
         defaultValue = "false",
         direction = ConnectorAttribute.Direction.INCOMING_AND_OUTGOING,
         type = "boolean")
+@ConnectorAttribute(name = JmsConnector.BATCH_SIZE_ATTRIBUTE,
+        description = "Size of the batch in which are messages being received before emitting to downstream. "
+                + "Larger batch usually performs better but takes more memory.",
+        mandatory = false,
+        defaultValue = "10",
+        direction = ConnectorAttribute.Direction.INCOMING,
+        type = "int")
 @ConnectorAttribute(name = JmsConnector.MESSAGE_SELECTOR_ATTRIBUTE,
         description = "JMS API message selector expression based on a subset of the SQL92. "
               + "Expression can only access headers and properties, not the payload.",
@@ -271,6 +280,12 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     public static final String TYPE_ATTRIBUTE = "type";
 
     /**
+     * Size of the batch in which are messages being received before emitting to downstream.
+     * Larger batch usually performs better but takes more memory.
+     */
+    public static final String BATCH_SIZE_ATTRIBUTE = "batch-size";
+
+    /**
      * Queue or topic name.
      */
     public static final String DESTINATION_ATTRIBUTE = "destination";
@@ -289,6 +304,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     static final boolean AWAIT_ACK_DEFAULT = false;
     static final long POLL_TIMEOUT_DEFAULT = 50L;
     static final long PERIOD_EXECUTIONS_DEFAULT = 100L;
+    static final int BATCH_SIZE_DEFAULT = 10;
     static final String TYPE_PROP_DEFAULT = "queue";
     static final String JNDI_JMS_FACTORY_DEFAULT = "ConnectionFactory";
 
@@ -504,6 +520,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                     .asLong()
                     .orElse(PERIOD_EXECUTIONS_DEFAULT);
 
+            int batchSize = config.get(BATCH_SIZE_ATTRIBUTE)
+                    .asInt()
+                    .orElse(BATCH_SIZE_DEFAULT);
+
             AtomicReference<JmsMessage<?>> lastMessage = new AtomicReference<>();
 
             scheduler.scheduleAtFixedRate(
@@ -511,14 +531,14 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                         if (!emitter.hasRequests()) {
                             return;
                         }
-                        // When await-ack is true, no message is received until previous one is acked
+                        // When await-ack is true, no message is received until latest from batch is acked
                         if (ackMode != AcknowledgeMode.AUTO_ACKNOWLEDGE
                                 && awaitAck
                                 && lastMessage.get() != null
                                 && !lastMessage.get().isAck()) {
                             return;
                         }
-                        produce(emitter, sessionEntry, consumer, nackHandler, pollTimeout)
+                        receiveFromJms(emitter, sessionEntry, consumer, nackHandler, pollTimeout, batchSize)
                                 .ifPresent(lastMessage::set);
                     }, 0, periodExecutions, TimeUnit.MILLISECONDS);
             sessionEntry.connection().start();
@@ -544,7 +564,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             MessageProducer producer = createProducer(destination, ctx, sessionEntry);
             AtomicReference<MessageMapper> mapper = new AtomicReference<>();
             return ReactiveStreams.<Message<?>>builder()
-                    .flatMapCompletionStage(m -> consume(m, session, mapper, producer, config))
+                    .flatMapCompletionStage(m -> sendToJMS(m, session, mapper, producer, config))
                                   .onError(t -> LOGGER.log(Level.ERROR,
                                           () -> "Error intercepted from channel " + config.get(CHANNEL_NAME_ATTRIBUTE)
                                                                                            .asString()
@@ -594,28 +614,37 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 });
     }
 
-    private Optional<JmsMessage<?>> produce(
+    private Optional<JmsMessage<?>> receiveFromJms(
             BufferedEmittingPublisher<Message<?>> emitter,
             SessionMetadata sessionEntry,
             MessageConsumer consumer,
             JmsNackHandler nackHandler,
-            Long pollTimeout) {
+            Long pollTimeout,
+            int batchSize) {
         try {
-            jakarta.jms.Message message = consumer.receive(pollTimeout);
-            if (message == null) {
-                return Optional.empty();
+            JmsMessage<?> lastMessage = null;
+            List<JmsMessage<?>> receivedMessages = new ArrayList<>(batchSize);
+            for (int i = 0; i < batchSize; i++) {
+                jakarta.jms.Message message = consumer.receive(pollTimeout);
+                if (message == null) {
+                    break;
+                }
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Received message " + i + " from batch of " + batchSize + ": " + message);
+                }
+                lastMessage = createMessage(nackHandler, message, executor, sessionEntry);
+                receivedMessages.add(lastMessage);
             }
-            LOGGER.log(Level.DEBUG, () -> "Received message: " + message);
-            JmsMessage<?> preparedMessage = createMessage(nackHandler, message, executor, sessionEntry);
-            emitter.emit(preparedMessage);
-            return Optional.of(preparedMessage);
+            // Avoid acking during polling, 40x faster
+            receivedMessages.forEach(emitter::emit);
+            return Optional.ofNullable(lastMessage);
         } catch (Throwable e) {
             emitter.fail(e);
             return Optional.empty();
         }
     }
 
-    CompletionStage<?> consume(
+    CompletionStage<?> sendToJMS(
             Message<?> m,
             Session session,
             AtomicReference<MessageMapper> mapper,
@@ -628,15 +657,15 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
 
         return CompletableFuture
-                .supplyAsync(() -> consumeAsync(m, session, mapper, producer, config), executor)
+                .supplyAsync(() -> sendToJmsAsync(m, session, mapper, producer, config), executor)
                 .thenApply(aVoid -> m);
     }
 
-    protected CompletionStage<?> consumeAsync(Message<?> m,
-                                              Session session,
-                                              AtomicReference<MessageMapper> mapper,
-                                              MessageProducer producer,
-                                              io.helidon.config.Config config) {
+    protected CompletionStage<?> sendToJmsAsync(Message<?> m,
+                                                Session session,
+                                                AtomicReference<MessageMapper> mapper,
+                                                MessageProducer producer,
+                                                io.helidon.config.Config config) {
         try {
             jakarta.jms.Message jmsMessage;
 
