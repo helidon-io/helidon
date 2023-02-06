@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import io.helidon.reactive.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link UserFilter}.
@@ -47,11 +48,11 @@ public class UserFilterTest {
         TestResponse response = TestClient.create(routing)
                 .path("/")
                 .get();
-        assertEquals(User.ANONYMOUS, userReference.get());
+        assertThat(userReference.get(), is(User.ANONYMOUS));
         response = TestClient.create(routing)
                 .path("/")
                 .header(Http.Header.COOKIE, "Unauthenticated-User-Alias=Foo")
                 .get();
-        assertEquals("Foo", userReference.get().getAlias());
+        assertThat(userReference.get().getAlias(), is("Foo"));
     }
 }
