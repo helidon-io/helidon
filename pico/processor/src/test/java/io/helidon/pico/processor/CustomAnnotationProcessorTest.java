@@ -37,7 +37,6 @@ import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
 import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
 import io.helidon.pico.tools.DefaultCustomAnnotationTemplateRequest;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.builder.types.DefaultTypeName.create;
@@ -57,7 +56,6 @@ class CustomAnnotationProcessorTest {
                    containsInAnyOrder(ExtensibleGET.class));
     }
 
-    @Disabled // TODO: review why this doesn't work in intellij
     @Test
     void extensibleGET() {
         CustomAnnotationProcessor processor = new CustomAnnotationProcessor();

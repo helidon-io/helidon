@@ -26,7 +26,7 @@ import io.helidon.common.config.Config;
  * @deprecated this is for internal use only
  */
 public abstract class IConfigBeanBase implements IConfigBeanCommon {
-    private final Config cfg;
+    private final Config config;
     private String instanceId;
 
     /**
@@ -37,13 +37,13 @@ public abstract class IConfigBeanBase implements IConfigBeanCommon {
      */
     protected IConfigBeanBase(IConfigBeanBuilder b,
                               String instanceId) {
-        this.cfg = b.__config().orElse(null);
+        this.config = b.__config().orElse(null);
         this.instanceId = instanceId;
     }
 
     @Override
     public Optional<Config> __config() {
-        return Optional.ofNullable(cfg);
+        return Optional.ofNullable(config);
     }
 
     /**

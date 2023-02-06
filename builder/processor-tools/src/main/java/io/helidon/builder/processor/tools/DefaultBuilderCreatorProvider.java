@@ -418,7 +418,17 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      * @return the generated sticker
      */
     protected String generatedStickerFor(BodyContext ctx) {
-        return BuilderTypeTools.generatedStickerFor(getClass().getName(), Versions.CURRENT_BUILDER_VERSION);
+        return BuilderTypeTools.generatedStickerFor(getClass().getName(), generatedVersionFor(ctx));
+    }
+
+    /**
+     * Returns the {@code Generated} version identifier.
+     *
+     * @param ctx   the context
+     * @return the generated version identifier
+     */
+    protected String generatedVersionFor(BodyContext ctx) {
+        return Versions.CURRENT_BUILDER_VERSION;
     }
 
     /**
@@ -723,6 +733,9 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
                                    BodyContext ctx,
                                    String tag,
                                    AtomicBoolean needsCustomMapOf) {
+        builder.append("\t\t").append(tag);
+        builder.append(".put(\"__generated\", Map.of(\"version\", \"")
+                .append(io.helidon.builder.processor.tools.Versions.BUILDER_VERSION_1).append("\"));\n");
         ctx.map().forEach((attrName, method) ->
                             builder.append("\t\t")
                                     .append(tag)
@@ -738,13 +751,21 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
      *
      * @param key      the key attribute
      * @param attrName the attribute name
-     * @param method   the method
      * @return the key to write on the generated output.
      */
     protected String normalizeConfiguredOptionKey(String key,
-                                                  String attrName,
-                                                  TypedElementName method) {
-        return BuilderTypeTools.hasNonBlankValue(key) ? key : "";
+                                                  String attrName) {
+        return BuilderTypeTools.hasNonBlankValue(key) ? key : toConfigKey(attrName);
+    }
+
+    /**
+     * Applicable if this builder is intended for config beans.
+     *
+     * @param attrName the attribute name
+     * @return the config key
+     */
+    protected String toConfigKey(String attrName) {
+        return "";
     }
 
     /**
@@ -1719,7 +1740,7 @@ public class DefaultBuilderCreatorProvider implements BuilderCreatorProvider {
 
         String key = (configuredOptions.isEmpty())
                 ? null : configuredOptions.get().value("key").orElse(null);
-        key = normalizeConfiguredOptionKey(key, attrName, method);
+        key = normalizeConfiguredOptionKey(key, attrName);
         if (BuilderTypeTools.hasNonBlankValue(key)) {
             typeDecl += ", " + quotedTupleOf("key", key);
         }

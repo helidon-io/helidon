@@ -34,9 +34,6 @@ import javax.tools.Diagnostic;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
-import io.helidon.builder.config.spi.ConfigBeanBuilderValidatorHolder;
-import io.helidon.builder.config.spi.ConfigResolver;
-import io.helidon.builder.config.spi.IConfigBeanBuilderBase;
 import io.helidon.builder.types.AnnotationAndValue;
 import io.helidon.builder.types.DefaultAnnotationAndValue;
 import io.helidon.builder.types.TypeName;
@@ -232,8 +229,8 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
                                + "\t\tserviceInfo(serviceInfo);\n"
                                + "\t}\n");
         } else {
-            result.add("\n\tprotected " + configBeanType + " configBean;\n"
-                               + "\n\tprotected " + activatorImplTypeName.className() + "(" + configBeanType + " configBean) {\n"
+            result.add("\n\tprivate " + configBeanType + " configBean;\n"
+                               + "\n\tprivate " + activatorImplTypeName.className() + "(" + configBeanType + " configBean) {\n"
                                + "\t\tthis.configBean = Objects.requireNonNull(configBean);\n"
                                + "\t\tassertIsRootProvider(false, true);\n"
                                + "\t\tserviceInfo(serviceInfo);\n"
@@ -278,12 +275,14 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
                            + "\t\treturn (CB) " + configBeanImplName + "\n\t\t\t.toBuilder(config)\n\t\t\t.build();\n"
                            + "\t}\n");
         result.add("\t@Override\n"
-                           + "\tpublic void resolveFrom(" + Config.class.getName() + " config, "
-                           + ConfigResolver.class.getName() + " resolver) {\n"
-                           + "\t\t((" + IConfigBeanBuilderBase.class.getName() + ") configBean)\n"
-                           + "\t\t\t\t.acceptConfig(config, resolver,\n"
-                           + "\t\t\t\t\t\t\t" + ConfigBeanBuilderValidatorHolder.class.getName() + "\n"
-                           + "\t\t\t\t\t\t\t\t\t\t.configBeanValidatorFor(configBeanType()).orElseThrow());\n"
+                           + "\tpublic " + configBeanImplName + ".Builder "
+                           + "toConfigBeanBuilder(" + Config.class.getName() + " config) {\n"
+                           + "\t\treturn " + configBeanImplName + ".toBuilder(config);\n"
+                           + "\t}\n");
+        result.add("\t@Override\n"
+                           + "\tprotected CB acceptConfig(io.helidon.common.config.Config config) {\n"
+                           + "\t\tthis.configBean = (CB) super.acceptConfig(config);\n"
+                           + "\t\treturn (CB) this.configBean;\n"
                            + "\t}\n");
 
         if (!hasParent) {

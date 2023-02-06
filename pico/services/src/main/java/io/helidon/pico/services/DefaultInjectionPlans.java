@@ -77,6 +77,7 @@ class DefaultInjectionPlans {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     private static void accumulate(
             DependencyInfo dep,
             Map<String, InjectionPlan> result,
@@ -111,19 +112,27 @@ class DefaultInjectionPlans {
                             Object resolved = ((InjectionResolver) self)
                                     .resolve(ipInfo, picoServices, self, resolveIps)
                                     .orElse(null);
-                            if (resolved != null) {
-                                Object target = (resolved instanceof Optional)
-                                        ? ((Optional<?>) resolved).orElse(null) : resolved;
-                                InjectionPlan plan = DefaultInjectionPlan.builder()
-                                        .injectionPointInfo(ipInfo)
-                                        .injectionPointQualifiedServiceProviders(toIpQualified(target))
-                                        .unqualifiedProviders(toIpUnqualified(target))
-                                        .wasResolved(true)
-                                        .resolved(target)
-                                        .build();
-                                Object prev = result.put(id, plan);
-                                assert (Objects.isNull(prev)) : ipInfo;
+                            Object target = (resolved instanceof Optional)
+                                    ? ((Optional<?>) resolved).orElse(null) : resolved;
+                            DefaultInjectionPlan.Builder planBuilder = DefaultInjectionPlan.builder()
+                                    .serviceProvider(self)
+                                    .injectionPointInfo(ipInfo)
+                                    .injectionPointQualifiedServiceProviders(toIpQualified(target))
+                                    .unqualifiedProviders(toIpUnqualified(target))
+                                    .wasResolved(true);
+                            if (target != null) {
+                                if (ipInfo.optionalWrapped()) {
+                                    planBuilder.resolved((target instanceof Optional && ((Optional<?>) target).isEmpty())
+                                                                 ? Optional.empty() : Optional.of(target));
+                                } else {
+                                    if (target instanceof Optional) {
+                                        target = ((Optional<Object>) target).orElse(null);
+                                    }
+                                    planBuilder.resolved(target);
+                                }
                             }
+                            Object prev = result.put(id, planBuilder.build());
+                            assert (Objects.isNull(prev)) : ipInfo;
                         }
                     });
         }
@@ -135,7 +144,7 @@ class DefaultInjectionPlans {
             }
         }
 
-        // filter down the selections to not include self...
+        // filter down the selections to not include self
         List<ServiceProvider<?>> serviceProviders =
                 (tmpServiceProviders != null && !tmpServiceProviders.isEmpty())
                         ? tmpServiceProviders.stream()

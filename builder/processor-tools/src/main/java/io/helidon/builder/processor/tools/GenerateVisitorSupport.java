@@ -100,7 +100,7 @@ final class GenerateVisitorSupport {
                                    + "\t\t\t}\n"
                                    + "\t\t\t\n"
                                    + "\t\t\tObject val = valueSupplier.get();\n"
-                                   + "\t\t\tif (Objects.nonNull(val)) {\n"
+                                   + "\t\t\tif (val != null) {\n"
                                    + "\t\t\t\treturn;\n"
                                    + "\t\t\t}\n"
                                    + "\t\t\t\n"
@@ -110,7 +110,8 @@ final class GenerateVisitorSupport {
                                    + "\n"
                                    + "\t\tvoid validate() {\n"
                                    + "\t\t\tif (!errors.isEmpty()) {\n"
-                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(String.join(\", \", errors));\n"
+                                   + "\t\t\t\tthrow new java.lang.IllegalStateException(\"problems building configbean '\" + "
+                                   + ctx.typeInfo().typeName() + ".class.getName() + \"': \" + String.join(\", \", errors));\n"
                                    + "\t\t\t}\n"
                                    + "\t\t}\n"
                                    + "\t}\n");

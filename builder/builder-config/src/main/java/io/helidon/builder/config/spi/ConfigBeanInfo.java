@@ -16,6 +16,7 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.builder.Builder;
@@ -40,13 +41,31 @@ public interface ConfigBeanInfo extends ConfigBean {
     static MetaConfigBeanInfo toMetaConfigBeanInfo(
             ConfigBean val,
             Class<?> cfgBeanType) {
+        Objects.requireNonNull(val);
         Objects.requireNonNull(cfgBeanType);
-        MetaConfigBeanInfo.Builder builder = MetaConfigBeanInfo.toBuilder(Objects.requireNonNull(val));
+        MetaConfigBeanInfo.Builder builder = MetaConfigBeanInfo.toBuilder(val);
         String key = val.key();
         if (!key.isBlank()) {
             builder.key(toConfigKey(cfgBeanType.getSimpleName()));
         }
         return builder.build();
+    }
+
+    /**
+     * Builds meta information appropriate for config integration from a
+     * meta attribute map.
+     *
+     * @param meta the meta attribute map
+     * @return the meta information for the config bean
+     */
+    static MetaConfigBeanInfo toMetaConfigBeanInfo(Map<String, Object> meta) {
+        return MetaConfigBeanInfo.builder()
+                .key((String) meta.get("key"))
+                .repeatable(Boolean.valueOf((String) meta.get("repeatable")))
+                .drivesActivation(Boolean.valueOf((String) meta.get("drivesActivation")))
+                .atLeastOne(Boolean.valueOf((String) meta.get("atLeastOne")))
+                .wantDefaultConfigBean(Boolean.valueOf((String) meta.get("atLeastOne")))
+                .build();
     }
 
     /**

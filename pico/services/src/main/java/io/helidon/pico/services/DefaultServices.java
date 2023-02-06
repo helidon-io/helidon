@@ -433,9 +433,12 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         return COMPARATOR;
     }
 
-    static void assertPermitsDynamic(PicoServicesConfig cfg) {
+    static void assertPermitsDynamic(
+            PicoServicesConfig cfg) {
         if (!cfg.permitsDynamic()) {
-            throw new IllegalStateException("services are configured to not prevent dynamic updates");
+            throw new IllegalStateException("Services are configured to prevent dynamic updates.\n"
+                                        + "Set config '" + PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC
+                                        + " = true' to enable");
         }
     }
 

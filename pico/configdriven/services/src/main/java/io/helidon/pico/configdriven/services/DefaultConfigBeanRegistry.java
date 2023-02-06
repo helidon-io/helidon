@@ -17,7 +17,6 @@
 package io.helidon.pico.configdriven.services;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -81,11 +80,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     @Override
     public boolean reset(
             boolean deep) {
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            System.Logger.Level level = isInitialized() ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
-            LOGGER.log(level, "Resetting...");
-        }
-
+        System.Logger.Level level = isInitialized() ? System.Logger.Level.INFO : System.Logger.Level.DEBUG;
+        LOGGER.log(level, "Resetting");
         configuredServiceProviderMetaConfigBeanMap.clear();
         configuredServiceProvidersByConfigKey.clear();
         initializing.set(false);
@@ -99,6 +95,10 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             ConfiguredServiceProvider<?, ?> configuredServiceProvider,
             QualifierAndValue configuredByQualifier,
             MetaConfigBeanInfo metaConfigBeanInfo) {
+        Objects.requireNonNull(configuredServiceProvider);
+        Objects.requireNonNull(configuredByQualifier);
+        Objects.requireNonNull(metaConfigBeanInfo);
+
         if (initializing.get()) {
             throw new ConfigException("unable to bind config post initialization: " + configuredServiceProvider.description());
         }
@@ -108,18 +108,15 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                     + " with " + configuredByQualifier.value());
         }
 
-        Object prev = configuredServiceProviderMetaConfigBeanMap
-                .put(Objects.requireNonNull(configuredServiceProvider),
-                     Objects.requireNonNull(metaConfigBeanInfo));
+        Object prev = configuredServiceProviderMetaConfigBeanMap.put(configuredServiceProvider, metaConfigBeanInfo);
         assert (Objects.isNull(prev)) : "duplicate service provider initialization occurred";
 
-        String configKey = Objects.requireNonNull(validatedConfigKey(metaConfigBeanInfo));
+        String configKey = validatedConfigKey(metaConfigBeanInfo);
         Class<?> cspType = Objects.requireNonNull(configuredServiceProvider.serviceType());
         configuredServiceProvidersByConfigKey.compute(configKey, (k, cspList) -> {
-            if (Objects.isNull(cspList)) {
+            if (cspList == null) {
                 cspList = new ArrayList<>();
             }
-
             Optional<ConfiguredServiceProvider<?, ?>> prevCsp = cspList.stream()
                     .filter(it -> (cspType.equals(it.configBeanType())))
                     .findAny();
@@ -172,7 +169,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
 
         io.helidon.config.Config cfg = safeDowncastOf(commonCfg);
 
-        // first load all the top-level config beans... but defer resolve until later phase...
+        // first load all the top-level config beans... but defer resolve until later phase
         configuredServiceProviderMetaConfigBeanMap.forEach((configuredServiceProvider, cbi) -> {
             MetaConfigBeanInfo metaConfigBeanInfo = (MetaConfigBeanInfo) cbi;
             String key = validatedConfigKey(metaConfigBeanInfo);
@@ -191,9 +188,9 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             return;
         }
 
-        // now find all the sub root level config beans also... still deferring resolution until a later phase...
+        // now find all the sub root level config beans also... still deferring resolution until a later phase
         visitAndInitialize(cfg.asNodeList().get(), 0);
-        LOGGER.log(System.Logger.Level.DEBUG, "Finishing walking config tree...");
+        LOGGER.log(System.Logger.Level.DEBUG, "finishing walking config tree");
     }
 
     private void visitAndInitialize(
@@ -261,8 +258,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             String fullConfigKey) {
         List<ConfiguredServiceProvider<?, ?>> cspsUsingSameKey =
                 configuredServiceProvidersByConfigKey.get(Objects.requireNonNull(key));
-        if (Objects.isNull(cspsUsingSameKey)) {
-            return Collections.emptyList();
+        if (cspsUsingSameKey == null) {
+            return List.of();
         }
 
         List<Object> result = new ArrayList<>();
@@ -343,7 +340,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         Object baseConfigBean = maybeLoadBaseConfigBean(config, nodeList, configuredServiceProvider);
         Map<String, CB> mapOfInstanceBasedConfig = maybeLoadConfigBeans(nodeList, configuredServiceProvider);
 
-        // validate what we've loaded, to ensure it complies to the meta config info policy...
+        // validate what we've loaded, to ensure it complies to the meta config info policy
         if (!metaConfigBeanInfo.repeatable() && !mapOfInstanceBasedConfig.isEmpty()) {
             throw new ConfigException("Expected to only have a single base, non-repeatable configuration for "
                                               + configuredServiceProvider.serviceType() + " with config: "
@@ -404,8 +401,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             io.helidon.config.Config config,
             ConfiguredServiceProvider<T, CB> configuredServiceProvider) {
         CB configBean = Objects.requireNonNull(configuredServiceProvider.toConfigBean(config),
-                                               "unable to create default config bean for "
-                                                       + configuredServiceProvider);
+                                               "unable to create default config bean for " + configuredServiceProvider);
         if (configuredServiceProvider instanceof AbstractConfiguredServiceProvider) {
             AbstractConfiguredServiceProvider<T, CB> csp = (AbstractConfiguredServiceProvider<T, CB>) configuredServiceProvider;
             csp.configBeanInstanceId(configBean, config.key().toString());
@@ -421,9 +417,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
      * @param csp                       the configured service provider
      * @param key                       the config key being validated (aka instance id)
      * @param configBean                the config bean itself
-     * @param metaAttributes            the meta-attributes that captures the policy in a map like structure by
-     *                                  attribute name
-     * @throws PicoServiceProviderException if the provided config bean is not valide according to policy
+     * @param metaAttributes            the meta-attributes that captures the policy in a map like structure by attribute name
+     * @throws PicoServiceProviderException if the provided config bean is not validated according to policy
      */
     <T> void validate(
             Object configBean,
@@ -431,8 +426,8 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             Config config,
             AbstractConfiguredServiceProvider<T, Object> csp,
             Map<String, Map<String, Object>> metaAttributes) {
-        final Set<String> problems = new LinkedHashSet<>();
-        final String instanceId = csp.toConfigBeanInstanceId(configBean);
+        Set<String> problems = new LinkedHashSet<>();
+        String instanceId = csp.toConfigBeanInstanceId(configBean);
         assert (hasValue(key));
         assert (config == null || DEFAULT_INSTANCE_ID.equals(key) || (config.key().toString().equals(key)))
                 : key + " and " + config.key().toString();

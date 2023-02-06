@@ -32,10 +32,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.config.ConfigBean;
+import io.helidon.builder.config.spi.BasicConfigResolver;
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
-import io.helidon.builder.config.spi.ConfigResolver;
-import io.helidon.builder.config.spi.ConfigResolverHolder;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 import io.helidon.builder.types.AnnotationAndValue;
 import io.helidon.common.config.Config;
@@ -297,7 +296,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             // post-initialize ourselves
             if (isRootProvider()) {
                 if (isAutoActivationEnabled()) {
-                    ContextualServiceQuery query = DefaultContextualServiceQuery.builder().build();
+                    ContextualServiceQuery query = DefaultContextualServiceQuery
+                            .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
+                            .build();
                     maybeActivate(query);
                 }
             }
@@ -311,6 +312,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
+    // not that it is expected that the generated services override this method - which will override the getAnnotation() call.
     public Class<?> configBeanType() {
         Class<?> serviceType = serviceType();
         ConfiguredBy configuredBy =
@@ -320,15 +322,27 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     @Override
     public MetaConfigBeanInfo metaConfigBeanInfo() {
+        Map<String, Object> meta = configBeanAttributes().get(BasicConfigResolver.TAG_META);
+        if (meta != null) {
+            ConfigBeanInfo cbi = (ConfigBeanInfo) meta.get(ConfigBeanInfo.class.getName());
+            if (cbi != null) {
+                // normal path
+                return MetaConfigBeanInfo.toBuilder(cbi).build();
+            }
+
+            return ConfigBeanInfo.toMetaConfigBeanInfo(meta);
+        }
+
+        LOGGER.log(System.Logger.Level.WARNING, "Unusual to find config bean without meta attributes: " + this);
         Class<?> configBeanType = configBeanType();
         ConfigBean configBean =
                 Objects.requireNonNull(configBeanType.getAnnotation(ConfigBean.class), String.valueOf(serviceType()));
-        return Objects.requireNonNull(ConfigBeanInfo.toMetaConfigBeanInfo(configBean, configBeanType));
+        return ConfigBeanInfo.toMetaConfigBeanInfo(configBean, configBeanType);
     }
 
     @Override
     public Map<String, Map<String, Object>> configBeanAttributes() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     /**
@@ -337,17 +351,6 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @return the backing config of this configured service instance
      */
     protected abstract Optional<io.helidon.common.config.Config> rawConfig();
-
-    /**
-     * Resolves this configured service's configuration bean from the provided config and resolver.
-     * Typically, for internal use only.
-     *
-     * @param config    the config
-     * @param resolver  the resolver
-     */
-    public abstract void resolveFrom(
-            io.helidon.common.config.Config config,
-            ConfigResolver resolver);
 
     @Override
     public abstract String toConfigBeanInstanceId(
@@ -420,7 +423,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             return Optional.of(configBeanType());
         }
 
-        return Optional.of(configBean());
+        return (Optional<Object>) configBean();
     }
 
     /**
@@ -598,8 +601,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             return;
         }
 
-        // resolve config
-        final ConfigResolver resolver = ConfigResolverHolder.configResolver().orElseThrow();
+        // accept and resolve config
         managedConfiguredServicesMap.values().forEach(opt -> {
             assert (opt.isPresent());
 
@@ -613,11 +615,22 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
                 startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
                 io.helidon.common.config.Config commonConfig = PicoServices.realizedGlobalBootStrap().config()
                         .orElseThrow(this::expectedConfigurationSetGlobally);
-                csp.resolveFrom(commonConfig, resolver);
+                csp.acceptConfig(commonConfig);
             } catch (Throwable t) {
                 csp.onFailedFinish(logEntryAndResult, t, true);
             }
         });
+    }
+
+    /**
+     * Called to accept the new config bean instance initialized from the appropriate configuration tree location.
+     *
+     * @param config the configuration
+     * @return the new config bean
+     */
+    protected CB acceptConfig(
+            Config config) {
+        return Objects.requireNonNull(toConfigBean(config));
     }
 
     private PicoException expectedConfigurationSetGlobally() {
@@ -660,9 +673,11 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     private void innerActivate() {
-        // this may go into a wait state if other threads are trying to also initialize at the same time -
-        // expected behavior
-        Optional<T> service = maybeActivate(null);
+        // this may go into a wait state if other threads are trying to also initialize at the same time - expected behavior
+        ContextualServiceQuery query = DefaultContextualServiceQuery
+                .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
+                .build();
+        Optional<T> service = maybeActivate(query);
         if (service.isPresent() && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "finished activating: " + service);
         }
@@ -697,7 +712,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
         // override our service info
         instance.serviceInfo(newServiceInfo);
-//        instance.picoServices(picoServices());
+        instance.picoServices(Optional.of(picoServices()));
         instance.rootProvider(this);
 
         if (logger().isLoggable(System.Logger.Level.DEBUG)) {

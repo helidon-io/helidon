@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.config.spi.BasicConfigBeanRegistry;
+import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -31,6 +33,7 @@ import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.PicoServicesHolder;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
+import io.helidon.pico.spi.Resetable;
 
 /**
  * Supporting helper utilities unit-testing Pico services.
@@ -130,6 +133,11 @@ public class PicoTestingSupport {
         public static void reset() {
             PicoServicesHolder.reset();
             instance = lazyCreate(basicTesableConfig());
+
+            BasicConfigBeanRegistry registry = ConfigBeanRegistryHolder.configBeanRegistry().orElse(null);
+            if (registry instanceof Resetable) {
+                ((Resetable) registry).reset(true);
+            }
         }
     }
 

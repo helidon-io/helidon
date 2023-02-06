@@ -27,8 +27,11 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
+/**
+ * For Testing.
+ */
 @ConfiguredBy(FakeServerConfig.class)
-public class FakeWebServer implements WebServer {
+public class FakeWebServer implements FakeWebServerContract {
 
     private FakeServerConfig cfg;
     private boolean running;
@@ -37,19 +40,20 @@ public class FakeWebServer implements WebServer {
     FakeWebServer(FakeServerConfig cfg,
                   Optional<FakeTracer> tracer) {
         this.cfg = Objects.requireNonNull(cfg);
+        assert (tracer.isEmpty());
     }
 
-//    /**
-//     * The traditional approach.
-//     */
-//    FakeWebServer(WebServer.Builder builder) {
-//    }
-
+    /**
+     * For Testing.
+     */
     @PostConstruct
     public void initialize() {
         running = true;
     }
 
+    /**
+     * For Testing.
+     */
     @PreDestroy
     public void shutdown() {
         running = false;

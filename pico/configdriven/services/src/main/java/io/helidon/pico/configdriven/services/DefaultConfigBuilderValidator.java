@@ -88,12 +88,6 @@ class DefaultConfigBuilderValidator<CBB> implements ConfigBeanBuilderValidator<C
                 return this;
             }
 
-            // note to self: _todo:
-//            Collection<?> values = extractValues(val, cbType);
-//            if (values.contains(receiver)) {
-//                issues.add(new ValidationIssue(Severity.ERROR, attributeName,
-//                                               "receiver can't be injected with itself"));
-//            }
             return this;
         }
 

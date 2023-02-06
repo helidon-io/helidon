@@ -365,12 +365,11 @@ public abstract class AbstractServiceProvider<T>
      *
      * @return the activation log
      */
-    protected ActivationLog activationLog() {
-        assert (picoServices != null) : "not initialized";
-        if (log == null) {
+    protected Optional<ActivationLog> activationLog() {
+        if (log == null && picoServices != null) {
             log = picoServices.activationLog().orElse(DefaultActivationLog.createUnretainedLog(logger()));
         }
-        return log;
+        return Optional.ofNullable(log);
     }
 
     @SuppressWarnings("unchecked")
@@ -466,6 +465,8 @@ public abstract class AbstractServiceProvider<T>
      */
     protected Optional<T> maybeActivate(
             ContextualServiceQuery ctx) {
+        Objects.requireNonNull(ctx);
+
         try {
             T serviceOrProvider = serviceRef.get();
 
@@ -871,7 +872,7 @@ public abstract class AbstractServiceProvider<T>
             Object resolved;
             if (value.wasResolved()) {
                 resolved = value.resolved();
-                result.put(key, resolved);
+                result.put(key, resolveOptional(value, resolved));
             } else {
                 List<ServiceProvider<?>> serviceProviders = value.injectionPointQualifiedServiceProviders();
                 serviceProviders = (serviceProviders == null)
@@ -879,11 +880,11 @@ public abstract class AbstractServiceProvider<T>
                         : Collections.unmodifiableList(serviceProviders);
                 if (serviceProviders.isEmpty()
                         && !value.unqualifiedProviders().isEmpty()) {
-                    resolved = Collections.emptyList(); // deferred...
+                    resolved = List.of(); // deferred
                 } else {
                     resolved = DefaultInjectionPlans.resolve(this, value.injectionPointInfo(), serviceProviders, logger());
                 }
-                result.put(key, resolved);
+                result.put(key, resolveOptional(value, resolved));
             }
 
             if (value.resolved().isEmpty()) {
@@ -896,6 +897,16 @@ public abstract class AbstractServiceProvider<T>
         });
 
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object resolveOptional(
+            InjectionPlan plan,
+            Object resolved) {
+        if (!plan.injectionPointInfo().optionalWrapped() && resolved instanceof Optional) {
+            return ((Optional<Object>) resolved).orElse(null);
+        }
+        return resolved;
     }
 
     /**
@@ -1115,15 +1126,14 @@ public abstract class AbstractServiceProvider<T>
             LogEntryAndResult logEntryAndResult,
             Throwable t,
             boolean throwOnError,
-            ActivationLog log) {
+            Optional<ActivationLog> log) {
         InjectionException e;
 
         DefaultActivationLogEntry.Builder res = logEntryAndResult.logEntry;
         Throwable prev = res.error().orElse(null);
         if (prev == null || !(t instanceof InjectionException)) {
             String msg = (t != null && t.getMessage() != null) ? t.getMessage() : "failed to complete operation";
-            e = new InjectionException(msg, t, this)
-                    .activationLog(log);
+            e = new InjectionException(msg, t, this).activationLog(log);
         } else {
             e = (InjectionException) t;
         }
@@ -1140,8 +1150,7 @@ public abstract class AbstractServiceProvider<T>
             DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
-                                                      targetServiceProvider)
-                .activationLog(activationLog());
+                                                      targetServiceProvider).activationLog(activationLog());
         entry.error(e);
         return e;
     }
@@ -1150,8 +1159,7 @@ public abstract class AbstractServiceProvider<T>
             DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("timed out during activation of " + targetServiceProvider,
-                                                      targetServiceProvider)
-                .activationLog(activationLog());
+                                                      targetServiceProvider).activationLog(activationLog());
         entry.error(e);
         return e;
     }
@@ -1160,8 +1168,7 @@ public abstract class AbstractServiceProvider<T>
             DefaultActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("timed out during deactivation of " + targetServiceProvider,
-                                                      targetServiceProvider)
-                .activationLog(activationLog());
+                                                      targetServiceProvider).activationLog(activationLog());
         entry.error(e);
         return e;
     }
@@ -1171,8 +1178,7 @@ public abstract class AbstractServiceProvider<T>
             Throwable cause) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
         InjectionException e = new InjectionException("circular dependency found during activation of " + targetServiceProvider,
-                                                      cause, targetServiceProvider)
-                .activationLog(activationLog());
+                                                      cause, targetServiceProvider).activationLog(activationLog());
         entry.error(e);
         return e;
     }
@@ -1274,7 +1280,10 @@ public abstract class AbstractServiceProvider<T>
         logEntryAndResult.logEntry
                 .event(Event.STARTING)
                 .activationResult(logEntryAndResult.activationResult.build());
-        activationLog().record(logEntryAndResult.logEntry.build());
+        ActivationLog log = activationLog().orElse(null);
+        if (log != null) {
+            log.record(logEntryAndResult.logEntry.build());
+        }
         onPhaseEvent(Event.STARTING, this.phase);
     }
 
@@ -1283,7 +1292,10 @@ public abstract class AbstractServiceProvider<T>
         logEntryAndResult.logEntry
                 .event(Event.FINISHED)
                 .activationResult(logEntryAndResult.activationResult.build());
-        activationLog().record(logEntryAndResult.logEntry.build());
+        ActivationLog log = activationLog().orElse(null);
+        if (log != null) {
+            log.record(logEntryAndResult.logEntry.build());
+        }
         onPhaseEvent(Event.FINISHED, this.phase);
     }
 

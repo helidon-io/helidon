@@ -16,36 +16,56 @@
 
 package io.helidon.builder.config;
 
+import java.util.Map;
+
 import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.config.spi.MetaConfigBeanInfo;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ConfigBean()
 class MetaConfigBeanInfoTest {
 
     @Test
-    void testToMetaConfigBeanInfo() {
+    void testToMetaConfigBeanInfoFromConfigBean() {
         ConfigBean cfg = getClass().getAnnotation(ConfigBean.class);
         Assertions.assertNotNull(cfg);
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(cfg, ConfigBean.class);
-        assertThat(metaCfg.annotationType(), CoreMatchers.sameInstance(ConfigBean.class));
-        assertThat(metaCfg.repeatable(), CoreMatchers.is(true));
-        assertThat(metaCfg.drivesActivation(), CoreMatchers.is(true));
-        assertThat(metaCfg.atLeastOne(), CoreMatchers.is(false));
-        assertThat(metaCfg.key(), CoreMatchers.is(""));
+        assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
+        assertThat(metaCfg.repeatable(), is(true));
+        assertThat(metaCfg.drivesActivation(), is(true));
+        assertThat(metaCfg.atLeastOne(), is(false));
+        assertThat(metaCfg.wantDefaultConfigBean(), is(false));
+        assertThat(metaCfg.key(), is(""));
+    }
+
+    @Test
+    void testToMetaConfigBeanInfoFromMetaAttributes() {
+        Map<String, Object> metaMap = Map.of("key", "fake-config",
+                                             "repeatable", "true",
+                                             "drivesActivation", "true",
+                                             "atLeastOne", "true",
+                                             "wantDefaultConfigBean", "true");
+        MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(metaMap);
+        assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
+        assertThat(metaCfg.repeatable(), is(true));
+        assertThat(metaCfg.drivesActivation(), is(true));
+        assertThat(metaCfg.atLeastOne(), is(true));
+        assertThat(metaCfg.wantDefaultConfigBean(), is(true));
+        assertThat(metaCfg.key(), is("fake-config"));
     }
 
     @Test
     void testToConfigKey() {
         Assertions.assertAll(
-                () -> assertThat(ConfigBeanInfo.toConfigKey("maxInitialLineLength"), CoreMatchers.is("max-initial-line-length")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("port"), CoreMatchers.is("port")),
-                () -> assertThat(ConfigBeanInfo.toConfigKey("listenAddress"), CoreMatchers.is("listen-address"))
+                () -> assertThat(ConfigBeanInfo.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
+                () -> assertThat(ConfigBeanInfo.toConfigKey("port"), is("port")),
+                () -> assertThat(ConfigBeanInfo.toConfigKey("listenAddress"), is("listen-address"))
         );
     }
 

@@ -21,7 +21,6 @@ import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
-import io.helidon.pico.testing.PicoTestingSupport;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.pico.testing.PicoTestingSupport.basicTesableConfig;
 import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.equalTo;
  * Javax to Jakarta related tests.
  */
 class JavaxTest {
-    Config config = PicoTestingSupport.basicTesableConfig();
+    Config config = basicTesableConfig();
     PicoServices picoServices;
     Services services;
 
