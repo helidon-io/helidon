@@ -36,7 +36,6 @@ module io.helidon.microprofile.openapi {
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
-    requires jakarta.interceptor.api;
     requires io.helidon.nima.openapi;
     requires transitive microprofile.openapi.api;
 

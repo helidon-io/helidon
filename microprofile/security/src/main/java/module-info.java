@@ -34,7 +34,6 @@ module io.helidon.microprofile.security {
     requires transitive io.helidon.security.integration.nima;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.cdi;
-    requires jakarta.interceptor.api;
 
     exports io.helidon.microprofile.security;
 

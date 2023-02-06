@@ -32,7 +32,6 @@ module io.helidon.microprofile.metrics {
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires static jakarta.interceptor.api;
     requires static jakarta.annotation;
     requires static jakarta.activation;
 

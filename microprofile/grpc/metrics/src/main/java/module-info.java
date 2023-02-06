@@ -37,8 +37,6 @@ module io.helidon.microprofile.grpc.metrics {
 
     requires io.helidon.microprofile.servicecommon;
 
-    requires jakarta.interceptor.api;
-
     provides io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer
             with io.helidon.microprofile.grpc.metrics.MetricsConfigurer;
 

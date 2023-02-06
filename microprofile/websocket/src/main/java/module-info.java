@@ -32,7 +32,6 @@ module io.helidon.microprofile.tyrus {
 
     requires java.net.http;
     requires jakarta.inject;
-    requires jakarta.interceptor.api;
 
     requires jakarta.cdi;
     requires transitive jakarta.websocket;

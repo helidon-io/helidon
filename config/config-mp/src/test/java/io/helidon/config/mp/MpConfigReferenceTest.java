@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config.mp;
 
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -64,6 +65,12 @@ public class MpConfigReferenceTest {
         // since Config 2.0, missing references must throw an exception
         assertThrows(NoSuchElementException.class, () -> config.getValue("referencing4-1", String.class));
         assertThrows(NoSuchElementException.class, () -> config.getValue( "referencing4-2", String.class));
+    }
+
+    @Test
+    void testOptionalMissingRefs() {
+        assertThat(config.getOptionalValue("referencing4-1", String.class), is(Optional.empty()));
+        assertThat(config.getOptionalValue("referencing4-2", String.class), is(Optional.empty()));
     }
 
     private void test(String prefix, String value) {

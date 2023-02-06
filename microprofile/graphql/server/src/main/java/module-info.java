@@ -36,7 +36,6 @@ module io.helidon.microprofile.graphql.server {
     requires jakarta.json.bind;
     requires jakarta.annotation;
     requires jakarta.cdi;
-    requires jakarta.interceptor.api;
     requires org.eclipse.yasson;
 
     requires org.jboss.jandex;

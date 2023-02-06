@@ -24,7 +24,6 @@ module io.helidon.microprofile.servicecommon {
     requires jakarta.cdi;
     requires io.helidon.nima.servicecommon;
     requires microprofile.config.api;
-    requires jakarta.interceptor.api;
     requires jakarta.inject;
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;

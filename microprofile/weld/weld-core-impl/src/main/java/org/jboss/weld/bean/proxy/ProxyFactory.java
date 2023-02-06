@@ -98,7 +98,7 @@ import org.jboss.weld.util.reflection.Reflections;
  *
  * Helidon changes are under the copyright of:
  *
- * Copyright (c) 2020. 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020. 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,6 +144,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
     protected static final String INVOKE_METHOD_NAME = "invoke";
     protected static final String METHOD_HANDLER_FIELD_NAME = "methodHandler";
     static final String JAVA = "java";
+    static final String JAKARTA = "jakarta";
     static final String NO_PACKAGE = "the class package is null or empty";
     static final String SIGNED = "the class is signed";
     private static final Set<ProxiedMethodFilter> METHOD_FILTERS;
@@ -429,6 +430,8 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         }
         if (proxyClassName.startsWith(JAVA)) {
             proxyClassName = proxyClassName.replaceFirst(JAVA, WELD_PROXY_PREFIX);
+        } else if (proxyClassName.startsWith(JAKARTA)) {
+            proxyClassName = proxyClassName.replaceFirst(JAKARTA, WELD_PROXY_PREFIX);
         }
         Class<T> proxyClass = null;
         Class<?> originalClass = bean != null ? bean.getBeanClass() : proxiedBeanType;
