@@ -59,6 +59,12 @@
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-config-processor</artifactId>
+            <scope>provided</scope>     <!-- reactor ordering -->
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
