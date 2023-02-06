@@ -155,18 +155,18 @@ public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse>
         request.reset();
 
         this.outputStream = new BlockingOutputStream(headers,
-                trailers,
-                this::status,
-                () -> streamResult,
-                dataWriter,
-                () -> {
-                    this.isSent = true;
-                    afterSend();
-                },
-                ctx,
-                sendListener,
-                request,
-                keepAlive);
+                                                     trailers,
+                                                     this::status,
+                                                     () -> streamResult,
+                                                     dataWriter,
+                                                     () -> {
+                                                         this.isSent = true;
+                                                         afterSend();
+                                                     },
+                                                     ctx,
+                                                     sendListener,
+                                                     request,
+                                                     keepAlive);
 
         return contentEncode(outputStream);
     }
@@ -228,7 +228,7 @@ public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse>
         }
         if (streamingEntity) {
             throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
-                    + ", do not call send().");
+                                                    + ", do not call send().");
         }
         isSent = true;
 
@@ -486,8 +486,8 @@ public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse>
             bytesWritten += buffer.available();
             if (bytesWritten > contentLength && contentLength != -1) {
                 throw new IOException("Content length was set to " + contentLength
-                        + ", but you are writing additional " + (bytesWritten - contentLength) + " "
-                        + "bytes");
+                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
+                                              + "bytes");
             }
 
             sendListener.data(ctx, buffer);
