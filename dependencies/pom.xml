@@ -70,12 +70,12 @@
         <!-- This is the BOM version for Jackson Databind 2.13.4.2 -->
         <version.lib.jackson>2.13.4.20221013</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
-        <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
-        <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
+        <version.lib.jakarta.annotation-api>2.1.0</version.lib.jakarta.annotation-api>
+        <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
-        <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
-        <version.lib.jakarta.interceptor-api>2.0.0</version.lib.jakarta.interceptor-api>
-        <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
+        <version.lib.jakarta.inject>2.0.1</version.lib.jakarta.inject>
+        <version.lib.jakarta.interceptor-api>2.1.0</version.lib.jakarta.interceptor-api>
+        <version.lib.jakarta.jaxrs-api>3.1.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
         <version.lib.jakarta.jsonp-api>2.0.1</version.lib.jakarta.jsonp-api>
@@ -94,7 +94,7 @@
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
-        <version.lib.jersey>3.0.9</version.lib.jersey>
+        <version.lib.jersey>3.1.0</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit>5.7.0</version.lib.junit>
@@ -107,7 +107,9 @@
         <version.lib.micronaut>3.4.3</version.lib.micronaut>
         <version.lib.micronaut.data>3.3.0</version.lib.micronaut.data>
         <version.lib.micronaut.sql>4.4.0</version.lib.micronaut.sql>
+        <!-- FIXME upgrade to 3.1 when it is released in Maven -->
         <version.lib.microprofile-config>3.0.1</version.lib.microprofile-config>
+        <!-- FIXME upgrade to 4.1 when it is released in Maven -->
         <version.lib.microprofile-fault-tolerance-api>4.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>4.0</version.lib.microprofile-health>
@@ -148,8 +150,8 @@
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.0.4</version.lib.tyrus>
-        <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
-        <version.lib.weld>4.0.2.Final</version.lib.weld>
+        <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
+        <version.lib.weld>5.1.0.Final</version.lib.weld>
         <version.lib.yasson>2.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
@@ -915,6 +917,17 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-spi</artifactId>
                 <version>${version.lib.weld-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-lite-extension-translator</artifactId>
+                <version>${version.lib.weld}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.weld</groupId>
+                        <artifactId>weld-core-impl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.module</groupId>

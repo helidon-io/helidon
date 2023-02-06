@@ -336,9 +336,14 @@ class MpConfigImpl implements Config {
                 LOGGER.finest("Found property " + propertyName + " in source " + source.getName());
             }
             String rawValue = value;
-            return applyFilters(propertyName, value)
-                    .map(it -> resolveReferences(propertyName, it))
-                    .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+            try {
+                return applyFilters(propertyName, value)
+                        .map(it -> resolveReferences(propertyName, it))
+                        .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+            } catch (NoSuchElementException e) {
+                // Property expression does not resolve
+                return Optional.empty();
+            }
         }
 
         return Optional.empty();

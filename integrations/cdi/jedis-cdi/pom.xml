@@ -47,6 +47,10 @@
             <scope>compile</scope>
         </dependency>
 
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
         <!-- Provided-scoped dependencies. -->
         <dependency>
             <groupId>jakarta.enterprise</groupId>

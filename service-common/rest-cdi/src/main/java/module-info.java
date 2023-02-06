@@ -25,7 +25,6 @@ module io.helidon.servicecommon.restcdi {
     requires io.helidon.servicecommon.rest;
     requires java.logging;
     requires microprofile.config.api;
-    requires jakarta.interceptor.api;
     requires jakarta.inject;
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;

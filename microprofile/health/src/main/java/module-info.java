@@ -34,7 +34,6 @@ module io.helidon.microprofile.health {
     requires jakarta.inject;
     requires jakarta.ws.rs;
     requires jakarta.json;
-    requires jakarta.interceptor.api;
     requires microprofile.config.api;
     requires microprofile.health.api;
     requires io.helidon.config.mp;

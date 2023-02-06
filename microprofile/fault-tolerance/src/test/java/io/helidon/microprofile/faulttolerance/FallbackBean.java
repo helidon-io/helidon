@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,13 @@ class FallbackBean extends BaseFallbackBean {
         throw new RuntimeException("Oops");
     }
 
+    @Fallback(FallbackBeanHandler2.class)
+    String fallbackHandler2(String value) {
+        called.set(true);
+        FaultToleranceTest.printStatus("FallbackBean::fallbackHandler2()", "failure");
+        throw new RuntimeException("Oops");
+    }
+
     @Dependent
     static class FallbackBeanHandler implements FallbackHandler<String> {
 
@@ -79,6 +86,19 @@ class FallbackBean extends BaseFallbackBean {
             assertThat(context.getParameters().length, is(1));
             assertThat(context.getParameters()[0], is("someValue"));
             return "fallbackHandler";
+        }
+    }
+
+    static class FallbackBeanHandler2 implements FallbackHandler<String> {
+
+        @Override
+        public String handle(ExecutionContext context) {
+            FaultToleranceTest.printStatus("FallbackBeanHandler2::handle()", "success");
+            assertThat(context, is(notNullValue()));
+            assertThat(context.getMethod().getName(), is("fallbackHandler2"));
+            assertThat(context.getParameters().length, is(1));
+            assertThat(context.getParameters()[0], is("someValue"));
+            return "fallbackHandler2";
         }
     }
 }
