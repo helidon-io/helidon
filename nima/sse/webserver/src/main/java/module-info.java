@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webserver.http;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * An SSE event.
+ * SSE WebServer.
  */
-public class SseEvent {
+@Feature(value = "SSE",
+         description = "SSE WebServer",
+         in = HelidonFlavor.NIMA,
+         invalidIn = HelidonFlavor.SE,
+         path = {"WebServer", "SSE"}
+)
+module io.helidon.nima.sse.webserver {
+    requires static io.helidon.common.features.api;
 
-    private final String data;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.nima.webserver;
 
-    private SseEvent(String data) {
-        this.data = data;
-    }
-
-    /**
-     * Get underlying event data.
-     *
-     * @return the data
-     */
-    public String data() {
-        return data;
-    }
-
-    /**
-     * Creates a new SSE event with data.
-     *
-     * @param data string data for the event
-     * @return newly created SSE event
-     */
-    public static SseEvent create(String data) {
-        return new SseEvent(data);
-    }
-
-    // TODO builder
+    exports io.helidon.nima.sse.webserver;
 }

@@ -17,6 +17,8 @@
 package io.helidon.nima.tests.integration.server;
 
 import io.helidon.common.http.Http;
+import io.helidon.nima.sse.webserver.SseEvent;
+import io.helidon.nima.sse.webserver.SseResponse;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -25,10 +27,8 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.SseEvent;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -48,22 +48,19 @@ class SseServerTest {
     }
 
     private static void sse1Handler(ServerRequest req, ServerResponse res) {
-        try (res) {
-            res.status(Http.Status.OK_200)
-                    .header(CONTENT_TYPE_EVENT_STREAM)      // required
-                    .send(SseEvent.create("hello"))
+        try (SseResponse sseRes = SseResponse.create(res)) {
+            sseRes.send(SseEvent.create("hello"))
                     .send(SseEvent.create("world"));
         }
     }
 
     private static void sse2Handler(ServerRequest req, ServerResponse res) throws InterruptedException {
-        res.status(Http.Status.OK_200)
-                .header(CONTENT_TYPE_EVENT_STREAM);         // required
+        SseResponse sseRes = SseResponse.create(res);
         for (int i = 1; i <= 3; i++) {
-            res.send(SseEvent.create(Integer.toString(i)));
+            sseRes.send(SseEvent.create(Integer.toString(i)));
             Thread.sleep(50);      // simulates messages over time
         }
-        res.close();
+        sseRes.close();
     }
 
     @Test

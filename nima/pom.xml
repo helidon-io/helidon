@@ -42,6 +42,7 @@
         <module>webclient</module>
         <module>webserver</module>
         <module>http2</module>
+        <module>sse</module>
         <module>websocket</module>
         <module>grpc</module>
         <module>observe</module>

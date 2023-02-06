@@ -30,13 +30,11 @@ import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
-import io.helidon.nima.webserver.http.SseEvent;
 
 /*
 HTTP/1.1 200 OK
@@ -45,7 +43,7 @@ Content-Length: 2
 Date: Fri, 22 Oct 2021 16:47:41 +0200
 hi
  */
-class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
+public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
@@ -157,18 +155,18 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         request.reset();
 
         this.outputStream = new BlockingOutputStream(headers,
-                                                     trailers,
-                                                     this::status,
-                                                     () -> streamResult,
-                                                     dataWriter,
-                                                     () -> {
-                                                         this.isSent = true;
-                                                         afterSend();
-                                                     },
-                                                     ctx,
-                                                     sendListener,
-                                                     request,
-                                                     keepAlive);
+                trailers,
+                this::status,
+                () -> streamResult,
+                dataWriter,
+                () -> {
+                    this.isSent = true;
+                    afterSend();
+                },
+                ctx,
+                sendListener,
+                request,
+                keepAlive);
 
         return contentEncode(outputStream);
     }
@@ -218,38 +216,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
     }
 
-    @Override
-    public ServerResponse send(SseEvent sseEvent) {
-        ensureSseContentType();
-        if (outputStream == null) {
-            outputStream();
-        }
-        // TODO optimize data buffers here
-        try {
-            outputStream.write("data:".getBytes(StandardCharsets.UTF_8));
-            outputStream.write(sseEvent.data().getBytes(StandardCharsets.UTF_8));
-            outputStream.write("\n\n".getBytes(StandardCharsets.UTF_8));
-            outputStream.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public void close() {
-        if (outputStream != null) {
-            outputStream.commit();
-        }
-    }
-
-    private void ensureSseContentType() {
-        HttpMediaType mt = headers.contentType().orElse(null);
-        if (mt == null || !mt.type().equals("text") || !mt.subtype().equals("event-stream")) {
-            throw new IllegalStateException("Content-type must be set to 'text/event-stream");
-        }
-    }
-
     private static void writeHeaders(Headers headers, BufferData buffer) {
         for (HeaderValue header : headers) {
             header.writeHttp1Header(buffer);
@@ -262,7 +228,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         if (streamingEntity) {
             throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
-                                                    + ", do not call send().");
+                    + ", do not call send().");
         }
         isSent = true;
 
@@ -520,8 +486,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             bytesWritten += buffer.available();
             if (bytesWritten > contentLength && contentLength != -1) {
                 throw new IOException("Content length was set to " + contentLength
-                                              + ", but you are writing additional " + (bytesWritten - contentLength) + " "
-                                              + "bytes");
+                        + ", but you are writing additional " + (bytesWritten - contentLength) + " "
+                        + "bytes");
             }
 
             sendListener.data(ctx, buffer);
