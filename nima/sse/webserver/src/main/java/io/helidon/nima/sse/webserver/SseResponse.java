@@ -30,7 +30,11 @@ import io.helidon.nima.webserver.http1.Http1ServerResponse;
 import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 
 /**
- * An SSE response.
+ * An SSE response that can be used to stream events to a client. Must be 
+ * created from a regular HTTP/1 response whose content type or status was
+ * not set.
+ * 
+ * @see #create(ServerResponse) 
  */
 public class SseResponse implements AutoCloseable {
 
@@ -46,6 +50,16 @@ public class SseResponse implements AutoCloseable {
         this.serverResponse.status(Http.Status.OK_200).header(CONTENT_TYPE_EVENT_STREAM);
     }
 
+    /**
+     * Creates an SSE response from an HTTP/1 response. Once a response is used to create 
+     * an SSE response, it should not be interacted with anymore. Moreover, a response
+     * used to create an SSE response must not have set its status code or its media
+     * type, these shall be set automatically set in the newly created SSE response.
+     * 
+     * @param serverResponse source response
+     * @return new SSE response
+     * @throws IllegalStateException if source not HTTP/1 or status or content type set
+     */
     public static SseResponse create(ServerResponse serverResponse) {
         // Verify response has no status or content type
         HttpMediaType mt = serverResponse.headers().contentType().orElse(null);
@@ -60,6 +74,12 @@ public class SseResponse implements AutoCloseable {
         throw new IllegalStateException("SSE support is only available with HTTP/1 responses");
     }
 
+    /**
+     * Sends an event over the SSE stream.
+     * 
+     * @param sseEvent event to send
+     * @return this SSE response
+     */
     public SseResponse send(SseEvent sseEvent) {
         if (outputStream == null) {
             outputStream = serverResponse.outputStream();
@@ -81,6 +101,9 @@ public class SseResponse implements AutoCloseable {
         return this;
     }
 
+    /**
+     * Closes the SSE stream.
+     */
     @Override
     public void close() {
         if (outputStream != null) {
@@ -94,7 +117,7 @@ public class SseResponse implements AutoCloseable {
     }
 
     /**
-     * Checks if SSE response has already been closed.
+     * Checks if SSE stream has already been closed.
      *
      * @return outcome of test
      */

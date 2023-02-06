@@ -36,12 +36,9 @@ import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
 
-/*
-HTTP/1.1 200 OK
-Connection: keep-alive
-Content-Length: 2
-Date: Fri, 22 Oct 2021 16:47:41 +0200
-hi
+/**
+ * An HTTP/1 server response. This class is public only for the SSE module in Nima.
+ * It is subject to change and shall not be used directly in any Helidon application.
  */
 public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
