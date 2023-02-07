@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,18 @@
 
 package io.helidon.nima.webserver;
 
+import java.util.concurrent.ExecutorService;
+
 import io.helidon.common.context.Context;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webserver.http.DirectHandlers;
 
 /**
- * Server context.
- * Provides elements that are configured on server level and shared by all listeners and all connections.
+ * Listener context.
+ * Provides elements that are configured on listener (socket) level.
  */
-public interface ServerContext {
-    /**
-     * Create a new server context.
-     *
-     * @param context context to act as a parent for all request contexts
-     * @param mediaContext media context
-     * @param contentEncodingContext content encoding context (gzip, deflate etc.)
-     * @return a new server context
-     */
-    static ServerContext create(Context context,
-                                MediaContext mediaContext,
-                                ContentEncodingContext contentEncodingContext) {
-        return new ServerContextImpl(context, mediaContext, contentEncodingContext);
-    }
-
+public interface ListenerContext {
     /**
      * Server context configured as the top level parents of all request context.
      *
@@ -59,4 +48,26 @@ public interface ServerContext {
      * @return content encoding support
      */
     ContentEncodingContext contentEncodingContext();
+
+    /**
+     * Direct handlers for non-routing exception handling.
+     *
+     * @return direct handlers
+     */
+    DirectHandlers directHandlers();
+
+    /**
+     * Configuration of this listener.
+     *
+     * @return listener configuration
+     */
+    ListenerConfiguration config();
+
+    /**
+     * Virtual thread per task executor service that can be used to execute tasks.
+     * Tasks submitted on this executor are considered to be tasks that must be completed before graceful shutdown.
+     *
+     * @return executor service
+     */
+    ExecutorService executor();
 }

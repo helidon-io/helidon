@@ -61,8 +61,6 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                   0), BufferData.empty());
     private static final System.Logger LOGGER = System.getLogger(Http2Stream.class.getName());
 
-    // todo nima - use or remove
-    //private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
     private final FlowControl flowControl;
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
@@ -267,7 +265,9 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()), flowControl);
             // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
-            DirectHandler handler = ctx.directHandlers().handler(e.eventType());
+            DirectHandler handler = ctx.listenerContext()
+                    .directHandlers()
+                    .handler(e.eventType());
             DirectHandler.TransportResponse response = handler.handle(e.request(),
                                                                       e.eventType(),
                                                                       e.status(),

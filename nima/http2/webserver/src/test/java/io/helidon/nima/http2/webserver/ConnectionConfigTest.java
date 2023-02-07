@@ -19,16 +19,16 @@ package io.helidon.nima.http2.webserver;
 import java.util.List;
 import java.util.function.Function;
 
-import org.junit.jupiter.api.Test;
-
 import io.helidon.config.Config;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.ListenerContext;
 import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.ServerContext;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,6 +36,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ConnectionConfigTest {
+
+    private static ConnectionContext mockContext() {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        return ctx;
+    }
 
     // Verify that HTTP/2 connection provider is properly configured from config file
     @Test
@@ -61,7 +68,6 @@ class ConnectionConfigTest {
                 .build()
                 .create(it -> Config.empty());
 
-
         Http2Connection conn = (Http2Connection) provider.connection(mockContext());
         // Verify values to be updated from configuration file
         assertThat(conn.config().maxFrameSize(), is(4096L));
@@ -73,7 +79,7 @@ class ConnectionConfigTest {
 
     // Verify that HTTP/2 MAX_CONCURRENT_STREAMS is properly configured from builder
     @Test
-    void testConfigMaxConcurrentStreams()  {
+    void testConfigMaxConcurrentStreams() {
         // This will pick up application.yaml from the classpath as default configuration file
         TestProvider provider = new TestProvider();
         WebServer.builder().addConnectionProvider(provider).build();
@@ -117,13 +123,6 @@ class ConnectionConfigTest {
             return http2Config != null;
         }
 
-    }
-
-    private static ConnectionContext mockContext() {
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.serverContext()).thenReturn(mock(ServerContext.class));
-        return ctx;
     }
 
 }

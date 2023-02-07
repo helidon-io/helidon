@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.helidon.nima.http2.Http2FrameTypes;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
@@ -66,7 +65,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
-    public ServerResponse header(HeaderValue header) {
+    public Http2ServerResponse header(HeaderValue header) {
         headers.set(header);
         return this;
     }

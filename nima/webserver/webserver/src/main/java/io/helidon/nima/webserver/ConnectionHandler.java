@@ -23,12 +23,13 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.task.InterruptableTask;
-import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
@@ -40,47 +41,30 @@ import static java.lang.System.Logger.Level.WARNING;
  * Representation of a single channel between client and server.
  * Everything in this class runs in the channel reader virtual thread
  */
-class ConnectionHandler implements InterruptableTask<Void> {
+class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
 
+    private final ListenerContext listenerContext;
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
-    private final String serverChannelId;
     private final HelidonSocket socket;
-    private final String channelId;
+    private final Router router;
     private final SocketWriter writer;
     private final DataReader reader;
-    private final ConnectionContext ctx;
 
     private ServerConnection connection;
 
-    ConnectionHandler(ServerContext serverContext,
+    ConnectionHandler(ListenerContext listenerContext,
                       ConnectionProviders connectionProviders,
-                      ExecutorService sharedExecutor,
-                      String serverChannelId,
-                      String channelId,
                       HelidonSocket socket,
-                      Router router,
-                      int writeQueueLength,
-                      long maxPayloadSize,
-                      DirectHandlers simpleHandlers) {
+                      Router router) {
+        this.listenerContext = listenerContext;
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
-        this.serverChannelId = serverChannelId;
         this.socket = socket;
-        this.channelId = channelId;
-        this.writer = SocketWriter.create(sharedExecutor, socket, writeQueueLength);
+        this.router = router;
+        this.writer = SocketWriter.create(listenerContext.executor(), socket, listenerContext.config().writeQueueLength());
         this.reader = new DataReader(socket);
-        this.ctx = ConnectionContext.create(serverContext,
-                                            sharedExecutor,
-                                            writer,
-                                            reader,
-                                            router,
-                                            serverChannelId,
-                                            channelId,
-                                            simpleHandlers,
-                                            socket,
-                                            maxPayloadSize);
     }
 
     @Override
@@ -92,13 +76,13 @@ class ConnectionHandler implements InterruptableTask<Void> {
     public final void run() {
         Thread.currentThread().setName("[" + socket.socketId() + " " + socket.childSocketId() + "] Nima socket");
         if (LOGGER.isLoggable(DEBUG)) {
-            ctx.log(LOGGER, DEBUG, "accepted socket from %s", socket.remotePeer().host());
+            socket.log(LOGGER, DEBUG, "accepted socket from %s", socket.remotePeer().host());
         }
 
         try {
             if (socket.protocolNegotiated()) {
                 this.connection = connectionProviders.byApplicationProtocol(socket.protocol())
-                        .connection(ctx);
+                        .connection(this);
             }
 
             if (connection == null) {
@@ -122,23 +106,73 @@ class ConnectionHandler implements InterruptableTask<Void> {
             //            }
             connection.handle();
         } catch (RequestException e) {
-            ctx.log(LOGGER, WARNING, "escaped Request exception", e);
+            socket.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {
-            ctx.log(LOGGER, WARNING, "escaped HTTP exception", e);
+            socket.log(LOGGER, WARNING, "escaped HTTP exception", e);
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client
-            ctx.log(LOGGER, TRACE, "connection close requested", e);
+            socket.log(LOGGER, TRACE, "connection close requested", e);
         } catch (UncheckedIOException e) {
             // socket exception - the socket failed, probably killed by OS, proxy or client
-            ctx.log(LOGGER, TRACE, "received I/O exception", e);
+            socket.log(LOGGER, TRACE, "received I/O exception", e);
         } catch (Exception e) {
-            ctx.log(LOGGER, WARNING, "unexpected exception", e);
+            socket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
             writer.close();
             closeChannel();
         }
 
-        ctx.log(LOGGER, DEBUG, "socket closed");
+        socket.log(LOGGER, DEBUG, "socket closed");
+    }
+
+    @Override
+    public PeerInfo remotePeer() {
+        return socket.remotePeer();
+    }
+
+    @Override
+    public PeerInfo localPeer() {
+        return socket.localPeer();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return socket.isSecure();
+    }
+
+    @Override
+    public String socketId() {
+        return socket.socketId();
+    }
+
+    @Override
+    public String childSocketId() {
+        return socket.childSocketId();
+    }
+
+    @Override
+    public ListenerContext listenerContext() {
+        return listenerContext;
+    }
+
+    @Override
+    public ExecutorService executor() {
+        return listenerContext.executor();
+    }
+
+    @Override
+    public DataWriter dataWriter() {
+        return writer;
+    }
+
+    @Override
+    public DataReader dataReader() {
+        return reader;
+    }
+
+    @Override
+    public Router router() {
+        return router;
     }
 
     private ServerConnection identifyConnection() {
@@ -155,7 +189,7 @@ class ConnectionHandler implements InterruptableTask<Void> {
         while (true) {
             Iterator<ServerConnectionSelector> iterator = providerCandidates.iterator();
             if (!iterator.hasNext()) {
-                ctx.log(LOGGER, DEBUG, "Could not find a suitable connection provider. "
+                socket.log(LOGGER, DEBUG, "Could not find a suitable connection provider. "
                                 + "initial connection buffer (may be empty if no providers exist):\n%s",
                         currentBuffer.debugDataHex(false));
                 return null;
@@ -176,7 +210,7 @@ class ConnectionHandler implements InterruptableTask<Void> {
 
                 switch (supports) {
                 case SUPPORTED -> {
-                    return candidate.connection(ctx);
+                    return candidate.connection(this);
                 }
                 // we are no longer interested in this connection provider, remove it from our list
                 case UNSUPPORTED -> iterator.remove();
@@ -197,7 +231,7 @@ class ConnectionHandler implements InterruptableTask<Void> {
             // we may have removed all candidates, we must re-check
             // we must return before requesting more data (as more data may not be available)
             if (providerCandidates.isEmpty()) {
-                ctx.log(LOGGER,
+                socket.log(LOGGER,
                         DEBUG,
                         "Could not find a suitable connection provider. "
                                 + "initial connection buffer (may be empty if no providers exist):\n%s",
@@ -215,7 +249,7 @@ class ConnectionHandler implements InterruptableTask<Void> {
         try {
             socket.close();
         } catch (Throwable e) {
-            ctx.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
+            socket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
         }
     }
 }

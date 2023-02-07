@@ -470,7 +470,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             stream.prologue(upgradePrologue);
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
-            ctx.sharedExecutor()
+            ctx.executor()
                     .submit(new StreamRunnable(streams, stream, stream.streamId()));
         }
     }
@@ -562,7 +562,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         state = State.READ_FRAME;
 
         // we now have all information needed to execute
-        ctx.sharedExecutor()
+        ctx.executor()
                 .submit(new StreamRunnable(streams, stream, stream.streamId()));
     }
 
