@@ -67,10 +67,13 @@ public final class FileService implements Service {
     private void upload(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class)
            .forEach(part -> {
-               if ("file[]".equals(part.name())) {
-                   part.content().map(DataChunk::data)
+               if (part.isNamed("file[]")) {
+                   String filename = part.filename()
+                                         .orElseThrow(() -> new BadRequestException("Missing filename"));
+                   part.content()
+                       .map(DataChunk::data)
                        .flatMapIterable(Arrays::asList)
-                       .to(IoMulti.writeToFile(storage.create(part.filename()))
+                       .to(IoMulti.writeToFile(storage.create(filename))
                                   .executor(executor)
                                   .build());
                } else {
