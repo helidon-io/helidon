@@ -134,8 +134,7 @@ To create a custom span that is a child of the WebServer request:
 ----
 Span span = request.tracer()
                 .spanBuilder("my-operation")
-                .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent)
-                )
+                .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent))
                 .start();
         
         try {
