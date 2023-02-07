@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,20 +34,23 @@ class TestConfig {
     void checkOptionsConfig() {
         String newTitle = "New Title";
         String newContext = "/overThere";
+        String newFooter = "New Footer";
         Map<String, String> settings = Map.of("openapi.ui.options.title", newTitle,
+                                              "openapi.ui.options.footer", newFooter,
                                               "openapi.ui.options.notThere", "anything",
                                               "openapi.web-context", newContext);
 
-        Config config = Config.create(ConfigSources.create(settings));
+        Config config = Config.just(ConfigSources.create(settings));
         Config openApiConfig = config.get(OpenAPISupport.Builder.CONFIG_KEY);
         OpenApiUiFull.Builder uiSupportBuilder = OpenApiUiFull.builder()
                 .config(openApiConfig.get(OpenApiUi.Builder.OPENAPI_UI_CONFIG_KEY));
-        OpenAPISupport openAPISupportBuilder = OpenAPISupport.builder()
+        OpenAPISupport.builder() // Side effect: trigger conversion of string options to SmallRye Options options.
                 .config(openApiConfig)
                 .ui(uiSupportBuilder)
                 .build();
 
         // Check a simple option setting.
         assertThat("Overridden title value", uiSupportBuilder.uiOptions().get(Option.title), is(newTitle));
+        assertThat("Overridden footer value", uiSupportBuilder.uiOptions().get(Option.footer), is(newFooter));
     }
 }
