@@ -33,7 +33,7 @@ public interface FakeTraceableConfig {
      *         {@code false} if it should not,
      *         {@code empty} when this flag is not explicitly configured
      */
-    /*protected*/ Optional<Boolean> isEnabled();
+    Optional<Boolean> isEnabled();
 
     /**
      * Name of this traceable unit.

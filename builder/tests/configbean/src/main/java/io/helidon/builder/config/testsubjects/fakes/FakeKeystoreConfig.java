@@ -32,29 +32,8 @@ public interface FakeKeystoreConfig {
 
     String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
-//    private final StreamHolder keystoreStream = new StreamHolder("keystore");
-
-//    default FakeKeystoreConfigBean trustStore() {
-//        return trustStore(true);
-//    }
-
     @ConfiguredOption(key = "trust-store")
     boolean trustStore();
-
-//    /**
-//     * Keystore resource definition.
-//     *
-//     * @param keystore keystore resource, from file path, classpath, URL etc.
-//     * @return updated builder instance
-//     */
-//    @ConfiguredOption(key = "resource", required = true)
-//    public KeystoreBuilder keystore(Resource keystore) {
-//        this.keystoreStream.stream(keystore);
-//        return this;
-//    }
-//    default DefaultFakeKeystoreConfigBean.Builder keystore(Resource keystore) {
-//
-//    }
 
     @ConfiguredOption(key = "type", value = DEFAULT_KEYSTORE_TYPE)
     String keystoreType();
@@ -74,61 +53,5 @@ public interface FakeKeystoreConfig {
 
     @ConfiguredOption(key = "cert-chain.alias")
     String certChainAlias();
-
-
-//    /**
-//     * Update this builder from configuration.
-//     * The following keys are expected under key {@code keystore}:
-//     * <ul>
-//     * <li>{@code resource}: resource configuration as understood by {@link io.helidon.common.configurable.Resource}</li>
-//     * <li>{@code type}: type of keystore (defaults to PKCS12)</li>
-//     * <li>{@code passphrase}: passphrase of keystore, if required</li>
-//     * <li>{@code key.alias}: alias of private key, if wanted (defaults to "1")</li>
-//     * <li>{@code key.passphrase}: passphrase of private key if differs from keystore passphrase</li>
-//     * <li>{@code cert.alias}: alias of public certificate (to obtain public key)</li>
-//     * <li>{@code cert-chain.alias}: alias of certificate chain</li>
-//     * <li>{@code trust-store}: true if this is a trust store (and we should load all certificates from it), defaults to false</li>
-//     * </ul>
-//     *
-//     * @param config configuration instance
-//     * @return updated builder instance
-//     */
-//    public KeystoreBuilder config(Config config) {
-//        Config keystoreConfig = config.get("keystore");
-//
-//        // the actual resource (file, classpath) with the bytes of the keystore
-//        keystoreConfig.get("resource").as(Resource::create).ifPresent(this::keystore);
-//
-//        // type of keystore
-//        keystoreConfig.get("type")
-//                .asString()
-//                .ifPresent(this::keystoreType);
-//        // password of the keystore
-//        keystoreConfig.get("passphrase")
-//                .asString()
-//                .map(String::toCharArray)
-//                .ifPresent(this::keystorePassphrase);
-//        // private key alias
-//        keystoreConfig.get("key.alias")
-//                .asString()
-//                .ifPresent(this::keyAlias);
-//        // private key password
-//        keystoreConfig.get("key.passphrase")
-//                .asString()
-//                .map(String::toCharArray)
-//                .ifPresent(this::keyPassphrase);
-//        keystoreConfig.get("cert.alias")
-//                .asString()
-//                .ifPresent(this::certAlias);
-//        keystoreConfig.get("cert-chain.alias")
-//                .asString()
-//                .ifPresent(this::certChainAlias);
-//        // whether this is a keystore (with a private key) or a trust store (just trusted public keys/certificates)
-//        keystoreConfig.get("trust-store")
-//                .asBoolean()
-//                .ifPresent(this::trustStore);
-//
-//        return this;
-//    }
 
 }

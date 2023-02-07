@@ -313,7 +313,7 @@ public abstract class AbstractServiceProvider<T>
 
     @Override
     public String description() {
-        return name(true) + ":" + currentActivationPhase();
+        return name(true) + identitySuffix() + ":" + currentActivationPhase();
     }
 
     @Override

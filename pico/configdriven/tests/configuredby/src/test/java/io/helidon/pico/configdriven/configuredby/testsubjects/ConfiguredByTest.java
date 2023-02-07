@@ -37,6 +37,8 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
 
 class ConfiguredByTest {
     static final String TAG_FAKE_SOCKET_CONFIG = "fake-socket-config";
@@ -56,6 +58,7 @@ class ConfiguredByTest {
                         ), "config-1"));
         this.picoServices = testableServices(config);
         this.services = picoServices.services();
+        assertThat(picoServices.metrics().orElseThrow().lookupCount().orElseThrow(), greaterThan(1));
     }
 
     @Test
@@ -65,7 +68,18 @@ class ConfiguredByTest {
                 .build();
         List<ServiceProvider<Object>> list = services.lookupAll(criteria);
         List<String> desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
-        assertThat(desc, contains("FakeWebServer:PENDING"));
+        assertThat("root providers are config-driven, auto-started services", desc, contains("FakeWebServer{root}:ACTIVE"));
+
+        criteria = DefaultServiceInfoCriteria.builder()
+                .addContractImplemented(FakeWebServerContract.class.getName())
+                .build();
+
+        list = services.lookupAll(criteria);
+        desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
+        assertThat("no root providers expected in result, but all are auto-started", desc, contains("FakeWebServer{1}:ACTIVE"));
+
+        FakeWebServer fakeWebServer = services.lookup(FakeWebServer.class).get();
+        assertThat(fakeWebServer.isRunning(), is(true));
     }
 
 }

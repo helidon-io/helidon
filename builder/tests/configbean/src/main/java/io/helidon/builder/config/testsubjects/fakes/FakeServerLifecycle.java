@@ -22,16 +22,4 @@ package io.helidon.builder.config.testsubjects.fakes;
  */
 public interface FakeServerLifecycle {
 
-//    /**
-//     * Before server start.
-//     */
-//    default void beforeStart() {
-//    }
-//
-//    /**
-//     * After server stop.
-//     */
-//    default void afterStop() {
-//    }
-
 }

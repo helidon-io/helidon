@@ -607,12 +607,12 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
             AbstractConfiguredServiceProvider<?, CB> csp = opt.get();
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                LOGGER.log(System.Logger.Level.DEBUG, "Resolving config for " + csp.get());
+                LOGGER.log(System.Logger.Level.DEBUG, "Resolving config for " + csp);
             }
 
             LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.PENDING);
             try {
-                startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
+                csp.startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PENDING);
                 io.helidon.common.config.Config commonConfig = PicoServices.realizedGlobalBootStrap().config()
                         .orElseThrow(this::expectedConfigurationSetGlobally);
                 csp.acceptConfig(commonConfig);
@@ -628,6 +628,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
      * @param config the configuration
      * @return the new config bean
      */
+    // expected that the generated configured service overrides this to set its new config bean value
     protected CB acceptConfig(
             Config config) {
         return Objects.requireNonNull(toConfigBean(config));
@@ -660,13 +661,13 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             String instanceId,
             Object configBean) {
         return managedConfiguredServicesMap.compute(instanceId, (id, existing) -> {
-            if (Objects.isNull(existing) || existing.isEmpty()) {
+            if (existing == null || existing.isEmpty()) {
                 existing = innerPreActivateManagedService(instanceId, configBean);
             }
 
-            AbstractConfiguredServiceProvider<T, CB> sp = existing.get();
-            if (Phase.ACTIVE != currentActivationPhase()) {
-                sp.innerActivate();
+            AbstractConfiguredServiceProvider<T, CB> csp = existing.get();
+            if (Phase.ACTIVE != csp.currentActivationPhase()) {
+                csp.innerActivate();
             }
             return existing;
         }).get();
