@@ -126,20 +126,29 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
                 .build();
 ----
 
-=== Creating custom spans
+=== Creating Custom Spans
 
 To create a custom span that is a child of the WebServer request:
 
 [source,java]
 ----
 Span span = request.tracer()
-        .buildSpan("my-operation")
-        .asChildOf(request.spanContext())
-                         .start();
+                .spanBuilder("my-operation")
+                .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent)
+                )
+                .start();
+        
+        try {
+            // Do some work and send a normal response.
+            span.end();
+        } catch (Throwable t) {
+            // Send an error response.
+            span.end(t);
+        }
 ----
 
 
-=== Helidon Spans
+== Helidon Spans
 
 include::{rootdir}/includes/tracing/common-spans.adoc[]
 
