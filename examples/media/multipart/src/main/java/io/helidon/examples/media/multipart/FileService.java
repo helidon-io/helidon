@@ -83,11 +83,12 @@ public final class FileService implements Service {
         req.content().asStream(ReadableBodyPart.class)
            .forEach(part -> {
                if (part.isNamed("file[]")) {
+                   String filename = part.filename()
+                                         .orElseThrow(() -> new BadRequestException("Missing filename"));
                    part.content()
                        .map(DataChunk::data)
                        .flatMapIterable(Arrays::asList)
-                       .to(IoMulti.writeToFile(storage.create(part.filename()
-                                                                  .orElseThrow(() -> new BadRequestException("Missing filename"))))
+                       .to(IoMulti.writeToFile(storage.create(filename))
                                   .executor(executor)
                                   .build());
                } else {
