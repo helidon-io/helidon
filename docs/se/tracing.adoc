@@ -126,20 +126,28 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
                 .build();
 ----
 
-=== Creating custom spans
+=== Creating Custom Spans
 
 To create a custom span that is a child of the WebServer request:
 
 [source,java]
 ----
 Span span = request.tracer()
-        .buildSpan("my-operation")
-        .asChildOf(request.spanContext())
-                         .start();
+                .spanBuilder("my-operation")
+                .update(spanBuilder -> request.spanContext().ifPresent(spanBuilder::parent))
+                .start();
+        
+        try {
+            // Do some work and send a normal response.
+            span.end();
+        } catch (Throwable t) {
+            // Send an error response.
+            span.end(t);
+        }
 ----
 
 
-=== Helidon Spans
+== Helidon Spans
 
 include::{rootdir}/includes/tracing/common-spans.adoc[]
 
@@ -149,7 +157,7 @@ The following configuration should be supported by all tracer implementations (i
 
 include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=1]
 
-=== Traced spans configuration
+=== Traced Spans Configuration
 
 Each component and its spans can be configured using Config.
 The traced configuration has the following layers:
@@ -203,9 +211,9 @@ tracing:
 routing.register(WebTracingConfig.create(config.get("tracing")));
 ----
 
-==== Path based configuration in Helidon Web Server
+==== Path-based configuration in Helidon Web Server
 
-For Web Server we have a path based support for configuring tracing, in addition
+For Web Server we have path-based support for configuring tracing, in addition
 to the configuration described above.
 
 Configuration of path can use any path string supported by the
