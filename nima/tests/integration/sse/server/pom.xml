@@ -15,8 +15,8 @@
     limitations under the License.
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.nima.tests.integration.sse</groupId>
@@ -31,6 +31,22 @@
         <dependency>
             <groupId>io.helidon.nima.sse</groupId>
             <artifactId>helidon-nima-sse-webserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonb</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>

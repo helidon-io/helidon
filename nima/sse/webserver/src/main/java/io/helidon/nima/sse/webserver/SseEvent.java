@@ -53,6 +53,17 @@ public class SseEvent {
     }
 
     /**
+     * Creates a new SSE event with data and media type.
+     *
+     * @param data data for the event
+     * @param mediaType media type for this event if not text/plain
+     * @return newly created SSE event
+     */
+    public static SseEvent create(Object data, MediaType mediaType) {
+        return builder().data(data).mediaType(mediaType).build();
+    }
+
+    /**
      * Creates builder for this class.
      *
      * @return new builder

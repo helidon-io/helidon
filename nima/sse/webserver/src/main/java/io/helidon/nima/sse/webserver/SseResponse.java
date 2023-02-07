@@ -21,41 +21,48 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http1.Http1ServerResponse;
 
 import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 
 /**
- * An SSE response that can be used to stream events to a client. Must be 
+ * An SSE response that can be used to stream events to a client. Must be
  * created from a regular HTTP/1 response whose content type or status was
  * not set.
- * 
- * @see #create(ServerResponse) 
+ *
+ * @see #create(ServerResponse)
  */
 public class SseResponse implements AutoCloseable {
 
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_SEPARATOR = "\n\n".getBytes(StandardCharsets.UTF_8);
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private boolean isClosed = false;
     private OutputStream outputStream;
     private final Http1ServerResponse serverResponse;
+    private final MediaContext mediaContext;
 
     private SseResponse(Http1ServerResponse serverResponse) {
         this.serverResponse = serverResponse;
-        this.serverResponse.status(Http.Status.OK_200).header(CONTENT_TYPE_EVENT_STREAM);
+        this.mediaContext = serverResponse.mediaContext();
     }
 
     /**
-     * Creates an SSE response from an HTTP/1 response. Once a response is used to create 
+     * Creates an SSE response from an HTTP/1 response. Once a response is used to create
      * an SSE response, it should not be interacted with anymore. Moreover, a response
      * used to create an SSE response must not have set its status code or its media
      * type, these shall be set automatically set in the newly created SSE response.
-     * 
+     *
      * @param serverResponse source response
      * @return new SSE response
      * @throws IllegalStateException if source not HTTP/1 or status or content type set
@@ -63,12 +70,14 @@ public class SseResponse implements AutoCloseable {
     public static SseResponse create(ServerResponse serverResponse) {
         // Verify response has no status or content type
         HttpMediaType mt = serverResponse.headers().contentType().orElse(null);
-        if (serverResponse.status().code() != Http.Status.OK_200.code() || mt != null) {
-            throw new IllegalStateException("ServerResponse must not have set status or content-type");
+        if (serverResponse.status().code() != Http.Status.OK_200.code()
+                || mt != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(mt.mediaType().text())) {
+            throw new IllegalStateException("ServerResponse instance cannot be used to create SseResponse");
         }
 
         // Create SSE response based on HTTP/1 response
         if (serverResponse instanceof Http1ServerResponse res) {
+            res.headers().add(CONTENT_TYPE_EVENT_STREAM);
             return new SseResponse(res);
         }
         throw new IllegalStateException("SSE support is only available with HTTP/1 responses");
@@ -76,7 +85,7 @@ public class SseResponse implements AutoCloseable {
 
     /**
      * Sends an event over the SSE stream.
-     * 
+     *
      * @param sseEvent event to send
      * @return this SSE response
      */
@@ -87,12 +96,25 @@ public class SseResponse implements AutoCloseable {
         }
         try {
             outputStream.write(SSE_DATA);
-            if (sseEvent.mediaType() == MediaTypes.TEXT_PLAIN) {
-                String stringData = sseEvent.data().toString();
-                outputStream.write(stringData.getBytes(StandardCharsets.UTF_8));
+
+            Object data = sseEvent.data();
+            if (data instanceof byte[] bytes) {
+                outputStream.write(bytes);
             } else {
-                throw new UnsupportedOperationException("Not implemented");
+                MediaType mediaType = sseEvent.mediaType();
+
+                if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    EntityWriter<String> writer = mediaContext.writer(GenericType.STRING, EMPTY_HEADERS, EMPTY_HEADERS);
+                    writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
+                } else {
+                    GenericType<Object> type = GenericType.create(data);
+                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    resHeaders.set(Http.Header.CONTENT_TYPE, sseEvent.mediaType().text());
+                    EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
+                    writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
+                }
             }
+
             outputStream.write(SSE_SEPARATOR);
             outputStream.flush();
         } catch (IOException e) {

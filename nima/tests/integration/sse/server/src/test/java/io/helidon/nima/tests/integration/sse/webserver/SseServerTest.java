@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.tests.integration.server;
+package io.helidon.nima.tests.integration.sse.webserver;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.sse.webserver.SseEvent;
@@ -27,6 +27,9 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -43,18 +46,22 @@ class SseServerTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/sse1", SseServerTest::sse1Handler);
-        rules.get("/sse2", SseServerTest::sse2Handler);
+        rules.get("/sseString1", SseServerTest::sseString1);
+        rules.get("/sseString2", SseServerTest::sseString2);
+        rules.get("/sseJson1", SseServerTest::sseJson1);
+        rules.get("/sseJson2", SseServerTest::sseJson2);
+        rules.get("/sseMixed", SseServerTest::sseMixed);
+
     }
 
-    private static void sse1Handler(ServerRequest req, ServerResponse res) {
+    private static void sseString1(ServerRequest req, ServerResponse res) {
         try (SseResponse sseRes = SseResponse.create(res)) {
             sseRes.send(SseEvent.create("hello"))
                     .send(SseEvent.create("world"));
         }
     }
 
-    private static void sse2Handler(ServerRequest req, ServerResponse res) throws InterruptedException {
+    private static void sseString2(ServerRequest req, ServerResponse res) throws InterruptedException {
         SseResponse sseRes = SseResponse.create(res);
         for (int i = 1; i <= 3; i++) {
             sseRes.send(SseEvent.create(Integer.toString(i)));
@@ -63,19 +70,83 @@ class SseServerTest {
         sseRes.close();
     }
 
-    @Test
-    void testSse1() {
-        try (Http1ClientResponse response = client.get("/sse1").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.as(String.class), is("data:hello\n\ndata:world\n\n"));
+    private static void sseJson1(ServerRequest req, ServerResponse res) {
+        JsonObject json = Json.createObjectBuilder()
+                .add("hello", "world")
+                .build();
+        try (SseResponse sseRes = SseResponse.create(res)) {
+            sseRes.send(SseEvent.create(json));
+        }
+    }
+
+    public static class HelloWorld {
+
+        private String hello;
+
+        public String getHello() {
+            return hello;
+        }
+
+        public void setHello(String hello) {
+            this.hello = hello;
+        }
+    }
+
+    private static void sseJson2(ServerRequest req, ServerResponse res) {
+        HelloWorld json = new HelloWorld();
+        json.setHello("world");
+        try (SseResponse sseRes = SseResponse.create(res)) {
+            sseRes.send(SseEvent.create(json));
+        }
+    }
+
+    private static void sseMixed(ServerRequest req, ServerResponse res) {
+        JsonObject jsonp = Json.createObjectBuilder()
+                .add("hello", "world")
+                .build();
+        HelloWorld jsonb = new HelloWorld();
+        jsonb.setHello("world");
+
+        try (SseResponse sseRes = SseResponse.create(res)) {
+            sseRes.send(SseEvent.create("hello"))
+                    .send(SseEvent.create("world"))
+                    .send(SseEvent.create(jsonp))
+                    .send(SseEvent.create(jsonb));
         }
     }
 
     @Test
-    void testSse2() {
-        try (Http1ClientResponse response = client.get("/sse2").request()) {
+    void testSseString1() {
+        testSse("/sseString1", "data:hello\n\ndata:world\n\n");
+    }
+
+    @Test
+    void testSseString2() {
+        testSse("/sseString2", "data:1\n\ndata:2\n\ndata:3\n\n");
+    }
+
+    @Test
+    void testSseJson1() {
+        testSse("/sseJson1", "data:{\"hello\":\"world\"}\n\n");
+    }
+
+    @Test
+    void testSseJson2() {
+        testSse("/sseJson2", "data:{\"hello\":\"world\"}\n\n");
+    }
+
+    @Test
+    void testSseMixed() {
+        testSse("/sseMixed",
+                "data:hello\n\ndata:world\n\n" +
+                        "data:{\"hello\":\"world\"}\n\n" +
+                        "data:{\"hello\":\"world\"}\n\n");
+    }
+
+    private void testSse(String path, String result) {
+        try (Http1ClientResponse response = client.get(path).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.as(String.class), is("data:1\n\ndata:2\n\ndata:3\n\n"));
+            assertThat(response.as(String.class), is(result));
         }
     }
 }

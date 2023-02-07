@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,6 +173,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public boolean isNexted() {
         return nexted;
+    }
+
+    /**
+     * Gets media context for this response.
+     *
+     * @return the media context
+     */
+    public MediaContext mediaContext() {
+        return mediaContext;
     }
 
     /**
