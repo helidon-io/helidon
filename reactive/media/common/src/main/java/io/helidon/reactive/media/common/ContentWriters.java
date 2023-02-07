@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,9 @@ package io.helidon.reactive.media.common;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
-import java.util.Objects;
-import java.util.concurrent.Flow.Publisher;
-import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.IoMulti;
-import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
 
 /**
@@ -115,88 +109,4 @@ public final class ContentWriters {
         }
         return returnValue;
     }
-
-    /**
-     * Returns a writer function for {@code byte[]}.
-     * <p>
-     * The {@code copy} variant is by default registered in
-     * {@code ServerResponse}.
-     *
-     * @param copy a signal if byte array should be copied - set it {@code true}
-     * if {@code byte[]} will be immediately reused.
-     * @return a {@code byte[]} writer
-     *
-     * @deprecated since 2.0.0, use {@link #writeBytes(byte[], boolean)} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Function<byte[], Publisher<DataChunk>> byteArrayWriter(boolean copy) {
-        return (bytes) -> writeBytes(bytes, copy);
-    }
-
-    /**
-     * Returns a writer function for {@link CharSequence} using provided
-     * standard {@code charset}.
-     * <p>
-     * An instance is by default registered in {@code ServerResponse} for all
-     * standard charsets.
-     *
-     * @param charset a standard charset to use
-     * @return a {@link String} writer
-     * @throws NullPointerException if parameter {@code charset} is {@code null}
-     * @deprecated since 2.0.0, use {@link #writeCharSequence(CharSequence, Charset)}
-     *  or {@link DefaultMediaSupport#charSequenceWriter()} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Function<CharSequence, Publisher<DataChunk>> charSequenceWriter(Charset charset) {
-        return (cs) -> writeCharSequence(cs, charset);
-    }
-
-    /**
-     * Returns a writer function for {@link CharBuffer} using provided standard
-     * {@code charset}.
-     * <p>
-     * An instance is by default registered in {@code ServerResponse} for all
-     * standard charsets.
-     *
-     * @param charset a standard charset to use
-     * @return a {@link String} writer
-     * @throws NullPointerException if parameter {@code charset} is {@code null}
-     * @deprecated since 2.0.0, use {@link #writeCharBuffer(CharBuffer, Charset)} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Function<CharBuffer, Publisher<DataChunk>> charBufferWriter(Charset charset) {
-        return (buffer) -> writeCharBuffer(buffer, charset);
-    }
-
-    /**
-     * Returns a writer function for {@link ReadableByteChannel}. Created
-     * publisher use provided {@link RetrySchema} to define delay between
-     * unsuccessful read attempts.
-     *
-     * @param retrySchema a retry schema to use in case when {@code read}
-     * operation reads {@code 0 bytes}
-     * @return a {@link ReadableByteChannel} writer
-     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#byteChannelWriter(RetrySchema)}} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter(RetrySchema retrySchema) {
-        Objects.requireNonNull(retrySchema);
-
-        return channel -> IoMulti.multiFromByteChannelBuilder(channel)
-                .retrySchema(retrySchema)
-                .build()
-                .map(DataChunk::create);
-    }
-
-    /**
-     * Returns a writer function for {@link ReadableByteChannel}.
-     *
-     * @return a {@link ReadableByteChannel} writer
-     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#byteChannelWriter()}} instead
-     */
-    @Deprecated(since = "2.0.0")
-    public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter() {
-        return channel -> IoMulti.multiFromByteChannel(channel).map(DataChunk::create);
-    }
-
 }

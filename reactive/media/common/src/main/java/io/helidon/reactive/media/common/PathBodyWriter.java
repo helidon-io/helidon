@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Single;
 
 /**
@@ -65,13 +66,7 @@ final class PathBodyWriter implements MessageBodyWriter<Path> {
      * Implementation of {@link Mapper} that converts a {@link Path} to a
      * publisher of {@link DataChunk}.
      */
-    private static final class PathToChunks implements Mapper<Path, Publisher<DataChunk>> {
-
-        private final MessageBodyWriterContext context;
-
-        PathToChunks(MessageBodyWriterContext context) {
-            this.context = context;
-        }
+    private record PathToChunks(MessageBodyWriterContext context) implements Mapper<Path, Publisher<DataChunk>> {
 
         @Override
         public Publisher<DataChunk> map(Path path) {
@@ -79,9 +74,9 @@ final class PathBodyWriter implements MessageBodyWriter<Path> {
                 context.contentType(MediaTypes.APPLICATION_OCTET_STREAM);
                 context.contentLength(Files.size(path));
                 FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
-                return ContentWriters.byteChannelWriter().apply(fc);
+                return IoMulti.multiFromByteChannel(fc).map(DataChunk::create);
             } catch (IOException ex) {
-                return Single.<DataChunk>error(ex);
+                return Single.error(ex);
             }
         }
     }

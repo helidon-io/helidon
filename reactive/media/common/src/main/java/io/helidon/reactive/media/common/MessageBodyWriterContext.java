@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow.Publisher;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
@@ -71,11 +70,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         super(parent, eventListener);
         Objects.requireNonNull(headers, "headers cannot be null!");
         this.headers = headers;
-        if (acceptedTypes != null) {
-            this.acceptedTypes = acceptedTypes;
-        } else {
-            this.acceptedTypes = List.of();
-        }
+        this.acceptedTypes = Objects.requireNonNullElseGet(acceptedTypes, List::of);
         if (parent != null) {
             this.writers = new MessageBodyOperators<>(parent.writers);
             this.swriters = new MessageBodyOperators<>(parent.swriters);
@@ -96,21 +91,6 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.writers = new MessageBodyOperators<>();
         this.swriters = new MessageBodyOperators<>();
         this.acceptedTypes = List.of();
-    }
-
-    /**
-     * Create a new standalone (non parented) context.
-     */
-    private MessageBodyWriterContext() {
-        super(null, null);
-        this.headers = WritableHeaders.create();
-        this.writers = new MessageBodyOperators<>();
-        this.swriters = new MessageBodyOperators<>();
-        this.acceptedTypes = List.of();
-        this.contentTypeCache = Optional.empty();
-        this.contentTypeCached = true;
-        this.charsetCache = DEFAULT_CHARSET;
-        this.charsetCached = true;
     }
 
     private MessageBodyWriterContext(MessageBodyWriterContext writerContext, WritableHeaders<?> headers) {
@@ -378,7 +358,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public void contentType(MediaType mediaType) {
         Objects.requireNonNull(mediaType);
-        headers.setIfAbsent(Http.Header.create(Http.Header.CONTENT_TYPE, false, false, mediaType.fullType()));
+        headers.setIfAbsent(Http.Header.create(Http.Header.CONTENT_TYPE, false, false, mediaType.text()));
     }
 
     /**
@@ -482,67 +462,6 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         charsetCache = DEFAULT_CHARSET;
         charsetCached = true;
         return charsetCache;
-    }
-
-    /**
-     * Message body writer adapter for the old deprecated writer.
-     * @param <T> writer type
-     */
-    private static final class WriterAdapter<T> implements MessageBodyWriter<T> {
-
-        private final Function<T, Publisher<DataChunk>> function;
-        private final Predicate predicate;
-        private final Class<T> type;
-        private final HttpMediaType contentType;
-
-        @SuppressWarnings("unchecked")
-        WriterAdapter(Function<T, Publisher<DataChunk>> function, Predicate<?> predicate, HttpMediaType contentType) {
-            Objects.requireNonNull(function, "function cannot be null!");
-            Objects.requireNonNull(predicate, "predicate cannot be null!");
-            this.function = function;
-            this.predicate = predicate;
-            this.contentType = contentType;
-            this.type = null;
-        }
-
-        @SuppressWarnings("unchecked")
-        WriterAdapter(Function<? extends T, Publisher<DataChunk>> function, Class<T> type, HttpMediaType contentType) {
-            Objects.requireNonNull(function, "function cannot be null!");
-            Objects.requireNonNull(type, "type cannot be null!");
-            this.function = (Function<T, Publisher<DataChunk>>) function;
-            this.type = type;
-            this.contentType = contentType;
-            this.predicate = null;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
-            if (this.type != null) {
-                if (!this.type.isAssignableFrom(type.rawType())) {
-                    return PredicateResult.NOT_SUPPORTED;
-                }
-            } else {
-                if (!predicate.test((Object) type.rawType())) {
-                    return PredicateResult.NOT_SUPPORTED;
-                }
-            }
-            HttpMediaType ct = context.contentType().orElse(null);
-            if (!(contentType != null && ct != null && !ct.test(contentType))) {
-                if (contentType != null) {
-                    context.contentType(contentType);
-                }
-                return PredicateResult.SUPPORTED;
-            }
-            return PredicateResult.NOT_SUPPORTED;
-        }
-
-        @Override
-        public Publisher<DataChunk> write(Single<? extends T> single,
-                                          GenericType<? extends T> type,
-                                          MessageBodyWriterContext context) {
-            return single.flatMap(function);
-        }
     }
 
     /**
