@@ -45,6 +45,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuring Jaeger
 
+NOTE: Jaeger changed its client implementation, so some Jaeger settings exposed by earlier releases of Helidon are no longer available. Please note the currently-supported settings in the table below.
+
 include::{rootdir}/config/io_helidon_tracing_jaeger_JaegerTracerBuilder.adoc[tag=config,levelOffset=1]
 
 The following is an example of a Jaeger configuration, specified in the YAML format. 
