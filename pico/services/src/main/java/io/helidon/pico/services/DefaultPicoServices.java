@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -189,7 +188,9 @@ class DefaultPicoServices implements PicoServices, Resetable {
         long finish;
         try {
             return es.submit(shutdown)
-                    .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    // note to self: have an appropriate timeout config for this
+//                    .get(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    .get();
         } catch (Throwable t) {
             finish = System.currentTimeMillis();
             errorLog("error during shutdown (elapsed = " + (finish - start) + " ms)", t);
@@ -238,14 +239,13 @@ class DefaultPicoServices implements PicoServices, Resetable {
                             .map(ActivationLogEntry::serviceProvider)
                             .filter(Optional::isPresent)
                             .map(Optional::get)
-                            .filter(sp -> sp.currentActivationPhase().eligibleForDeactivation())
                             .forEach(serviceProviderActivations::add);
 
                     // prepare for the shutdown log event sequence
                     log.toQuery().ifPresent(it -> it.reset(false));
 
                     // shutdown using the reverse chronological ordering in the log for starters
-                    doShutdown(serviceProviderActivations);
+                    doFinalShutdown(serviceProviderActivations);
                 }
             }
 
@@ -259,7 +259,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
                 int runLevel2 = o2.serviceInfo().realizedRunLevel();
                 return Integer.compare(runLevel1, runLevel2);
             });
-            doShutdown(serviceProviders);
+            doFinalShutdown(serviceProviders);
 
             // finally, clear everything
             reset(false);
@@ -267,24 +267,25 @@ class DefaultPicoServices implements PicoServices, Resetable {
             return map;
         }
 
-        private void doShutdown(
+        private void doFinalShutdown(
                 Collection<ServiceProvider<?>> serviceProviders) {
-            for (ServiceProvider<?> sp : serviceProviders) {
-                assert (sp.currentActivationPhase().eligibleForDeactivation());
-
+            for (ServiceProvider<?> csp : serviceProviders) {
+                Phase startingActivationPhase = csp.currentActivationPhase();
                 ActivationResult result;
                 try {
-                    result = injector.deactivate(sp, opts);
+                    result = injector.deactivate(csp, opts);
                 } catch (Throwable t) {
+                    errorLog("error during shutdown", t);
                     result = DefaultActivationResult.builder()
-                            .serviceProvider(sp)
+                            .serviceProvider(csp)
+                            .startingActivationPhase(startingActivationPhase)
+                            .targetActivationPhase(Phase.DESTROYED)
+                            .finishingActivationPhase(csp.currentActivationPhase())
                             .finishingStatus(ActivationStatus.FAILURE)
                             .error(t)
                             .build();
-                    errorLog("error during shutdown", t);
                 }
-                Object prev = map.put(sp.serviceInfo().serviceTypeName(), result);
-                assert (prev == null);
+                map.put(csp.serviceInfo().serviceTypeName(), result);
             }
         }
     }

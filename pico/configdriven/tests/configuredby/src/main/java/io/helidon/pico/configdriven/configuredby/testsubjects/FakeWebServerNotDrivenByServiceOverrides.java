@@ -16,59 +16,21 @@
 
 package io.helidon.pico.configdriven.configuredby.testsubjects;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
 import io.helidon.builder.config.testsubjects.fakes.FakeTracer;
 import io.helidon.pico.configdriven.ConfiguredBy;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 
-/**
- * For Testing.
- */
-@ConfiguredBy(FakeServerConfig.class)
-public class FakeWebServer implements FakeWebServerContract {
-
-    private FakeServerConfig cfg;
-    private boolean running;
+@ConfiguredBy(value = FakeServerConfig.class, overrideBean = true, drivesActivation = false)
+public class FakeWebServerNotDrivenByServiceOverrides extends FakeWebServer {
 
     @Inject
-    FakeWebServer(
-            FakeServerConfig cfg,
-            Optional<FakeTracer> tracer) {
-        this.cfg = Objects.requireNonNull(cfg);
-        assert (tracer.isEmpty());
-    }
-
-    /**
-     * For Testing.
-     */
-    @PostConstruct
-    public void initialize() {
-        assert (!running);
-        running = true;
-    }
-
-    /**
-     * For Testing.
-     */
-    @PreDestroy
-    public void shutdown() {
-        running = false;
-    }
-
-    @Override
-    public FakeServerConfig configuration() {
-        return cfg;
-    }
-
-    @Override
-    public boolean isRunning() {
-        return running;
+    FakeWebServerNotDrivenByServiceOverrides(FakeServerConfig cfg,
+                                             Optional<FakeTracer> tracer) {
+        super(cfg, tracer);
     }
 
 }

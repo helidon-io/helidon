@@ -34,6 +34,7 @@ import javax.tools.Diagnostic;
 import io.helidon.builder.AttributeVisitor;
 import io.helidon.builder.Builder;
 import io.helidon.builder.config.ConfigBean;
+import io.helidon.builder.config.spi.ConfigBeanInfo;
 import io.helidon.builder.types.AnnotationAndValue;
 import io.helidon.builder.types.DefaultAnnotationAndValue;
 import io.helidon.builder.types.TypeName;
@@ -63,6 +64,8 @@ import static io.helidon.builder.types.DefaultTypeName.toBuilder;
 public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     private final System.Logger logger = System.getLogger(getClass().getName());
     private final LinkedHashSet<Element> elementsProcessed = new LinkedHashSet<>();
+
+    static final String TAG_OVERRIDE_BEAN = "overrideBean";
 
     /**
      * Service loader based constructor.
@@ -126,8 +129,8 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
         }
 
         AnnotationMirror am = findAnnotationMirror(ConfiguredBy.class.getName(), element.getAnnotationMirrors()).orElseThrow();
-        Map<String, String> vals = extractValues(am, processingEnv.getElementUtils());
-        TypeName configBeanType = createFromTypeName(vals.get("value"));
+        Map<String, String> configuredByAttributes = extractValues(am, processingEnv.getElementUtils());
+        TypeName configBeanType = createFromTypeName(configuredByAttributes.get("value"));
         TypeName serviceTypeName = createTypeNameFromElement(element).orElseThrow();
         TypeElement parent = toTypeElement(((TypeElement) element).getSuperclass()).orElse(null);
         TypeName parentServiceTypeName = (parent == null) ? null : createTypeNameFromElement(parent).orElseThrow();
@@ -151,7 +154,7 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
 
         validate((TypeElement) element, configBeanType, serviceTypeName, parentServiceTypeName);
 
-        List<String> extraCodeGen = createExtraCodeGen(activatorImplTypeName, configBeanType, hasParent);
+        List<String> extraCodeGen = createExtraCodeGen(activatorImplTypeName, configBeanType, hasParent, configuredByAttributes);
 
         ServicesToProcess servicesToProcess = ServicesToProcess.servicesInstance();
         boolean accepted = servicesToProcess.addParentServiceType(serviceTypeName, parentServiceTypeName, Optional.of(true));
@@ -219,25 +222,36 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
     List<String> createExtraCodeGen(
             TypeName activatorImplTypeName,
             TypeName configBeanType,
-            boolean hasParent) {
+            boolean hasParent,
+            Map<String, String> configuredByAttributes) {
         List<String> result = new ArrayList<>();
         TypeName configBeanImplName = toDefaultImpl(configBeanType);
 
+        String comment = "\n\t/**\n"
+                + "\t * Config-driven service constructor.\n"
+                + "\t * \n"
+                + "\t * @param configBean config bean\n"
+                + "\t */";
         if (hasParent) {
-            result.add("\n\tprotected " + activatorImplTypeName.className() + "(" + configBeanType + " configBean) {\n"
+            result.add(comment + "\n\tprotected " + activatorImplTypeName.className() + "(" + configBeanType + " configBean) {\n"
                                + "\t\tsuper(configBean);\n"
                                + "\t\tserviceInfo(serviceInfo);\n"
                                + "\t}\n");
         } else {
-            result.add("\n\tprivate " + configBeanType + " configBean;\n"
-                               + "\n\tprivate " + activatorImplTypeName.className() + "(" + configBeanType + " configBean) {\n"
+            result.add("\n\tprivate " + configBeanType + " configBean;\n");
+            result.add(comment + "\n\tprotected " + activatorImplTypeName.className() + "(" + configBeanType + " configBean) {\n"
                                + "\t\tthis.configBean = Objects.requireNonNull(configBean);\n"
                                + "\t\tassertIsRootProvider(false, true);\n"
                                + "\t\tserviceInfo(serviceInfo);\n"
                                + "\t}\n");
         }
 
-        result.add("\t@Override\n"
+        comment = "\n\t/**\n"
+                + "\t * Creates an instance given a config bean.\n"
+                + "\t * \n"
+                + "\t * @param configBean config bean\n"
+                + "\t */\n";
+        result.add(comment + "\t@Override\n"
                            + "\tprotected " + activatorImplTypeName + " createInstance(Object configBean) {\n"
                            + "\t\treturn new " + activatorImplTypeName.className() + "((" + configBeanType + ") configBean);\n"
                            + "\t}\n");
@@ -279,13 +293,13 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
                            + "toConfigBeanBuilder(" + Config.class.getName() + " config) {\n"
                            + "\t\treturn " + configBeanImplName + ".toBuilder(config);\n"
                            + "\t}\n");
-        result.add("\t@Override\n"
-                           + "\tprotected CB acceptConfig(io.helidon.common.config.Config config) {\n"
-                           + "\t\tthis.configBean = (CB) super.acceptConfig(config);\n"
-                           + "\t\treturn (CB) this.configBean;\n"
-                           + "\t}\n");
 
         if (!hasParent) {
+            result.add("\t@Override\n"
+                               + "\tprotected CB acceptConfig(io.helidon.common.config.Config config) {\n"
+                               + "\t\tthis.configBean = (CB) super.acceptConfig(config);\n"
+                               + "\t\treturn (CB) this.configBean;\n"
+                               + "\t}\n");
             result.add("\t@Override\n"
                                + "\tpublic String toConfigBeanInstanceId(CB configBean) {\n"
                                + "\t\treturn ((" + configBeanImplName
@@ -296,6 +310,16 @@ public class ConfiguredByProcessor extends ServiceAnnotationProcessor {
                                + "\t\t((" + configBeanImplName + ") configBean).__instanceId(val);\n"
                                + "\t}\n");
         }
+
+        String overridesEnabledStr = configuredByAttributes.get(TAG_OVERRIDE_BEAN);
+        if (Boolean.parseBoolean(overridesEnabledStr)) {
+            String drivesActivationStr = configuredByAttributes.get(ConfigBeanInfo.TAG_DRIVES_ACTIVATION);
+            result.add("\t@Override\n"
+                       + "\tprotected boolean drivesActivation() {\n"
+                       + "\t\treturn " + Boolean.parseBoolean(drivesActivationStr) + ";\n"
+                       + "\t}\n");
+        }
+
         return result;
     }
 

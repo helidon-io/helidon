@@ -16,28 +16,8 @@
 
 package io.helidon.pico.configdriven.configuredby.testsubjects;
 
-import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
-import io.helidon.pico.Contract;
+import io.helidon.builder.config.ConfigBean;
 
-/**
- * For Testing.
- */
-@Contract
-public interface FakeWebServerContract {
-
-    /**
-     * Gets effective server configuration.
-     *
-     * @return Server configuration
-     */
-    FakeServerConfig configuration();
-
-    /**
-     * Returns {@code true} if the server is currently running. Running server in stopping phase returns {@code true} until it
-     * is not fully stopped.
-     *
-     * @return {@code true} if server is running
-     */
-    boolean isRunning();
-
+@ConfigBean(atLeastOne = true, wantDefaultConfigBean = true)
+public interface ASingletonConfigBean {
 }

@@ -54,7 +54,7 @@ public @interface ConfiguredBy {
     Class<?> value();
 
     /**
-     * Required to be set to true if {@link #drivesActivation()} or {@link #wantDefaultConfigBean()}  is
+     * Required to be set to true if {@link #drivesActivation()} is
      * applied, thereby overriding the defaults in {@link io.helidon.builder.config.ConfigBean} annotation.
      *
      * @return true to override the config bean attributes, false to defer to the bean
@@ -68,14 +68,5 @@ public @interface ConfiguredBy {
      * @return true if the presence of the config bean has an activation affect (aka, "config-driven services")
      */
     boolean drivesActivation() default true;
-
-    /**
-     * An instance of this bean will be created iff there are no instances discovered by the configuration provider(s) post
-     * startup, and will use all default values annotated on the bean interface.
-     * Note that {@link #overrideBean()} must be set to true for this to be applied.
-     *
-     * @return use the default config instance
-     */
-    boolean wantDefaultConfigBean() default false;
 
 }

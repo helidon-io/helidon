@@ -88,7 +88,13 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
 
     @Override
     protected String identitySuffix() {
-        return "{" + delegate.id() + "}";
+        return delegate.identitySuffix();
+    }
+
+    @Override
+    public String name(
+            boolean simple) {
+        return delegate.name(simple);
     }
 
     @Override
@@ -172,4 +178,27 @@ public class UnconfiguredServiceProvider<T, CB> extends AbstractConfiguredServic
             Object configBean) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    protected boolean drivesActivation() {
+        return delegate.drivesActivation();
+    }
+
+    @Override
+    protected void doPreDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        delegate.doPreDestroying(logEntryAndResult);
+    }
+
+    @Override
+    protected void doDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        delegate.doDestroying(logEntryAndResult);
+    }
+
+    @Override
+    protected void onFinalShutdown() {
+        delegate.onFinalShutdown();
+    }
+
 }

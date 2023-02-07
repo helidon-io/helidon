@@ -16,33 +16,18 @@
 
 package io.helidon.pico.configdriven.configuredby.testsubjects;
 
-import java.util.Objects;
-import java.util.Optional;
-
-import io.helidon.builder.config.testsubjects.fakes.FakeServerConfig;
-import io.helidon.builder.config.testsubjects.fakes.FakeTracer;
 import io.helidon.pico.configdriven.ConfiguredBy;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
-/**
- * For Testing.
- */
-@ConfiguredBy(FakeServerConfig.class)
-public class FakeWebServer implements FakeWebServerContract {
-
-    private FakeServerConfig cfg;
+@ConfiguredBy(ASingletonConfigBean.class)
+@Named("jane")
+class ASingletonService {
     private boolean running;
 
-    @Inject
-    FakeWebServer(
-            FakeServerConfig cfg,
-            Optional<FakeTracer> tracer) {
-        this.cfg = Objects.requireNonNull(cfg);
-        assert (tracer.isEmpty());
-    }
+    // note: initially left w/o a ctor here!
 
     /**
      * For Testing.
@@ -61,12 +46,9 @@ public class FakeWebServer implements FakeWebServerContract {
         running = false;
     }
 
-    @Override
-    public FakeServerConfig configuration() {
-        return cfg;
-    }
-
-    @Override
+    /**
+     * For Testing.
+     */
     public boolean isRunning() {
         return running;
     }

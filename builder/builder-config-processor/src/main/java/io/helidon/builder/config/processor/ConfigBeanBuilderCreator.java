@@ -188,7 +188,8 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             BodyContext ctx,
             String builderTag) {
         if (!ctx.hasParent()) {
-            builder.append("\t\tsuper(b, String.valueOf(__INSTANCE_ID.getAndIncrement()));\n");
+            builder.append("\t\tsuper(b, b.__config().isPresent() ? String.valueOf(__INSTANCE_ID.getAndIncrement()) : "
+                                   + "\"-1\");\n");
         }
 
         super.appendExtraCtorCode(builder, ctx, builderTag);
@@ -332,18 +333,18 @@ public class ConfigBeanBuilderCreator extends DefaultBuilderCreatorProvider {
             StringBuilder builder,
             TypeInfo typeInfo,
             AnnotationAndValue configBeanAnno) {
-        String configKey = configBeanAnno.value("key").orElse(null);
+        String configKey = configBeanAnno.value(ConfigBeanInfo.TAG_KEY).orElse(null);
         configKey = Objects.requireNonNull(normalizeConfiguredOptionKey(configKey, typeInfo.typeName().className()));
         builder.append("\t\t\t\t\t\t.key(\"")
                 .append(configKey).append("\")\n");
         builder.append("\t\t\t\t\t\t.repeatable(")
-                .append(configBeanAnno.value("repeatable").orElseThrow()).append(")\n");
+                .append(configBeanAnno.value(ConfigBeanInfo.TAG_REPEATABLE).orElseThrow()).append(")\n");
         builder.append("\t\t\t\t\t\t.drivesActivation(")
-                .append(configBeanAnno.value("drivesActivation").orElseThrow()).append(")\n");
+                .append(configBeanAnno.value(ConfigBeanInfo.TAG_DRIVES_ACTIVATION).orElseThrow()).append(")\n");
         builder.append("\t\t\t\t\t\t.atLeastOne(")
-                .append(configBeanAnno.value("atLeastOne").orElseThrow()).append(")\n");
+                .append(configBeanAnno.value(ConfigBeanInfo.TAG_AT_LEAST_ONE).orElseThrow()).append(")\n");
         builder.append("\t\t\t\t\t\t.wantDefaultConfigBean(")
-                .append(configBeanAnno.value("wantDefaultConfigBean").orElseThrow()).append(")\n");
+                .append(configBeanAnno.value(ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN).orElseThrow()).append(")\n");
     }
 
     private void javaDocMetaAttributesGetter(

@@ -161,13 +161,51 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         }
     }
 
+    @Override
+    protected void doPreDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        if (isRootProvider()) {
+            managedConfiguredServicesMap.values().stream()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(csp -> {
+                        LogEntryAndResult cspLogEntryAndResult = csp.createLogEntryAndResult(Phase.DESTROYED);
+                        csp.doPreDestroying(cspLogEntryAndResult);
+                    });
+        }
+        super.doPreDestroying(logEntryAndResult);
+    }
+
+    @Override
+    protected void doDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        super.doDestroying(logEntryAndResult);
+    }
+
+    @Override
+    protected void onFinalShutdown() {
+        if (isRootProvider()) {
+            managedConfiguredServicesMap.values().stream()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(csp -> csp.currentActivationPhase().eligibleForDeactivation())
+                    .forEach(AbstractConfiguredServiceProvider::onFinalShutdown);
+        }
+
+        this.initialized.set(false);
+        this.managedConfiguredServicesMap.clear();
+        this.configBeanMap.clear();
+
+        super.onFinalShutdown();
+    }
+
     /**
      * Transition into an initialized state.
      */
     void assertInitialized(
             boolean initialized) {
         assertIsInitializing();
-        assert (!isAutoActivationEnabled() || isAlreadyAtTargetPhase(Phase.ACTIVE) || managedConfiguredServicesMap.isEmpty());
+        assert (!drivesActivation() || isAlreadyAtTargetPhase(Phase.ACTIVE) || managedConfiguredServicesMap.isEmpty());
         this.initialized.set(initialized);
     }
 
@@ -295,7 +333,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         } else if (phase == Phase.FINAL_RESOLVE) {
             // post-initialize ourselves
             if (isRootProvider()) {
-                if (isAutoActivationEnabled()) {
+                if (drivesActivation()) {
                     ContextualServiceQuery query = DefaultContextualServiceQuery
                             .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
                             .build();
@@ -383,7 +421,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     protected void doConstructing(
             LogEntryAndResult logEntryAndResult) {
         if (isRootProvider()) {
-            boolean shouldBeActive = (isAutoActivationEnabled() && !managedConfiguredServicesMap.isEmpty());
+            boolean shouldBeActive = (drivesActivation() && !managedConfiguredServicesMap.isEmpty());
             Phase setPhase = (shouldBeActive) ? Phase.ACTIVE : Phase.PENDING;
             startTransitionCurrentActivationPhase(logEntryAndResult, setPhase);
             onFinished(logEntryAndResult);
@@ -458,8 +496,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             boolean wantThis,
             boolean thisAlreadyMatches) {
         if (isRootProvider()) {
-            Set<QualifierAndValue> qualifiers = (Objects.isNull(criteria))
-                                                         ? Collections.emptySet() : criteria.qualifiers();
+            Set<QualifierAndValue> qualifiers = criteria.qualifiers();
             Optional<? extends AnnotationAndValue> configuredByQualifier = DefaultQualifierAndValue
                     .findFirst(EMPTY_CONFIGURED_BY.typeName().name(), qualifiers);
             boolean hasValue = configuredByQualifier.isPresent()
@@ -647,7 +684,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
             return;
         }
 
-        if (!isAutoActivationEnabled()) {
+        if (!drivesActivation()) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG, "drivesActivation disabled for: " + description());
             }
@@ -678,7 +715,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
         ContextualServiceQuery query = DefaultContextualServiceQuery
                 .builder().serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
                 .build();
-        Optional<T> service = maybeActivate(query);
+        Optional<T> service = maybeActivate(query); // triggers the post-construct
         if (service.isPresent() && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "finished activating: " + service);
         }
@@ -726,10 +763,12 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     /**
      * Return true if this service is driven to activation during startup (and provided it has some config).
-     *
+     * See {@link io.helidon.pico.configdriven.ConfiguredBy#drivesActivation()} and
+     * see {@link io.helidon.builder.config.ConfigBean#drivesActivation()} for more.
      * @return true if this service is driven to activation during startup
      */
-    boolean isAutoActivationEnabled() {
+    // note: overridden by the service if disabled at the ConfiguredBy service level
+    protected boolean drivesActivation() {
         return metaConfigBeanInfo().drivesActivation();
     }
 

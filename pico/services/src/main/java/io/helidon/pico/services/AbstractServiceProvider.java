@@ -259,6 +259,7 @@ public abstract class AbstractServiceProvider<T>
         }
 
         this.picoServices = picoServices.orElse(null);
+        this.phase = Phase.INIT;
         if (this.picoServices != null) {
             onInitialized();
         }
@@ -327,9 +328,9 @@ public abstract class AbstractServiceProvider<T>
      * @param simple flag to indicate simple name usage
      * @return this name assigned to this provider
      */
-    protected String name(
+    public String name(
             boolean simple) {
-        String name = serviceInfo.serviceTypeName();
+        String name = serviceInfo().serviceTypeName();
         return (simple) ? DefaultTypeName.createFromTypeName(name).className() : name;
     }
 
@@ -627,6 +628,7 @@ public abstract class AbstractServiceProvider<T>
     protected void onFinished(
             LogEntryAndResult logEntryAndResult) {
         // NOP;
+        int debugMe = 0;
     }
 
     private void doStartingLifecycle(
@@ -1015,7 +1017,12 @@ public abstract class AbstractServiceProvider<T>
         boolean debugMe = true;
     }
 
-    void doPostConstructing(
+    /**
+     * Called during the {@link io.helidon.pico.PostConstructMethod} process.
+     *
+     * @param logEntryAndResult the entry holding the result
+     */
+    protected void doPostConstructing(
             LogEntryAndResult logEntryAndResult) {
         Optional<PostConstructMethod> postConstruct = postConstructMethod();
         if (postConstruct.isPresent()) {
@@ -1025,6 +1032,37 @@ public abstract class AbstractServiceProvider<T>
         } else {
             startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.POST_CONSTRUCTING);
         }
+    }
+
+    /**
+     * Called during the {@link io.helidon.pico.PreDestroyMethod} process.
+     *
+     * @param logEntryAndResult the entry holding the result
+     */
+    protected void doPreDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        Optional<PreDestroyMethod> preDestroyMethod = preDestroyMethod();
+        if (preDestroyMethod.isEmpty()) {
+            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
+        } else {
+            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
+            preDestroyMethod.get().preDestroy();
+            finishedTransitionCurrentActivationPhase(logEntryAndResult);
+        }
+    }
+
+    /**
+     * Called after the {@link io.helidon.pico.PreDestroyMethod} process.
+     *
+     * @param logEntryAndResult the entry holding the result
+     */
+    protected void doDestroying(
+            LogEntryAndResult logEntryAndResult) {
+        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
+        logEntryAndResult.activationResult.wasResolved(false);
+        logEntryAndResult.activationResult.resolvedDependencies(Map.of());
+        serviceRef(null);
+        finishedTransitionCurrentActivationPhase(logEntryAndResult);
     }
 
     private void doActivationFinishing(
@@ -1047,14 +1085,13 @@ public abstract class AbstractServiceProvider<T>
         PicoServices picoServices = picoServices();
         PicoServicesConfig cfg = picoServices.config();
 
-        // if we are here then we are not yet at the ultimate target phase, and we either have to activate or
-        // deactivate...
+        // if we are here then we are not yet at the ultimate target phase, and we either have to activate or deactivate
         LogEntryAndResult logEntryAndResult = createLogEntryAndResult(Phase.DESTROYED);
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
 
         boolean didAcquire = false;
         try {
-            // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)...
+            // let's wait a bit on the semaphore until we read timeout (probably detecting a deadlock situation)
             if (!activationSemaphore.tryAcquire(cfg.activationDeadlockDetectionTimeoutMillis(), TimeUnit.MILLISECONDS)) {
                 // if we couldn't grab the semaphore than we (or someone else) is busy activating this services, or
                 // we deadlocked.
@@ -1064,46 +1101,37 @@ public abstract class AbstractServiceProvider<T>
             }
             didAcquire = true;
 
-            // if we made it to here then we "own" the semaphore and the subsequent activation steps...
+            // if we made it to here then we "own" the semaphore and the subsequent activation steps
             this.lastActivationThreadId = Thread.currentThread().getId();
 
             doPreDestroying(logEntryAndResult);
             if (Phase.PRE_DESTROYING == logEntryAndResult.activationResult.finishingActivationPhase()) {
                 doDestroying(logEntryAndResult);
             }
+            onFinished(logEntryAndResult);
         } catch (Throwable t) {
             InjectionException e = interruptedPreActivationInjectionError(logEntryAndResult.logEntry, t);
             onFailedFinish(logEntryAndResult, e, req.throwIfError());
         } finally {
-            lastActivationThreadId = 0;
-            //            res.setFinished(true);
             if (didAcquire) {
                 activationSemaphore.release();
             }
+            onFinalShutdown();
         }
 
         return logEntryAndResult.activationResult.build();
     }
 
-    private void doPreDestroying(
-            LogEntryAndResult logEntryAndResult) {
-        Optional<PreDestroyMethod> preDestroyMethod = preDestroyMethod();
-        if (preDestroyMethod.isEmpty()) {
-            startAndFinishTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
-        } else {
-            startTransitionCurrentActivationPhase(logEntryAndResult, Phase.PRE_DESTROYING);
-            preDestroyMethod.get().preDestroy();
-            finishedTransitionCurrentActivationPhase(logEntryAndResult);
-        }
-    }
-
-    private void doDestroying(
-            LogEntryAndResult logEntryAndResult) {
-        startTransitionCurrentActivationPhase(logEntryAndResult, Phase.DESTROYED);
-        logEntryAndResult.activationResult.wasResolved(false);
-        logEntryAndResult.activationResult.resolvedDependencies(Map.of());
-        serviceRef(null);
-        finishedTransitionCurrentActivationPhase(logEntryAndResult);
+    /**
+     * Called on the final leg of the shutdown sequence.
+     */
+    protected void onFinalShutdown() {
+        this.lastActivationThreadId = 0;
+        this.injectionPlan = null;
+        this.phase = Phase.DESTROYED;
+        this.serviceRef.set(null);
+        this.picoServices = null;
+        this.log = null;
     }
 
     /**
@@ -1327,7 +1355,7 @@ public abstract class AbstractServiceProvider<T>
      * @see #createLogEntryAndResult(io.helidon.pico.Phase)
      */
     // note that for one result, there may be N logEntry records we will build and write to the log
-    protected static class LogEntryAndResult {
+    protected static class LogEntryAndResult /* implements Cloneable*/ {
         private final DefaultActivationResult.Builder activationResult;
         private final DefaultActivationLogEntry.Builder logEntry;
 
@@ -1337,6 +1365,12 @@ public abstract class AbstractServiceProvider<T>
             this.logEntry = logEntry;
             this.activationResult = activationResult;
         }
+
+//        public LogEntryAndResult clone() {
+//            return new LogEntryAndResult(
+//                    DefaultActivationLogEntry.toBuilder(logEntry),
+//                    DefaultActivationResult.toBuilder(activationResult));
+//        }
 
         DefaultActivationResult.Builder activationResult() {
             return activationResult;

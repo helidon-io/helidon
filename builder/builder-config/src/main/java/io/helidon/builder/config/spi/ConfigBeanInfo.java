@@ -30,6 +30,31 @@ import io.helidon.builder.config.ConfigBean;
 public interface ConfigBeanInfo extends ConfigBean {
 
     /**
+     * The attribute name for {@link #key()}.
+     */
+    String TAG_KEY = "key";
+
+    /**
+     * The attribute name for {@link #drivesActivation()}.
+     */
+    String TAG_DRIVES_ACTIVATION = "drivesActivation";
+
+    /**
+     * The attribute name for {@link #atLeastOne()}.
+     */
+    String TAG_AT_LEAST_ONE = "atLeastOne";
+
+    /**
+     * The attribute name for {@link #repeatable()}.
+     */
+    String TAG_REPEATABLE = "repeatable";
+
+    /**
+     * The attribute name for {@link #wantDefaultConfigBean()}.
+     */
+    String TAG_WANT_DEFAULT_CONFIG_BEAN = "wantDefaultConfigBean";
+
+    /**
      * Builds meta information appropriate for config integration from a
      * {@link io.helidon.builder.config.ConfigBean} instance. This will use the key if {@link #key()} is present, and
      * if not present will default to the simple class name of the bean type.

@@ -46,11 +46,11 @@ class MetaConfigBeanInfoTest {
 
     @Test
     void testToMetaConfigBeanInfoFromMetaAttributes() {
-        Map<String, Object> metaMap = Map.of("key", "fake-config",
-                                             "repeatable", "true",
-                                             "drivesActivation", "true",
-                                             "atLeastOne", "true",
-                                             "wantDefaultConfigBean", "true");
+        Map<String, Object> metaMap = Map.of(ConfigBeanInfo.TAG_KEY, "fake-config",
+                                             ConfigBeanInfo.TAG_REPEATABLE, "true",
+                                             ConfigBeanInfo.TAG_DRIVES_ACTIVATION, "true",
+                                             ConfigBeanInfo.TAG_AT_LEAST_ONE, "true",
+                                             ConfigBeanInfo.TAG_WANT_DEFAULT_CONFIG_BEAN, "true");
         MetaConfigBeanInfo metaCfg = ConfigBeanInfo.toMetaConfigBeanInfo(metaMap);
         assertThat(metaCfg.annotationType(), sameInstance(ConfigBean.class));
         assertThat(metaCfg.repeatable(), is(true));

@@ -776,6 +776,9 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             Collection<QualifierAndValue> qualifiers) {
         StringBuilder builder = new StringBuilder();
         for (QualifierAndValue qualifier : qualifiers) {
+            if (builder.length() > 0) {
+                builder.append("\n\t\t\t");
+            }
             builder.append(".addQualifier(").append(toCodegenQualifiers(qualifier)).append(")");
         }
         return builder.toString();
