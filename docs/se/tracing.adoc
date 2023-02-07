@@ -205,7 +205,7 @@ routing.register(WebTracingConfig.create(config.get("tracing")));
 
 ==== Path-based configuration in Helidon Web Server
 
-For Web Server we have a path-based support for configuring tracing, in addition
+For Web Server we have path-based support for configuring tracing, in addition
 to the configuration described above.
 
 Configuration of path can use any path string supported by the
