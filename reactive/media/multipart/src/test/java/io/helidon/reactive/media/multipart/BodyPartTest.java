@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,11 @@ import io.helidon.reactive.media.common.MessageBodyReadableContent;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static io.helidon.reactive.media.multipart.MultiPartDecoderTest.chunksPublisher;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -122,8 +123,8 @@ public class BodyPartTest {
                         .build())
                 .entity("abc")
                 .build();
-        assertThat(bodyPart.name(), is(equalTo("foo")));
-        assertThat(bodyPart.filename(), is(nullValue()));
+        assertThat(bodyPart.name(), optionalValue(is("foo")));
+        assertThat(bodyPart.filename(), is(optionalEmpty()));
     }
 
     @Test
@@ -136,8 +137,8 @@ public class BodyPartTest {
                         .build())
                 .entity("abc")
                 .build();
-        assertThat(bodyPart.filename(), is(equalTo("foo.txt")));
-        assertThat(bodyPart.name(), is(nullValue()));
+        assertThat(bodyPart.filename(), optionalValue(is("foo.txt")));
+        assertThat(bodyPart.name(), is(optionalEmpty()));
     }
 
     static MessageBodyReadableContent readableContent(Publisher<DataChunk> chunks) {
