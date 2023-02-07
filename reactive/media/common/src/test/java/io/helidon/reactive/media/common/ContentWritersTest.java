@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ContentWritersTest {
 
     @Test
-    public void byteWriter() throws Exception {
+    public void writeBytesNoCopy() throws Exception {
         byte[] bytes = "abc".getBytes(StandardCharsets.ISO_8859_1);
         Publisher<DataChunk> publisher = ContentWriters.writeBytes(bytes, false);
         byte[] result = ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
@@ -41,7 +41,7 @@ public class ContentWritersTest {
     }
 
     @Test
-    public void copyByteWriter() throws Exception {
+    public void writeBytesCopy() throws Exception {
         byte[] bytes = "abc".getBytes(StandardCharsets.ISO_8859_1);
         Publisher<DataChunk> publisher = ContentWriters.writeBytes(bytes, true);
         System.arraycopy("xxx".getBytes(StandardCharsets.ISO_8859_1), 0, bytes, 0, bytes.length);
@@ -50,7 +50,7 @@ public class ContentWritersTest {
     }
 
     @Test
-    public void byteWriterEmpty() throws Exception {
+    public void writeEmptyBytes() throws Exception {
         byte[] bytes = new byte[0];
         Publisher<DataChunk> publisher = ContentWriters.writeBytes(bytes, false);
         byte[] result = ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
@@ -58,9 +58,9 @@ public class ContentWritersTest {
     }
 
     @Test
-    public void charSequenceWriter() throws Exception {
+    public void writeCharSequence() throws Exception {
         String data = "abc";
-        Publisher<DataChunk> publisher = ContentWriters.charSequenceWriter(StandardCharsets.UTF_8).apply(data);
+        Publisher<DataChunk> publisher = ContentWriters.writeCharSequence(data, StandardCharsets.UTF_8);
         byte[] result = ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
         assertThat(new String(result, StandardCharsets.UTF_8), is(data));
     }
