@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -81,10 +82,12 @@ public final class FileService implements Service {
     private void upload(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class)
            .forEach(part -> {
-               if ("file[]".equals(part.name())) {
-                   part.content().map(DataChunk::data)
+               if (part.isNamed("file[]")) {
+                   part.content()
+                       .map(DataChunk::data)
                        .flatMapIterable(Arrays::asList)
-                       .to(IoMulti.writeToFile(storage.create(part.filename()))
+                       .to(IoMulti.writeToFile(storage.create(part.filename()
+                                                                  .orElseThrow(() -> new BadRequestException("Missing filename"))))
                                   .executor(executor)
                                   .build());
                } else {
