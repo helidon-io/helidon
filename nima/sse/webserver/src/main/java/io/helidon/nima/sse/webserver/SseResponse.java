@@ -18,6 +18,7 @@ package io.helidon.nima.sse.webserver;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -41,18 +42,16 @@ import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM
  *
  * @see #create(ServerResponse)
  */
-public class SseResponse implements AutoCloseable {
-
+class SseResponse {
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_SEPARATOR = "\n\n".getBytes(StandardCharsets.UTF_8);
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
-    private boolean isClosed = false;
     private OutputStream outputStream;
     private final Http1ServerResponse serverResponse;
     private final MediaContext mediaContext;
 
-    private SseResponse(Http1ServerResponse serverResponse) {
+    SseResponse(Http1ServerResponse serverResponse) {
         this.serverResponse = serverResponse;
         this.mediaContext = serverResponse.mediaContext();
     }
@@ -89,7 +88,7 @@ public class SseResponse implements AutoCloseable {
      * @param sseEvent event to send
      * @return this SSE response
      */
-    public SseResponse send(SseEvent sseEvent) {
+    protected SseResponse send(SseEvent sseEvent) {
         if (outputStream == null) {
             outputStream = serverResponse.outputStream();
             Objects.requireNonNull(outputStream);
@@ -118,32 +117,8 @@ public class SseResponse implements AutoCloseable {
             outputStream.write(SSE_SEPARATOR);
             outputStream.flush();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
         return this;
-    }
-
-    /**
-     * Closes the SSE stream.
-     */
-    @Override
-    public void close() {
-        if (outputStream != null) {
-            try {
-                outputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        isClosed = true;
-    }
-
-    /**
-     * Checks if SSE stream has already been closed.
-     *
-     * @return outcome of test
-     */
-    boolean isClosed() {
-        return isClosed;
     }
 }

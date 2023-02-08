@@ -30,7 +30,7 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.StringSupportProvider;
 import io.helidon.nima.sse.webserver.SseEvent;
-import io.helidon.nima.sse.webserver.SseResponse;
+import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -65,9 +65,9 @@ class SseServerMediaTest {
     }
 
     private static void sse(ServerRequest req, ServerResponse res) {
-        try (SseResponse sseRes = SseResponse.create(res)) {
-            sseRes.send(SseEvent.create("hello", MY_PLAIN_TEXT))        // custom media type
-                    .send(SseEvent.create("world"));                          // text/plain by default
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create("hello", MY_PLAIN_TEXT))        // custom media type
+                    .emit(SseEvent.create("world"));                          // text/plain by default
         }
     }
 

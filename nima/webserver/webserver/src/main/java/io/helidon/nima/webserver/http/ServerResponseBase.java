@@ -22,8 +22,10 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
@@ -35,6 +37,8 @@ import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.ConnectionContext;
+import io.helidon.nima.webserver.http.spi.Sink;
+import io.helidon.nima.webserver.http.spi.SinkProvider;
 
 /**
  * Base class for common server response tasks that can be shared across HTTP versions.
@@ -42,6 +46,10 @@ import io.helidon.nima.webserver.ConnectionContext;
  * @param <T> type of the response extending this class to allow fluent API
  */
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
+
+    private static final HelidonServiceLoader<SinkProvider> SINK_PROVIDER_LOADER
+            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build();
+
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final HttpPrologue requestPrologue;
@@ -173,6 +181,18 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public boolean isNexted() {
         return nexted;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        List<SinkProvider> providers = SINK_PROVIDER_LOADER.asList();
+        for (SinkProvider p : providers) {
+            if (p.supports(sinkType)) {
+                return (X) p.create(this, e -> {}, this::commit);       // todo event consumer
+            }
+        }
+        throw new IllegalArgumentException("Unable to find provider for type " + sinkType);
     }
 
     /**

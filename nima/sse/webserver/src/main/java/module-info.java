@@ -16,6 +16,8 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.nima.sse.webserver.SseSinkProvider;
+import io.helidon.nima.webserver.http.spi.SinkProvider;
 
 /**
  * SSE WebServer.
@@ -33,4 +35,6 @@ module io.helidon.nima.sse.webserver {
     requires transitive io.helidon.nima.webserver;
 
     exports io.helidon.nima.sse.webserver;
+
+    provides SinkProvider with SseSinkProvider;
 }

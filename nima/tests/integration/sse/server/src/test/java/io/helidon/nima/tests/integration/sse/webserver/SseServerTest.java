@@ -18,7 +18,7 @@ package io.helidon.nima.tests.integration.sse.webserver;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.sse.webserver.SseEvent;
-import io.helidon.nima.sse.webserver.SseResponse;
+import io.helidon.nima.sse.webserver.SseSink;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -55,27 +55,27 @@ class SseServerTest {
     }
 
     private static void sseString1(ServerRequest req, ServerResponse res) {
-        try (SseResponse sseRes = SseResponse.create(res)) {
-            sseRes.send(SseEvent.create("hello"))
-                    .send(SseEvent.create("world"));
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create("hello"))
+                    .emit(SseEvent.create("world"));
         }
     }
 
     private static void sseString2(ServerRequest req, ServerResponse res) throws InterruptedException {
-        SseResponse sseRes = SseResponse.create(res);
+        SseSink sseSink = res.sink(SseSink.TYPE);
         for (int i = 1; i <= 3; i++) {
-            sseRes.send(SseEvent.create(Integer.toString(i)));
+            sseSink.emit(SseEvent.create(Integer.toString(i)));
             Thread.sleep(50);      // simulates messages over time
         }
-        sseRes.close();
+        sseSink.close();
     }
 
     private static void sseJson1(ServerRequest req, ServerResponse res) {
         JsonObject json = Json.createObjectBuilder()
                 .add("hello", "world")
                 .build();
-        try (SseResponse sseRes = SseResponse.create(res)) {
-            sseRes.send(SseEvent.create(json));
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create(json));
         }
     }
 
@@ -95,8 +95,8 @@ class SseServerTest {
     private static void sseJson2(ServerRequest req, ServerResponse res) {
         HelloWorld json = new HelloWorld();
         json.setHello("world");
-        try (SseResponse sseRes = SseResponse.create(res)) {
-            sseRes.send(SseEvent.create(json));
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create(json));
         }
     }
 
@@ -107,11 +107,11 @@ class SseServerTest {
         HelloWorld jsonb = new HelloWorld();
         jsonb.setHello("world");
 
-        try (SseResponse sseRes = SseResponse.create(res)) {
-            sseRes.send(SseEvent.create("hello"))
-                    .send(SseEvent.create("world"))
-                    .send(SseEvent.create(jsonp))
-                    .send(SseEvent.create(jsonb));
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create("hello"))
+                    .emit(SseEvent.create("world"))
+                    .emit(SseEvent.create(jsonp))
+                    .emit(SseEvent.create(jsonb));
         }
     }
 
