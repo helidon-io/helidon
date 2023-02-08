@@ -189,10 +189,22 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         List<SinkProvider> providers = SINK_PROVIDER_LOADER.asList();
         for (SinkProvider p : providers) {
             if (p.supports(sinkType)) {
-                return (X) p.create(this, e -> {}, this::commit);       // todo event consumer
+                return (X) p.create(this, this::handleSinkEvent, this::commit);
             }
         }
         throw new IllegalArgumentException("Unable to find provider for type " + sinkType);
+    }
+
+    private void handleSinkEvent(Object event) {
+        if (event instanceof BufferData buffer) {
+            try {
+                OutputStream os = outputStream();
+                buffer.writeTo(os);
+                os.flush();     // assumes each event needs flushing
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     /**

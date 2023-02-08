@@ -16,16 +16,33 @@
 
 package io.helidon.nima.sse.webserver;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http1.Http1ServerResponse;
+
+import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 
 /**
  * Implementation of an SSE sink. Emits {@link SseEvent}s.
  */
-public class SseSink extends SseResponse implements Sink<SseEvent> {
+public class SseSink implements Sink<SseEvent> {
+    private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_SEPARATOR = "\n\n".getBytes(StandardCharsets.UTF_8);
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     /**
      * Type of SSE event sinks.
@@ -35,16 +52,65 @@ public class SseSink extends SseResponse implements Sink<SseEvent> {
     private final Consumer<Object> eventConsumer;
     private final Runnable closeRunnable;
 
+    private OutputStream outputStream;
+    private final Http1ServerResponse serverResponse;
+    private final MediaContext mediaContext;
+
     SseSink(Http1ServerResponse serverResponse, Consumer<Object> eventConsumer, Runnable closeRunnable) {
-        super(serverResponse);
+        // Verify response has no status or content type
+        HttpMediaType ct = serverResponse.headers().contentType().orElse(null);
+        if (serverResponse.status().code() != Http.Status.OK_200.code()
+                || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
+            throw new IllegalStateException("ServerResponse instance cannot be used to create SseResponse");
+        }
+
+        // Ensure content type set for SSE
+        if (ct == null) {
+            serverResponse.headers().add(CONTENT_TYPE_EVENT_STREAM);
+        }
+
+        this.serverResponse = serverResponse;
         this.eventConsumer = eventConsumer;
         this.closeRunnable = closeRunnable;
+        this.mediaContext = serverResponse.mediaContext();
     }
 
     @Override
-    public SseSink emit(SseEvent event) {
-        eventConsumer.accept(event);
-        send(event);
+    public SseSink emit(SseEvent sseEvent) {
+        if (eventConsumer != null) {
+            eventConsumer.accept(sseEvent);
+        }
+
+        if (outputStream == null) {
+            outputStream = serverResponse.outputStream();
+            Objects.requireNonNull(outputStream);
+        }
+        try {
+            outputStream.write(SSE_DATA);
+
+            Object data = sseEvent.data();
+            if (data instanceof byte[] bytes) {
+                outputStream.write(bytes);
+            } else {
+                MediaType mediaType = sseEvent.mediaType();
+
+                if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    EntityWriter<String> writer = mediaContext.writer(GenericType.STRING, EMPTY_HEADERS, EMPTY_HEADERS);
+                    writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
+                } else {
+                    GenericType<Object> type = GenericType.create(data);
+                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    resHeaders.set(Http.Header.CONTENT_TYPE, sseEvent.mediaType().text());
+                    EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
+                    writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
+                }
+            }
+
+            outputStream.write(SSE_SEPARATOR);
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return this;
     }
 
