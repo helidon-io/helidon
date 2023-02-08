@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,22 @@ package io.helidon.tests.integration.dbclient.appl;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObjectBuilder;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
-import io.helidon.tests.integration.dbclient.appl.model.Type;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
 import io.helidon.reactive.webserver.Service;
+import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
+import io.helidon.tests.integration.dbclient.appl.model.Type;
 
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -44,10 +42,6 @@ import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
  * Web resource for tests initialization services.
  */
 public class InitService implements Service {
-
-    private static final Logger LOGGER = Logger.getLogger(InitService.class.getName());
-
-    private static boolean pingDml = true;
 
     private final DbClient dbClient;
 
@@ -59,7 +53,7 @@ public class InitService implements Service {
      * @param dbClient DbClient instance
      * @param dbConfig testing application configuration
      */
-    InitService(final DbClient dbClient, final Config dbConfig) {
+    InitService(DbClient dbClient, Config dbConfig) {
         this.dbClient = dbClient;
         this.dbConfig = dbConfig;
     }
@@ -76,7 +70,7 @@ public class InitService implements Service {
                 .get("/testInitPokemonTypes", this::testInitPokemonTypes);
     }
 
-    public static void sendDmlResponse(final ServerResponse response, final Supplier<CompletableFuture<Long>> test) {
+    public static void sendDmlResponse(ServerResponse response, Supplier<CompletableFuture<Long>> test) {
         test.get()
                 .thenAccept(result -> response.send(okStatus(Json.createValue(result))))
                 .exceptionally(t -> {
@@ -87,31 +81,28 @@ public class InitService implements Service {
 
     // Setup tests.
     @SuppressWarnings("null")
-    private void setup(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.setup on server");
-        final Config cfgPingDml = dbConfig.get("test.ping-dml");
-        pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
-        final JsonObjectBuilder data = Json.createObjectBuilder();
+    private void setup(ServerRequest request, ServerResponse response) {
+        Config cfgPingDml = dbConfig.get("test.ping-dml");
+        boolean pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
+        JsonObjectBuilder data = Json.createObjectBuilder();
         data.add("ping-dml", pingDml);
         response.send(okStatus(data.build()));
     }
 
     // Database HealthCheck to make sure that database is alive.
-    private void testHealthCheck(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.testHealthCheck on server");
+    private void testHealthCheck(ServerRequest request, ServerResponse response) {
         HealthCheck check = DbClientHealthCheck.create(
                                 dbClient,
                                 dbConfig.get("health-check"));
         HealthCheckResponse checkResponse = check.call();
-        HealthCheckResponse.Status checkState = checkResponse.getStatus();
-        final JsonObjectBuilder data = Json.createObjectBuilder();
+        HealthCheckResponse.Status checkState = checkResponse.status();
+        JsonObjectBuilder data = Json.createObjectBuilder();
         data.add("state", checkState.name());
         response.send(okStatus(data.build()));
     }
 
     // Drop database schema (tables)
-    private void testDropSchema(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.testDropSchema on server");
+    private void testDropSchema(ServerRequest request, ServerResponse response) {
         sendDmlResponse(response,
                 () -> dbClient.execute(
                         exec -> exec
@@ -123,7 +114,6 @@ public class InitService implements Service {
 
     // Initialize database schema (tables)
     private void testInitSchema(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.testInitSchema on server");
         sendDmlResponse(response,
                 () -> dbClient.execute(
                         exec -> exec
@@ -135,7 +125,6 @@ public class InitService implements Service {
 
     // Initialize pokemon types list
     private void testInitTypes(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.testInitTypes on server");
         sendDmlResponse(response,
                 () -> dbClient.inTransaction(tx -> {
                     Single<Long> stage = null;
@@ -154,7 +143,6 @@ public class InitService implements Service {
 
     // Initialize pokemons
     private void testInitPokemons(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.testInitPokemons on server");
         sendDmlResponse(response,
                 () -> dbClient.inTransaction(tx -> {
                     Single<Long> stage = null;
@@ -173,7 +161,6 @@ public class InitService implements Service {
 
     // Initialize pokemon types relation
     private void testInitPokemonTypes(final ServerRequest request, final ServerResponse response) {
-        LOGGER.fine(() -> "Running InitResource.testInitPokemonTypes on server");
         sendDmlResponse(response,
                 () -> dbClient.inTransaction(tx -> {
                     Single<Long> stage = null;

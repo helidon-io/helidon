@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
@@ -31,7 +31,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 
 final class OidcUtil {
-    private static final Logger LOGGER = Logger.getLogger(OidcUtil.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OidcUtil.class.getName());
 
     private OidcUtil() {
     }
@@ -40,7 +40,7 @@ final class OidcUtil {
         if (serverType != null) {
             // explicit server type
             if (!"idcs".equals(serverType) && !OidcConfig.Builder.DEFAULT_SERVER_TYPE.equals(serverType)) {
-                LOGGER.warning("OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
+                LOGGER.log(Level.WARNING, "OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
                                        + " \"" + OidcConfig.Builder.DEFAULT_SERVER_TYPE + "\" are supported");
                 return OidcConfig.Builder.DEFAULT_SERVER_TYPE;
             }

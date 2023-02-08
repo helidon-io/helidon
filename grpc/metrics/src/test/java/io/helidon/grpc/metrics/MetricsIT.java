@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.grpc.metrics;
 
+import java.lang.System.Logger.Level;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.grpc.server.GrpcRouting;
@@ -66,9 +66,9 @@ public class MetricsIT {
     private static WebClient client;
 
     /**
-     * The {@link Logger} to use for logging.
+     * The {@link System.Logger} to use for logging.
      */
-    private static final Logger LOGGER = Logger.getLogger(MetricsIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MetricsIT.class.getName());
 
     /**
      * The Helidon {@link io.helidon.grpc.server.GrpcServer} being tested.
@@ -156,7 +156,7 @@ public class MetricsIT {
                         .toCompletableFuture()
                         .get(10, TimeUnit.SECONDS);
 
-       LOGGER.info("Started gRPC server at: localhost:" + grpcServer.port());
+       LOGGER.log(Level.INFO, "Started gRPC server at: localhost:" + grpcServer.port());
     }
 
     /**
@@ -176,6 +176,6 @@ public class MetricsIT {
                      .toCompletableFuture()
                      .get(10, TimeUnit.SECONDS);
 
-        LOGGER.info("Started web server at: http://localhost:" + webServer.port());
+        LOGGER.log(Level.INFO, "Started web server at: http://localhost:" + webServer.port());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
+import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
@@ -29,7 +28,7 @@ import io.helidon.integrations.vault.auths.common.VaultRestApi;
 import io.helidon.reactive.webclient.WebClientRequestBuilder;
 
 class AppRoleRestApi extends VaultRestApi {
-    private static final Logger LOGGER = Logger.getLogger(AppRoleRestApi.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AppRoleRestApi.class.getName());
 
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();
 

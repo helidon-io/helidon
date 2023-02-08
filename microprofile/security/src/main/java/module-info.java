@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,12 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.security {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
     requires transitive io.helidon.security;
     requires io.helidon.security.providers.abac;
     requires transitive io.helidon.security.integration.jersey;
     requires transitive io.helidon.security.integration.nima;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.cdi;
-    requires jakarta.interceptor.api;
 
     exports io.helidon.microprofile.security;
 

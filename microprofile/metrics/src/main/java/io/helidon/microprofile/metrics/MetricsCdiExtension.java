@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
@@ -33,8 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -124,7 +123,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  */
 public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature> {
 
-    private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
 
     static final Set<Class<? extends Annotation>> ALL_METRIC_ANNOTATIONS = Set.of(
             Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class, Gauge.class);
@@ -282,7 +281,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         // Check for Interceptor. We have already checked developer-provided beans, but other extensions might have supplied
         // additional beans that we have not checked yet.
         if (type.isAnnotationPresent(Interceptor.class)) {
-            LOGGER.log(Level.FINE, "Ignoring objects defined on type " + clazz.getName()
+            LOGGER.log(Level.DEBUG, "Ignoring objects defined on type " + clazz.getName()
                     + " because a CDI portable extension added @Interceptor to it dynamically");
             return;
         }
@@ -360,7 +359,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      * @param discovery bean discovery event
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
-        LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
+        LOGGER.log(Level.DEBUG, () -> "Before bean discovery " + discovery);
 
         // Register beans manually with annotated type identifiers that are deliberately the same as those used by the container
         // during bean discovery to avoid accidental duplicate registration in odd packaging scenarios.
@@ -543,14 +542,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         // Abstract classes are handled when we deal with a concrete subclass. Also, ignore if @Interceptor is present.
         if (annotatedType.isAnnotationPresent(Interceptor.class)
                 || Modifier.isAbstract(clazz.getModifiers())) {
-            LOGGER.log(Level.FINER, () -> "Ignoring " + clazz.getName()
+            LOGGER.log(Level.TRACE, () -> "Ignoring " + clazz.getName()
                     + " with annotations " + annotatedType.getAnnotations()
                     + " for later processing: "
                     + (Modifier.isAbstract(clazz.getModifiers()) ? "abstract " : "")
                     + (annotatedType.isAnnotationPresent(Interceptor.class) ? "interceptor " : ""));
             return false;
         }
-        LOGGER.log(Level.FINE, () -> "Accepting annotated type " + clazz.getName() + " for later bean processing");
+        LOGGER.log(Level.DEBUG, () -> "Accepting annotated type " + clazz.getName() + " for later bean processing");
         return true;
     }
 
@@ -571,7 +570,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             return;
         }
 
-        LOGGER.log(Level.FINE,
+        LOGGER.log(Level.DEBUG,
                 () -> "Processing @SyntheticRestRequest annotation for " + pat.getAnnotatedType()
                         .getJavaClass()
                         .getName());
@@ -594,7 +593,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                                 // class, not subclasses.
                                 if (clazz.equals(m.getDeclaringClass())) {
 
-                                    LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticRestRequest to %s",
+                                    LOGGER.log(Level.DEBUG, () -> String.format("Adding @SyntheticRestRequest to %s",
                                             m.toString()));
                                     annotatedMethodConfigurator.add(SyntheticRestRequest.Literal.getInstance());
                                     methodsToRecord.add(m);
@@ -614,7 +613,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      */
     static SimpleTimer restEndpointSimpleTimer(Method method) {
         // By spec, the synthetic SimpleTimers are always in the base registry.
-        LOGGER.log(Level.FINE,
+        LOGGER.log(Level.DEBUG,
                 () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
                         method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
@@ -628,7 +627,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      * @return the located or created {@code Counter}
      */
     static Counter restEndpointCounter(Method method) {
-        LOGGER.log(Level.FINE,
+        LOGGER.log(Level.DEBUG,
                    () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
@@ -695,7 +694,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             return;
         }
 
-        LOGGER.log(Level.FINE, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
+        LOGGER.log(Level.DEBUG, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
 
         restRequestMetricsClassesProcessed.add(clazz);
         restRequestMetricsToRegister.addAll(methodsWithRestRequestMetrics.get(clazz));
@@ -703,11 +702,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
 
     private void registerRestRequestMetrics() {
         restRequestMetricsToRegister.forEach(this::registerAndSaveRestRequestMetrics);
-        if (LOGGER.isLoggable(Level.FINE)) {
+        if (LOGGER.isLoggable(Level.DEBUG)) {
             Set<Class<?>> syntheticSimpleTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
             syntheticSimpleTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
             if (!syntheticSimpleTimerAnnotatedClassesIgnored.isEmpty()) {
-                LOGGER.log(Level.FINE, () ->
+                LOGGER.log(Level.DEBUG, () ->
                         "Classes with synthetic SimplyTimer annotations added that were not processed, probably "
                                 + "because they were vetoed:" + syntheticSimpleTimerAnnotatedClassesIgnored.toString());
             }
@@ -788,7 +787,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
 
         Config metricsConfig = mpConfig.get("metrics").detach();
 
-        Config.Builder builder = Config.builder();
+        Config.Builder builder = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource();
         if (!mpConfigSettings.isEmpty()) {
             builder.addSource(ConfigSources.create(mpConfigSettings));
         }
@@ -803,11 +804,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 metricsConfig.get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME).asBoolean();
         boolean result = explicitRestEndpointsSetting.orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
         if (explicitRestEndpointsSetting.isPresent()) {
-            LOGGER.log(Level.FINE, () -> String.format(
+            LOGGER.log(Level.DEBUG, () -> String.format(
                     "Support for MP REST.request metric and annotation handling explicitly set to %b in configuration",
                     explicitRestEndpointsSetting.get()));
         } else {
-            LOGGER.log(Level.FINE, () -> String.format(
+            LOGGER.log(Level.DEBUG, () -> String.format(
                     "Support for MP REST.request metric and annotation handling defaulted to %b",
                     REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE));
         }
@@ -818,8 +819,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
 
-        LOGGER.log(Level.FINE, () -> "recordAnnotatedGaugeSite for class " + clazz);
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
+        LOGGER.log(Level.DEBUG, () -> "recordAnnotatedGaugeSite for class " + clazz);
+        LOGGER.log(Level.DEBUG, () -> "Processing annotations for " + clazz.getName());
 
         // Register metrics based on annotations
         // If abstract class, then handled by concrete subclasses
@@ -843,7 +844,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 }
                 if (scopeAnnotation != ApplicationScoped.class && type.getAnnotation(Singleton.class) == null) {
                     if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
-                        LOGGER.warning(String.format("""
+                        LOGGER.log(Level.WARNING, String.format("""
                                                @Gauge is configured on a bean %s that is neither ApplicationScoped nor \
                                                Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' \
                                                configuration option to 'false' to remove this warning.""", clazz.getName()));
@@ -858,19 +859,19 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                         gaugeAnnotation.absolute() ? gaugeNameSuffix
                                 : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
                 annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
-                LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
+                LOGGER.log(Level.DEBUG, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
             });
         }
     }
 
     private void registerAnnotatedGauges(BeanManager bm) {
-        LOGGER.log(Level.FINE, () -> "registerGauges");
+        LOGGER.log(Level.DEBUG, () -> "registerGauges");
         MetricRegistry registry = getMetricRegistry();
 
         List<Exception> gaugeProblems = new ArrayList<>();
 
         annotatedGaugeSites.entrySet().forEach(gaugeSite -> {
-            LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
+            LOGGER.log(Level.DEBUG, () -> "gaugeSite " + gaugeSite.toString());
             MetricID gaugeID = gaugeSite.getKey();
 
             AnnotatedMethod<?> site = gaugeSite.getValue();
@@ -893,7 +894,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                             .withType(MetricType.GAUGE)
                             .withUnit(gaugeAnnotation.unit())
                             .build();
-                    LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
+                    LOGGER.log(Level.DEBUG, () -> String.format("Registering gauge with metadata %s", md.toString()));
                     registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
                 }
             } catch (Throwable t) {

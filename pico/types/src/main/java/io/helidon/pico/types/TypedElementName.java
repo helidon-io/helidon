@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.pico.types;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Provides a way to describe method, field, or annotation attribute.
@@ -32,11 +33,18 @@ public interface TypedElementName {
     TypeName typeName();
 
     /**
-     * The element (method, field, or attribute) name.
+     * The element (e.g., method, field, etc) name.
      *
      * @return the name of the element
      */
     String elementName();
+
+    /**
+     * The kind of element (e.g., method, field, etc).
+     *
+     * @return the element kind
+     */
+    String elementKind();
 
     /**
      * The default value assigned to the element, represented as a string.
@@ -59,5 +67,19 @@ public interface TypedElementName {
      * @return the list of annotations on this element's (return) type.
      */
     List<AnnotationAndValue> elementTypeAnnotations();
+
+    /**
+     * Returns the component type names describing the element.
+     *
+     * @return the component type names of the element
+     */
+    List<TypeName> componentTypeNames();
+
+    /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     */
+    Set<String> modifierNames();
 
 }

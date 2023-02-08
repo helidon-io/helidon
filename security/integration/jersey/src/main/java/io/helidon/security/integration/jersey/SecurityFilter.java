@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.integration.jersey;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.context.Contexts;
@@ -71,7 +71,7 @@ import org.glassfish.jersey.server.model.RuntimeResource;
 @Priority(Priorities.AUTHENTICATION)
 @ConstrainedTo(RuntimeType.SERVER)
 public class SecurityFilter extends SecurityFilterCommon implements ContainerRequestFilter, ContainerResponseFilter {
-    private static final Logger LOGGER = Logger.getLogger(SecurityFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecurityFilter.class.getName());
 
     /**
      * Since Helidon supports multiple {@code Application} subclasses as well as resource
@@ -194,7 +194,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
              * Authentication
              */
             authenticate(filterContext, securityContext, tracing.atnTracing());
-            LOGGER.finest(() -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
+            LOGGER.log(Level.TRACE, () -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
             // authentication failed
             if (filterContext.isShouldFinish()) {
                 return;
@@ -210,7 +210,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
              */
             authorize(filterContext, securityContext, tracing.atzTracing());
 
-            LOGGER.finest(() -> "Filter completed (after authorization)");
+            LOGGER.log(Level.TRACE, () -> "Filter completed (after authorization)");
         }
     }
 
@@ -251,7 +251,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                     responseContext.setEntity("");
                 }
                 responseContext.setStatus(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-                LOGGER.severe("Authorization failure. Request for" + fc.getResourcePath() + " has failed, as it was marked"
+                LOGGER.log(Level.ERROR, "Authorization failure. Request for" + fc.getResourcePath()
+                                      + " has failed, as it was marked"
                                       + "as explicitly authorized, yet authorization was never called on security context. The "
                                       + "method was invoked and may have changed data. Marking as internal server error");
                 fc.setShouldFinish(true);
@@ -313,7 +314,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     }
 
     @Override
-    protected Logger logger() {
+    protected System.Logger logger() {
         return LOGGER;
     }
 

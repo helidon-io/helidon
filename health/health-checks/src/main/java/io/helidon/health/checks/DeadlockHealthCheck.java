@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package io.helidon.health.checks;
 
+import java.lang.System.Logger.Level;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.NativeImageHelper;
 import io.helidon.health.HealthCheck;
@@ -34,7 +33,7 @@ import io.helidon.health.HealthCheckType;
  * health check from being exposed, use {@code helidon.health.exclude: deadlock}.
  */
 public class DeadlockHealthCheck implements HealthCheck {
-    private static final Logger LOGGER = Logger.getLogger(DeadlockHealthCheck.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(DeadlockHealthCheck.class.getName());
     private static final String NAME = "deadlock";
     private static final String PATH = "deadlock";
 
@@ -88,7 +87,7 @@ public class DeadlockHealthCheck implements HealthCheck {
     @Override
     public HealthCheckResponse call() {
         if (disabled) {
-            LOGGER.log(Level.FINEST, "Running in graal native image, this health-check always returns up.");
+            LOGGER.log(Level.TRACE, "Running in graal native image, this health-check always returns up.");
             return HealthCheckResponse.builder()
                     .detail("enabled", "false")
                     .detail("description", "in native image")
@@ -102,7 +101,7 @@ public class DeadlockHealthCheck implements HealthCheck {
             noDeadLock = (threadBean.findDeadlockedThreads() == null);
         } catch (Throwable e) {
             // ThreadBean does not work - probably in native image
-            LOGGER.log(Level.FINEST, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
+            LOGGER.log(Level.TRACE, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
         }
         return HealthCheckResponse.builder()
                 .status(noDeadLock ? Status.UP : Status.DOWN)

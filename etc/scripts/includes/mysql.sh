@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,5 +33,6 @@ readonly DOCKER_ENV="-e MYSQL_USER=${DB_USER} -e MYSQL_DATABASE=${DB_NAME} -e MY
 readonly DOCKER_IMG='mysql:8'
 
 readonly DB_PROFILE='mysql'
+readonly DB_PROPERTY='db=mysql'
 
 echo " - Database URL: ${DB_URL}"

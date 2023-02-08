@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package io.helidon.security.abac.policy.el;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -44,7 +43,7 @@ import jakarta.el.VariableMapper;
  * .oracle.com/javaee/7/tutorial/jsf-el005.htm#BNAIK</a>
  */
 public final class JavaxElPolicyExecutor implements PolicyExecutor {
-    private static final Logger LOGGER = Logger.getLogger(JavaxElPolicyExecutor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JavaxElPolicyExecutor.class.getName());
     private static final AttributeResolver ATTRIBUTE_RESOLVER = new AttributeResolver();
 
     private final ExpressionFactory ef;
@@ -111,7 +110,7 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
                 collector.fatal(this, "Policy statement \"" + policyStatement + "\" evaluated to false");
             }
         } catch (Exception e) {
-            LOGGER.log(Level.FINEST, e, () -> "Statement " + policyStatement + " evaluation failed");
+            LOGGER.log(Level.TRACE, () -> "Statement " + policyStatement + " evaluation failed", e);
             throw new SecurityException("Policy statement \"" + policyStatement + "\" evaluated to an exception", e);
         }
     }

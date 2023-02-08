@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.reactive.faulttolerance;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.CompletionStage;
@@ -25,14 +26,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 class BulkheadImpl implements Bulkhead {
-    private static final Logger LOGGER = Logger.getLogger(BulkheadImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 
     private final LazyValue<? extends ExecutorService> executor;
     private final Queue<DelayedTask<?>> queue;
@@ -101,7 +101,7 @@ class BulkheadImpl implements Bulkhead {
     @SuppressWarnings("unchecked")
     private <R> R invokeTask(DelayedTask<R> task) {
         if (inProgress.tryAcquire()) {
-            LOGGER.finest(() -> name + " invoke immediate: " + task);
+            LOGGER.log(Level.TRACE, () -> name + " invoke immediate: " + task);
 
             // free permit, we can invoke
             execute(task);
@@ -109,7 +109,7 @@ class BulkheadImpl implements Bulkhead {
         } else {
             // no free permit, let's try to enqueue
             if (queue.offer(task)) {
-                LOGGER.finest(() -> name + " enqueue: " + task);
+                LOGGER.log(Level.TRACE, () -> name + " enqueue: " + task);
                 R result = task.result();
                 if (result instanceof Single<?>) {
                     Single<Object> single = (Single<Object>) result;
@@ -117,7 +117,7 @@ class BulkheadImpl implements Bulkhead {
                 }
                 return result;
             } else {
-                LOGGER.finest(() -> name + " reject: " + task);
+                LOGGER.log(Level.TRACE, () -> name + " reject: " + task);
                 callsRejected.incrementAndGet();
                 return task.error(new BulkheadException("Bulkhead queue \"" + name + "\" is full"));
             }
@@ -133,15 +133,15 @@ class BulkheadImpl implements Bulkhead {
                 .handle((it, throwable) -> {
                     concurrentExecutions.decrementAndGet();
                     // we do not care about execution, but let's record it in debug
-                    LOGGER.finest(() -> name + " finished execution: " + task
+                    LOGGER.log(Level.TRACE, () -> name + " finished execution: " + task
                             + " (" + (throwable == null ? "success" : "failure") + ")");
                     DelayedTask<?> polled = queue.poll();
                     if (polled != null) {
-                        LOGGER.finest(() -> name + " invoke in executor: " + polled);
+                        LOGGER.log(Level.TRACE, () -> name + " invoke in executor: " + polled);
                         // chain executions from queue until all are executed
                         executor.get().submit(() -> execute(polled));
                     } else {
-                        LOGGER.finest(() -> name + " permit released after: " + task);
+                        LOGGER.log(Level.TRACE, () -> name + " permit released after: " + task);
                         // nothing in the queue, release permit
                         inProgress.release();
                     }

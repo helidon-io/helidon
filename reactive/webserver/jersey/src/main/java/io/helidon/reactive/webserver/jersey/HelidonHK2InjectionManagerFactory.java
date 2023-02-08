@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.helidon.reactive.webserver.jersey;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,7 +49,7 @@ import org.glassfish.jersey.server.ResourceConfig;
  */
 @Priority(11)   // overrides Jersey's
 public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactory {
-    private static final Logger LOGGER = Logger.getLogger(HelidonHK2InjectionManagerFactory.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HelidonHK2InjectionManagerFactory.class.getName());
 
     @Override
     public InjectionManager create(Object parent) {
@@ -58,19 +57,19 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         if (parent == null) {
             result = super.create(null);
-            LOGGER.finest(() -> "Creating injection manager " + result);
+            LOGGER.log(Level.TRACE, () -> "Creating injection manager " + result);
         } else if (parent instanceof ImmediateHk2InjectionManager) {        // single JAX-RS app
             result = (InjectionManager) parent;
-            LOGGER.finest(() -> "Using injection manager for single app case " + result);
+            LOGGER.log(Level.TRACE, () -> "Using injection manager for single app case " + result);
         } else if (parent instanceof InjectionManagerWrapper) {             // multiple JAX-RS apps
             InjectionManagerWrapper wrapper = (InjectionManagerWrapper) parent;
             InjectionManager forApplication = super.create(null);
             result = new HelidonInjectionManager(forApplication, wrapper.injectionManager, wrapper.application);
-            LOGGER.finest(() -> "Creating injection manager for multi app case " + forApplication
+            LOGGER.log(Level.TRACE, () -> "Creating injection manager for multi app case " + forApplication
                     + " with shared " + wrapper.injectionManager);
         } else if (parent instanceof HelidonInjectionManager) {
             result = (InjectionManager) parent;
-            LOGGER.finest(() -> "Re-using existing Helidon injection manager " + result);
+            LOGGER.log(Level.TRACE, () -> "Re-using existing Helidon injection manager " + result);
         } else {
             throw new IllegalStateException("Invalid parent injection manager");
         }
@@ -90,7 +89,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
      * semantics</p>
      */
     static class HelidonInjectionManager implements InjectionManager {
-        private static final Logger LOGGER = Logger.getLogger(HelidonInjectionManager.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(HelidonInjectionManager.class.getName());
 
         private final ResourceConfig resourceConfig;
         private final InjectionManager shared;
@@ -114,6 +113,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
             forApplication.shutdown();
         }
 
+        @Override
+        public boolean isShutdown() {
+            return shared.isShutdown() && forApplication.isShutdown();
+        }
+
         /**
          * Registers classes returned by {@code getClasses} in {@code forApplication} and
          * all other classes in {@code shared}. This is done to keep separation between
@@ -125,10 +129,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         public void register(Binding binding) {
             if (returnedByApplication(binding)) {
                 forApplication.register(binding);
-                LOGGER.finest(() -> "register forApplication " + forApplication + " " + toString(binding));
+                LOGGER.log(Level.TRACE, () -> "register forApplication " + forApplication + " " + toString(binding));
             } else {
                 shared.register(binding);
-                LOGGER.finest(() -> "register shared " + shared + " " + toString(binding));
+                LOGGER.log(Level.TRACE, () -> "register shared " + shared + " " + toString(binding));
             }
         }
 
@@ -146,10 +150,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         public void register(Object provider) throws IllegalArgumentException {
             if (getSingletons().contains(provider)) {
                 forApplication.register(provider);
-                LOGGER.finest(() -> "register forApplication " + forApplication + " " + provider);
+                LOGGER.log(Level.TRACE, () -> "register forApplication " + forApplication + " " + provider);
             } else {
                 shared.register(provider);
-                LOGGER.finest(() -> "register shared " + forApplication + " " + provider);
+                LOGGER.log(Level.TRACE, () -> "register shared " + forApplication + " " + provider);
             }
         }
 
@@ -188,10 +192,10 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         @Override
         public <T> List<ServiceHolder<T>> getAllServiceHolders(Class<T> contractOrImpl, Annotation... qualifiers) {
             List<ServiceHolder<T>> sharedList = shared.getAllServiceHolders(contractOrImpl, qualifiers);
-            sharedList.forEach(sh -> LOGGER.finest(() ->
+            sharedList.forEach(sh -> LOGGER.log(Level.TRACE, () ->
                     "getAllServiceHolders shared " + shared + " " + sh.getContractTypes().iterator().next()));
             List<ServiceHolder<T>> forApplicationList = forApplication.getAllServiceHolders(contractOrImpl, qualifiers);
-            forApplicationList.forEach(sh -> LOGGER.finest(() ->
+            forApplicationList.forEach(sh -> LOGGER.log(Level.TRACE, () ->
                     "getAllServiceHolders forApplication " + forApplication + " " + sh.getContractTypes().iterator().next()));
             return forApplicationList.size() == 0 ? sharedList
                     : Stream.concat(sharedList.stream(), forApplicationList.stream()).collect(Collectors.toList());
@@ -349,6 +353,11 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
 
         @Override
         public void shutdown() {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public boolean isShutdown() {
             throw new UnsupportedOperationException("Not supported");
         }
 

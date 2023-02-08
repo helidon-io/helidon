@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.lra;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -26,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -127,7 +127,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @AddConfig(key = "server.sockets.2.bind-address", value = "localhost")
 public class LoadBalancedCoordinatorTest {
 
-    private static final Logger LOGGER = Logger.getLogger(LoadBalancedCoordinatorTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LoadBalancedCoordinatorTest.class.getName());
 
     private static final long TIMEOUT_SEC = 10L;
 
@@ -479,11 +479,11 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(Recovery.CS_START_COMPENSATE_LRA), is(lraId));
         assertThat(await(Recovery.CS_COMPENSATE_FIRST), is(lraId));
         LocalDateTime first = LocalDateTime.now();
-        LOGGER.fine("First compensate attempt after " + Duration.between(start, first));
+        LOGGER.log(Level.DEBUG, "First compensate attempt after " + Duration.between(start, first));
         waitForRecovery(lraId);
         assertThat(await(Recovery.CS_COMPENSATE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
-        LOGGER.fine("Second compensate attempt after " + Duration.between(first, second));
+        LOGGER.log(Level.DEBUG, "Second compensate attempt after " + Duration.between(first, second));
         assertLoadBalancerCalledProperly();
     }
 
@@ -501,11 +501,11 @@ public class LoadBalancedCoordinatorTest {
         assertThat(await(Recovery.CS_START_COMPLETE_LRA), is(lraId));
         assertThat(await(Recovery.CS_COMPLETE_FIRST), is(lraId));
         LocalDateTime first = LocalDateTime.now();
-        LOGGER.fine("First complete attempt after " + Duration.between(start, first));
+        LOGGER.log(Level.DEBUG, "First complete attempt after " + Duration.between(start, first));
         waitForRecovery(lraId);
         assertThat(await(Recovery.CS_COMPLETE_SECOND), is(lraId));
         LocalDateTime second = LocalDateTime.now();
-        LOGGER.fine("Second complete attempt after " + Duration.between(first, second));
+        LOGGER.log(Level.DEBUG, "Second complete attempt after " + Duration.between(first, second));
         assertLoadBalancerCalledProperly();
     }
 
@@ -586,11 +586,11 @@ public class LoadBalancedCoordinatorTest {
                     .await(TIMEOUT_SEC, TimeUnit.SECONDS);
             response.close();
             if (!recoveringLras.contains(lraId.toASCIIString())) {
-                LOGGER.fine("LRA is no longer among those recovering " + lraId.toASCIIString());
+                LOGGER.log(Level.DEBUG, "LRA is no longer among those recovering " + lraId.toASCIIString());
                 // intended LRA is not longer among those recovering
                 break;
             }
-            LOGGER.fine("Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
+            LOGGER.log(Level.DEBUG, "Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);
         }
     }
 

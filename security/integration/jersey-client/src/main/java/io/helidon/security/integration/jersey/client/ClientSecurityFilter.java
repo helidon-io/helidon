@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package io.helidon.security.integration.jersey.client;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -53,7 +53,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 @Priority(Priorities.AUTHENTICATION)
 public class ClientSecurityFilter implements ClientRequestFilter {
 
-    private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ClientSecurityFilter.class.getName());
     private static final AtomicLong CONTEXT_COUNTER = new AtomicLong();
 
     /**
@@ -80,7 +80,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         if (securityContext.isPresent()) {
             outboundSecurity(requestContext, securityContext.get());
         } else {
-            LOGGER.finest("Security context not available, using empty one. You can define it using "
+            LOGGER.log(Level.TRACE, "Security context not available, using empty one. You can define it using "
                                   + "property \""
                                   + ClientSecurity.PROPERTY_CONTEXT + "\" on request");
 
@@ -101,7 +101,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                 Contexts.runInContext(context, () -> outboundSecurity(requestContext, newSecurityContext.get()));
             } else {
                 // we cannot do anything - security is not available in global or current context, cannot propagate
-                LOGGER.finest("Security is not available in global or current context, cannot propagate identity.");
+                LOGGER.log(Level.TRACE, "Security is not available in global or current context, cannot propagate identity.");
             }
         }
     }
@@ -114,12 +114,14 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         try {
             SecurityEnvironment.Builder outboundEnv = securityContext.env()
                     .derive()
-                    .clearHeaders();
+                    .clearHeaders()
+                    .clearQueryParams();
 
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
-                    .headers(requestContext.getStringHeaders());
+                    .headers(requestContext.getStringHeaders())
+                    .queryParams(UriQuery.create(requestContext.getUri()));
 
             EndpointConfig.Builder outboundEp = securityContext.endpointConfig().derive();
 
@@ -158,11 +160,11 @@ public class ClientSecurityFilter implements ClientRequestFilter {
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
-            LOGGER.finest(() -> "Client filter header(s). SIZE: " + newHeaders.size());
+            LOGGER.log(Level.TRACE, () -> "Client filter header(s). SIZE: " + newHeaders.size());
 
             MultivaluedMap<String, Object> hdrs = requestContext.getHeaders();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-                LOGGER.finest(() -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                LOGGER.log(Level.TRACE, () -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
 
                 //replace existing
                 hdrs.remove(entry.getKey());

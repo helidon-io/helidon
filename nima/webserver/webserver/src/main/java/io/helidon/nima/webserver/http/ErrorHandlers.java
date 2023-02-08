@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 
 import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.RequestException;
@@ -155,11 +156,16 @@ public final class ErrorHandlers {
         }
         boolean keepAlive = e.keepAlive();
         if (keepAlive && !request.content().consumed()) {
-            try {
-                // attempt to consume the request entity (only when keeping the connection alive)
-                request.content().consume();
-            } catch (Exception ignored) {
-                keepAlive = request.content().consumed();
+            if (request.headers().contains(Http.HeaderValues.EXPECT_100)) {
+                // No content is coming, reset connection
+                request.reset();
+            } else {
+                try {
+                    // attempt to consume the request entity (only when keeping the connection alive)
+                    request.content().consume();
+                } catch (Exception ignored) {
+                    keepAlive = request.content().consumed();
+                }
             }
         }
         ctx.directHandlers().handle(e, response, keepAlive);

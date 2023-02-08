@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,8 +45,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class MtlsTest {
     private final Http1Client client;
+    private static WebServer server;
 
     MtlsTest(WebServer server) {
+        this.server = server;
         int port = server.port();
 
         KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
@@ -80,21 +83,47 @@ class MtlsTest {
                 })
                 .get("/certs", (req, res) -> {
                     Certificate[] certs = req.remotePeer().tlsCertificates().orElse(null);
-                    if (certs == null) {
-                        res.status(Http.Status.BAD_REQUEST_400).send("Expected client certificate");
-                    } else {
-                        List<String> certDefs = new LinkedList<>();
-                        for (Certificate cert : certs) {
-                            if (cert instanceof X509Certificate x509) {
-                                certDefs.add("X.509:" + x509.getSubjectX500Principal().getName());
-                            } else {
-                                certDefs.add(cert.getType());
-                            }
-                        }
+                    sendCertificateString(certs, res);
+                })
+                .get("/reload", (req, res) -> {
+                    KeyConfig privateKeyConfig = KeyConfig.keystoreBuilder()
+                            .keystore(Resource.create("second-valid/server.p12"))
+                            .keystorePassphrase("password")
+                            .build();
 
-                        res.send(String.join("|", certDefs));
-                    }
+                    Tls tls = Tls.builder()
+                            .tlsClientAuth(TlsClientAuth.REQUIRED)
+                            .privateKey(privateKeyConfig.privateKey().get())
+                            .privateKeyCertChain(privateKeyConfig.certChain())
+                            .trustAll(true)
+                            // insecure setup, as we have self-signed certificate
+                            .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                            .build();
+
+                    server.reloadTls(tls);
+                    res.status(Http.Status.OK_200).send();
+                })
+                .get("/serverCert", (req, res) -> {
+                    Certificate[] certs = req.localPeer().tlsCertificates().orElse(null);
+                    sendCertificateString(certs, res);
                 });
+    }
+
+    private static void sendCertificateString(Certificate[] certs, ServerResponse res) {
+        if (certs == null) {
+            res.status(Http.Status.BAD_REQUEST_400).send("Expected client certificate");
+        } else {
+            List<String> certDefs = new LinkedList<>();
+            for (Certificate cert : certs) {
+                if (cert instanceof X509Certificate x509) {
+                    certDefs.add("X.509:" + x509.getSubjectX500Principal().getName());
+                } else {
+                    certDefs.add(cert.getType());
+                }
+            }
+
+            res.send(String.join("|", certDefs));
+        }
     }
 
     @SetUpServer
@@ -134,5 +163,28 @@ class MtlsTest {
 
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.as(String.class), is("X.509:C=CZ,CN=Helidon-client,OU=Prague,O=Oracle|X.509:CN=Helidon-CA"));
+    }
+
+    @Test
+    void testTlsReload() {
+        Http1ClientResponse response = client.method(Http.Method.GET)
+                .uri("/serverCert")
+                .request();
+
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.as(String.class), is("X.509:CN=localhost|X.509:CN=Helidon-CA"));
+
+        response = client.method(Http.Method.GET)
+                .uri("/reload")
+                .request();
+
+        assertThat(response.status(), is(Http.Status.OK_200));
+
+        response = client.method(Http.Method.GET)
+                .uri("/serverCert")
+                .request();
+
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.as(String.class), is("X.509:CN=localhost|X.509:CN=Nima-CA"));
     }
 }

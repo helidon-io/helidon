@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,9 +46,12 @@ import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MainTest {
@@ -92,28 +95,28 @@ public class MainTest {
 
         WebClientResponse r = getResponse("/greet");
 
-        assertEquals(200, r.status().code(), "HTTP response1");
-        assertEquals("Hello World!", fromPayload(r).getMessage(),
-                "default message");
+        assertThat("HTTP response1", r.status().code(), is(200));
+        assertThat("default message", fromPayload(r).getMessage(),
+                is("Hello World!"));
 
         r = getResponse("/greet/Joe");
-        assertEquals(200, r.status().code(), "HTTP response2");
-        assertEquals("Hello Joe!", fromPayload(r).getMessage(),
-                "hello Joe message");
+        assertThat("HTTP response2", r.status().code(), is(200));
+        assertThat("hello Joe message", fromPayload(r).getMessage(),
+                is("Hello Joe!"));
 
         r = putResponse("/greet/greeting", new GreetingMessage("Hola"));
-        assertEquals(204, r.status().code(), "HTTP response3");
+        assertThat("HTTP response3", r.status().code(), is(204));
 
         r = getResponse("/greet/Jose");
-        assertEquals(200, r.status().code(), "HTTP response4");
-        assertEquals("Hola Jose!", fromPayload(r).getMessage(),
-                "hola Jose message");
+        assertThat( "HTTP response4", r.status().code(), is(200));
+        assertThat("hola Jose message", fromPayload(r).getMessage(),
+                is("Hola Jose!"));
 
         r = getResponse("/health");
-        assertEquals(200, r.status().code(), "HTTP response2");
+        assertThat("HTTP response2", r.status().code(), is(200));
 
         r = getResponse("/metrics");
-        assertEquals(200, r.status().code(), "HTTP response2");
+        assertThat( "HTTP response2", r.status().code(), is(200));
     }
 
     @Order(10) // Run after the non-CORS tests (so the greeting is Hola) but before the CORS test that changes the greeting again.
@@ -125,14 +128,14 @@ public class MainTest {
         headers.set(HOST, "here.com");
 
         WebClientResponse r = getResponse("/greet", builder);
-        assertEquals(200, r.status().code(), "HTTP response");
+        assertThat("HTTP response", r.status().code(), is(200));
         String payload = fromPayload(r).getMessage();
-        assertTrue(payload.contains("Hola World"), "HTTP response payload was " + payload);
+        assertThat("HTTP response payload was " + payload, payload, containsString("Hola World"));
         Headers responseHeaders = r.headers();
         Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertTrue(allowOrigin.isPresent(),
-                "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent");
-        assertEquals(allowOrigin.get(), "*");
+        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent",
+                allowOrigin.isPresent(), is(true));
+        assertThat(allowOrigin.get(), is("*"));
     }
 
     @Order(11) // Run after the non-CORS tests but before other CORS tests.
@@ -153,14 +156,15 @@ public class MainTest {
 
         Headers responseHeaders = r.headers();
         List<String> allowMethods = responseHeaders.values(ACCESS_CONTROL_ALLOW_METHODS);
-        assertFalse(allowMethods.isEmpty(),
-                "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
-        assertTrue(allowMethods.contains("PUT"));
+        assertThat("pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS,
+                allowMethods, not(empty()));
+        assertThat(allowMethods, hasItem("PUT"));
         List<String> allowOrigins = responseHeaders.values(ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertFalse(allowOrigins.isEmpty(),
-                "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertTrue(allowOrigins.contains("http://foo.com"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
-                + " should contain '*' but does not; " + allowOrigins);
+        assertThat("pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
+                allowOrigins, not(empty()));
+        assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
+                        + " should contain '*' but does not; " + allowOrigins,
+                allowOrigins, hasItem("http://foo.com"));
 
         // Send the follow-up request.
 
@@ -171,13 +175,14 @@ public class MainTest {
         headers.addAll(responseHeaders);
 
         r = putResponse("/greet/greeting", new GreetingMessage("Cheers"), builder);
-        assertEquals(204, r.status().code(), "HTTP response3");
+        assertThat("HTTP response3", r.status().code(), is(204));
         responseHeaders = r.headers();
         allowOrigins = responseHeaders.values(ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertFalse(allowOrigins.isEmpty(),
-                "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " has no value(s)");
-        assertTrue(allowOrigins.contains("http://foo.com"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
-                + " should contain '*' but does not; " + allowOrigins);
+        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " has no value(s)",
+                allowOrigins, not(empty()));
+        assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
+                        + " should contain '*' but does not; " + allowOrigins,
+                allowOrigins, hasItem("http://foo.com"));
     }
 
     @Order(12) // Run after CORS test changes greeting to Cheers.
@@ -189,13 +194,13 @@ public class MainTest {
         headers.set(HOST, "here.com");
 
         WebClientResponse r = getResponse("/greet/Maria", builder);
-        assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("Cheers Maria"));
+        assertThat("HTTP response", r.status().code(), is(200));
+        assertThat(fromPayload(r).getMessage(), containsString("Cheers Maria"));
         WebClientResponseHeaders responseHeaders = r.headers();
         Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertTrue(allowOrigin.isPresent(),
-                "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent");
-        assertEquals(allowOrigin.get(), "*");
+        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent",
+                allowOrigin.isPresent(), is(true));
+        assertThat(allowOrigin.get(), is("*"));
     }
 
     @Order(100) // After all other tests so we can rely on deterministic greetings.
@@ -209,7 +214,7 @@ public class MainTest {
         WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Ahoy"), builder);
         // Result depends on whether we are using overrides or not.
         boolean isOverriding = Config.create().get("cors").exists();
-        assertEquals(isOverriding ? 204 : 403, r.status().code(), "HTTP response3");
+        assertThat("HTTP response3", r.status().code(), is(isOverriding ? 204 : 403));
     }
 
     private static WebClientResponse getResponse(String path) {

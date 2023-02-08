@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,15 @@
  */
 package io.helidon.security.integration.jersey;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -90,6 +91,7 @@ abstract class SecurityFilterCommon {
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())
+                .queryParams(filterContext.getQueryParams())
                 .headers(allHeaders)
                 .addAttribute("resourceType", filterContext.getResourceName());
 
@@ -182,7 +184,7 @@ abstract class SecurityFilterCommon {
             return;
         case FAILURE_FINISH:
             if (methodSecurity.authenticationOptional()) {
-                logger().finest("Authentication failed, but was optional, so assuming anonymous");
+                logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceSuccess(false);
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));
@@ -203,7 +205,7 @@ abstract class SecurityFilterCommon {
             return;
         case ABSTAIN:
             if (methodSecurity.authenticationOptional()) {
-                logger().finest("Authentication failed, but was optional, so assuming anonymous");
+                logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceSuccess(false);
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));
@@ -216,7 +218,7 @@ abstract class SecurityFilterCommon {
             return;
         case FAILURE:
             if (methodSecurity.authenticationOptional() && !methodSecurity.failOnFailureIfOptional()) {
-                logger().finest("Authentication failed, but was optional, so assuming anonymous");
+                logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceDescription(response.description().orElse(responseStatus.toString()));
                 context.setTraceThrowable(response.throwable().orElse(null));
@@ -238,7 +240,7 @@ abstract class SecurityFilterCommon {
         }
     }
 
-    protected abstract Logger logger();
+    protected abstract System.Logger logger();
 
     protected void authorize(FilterContext context,
                              SecurityContext securityContext,
@@ -374,6 +376,7 @@ abstract class SecurityFilterCommon {
         context.setHeaders(requestContext.getHeaders());
         context.setTargetUri(requestContext.getUriInfo().getRequestUri());
         context.setResourcePath(context.getTargetUri().getPath());
+        context.setQueryParams(UriQuery.create(uriInfo.getRequestUri()));
 
         context.setJerseyRequest((ContainerRequest) requestContext);
 
@@ -414,6 +417,7 @@ abstract class SecurityFilterCommon {
         private boolean traceSuccess = true;
         private String traceDescription;
         private Throwable traceThrowable;
+        private UriQuery queryParams;
 
         String getResourceName() {
             return resourceName;
@@ -509,6 +513,13 @@ abstract class SecurityFilterCommon {
 
         void setTraceThrowable(Throwable traceThrowable) {
             this.traceThrowable = traceThrowable;
+        }
+
+        UriQuery getQueryParams() {
+            return queryParams;
+        }
+        void setQueryParams(UriQuery queryParams) {
+            this.queryParams = queryParams;
         }
 
         void clearTrace() {

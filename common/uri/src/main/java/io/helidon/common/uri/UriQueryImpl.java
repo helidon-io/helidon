@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,8 @@ final class UriQueryImpl implements UriQuery {
 
     @Override
     public boolean isEmpty() {
+        // we now have a guarantee this is not an empty query
+        // null strings are not allowed, and empty string returns empty()
         return false;
     }
 
@@ -135,11 +137,6 @@ final class UriQueryImpl implements UriQuery {
     private void ensureDecoded() {
         if (decodedQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();
-
-            if (query == null || query.isEmpty()) {
-                decodedQueryParams = newQueryParams;
-                return;
-            }
 
             String remaining = query;
             String next;
@@ -174,10 +171,6 @@ final class UriQueryImpl implements UriQuery {
         if (rawQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();
 
-            if (query == null) {
-                rawQueryParams = newQueryParams;
-                return;
-            }
             String remaining = query;
             String next;
             int and;

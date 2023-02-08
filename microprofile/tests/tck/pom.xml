@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,17 +36,12 @@
         <module>tck-metrics</module>
         <module>tck-messaging</module>
         <module>tck-graphql</module>
-        <!-- TODO:Java19 - fails
-        Expected exception of type class org.jose4j.jwt.consumer.InvalidJwtException but got org.jose4j.lang.InvalidKeyException:
-            Invalid key for JWE A128KW, expected a 128 bit key but a 256 bit key was provided.
         <module>tck-jwt-auth</module>
-        -->
         <module>tck-openapi</module>
         <module>tck-opentracing</module>
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
-        <!-- TODO:Níma - fails for now, requires analysis -->
-<!--        <module>tck-lra</module>-->
+        <module>tck-lra</module>
     </modules>
 
     <properties>

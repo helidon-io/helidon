@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.microprofile.lra;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -47,7 +47,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 @ApplicationScoped
 public class CoordinatorClusterDeploymentService {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
-    private static final Logger LOGGER = Logger.getLogger(CoordinatorClusterDeploymentService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CoordinatorClusterDeploymentService.class.getName());
 
     static final String LOAD_BALANCER_NAME = "coordinator-loadbalancer";
     static final String COORDINATOR_A_NAME = "coordinator-a";
@@ -130,7 +130,7 @@ public class CoordinatorClusterDeploymentService {
                         .any((req, res) -> {
                             String path = req.path().absolute().path();
                             if (!path.contains("/start")) {
-                                LOGGER.severe("Loadbalancer should be called only for starting LRA. " + path);
+                                LOGGER.log(Level.ERROR, "Loadbalancer should be called only for starting LRA. " + path);
                                 forbiddenLoadBalancerCall.set(req.prologue().method().name() + " " + path);
                             }
                             res.next();

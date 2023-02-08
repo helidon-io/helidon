@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,10 @@ import io.helidon.common.http.HttpException;
 import io.helidon.common.http.RequestException;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -39,11 +40,11 @@ import static java.lang.System.Logger.Level.WARNING;
  * Representation of a single channel between client and server.
  * Everything in this class runs in the channel reader virtual thread
  */
-class ConnectionHandler implements Runnable {
+class ConnectionHandler implements InterruptableTask<Void> {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
 
     private final ConnectionProviders connectionProviders;
-    private final List<ServerConnectionProvider> providerCandidates;
+    private final List<ServerConnectionSelector> providerCandidates;
     private final String serverChannelId;
     private final HelidonSocket socket;
     private final String channelId;
@@ -80,6 +81,11 @@ class ConnectionHandler implements Runnable {
                                             simpleHandlers,
                                             socket,
                                             maxPayloadSize);
+    }
+
+    @Override
+    public boolean canInterrupt() {
+       return connection instanceof InterruptableTask<?> task && task.canInterrupt();
     }
 
     @Override
@@ -147,7 +153,7 @@ class ConnectionHandler implements Runnable {
 
         // go through candidates until we identify what kind of connection we have (now this will be either HTTP/1 or HTTP/2)
         while (true) {
-            Iterator<ServerConnectionProvider> iterator = providerCandidates.iterator();
+            Iterator<ServerConnectionSelector> iterator = providerCandidates.iterator();
             if (!iterator.hasNext()) {
                 ctx.log(LOGGER, DEBUG, "Could not find a suitable connection provider. "
                                 + "initial connection buffer (may be empty if no providers exist):\n%s",
@@ -157,10 +163,10 @@ class ConnectionHandler implements Runnable {
 
             // check if we can identify which connection to use based on the available data
             while (iterator.hasNext()) {
-                ServerConnectionProvider candidate = iterator.next();
+                ServerConnectionSelector candidate = iterator.next();
                 int expectedBytes = candidate.bytesToIdentifyConnection();
 
-                ServerConnectionProvider.Support supports;
+                ServerConnectionSelector.Support supports;
                 if (expectedBytes == 0 || expectedBytes < currentBuffer.available()) {
                     supports = candidate.supports(currentBuffer);
                 } else {

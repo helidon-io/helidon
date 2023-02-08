@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import io.helidon.tracing.config.TracingConfigUtil;
 /**
  * The basic abstract implementation of {@link ServerRequest}.
  */
-@SuppressWarnings("deprecation")
 abstract class Request implements ServerRequest {
 
     private static final String TRACING_CONTENT_READ_NAME = "content-read";
@@ -75,7 +74,7 @@ abstract class Request implements ServerRequest {
         this.webServer = webServer;
         this.headers = headers;
         this.context = Contexts.context().orElseGet(() -> Context.create(webServer.context()));
-        this.queryParams = UriQuery.create(req.uri().getRawQuery());
+        this.queryParams = UriQuery.create(req.uri());
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
                 .create(webServer.readerContext(), eventListener, headers, headers.contentType());

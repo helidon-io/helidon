@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import io.helidon.microprofile.server.Server;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -32,7 +32,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
  * As we invoke this from a different classloader, the class must be public.
  */
 public class ServerRunner {
-    private static final Logger LOGGER = Logger.getLogger(ServerRunner.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ServerRunner.class.getName());
 
     private Server server;
 
@@ -72,7 +72,7 @@ public class ServerRunner {
                 // or it fails to start
                 .start();
 
-        LOGGER.finest(() -> "Started server");
+        LOGGER.log(Level.TRACE, () -> "Started server");
     }
 
     /**
@@ -80,7 +80,7 @@ public class ServerRunner {
      */
     public void stop() {
         if (null != server) {
-            LOGGER.finest(() -> "Stopping server");
+            LOGGER.log(Level.TRACE, () -> "Stopping server");
             server.stop();
         }
     }

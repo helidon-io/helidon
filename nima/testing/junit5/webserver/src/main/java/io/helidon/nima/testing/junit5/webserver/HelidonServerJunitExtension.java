@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,26 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.net.URI;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
 import io.helidon.nima.webserver.ListenerConfiguration;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -46,6 +46,9 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import static io.helidon.nima.testing.junit5.webserver.Junit5Util.withStaticMethods;
+import static io.helidon.nima.webserver.WebServer.DEFAULT_SOCKET_NAME;
+
 /**
  * JUnit5 extension to support Helidon Níma WebServer in tests.
  */
@@ -55,13 +58,14 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
                                              InvocationInterceptor,
                                              ParameterResolver {
 
-    private final Map<String, SocketHttpClient> socketHttpClients = new ConcurrentHashMap<>();
-    private final Map<String, Http1Client> httpClients = new ConcurrentHashMap<>();
+    private final Map<String, URI> uris = new ConcurrentHashMap<>();
+    private final List<ServerJunitExtension> extensions;
+
     private Class<?> testClass;
     private WebServer server;
-    private URI uri;
 
     HelidonServerJunitExtension() {
+        this.extensions = HelidonServiceLoader.create(ServiceLoader.load(ServerJunitExtension.class)).asList();
     }
 
     @Override
@@ -79,15 +83,20 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
                 .shutdownHook(false)
                 .host("localhost");
 
+        extensions.forEach(it -> it.beforeAll(context));
+        extensions.forEach(it -> it.updateServerBuilder(builder));
+
         setupServer(builder);
         addRouting(builder);
 
         server = builder.start();
-        uri = URI.create("http://localhost:" + server.port() + "/");
+        uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
     }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) {
+        extensions.forEach(it -> it.afterAll(extensionContext));
+
         if (server != null) {
             server.stop();
         }
@@ -95,7 +104,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
     @Override
     public void afterEach(ExtensionContext extensionContext) {
-        socketHttpClients.values().forEach(SocketHttpClient::disconnect);
+        extensions.forEach(it -> it.afterEach(extensionContext));
     }
 
     @Override
@@ -103,21 +112,26 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
             throws ParameterResolutionException {
 
         Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(Http1Client.class)) {
-            return true;
-        }
-        if (paramType.equals(SocketHttpClient.class)) {
-            return true;
-        }
         if (paramType.equals(WebServer.class)) {
             return true;
         }
         if (paramType.equals(URI.class)) {
             return true;
         }
-        // todo maybe use context
-        // return Context.singletonContext().value(GenericType.create(paramType)).isPresent();
-        return false;
+
+        for (ServerJunitExtension extension : extensions) {
+            if (extension.supportsParameter(parameterContext, extensionContext)) {
+                return true;
+            }
+        }
+
+        Context context;
+        if (server == null) {
+            context = Contexts.globalContext();
+        } else {
+            context = server.context();
+        }
+        return context.get(paramType).isPresent();
     }
 
     @Override
@@ -125,45 +139,50 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
             throws ParameterResolutionException {
 
         Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(SocketHttpClient.class)) {
-            return socketHttpClients.computeIfAbsent(socketName(parameterContext.getParameter()), this::socketHttpClient);
-        }
-        if (paramType.equals(Http1Client.class)) {
-            return httpClients.computeIfAbsent(socketName(parameterContext.getParameter()), this::httpClient);
-        }
         if (paramType.equals(WebServer.class)) {
             return server;
         }
         if (paramType.equals(URI.class)) {
-            return uri;
-        }
-        // todo maybe use context
-        //return Context.singletonContext().value(GenericType.create(paramType)).orElse(null);
-        return false;
-    }
-
-    private Http1Client httpClient(String socketName) {
-        return WebClient.builder()
-                .baseUri("http://localhost:" + server.port(socketName))
-                .build();
-    }
-
-    private SocketHttpClient socketHttpClient(String socketName) {
-        return SocketHttpClient.create(server.port(socketName));
-    }
-
-    private String socketName(Parameter parameter) {
-        Socket socketAnnot = parameter.getAnnotation(Socket.class);
-
-        if (socketAnnot == null) {
-            return WebServer.DEFAULT_SOCKET_NAME;
+            return uri(parameterContext.getDeclaringExecutable(), Junit5Util.socketName(parameterContext.getParameter()));
         }
 
-        return socketAnnot.value();
+        for (ServerJunitExtension extension : extensions) {
+            if (extension.supportsParameter(parameterContext, extensionContext)) {
+                return extension.resolveParameter(parameterContext, extensionContext, paramType, server);
+            }
+        }
+
+        Context context;
+        if (server == null) {
+            context = Contexts.globalContext();
+        } else {
+            context = server.context();
+        }
+
+        return context.get(paramType)
+                .orElseThrow(() -> new ParameterResolutionException("Failed to resolve parameter of type "
+                                                                            + paramType.getName()));
+    }
+
+    private URI uri(Executable declaringExecutable, String socketName) {
+        URI uri = uris.computeIfAbsent(socketName, it -> {
+            int port = server.port(it);
+            if (port == -1) {
+                return null;
+            }
+            return URI.create("http://localhost:" + port + "/");
+        });
+
+        if (uri == null) {
+            throw new IllegalStateException(declaringExecutable + " expects injection of URI parameter for socket named "
+                                                    + socketName
+                                                    + ", which is not available on the running webserver");
+        }
+        return uri;
     }
 
     private void setupServer(WebServer.Builder builder) {
-        withStaticMethods(SetUpServer.class, (setUpServer, method) -> {
+        withStaticMethods(testClass, SetUpServer.class, (setUpServer, method) -> {
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes.length != 1) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
@@ -182,132 +201,83 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         });
     }
 
-    private <T extends Annotation> void withStaticMethods(Class<T> annotationType, BiConsumer<T, Method> handler) {
-        LinkedList<Class<?>> hierarchy = new LinkedList<>();
-        Class<?> analyzedClass = testClass;
-        while (analyzedClass != null && !analyzedClass.equals(Object.class)) {
-            hierarchy.addFirst(analyzedClass);
-            analyzedClass = analyzedClass.getSuperclass();
-        }
-        for (Class<?> aClass : hierarchy) {
-            for (Method method : aClass.getDeclaredMethods()) {
-                T annotation = method.getDeclaredAnnotation(annotationType);
-                if (annotation != null) {
-                    // maybe our method
-                    if (Modifier.isStatic(method.getModifiers())) {
-                        handler.accept(annotation, method);
-                    } else {
-                        throw new IllegalStateException("Method " + method + " is annotated with "
-                                                                + annotationType.getSimpleName()
-                                                                + " yet it is not static");
-                    }
-                }
-            }
-        }
-    }
-
     private void addRouting(WebServer.Builder builder) {
-        withStaticMethods(SetUpRoute.class, (annotation, method) -> {
+        withStaticMethods(testClass, SetUpRoute.class, (setUpRoute, method) -> {
             // validate parameters
-            String socketName = annotation.value();
-            boolean isDefaultSocket = socketName.equals(WebServer.DEFAULT_SOCKET_NAME);
-            // allowed parameters are Router.Builder and ListenerConfiguration.Builder
-            BiConsumer<ListenerConfiguration.Builder, Router.RouterBuilder<?>> methodConsumer
-                    = createRoutingMethodCall(isDefaultSocket, method);
+            String socketName = setUpRoute.value();
+            boolean isDefaultSocket = socketName.equals(DEFAULT_SOCKET_NAME);
+
+            SetUpRouteHandler methodConsumer = createRoutingMethodCall(method);
+
+            extensions.forEach(it -> builder.socket(socketName,
+                                                    (socket, route) -> it.updateListenerBuilder(socketName,
+                                                                                                socket,
+                                                                                                route)));
 
             if (isDefaultSocket) {
                 builder.defaultSocket(socketBuilder -> {
-                    methodConsumer.accept(socketBuilder, builder);
+                    methodConsumer.handle(socketName, builder, socketBuilder, builder);
                 });
             } else {
-                builder.socket(socketName, methodConsumer);
+                builder.socket(socketName, (socket, router) -> methodConsumer.handle(socketName, builder, socket, router));
             }
         });
     }
 
-    private BiConsumer<ListenerConfiguration.Builder, Router.RouterBuilder<?>> createRoutingMethodCall(boolean isDefaultSocket,
-                                                                                                       Method method) {
-        // default socket cannot have socket configuration
-        BiConsumer<Object[], ListenerConfiguration.Builder> socketConsumer = null;
-        BiConsumer<Object[], Router.RouterBuilder<?>> routingConsumer = null;
-        BiConsumer<Object[], HttpRules> httpRoutingConsumer = null;
+    private SetUpRouteHandler createRoutingMethodCall(Method method) {
+        // @SetUpRoute may have parameters handled by different extensions
+        List<ServerJunitExtension.ParamHandler> handlers = new ArrayList<>();
 
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        int parameterCount = parameterTypes.length;
-        for (int i = 0; i < parameterTypes.length; i++) {
-            Class<?> parameterType = parameterTypes[i];
+        Parameter[] parameters = method.getParameters();
+        for (Parameter parameter : parameters) {
+            Class<?> paramType = parameter.getType();
 
-            if (parameterType.equals(Router.RouterBuilder.class)) {
-                if (routingConsumer == null) {
-                    int index = i;
-                    routingConsumer = (params, routing) -> params[index] = routing;
-                } else {
-                    throw new IllegalArgumentException("Method " + method + " has more than one router builder parameters");
-                }
-            } else if (parameterType.equals(ListenerConfiguration.Builder.class)) {
-                if (isDefaultSocket) {
-                    throw new IllegalArgumentException("Method " + method + " configures default socket and is not allowed "
-                                                               + "to use ListenerConfiguration builder.");
-                }
-                if (socketConsumer == null) {
-                    int index = i;
-                    socketConsumer = (params, socket) -> params[index] = socket;
-                }
-            } else if (HttpRules.class.isAssignableFrom(parameterType)) {
-                if (httpRoutingConsumer == null) {
-                    int index = i;
-                    httpRoutingConsumer = (params, routing) -> params[index] = routing;
-                } else {
-                    throw new IllegalArgumentException("Method " + method + " has more than one router builder parameters");
+            // for each parameter, resolve a parameter handler
+            boolean found = false;
+            for (ServerJunitExtension extension : extensions) {
+                Optional<? extends ServerJunitExtension.ParamHandler> paramHandler =
+                        extension.setUpRouteParamHandler(paramType);
+                if (paramHandler.isPresent()) {
+                    // we care about the extension with the highest priority only
+                    handlers.add(paramHandler.get());
+                    found = true;
+                    break;
                 }
             }
-
+            if (!found) {
+                throw new IllegalArgumentException("Method " + method + " has a parameter " + paramType + " that is "
+                                                           + "not supported by any available testing extension");
+            }
         }
+        // now we have the same number of parameter handlers as we have parameters
+        return (socketName, serverBuilder, listenerBuilder, routerBuilder) -> {
+            Object[] values = new Object[handlers.size()];
 
-        if (socketConsumer == null) {
-            socketConsumer = (params, socket) -> {
-            };
-        }
-        if (routingConsumer == null) {
-            routingConsumer = (params, routing) -> {
-            };
-        }
+            for (int i = 0; i < handlers.size(); i++) {
+                ServerJunitExtension.ParamHandler<?> handler = handlers.get(i);
+                values[i] = handler.get(socketName, serverBuilder, listenerBuilder, routerBuilder);
+            }
 
-        BiConsumer<Object[], ListenerConfiguration.Builder> theSocketConsumer = socketConsumer;
+            try {
+                method.setAccessible(true);
+                method.invoke(null, values);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new IllegalStateException("Cannot invoke router/socket method", e);
+            }
 
-        if (httpRoutingConsumer == null) {
-            BiConsumer<Object[], Router.RouterBuilder<?>> theRoutingConsumer = routingConsumer;
+            for (int i = 0; i < values.length; i++) {
+                Object value = values[i];
+                ServerJunitExtension.ParamHandler handler = handlers.get(i);
+                handler.handle(socketName, serverBuilder, listenerBuilder, routerBuilder, value);
+            }
+        };
+    }
 
-            // we need to find the method parameters
-            return (socketConfig, routing) -> {
-                Object[] parameters = new Object[parameterCount];
-                theSocketConsumer.accept(parameters, socketConfig);
-                theRoutingConsumer.accept(parameters, routing);
-                try {
-                    method.setAccessible(true);
-                    method.invoke(null, parameters);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new IllegalStateException("Cannot invoke router/socket method", e);
-                }
-            };
-        } else {
-            BiConsumer<Object[], HttpRules> theHttpConsumer = httpRoutingConsumer;
-
-            // we need to find the method parameters
-            return (socketConfig, routing) -> {
-                Object[] parameters = new Object[parameterCount];
-                theSocketConsumer.accept(parameters, socketConfig);
-                HttpRouting.Builder httpBuilder = HttpRouting.builder();
-                theHttpConsumer.accept(parameters, httpBuilder);
-                try {
-                    method.setAccessible(true);
-                    method.invoke(null, parameters);
-                    routing.addRouting(httpBuilder);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new IllegalStateException("Cannot invoke router/socket method", e);
-                }
-            };
-        }
+    private interface SetUpRouteHandler {
+        void handle(String socketName,
+                    WebServer.Builder serverBuilder,
+                    ListenerConfiguration.Builder listenerBuilder,
+                    Router.RouterBuilder<?> routerBuilder);
     }
 
 }

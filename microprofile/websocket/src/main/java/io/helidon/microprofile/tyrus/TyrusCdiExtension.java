@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.tyrus;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
@@ -48,7 +48,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  * Configure Tyrus related things.
  */
 public class TyrusCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(TyrusCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(TyrusCdiExtension.class.getName());
     private static final String DEFAULT_WEBSOCKET_PATH = "/";
 
     private Config config;
@@ -72,7 +72,7 @@ public class TyrusCdiExtension implements Extension {
      * @param applicationClass Application class.
      */
     void applicationClass(@Observes ProcessAnnotatedType<? extends ServerApplicationConfig> applicationClass) {
-        LOGGER.finest(() -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
+        LOGGER.log(Level.TRACE, () -> "Application class found " + applicationClass.getAnnotatedType().getJavaClass());
         appBuilder.applicationClass(applicationClass.getAnnotatedType().getJavaClass());
     }
 
@@ -82,7 +82,7 @@ public class TyrusCdiExtension implements Extension {
      * @param applicationClass Application class.
      */
     public void applicationClass(Class<? extends ServerApplicationConfig> applicationClass) {
-        LOGGER.finest(() -> "Using manually set application class  " + applicationClass);
+        LOGGER.log(Level.TRACE, () -> "Using manually set application class  " + applicationClass);
         appBuilder.updateApplicationClass(applicationClass);
     }
 
@@ -92,7 +92,7 @@ public class TyrusCdiExtension implements Extension {
      * @param endpoint The endpoint.
      */
     void endpointClasses(@Observes @WithAnnotations(ServerEndpoint.class) ProcessAnnotatedType<?> endpoint) {
-        LOGGER.finest(() -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.log(Level.TRACE, () -> "Annotated endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.annotatedEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
 
@@ -102,7 +102,7 @@ public class TyrusCdiExtension implements Extension {
      * @param endpoint The endpoint.
      */
     void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
-        LOGGER.finest(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
+        LOGGER.log(Level.TRACE, () -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
     }
 
@@ -112,14 +112,14 @@ public class TyrusCdiExtension implements Extension {
      * @param extension The extension.
      */
     void extension(@Observes ProcessAnnotatedType<? extends jakarta.websocket.Extension> extension) {
-        LOGGER.finest(() -> "Extension found " + extension.getAnnotatedType().getJavaClass());
+        LOGGER.log(Level.TRACE, () -> "Extension found " + extension.getAnnotatedType().getJavaClass());
 
         Class<? extends jakarta.websocket.Extension> cls = extension.getAnnotatedType().getJavaClass();
         try {
             jakarta.websocket.Extension instance = cls.getConstructor().newInstance();
             appBuilder.extension(instance);
         } catch (NoSuchMethodException e) {
-            LOGGER.warning(() -> "Extension does not have no-args constructor for "
+            LOGGER.log(Level.WARNING, () -> "Extension does not have no-args constructor for "
                     + extension.getAnnotatedType().getJavaClass() + "! Skipping.");
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Unable to load WebSocket extension", e);
@@ -133,59 +133,54 @@ public class TyrusCdiExtension implements Extension {
     private void registerWebSockets() {
         try {
             TyrusApplication app = appBuilder.build();
-
-            // If application present call its methods
             TyrusRouting.Builder tyrusRoutingBuilder = TyrusRouting.builder();
-            Optional<Class<? extends ServerApplicationConfig>> appClass = app.applicationClass();
 
-            Optional<String> contextRoot = appClass.flatMap(c -> findContextRoot(config, c));
-            Optional<String> namedRouting = appClass.flatMap(c -> findNamedRouting(config, c));
-            boolean routingNameRequired = appClass.map(c -> isNamedRoutingRequired(config, c)).orElse(false);
-
-            String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
-
-            LOGGER.info("Registering websocket application at " + rootPath);
-
-            if (appClass.isPresent()) {
-                Class<? extends ServerApplicationConfig> c = appClass.get();
-
-                // Attempt to instantiate via CDI
-                ServerApplicationConfig instance = null;
-                try {
-                    instance = CDI.current().select(c).get();
-                } catch (UnsatisfiedResolutionException e) {
-                    // falls through
-                }
-
-                // Otherwise, we create instance directly
-                if (instance == null) {
-                    try {
-                        instance = c.getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException("Unable to instantiate websocket application " + c, e);
-                    }
-                }
-
-                // Call methods in application class
-                Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
-                Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
-
-                // Register classes and configs
-                endpointClasses.forEach(cl -> tyrusRoutingBuilder.endpoint(rootPath, cl));
-                endpointConfigs.forEach(cf -> tyrusRoutingBuilder.endpoint(rootPath, cf));
-
-                // Create routing wsRoutingBuilder
-                tyrusRouting = tyrusRoutingBuilder.build();
-                addWsRouting(tyrusRouting, namedRouting, routingNameRequired, c.getName());
-            } else {
+            Set<Class<? extends ServerApplicationConfig>> appClasses = app.applicationClasses();
+            if (appClasses.isEmpty()) {
                 // Direct registration without calling application class
-                app.annotatedEndpoints().forEach(cl -> tyrusRoutingBuilder.endpoint(rootPath, cl));
-                app.programmaticEndpoints().forEach(ep -> tyrusRoutingBuilder.endpoint(rootPath, ep));
+                app.annotatedEndpoints().forEach(aClass -> tyrusRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, aClass));
+                app.programmaticEndpoints().forEach(wsCfg -> tyrusRoutingBuilder.endpoint(DEFAULT_WEBSOCKET_PATH, wsCfg));
                 app.extensions().forEach(tyrusRoutingBuilder::extension);
 
-                // Create routing wsRoutingBuilder
+                // Create routing
                 tyrusRouting = tyrusRoutingBuilder.build();
                 serverCdiExtension.serverBuilder().addRouting(tyrusRouting);
+            } else {
+                appClasses.forEach(appClass -> {
+                    Optional<String> contextRoot = findContextRoot(config, appClass);
+                    String rootPath = contextRoot.orElse(DEFAULT_WEBSOCKET_PATH);
+                    Optional<String> namedRouting = findNamedRouting(config, appClass);
+                    boolean routingNameRequired = isNamedRoutingRequired(config, appClass);
+
+                    // Attempt to instantiate via CDI
+                    ServerApplicationConfig instance = null;
+                    try {
+                        instance = CDI.current().select(appClass).get();
+                    } catch (UnsatisfiedResolutionException e) {
+                        // falls through
+                    }
+
+                    // Otherwise, we create instance directly
+                    if (instance == null) {
+                        try {
+                            instance = appClass.getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
+                            throw new RuntimeException("Unable to instantiate websocket application " + appClass, e);
+                        }
+                    }
+
+                    // Call methods in application class
+                    Set<ServerEndpointConfig> endpointConfigs = instance.getEndpointConfigs(app.programmaticEndpoints());
+                    Set<Class<?>> endpointClasses = instance.getAnnotatedEndpointClasses(app.annotatedEndpoints());
+
+                    // Register classes and configs
+                    endpointClasses.forEach(aClass -> tyrusRoutingBuilder.endpoint(rootPath, aClass));
+                    endpointConfigs.forEach(wsCfg -> tyrusRoutingBuilder.endpoint(rootPath, wsCfg));
+
+                    // Create routing
+                    tyrusRouting = tyrusRoutingBuilder.build();
+                    addWsRouting(tyrusRouting, namedRouting, routingNameRequired, appClass.getName());
+                });
             }
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to load WebSocket extension", e);
@@ -207,7 +202,7 @@ public class TyrusCdiExtension implements Extension {
                             + socket
                             + " to exist, yet such a socket is not configured for web server");
                 } else {
-                    LOGGER.info("Routing " + socket + " does not exist, using default routing for application "
+                    LOGGER.log(Level.INFO, "Routing " + socket + " does not exist, using default routing for application "
                             + appName);
 
                     serverBuilder.addRouting(routing);

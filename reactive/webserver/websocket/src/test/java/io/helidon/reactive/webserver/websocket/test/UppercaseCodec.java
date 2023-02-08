@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.reactive.webserver.websocket.test;
 
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import jakarta.websocket.Decoder;
 import jakarta.websocket.Encoder;
@@ -25,17 +25,17 @@ import jakarta.websocket.EndpointConfig;
  * Class UppercaseCodec.
  */
 public class UppercaseCodec implements Decoder.Text<String>, Encoder.Text<String> {
-    private static final Logger LOGGER = Logger.getLogger(UppercaseCodec.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(UppercaseCodec.class.getName());
 
     private static final String ENCODING_PREFIX = "\0\0";
 
     public UppercaseCodec() {
-        LOGGER.info("UppercaseCodec instance created");
+        LOGGER.log(Level.INFO, "UppercaseCodec instance created");
     }
 
     @Override
     public String decode(String s) {
-        LOGGER.info("UppercaseCodec decode called");
+        LOGGER.log(Level.INFO, "UppercaseCodec decode called");
         return ENCODING_PREFIX + s;
     }
 
@@ -54,7 +54,7 @@ public class UppercaseCodec implements Decoder.Text<String>, Encoder.Text<String
 
     @Override
     public String encode(String s) {
-        LOGGER.info("UppercaseCodec encode called");
+        LOGGER.log(Level.INFO, "UppercaseCodec encode called");
         return s.replace(ENCODING_PREFIX, "");
     }
 

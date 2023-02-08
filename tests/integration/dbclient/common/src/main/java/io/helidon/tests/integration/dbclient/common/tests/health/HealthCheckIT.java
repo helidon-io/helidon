@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,20 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.health;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
 
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class HealthCheckIT {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(HealthCheckIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(HealthCheckIT.class.getName());
 
     private static boolean pingDml = true;
 
@@ -53,11 +53,10 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheck() {
-        LOGGER.log(Level.INFO, "Running test testHealthCheck");
         HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -65,12 +64,11 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithName() {
-        LOGGER.log(Level.INFO, "Running test testHealthCheckWithName");
-        final String hcName = "TestHC";
+        String hcName = "TestHC";
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).config(CONFIG.get("db.health-check")).name(hcName).build();
         HealthCheckResponse response = check.call();
-        String name = response.getName();
-        HealthCheckResponse.Status state = response.getStatus();
+        String name = check.name();
+        HealthCheckResponse.Status state = response.status();
         assertThat(name, equalTo(hcName));
         assertThat(state, equalTo(HealthCheckResponse.Status.UP));
     }
@@ -80,15 +78,14 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomNamedDML() {
-        LOGGER.log(Level.INFO, "Running test testHealthCheckWithCustomNamedDML");
         if (!pingDml) {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", DB_CLIENT.dbType()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Database %s does not support DML ping, skipping this test", DB_CLIENT.dbType()));
             return;
         }
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).dml().statementName("ping-dml").build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -96,20 +93,19 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomDML() {
-        LOGGER.log(Level.INFO, "Running test testHealthCheckWithCustomDML");
         if (!pingDml) {
-            LOGGER.log(Level.INFO, () -> String.format("Database %s does not support DML ping, skipping this test", DB_CLIENT.dbType()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Database %s does not support DML ping, skipping this test", DB_CLIENT.dbType()));
             return;
         }
         Config cfgStatement = CONFIG.get("db.statements.ping-dml");
         assertThat("Missing ping-dml statement in database configuration!", cfgStatement.exists(), equalTo(true));
         String statement = cfgStatement.asString().get();
         assertThat("Missing ping-dml statement String in database configuration!", statement, is(notNullValue()));
-        LOGGER.log(Level.INFO, () -> String.format("Using db.statements.ping-dml value %s", statement));
+        LOGGER.log(Level.DEBUG, () -> String.format("Using db.statements.ping-dml value %s", statement));
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).dml().statement(statement).build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -117,11 +113,10 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomNamedQuery() {
-        LOGGER.log(Level.INFO, "Running test testHealthCheckWithCustomNamedQuery");
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).query().statementName("ping-query").build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
 
     /**
@@ -129,17 +124,15 @@ public class HealthCheckIT {
      */
     @Test
     public void testHealthCheckWithCustomQuery() {
-        LOGGER.log(Level.INFO, "Running test testHealthCheckWithCustomQuery");
         Config cfgStatement = CONFIG.get("db.statements.ping-query");
         assertThat("Missing ping-query statement in database configuration!", cfgStatement.exists(), equalTo(true));
         String statement = cfgStatement.asString().get();
         assertThat("Missing ping-query statement String in database configuration!", statement, is(notNullValue()));
-        LOGGER.log(Level.INFO, () -> String.format("Using db.statements.ping-query value %s", statement));
+        LOGGER.log(Level.DEBUG, () -> String.format("Using db.statements.ping-query value %s", statement));
         HealthCheck check = DbClientHealthCheck.builder(DB_CLIENT).query().statement(statement).build();
         HealthCheckResponse response = check.call();
-        HealthCheckResponse.Status state = response.getStatus();
-        assertThat("Healthcheck failed, response: " + response.getData(), state, equalTo(HealthCheckResponse.Status.UP));
+        HealthCheckResponse.Status state = response.status();
+        assertThat("Health check failed, response: " + response.details(), state, equalTo(HealthCheckResponse.Status.UP));
     }
-
 
 }

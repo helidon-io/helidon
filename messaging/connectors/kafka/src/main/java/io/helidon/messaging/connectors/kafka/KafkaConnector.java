@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.lang.System.Logger.Level;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
@@ -150,7 +149,7 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
         type = "string")
 public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaConnector.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(KafkaConnector.class.getName());
     /**
      * Microprofile messaging Kafka connector name.
      */
@@ -198,7 +197,7 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
                 .config(MpConfig.toHelidonConfig(config))
                 .scheduler(scheduler)
                 .build();
-        LOGGER.fine(() -> String.format("Resource %s added", publisher));
+        LOGGER.log(Level.DEBUG, () -> String.format("Resource %s added", publisher));
         resources.add(publisher);
         return ReactiveStreams.fromPublisher(publisher);
     }
@@ -231,7 +230,7 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
      * Stops the KafkaConnector and all the jobs and resources related to it.
      */
     public void stop() {
-        LOGGER.fine(() -> "Terminating KafkaConnector...");
+        LOGGER.log(Level.DEBUG, () -> "Terminating KafkaConnector...");
         // Stops the scheduler first to make sure no new task will be triggered meanwhile consumers are closing
         scheduler.shutdown();
         List<Exception> failed = new LinkedList<>();
@@ -245,10 +244,10 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
             }
         }
         if (failed.isEmpty()) {
-            LOGGER.fine("KafkaConnector terminated successfuly");
+            LOGGER.log(Level.DEBUG, "KafkaConnector terminated successfuly");
         } else {
             // Inform about the errors
-            failed.forEach(e -> LOGGER.log(Level.SEVERE, "An error happened closing resource", e));
+            failed.forEach(e -> LOGGER.log(Level.ERROR, "An error happened closing resource", e));
         }
     }
 

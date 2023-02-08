@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Executable;
 import java.time.Duration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.microprofile.servicecommon.HelidonInterceptor;
 import io.helidon.nima.observe.metrics.PostRequestMetricsSupport;
@@ -56,7 +55,7 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<Synt
         implements HelidonInterceptor<SyntheticRestRequestWorkItem> {
 
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticRestRequest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(InterceptorSyntheticRestRequest.class.getName());
 
     private long startNanos;
 
@@ -77,8 +76,8 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<Synt
                                             workItem.successfulSimpleTimer());
         MetricsInterceptorBase.verifyMetric(workItem.unmappedExceptionCounterMetricID(),
                                             workItem.unmappedExceptionCounter());
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.log(Level.FINEST, String.format(
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, String.format(
                     "%s (%s) is starting processing of a REST request on %s triggered by @%s",
                     getClass().getSimpleName(),
                     MetricsInterceptorBase.ActionType.PREINVOKE,

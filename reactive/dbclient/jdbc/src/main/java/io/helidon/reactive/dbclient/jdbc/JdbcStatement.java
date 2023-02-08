@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.reactive.dbclient.jdbc;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -26,8 +27,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.reactive.dbclient.DbClientException;
 import io.helidon.reactive.dbclient.DbClientServiceContext;
@@ -44,7 +43,7 @@ import io.helidon.reactive.dbclient.common.DbStatementContext;
 abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
 
     /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(JdbcStatement.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JdbcStatement.class.getName());
 
     private final ExecutorService executorService;
     private final String dbType;
@@ -61,7 +60,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     }
 
     PreparedStatement build(Connection conn, DbClientServiceContext dbContext) {
-        LOGGER.fine(() -> String.format("Building SQL statement: %s", dbContext.statement()));
+        LOGGER.log(Level.DEBUG, () -> String.format("Building SQL statement: %s", dbContext.statement()));
         String statement = dbContext.statement();
         String statementName = dbContext.statementName();
 
@@ -113,7 +112,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             // Parameters names must be replaced with ? and names occurence order must be stored.
             Parser parser = new Parser(statement);
             String jdbcStatement = parser.convert();
-            LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
+            LOGGER.log(Level.TRACE, () -> String.format("Converted statement: %s", jdbcStatement));
             preparedStatement = connection.prepareStatement(jdbcStatement);
             List<String> namesOrder = parser.namesOrder();
             // Set parameters into prepared statement
@@ -121,7 +120,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             for (String name : namesOrder) {
                 if (parameters.containsKey(name)) {
                     Object value = parameters.get(name);
-                    LOGGER.finest(String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
                     preparedStatement.setObject(i, value);
                     i++;
                 } else {
@@ -145,7 +144,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             preparedStatement = connection.prepareStatement(statement);
             int i = 1; // JDBC set position parameter starts from 1.
             for (Object value : parameters) {
-                LOGGER.finest(String.format("Indexed parameter %d: %s", i, value));
+                LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
                 preparedStatement.setObject(i, value);
                 // increase value for next iteration
                 i++;

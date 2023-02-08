@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.dbresult;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.reactive.dbclient.DbRow;
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class FlowControlIT {
 
-    private static final Logger LOGGER = Logger.getLogger(FlowControlIT.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FlowControlIT.class.getName());
 
     /**
      * Test subscriber.
@@ -80,27 +79,27 @@ public class FlowControlIT {
             // Initially request 3 DbRows.
             requested = REQUESTS[reqIdx];
             remaining = REQUESTS[reqIdx++];
-            LOGGER.info(() -> String.format("Requesting first rows: %d", requested));
+            LOGGER.log(Level.DEBUG, () -> String.format("Requesting first rows: %d", requested));
             this.subscription.request(requested);
         }
 
         @Override
-        public void onNext(final DbRow dbRow) {
-            final Type type = new Type(dbRow.column(1).as(Integer.class), dbRow.column(2).as(String.class));
+        public void onNext(DbRow dbRow) {
+            Type type = new Type(dbRow.column(1).as(Integer.class), dbRow.column(2).as(String.class));
             total++;
             if (remaining > 0) {
-                LOGGER.info(() -> String.format(
+                LOGGER.log(Level.DEBUG, () -> String.format(
                         "NEXT: tot: %d req: %d rem: %d type: %s", total, requested, remaining, type.toString()));
                 remaining -= 1;
                 if (remaining == 0 && reqIdx < REQUESTS.length) {
-                    LOGGER.info(() -> String.format("Notifying main thread to request more rows"));
+                    LOGGER.log(Level.DEBUG, "Notifying main thread to request more rows");
                     synchronized (this) {
                         this.notify();
                     }
                 }
                 // Shall not recieve dbRow when not requested!
             } else {
-                LOGGER.warning(() -> String.format(
+                LOGGER.log(Level.WARNING, () -> String.format(
                         "NEXT: tot: %d req: %d rem: %d type: %s", total, requested, remaining, type.toString()));
                 throw new IllegalStateException(String.format("Recieved unexpected row: %s", type.toString()));
             }
@@ -109,13 +108,13 @@ public class FlowControlIT {
         @Override
         public void onError(Throwable throwable) {
             error = throwable.getMessage();
-            LOGGER.warning(() -> String.format("EXCEPTION: %s", throwable.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("EXCEPTION: %s", throwable.getMessage()));
             finished = true;
         }
 
         @Override
         public void onComplete() {
-            LOGGER.info(() -> String.format("COMPLETE: tot: %d req: %d rem: %d", total, requested, remaining));
+            LOGGER.log(Level.DEBUG, () -> String.format("COMPLETE: tot: %d req: %d rem: %d", total, requested, remaining));
             finished = true;
             synchronized (this) {
                 this.notify();
@@ -129,7 +128,7 @@ public class FlowControlIT {
         public void requestNext() {
             if (reqIdx < REQUESTS.length) {
                 requested = remaining = REQUESTS[reqIdx++];
-                LOGGER.info(() -> String.format("Requesting more rows: %d", requested));
+                LOGGER.log(Level.DEBUG, () -> String.format("Requesting more rows: %d", requested));
                 this.subscription.request(requested);
             } else {
                 fail("Can't request more rows, processing shall be finished now.");
@@ -153,9 +152,9 @@ public class FlowControlIT {
         for (DbRow row : list) {
             Integer id = row.column(1).as(Integer.class);
             String name = row.column(2).as(String.class);
-            final Type type = new Type(id, name);
+            Type type = new Type(id, name);
             assertThat(name, TYPES.get(id).getName().equals(name));
-            LOGGER.info(() -> String.format("Type: %s", type.toString()));
+            LOGGER.log(Level.DEBUG, () -> String.format("Type: %s", type.toString()));
         }
     }
 
@@ -165,9 +164,8 @@ public class FlowControlIT {
      * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "BusyWait", "SynchronizationOnLocalVariableOrMethodParameter"})
     public void testFlowControl() throws InterruptedException {
-        CompletableFuture<Long> rowsFuture = new CompletableFuture<>();
         TestSubscriber subscriber = new TestSubscriber();
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-types"));
@@ -186,7 +184,7 @@ public class FlowControlIT {
                 Thread.sleep(500);
                 subscriber.requestNext();
             } else {
-                LOGGER.info(() -> String.format("All requests were already done."));
+                LOGGER.log(Level.DEBUG, "All requests were already done.");
             }
         }
         if (subscriber.error != null) {

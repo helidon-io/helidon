@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import io.helidon.common.reactive.Single;
 /**
  * Readable {@link MessageBodyContent}.
  */
-@SuppressWarnings("deprecation")
 public final class MessageBodyReadableContent
         implements MessageBodyReaders, MessageBodyFilters, MessageBodyContent, Multi<DataChunk> {
 
@@ -44,16 +43,6 @@ public final class MessageBodyReadableContent
         Objects.requireNonNull(context, "context is null!");
         this.publisher = publisher;
         this.context = context;
-    }
-
-    /**
-     * Copy constructor.
-     * @param orig original context to be copied
-     */
-    private MessageBodyReadableContent(MessageBodyReadableContent orig) {
-        Objects.requireNonNull(orig, "orig is null!");
-        this.publisher = orig.publisher;
-        this.context = orig.context;
     }
 
     /**

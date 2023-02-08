@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,56 @@
 
 package io.helidon.builder.test;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import io.helidon.builder.test.testsubjects.DefaultEdgeCases;
+import io.helidon.builder.test.testsubjects.EdgeCases;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 class EdgeCasesTest {
 
     @Test
-    void testIt() {
-        DefaultEdgeCases val = DefaultEdgeCases.builder().build();
+    void testBasics() {
+        EdgeCases val = DefaultEdgeCases.builder().build();
         assertThat(val.optionalIntegerWithDefault().get(), is(-1));
         assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
 
         val = DefaultEdgeCases.toBuilder(val).optionalIntegerWithDefault(-2).build();
         assertThat(val.optionalIntegerWithDefault().get(), is(-2));
         assertThat(val.optionalStringWithDefault().get(), equalTo("test"));
+    }
+
+    @Test
+    void listOfObjects() {
+        List<?> listOfGenericObjects = List.of("test1");
+        EdgeCases val = DefaultEdgeCases.builder()
+                .listOfObjects(listOfGenericObjects)
+                .addListOfObject("test2")
+                .build();
+        assertThat(val.listOfObjects(), equalTo(List.of("test1", "test2")));
+    }
+
+    @Test
+    void mapOfEdgeCases() {
+        AnotherEdgeCase anotherEdgeCase = mock(AnotherEdgeCase.class);
+        Map<String, ? extends EdgeCases> mapOfEdgeCases = Map.of("test1", anotherEdgeCase);
+        EdgeCases val = DefaultEdgeCases.builder()
+                .mapOfEdgeCases(mapOfEdgeCases)
+                .addMapOfEdgeCase("test2", anotherEdgeCase)
+                .build();
+        assertThat(val.mapOfEdgeCases().keySet(), equalTo(Set.of("test1", "test2")));
+    }
+
+
+    interface AnotherEdgeCase extends EdgeCases {
     }
 
 }

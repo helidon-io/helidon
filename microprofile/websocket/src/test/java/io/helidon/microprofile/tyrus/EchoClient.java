@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.tyrus;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -24,8 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason;
@@ -37,14 +36,15 @@ import jakarta.websocket.Session;
 import org.glassfish.tyrus.client.ClientManager;
 import org.glassfish.tyrus.container.jdk.client.JdkClientContainer;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Class EchoClient.
  */
 class EchoClient {
-    private static final Logger LOGGER = Logger.getLogger(EchoClient.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EchoClient.class.getName());
 
     private static final ClientManager client = ClientManager.createClient(JdkClientContainer.class.getName());
     private static final long TIMEOUT_SECONDS = 10;
@@ -89,10 +89,10 @@ class EchoClient {
                     session.addMessageHandler(new MessageHandler.Whole<String>() {
                         @Override
                         public void onMessage(String message) {
-                            LOGGER.info("Client OnMessage called '" + message + "'");
+                            LOGGER.log(Level.INFO, "Client OnMessage called '" + message + "'");
 
                             int index = messages.length - (int) messageLatch.getCount();
-                            assertTrue(equals.apply(messages[index], message), messages[index] + ":" + message);
+                            assertThat(messages[index] + ":" + message, equals.apply(messages[index], message), is(true));
 
                             messageLatch.countDown();
                             if (messageLatch.getCount() == 0) {
@@ -107,7 +107,7 @@ class EchoClient {
 
                     // Send message to Echo service
                     for (String msg : messages) {
-                        LOGGER.info("Client sending message '" + msg + "'");
+                        LOGGER.log(Level.INFO, "Client sending message '" + msg + "'");
                         session.getBasicRemote().sendText(msg);
                     }
                 } catch (IOException e) {
@@ -117,13 +117,13 @@ class EchoClient {
 
             @Override
             public void onClose(Session session, CloseReason closeReason) {
-                LOGGER.info("Client OnClose called '" + closeReason + "'");
+                LOGGER.log(Level.INFO, "Client OnClose called '" + closeReason + "'");
                 closeFuture.complete(null);
             }
 
             @Override
             public void onError(Session session, Throwable thr) {
-                LOGGER.log(Level.SEVERE, "Client OnError called '" + thr + "'", thr);
+                LOGGER.log(Level.ERROR, "Client OnError called '" + thr + "'", thr);
             }
         }, config, uri);
 

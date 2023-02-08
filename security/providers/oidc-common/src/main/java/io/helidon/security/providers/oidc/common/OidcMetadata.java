@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,18 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.reactive.webclient.WebClient;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
 final class OidcMetadata {
-    private static final Logger LOGGER = Logger.getLogger(OidcMetadata.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OidcMetadata.class.getName());
     private static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";
 
     private final JsonObject oidcMetadata;
@@ -49,7 +45,7 @@ final class OidcMetadata {
 
         // is it explicitly configured?
         if (currentValue != null) {
-            LOGGER.finest(() -> metaKey + " explicitly configured: " + currentValue);
+            LOGGER.log(Level.TRACE, () -> metaKey + " explicitly configured: " + currentValue);
             return currentValue;
         }
 
@@ -66,8 +62,8 @@ final class OidcMetadata {
             // get it from metadata
             String jsonValue = oidcMetadata.getString(metaKey, null);
             if (jsonValue != null) {
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.finest(metaKey + " loaded from well known metadata: " + jsonValue);
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, metaKey + " loaded from well known metadata: " + jsonValue);
                 }
                 foundValue = URI.create(jsonValue);
             }
@@ -97,7 +93,6 @@ final class OidcMetadata {
     }
 
     static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {
-        private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
         private boolean enableRemoteLoad;
         private JsonObject metadata;
         private WebClient webClient;
@@ -149,7 +144,7 @@ final class OidcMetadata {
                         .request(JsonObject.class)
                         .await(Duration.ofSeconds(20));
 
-                LOGGER.finest(() -> "OIDC Metadata loaded from well known URI: " + wellKnown);
+                LOGGER.log(Level.TRACE, () -> "OIDC Metadata loaded from well known URI: " + wellKnown);
             } catch (Exception e) {
                 collector.fatal(e, "Failed to load metadata: " + e.getClass().getName()
                         + ": " + e.getMessage()

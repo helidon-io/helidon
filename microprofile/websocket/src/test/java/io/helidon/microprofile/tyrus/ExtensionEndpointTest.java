@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.microprofile.tyrus;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -32,22 +31,22 @@ import org.junit.jupiter.api.Test;
 @HelidonTest
 @AddBean(ExtensionEndpointTest.TestExtension.class)
 @AddBean(ExtensionEndpointTest.ExtensionEndpoint.class)
-class ExtensionEndpointTest extends EchoEndpointBaseTest {
+class ExtensionEndpointTest extends WebSocketBaseTest {
 
     @Test
     public void test() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + serverPort() + "/extAnnot");
+        URI echoUri = URI.create("ws://localhost:" + port() + "/extAnnot");
         EchoClient echoClient = new EchoClient(echoUri, new TestExtension());
         echoClient.echo("hi", "how are you?");
     }
 
     @ServerEndpoint("/extAnnot")
     public static class ExtensionEndpoint {
-        private static final Logger LOGGER = Logger.getLogger(ExtensionEndpoint.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(ExtensionEndpoint.class.getName());
 
         @OnMessage
         public void echo(Session session, String message) throws Exception {
-            LOGGER.info("OnMessage called '" + message + "'");
+            LOGGER.log(System.Logger.Level.INFO, "OnMessage called '" + message + "'");
             if (session.getNegotiatedExtensions().isEmpty()) {
                 throw new IllegalStateException();
             }

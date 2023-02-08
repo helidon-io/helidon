@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.jwt;
 
+import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -23,7 +24,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
@@ -65,7 +65,7 @@ import io.helidon.security.util.TokenHandler;
  * JWK files are expected (one for verification, one for signatures).
  */
 public final class JwtProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    private static final Logger LOGGER = Logger.getLogger(JwtProvider.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
 
     /**
      * Configure this for outbound requests to override user to use.
@@ -120,7 +120,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         if (!verifySignature) {
-            LOGGER.info("JWT Signature validation is disabled. Any JWT will be accepted.");
+            LOGGER.log(Level.INFO, "JWT Signature validation is disabled. Any JWT will be accepted.");
         }
     }
 

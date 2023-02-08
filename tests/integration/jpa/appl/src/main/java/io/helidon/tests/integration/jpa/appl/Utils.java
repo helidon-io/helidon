@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 /**
  * Test utilities.
  */
 public class Utils {
 
-    private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Utils.class.getName());
 
     private Utils() {
         throw new IllegalStateException("No instances of this class are allowed!");
@@ -39,7 +39,7 @@ public class Utils {
         try {
             connection.close();
         } catch (SQLException ex) {
-            LOGGER.warning(() -> String.format("Could not close database connection: %s", ex.getMessage()));
+            LOGGER.log(Level.WARNING, () -> String.format("Could not close database connection: %s", ex.getMessage()));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,13 +81,7 @@ public final class ContentReaders {
      * Implementation of {@link Mapper} that converts a {@code byte[]} into
      * a {@link String} using a given {@link Charset}.
      */
-    private static final class BytesToString implements Mapper<byte[], String> {
-
-        private final Charset charset;
-
-        BytesToString(Charset charset) {
-            this.charset = charset;
-        }
+    private record BytesToString(Charset charset) implements Mapper<byte[], String> {
 
         @Override
         public String map(byte[] bytes) {
@@ -98,19 +92,14 @@ public final class ContentReaders {
     /**
      * Mapper that applies URL decoding to a {@code String}.
      */
-    private static final class StringToDecodedString implements Mapper<String, String> {
-
-        private final Charset charset;
-
-        StringToDecodedString(Charset charset) {
-            this.charset = charset;
-        }
+    private record StringToDecodedString(Charset charset) implements Mapper<String, String> {
 
         @Override
         public String map(String s) {
             return URLDecoder.decode(s, charset);
         }
     }
+
     /**
      * Implementation of {@link Collector} that collects chunks into a single
      * {@code byte[]}.

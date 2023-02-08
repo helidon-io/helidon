@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -39,7 +39,7 @@ import org.jboss.jandex.IndexReader;
  */
 class JandexUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(JandexUtils.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JandexUtils.class.getName());
 
     /**
      * Default Jandex index file.
@@ -88,7 +88,7 @@ class JandexUtils {
                 try (InputStream input = url.openStream()) {
                     setIndexes.add(new IndexReader(input).read());
                 } catch (Exception e) {
-                    LOGGER.warning("Unable to load default Jandex index file: " + url
+                    LOGGER.log(Level.WARNING, "Unable to load default Jandex index file: " + url
                                            + " : " + e.getMessage());
                 }
             }

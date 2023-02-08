@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config.mp;
 
 import java.io.File;
+import java.lang.System.Logger.Level;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -54,8 +55,6 @@ import java.util.ServiceLoader;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Builder;
@@ -82,7 +81,7 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
  */
 @Configured(prefix = "mp.config", root = true)
 class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder {
-    private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
 
     private static final Map<String, MpMetaConfigProvider> MP_META_PROVIDERS;
@@ -323,8 +322,8 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
         Collections.reverse(ordinalSources);
         Collections.reverse(ordinalConverters);
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.finest("The following config sources are used (ordered): " + ordinalSources);
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "The following config sources are used (ordered): " + ordinalSources);
         }
 
         List<ConfigSource> targetSources = new LinkedList<>();
@@ -337,8 +336,8 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
         // if we already have a profile configured, we have loaded it and can safely return
         if (profile != null) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Built MP config for profile " + profile);
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Built MP config for profile " + profile);
             }
             return result;
         }
@@ -348,11 +347,11 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
         // nope, return the result
         if (configuredProfile == null) {
-            LOGGER.fine("Built MP config with no profile");
+            LOGGER.log(Level.DEBUG, "Built MP config with no profile");
             return result;
         } else {
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("MP profile configured, rebuilding: " + configuredProfile);
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "MP profile configured, rebuilding: " + configuredProfile);
             }
         }
 
@@ -412,8 +411,8 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
                         .forEach(targetConfigSources::add);
             }
 
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("The following default config sources discovered: " + targetConfigSources);
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "The following default config sources discovered: " + targetConfigSources);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.microprofile.lra.tck;
 
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -28,16 +28,19 @@ import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Destroyed;
+import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+
 @ApplicationScoped
 public class CoordinatorAppService {
 
-    private static final Logger LOGGER = Logger.getLogger(CoordinatorAppService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CoordinatorAppService.class.getName());
 
     @Inject
     Config config;
@@ -53,7 +56,7 @@ public class CoordinatorAppService {
         String urlProperty = System.getProperty("lra.coordinator.url", "");
         // Maven can't set null
         urlProperty = urlProperty.isEmpty() ? "http://localhost:" + port + "/lra-coordinator" : urlProperty;
-        LOGGER.info("Using LRA Coordinator: " + urlProperty);
+        LOGGER.log(Level.INFO, "Using LRA Coordinator: " + urlProperty);
         return URI.create(urlProperty);
     });
 
@@ -75,7 +78,7 @@ public class CoordinatorAppService {
         return coordinatorService.get();
     }
 
-    private void whenApplicationTerminates(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
+    private void whenApplicationTerminates(@Observes @Priority(PLATFORM_BEFORE - 10) @BeforeDestroyed(ApplicationScoped.class) final Object event) {
         coordinatorService.get().shutdown();
     }
 }

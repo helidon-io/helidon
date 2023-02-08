@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
 import io.helidon.nima.http2.Http2ErrorCode;
@@ -52,6 +53,7 @@ import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2Util;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.WindowSize;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -66,7 +68,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * A single connection is created between a client and a server.
  * A single connection serves multiple streams.
  */
-public class Http2Connection implements ServerConnection {
+public class Http2Connection implements ServerConnection, InterruptableTask<Void> {
     static final String FULL_PROTOCOL = "HTTP/2.0";
     static final String PROTOCOL = "HTTP";
     static final String PROTOCOL_VERSION = "2.0";
@@ -76,18 +78,20 @@ public class Http2Connection implements ServerConnection {
 
     private final Map<Integer, StreamContext> streams = new HashMap<>(1000);
     private final ConnectionContext ctx;
+    private final Http2Config http2Config;
     private final HttpRouting routing;
     private final Http2Headers.DynamicTable requestDynamicTable;
     private final Http2HuffmanDecoder requestHuffman;
     private final Http2FrameListener receiveFrameListener = // Http2FrameListener.create(List.of());
             Http2FrameListener.create(List.of(new Http2LoggingFrameListener("recv")));
     private final Http2ConnectionWriter connectionWriter;
+    private final List<Http2SubProtocolSelector> subProviders;
     private final WindowSize connectionWindowSize = new WindowSize();
     private final DataReader reader;
 
-    private Http2Settings serverSettings = Http2Settings.builder()
-            .add(Http2Setting.ENABLE_PUSH, false)
-            .build();
+    private final Http2Settings serverSettings;
+    private final boolean sendErrorDetails;
+
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
             .build();
@@ -97,21 +101,29 @@ public class Http2Connection implements ServerConnection {
     private boolean expectPreface;
     private HttpPrologue upgradePrologue;
     private Http2Headers upgradeHeaders;
-    private boolean returnErrorDetails = true;
     private State state = State.WRITE_SERVER_SETTINGS;
     private int continuationExpectedStreamId;
     private int lastStreamId;
-    private long maxClientFrameSize = 16_384;
+    private long maxClientFrameSize;
+    private long maxClientConcurrentStreams;
     private int streamInitialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
 
-    Http2Connection(ConnectionContext ctx) {
+    Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.ctx = ctx;
-
+        this.http2Config = http2Config;
+        this.serverSettings = Http2Settings.builder()
+                .update(builder -> settingsUpdate(http2Config, builder))
+                .add(Http2Setting.ENABLE_PUSH, false)
+                .build();
         this.connectionWriter = new Http2ConnectionWriter(ctx, ctx.dataWriter(), List.of(new Http2LoggingFrameListener("send")));
+        this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
         this.requestHuffman = new Http2HuffmanDecoder();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.reader = ctx.dataReader();
+        this.sendErrorDetails = http2Config.sendErrorDetails();
+        this.maxClientFrameSize = http2Config.maxClientFrameSize();
+        this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
     }
 
     @Override
@@ -131,7 +143,7 @@ public class Http2Connection implements ServerConnection {
 
             Http2GoAway frame = new Http2GoAway(0,
                                                 e.code(),
-                                                returnErrorDetails ? e.getMessage() : "");
+                                                sendErrorDetails ? e.getMessage() : "");
             connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
             state = State.FINISHED;
         } catch (CloseConnectionException | InterruptedException e) {
@@ -143,7 +155,7 @@ public class Http2Connection implements ServerConnection {
             }
             Http2GoAway frame = new Http2GoAway(0,
                                                 Http2ErrorCode.INTERNAL,
-                                                returnErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
+                                                sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
             connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()), FlowControl.NOOP);
             state = State.FINISHED;
             throw e;
@@ -181,8 +193,36 @@ public class Http2Connection implements ServerConnection {
     }
 
     @Override
+    public boolean canInterrupt() {
+        return streams.isEmpty();
+    }
+
+    @Override
     public String toString() {
         return "[" + ctx.socketId() + " " + ctx.childSocketId() + "]";
+    }
+
+    // jUnit Http2Config pkg only visible test accessor.
+    Http2Config config() {
+        return http2Config;
+    }
+
+    // jUnit Http2Settings pkg only visible test accessor.
+    Http2Settings serverSettings() {
+        return serverSettings;
+    }
+
+    private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
+        applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
+        applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
+        applySetting(builder, config.maxConcurrentStreams(), Http2Setting.MAX_CONCURRENT_STREAMS);
+    }
+
+    // Add value to the builder only when differs from default
+    private static void applySetting(Http2Settings.Builder builder, long value, Http2Setting<Long> settings) {
+        if (value != settings.defaultValue()) {
+            builder.add(settings, value);
+        }
     }
 
     private void doHandle() throws InterruptedException {
@@ -390,6 +430,23 @@ public class Http2Connection implements ServerConnection {
                         + maxClientFrameSize);
             }
 
+            // Set server MAX_CONCURRENT_STREAMS limit when client sends number lower than hard limit
+            // from configuration. Refuse settings if client sends larger number than is configured.
+            this.clientSettings.presentValue(Http2Setting.MAX_CONCURRENT_STREAMS)
+                    .ifPresent(it -> {
+                        if (http2Config.maxConcurrentStreams() >= it) {
+                            maxClientConcurrentStreams = it;
+                        } else {
+                            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL,
+                                    "Value of maximum concurrent streams limit " + it
+                                          + " exceeded hard limit value " + http2Config.maxConcurrentStreams());
+                            connectionWriter.write(
+                                    frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()),
+                                    FlowControl.NOOP);
+
+                        }
+                    });
+
             // TODO for each
             //        Http2Setting.MAX_CONCURRENT_STREAMS;
             //        Http2Setting.MAX_HEADER_LIST_SIZE;
@@ -492,7 +549,6 @@ public class Http2Connection implements ServerConnection {
 
         receiveFrameListener.headers(ctx, headers);
         headers.validateRequest();
-        // todo configure path validation
         String path = headers.path();
         Http.Method method = headers.method();
         HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
@@ -500,7 +556,7 @@ public class Http2Connection implements ServerConnection {
                                                         PROTOCOL_VERSION,
                                                         method,
                                                         path,
-                                                        true);
+                                                        http2Config.validatePath());
         stream.prologue(httpPrologue);
         stream.headers(headers, endOfStream);
         state = State.READ_FRAME;
@@ -624,9 +680,17 @@ public class Http2Connection implements ServerConnection {
                 }
             }
 
+            // MAX_CONCURRENT_STREAMS limit check - according to RFC 9113 section 5.1.2 endpoint MUST treat this
+            // as a stream error (section 5.4.2) of type PROTOCOL_ERROR or REFUSED_STREAM.
+            if (streams.size() > maxClientConcurrentStreams) {
+                throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
+                        "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
+            }
             streamContext = new StreamContext(streamId,
                                               new Http2Stream(ctx,
                                                               routing,
+                                                              http2Config,
+                                                              subProviders,
                                                               streamId,
                                                               serverSettings,
                                                               clientSettings,

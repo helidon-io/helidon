@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,12 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
+import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.http.DirectHandlers;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
@@ -57,7 +59,7 @@ class ServerListener {
     private final String socketName;
     private final ListenerConfiguration listenerConfig;
     private final Router router;
-    private final ExecutorService readerExecutor;
+    private final HelidonTaskExecutor readerExecutor;
     private final ExecutorService sharedExecutor;
     private final Thread serverThread;
     private final DirectHandlers simpleHandlers;
@@ -72,11 +74,12 @@ class ServerListener {
     private volatile ServerSocket serverSocket;
 
     ServerListener(ServerContext serverContext,
-                   List<ServerConnectionProvider> connectionProviders,
+                   List<ServerConnectionSelector> connectionProviders,
                    String socketName,
                    ListenerConfiguration listenerConfig,
                    Router router,
-                   DirectHandlers simpleHandlers) {
+                   DirectHandlers simpleHandlers,
+                   boolean inheritThreadLocals) {
 
         this.serverContext = serverContext;
         this.connectionProviders = ConnectionProviders.create(connectionProviders);
@@ -92,14 +95,14 @@ class ServerListener {
                 .name("server-" + socketName + "-listener")
                 .unstarted(this::listen);
         this.simpleHandlers = simpleHandlers;
-        this.readerExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
-                                                                         .inheritInheritableThreadLocals(false)
+                                                                         .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
         this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                          .allowSetThreadLocals(true)
-                                                                         .inheritInheritableThreadLocals(false)
+                                                                         .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                          .factory());
 
         this.closeFuture = new CompletableFuture<>();
@@ -130,11 +133,30 @@ class ServerListener {
         }
         running = false;
         try {
-            // Attempt to wait until existing channels finish execution
-            shutdownExecutor(readerExecutor);
-            shutdownExecutor(sharedExecutor);
-
+            // Stop listening for connections
             serverSocket.close();
+
+            // Shutdown reader executor
+            readerExecutor.terminate(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+            if (!readerExecutor.isTerminated()) {
+                LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
+                readerExecutor.forceTerminate();
+            }
+
+            // Shutdown shared executor
+            try {
+                sharedExecutor.shutdown();
+                boolean done = sharedExecutor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+                if (!done) {
+                    List<Runnable> running = sharedExecutor.shutdownNow();
+                    if (!running.isEmpty()) {
+                        LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
+                    }
+                }
+            } catch (InterruptedException e) {
+                // falls through
+            }
+
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
@@ -194,6 +216,21 @@ class ServerListener {
         serverThread.start();
     }
 
+    boolean hasTls() {
+        return listenerConfig.hasTls();
+    }
+
+    void reloadTls(Tls tls) {
+        if (!listenerConfig.hasTls()) {
+            throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
+                                                            + " and therefore cannot be reloaded");
+        }
+        if (!tls.enabled()) {
+            throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
+        }
+        listenerConfig.tls().reload(tls);
+    }
+
     private void debugTls(String serverChannelId, Tls tls) {
         SSLParameters sslParameters = tls.newEngine()
                 .getSSLParameters();
@@ -251,7 +288,7 @@ class ServerListener {
                                                     listenerConfig.maxPayloadSize(),
                                                     simpleHandlers);
 
-                    readerExecutor.submit(handler);
+                    readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
                 } catch (Exception e) {
@@ -275,24 +312,5 @@ class ServerListener {
 
         LOGGER.log(INFO, String.format("[%s] %s socket closed.", serverChannelId, socketName));
         closeFuture.complete(null);
-    }
-
-    /**
-     * Shutdown an executor by waiting for a period of time.
-     *
-     * @param executor executor to shut down
-     */
-    static void shutdownExecutor(ExecutorService executor) {
-        try {
-            boolean terminate = executor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
-            if (!terminate) {
-                List<Runnable> running = executor.shutdownNow();
-                if (!running.isEmpty()) {
-                    LOGGER.log(INFO, running.size() + " channel tasks did not terminate gracefully");
-                }
-            }
-        } catch (InterruptedException e) {
-           LOGGER.log(INFO, "InterruptedException caught while shutting down channel tasks");
-        }
     }
 }

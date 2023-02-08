@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package io.helidon.reactive.webserver.staticcontent;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -29,7 +29,7 @@ import io.helidon.reactive.webserver.ServerResponse;
  * Serves files from the filesystem as a static WEB content.
  */
 class FileSystemContentHandler extends FileBasedContentHandler {
-    private static final Logger LOGGER = Logger.getLogger(FileSystemContentHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(FileSystemContentHandler.class.getName());
 
     private final Path root;
 
@@ -47,7 +47,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             resolved = root;
         } else {
             resolved = root.resolve(requestedPath).normalize();
-            LOGGER.finest(() -> "Requested file: " + resolved.toAbsolutePath());
+            LOGGER.log(Level.TRACE, () -> "Requested file: " + resolved.toAbsolutePath());
             if (!resolved.startsWith(root)) {
                 return false;
             }

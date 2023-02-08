@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -115,6 +115,7 @@
                                 <exclude>**/TestExtendedKPIMetrics.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                                 <exclude>**/TestDisabledMetrics.java</exclude>
+                                <exclude>**/TestConfigProcessing.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -146,6 +147,20 @@
                                 <exclude>**/HelloWorldTest.java</exclude>
                                 <exclude>**/HelloWorldAsyncResponseWithRestRequestTest.java</exclude>
                             </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-config-with-top-level-tags</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestConfigProcessing.java</include>
+                            </includes>
+                            <environmentVariables>
+                                <TAGS>topLevel</TAGS>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>

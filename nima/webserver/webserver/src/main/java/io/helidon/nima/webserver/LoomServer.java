@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -31,10 +32,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.Version;
+import io.helidon.common.context.Context;
+import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webserver.http.DirectHandlers;
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 class LoomServer implements WebServer {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
@@ -44,19 +51,21 @@ class LoomServer implements WebServer {
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
+    private final Context context;
     private final boolean registerShutdownHook;
-    private volatile Thread shutdownHook;
 
+    private volatile Thread shutdownHook;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
     LoomServer(Builder builder, DirectHandlers simpleHandlers) {
         this.registerShutdownHook = builder.shutdownHook();
-        ServerContextImpl serverContext = new ServerContextImpl(builder.context(),
+        this.context = builder.context();
+        ServerContextImpl serverContext = new ServerContextImpl(context,
                                                                 builder.mediaContext(),
                                                                 builder.contentEncodingContext());
 
-        List<ServerConnectionProvider> connectionProviders = builder.connectionProviders();
+        List<ServerConnectionSelector> connectionProviders = builder.connectionProviders();
 
         Map<String, Router> routers = builder.routers();
         Map<String, ListenerConfiguration.Builder> sockets = builder.socketBuilders();
@@ -70,6 +79,8 @@ class LoomServer implements WebServer {
         if (defaultRouter == null) {
             defaultRouter = Router.empty();
         }
+
+       boolean inheritThreadLocals = builder.inheritThreadLocals();
 
         for (String socketName : socketNames) {
             Router router = routers.get(socketName);
@@ -90,13 +101,14 @@ class LoomServer implements WebServer {
                                              socketName,
                                              socketConfig,
                                              router,
-                                             simpleHandlers));
+                                             simpleHandlers,
+                                             inheritThreadLocals));
         }
 
         this.listeners = Map.copyOf(listeners);
         this.executorService = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                           .allowSetThreadLocals(true)
-                                                                          .inheritInheritableThreadLocals(false)
+                                                                          .inheritInheritableThreadLocals(inheritThreadLocals)
                                                                           .factory());
     }
 
@@ -157,11 +169,32 @@ class LoomServer implements WebServer {
 
     @Override
     public boolean hasTls(String socketName) {
-        return false;
+        ServerListener listener = listeners.get(socketName);
+        return listener != null && listener.hasTls();
+    }
+
+    @Override
+    public void reloadTls(String socketName, Tls tls) {
+        ServerListener listener = listeners.get(socketName);
+        if (listener == null) {
+            throw new IllegalArgumentException("Cannot reload TLS on socket " + socketName
+                                                       + " since this socket does not exist");
+        } else {
+            listener.reloadTls(tls);
+        }
+    }
+
+    @Override
+    public Context context() {
+        return context;
     }
 
     private void stopIt() {
-        parallel("stop", ServerListener::stop);
+        // We may be in a shutdown hook and new threads may not be created
+        for (ServerListener listener : listeners.values()) {
+            listener.stop();
+        }
+
         running.set(false);
 
         LOGGER.log(System.Logger.Level.INFO, "Níma server stopped all channels.");
@@ -199,13 +232,19 @@ class LoomServer implements WebServer {
 
     private void registerShutdownHook() {
         this.shutdownHook = new Thread(() -> {
+                    LOGGER.log(System.Logger.Level.INFO, "Shutdown requested by JVM shutting down");
                     listeners.values().forEach(ServerListener::stop);
                     if (startFutures != null) {
                         startFutures.forEach(future -> future.future().cancel(true));
                     }
-                }, "shutdown-hook");
+                    LOGGER.log(System.Logger.Level.INFO, "Shutdown finished");
+                }, "nima-shutdown-hook");
 
         Runtime.getRuntime().addShutdownHook(shutdownHook);
+        // we also need to keep the logging system active until the shutdown hook completes
+        // this introduces a hard dependency on JUL, as we cannot abstract this easily away
+        // this is to workaround https://bugs.openjdk.java.net/browse/JDK-8161253
+        keepLoggingActive(shutdownHook);
     }
 
     private void deregisterShutdownHook() {
@@ -244,6 +283,61 @@ class LoomServer implements WebServer {
         return result;
     }
 
+    private void keepLoggingActive(Thread shutdownHook) {
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        Handler[] handlers = rootLogger.getHandlers();
+
+        List<Handler> newHandlers = new ArrayList<>();
+
+        boolean added = false;
+        for (Handler handler : handlers) {
+            if (handler instanceof KeepLoggingActiveHandler) {
+                // we want to replace it with our current shutdown hook
+                newHandlers.add(new KeepLoggingActiveHandler(shutdownHook));
+                added = true;
+            } else {
+                newHandlers.add(handler);
+            }
+        }
+        if (!added) {
+            // out handler must be first, so other handlers are not closed before we finish shutdown hook
+            newHandlers.add(0, new KeepLoggingActiveHandler(shutdownHook));
+        }
+
+        for (Handler handler : handlers) {
+            rootLogger.removeHandler(handler);
+        }
+        for (Handler newHandler : newHandlers) {
+            rootLogger.addHandler(newHandler);
+        }
+    }
+
     private record ListenerFuture(ServerListener listener, Future<?> future) {
+    }
+
+    private static final class KeepLoggingActiveHandler extends Handler {
+        private final Thread shutdownHook;
+
+        private KeepLoggingActiveHandler(Thread shutdownHook) {
+            this.shutdownHook = shutdownHook;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            // noop
+        }
+
+        @Override
+        public void flush() {
+            // noop
+        }
+
+        @Override
+        public void close() {
+            try {
+                shutdownHook.join();
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 }

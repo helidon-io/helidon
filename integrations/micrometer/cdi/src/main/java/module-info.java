@@ -30,14 +30,11 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.micrometer.cdi {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
     requires static jakarta.annotation;
 
     requires static jakarta.activation;
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires static jakarta.interceptor.api;
 
     requires io.helidon.common.http;
     requires io.helidon.reactive.servicecommon;

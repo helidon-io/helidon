@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import io.helidon.nima.http2.Http2RstStream;
 import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.http2.Http2WindowUpdate;
-import io.helidon.nima.http2.webserver.spi.Http2SubProtocolProvider;
+import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 
-class GrpcProtocolHandlerNotFound implements Http2SubProtocolProvider.SubProtocolHandler {
+class GrpcProtocolHandlerNotFound implements Http2SubProtocolSelector.SubProtocolHandler {
     private final Http2StreamWriter streamWriter;
     private final int streamId;
     private Http2StreamState currentStreamState;

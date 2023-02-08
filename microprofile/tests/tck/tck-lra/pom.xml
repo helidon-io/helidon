@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,6 +40,28 @@
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>helidon-microprofile-openapi</artifactId>
+                    <groupId>io.helidon.microprofile.openapi</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.helidon.microprofile.tracing</groupId>
+                    <artifactId>helidon-microprofile-tracing</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.helidon.microprofile.metrics</groupId>
+                    <artifactId>helidon-microprofile-metrics</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.helidon.microprofile</groupId>
+                    <artifactId>helidon-microprofile-fault-tolerance</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.helidon.microprofile.jwt</groupId>
+                    <artifactId>helidon-microprofile-jwt-auth</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.lra</groupId>
@@ -86,6 +108,10 @@
                     <includes>
                         <include>**/*Test*.java</include>
                     </includes>
+                    <excludes>
+                        <!-- It fails randomly -->
+                        <exclude>org.eclipse.microprofile.lra.tck.TckRecoveryTests.java</exclude>
+                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>

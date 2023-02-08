@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,89 +18,55 @@ package io.helidon.nima.http.encoding;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.ServiceLoader;
-import java.util.Set;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.nima.http.encoding.spi.ContentEncodingProvider;
 
 class ContentEncodingSupportImpl implements ContentEncodingContext {
-    private static final String IDENTITY_ENCODING = "identity";
 
-    // todo now all static, should be in builder + instance, so we can configure per server
-    private static final boolean ENCODING_ENABLED;
-    private static final boolean DECODING_ENABLED;
+    private final boolean encodingEnabled;
+    private final boolean decodingEnabled;
+    private final Map<String, ContentEncoder> encoders;
+    private final Map<String, ContentDecoder> decoders;
+    private final ContentEncoder firstEncoder;
 
-    private static final Map<String, ContentEncoder> ENCODERS;
-    private static final Map<String, ContentDecoder> DECODERS;
-    private static final ContentEncoder FIRST_ENCODER;
-
-    static {
-        List<ContentEncodingProvider> providers =
-                HelidonServiceLoader.create(ServiceLoader.load(ContentEncodingProvider.class))
-                        .asList();
-        Map<String, ContentEncoder> encoders = new HashMap<>();
-        Map<String, ContentDecoder> decoders = new HashMap<>();
-        ContentEncoder firstEncoder = null;
-        for (ContentEncodingProvider provider : providers) {
-            Set<String> ids = provider.ids();
-            if (provider.supportsDecoding()) {
-                for (String id : ids) {
-                    decoders.putIfAbsent(id, provider.decoder());
-                }
-            }
-            if (provider.supportsEncoding()) {
-                for (String id : ids) {
-                    ContentEncoder encoder = provider.encoder();
-                    if (firstEncoder == null) {
-                        firstEncoder = encoder;
-                    }
-                    encoders.putIfAbsent(id, encoder);
-                }
-            }
-        }
-        encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
-        decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
-
-        FIRST_ENCODER = firstEncoder;
-
-        ENCODING_ENABLED = !encoders.isEmpty();
-        DECODING_ENABLED = !decoders.isEmpty();
-
-        ENCODERS = Map.copyOf(encoders);
-        DECODERS = Map.copyOf(decoders);
+    ContentEncodingSupportImpl(Map<String, ContentEncoder> encoders,
+                               Map<String, ContentDecoder> decoders,
+                               ContentEncoder firstEncoder) {
+        this.encoders = encoders;
+        this.decoders = decoders;
+        this.encodingEnabled = !encoders.isEmpty();
+        this.decodingEnabled = !decoders.isEmpty();
+        this.firstEncoder = firstEncoder;
     }
 
     @Override
     public boolean contentEncodingEnabled() {
-        return ENCODING_ENABLED;
+        return encodingEnabled;
     }
 
     @Override
     public boolean contentDecodingEnabled() {
-        return DECODING_ENABLED;
+        return decodingEnabled;
     }
 
     @Override
     public boolean contentEncodingSupported(String encodingId) {
-        return ENCODERS.get(encodingId) != null;
+        return encoders.get(encodingId) != null;
     }
 
     @Override
     public boolean contentDecodingSupported(String encodingId) {
-        return DECODERS.get(encodingId) != null;
+        return decoders.get(encodingId) != null;
     }
 
     @Override
     public ContentEncoder encoder(String encodingId) throws NoSuchElementException {
-        ContentEncoder encoder = ENCODERS.get(encodingId);
+        ContentEncoder encoder = encoders.get(encodingId);
         if (encoder == null) {
             throw new NoSuchElementException("Encoding for " + encodingId + " not available");
         }
@@ -109,7 +75,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
     @Override
     public ContentDecoder decoder(String encodingId) throws NoSuchElementException {
-        ContentDecoder decoder = DECODERS.get(encodingId);
+        ContentDecoder decoder = decoders.get(encodingId);
         if (decoder == null) {
             throw new NoSuchElementException("Decoding for " + encodingId + " not available");
         }
@@ -137,10 +103,10 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         Collections.sort(supported);
         for (EncodingWithQ encodingWithQ : supported) {
             if ("*".equals(encodingWithQ.encoding)) {
-                return FIRST_ENCODER;
+                return firstEncoder;
             }
             if (contentEncodingSupported(encodingWithQ.encoding)) {
-                return ENCODERS.get(encodingWithQ.encoding);
+                return encoders.get(encodingWithQ.encoding);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -24,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +46,7 @@ import org.testng.annotations.BeforeMethod;
  * Class HelidonMethodExecutor.
  */
 public class HelidonMethodExecutor implements ContainerMethodExecutor {
-    private static final Logger LOGGER = Logger.getLogger(ContainerMethodExecutor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ContainerMethodExecutor.class.getName());
 
     private HelidonCDIInjectionEnricher enricher = new HelidonCDIInjectionEnricher();
 
@@ -69,7 +69,7 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             controller.activate();
             Object instance = testMethodExecutor.getInstance();
             Method method = testMethodExecutor.getMethod();
-            LOGGER.info("Invoking '" + method + "' on " + instance);
+            LOGGER.log(Level.INFO, "Invoking '" + method + "' on " + instance);
             enricher.enrich(instance);
             jUnitTestNameRule(testMethodExecutor);
             invokeBefore(instance, method);

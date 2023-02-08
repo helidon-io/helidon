@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 package io.helidon.common.reactive;
 
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -29,7 +28,7 @@ import org.testng.annotations.Test;
 
 @Test
 public class MultiFromNotTrustedInputStreamTckTest extends MultiFromTrustedInputStreamTckTest {
-    private static final Logger LOGGER = Logger.getLogger(MultiFromNotTrustedInputStreamTckTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MultiFromNotTrustedInputStreamTckTest.class.getName());
 
     static final int BUFFER_SIZE = 4;
 
@@ -48,7 +47,7 @@ public class MultiFromNotTrustedInputStreamTckTest extends MultiFromTrustedInput
         try {
             executorService.awaitTermination(500, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            LOGGER.log(Level.SEVERE, e, () -> "Executor service shutdown interrupted!");
+            LOGGER.log(Level.ERROR, () -> "Executor service shutdown interrupted!", e);
         } finally {
             executorService = null;
         }

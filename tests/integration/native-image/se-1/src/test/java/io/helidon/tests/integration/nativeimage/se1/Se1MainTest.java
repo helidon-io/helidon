@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.tests.integration.nativeimage.se1;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -32,6 +34,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 
 /**
  * Unit test for {@link Se1Main}.
@@ -102,6 +108,19 @@ class Se1MainTest {
 
         conn = getURLConnection("GET", "/metrics");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+    }
+
+    @Test
+    void testEnumMapping() throws Exception {
+        HttpURLConnection conn = getURLConnection("GET", "/color");
+        int status = conn.getResponseCode();
+        ColorService.Color tint;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            String colorName = reader.readLine(); // Makes sure the color name was sent.
+            tint = ColorService.Color.valueOf(colorName); // Makes sure the color name maps to a Color.
+        }
+        assertThat("/color GET status", status, is(200));
+        assertThat("reported tint", tint, is(ColorService.Color.RED)); // Makes sure the mapped color is RED.
     }
 
     private HttpURLConnection getURLConnection(String method, String path) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.tests.bookstore;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,7 +29,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
@@ -65,7 +65,7 @@ class MainTest {
     private static final LocalPlatform localPlatform = LocalPlatform.get();
     private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
     private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
-    private static final Logger LOGGER = Logger.getLogger(MainTest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MainTest.class.getName());
 
     /**
      * Representation of a Helidon application. Encapsulates the
@@ -113,7 +113,7 @@ class MainTest {
             long now = System.currentTimeMillis();
             String operation = (toBeUp ? "start" : "stop");
             URL url = getHealthUrl();
-            LOGGER.info("Waiting for application to " + operation);
+            LOGGER.log(Level.INFO, "Waiting for application to " + operation);
 
             HttpURLConnection conn = null;
             int responseCode;
@@ -127,11 +127,13 @@ class MainTest {
                     conn.setConnectTimeout(500);
                     responseCode = conn.getResponseCode();
                     if (toBeUp && responseCode != 200) {
-                        LOGGER.info("Waiting for application to " + operation + ": Bad health response  " + responseCode);
+                        LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Bad health response  "
+                                + responseCode);
                     }
                 } catch (Exception ex) {
                     if (toBeUp) {
-                        LOGGER.info("Waiting for application to " + operation + ": Unable to connect to " + url.toString() + ": " + ex);
+                        LOGGER.log(Level.INFO, "Waiting for application to " + operation + ": Unable to connect to "
+                                + url.toString() + ": " + ex);
                     }
                     responseCode = -1;
                 }
@@ -139,7 +141,7 @@ class MainTest {
                     conn.disconnect();
                 }
             } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
-            LOGGER.info("Application " + operation + " successful" );
+            LOGGER.log(Level.INFO, "Application " + operation + " successful" );
         }
     }
 

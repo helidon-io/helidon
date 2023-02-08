@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.openapi;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Modifier;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -22,8 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -63,7 +62,7 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
             "mp.openapi.extensions.helidon." + USE_JAXRS_SEMANTICS_CONFIG_KEY;
     private static final boolean USE_JAXRS_SEMANTICS_DEFAULT = true;
 
-    private static final Logger LOGGER = Logger.getLogger(MPOpenAPIBuilder.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MPOpenAPIBuilder.class.getName());
 
     private OpenApiConfig openAPIConfig;
 
@@ -143,8 +142,8 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
         Set<String> result = new HashSet<>(resourceClassNames(indexView));
         result.addAll(providerClassNames(indexView));
         result.addAll(featureClassNames(indexView));
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.log(Level.FINER, "Ancillary classes: {0}", result);
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Ancillary classes: {0}", result);
         }
         return result;
     }
@@ -230,8 +229,8 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
 
         if (classesExplicitlyReferenced.isEmpty() && jaxRsApplications.size() == 1) {
             // No need to do filtering at all.
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.log(Level.FINE, String.format(
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, String.format(
                         "No filtering required for %s which reports no explicitly referenced classes and "
                                 + "is the only JAX-RS application",
                         appClassName));
@@ -248,8 +247,8 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
         if ((classesFromGetClasses.isEmpty()
                      && (classesFromGetSingletons.isEmpty() || !useJaxRsSemantics))
                 && jaxRsApplications.size() == 1) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.log(Level.FINE, String.format(
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, String.format(
                         "No filtering required for %s; although it returns a non-empty set from getSingletons, JAX-RS semantics "
                                 + "has been turned off for OpenAPI processing using " + USE_JAXRS_SEMANTICS_FULL_CONFIG_KEY,
                         appClassName));
@@ -277,14 +276,14 @@ public final class MPOpenAPIBuilder extends OpenApiService.AbstractBuilder<MPOpe
         // delegate is the previously-created view based only on the MP configuration.
         FilteredIndexView result = new FilteredIndexView(viewFilteredByConfig,
                                                          new FilteringOpenApiConfigImpl(mpConfig, excludePattern));
-        if (LOGGER.isLoggable(Level.FINE)) {
+        if (LOGGER.isLoggable(Level.DEBUG)) {
             String knownClassNames = result
                     .getKnownClasses()
                     .stream()
                     .map(ClassInfo::toString)
                     .sorted()
                     .collect(Collectors.joining("," + System.lineSeparator() + "    "));
-            LOGGER.log(Level.FINE,
+            LOGGER.log(Level.DEBUG,
                        String.format("FilteredIndexView for %n"
                                              + "  application class %s%n"
                                              + "  with explicitly-referenced classes %s%n"

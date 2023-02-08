@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
@@ -111,6 +110,12 @@ import org.reactivestreams.FlowAdapters;
         defaultValue = "false",
         direction = ConnectorAttribute.Direction.INCOMING_AND_OUTGOING,
         type = "boolean")
+@ConnectorAttribute(name = JmsConnector.AWAIT_ACK_ATTRIBUTE,
+        description = "Wait for the acknowledgement of previous message before pulling next one.",
+        mandatory = false,
+        defaultValue = "false",
+        direction = ConnectorAttribute.Direction.INCOMING_AND_OUTGOING,
+        type = "boolean")
 @ConnectorAttribute(name = JmsConnector.MESSAGE_SELECTOR_ATTRIBUTE,
         description = "JMS API message selector expression based on a subset of the SQL92. "
               + "Expression can only access headers and properties, not the payload.",
@@ -177,7 +182,7 @@ import org.reactivestreams.FlowAdapters;
         type = "properties")
 public class JmsConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
 
-    private static final Logger LOGGER = Logger.getLogger(JmsConnector.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(JmsConnector.class.getName());
 
     /**
      * Microprofile messaging JMS connector name.
@@ -187,43 +192,93 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     /**
      * Select in case factory is injected as a named bean or configured with name.
      */
-    protected static final String NAMED_FACTORY_ATTRIBUTE = "named-factory";
+    public static final String NAMED_FACTORY_ATTRIBUTE = "named-factory";
+
     /**
-     * User name used with ConnectionFactory.
+     * Username used with ConnectionFactory.
      */
-    protected static final String USERNAME_ATTRIBUTE = "username";
+    public static final String USERNAME_ATTRIBUTE = "username";
+
     /**
      * Password used with ConnectionFactory.
      */
-    protected static final String PASSWORD_ATTRIBUTE = "password";
+    public static final String PASSWORD_ATTRIBUTE = "password";
+
     /**
      * Client identifier for JMS connection.
      */
-    protected static final String CLIENT_ID_ATTRIBUTE = "client-id";
+    public static final String CLIENT_ID_ATTRIBUTE = "client-id";
+
     /**
      * True for creating durable consumer (only for topic).
      */
-    protected static final String DURABLE_ATTRIBUTE = "durable";
+    public static final String DURABLE_ATTRIBUTE = "durable";
+
     /**
      * Subscriber name for durable consumer used to identify subscription.
      */
-    protected static final String SUBSCRIBER_NAME_ATTRIBUTE = "subscriber-name";
+    public static final String SUBSCRIBER_NAME_ATTRIBUTE = "subscriber-name";
+
     /**
      * If true then any messages published to the topic using this session's connection,
      * or any other connection with the same client identifier,
      * will not be added to the durable subscription.
      */
-    protected static final String NON_LOCAL_ATTRIBUTE = "non-local";
+    public static final String NON_LOCAL_ATTRIBUTE = "non-local";
 
-    static final String ACK_MODE_ATTRIBUTE = "acknowledge-mode";
-    static final String TRANSACTED_ATTRIBUTE = "transacted";
-    static final String AWAIT_ACK_ATTRIBUTE = "await-ack";
-    static final String MESSAGE_SELECTOR_ATTRIBUTE = "message-selector";
-    static final String POLL_TIMEOUT_ATTRIBUTE = "poll-timeout";
-    static final String PERIOD_EXECUTIONS_ATTRIBUTE = "period-executions";
-    static final String TYPE_ATTRIBUTE = "type";
-    static final String DESTINATION_ATTRIBUTE = "destination";
-    static final String SESSION_GROUP_ID_ATTRIBUTE = "session-group-id";
+    /**
+     * JMS acknowledge mode.
+     * <p>
+     * Possible values are:
+     * </p>
+     * <ul>
+     * <li>AUTO_ACKNOWLEDGE - session automatically acknowledges a client’s receipt of a message,
+     * <li>CLIENT_ACKNOWLEDGE - receipt of a message is acknowledged only when Message.ack() is called manually,
+     * <li>DUPS_OK_ACKNOWLEDGE - session lazily acknowledges the delivery of messages.
+     * </ul>
+     */
+    public static final String ACK_MODE_ATTRIBUTE = "acknowledge-mode";
+
+    /**
+     * Indicates whether the session will use a local transaction.
+     */
+    public static final String TRANSACTED_ATTRIBUTE = "transacted";
+
+    /**
+     * Wait for the acknowledgement of previous message before pulling next one.
+     */
+    public static final String AWAIT_ACK_ATTRIBUTE = "await-ack";
+
+    /**
+     * JMS API message selector expression based on a subset of the SQL92.
+     * Expression can only access headers and properties, not the payload.
+     */
+    public static final String MESSAGE_SELECTOR_ATTRIBUTE = "message-selector";
+
+    /**
+     * Timeout for polling for next message in every poll cycle in millis.
+     */
+    public static final String POLL_TIMEOUT_ATTRIBUTE = "poll-timeout";
+
+    /**
+     * Period for executing poll cycles in millis.
+     */
+    public static final String PERIOD_EXECUTIONS_ATTRIBUTE = "period-executions";
+
+    /**
+     * Possible values are: queue, topic.
+     */
+    public static final String TYPE_ATTRIBUTE = "type";
+
+    /**
+     * Queue or topic name.
+     */
+    public static final String DESTINATION_ATTRIBUTE = "destination";
+
+    /**
+     * When multiple channels share same session-group-id, they share same JMS session and same JDBC connection as well.
+     */
+    public static final String SESSION_GROUP_ID_ATTRIBUTE = "session-group-id";
     static final String JNDI_ATTRIBUTE = "jndi";
     static final String JNDI_PROPS_ATTRIBUTE = "env-properties";
     static final String JNDI_JMS_FACTORY_ATTRIBUTE = "jms-factory";
@@ -325,7 +380,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 executor.shutdownNow();
             }
         } catch (InterruptedException e) {
-            LOGGER.log(Level.SEVERE, e, () -> "Error when awaiting scheduler termination.");
+            LOGGER.log(Level.ERROR, () -> "Error when awaiting scheduler termination.", e);
             scheduler.shutdownNow();
             executor.shutdownNow();
         }
@@ -334,10 +389,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 e.session().close();
                 e.connection().close();
             } catch (JMSException jmsException) {
-                LOGGER.log(Level.SEVERE, jmsException, () -> "Error when stopping JMS sessions.");
+                LOGGER.log(Level.ERROR, () -> "Error when stopping JMS sessions.", jmsException);
             }
         }
-        LOGGER.info("JMS Connector gracefully stopped.");
+        LOGGER.log(Level.INFO, "JMS Connector gracefully stopped.");
     }
 
     /**
@@ -469,7 +524,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             sessionEntry.connection().start();
             return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emitter)));
         } catch (JMSException e) {
-            LOGGER.log(Level.SEVERE, e, () -> "Error during JMS publisher preparation");
+            LOGGER.log(Level.ERROR, () -> "Error during JMS publisher preparation", e);
             return ReactiveStreams.failed(e);
         }
     }
@@ -490,8 +545,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             AtomicReference<MessageMapper> mapper = new AtomicReference<>();
             return ReactiveStreams.<Message<?>>builder()
                     .flatMapCompletionStage(m -> consume(m, session, mapper, producer, config))
-                    .onError(t -> LOGGER.log(Level.SEVERE, t, () -> "Error intercepted from channel "
-                            + config.get(CHANNEL_NAME_ATTRIBUTE).asString().orElse("unknown")))
+                                  .onError(t -> LOGGER.log(Level.ERROR,
+                                          () -> "Error intercepted from channel " + config.get(CHANNEL_NAME_ATTRIBUTE)
+                                                                                           .asString()
+                                                                                           .orElse("unknown"), t))
                     .ignore();
         } catch (JMSException e) {
             throw new MessagingException("Error when creating JMS producer.", e);
@@ -548,7 +605,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             if (message == null) {
                 return Optional.empty();
             }
-            LOGGER.fine(() -> "Received message: " + message);
+            LOGGER.log(Level.DEBUG, () -> "Received message: " + message);
             JmsMessage<?> preparedMessage = createMessage(nackHandler, message, executor, sessionEntry);
             emitter.emit(preparedMessage);
             return Optional.of(preparedMessage);

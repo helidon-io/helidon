@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.mp;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -33,8 +34,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,7 +48,7 @@ import org.eclipse.microprofile.config.spi.Converter;
  * Implementation of the basic MicroProfile {@link org.eclipse.microprofile.config.Config} API.
  */
 class MpConfigImpl implements Config {
-    private static final Logger LOGGER = Logger.getLogger(MpConfigImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MpConfigImpl.class.getName());
     // for references resolving
     // matches string between ${ } with a negative lookbehind if there is not backslash
     private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^${}:]+)(:[^$}]*)?}";
@@ -324,21 +323,26 @@ class MpConfigImpl implements Config {
             }
 
             if (value.isEmpty()) {
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.finest("Found property " + propertyName
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Found property " + propertyName
                                           + " in source " + source.getName()
                                           + " and it is empty (removed)");
                 }
                 return Optional.empty();
             }
 
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("Found property " + propertyName + " in source " + source.getName());
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Found property " + propertyName + " in source " + source.getName());
             }
             String rawValue = value;
-            return applyFilters(propertyName, value)
-                    .map(it -> resolveReferences(propertyName, it))
-                    .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+            try {
+                return applyFilters(propertyName, value)
+                        .map(it -> resolveReferences(propertyName, it))
+                        .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
+            } catch (NoSuchElementException e) {
+                // Property expression does not resolve
+                return Optional.empty();
+            }
         }
 
         return Optional.empty();
@@ -479,10 +483,10 @@ class MpConfigImpl implements Config {
                     }
                 });
             } else {
-                LOGGER.finest("Constructor with String parameter is not accessible on type " + type);
+                LOGGER.log(Level.TRACE, "Constructor with String parameter is not accessible on type " + type);
             }
         } catch (NoSuchMethodException e) {
-            LOGGER.log(Level.FINEST, "There is no public constructor with string parameter on class " + type.getName(), e);
+            LOGGER.log(Level.TRACE, "There is no public constructor with string parameter on class " + type.getName(), e);
         }
 
         return Optional.empty();
@@ -492,19 +496,19 @@ class MpConfigImpl implements Config {
         try {
             Method result = type.getDeclaredMethod(name, parameterTypes);
             if (!result.canAccess(null)) {
-                LOGGER.finest(() -> "Method " + name + "(" + Arrays
+                LOGGER.log(Level.TRACE, () -> "Method " + name + "(" + Arrays
                         .toString(parameterTypes) + ") is not accessible on class " + type.getName());
                 return Optional.empty();
             }
             if (!Modifier.isStatic(result.getModifiers())) {
-                LOGGER.finest(() -> "Method " + name + "(" + Arrays
+                LOGGER.log(Level.TRACE, () -> "Method " + name + "(" + Arrays
                         .toString(parameterTypes) + ") is not static on class " + type.getName());
                 return Optional.empty();
             }
 
             return Optional.of(result);
         } catch (NoSuchMethodException e) {
-            LOGGER.log(Level.FINEST,
+            LOGGER.log(Level.TRACE,
                        "Method " + name + "(" + Arrays.toString(parameterTypes) + ") is not avilable on class " + type.getName(),
                        e);
             return Optional.empty();

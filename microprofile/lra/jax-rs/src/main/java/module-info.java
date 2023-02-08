@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,11 @@ module io.helidon.microprofile.lra {
     requires jakarta.ws.rs;
     requires microprofile.lra.api;
     requires org.jboss.jandex;
-    requires java.logging;
     requires jakarta.annotation;
     requires io.helidon.config;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
     requires microprofile.config.api;
-    requires jakarta.interceptor.api;
     requires jersey.common;
     requires io.helidon.lra.coordinator.client;
     requires io.helidon.common.reactive;

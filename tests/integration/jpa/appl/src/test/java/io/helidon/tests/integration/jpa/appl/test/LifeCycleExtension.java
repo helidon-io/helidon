@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package io.helidon.tests.integration.jpa.appl.test;
 
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.tests.integration.jpa.appl.Utils;
@@ -40,7 +39,7 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
  */
 public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static final Logger LOGGER = Logger.getLogger(LifeCycleExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LifeCycleExtension.class.getName());
 
     private static final String STORE_KEY = LifeCycleExtension.class.getName();
 
@@ -65,11 +64,11 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
         final Object resource = ec.getRoot().getStore(GLOBAL).get(STORE_KEY);
         if (resource == null) {
             LogConfig.configureRuntime();
-            LOGGER.finest("Running beforeAll lifecycle method for the first time, invoking setup()");
+            LOGGER.log(Level.TRACE, "Running beforeAll lifecycle method for the first time, invoking setup()");
             ec.getRoot().getStore(GLOBAL).put(STORE_KEY, this);
             setup();
         } else {
-            LOGGER.finest("Running beforeAll lifecycle method next time, skipping setup()");
+            LOGGER.log(Level.TRACE, "Running beforeAll lifecycle method next time, skipping setup()");
         }
     }
 
@@ -77,7 +76,7 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
      * Setup JPA application tests.
      */
     private void setup() {
-        LOGGER.fine("Running JPA application test setup()");
+        LOGGER.log(Level.DEBUG, "Running JPA application test setup()");
         waitForDatabase();
         waitForServer();
         ClientUtils.callJdbcTest("/setup");
@@ -91,7 +90,7 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
      */
     @Override
     public void close() throws Throwable {
-        LOGGER.fine("Running JPA application test close()");
+        LOGGER.log(Level.DEBUG, "Running JPA application test close()");
         shutdown();
     }
 
@@ -118,14 +117,14 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
                 Utils.closeConnection(conn);
                 return;
             } catch (SQLException ex) {
-                LOGGER.fine(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.log(Level.DEBUG, () -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > endTm) {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
                 try {
                     Thread.sleep(SLEEP_MILIS);
                 } catch (InterruptedException ie) {
-                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+                    LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
                 }
             }
         }
@@ -142,14 +141,14 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
                 Response response = status.request().get();
                 retry = false;
             } catch (Exception ex) {
-                LOGGER.fine(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.log(Level.DEBUG, () -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > tmEnd) {
                     throw new IllegalStateException(String.format("Appserver is not ready within %d seconds", TIMEOUT));
                 }
                 try {
                     Thread.sleep(SLEEP_MILIS);
                 } catch (InterruptedException ie) {
-                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
+                    LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
                 }
             }
         }
@@ -162,7 +161,7 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
+            LOGGER.log(Level.ERROR, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr), t);
         }
     }
 
@@ -173,14 +172,14 @@ public class LifeCycleExtension implements BeforeAllCallback, ExtensionContext.S
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
+            LOGGER.log(Level.ERROR, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr), t);
         }
     }
 
     public void shutdown() {
         WebTarget exit = TARGET.path("/exit");
         Response response = exit.request().get();
-        LOGGER.info(() -> String.format("Status: %s", response.readEntity(String.class)));
+        LOGGER.log(Level.INFO, () -> String.format("Status: %s", response.readEntity(String.class)));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.servicecommon;
 
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
@@ -26,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
@@ -87,7 +86,7 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
     private final Set<Class<?>> annotatedClasses = new HashSet<>();
     private final Set<Class<?>> annotatedClassesProcessed = new HashSet<>();
 
-    private final Logger logger;
+    private final System.Logger logger;
     private final Function<Config, T> serviceSupportFactory;
     private final String configPrefix;
 
@@ -101,7 +100,7 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
      * @param configPrefix          prefix for retrieving config related to this extension
      */
     protected HelidonRestCdiExtension(
-            Logger logger,
+            System.Logger logger,
             Function<Config, T> serviceSupportFactory,
             String configPrefix) {
         this.logger = logger;
@@ -117,11 +116,11 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
      */
     // method needs to be public so it is registered for reflection (native image)
     public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(Level.DEBUG)) {
             Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses);
             annotatedClassesIgnored.removeAll(annotatedClassesProcessed);
             if (!annotatedClassesIgnored.isEmpty()) {
-                logger.log(Level.FINE, () ->
+                logger.log(Level.DEBUG, () ->
                         "Classes originally found with selected annotations that were not processed, probably "
                                 + "because they were vetoed:" + annotatedClassesIgnored.toString());
             }
@@ -146,7 +145,7 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
 
         annotatedClassesProcessed.add(clazz);
 
-        logger.log(Level.FINE, () -> "Processing managed bean " + clazz.getName());
+        logger.log(Level.DEBUG, () -> "Processing managed bean " + clazz.getName());
 
         processManagedBean(pmb);
    }
@@ -176,14 +175,14 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
         // Abstract classes are handled when we deal with a concrete subclass. Also, ignore if @Interceptor is present.
         if (annotatedType.isAnnotationPresent(Interceptor.class)
                 || Modifier.isAbstract(clazz.getModifiers())) {
-            logger.log(Level.FINER, () -> "Ignoring " + clazz.getName()
+            logger.log(Level.TRACE, () -> "Ignoring " + clazz.getName()
                     + " with annotations " + annotatedType.getAnnotations()
                     + " for later processing: "
                     + (Modifier.isAbstract(clazz.getModifiers()) ? "abstract " : "")
                     + (annotatedType.isAnnotationPresent(Interceptor.class) ? "interceptor " : ""));
             return false;
         }
-        logger.log(Level.FINE, () -> "Accepting " + clazz.getName() + " for later bean processing");
+        logger.log(Level.DEBUG, () -> "Accepting " + clazz.getName() + " for later bean processing");
         return true;
     }
 
@@ -314,7 +313,7 @@ public abstract class HelidonRestCdiExtension<T extends FeatureSupport> implemen
      * @param bean the bean which might bear producer members we are interested in
      */
     private void recordProducerMember(String logPrefix, AnnotatedMember<?> member, Bean<?> bean) {
-        logger.log(Level.FINE, () -> logPrefix + " " + bean.getBeanClass());
+        logger.log(Level.DEBUG, () -> logPrefix + " " + bean.getBeanClass());
         producers.put(bean, member);
     }
 }

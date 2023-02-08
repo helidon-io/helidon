@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -22,8 +23,6 @@ import java.lang.reflect.Parameter;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.container.AsyncResponse;
@@ -125,7 +124,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
 
     private static class FinishCallback<T> implements CompletionCallback {
 
-        private static final Logger LOGGER = Logger.getLogger(FinishCallback.class.getName());
+        private static final System.Logger LOGGER = System.getLogger(FinishCallback.class.getName());
 
         private final InvocationContext context;
         private final BiConsumer<InvocationContext, T> postCompletionHandler;
@@ -146,7 +145,7 @@ class InterceptionRunnerImpl implements InterceptionRunner {
         public void onComplete(Throwable throwable) {
             workItems.forEach(workItem -> postCompletionHandler.accept(context, workItem));
             if (throwable != null) {
-                LOGGER.log(Level.FINE, "Throwable detected by interceptor async callback", throwable);
+                LOGGER.log(Level.DEBUG, "Throwable detected by interceptor async callback", throwable);
             }
         }
     }

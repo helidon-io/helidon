@@ -73,6 +73,7 @@
         <dependency>
             <groupId>io.helidon.lra</groupId>
             <artifactId>helidon-lra-coordinator-server</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -88,6 +89,11 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package io.helidon.reactive.webclient.security;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -43,7 +43,7 @@ import io.helidon.tracing.Tracer;
  * Client service for security propagation.
  */
 public class WebClientSecurity implements WebClientService {
-    private static final Logger LOGGER = Logger.getLogger(WebClientSecurity.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(WebClientSecurity.class.getName());
 
     private static final String PROVIDER_NAME = "io.helidon.security.rest.client.security.providerName";
 
@@ -117,12 +117,14 @@ public class WebClientSecurity implements WebClientService {
         try {
             SecurityEnvironment.Builder outboundEnv = context.env()
                     .derive()
-                    .clearHeaders();
+                    .clearHeaders()
+                    .clearQueryParams();
 
             outboundEnv.method(request.method().name())
                     .path(request.path().toString())
                     .targetUri(request.uri())
-                    .headers(request.headers().toMap());
+                    .headers(request.headers().toMap())
+                    .queryParams(request.queryParams());
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
             Map<String, String> propMap = request.properties();
@@ -168,11 +170,11 @@ public class WebClientSecurity implements WebClientService {
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
-            LOGGER.finest(() -> "Client filter header(s). SIZE: " + newHeaders.size());
+            LOGGER.log(Level.TRACE, () -> "Client filter header(s). SIZE: " + newHeaders.size());
 
             WebClientRequestHeaders clientHeaders = request.headers();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-                LOGGER.finest(() -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                LOGGER.log(Level.TRACE, () -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
 
                 //replace existing
                 Http.HeaderName headerName = Http.Header.create(entry.getKey());

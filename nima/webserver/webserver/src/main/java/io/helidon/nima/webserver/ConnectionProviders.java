@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 /**
  * Connection provider candidates.
  */
 public class ConnectionProviders {
-    private final List<ServerConnectionProvider> connectionProviders;
+    private final List<ServerConnectionSelector> connectionProviders;
 
     private final Set<String> supportedAppProtocols;
-    private final Map<String, ServerConnectionProvider> providersByAppProtocol;
+    private final Map<String, ServerConnectionSelector> providersByAppProtocol;
 
-    private ConnectionProviders(List<ServerConnectionProvider> connectionProviders) {
+    private ConnectionProviders(List<ServerConnectionSelector> connectionProviders) {
         this.connectionProviders = connectionProviders;
         Set<String> supportedAppProtocols = new LinkedHashSet<>();
-        Map<String, ServerConnectionProvider> byAppProtocol = new HashMap<>();
+        Map<String, ServerConnectionSelector> byAppProtocol = new HashMap<>();
 
-        for (ServerConnectionProvider provider : connectionProviders) {
+        for (ServerConnectionSelector provider : connectionProviders) {
             supportedAppProtocols.addAll(provider.supportedApplicationProtocols());
             for (String protocol : provider.supportedApplicationProtocols()) {
                 // we need the first one that supports the protocol
@@ -56,7 +56,7 @@ public class ConnectionProviders {
      * @param connectionProviders list of providers to use
      * @return a new instance of connection providers
      */
-    public static ConnectionProviders create(List<ServerConnectionProvider> connectionProviders) {
+    public static ConnectionProviders create(List<ServerConnectionSelector> connectionProviders) {
         return new ConnectionProviders(connectionProviders);
     }
 
@@ -65,7 +65,7 @@ public class ConnectionProviders {
      *
      * @return provider candidates
      */
-    public List<ServerConnectionProvider> providerCandidates() {
+    public List<ServerConnectionSelector> providerCandidates() {
         return new ArrayList<>(connectionProviders);
     }
 
@@ -84,7 +84,7 @@ public class ConnectionProviders {
      * @param protocol protocol id
      * @return connection provider
      */
-    public ServerConnectionProvider byApplicationProtocol(String protocol) {
+    public ServerConnectionSelector byApplicationProtocol(String protocol) {
         return providersByAppProtocol.get(protocol);
     }
 }

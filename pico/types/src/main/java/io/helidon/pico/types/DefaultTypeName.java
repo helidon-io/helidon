@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,11 +122,18 @@ public class DefaultTypeName implements TypeName {
      */
     public static DefaultTypeName createFromTypeName(String typeName) {
         Objects.requireNonNull(typeName);
-        if (typeName.startsWith("? extends ")) {
-            return createFromTypeName(typeName.substring(10).trim())
-                    .toBuilder()
-                    .wildcard(true)
-                    .build();
+        if (typeName.startsWith("?")) {
+            if (typeName.startsWith("? extends ")) {
+                return createFromTypeName(typeName.substring(10).trim())
+                        .toBuilder()
+                        .wildcard(true)
+                        .build();
+            } else {
+                return DefaultTypeName.builder()
+                        .type(Object.class)
+                        .wildcard(true)
+                        .build();
+            }
         }
 
         // a.b.c.SomeClass
@@ -259,7 +266,11 @@ public class DefaultTypeName implements TypeName {
      * @return the fully qualified name
      */
     protected String calcFQName() {
-        StringBuilder nameBuilder = new StringBuilder(wildcard() ? "? extends " + name() : name());
+        String name = name();
+        boolean isObject = Object.class.getName().equals(name);
+        StringBuilder nameBuilder = (isObject)
+                ? new StringBuilder(wildcard() ? "?" : name)
+                : new StringBuilder(wildcard() ? "? extends " + name : name);
 
         if (null != typeArguments && !typeArguments.isEmpty()) {
             nameBuilder.append("<");

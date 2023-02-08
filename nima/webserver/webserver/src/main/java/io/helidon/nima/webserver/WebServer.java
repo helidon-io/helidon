@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ServerConnectionProvider;
+import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 
 /**
  * Server that opens server sockets and handles requests through routing.
@@ -115,12 +116,36 @@ public interface WebServer {
     }
 
     /**
+     * Context associated with the {@code WebServer}, used as a parent for request contexts.
+     *
+     * @return a server context
+     */
+    Context context();
+
+    /**
      * Returns {@code true} if TLS is configured for the named socket.
      *
      * @param socketName the name of a socket
      * @return whether TLS is enabled for the socket, returns {@code false} if the socket does not exists
      */
     boolean hasTls(String socketName);
+
+    /**
+     * Reload TLS keystore and truststore configuration for the default socket.
+     *
+     * @param tls new TLS configuration
+     */
+    default void reloadTls(Tls tls) {
+        reloadTls(DEFAULT_SOCKET_NAME, tls);
+    }
+
+    /**
+     * Reload TLS keystore and truststore configuration for the named socket.
+     *
+     * @param socketName socket name to reload TLS configuration on
+     * @param tls new TLS configuration
+     */
+    void reloadTls(String socketName, Tls tls);
 
     /**
      * Fluent API builder for {@link WebServer}.
@@ -137,14 +162,16 @@ public interface WebServer {
         private final Map<String, Router.Builder> routers = new HashMap<>();
         private final DirectHandlers.Builder simpleHandlers = DirectHandlers.builder();
 
-        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders =
-                HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
+        private final HelidonServiceLoader.Builder<ServerConnectionProvider> connectionProviders
+                = HelidonServiceLoader.builder(ServiceLoader.load(ServerConnectionProvider.class));
 
+        private Config providersConfig = Config.empty();
         private MediaContext mediaContext = MediaContext.create();
         private ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         private boolean shutdownHook = true;
         private Context context;
+        private boolean inheritThreadLocals = false;
 
         Builder(Config rootConfig) {
             config(rootConfig.get("server"));
@@ -188,6 +215,7 @@ public interface WebServer {
             config.get("host").asString().ifPresent(this::host);
             config.get("port").asInt().ifPresent(this::port);
             config.get("tls").as(Tls::create).ifPresent(this::tls);
+            config.get("inherit-thread-locals").asBoolean().ifPresent(this::inheritThreadLocals);
 
             // now let's configure the sockets
             config.get("sockets")
@@ -222,6 +250,12 @@ public interface WebServer {
                             connConfig.get("tcp-no-delay").asBoolean().ifPresent(socketOptionsBuilder::tcpNoDelay);
                         });
                     });
+            // Configure content encoding
+            config.get("content-encoding")
+                    .as(ContentEncodingContext::create)
+                    .ifPresent(this::contentEncodingContext);
+            // Store providers config node for later usage.
+            providersConfig = config.get("connection-providers");
             return this;
         }
 
@@ -352,7 +386,7 @@ public interface WebServer {
         }
 
         /**
-         * Configure a connection provider. This instance has priority over provider(s) discovered by service loader.
+         * Configure a connection providers. This instance has priority over provider(s) discovered by service loader.
          *
          * @param connectionProvider explicit connection provider
          * @return updated builder
@@ -376,6 +410,7 @@ public interface WebServer {
         /**
          * Configure the default {@link MediaContext}.
          * This method discards all previously registered MediaContext.
+         *
          * @param mediaContext media context
          * @return updated instance of the builder
          */
@@ -388,6 +423,7 @@ public interface WebServer {
         /**
          * Configure the default {@link ContentEncodingContext}.
          * This method discards all previously registered ContentEncodingContext.
+         *
          * @param contentEncodingContext content encoding context
          * @return updated instance of the builder
          */
@@ -399,6 +435,7 @@ public interface WebServer {
 
         /**
          * Configure the application scoped context to be used as a parent for webserver request contexts.
+         *
          * @param context top level context
          * @return an updated builder
          */
@@ -421,6 +458,22 @@ public interface WebServer {
             return this;
         }
 
+        /**
+         * Configure whether server threads should inherit inheritable thread locals.
+         * Default value is {@code false}.
+         *
+         * @param inheritThreadLocals whether to inherit thread locals
+         * @return an updated builder
+         */
+        public Builder inheritThreadLocals(boolean inheritThreadLocals) {
+            this.inheritThreadLocals = inheritThreadLocals;
+            return this;
+        }
+
+        boolean inheritThreadLocals() {
+            return inheritThreadLocals;
+        }
+
         Context context() {
             return context;
         }
@@ -440,6 +493,7 @@ public interface WebServer {
         Map<String, ListenerConfiguration.Builder> socketBuilders() {
             return socketBuilder;
         }
+
         /**
          * Map of socket name to router.
          *
@@ -451,8 +505,13 @@ public interface WebServer {
             return result;
         }
 
-        List<ServerConnectionProvider> connectionProviders() {
-            return connectionProviders.build().asList();
+        List<ServerConnectionSelector> connectionProviders() {
+            providersConfig.get("discover-services").asBoolean().ifPresent(connectionProviders::useSystemServiceLoader);
+            List<ServerConnectionProvider> providers = connectionProviders.build().asList();
+            // Send configuration nodes to providers
+            return providers.stream()
+                    .map(it -> it.create(providersConfig::get))
+                    .toList();
         }
 
         private ListenerConfiguration.Builder socket(String socketName) {
@@ -463,4 +522,5 @@ public interface WebServer {
             return routers.computeIfAbsent(socketName, it -> Router.builder());
         }
     }
+
 }

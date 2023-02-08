@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.nima.webclient.http1;
 
 import java.io.ByteArrayOutputStream;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -60,7 +62,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private static final String HTTPS = "https";
     private static final Map<KeepAliveKey, Queue<Http1ClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
-    private final WritableHeaders<?> explicitHeaders = WritableHeaders.create();
+    private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private final UriQueryWriteable query;
     private final Map<String, String> pathParams = new HashMap<>();
 
@@ -121,6 +123,12 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     @Override
+    public Http1ClientRequest headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
+        this.explicitHeaders = headersConsumer.apply(ClientRequestHeaders.create(explicitHeaders));
+        return this;
+    }
+
+    @Override
     public Http1ClientRequest pathParam(String name, String value) {
         pathParams.put(name, value);
         return this;
@@ -164,7 +172,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             entityBytes = entityBytes(entity, headers);
         }
 
-        headers.setIfAbsent(Header.create(Header.CONTENT_LENGTH, String.valueOf(entityBytes.length)));
+        headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
 
         writeHeaders(headers, writeBuffer);
         if (entityBytes.length > 0) {
@@ -273,7 +281,8 @@ class ClientRequestImpl implements Http1ClientRequest {
     }
 
     private Http1ClientResponse readResponse(ClientRequestHeaders usedHeaders, ClientConnection connection, DataReader reader) {
-        Http.Status responseStatus = readStatus(reader);
+        // todo configurable max status line length
+        Http.Status responseStatus = Http1StatusParser.readStatus(reader, 256);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return new ClientResponseImpl(responseStatus, usedHeaders, responseHeaders, connection, reader);
@@ -287,63 +296,6 @@ class ClientRequestImpl implements Http1ClientRequest {
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader, maxHeaderSize, validateHeaders);
 
         return ClientResponseHeaders.create(writable);
-    }
-
-    private Http.Status readStatus(DataReader reader) {
-        // todo configurable max status line length
-        int newLine = reader.findNewLine(256);
-        if (newLine == 4096) {
-            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: \n"
-                                                    + reader.readBuffer(newLine).debugDataHex());
-        }
-        int slash = reader.findOrNewLine(Bytes.SLASH_BYTE, newLine);
-        if (slash == newLine) {
-            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: \n"
-                                                    + reader.readBuffer(newLine).debugDataHex());
-        }
-        String protocol = reader.readAsciiString(slash);
-        if (!protocol.equals("HTTP")) {
-            throw new IllegalStateException("HTTP response did not contain correct status line. Protocol is not HTTP: \n"
-                                                    + BufferData.create(protocol.getBytes(StandardCharsets.US_ASCII))
-                    .debugDataHex());
-        }
-        reader.skip(1); // /
-        newLine -= slash;
-        newLine--;
-        int space = reader.findOrNewLine(Bytes.SPACE_BYTE, newLine);
-        if (space == newLine) {
-            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: HTTP/\n"
-                                                    + reader.readBuffer(newLine).debugDataHex());
-        }
-        String protocolVersion = reader.readAsciiString(space);
-        reader.skip(1); // space
-        newLine -= space;
-        newLine--;
-        if (!protocolVersion.equals("1.1")) {
-            throw new IllegalStateException("HTTP response did not contain correct status line. Version is not 1.1: \n"
-                                                    + BufferData.create(protocolVersion.getBytes(StandardCharsets.US_ASCII))
-                    .debugDataHex());
-        }
-        // HTTP/1.1 200 OK
-        space = reader.findOrNewLine(Bytes.SPACE_BYTE, newLine);
-        if (space == newLine) {
-            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: HTTP/1.1\n"
-                                                    + reader.readBuffer(newLine).debugDataHex());
-        }
-        String code = reader.readAsciiString(space);
-        reader.skip(1); // the new line
-        newLine -= space;
-        newLine--;
-        String phrase = reader.readAsciiString(newLine); // the rest of the line is reason phrase
-        reader.skip(2); // skip the last CRLF
-
-        try {
-            return Http.Status.create(Integer.parseInt(code), phrase);
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("HTTP Response did not cntain HTTP status line. Line HTTP/1.1 \n"
-                                                    + BufferData.create(code.getBytes(StandardCharsets.US_ASCII)) + "\n"
-                                                    + BufferData.create(phrase.getBytes(StandardCharsets.US_ASCII)));
-        }
     }
 
     private boolean handleKeepAlive(WritableHeaders<?> headers) {

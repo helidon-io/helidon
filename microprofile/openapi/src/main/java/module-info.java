@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,14 +31,11 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 module io.helidon.microprofile.openapi {
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-    
     requires smallrye.open.api.core;
 
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
-    requires jakarta.interceptor.api;
     requires io.helidon.nima.openapi;
     requires transitive microprofile.openapi.api;
 

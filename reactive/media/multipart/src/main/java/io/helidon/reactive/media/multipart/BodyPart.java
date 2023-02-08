@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.reactive.media.multipart;
 
+import java.util.Optional;
+
 import io.helidon.reactive.media.common.MessageBodyContent;
 
 /**
@@ -27,33 +29,46 @@ public interface BodyPart {
 
     /**
      * Get the reactive representation of the part content.
+     *
      * @return {@link io.helidon.reactive.media.common.MessageBodyContent}, never {@code null}
      */
     MessageBodyContent content();
 
     /**
      * Returns HTTP part headers.
+     *
      * @return BodyPartHeaders, never {@code null}
      */
     BodyPartHeaders headers();
 
     /**
+     * Test the control name.
+     *
+     * @param name the name to test
+     * @return {@code true} if the {@code name} parameter of the {@code Content-Disposition} header matches,
+     * {@code false} otherwise
+     */
+    default boolean isNamed(String name) {
+        return name().map(name::equals).orElse(false);
+    }
+
+    /**
      * Get the control name.
      *
      * @return the {@code name} parameter of the {@code Content-Disposition}
-     * header, or {@code null} if not present.
+     * header.
      */
-    default String name() {
-        return headers().contentDisposition().contentName().orElse(null);
+    default Optional<String> name() {
+        return headers().contentDisposition().contentName();
     }
 
     /**
      * Get the file name.
      *
      * @return the {@code filename} parameter of the {@code Content-Disposition}
-     * header, or {@code null} if not present.
+     * header.
      */
-    default String filename() {
-        return headers().contentDisposition().filename().orElse(null);
+    default Optional<String> filename() {
+        return headers().contentDisposition().filename();
     }
 }

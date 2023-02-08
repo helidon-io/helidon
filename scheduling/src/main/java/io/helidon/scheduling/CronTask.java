@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.scheduling;
 
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Locale;
@@ -24,8 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.cronutils.descriptor.CronDescriptor;
 import com.cronutils.model.Cron;
@@ -38,7 +37,7 @@ import static com.cronutils.model.CronType.QUARTZ;
 
 class CronTask implements Task {
 
-    private static final Logger LOGGER = Logger.getLogger(CronTask.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(CronTask.class.getName());
 
     private final AtomicLong iteration = new AtomicLong(0);
     private final ExecutionTime executionTime;
@@ -93,7 +92,7 @@ class CronTask implements Task {
                 }
             });
         } catch (Throwable e) {
-            LOGGER.log(Level.SEVERE, e, () -> "Error when invoking scheduled method.");
+            LOGGER.log(Level.ERROR, () -> "Error when invoking scheduled method.", e);
         }
         if (!concurrentExecution) {
             scheduleNext();

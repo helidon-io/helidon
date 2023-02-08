@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.lang.System.Logger.Level;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Objects;
@@ -23,8 +24,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -64,7 +63,7 @@ import jakarta.json.JsonObject;
 public class GreetService implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final Logger LOGGER = Logger.getLogger(GreetService.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GreetService.class.getName());
 
     /**
      * The config value for the key {@code greeting}.
@@ -222,7 +221,7 @@ public class GreetService implements Service {
                         try {
                             Main.webServer.shutdown().get(10, TimeUnit.SECONDS);
                         } catch (Throwable t) {
-                            LOGGER.log(Level.SEVERE, "Webserver failed to shut down!", t);
+                            LOGGER.log(Level.ERROR, "Webserver failed to shut down!", t);
                         }
                     }
                 })
@@ -246,14 +245,14 @@ public class GreetService implements Service {
 
         if (ex.getCause() instanceof JsonException) {
 
-            LOGGER.log(Level.FINE, "Invalid JSON", ex);
+            LOGGER.log(Level.DEBUG, "Invalid JSON", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "Invalid JSON")
                     .build();
             response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
         } else {
 
-            LOGGER.log(Level.FINE, "Internal error", ex);
+            LOGGER.log(Level.DEBUG, "Internal error", ex);
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "Internal error")
                     .build();

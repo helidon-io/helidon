@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,10 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires java.logging;
     requires transitive jakarta.cdi;
     requires jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.ws.rs;
     requires microprofile.config.api;
-    requires oci.java.sdk.shaded.full;
+    requires oci.java.sdk.common;
+    requires oci.java.sdk.common.httpclient;
     
     exports io.helidon.integrations.oci.sdk.cdi;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.nima.webserver.http;
 
 import java.io.InputStream;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -34,12 +35,13 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
 
-    private ServerRequestEntity(Function<InputStream, InputStream> decoder,
+    private ServerRequestEntity(Consumer<Boolean> entityRequestedCallback,
+                                Function<InputStream, InputStream> decoder,
                                 Function<Integer, BufferData> readEntityFunction,
                                 Runnable entityProcessedRunnable,
                                 ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext) {
-        super(decoder, readEntityFunction, entityProcessedRunnable);
+        super(entityRequestedCallback, decoder, readEntityFunction, entityProcessedRunnable);
 
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;
@@ -48,6 +50,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     /**
      * Create a new entity.
      *
+     * @param entityRequestedCallback callback invoked when entity data are requested for the first time
      * @param decoder                 content decoder
      * @param readEntityFunction      function to read buffer from entity (int is an estimated number of bytes needed, buffer
      *                                will contain at least 1 byte)
@@ -56,21 +59,26 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
      * @param mediaContext            media context to map to correct types
      * @return a new entity
      */
-    public static ServerRequestEntity create(ContentDecoder decoder,
+    public static ServerRequestEntity create(Consumer<Boolean> entityRequestedCallback,
+                                             ContentDecoder decoder,
                                              Function<Integer, BufferData> readEntityFunction,
                                              Runnable entityProcessedRunnable,
                                              ServerRequestHeaders requestHeaders,
                                              MediaContext mediaContext) {
-        return new ServerRequestEntity(decoder, readEntityFunction, entityProcessedRunnable, requestHeaders, mediaContext);
+        return new ServerRequestEntity(entityRequestedCallback,
+                                       decoder,
+                                       readEntityFunction,
+                                       entityProcessedRunnable,
+                                       requestHeaders,
+                                       mediaContext);
     }
 
     @Override
     public ReadableEntity copy(Runnable entityProcessedRunnable) {
-        return new ServerRequestEntity(contentDecoder(),
-                                       readEntityFunction(), () -> {
-            entityProcessedRunnable.run();
-            entityProcessedRunnable().run();
-        },
+        return new ServerRequestEntity(d -> {},
+                                       contentDecoder(),
+                                       readEntityFunction(),
+                                       entityProcessedRunnable(),
                                        requestHeaders,
                                        mediaContext);
     }
