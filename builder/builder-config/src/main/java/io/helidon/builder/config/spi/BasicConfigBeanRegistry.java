@@ -16,6 +16,7 @@
 
 package io.helidon.builder.config.spi;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -28,8 +29,8 @@ public interface BasicConfigBeanRegistry {
      * Returns all config beans indexed by its config key.
      *
      * @param <CB> the config bean type
-     * @return all config beans.
+     * @return all config beans
      */
-    <CB> Map<String, CB> allConfigBeans();
+    <CB> Map<String, Collection<CB>> allConfigBeans();
 
 }

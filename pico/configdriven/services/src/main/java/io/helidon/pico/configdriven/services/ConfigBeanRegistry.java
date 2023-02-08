@@ -44,7 +44,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      *
      * @param <T>  the service type
      * @param <CB> the config bean type
-     * @return the map of configurable services to the meta config beans each expects.
+     * @return the map of configurable services to the meta config beans each expects
      */
     <T, CB> Map<ConfiguredServiceProvider<T, CB>, ConfigBeanInfo> configurableServiceProviders();
 
@@ -53,7 +53,7 @@ public interface ConfigBeanRegistry extends BasicConfigBeanRegistry {
      *
      * @param <T>  the service type
      * @param <CB> the config bean type
-     * @return the list of configured services.
+     * @return the list of configured services
      */
     <T, CB> List<ConfiguredServiceProvider<T, CB>> configuredServiceProviders();
 

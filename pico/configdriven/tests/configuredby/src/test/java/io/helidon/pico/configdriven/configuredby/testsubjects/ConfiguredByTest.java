@@ -18,26 +18,32 @@ package io.helidon.pico.configdriven.configuredby.testsubjects;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.config.spi.ConfigBeanRegistryHolder;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfoCriteria;
+import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServiceProviderException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.Services;
 import io.helidon.pico.configdriven.ConfiguredBy;
+import io.helidon.pico.configdriven.services.ConfigBeanRegistry;
 import io.helidon.pico.testing.PicoTestingSupport;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -49,6 +55,12 @@ class ConfiguredByTest {
 
     private PicoServices picoServices;
     private Services services;
+
+    @BeforeAll
+    static void initialStateChecks() {
+        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        assertThat(cbr.ready(), is(false));
+    }
 
     @BeforeEach
     void reset() {
@@ -65,7 +77,27 @@ class ConfiguredByTest {
     }
 
     @Test
-    void serviceRegistry() {
+    void testItAll() {
+        // verify the services registry
+        testRegisty();
+
+        ServiceProvider<FakeWebServer> fakeWebServer = services.lookup(FakeWebServer.class);
+        assertThat(fakeWebServer.currentActivationPhase(), is(Phase.ACTIVE));
+        assertThat(fakeWebServer.get().isRunning(), is(true));
+
+        ServiceProvider<ASingletonService> singletonService = services.lookup(ASingletonService.class);
+        assertThat(singletonService.currentActivationPhase(), is(Phase.ACTIVE));
+        assertThat(singletonService.get().isRunning(), is(true));
+
+        // verify the bean registry
+        testBeanRegistry();
+
+        // shutdown has to come next
+        testShutdown(fakeWebServer.get());
+    }
+
+//    @Test
+    void testRegisty() {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
                 .build();
@@ -87,9 +119,6 @@ class ConfiguredByTest {
                    contains("FakeWebServer{3}:ACTIVE",
                             "FakeWebServerNotDrivenByServiceOverrides{2}:PENDING"));
 
-        FakeWebServer fakeWebServer = services.lookup(FakeWebServer.class).get();
-        assertThat(fakeWebServer.isRunning(), is(true));
-
         criteria = DefaultServiceInfoCriteria.builder()
                 .serviceTypeName(FakeTlsWSNotDrivenByCB.class.getName())
                 .build();
@@ -109,8 +138,8 @@ class ConfiguredByTest {
 
         ServiceProvider<Object> fakeTlsProvider = list.get(0);
         PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, () -> fakeTlsProvider.get());
-        assertThat("there is no configuration, so cannot activate this service",
-                   e.getMessage(), equalTo("expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
+        assertThat("there is no configuration, so cannot activate this service", e.getMessage(),
+                   equalTo("expected to find a match: service provider: FakeTlsWSNotDrivenByCB{root}:PENDING"));
 
         criteria = DefaultServiceInfoCriteria.builder()
                 .addContractImplemented(ASingletonService.class.getName())
@@ -120,9 +149,6 @@ class ConfiguredByTest {
         desc = list.stream().map(ServiceProvider::description).collect(Collectors.toList());
         assertThat("slave providers expected here since we have default configuration for this service", desc,
                    contains("ASingletonService{1}:ACTIVE"));
-
-        // shutdown has to come next
-        testShutdown(fakeWebServer);
     }
 
 //    @Test
@@ -133,6 +159,18 @@ class ConfiguredByTest {
         picoServices.shutdown();
 
         assertThat(fakeWebServer.isRunning(), is(false));
+    }
+
+//    @Test
+    void testBeanRegistry() {
+        ConfigBeanRegistry cbr = (ConfigBeanRegistry) ConfigBeanRegistryHolder.configBeanRegistry().orElseThrow();
+        assertThat(cbr.ready(), is(true));
+
+        Set<String> set = cbr.allConfigBeans().keySet();
+        assertThat(set, containsInAnyOrder(
+                "@default",
+                "fake-server-config"
+        ));
     }
 
 }

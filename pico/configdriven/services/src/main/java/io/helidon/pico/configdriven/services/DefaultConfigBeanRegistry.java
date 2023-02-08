@@ -17,6 +17,7 @@
 package io.helidon.pico.configdriven.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -70,10 +71,6 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     private final Map<String, List<ConfiguredServiceProvider<?, ?>>> configuredServiceProvidersByConfigKey =
             new ConcurrentHashMap<>();
 
-    protected boolean isInitialized() {
-        return (0 == initialized.getCount());
-    }
-
     DefaultConfigBeanRegistry() {
     }
 
@@ -86,7 +83,6 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         configuredServiceProvidersByConfigKey.clear();
         initializing.set(false);
         initialized = new CountDownLatch(1);
-
         return true;
     }
 
@@ -193,6 +189,10 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
         LOGGER.log(System.Logger.Level.DEBUG, "finishing walking config tree");
     }
 
+    protected boolean isInitialized() {
+        return (0 == initialized.getCount());
+    }
+
     private void visitAndInitialize(
             List<io.helidon.config.Config> configs,
             int depth) {
@@ -268,7 +268,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 .map(AbstractConfiguredServiceProvider.class::cast)
                 .forEach(csp -> {
                     Map<String, ?> configBeans = csp.configBeanMap();
-                    if (Objects.isNull(fullConfigKey)) {
+                    if (fullConfigKey == null) {
                         result.addAll(configBeans.values());
                     } else {
                         configBeans.forEach((k, v) -> {
@@ -296,7 +296,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                 .forEach(csp -> {
                     Map<String, ?> configBeans = csp.configBeanMap();
                     configBeans.forEach((k, v) -> {
-                        if (Objects.isNull(fullConfigKey) || fullConfigKey.equals(k)) {
+                        if (fullConfigKey == null || fullConfigKey.equals(k)) {
                             Object prev = result.put(k, (CB) v);
                             if (prev != null && prev != v) {
                                 throw new IllegalStateException("had two entries with the same key: " + prev + " and " + v);
@@ -308,20 +308,26 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     }
 
     @Override
-    public <CB> Map<String, CB> allConfigBeans() {
-        Map<String, CB> result = new TreeMap<>(AbstractConfiguredServiceProvider.configBeanComparator());
+    @SuppressWarnings("unchecked")
+    public <CB> Map<String, Collection<CB>> allConfigBeans() {
+        Map<String, Collection<CB>> result = new TreeMap<>(AbstractConfiguredServiceProvider.configBeanComparator());
+
         configuredServiceProvidersByConfigKey.forEach((key, value) -> value.stream()
                 .filter(csp -> csp instanceof AbstractConfiguredServiceProvider)
                 .map(AbstractConfiguredServiceProvider.class::cast)
                 .forEach(csp -> {
                     Map<String, ?> configBeans = csp.configBeanMap();
                     configBeans.forEach((key1, value1) -> {
-                        Object prev = result.put(key1, (CB) value1);
-                        if (prev != null && prev != value1) {
-                            throw new IllegalStateException("had two entries with the same key: " + prev + " and " + value1);
-                        }
+                        result.compute(key1, (k, v) -> {
+                            if (v == null) {
+                                v = new ArrayList<>();
+                            }
+                            v.add((CB) value1);
+                            return v;
+                        });
                     });
                 }));
+
         return result;
     }
 
@@ -441,7 +447,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
                               Class<?> type,
                               Class<?>... typeArgument) {
                 Map<String, Object> metaAttrPolicy = metaAttributes.get(attrName);
-                if (Objects.isNull(metaAttrPolicy)) {
+                if (metaAttrPolicy == null) {
                     problems.add("Unable to query policy for config key '" + key + "'");
                     return;
                 }
@@ -490,7 +496,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             Config config,
             Supplier<Object> beanBasedValueSupplier,
             Set<String> problems) {
-        if (Objects.isNull(config)) {
+        if (config == null) {
             if (!DEFAULT_INSTANCE_ID.equals(instanceId)) {
                 problems.add("Unable to obtain backing config for service provider for " + attrConfigKey);
             }
@@ -504,7 +510,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
 
             // if we have a default value from our bean, then that is the fallback verification
             Object val = beanBasedValueSupplier.get();
-            if (Objects.isNull(val)) {
+            if (val == null) {
                 problems.add("'" + attrConfigKey + "' is a required configuration for attribute '" + attrName + "'");
                 return true;
             }
@@ -519,7 +525,7 @@ class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
             String attrName,
             Set<String> problems) {
         Object val = valueSupplier.get();
-        if (Objects.isNull(val)) {
+        if (val == null) {
             problems.add("'" + attrName + "' is a required attribute and cannot be null");
         } else {
             if (!(val instanceof String)) {

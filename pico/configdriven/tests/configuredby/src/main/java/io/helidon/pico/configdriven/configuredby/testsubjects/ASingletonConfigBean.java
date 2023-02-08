@@ -20,4 +20,5 @@ import io.helidon.builder.config.ConfigBean;
 
 @ConfigBean(atLeastOne = true, wantDefaultConfigBean = true)
 public interface ASingletonConfigBean {
+
 }
