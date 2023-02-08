@@ -332,7 +332,7 @@ io.helidon.examples.AdminService:
 
 In the sections above you learned how to configure the WebServer using configuration options and annotations. There are some functions that cannot be handled using the standard configuration options and, instead, must be handled programmatically. 
 
-For example, if you wanted to run code when a CDI container starts, then you would have to write an  _observer method_ in an enabled CDI-managed bean that observes the initialization of the application scope. 
+For example, if you wanted to run code when a CDI container starts, then you would have to write an  _observer method_ in an enabled CDI-managed bean that observes the initialization of the https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#application_context[application scope]. 
 
 The method can be named anything you choose and it can be `public`, package-protected, `protected` or `private`. The method returns `void` and must take at least one parameter that is annotated with `@Observes @Initialized(ApplicationScoped.class)`. 
 
