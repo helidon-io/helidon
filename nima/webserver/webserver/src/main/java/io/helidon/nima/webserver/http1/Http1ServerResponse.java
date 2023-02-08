@@ -20,8 +20,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Headers;
@@ -32,9 +36,15 @@ import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.EntityWriter;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.ServerResponseBase;
+import io.helidon.nima.webserver.http.spi.Sink;
+import io.helidon.nima.webserver.http.spi.SinkProvider;
 
 /**
  * An HTTP/1 server response. This class is public only for the SSE module in Nima.
@@ -50,6 +60,10 @@ public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse>
     private static final HeaderValue STREAM_TRAILERS =
             Http.Header.create(Http.Header.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
+
+    private static final HelidonServiceLoader<SinkProvider> SINK_PROVIDER_LOADER
+            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build();
+    private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ConnectionContext ctx;
     private final Http1ConnectionListener sendListener;
@@ -210,6 +224,46 @@ public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse>
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        List<SinkProvider> providers = SINK_PROVIDER_LOADER.asList();
+        for (SinkProvider p : providers) {
+            if (p.supports(sinkType)) {
+                return (X) p.create(this,
+                        (e, m) -> handleSinkData(e, (MediaType) m),
+                        this::commit);
+            }
+        }
+        throw new IllegalArgumentException("Unable to find provider for type " + sinkType);
+    }
+
+    private void handleSinkData(Object data, MediaType mediaType) {
+        if (outputStream == null) {
+            outputStream();
+        }
+        try {
+            MediaContext mediaContext = mediaContext();
+
+            if (data instanceof byte[] bytes) {
+                outputStream.write(bytes);
+            } else {
+                if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    EntityWriter<String> writer = mediaContext.writer(GenericType.STRING, EMPTY_HEADERS, EMPTY_HEADERS);
+                    writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
+                } else {
+                    GenericType<Object> type = GenericType.create(data);
+                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    resHeaders.set(Http.Header.CONTENT_TYPE, mediaType.text());
+                    EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
+                    writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

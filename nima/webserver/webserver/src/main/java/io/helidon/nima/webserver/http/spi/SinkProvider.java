@@ -16,9 +16,10 @@
 
 package io.helidon.nima.webserver.http.spi;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
@@ -45,5 +46,5 @@ public interface SinkProvider<T, X extends Sink<T>> {
      * @param closeRunnable a runnable to call on close
      * @return newly created sink
      */
-    X create(ServerResponse response, Consumer<Object> eventConsumer, Runnable closeRunnable);
+    X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable);
 }

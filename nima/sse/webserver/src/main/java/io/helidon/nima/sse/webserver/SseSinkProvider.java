@@ -16,9 +16,10 @@
 
 package io.helidon.nima.sse.webserver;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
@@ -35,7 +36,7 @@ public class SseSinkProvider implements SinkProvider<SseEvent, SseSink> {
     }
 
     @Override
-    public SseSink create(ServerResponse response, Consumer<Object> eventConsumer, Runnable closeRunnable) {
+    public SseSink create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
         if (response instanceof Http1ServerResponse res) {
             return new SseSink(res, eventConsumer, closeRunnable);
         }
