@@ -22,7 +22,14 @@ import io.helidon.common.GenericType;
 import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http1.Http1ServerResponse;
 
+/**
+ * Implementation of an SSE sink. Emits {@link SseEvent}s.
+ */
 public class SseSink extends SseResponse implements Sink<SseEvent> {
+
+    /**
+     * Type of SSE event sinks.
+     */
     public static final GenericType<SseSink> TYPE = GenericType.create(SseSink.class);
 
     private final Consumer<Object> eventConsumer;
