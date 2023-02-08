@@ -23,7 +23,6 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
-import io.helidon.nima.webserver.http1.Http1ServerResponse;
 
 /**
  * Sink provider for SSE type.
@@ -37,9 +36,6 @@ public class SseSinkProvider implements SinkProvider<SseEvent, SseSink> {
 
     @Override
     public SseSink create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
-        if (response instanceof Http1ServerResponse res) {
-            return new SseSink(res, eventConsumer, closeRunnable);
-        }
-        throw new IllegalArgumentException("SseSink can only be created from an HTTP/1 response");
+        return new SseSink(response, eventConsumer, closeRunnable);
     }
 }

@@ -27,8 +27,8 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
-import io.helidon.nima.webserver.http1.Http1ServerResponse;
 
 import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 
@@ -44,12 +44,12 @@ public class SseSink implements Sink<SseEvent> {
      */
     public static final GenericType<SseSink> TYPE = GenericType.create(SseSink.class);
 
-    private final Http1ServerResponse serverResponse;
+    private final ServerResponse serverResponse;
     private final BiConsumer<Object, MediaType> eventConsumer;
     private final Runnable closeRunnable;
     private OutputStream outputStream;
 
-    SseSink(Http1ServerResponse serverResponse, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
+    SseSink(ServerResponse serverResponse, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
         // Verify response has no status or content type
         HttpMediaType ct = serverResponse.headers().contentType().orElse(null);
         if (serverResponse.status().code() != Http.Status.OK_200.code()

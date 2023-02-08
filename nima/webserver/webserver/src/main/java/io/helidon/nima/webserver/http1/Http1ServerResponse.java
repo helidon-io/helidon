@@ -47,10 +47,9 @@ import io.helidon.nima.webserver.http.spi.Sink;
 import io.helidon.nima.webserver.http.spi.SinkProvider;
 
 /**
- * An HTTP/1 server response. This class is public only for the SSE module in Nima.
- * It is subject to change and shall not be used directly in any Helidon application.
+ * An HTTP/1 server response.
  */
-public class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
+class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
