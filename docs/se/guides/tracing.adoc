@@ -162,7 +162,7 @@ WebServer server = WebServer.builder(createRouting(config))
 <2> Build and register a `Tracer` object using the tracing configuration.
 
 [source,java]
-.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class; Replace the `getDefaultMessageHandler` method:
 ----
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
@@ -382,7 +382,7 @@ WebServer server = WebServer.builder(createRouting(config))
 ----
 
 [source,java]
-.Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
+.Update the `GreetService` class; Replace the `getDefaultMessageHandler` method:
 ----
     private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
@@ -463,7 +463,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import io.opentracing.Span;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import jakarta.json.Json;
