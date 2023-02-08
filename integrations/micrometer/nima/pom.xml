@@ -41,7 +41,7 @@
             <groupId>io.helidon.integrations.micrometer</groupId>
             <artifactId>helidon-integrations-micrometer</artifactId>
         </dependency>
-                <dependency>
+        <dependency>
             <groupId>io.helidon.nima.webserver</groupId>
             <artifactId>helidon-nima-webserver</artifactId>
             <scope>provided</scope>
@@ -63,12 +63,6 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
