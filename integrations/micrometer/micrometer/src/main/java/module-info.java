@@ -36,8 +36,6 @@ module io.helidon.integrations.micrometer {
     requires io.helidon.config;
     requires io.helidon.common.http;
 
-    requires static io.helidon.config.metadata;
-
     requires micrometer.core;
     requires micrometer.registry.prometheus;
     requires simpleclient;
