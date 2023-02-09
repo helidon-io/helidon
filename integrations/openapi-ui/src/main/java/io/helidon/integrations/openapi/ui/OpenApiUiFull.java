@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.config.Config;
 import io.helidon.openapi.OpenApiUi;
 import io.helidon.openapi.OpenApiUiBase;
 import io.helidon.webserver.Routing;
@@ -73,7 +72,7 @@ class OpenApiUiFull extends OpenApiUiBase {
 
     private OpenApiUiFull(Builder builder) {
         super(builder, builder.documentPreparer(), builder.openApiSupportWebContext());
-        Map<Option, String> options = new HashMap<>(builder.options);
+        Map<Option, String> options = builder.uiOptions();
 
         // Apply some Helidon-specific defaults.
         Map.of(Option.title, "Helidon OpenAPI UI",
@@ -138,15 +137,23 @@ class OpenApiUiFull extends OpenApiUiBase {
      */
     public static class Builder extends OpenApiUiBase.Builder<Builder, OpenApiUiFull> {
 
-        private Map<Option, String> options = new HashMap<>();
-
         private Builder() {
             super();
         }
 
         @Override
         public OpenApiUiFull build() {
-            if (options.containsKey(Option.url)) {
+            return new OpenApiUiFull(this);
+        }
+
+        /**
+         * Converts the recorded options based on {@code String}s to ones based on {@link Option}s.
+         *
+         * @return {@code Option}-based map of UI options
+         */
+        Map<Option, String> uiOptions() {
+            // Package-private for visibility from tests.
+            if (options().containsKey(Option.url.name())) {
                 LOGGER.log(Level.WARNING,
                            """
                                    Unexpected setting for the OpenAPI URL; \
@@ -155,56 +162,25 @@ class OpenApiUiFull extends OpenApiUiBase {
                                    """,
                            new Object[] {
                                    openApiSupportWebContext() + OpenApiUi.UI_WEB_SUBCONTEXT,
-                                   options.get(Option.url)}
-                           );
+                                   options().get(Option.url.name())}
+                );
             }
-            return new OpenApiUiFull(this);
-        }
 
-        /**
-         * Sets the options map the UI should use. Other settings previously assigned will be respected unless the provided map
-         * sets the corresponding value.
-         *
-         * @param options UI options map
-         * @return updated builder
-         */
-        @Override
-        public Builder options(Map<String, String> options) {
-            this.options = convertOptions(options);
-            return this;
-        }
-
-        /**
-         * Assigns the settings using the provided OpenAPI UI {@code Config} node.
-         *
-         * @param uiConfig OpenAPI UI config node
-         * @return updated builder
-         */
-        @Override
-        public Builder config(Config uiConfig) {
-            super.config(uiConfig);
-            applyConfigToOptions(uiConfig.get(OPTIONS_CONFIG_KEY));
-            return this;
-        }
-
-        // For testing.
-        Map<Option, String> uiOptions() {
-            return options;
-        }
-
-        private Map<Option, String> convertOptions(Map<String, String> options) {
             Map<Option, String> result = new HashMap<>();
             List<String> unrecognizedKeys = new ArrayList<>();
 
-            nextKey:
-            for (Map.Entry<String, String> entry : options.entrySet()) {
+            for (Map.Entry<String, String> entry : options().entrySet()) {
+                boolean matched = false;
                 for (Option opt : Option.values()) {
                     if (opt.name().equals(entry.getKey())) {
                         result.put(opt, entry.getValue());
-                        break nextKey;
+                        matched = true;
+                        break;
                     }
                 }
-                unrecognizedKeys.add(entry.getKey());
+                if (!matched) {
+                    unrecognizedKeys.add(entry.getKey());
+                }
             }
             if (!unrecognizedKeys.isEmpty()) {
                 LOGGER.log(Level.WARNING,
@@ -212,16 +188,6 @@ class OpenApiUiFull extends OpenApiUiBase {
                            unrecognizedKeys);
             }
             return result;
-        }
-
-        private void applyConfigToOptions(Config optionsConfig) {
-            if (!optionsConfig.exists() || optionsConfig.isLeaf()) {
-                return;
-            }
-            optionsConfig.detach()
-                    .asMap()
-                    .map(this::convertOptions)
-                    .ifPresent(options::putAll);
         }
     }
 

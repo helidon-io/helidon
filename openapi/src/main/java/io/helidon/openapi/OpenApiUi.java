@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,9 +100,9 @@ public interface OpenApiUi extends Service {
         String WEB_CONTEXT_CONFIG_KEY = "web-context";
 
         /**
-         * Sets implementation-specific UI options.
+         * Merges implementation-specific UI options.
          *
-         * @param options the options to set for the UI
+         * @param options the options to for the UI to merge
          * @return updated builder
          */
         @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
@@ -136,7 +136,7 @@ public interface OpenApiUi extends Service {
         default B config(Config uiConfig) {
             uiConfig.get(ENABLED_CONFIG_KEY).asBoolean().ifPresent(this::isEnabled);
             uiConfig.get(WEB_CONTEXT_CONFIG_KEY).asString().ifPresent(this::webContext);
-            uiConfig.get(OPTIONS_CONFIG_KEY).asMap().ifPresent(this::options);
+            uiConfig.get(OPTIONS_CONFIG_KEY).detach().asMap().ifPresent(this::options);
             return identity();
         }
 
