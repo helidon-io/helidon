@@ -28,8 +28,9 @@ import jakarta.inject.Inject;
 public class FakeWebServerNotDrivenByServiceOverrides extends FakeWebServer {
 
     @Inject
-    FakeWebServerNotDrivenByServiceOverrides(FakeServerConfig cfg,
-                                             Optional<FakeTracer> tracer) {
+    FakeWebServerNotDrivenByServiceOverrides(
+            FakeServerConfig cfg,
+            Optional<FakeTracer> tracer) {
         super(cfg, tracer);
     }
 

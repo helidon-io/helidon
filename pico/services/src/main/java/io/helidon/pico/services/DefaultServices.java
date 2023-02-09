@@ -36,7 +36,9 @@ import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.InjectionException;
 import io.helidon.pico.Intercepted;
 import io.helidon.pico.Metrics;
+import io.helidon.pico.Module;
 import io.helidon.pico.Phase;
+import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
@@ -85,6 +87,10 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         return (stateWatchOnly == null) ? Phase.INIT : stateWatchOnly.currentPhase();
     }
 
+    Map<ServiceInfoCriteria, List<ServiceProvider<?>>> cache() {
+        return Map.copyOf(cache);
+    }
+
     /**
      * Total size of the service registry.
      *
@@ -104,9 +110,11 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
      * @throws java.lang.IllegalStateException when dynamic is not permitted
      */
     @Override
-    public synchronized boolean reset(
+    public boolean reset(
             boolean deep) {
-        assertPermitsDynamic(cfg);
+        if (Phase.ACTIVATION_STARTING != currentPhase()) {
+            assertPermitsDynamic(cfg);
+        }
 
         boolean changed = (deep || !servicesByTypeName.isEmpty() || lookupCount.get() > 0 || cacheLookupCount.get() > 0);
 
@@ -333,9 +341,10 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     ServiceBinder createServiceBinder(
             PicoServices picoServices,
             DefaultServices services,
-            String moduleName) {
+            String moduleName,
+            boolean trusted) {
         assert (picoServices.services() == services);
-        return DefaultServiceBinder.create(picoServices, moduleName);
+        return DefaultServiceBinder.create(picoServices, moduleName, trusted);
     }
 
     void bind(
@@ -347,22 +356,27 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
         if (isLoggable) {
             DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "starting binding application: " + appName);
         }
-        app.configure(binder);
-        bind(createServiceProvider(app, picoServices));
-        if (isLoggable) {
-            DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "finished binding application: " + appName);
+        try {
+            app.configure(binder);
+            bind(createServiceProvider(app, picoServices));
+            if (isLoggable) {
+                DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "finished binding application: " + appName);
+            }
+        } catch (Exception e) {
+            throw new PicoException("failed to process: " + app, e);
         }
     }
 
     void bind(
             PicoServices picoServices,
-            io.helidon.pico.Module module) {
+            Module module,
+            boolean initializing) {
         String moduleName = module.named().orElse(module.getClass().getName());
         boolean isLoggable = DefaultPicoServices.LOGGER.isLoggable(System.Logger.Level.INFO);
         if (isLoggable) {
             DefaultPicoServices.LOGGER.log(System.Logger.Level.INFO, "starting binding module: " + moduleName);
         }
-        ServiceBinder moduleServiceBinder = createServiceBinder(picoServices, this, moduleName);
+        ServiceBinder moduleServiceBinder = createServiceBinder(picoServices, this, moduleName, initializing);
         module.configure(moduleServiceBinder);
         bind(createServiceProvider(module, moduleName, picoServices));
         if (isLoggable) {
@@ -373,7 +387,10 @@ class DefaultServices implements Services, ServiceBinder, Resetable {
     @Override
     public void bind(
             ServiceProvider<?> serviceProvider) {
-        assertPermitsDynamic(cfg);
+        if (Phase.ACTIVATION_STARTING != currentPhase()) {
+            assertPermitsDynamic(cfg);
+        }
+
         ServiceInfo serviceInfo = toValidatedServiceInfo(serviceProvider);
         String serviceTypeName = serviceInfo.serviceTypeName();
 

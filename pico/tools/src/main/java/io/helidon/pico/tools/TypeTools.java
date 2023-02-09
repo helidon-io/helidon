@@ -59,11 +59,14 @@ import io.helidon.builder.types.TypedElementName;
 import io.helidon.pico.DefaultElementInfo;
 import io.helidon.pico.DefaultInjectionPointInfo;
 import io.helidon.pico.DefaultQualifierAndValue;
+import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.InjectionPointProvider;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
+import io.helidon.pico.ServiceInfoCriteria;
+import io.helidon.pico.services.Dependencies;
 
 import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.AnnotationInfoList;
@@ -625,14 +628,17 @@ public class TypeTools extends BuilderTypeTools {
             TypeName annotationType = DefaultTypeName.createFromTypeName(translate(ai.getName()));
             AnnotationParameterValueList values = ai.getParameterValues();
             if (values == null || values.isEmpty()) {
-                result.add(DefaultAnnotationAndValue.create(annotationType, (String) null));
+                result.add(DefaultAnnotationAndValue.create(annotationType));
             } else if (values.size() > 1) {
                 Map<String, String> strVals = extractValues(values);
                 result.add(DefaultAnnotationAndValue.create(annotationType, strVals));
             } else {
                 Object value = values.get(0).getValue();
                 String strValue = (value != null) ? String.valueOf(value) : null;
-                result.add(DefaultAnnotationAndValue.create(annotationType, strValue));
+                AnnotationAndValue annotationAndValue = (strValue == null)
+                        ? DefaultAnnotationAndValue.create(annotationType)
+                        : DefaultAnnotationAndValue.create(annotationType, strValue);
+                result.add(annotationAndValue);
             }
         }
         return result;
@@ -850,16 +856,26 @@ public class TypeTools extends BuilderTypeTools {
             qualifiers = createQualifierAndValueSet(elemInfo);
             annotations = createAnnotationAndValueSet(elemInfo.getAnnotationInfo());
         }
+        String elemName = elemInfo.isConstructor()
+                ? InjectionPointInfo.CONSTRUCTOR : elemInfo.getName();
+        int elemArgs = elemInfo.getParameterInfo().length;
+        ElementInfo.Access access = toAccess(elemInfo.getModifiers());
+        String packageName = serviceTypeName.packageName();
+        ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+                .serviceTypeName(elemType)
+                .build();
         return DefaultInjectionPointInfo.builder()
+                .baseIdentity(Dependencies.toMethodBaseIdentity(elemName, elemArgs, access, () -> packageName))
+                .id(Dependencies.toMethodIdentity(elemName, elemArgs, elemOffset, access, () -> packageName))
+                .dependencyToServiceInfo(serviceInfo)
                 .serviceTypeName(serviceTypeName.name())
-                .elementName(elemInfo.isConstructor()
-                                     ? InjectionPointInfo.CONSTRUCTOR : elemInfo.getName())
+                .elementName(elemName)
                 .elementKind(elemInfo.isConstructor()
                                      ? InjectionPointInfo.ElementKind.CONSTRUCTOR : InjectionPointInfo.ElementKind.METHOD)
                 .elementTypeName(elemType)
-                .elementArgs(elemInfo.getParameterInfo().length)
+                .elementArgs(elemArgs)
                 .elementOffset(elemOffset)
-                .access(toAccess(elemInfo.getModifiers()))
+                .access(access)
                 .staticDeclaration(isStatic(elemInfo.getModifiers()))
                 .qualifiers(qualifiers)
                 .annotations(annotations)
@@ -1091,7 +1107,15 @@ public class TypeTools extends BuilderTypeTools {
         AtomicReference<Boolean> isOptionalWrapped = new AtomicReference<>();
         String elemType = extractInjectionPointTypeInfo(elemInfo, isProviderWrapped, isListWrapped, isOptionalWrapped);
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(elemInfo);
+        String elemName = elemInfo.getName();
+        String id = Dependencies.toFieldIdentity(elemName, () -> serviceTypeName.packageName());
+        ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+                .serviceTypeName(elemType)
+                .build();
         return DefaultInjectionPointInfo.builder()
+                .baseIdentity(id)
+                .id(id)
+                .dependencyToServiceInfo(serviceInfo)
                 .serviceTypeName(serviceTypeName.name())
                 .elementName(elemInfo.getName())
                 .elementKind(InjectionPointInfo.ElementKind.FIELD)

@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,7 +40,6 @@ import io.helidon.builder.types.DefaultTypeName;
 import io.helidon.builder.types.TypeName;
 import io.helidon.pico.DefaultServiceInfoCriteria;
 import io.helidon.pico.Module;
-import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceProvider;
@@ -198,13 +198,14 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         return Objects.requireNonNull(packageName);
     }
 
-    static PicoException noModuleFoundError() {
-        return new PicoException("unnamed to determine the name for the current module - was APT run?");
+    static ToolsException noModuleFoundError() {
+        return new ToolsException("unable to determine the name for the current module - "
+                                          + "was APT run and do you have a module-info?");
     }
 
-    static PicoException noModuleFoundError(
+    static ToolsException noModuleFoundError(
             String moduleName) {
-        return new PicoException("no pico module named '" + moduleName + "' found in the current module - was APT run?");
+        return new ToolsException("no pico module named '" + moduleName + "' found in the current module - was APT run?");
     }
 
     String getThisModuleName() {
@@ -212,7 +213,8 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
         Path basePath = toBasePath(build.getSourceDirectory());
         String moduleName = toSuggestedModuleName(basePath, Path.of(build.getSourceDirectory()), true).orElseThrow();
         if (isUnnamedModuleName(moduleName)) {
-            throw noModuleFoundError();
+//            throw noModuleFoundError();
+            getLog().warn(noModuleFoundError().getMessage());
         }
         return moduleName;
     }
@@ -359,7 +361,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
             CodeGenPaths codeGenPaths = DefaultCodeGenPaths.builder()
                     .generatedSourcesPath(getGeneratedSourceDirectory().getPath())
                     .outputPath(getOutputDirectory().getPath())
-                    .moduleInfoPath(moduleInfoPath)
+                    .moduleInfoPath(Optional.ofNullable(moduleInfoPath))
                     .build();
             ApplicationCreatorCodeGen applicationCodeGen = DefaultApplicationCreatorCodeGen.builder()
                     .packageName(packageName)
@@ -382,7 +384,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .build();
             String moduleName = getModuleName();
             AbstractFilerMsgr directFiler = AbstractFilerMsgr.createDirectFiler(codeGenPaths, getLogger());
-            CodeGenFiler codeGenFiler = new CodeGenFiler(directFiler);
+            CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
             DefaultApplicationCreatorRequest.Builder reqBuilder = DefaultApplicationCreatorRequest.builder()
                     .codeGen(applicationCodeGen)
                     .messager(new Messager2LogAdapter())

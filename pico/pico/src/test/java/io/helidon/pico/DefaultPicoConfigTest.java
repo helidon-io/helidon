@@ -42,7 +42,7 @@ class DefaultPicoConfigTest {
         assertThat(cfg.serviceLookupCaching(), equalTo(Boolean.FALSE));
         assertThat(cfg.activationLogs(), equalTo(Boolean.FALSE));
         assertThat(cfg.activationDeadlockDetectionTimeoutMillis(), equalTo(10000L));
-        assertThat(cfg.permitsDynamic(), equalTo(Boolean.FALSE));
+        assertThat(cfg.permitsDynamic(), equalTo(Boolean.TRUE));
         assertThat(cfg.supportsDynamic(), equalTo(Boolean.TRUE));
         assertThat(cfg.permitsReflection(), equalTo(Boolean.FALSE));
         assertThat(cfg.supportsReflection(), equalTo(Boolean.FALSE));

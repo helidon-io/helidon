@@ -48,7 +48,7 @@
         <dependency>
             <groupId>io.helidon.builder.tests</groupId>
             <artifactId>helidon-builder-tests-test-configbean</artifactId>
-            <version>4.0.0-SNAPSHOT</version>
+            <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -110,9 +110,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-XprintProcessorInfo</arg>
-                        <arg>-XprintRounds</arg>
-                        <arg>-verbose</arg>
+                        <arg>-Aio.helidon.pico.autoAddNonContractInterfaces=true</arg>
+<!--                        <arg>-XprintProcessorInfo</arg>-->
+<!--                        <arg>-XprintRounds</arg>-->
+<!--                        <arg>-verbose</arg>-->
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
@@ -128,6 +129,17 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

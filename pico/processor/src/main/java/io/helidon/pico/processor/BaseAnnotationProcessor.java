@@ -545,7 +545,7 @@ abstract class BaseAnnotationProcessor<B> extends AbstractProcessor implements M
 
     CodeGenFiler createCodeGenFiler() {
         AbstractFilerMsgr filer = AbstractFilerMsgr.createAnnotationBasedFiler(processingEnv, this);
-        return new CodeGenFiler(filer);
+        return CodeGenFiler.create(filer);
     }
 
     boolean doFiler(

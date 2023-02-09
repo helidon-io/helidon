@@ -81,7 +81,7 @@ public abstract class AbstractServiceProvider<T>
                    DeActivator<T>,
                    ActivationPhaseReceiver,
                    Resetable {
-    private static final DependenciesInfo NO_DEPS = DefaultDependenciesInfo.builder().build();
+    static final DependenciesInfo NO_DEPS = DefaultDependenciesInfo.builder().build();
     private static final System.Logger LOGGER = System.getLogger(AbstractServiceProvider.class.getName());
 
     private final Semaphore activationSemaphore = new Semaphore(1);
@@ -473,7 +473,7 @@ public abstract class AbstractServiceProvider<T>
 
             if (serviceOrProvider == null
                     || Phase.ACTIVE != currentActivationPhase()) {
-                ActivationRequest req = ActivationRequest.DEFAULT.get();
+                ActivationRequest req = PicoServices.createDefaultActivationRequest();
                 ActivationResult res = activate(req);
                 if (res.failure()) {
                     if (ctx.expected()) {
@@ -688,7 +688,7 @@ public abstract class AbstractServiceProvider<T>
                     String id,
                     ServiceProvider<?> serviceProvider) {
                 InjectionPlan plan = createBuilder(id)
-                        .injectionPointQualifiedServiceProviders(Collections.singletonList(bind(serviceProvider)))
+                        .injectionPointQualifiedServiceProviders(List.of(bind(serviceProvider)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
                 assert (Objects.isNull(prev));
@@ -717,23 +717,27 @@ public abstract class AbstractServiceProvider<T>
             public ServiceInjectionPlanBinder.Binder resolvedBind(
                     String id,
                     Class<?> serviceType) {
-                InjectionResolver resolver = (InjectionResolver) AbstractServiceProvider.this;
-                ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
-                        .serviceTypeName(serviceType.getName())
-                        .build();
-                DefaultInjectionPointInfo ipInfo = DefaultInjectionPointInfo.builder()
-                        .id(id)
-                        .dependencyToServiceInfo(serviceInfo)
-                        .build();
-                Object resolved = Objects.requireNonNull(
-                        resolver.resolve(ipInfo, picoServices(), AbstractServiceProvider.this, false));
-                InjectionPlan plan = createBuilder(id)
-                        .unqualifiedProviders(List.of(resolved))
-                        .resolved(false)
-                        .build();
-                Object prev = injectionPlan.put(id, plan);
-                assert (Objects.isNull(prev));
-                return this;
+                try {
+                    InjectionResolver resolver = (InjectionResolver) AbstractServiceProvider.this;
+                    ServiceInfoCriteria serviceInfo = DefaultServiceInfoCriteria.builder()
+                            .serviceTypeName(serviceType.getName())
+                            .build();
+                    InjectionPointInfo ipInfo = DefaultInjectionPointInfo.builder()
+                            .id(id)
+                            .dependencyToServiceInfo(serviceInfo);
+//                            .build();
+                    Object resolved = Objects.requireNonNull(
+                            resolver.resolve(ipInfo, picoServices(), AbstractServiceProvider.this, false));
+                    InjectionPlan plan = createBuilder(id)
+                            .unqualifiedProviders(List.of(resolved))
+                            .resolved(false)
+                            .build();
+                    Object prev = injectionPlan.put(id, plan);
+                    assert (Objects.isNull(prev));
+                    return this;
+                } catch (Exception e) {
+                    throw new PicoServiceProviderException("failed to process: " + id, e, AbstractServiceProvider.this);
+                }
             }
 
             @Override
@@ -878,7 +882,7 @@ public abstract class AbstractServiceProvider<T>
             } else {
                 List<ServiceProvider<?>> serviceProviders = value.injectionPointQualifiedServiceProviders();
                 serviceProviders = (serviceProviders == null)
-                        ? Collections.emptyList()
+                        ? List.of()
                         : Collections.unmodifiableList(serviceProviders);
                 if (serviceProviders.isEmpty()
                         && !value.unqualifiedProviders().isEmpty()) {
@@ -893,7 +897,7 @@ public abstract class AbstractServiceProvider<T>
                 // update the original plans map to properly reflect the resolved value
                 mutablePlans.put(key, DefaultInjectionPlan.toBuilder(value)
                         .wasResolved(true)
-                        .resolved(resolved)
+                        .resolved(Optional.ofNullable(resolved))
                         .build());
             }
         });

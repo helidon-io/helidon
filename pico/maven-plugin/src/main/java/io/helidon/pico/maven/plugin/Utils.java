@@ -28,6 +28,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.pico.DefaultBootstrap;
+import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesHolder;
 import io.helidon.pico.ServiceProvider;
@@ -113,7 +114,10 @@ class Utils {
     static LazyValue<PicoServices> lazyCreate(
             Config config) {
         return LazyValue.create(() -> {
-            PicoServices.globalBootstrap(DefaultBootstrap.builder().config(config).build());
+            PicoServices.globalBootstrap(DefaultBootstrap.builder()
+                                                 .config(config)
+                                                 .limitRuntimePhase(Phase.GATHERING_DEPENDENCIES)
+                                                 .build());
             return PicoServices.picoServices().orElseThrow();
         });
     }

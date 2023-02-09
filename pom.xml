@@ -1190,6 +1190,12 @@
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
             </dependency>
+            <!-- Pico TCK tests -->
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-tck</artifactId>
+                <version>${version.lib.jakarta.inject}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

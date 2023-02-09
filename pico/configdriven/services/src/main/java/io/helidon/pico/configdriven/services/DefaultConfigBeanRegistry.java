@@ -53,6 +53,7 @@ import static io.helidon.pico.configdriven.services.Utils.validatedConfigKey;
 /**
  * The default implementation for {@link ConfigBeanRegistry}.
  */
+@SuppressWarnings("unchecked")
 class DefaultConfigBeanRegistry implements InternalConfigBeanRegistry {
     /**
      * The default config bean instance id.

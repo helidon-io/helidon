@@ -16,9 +16,8 @@
 
 package io.helidon.pico;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,16 +80,34 @@ public interface DependenciesInfo {
                     }
                 }));
         if (result.size() > 1) {
-            Collections.sort(result, new Comparator<DependencyInfo>() {
-                @Override
-                public int compare(DependencyInfo o1, DependencyInfo o2) {
-                    int pos1 = o1.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
-                    int pos2 = o2.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
-                    return Integer.compare(pos1, pos2);
-                }
-            });
+            result.sort(comparator());
         }
         return result;
     }
+
+    /**
+     * Comparator appropriate for {@link DependencyInfo}.
+     */
+    class Comparator implements java.util.Comparator<DependencyInfo>, Serializable {
+        private Comparator() {
+        }
+
+        @Override
+        public int compare(DependencyInfo o1, DependencyInfo o2) {
+            int pos1 = o1.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
+            int pos2 = o2.injectionPointDependencies().iterator().next().elementOffset().orElse(0);
+            return Integer.compare(pos1, pos2);
+        }
+    }
+
+    /**
+     * Provides a comparator appropriate for {@link io.helidon.pico.DependencyInfo}.
+     *
+     * @return a comparator for dependency info.
+     */
+    static java.util.Comparator<DependencyInfo> comparator() {
+        return new Comparator();
+    }
+
 
 }

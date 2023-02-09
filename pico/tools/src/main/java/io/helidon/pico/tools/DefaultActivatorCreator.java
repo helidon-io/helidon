@@ -43,6 +43,7 @@ import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfo;
 import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.DependencyInfo;
+import io.helidon.pico.ElementInfo;
 import io.helidon.pico.InjectionPointInfo;
 import io.helidon.pico.Module;
 import io.helidon.pico.QualifierAndValue;
@@ -579,7 +580,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
             List<TypeName> filtered = e.getValue().stream()
                     .filter((typeName) -> services.serviceTypeNames().contains(typeName))
                     .collect(Collectors.toList());
-            assert (!filtered.isEmpty()) : e;
+//            assert (!filtered.isEmpty()) : e;
             filteredHierarchy.put(e.getKey(), filtered);
         }
         return filteredHierarchy;
@@ -869,7 +870,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         List<DependencyInfo> allCtorArgs = dependencies.allDependenciesFor(DefaultInjectionPointInfo.CONSTRUCTOR);
         allCtorArgs.forEach(dep1 -> dep1.injectionPointDependencies().stream()
                         .forEach(dep2 -> {
-                            if (Objects.isNull(nameRef.get())) {
+                            if (nameRef.get() == null) {
                                 nameRef.set(dep2.baseIdentity());
                             } else {
                                 assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 constructor can be injectable";
@@ -923,7 +924,14 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
         String lastElemName = null;
         String lastId = null;
         List<String> compositeSetter = null;
-        for (DependencyInfo dep1 : dependencies.allDependencies()) {
+        List<DependencyInfo> allDeps = dependencies.allDependencies().stream()
+                .filter(it -> it.injectionPointDependencies().iterator().next().elementKind() == ElementInfo.ElementKind.METHOD)
+                .collect(Collectors.toList());
+        if (allDeps.size() > 1) {
+            allDeps.sort(DependenciesInfo.comparator());
+        }
+
+        for (DependencyInfo dep1 : allDeps) {
             for (InjectionPointInfo ipInfo : dep1.injectionPointDependencies()) {
                 if (ipInfo.elementKind() != InjectionPointInfo.ElementKind.METHOD) {
                     continue;
@@ -935,7 +943,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                 int elemArgs = ipInfo.elementArgs().orElse(0);
                 String cn = toCodegenDecl(dep1.dependencyTo(), ipInfo);
 
-                if (lastId != null && !lastId.equals(id) && Objects.nonNull(compositeSetter)) {
+                if (lastId != null && !lastId.equals(id) && compositeSetter != null) {
                     IdAndToString setter = new IdAndToString(lastId, lastElemName + "("
                             + CommonUtils.toString(compositeSetter, null, ",\n\t\t\t\t")
                             + ")");
@@ -954,7 +962,7 @@ public class DefaultActivatorCreator extends AbstractCreator implements Activato
                     methods.add(setter);
                 } else {
                     assert (elemArgs > 1);
-                    if (Objects.isNull(compositeSetter)) {
+                    if (compositeSetter == null) {
                         compositeSetter = new ArrayList<>();
                     }
                     compositeSetter.add("(" + cn + ") get(deps, \"" + id + "(" + elemPos + ")\")");

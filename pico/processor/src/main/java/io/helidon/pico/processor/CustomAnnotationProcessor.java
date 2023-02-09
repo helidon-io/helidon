@@ -178,7 +178,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor<Void> {
     void doFiler(
             CustomAnnotationTemplateResponse response) {
         AbstractFilerMsgr filer = AbstractFilerMsgr.createAnnotationBasedFiler(processingEnv, this);
-        CodeGenFiler codegen = new CodeGenFiler(filer);
+        CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach((typeName, codeBody) -> {
             codegen.codegenJavaFilerOut(typeName, codeBody);
         });

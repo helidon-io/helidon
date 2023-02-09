@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -56,6 +57,7 @@ import io.helidon.pico.PicoException;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceBinder;
+import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.ServiceProvider;
 import io.helidon.pico.spi.Resetable;
 
@@ -125,10 +127,25 @@ class DefaultPicoServices implements PicoServices, Resetable {
     }
 
     @Override
+    public Optional<Set<ServiceInfoCriteria>> lookups() {
+        if (!cfg.serviceLookupCaching()) {
+            return Optional.empty();
+        }
+
+        DefaultServices thisServices = services.get();
+        if (thisServices == null) {
+            // never has been any lookup yet
+            return Optional.of(Set.of());
+        }
+        return Optional.of(thisServices.cache().keySet());
+    }
+
+    @Override
     public Optional<ServiceBinder> createServiceBinder(
             io.helidon.pico.Module module) {
         DefaultServices.assertPermitsDynamic(cfg);
-        return Optional.of(DefaultServiceBinder.create(this, module.named().orElse(module.getClass().getName())));
+        String moduleName = module.named().orElse(module.getClass().getName());
+        return Optional.of(DefaultServiceBinder.create(this, moduleName, false));
     }
 
     @Override
@@ -230,7 +247,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
             ActivationLogQuery query = log.toQuery().orElse(null);
             if (query != null) {
                 // we can lean on the log entries in order to shut down in reverse chronological order
-                List<ActivationLogEntry> fullyActivationLog = query.fullActivationLog();
+                List<ActivationLogEntry> fullyActivationLog = new ArrayList<>(query.fullActivationLog());
                 if (!fullyActivationLog.isEmpty()) {
                     LinkedHashSet<ServiceProvider<?>> serviceProviderActivations = new LinkedHashSet<>();
 
@@ -454,7 +471,7 @@ class DefaultPicoServices implements PicoServices, Resetable {
         if (modules.isEmpty()) {
             LOGGER.log(System.Logger.Level.WARNING, "no " + io.helidon.pico.Module.class.getName() + " was found.");
         } else {
-            modules.forEach(module -> services.bind(this, module));
+            modules.forEach(module -> services.bind(this, module, isBinding.get()));
         }
     }
 

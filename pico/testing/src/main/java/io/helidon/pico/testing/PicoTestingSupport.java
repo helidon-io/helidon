@@ -61,7 +61,7 @@ public class PicoTestingSupport {
     public static void bind(
             PicoServices picoServices,
             ServiceProvider<?> serviceProvider) {
-        DefaultServiceBinder binder = DefaultServiceBinder.create(picoServices, PicoTestingSupport.class.getSimpleName());
+        DefaultServiceBinder binder = DefaultServiceBinder.create(picoServices, PicoTestingSupport.class.getSimpleName(), true);
         binder.bind(serviceProvider);
     }
 

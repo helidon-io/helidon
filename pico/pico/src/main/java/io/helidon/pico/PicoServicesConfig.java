@@ -159,9 +159,10 @@ public abstract class PicoServicesConfig {
      */
     public static final String KEY_PERMITS_DYNAMIC = "permits-dynamic";
     /**
-     * The default value for this is false, meaning that the services registry cannot be changed during runtime post Pico startup.
+     * The default value for this is true, meaning that the services registry can be changed during runtime post Pico startup.
      */
-    public static final String DEFAULT_PERMITS_DYNAMIC = "false";
+    // note to self: ideally we should have this be false, but parallel maven builds are failing with this enabled!
+    public static final String DEFAULT_PERMITS_DYNAMIC = "true";
 
     /**
      * Flag indicating whether the services registry permits dynamic behavior (key is {@link #KEY_PERMITS_DYNAMIC}). The default

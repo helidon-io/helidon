@@ -44,6 +44,7 @@
 
     <modules>
         <module>configuredby</module>
+        <module>configuredby-application</module>
     </modules>
 
 </project>

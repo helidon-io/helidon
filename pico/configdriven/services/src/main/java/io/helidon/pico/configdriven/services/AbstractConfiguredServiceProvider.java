@@ -205,7 +205,9 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     void assertInitialized(
             boolean initialized) {
         assertIsInitializing();
-        assert (!drivesActivation() || isAlreadyAtTargetPhase(Phase.ACTIVE) || managedConfiguredServicesMap.isEmpty());
+        assert (!drivesActivation()
+                        || isAlreadyAtTargetPhase(PicoServices.terminalActivationPhase())
+                        || managedConfiguredServicesMap.isEmpty());
         this.initialized.set(initialized);
     }
 
@@ -238,6 +240,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void rootProvider(
             ServiceProvider<T> root) {
         assertIsRootProvider(false, false);
@@ -433,6 +436,7 @@ public abstract class AbstractConfiguredServiceProvider<T, CB> extends AbstractS
 
     // note that all responsibilities to resolve is delegated to the root provider
     @Override
+    @SuppressWarnings("unchecked")
     public Optional<Object> resolve(
             InjectionPointInfo ipInfo,
             PicoServices picoServices,

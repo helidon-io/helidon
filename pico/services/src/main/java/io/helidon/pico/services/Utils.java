@@ -19,6 +19,7 @@ package io.helidon.pico.services;
 import java.util.Set;
 
 import io.helidon.pico.Application;
+import io.helidon.pico.DependenciesInfo;
 import io.helidon.pico.ServiceInfo;
 import io.helidon.pico.ServiceProvider;
 
@@ -40,9 +41,11 @@ public class Utils {
             ServiceProvider<?> sp) {
         ServiceInfo serviceInfo = sp.serviceInfo();
         Set<String> contractsImplemented = serviceInfo.contractsImplemented();
-        return !contractsImplemented.isEmpty()
-                && !contractsImplemented.contains(io.helidon.pico.Module.class.getName())
-                && !contractsImplemented.contains(Application.class.getName());
+        DependenciesInfo deps = sp.dependencies();
+        return (deps != AbstractServiceProvider.NO_DEPS)
+                || (!contractsImplemented.isEmpty()
+                    && !contractsImplemented.contains(io.helidon.pico.Module.class.getName())
+                    && !contractsImplemented.contains(Application.class.getName()));
     }
 
 }

@@ -24,12 +24,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.QualifierAndValue;
 import io.helidon.pico.tools.AbstractFilerMsgr;
 import io.helidon.pico.tools.ActivatorCreator;
+import io.helidon.pico.tools.ActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.ActivatorCreatorResponse;
 import io.helidon.pico.tools.CodeGenFiler;
 import io.helidon.pico.tools.CodeGenPaths;
@@ -37,6 +39,7 @@ import io.helidon.pico.tools.DefaultActivatorCreatorConfigOptions;
 import io.helidon.pico.tools.DefaultCodeGenPaths;
 import io.helidon.pico.tools.DefaultExternalModuleCreatorRequest;
 import io.helidon.pico.tools.ExternalModuleCreator;
+import io.helidon.pico.tools.ExternalModuleCreatorRequest;
 import io.helidon.pico.tools.ExternalModuleCreatorResponse;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -168,7 +171,7 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
 
             ExternalModuleCreator externalModuleCreator = externalModuleCreator();
 
-            DefaultActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
+            ActivatorCreatorConfigOptions configOptions = DefaultActivatorCreatorConfigOptions.builder()
                     .supportsJsr330InStrictMode(isSupportsJsr330InStrictMode())
                     .build();
             String generatedSourceDir = getGeneratedSourceDirectory().getPath();
@@ -178,14 +181,14 @@ public class ExternalModuleCreatorMojo extends AbstractCreatorMojo {
                     .metaInfServicesPath(new File(getOutputDirectory(), "META-INF/services").getPath())
                     .build();
             AbstractFilerMsgr directFiler = AbstractFilerMsgr.createDirectFiler(codeGenPaths, getLogger());
-            CodeGenFiler codeGenFiler = new CodeGenFiler(directFiler);
-            DefaultExternalModuleCreatorRequest request = DefaultExternalModuleCreatorRequest.builder()
+            CodeGenFiler codeGenFiler = CodeGenFiler.create(directFiler);
+            ExternalModuleCreatorRequest request = DefaultExternalModuleCreatorRequest.builder()
                     .packageNamesToScan(getPackageNames())
                     .serviceTypeToQualifiersMap(getServiceTypeToQualifiers())
                     .throwIfError(isFailOnWarning())
                     .activatorCreatorConfigOptions(configOptions)
                     .codeGenPaths(codeGenPaths)
-                    .moduleName(getModuleName())
+                    .moduleName(Optional.ofNullable(getModuleName()))
                     .filer(codeGenFiler)
                     .build();
             ExternalModuleCreatorResponse res = externalModuleCreator.prepareToCreateExternalModule(request);

@@ -24,7 +24,7 @@ import jakarta.inject.Named;
 
 @ConfiguredBy(ASingletonConfigBean.class)
 @Named("jane")
-class ASingletonService {
+class ASingletonService implements ASingletonServiceContract {
     private boolean running;
 
     // note: initially left w/o a ctor here!
@@ -49,6 +49,7 @@ class ASingletonService {
     /**
      * For Testing.
      */
+    @Override
     public boolean isRunning() {
         return running;
     }

@@ -260,7 +260,7 @@ public abstract class AbstractFilerMsgr implements Filer, Msgr {
         public JavaFileObject createSourceFile(
                 CharSequence name,
                 Element... originatingElement) {
-            Path javaFilePath = toSourcePath(StandardLocation.SOURCE_OUTPUT, name.toString());
+            Path javaFilePath = Objects.requireNonNull(toSourcePath(StandardLocation.SOURCE_OUTPUT, name.toString()));
             return new DirectJavaFileObject(javaFilePath.toFile());
         }
 

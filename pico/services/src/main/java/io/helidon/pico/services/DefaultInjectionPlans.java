@@ -18,7 +18,6 @@ package io.helidon.pico.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -277,7 +276,8 @@ class DefaultInjectionPlans {
                 }
 
                 ContextualServiceQuery query = ContextualServiceQuery.create(ipInfo, true);
-                return serviceProvider.first(query).orElseThrow();
+                Optional<?> first = serviceProvider.first(query);
+                return first.orElse(null);
             }
         } catch (InjectionException ie) {
             throw ie;
@@ -299,8 +299,8 @@ class DefaultInjectionPlans {
         }
 
         return (target instanceof AbstractServiceProvider)
-                ? Collections.singletonList((ServiceProvider<?>) target)
-                : Collections.emptyList();
+                ? List.of((ServiceProvider<?>) target)
+                : List.of();
     }
 
     private static List<?> toIpUnqualified(
@@ -313,9 +313,9 @@ class DefaultInjectionPlans {
             return result;
         }
 
-        return (target instanceof AbstractServiceProvider)
-                ? Collections.emptyList()
-                : Collections.singletonList(target);
+        return (target == null || target instanceof AbstractServiceProvider)
+                ? List.of()
+                : List.of(target);
     }
 
     private static boolean isSelf(

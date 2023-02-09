@@ -47,10 +47,11 @@ import io.helidon.pico.Services;
 import io.helidon.pico.services.AbstractServiceProvider;
 import io.helidon.pico.services.DefaultServiceBinder;
 import io.helidon.pico.services.InjectionPlan;
-import io.helidon.pico.services.Utils;
 
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
+
+import static io.helidon.pico.services.Utils.isQualifiedInjectionTarget;
 
 /**
  * The default implementation for {@link ApplicationCreator}.
@@ -63,6 +64,8 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     static final String NAME = PicoServicesConfig.NAME;
     static final String SERVICE_PROVIDER_APPLICATION_SERVICETYPEBINDING_HBS
             = "service-provider-application-servicetypebinding.hbs";
+    static final String SERVICE_PROVIDER_APPLICATION_EMPTY_SERVICETYPEBINDING_HBS
+            = "service-provider-application-empty-servicetypebinding.hbs";
     static final String SERVICE_PROVIDER_APPLICATION_HBS
             = "service-provider-application.hbs";
 
@@ -191,11 +194,14 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
 
         String serviceTypeBindingTemplate = templateHelper()
                 .safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_SERVICETYPEBINDING_HBS);
+        String serviceTypeBindingEmptyTemplate = templateHelper()
+                .safeLoadTemplate(req.templateName(), SERVICE_PROVIDER_APPLICATION_EMPTY_SERVICETYPEBINDING_HBS);
 
         List<TypeName> serviceTypeNames = new ArrayList<>();
         List<String> serviceTypeBindings = new ArrayList<>();
         for (TypeName serviceTypeName : req.serviceTypeNames()) {
-            String injectionPlan = toServiceTypeInjectionPlan(picoServices, serviceTypeName, serviceTypeBindingTemplate);
+            String injectionPlan = toServiceTypeInjectionPlan(picoServices, serviceTypeName,
+                                                              serviceTypeBindingTemplate, serviceTypeBindingEmptyTemplate);
             if (injectionPlan == null) {
                 continue;
             }
@@ -267,25 +273,25 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
     String toServiceTypeInjectionPlan(
             PicoServices picoServices,
             TypeName serviceTypeName,
-            String serviceTypeBindingTemplate) {
+            String serviceTypeBindingTemplate,
+            String serviceTypeBindingEmptyTemplate) {
         Services services = picoServices.services();
 
         ServiceInfoCriteria si = toServiceInfoCriteria(serviceTypeName);
         ServiceProvider<?> sp = services.lookupFirst(si);
-        if (!Utils.isQualifiedInjectionTarget(sp)) {
+        String activator = toActivatorCodeGen(sp);
+        if (activator == null) {
             return null;
-        } else {
-            String activator = toActivatorCodeGen(sp);
-            if (activator == null) {
-                return null;
-            }
-            Map<String, Object> subst = new HashMap<>();
-            subst.put("servicetypename", serviceTypeName.name());
-            subst.put("activator", activator);
+        }
+        Map<String, Object> subst = new HashMap<>();
+        subst.put("servicetypename", serviceTypeName.name());
+        subst.put("activator", activator);
+        subst.put("modulename", sp.serviceInfo().moduleName().orElse(null));
+        if (isQualifiedInjectionTarget(sp)) {
             subst.put("injectionplan", toInjectionPlanBindings(sp));
-            subst.put("modulename", sp.serviceInfo().moduleName().orElse(null));
-
             return templateHelper().applySubstitutions(serviceTypeBindingTemplate, subst, true);
+        } else {
+            return templateHelper().applySubstitutions(serviceTypeBindingEmptyTemplate, subst, true);
         }
     }
 
@@ -303,42 +309,45 @@ public class DefaultApplicationCreator extends AbstractCreator implements Applic
         Map<String, InjectionPlan> injectionPlan = asp.getOrCreateInjectionPlan(false);
         for (Map.Entry<String, InjectionPlan> e : injectionPlan.entrySet()) {
             StringBuilder line = new StringBuilder();
-
             InjectionPointInfo ipInfo = e.getValue().injectionPointInfo();
             List<? extends ServiceProvider<?>> ipQualified = e.getValue().injectionPointQualifiedServiceProviders();
             List<?> ipUnqualified = e.getValue().unqualifiedProviders();
             boolean resolved = false;
-            if (ipQualified == null || ipQualified.isEmpty()) {
-                if (ipUnqualified != null && !ipUnqualified.isEmpty()) {
-                    resolved = true;
-                    line.append(".resolvedBind(");
+            try {
+                if (ipQualified.isEmpty()) {
+                    if (!ipUnqualified.isEmpty()) {
+                        resolved = true;
+                        line.append(".resolvedBind(");
+                    } else {
+                        line.append(".bindVoid(");
+                    }
+                } else if (ipInfo.listWrapped()) {
+                    line.append(".bindMany(");
                 } else {
-                    line.append(".bindVoid(");
+                    line.append(".bind(");
                 }
-            } else if (ipInfo.listWrapped()) {
-                line.append(".bindMany(");
-            } else {
-                line.append(".bind(");
-            }
 
-            line.append("\"").append(e.getKey()).append("\"");
+                line.append("\"").append(e.getKey()).append("\"");
 
-            if (resolved) {
-                Object target = ipUnqualified.get(0);
-                if (!(target instanceof Class)) {
-                    target = target.getClass();
+                if (resolved) {
+                    Object target = ipUnqualified.get(0);
+                    if (!(target instanceof Class)) {
+                        target = target.getClass();
+                    }
+                    line.append(", ").append(((Class<?>) target).getName()).append(".class");
+                } else if (ipQualified.isEmpty()) {
+                    // no-op
+                } else if (ipInfo.listWrapped()) {
+                    line.append(", ").append(toActivatorCodeGen((Collection<ServiceProvider<?>>) ipQualified));
+                } else {
+                    line.append(", ").append(toActivatorCodeGen(ipQualified.get(0)));
                 }
-                line.append(", ").append(((Class<?>) target).getName()).append(".class");
-            } else if (ipQualified == null || ipQualified.isEmpty()) {
-                // no-op
-            } else if (ipInfo.listWrapped()) {
-                line.append(", ").append(toActivatorCodeGen((Collection<ServiceProvider<?>>) ipQualified));
-            } else {
-                line.append(", ").append(toActivatorCodeGen(ipQualified.get(0)));
-            }
-            line.append(")");
+                line.append(")");
 
-            plan.add(line.toString());
+                plan.add(line.toString());
+            } catch (Exception exc) {
+                throw new IllegalStateException("failed to process: " + e.getKey() + " with " + e.getValue(), exc);
+            }
         }
 
         return plan;

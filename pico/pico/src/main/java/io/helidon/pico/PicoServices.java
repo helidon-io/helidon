@@ -18,6 +18,7 @@ package io.helidon.pico;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Abstract factory for all services provided by a single Helidon Pico provider implementation.
@@ -157,5 +158,37 @@ public interface PicoServices {
      * @return the metrics, or empty if not available
      */
     Optional<Metrics> metrics();
+
+    /**
+     * Optionally, the set of {@link io.helidon.pico.Services} lookup criteria that were recorded. This is only available if
+     * {@link PicoServicesConfig#serviceLookupCaching()} is enabled.
+     *
+     * @return the lookup criteria recorded, or empty if not available
+     */
+    Optional<Set<ServiceInfoCriteria>> lookups();
+
+    /**
+     * Will create an activation request either to {@link io.helidon.pico.Phase#ACTIVE} or limited to any
+     * {@link io.helidon.pico.Bootstrap#limitRuntimePhase()} specified.
+     *
+     * @return the activation request
+     */
+    static ActivationRequest createDefaultActivationRequest() {
+        return DefaultActivationRequest.builder().targetPhase(terminalActivationPhase()).build();
+    }
+
+    /**
+     * The terminal phase for activation that we should not cross.
+     *
+     * @return the terminal phase for activation
+     */
+    static Phase terminalActivationPhase() {
+        Optional<Bootstrap> globalBootstrap = PicoServices.globalBootstrap();
+        if (globalBootstrap.isPresent()) {
+            Optional<Phase> limitPhase = globalBootstrap.get().limitRuntimePhase();
+            return limitPhase.orElse(Phase.ACTIVE);
+        }
+        return Phase.ACTIVE;
+    }
 
 }

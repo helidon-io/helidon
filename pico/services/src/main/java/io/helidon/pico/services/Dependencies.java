@@ -80,6 +80,7 @@ public class Dependencies {
          * @param access    the element access
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation add(
                 String elemName,
                 Class<?> elemType,
@@ -88,7 +89,8 @@ public class Dependencies {
             if (InjectionPointInfo.ElementKind.FIELD != kind && Void.class != elemType) {
                 throw new IllegalStateException("should not use this method for method types");
             }
-            return add(builder.fromServiceTypeName().orElseThrow(), elemName, elemType.getName(), kind, 0, access);
+            String fromServiceTypeName = builder.fromServiceTypeName().orElseThrow();
+            return add(fromServiceTypeName, elemName, elemType.getName(), kind, 0, access);
         }
 
         /**
@@ -101,15 +103,18 @@ public class Dependencies {
          * @param access the element access
          * @return the builder
          */
-        public BuilderContinuation add(String elemName,
-                                       Class<?> elemType,
-                                       InjectionPointInfo.ElementKind kind,
-                                       int elemArgs,
-                                       InjectionPointInfo.Access access) {
+        // note: called from generated code
+        public BuilderContinuation add(
+                String elemName,
+                Class<?> elemType,
+                InjectionPointInfo.ElementKind kind,
+                int elemArgs,
+                InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD == kind && 0 != elemArgs) {
                 throw new IllegalStateException("should not have args for field: " + elemName);
             }
-            return add(builder.fromServiceTypeName().orElseThrow(), elemName, elemType.getName(), kind, elemArgs, access);
+            String fromServiceTypeName = builder.fromServiceTypeName().orElseThrow();
+            return add(fromServiceTypeName, elemName, elemType.getName(), kind, elemArgs, access);
         }
 
         /**
@@ -122,6 +127,7 @@ public class Dependencies {
          * @param access        the element access
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation add(
                 Class<?> serviceType,
                 String elemName,
@@ -129,7 +135,7 @@ public class Dependencies {
                 InjectionPointInfo.ElementKind kind,
                 InjectionPointInfo.Access access) {
             if (InjectionPointInfo.ElementKind.FIELD != kind) {
-                throw new IllegalStateException("should not use this method for method types");
+                throw new IllegalStateException("should not use this for method types");
             }
             return add(serviceType.getName(), elemName, elemType.getName(), kind, 0, access);
         }
@@ -145,6 +151,7 @@ public class Dependencies {
          * @param access        the element access
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation add(
                 Class<?> serviceType,
                 String elemName,
@@ -175,6 +182,7 @@ public class Dependencies {
          * @param offset the offset
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation elemOffset(
                 Integer offset) {
             ipInfoBuilder.elementOffset(Optional.ofNullable(offset));
@@ -186,6 +194,7 @@ public class Dependencies {
          *
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation listWrapped() {
             return listWrapped(true);
         }
@@ -196,6 +205,7 @@ public class Dependencies {
          * @param val true if list type
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation listWrapped(
                 boolean val) {
             ipInfoBuilder.listWrapped(val);
@@ -207,6 +217,7 @@ public class Dependencies {
          *
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation providerWrapped() {
             return providerWrapped(true);
         }
@@ -217,6 +228,7 @@ public class Dependencies {
          * @param val true if provider type
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation providerWrapped(
                 boolean val) {
             ipInfoBuilder.providerWrapped(val);
@@ -228,6 +240,7 @@ public class Dependencies {
          *
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation optionalWrapped() {
             return optionalWrapped(true);
         }
@@ -238,6 +251,7 @@ public class Dependencies {
          * @param val true if list type
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation optionalWrapped(
                 boolean val) {
             ipInfoBuilder.optionalWrapped(val);
@@ -262,6 +276,7 @@ public class Dependencies {
          * @param val the qualifier
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation addQualifier(
                 Class<? extends Annotation> val) {
             ipInfoBuilder.addQualifier(DefaultQualifierAndValue.create(val));
@@ -274,6 +289,7 @@ public class Dependencies {
          * @param val the qualifier
          * @return the builder
          */
+        // note: called from generated code
         public BuilderContinuation addQualifier(
                 QualifierAndValue val) {
             ipInfoBuilder.addQualifier(val);
@@ -354,6 +370,7 @@ public class Dependencies {
                     .elementKind(kind)
                     .elementTypeName(elemTypeName)
                     .elementName(elemName)
+                    .elementOffset(Optional.ofNullable(ElementInfo.ElementKind.FIELD == kind ? null : 0))
                     .elementArgs(elemArgs);
             return this;
         }
@@ -363,30 +380,37 @@ public class Dependencies {
          *
          * @return any built dependencies info realized from this last commit
          */
+        // note: called from generated code
         public Optional<DependencyInfo> commitLastDependency() {
-            assert (builder != null);
+            String id = null;
+            try {
+                assert (builder != null);
 
-            if (ipInfoBuilder != null) {
-                ipInfoBuilder.baseIdentity(toBaseIdentity(ipInfoBuilder));
-                ipInfoBuilder.id(toId(ipInfoBuilder));
-                ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
-                        .addContractImplemented(ipInfoBuilder.elementTypeName())
-                        .qualifiers(ipInfoBuilder.qualifiers())
-                        .build();
-                InjectionPointInfo ipInfo = ipInfoBuilder
-                        .dependencyToServiceInfo(criteria)
-                        .build();
-                ipInfoBuilder = null;
+                if (ipInfoBuilder != null) {
+                    id = toId(ipInfoBuilder);
+                    ipInfoBuilder.baseIdentity(toBaseIdentity(ipInfoBuilder));
+                    ipInfoBuilder.id(id);
+                    ServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
+                            .addContractImplemented(ipInfoBuilder.elementTypeName())
+                            .qualifiers(ipInfoBuilder.qualifiers())
+                            .build();
+                    InjectionPointInfo ipInfo = ipInfoBuilder
+                            .dependencyToServiceInfo(criteria)
+                            .build();
+                    ipInfoBuilder = null;
 
-                DependencyInfo dep = DefaultDependencyInfo.builder()
-                        .addInjectionPointDependency(ipInfo)
-                        .dependencyTo(ipInfo.dependencyToServiceInfo())
-                        .build();
-                builder.addServiceInfoDependency(ipInfo.dependencyToServiceInfo(), dep);
-                return Optional.of(dep);
+                    DependencyInfo dep = DefaultDependencyInfo.builder()
+                            .addInjectionPointDependency(ipInfo)
+                            .dependencyTo(ipInfo.dependencyToServiceInfo())
+                            .build();
+                    builder.addServiceInfoDependency(ipInfo.dependencyToServiceInfo(), dep);
+                    return Optional.of(dep);
+                }
+
+                return Optional.empty();
+            } catch (Exception e) {
+                throw new IllegalStateException("failed to commit a dependency: " + id, e);
             }
-
-            return Optional.empty();
         }
     }
 
@@ -438,7 +462,7 @@ public class Dependencies {
 
         String baseId;
         if (ElementInfo.ElementKind.FIELD == kind) {
-            baseId = toFieldIdentity(elemName, access, packageName);
+            baseId = toFieldIdentity(elemName, packageName);
         } else {
             baseId = toMethodBaseIdentity(elemName,
                                           dep.elementArgs().orElseThrow(),
@@ -456,17 +480,19 @@ public class Dependencies {
 
         String id;
         if (ElementInfo.ElementKind.FIELD == kind) {
-            id = toFieldIdentity(elemName, access, packageName);
+            id = toFieldIdentity(elemName, packageName);
         } else {
             id = toMethodIdentity(elemName,
                                   dep.elementArgs().orElseThrow(),
-                                  dep.elementOffset().orElseThrow(),
-                                  access, packageName);
+                                  dep.elementOffset().orElseThrow(() -> new IllegalStateException("failed on " + elemName)),
+                                  access,
+                                  packageName);
         }
         return id;
     }
 
-    private static Supplier<String> toPackageName(String serviceTypeName) {
+    private static Supplier<String> toPackageName(
+            String serviceTypeName) {
         return () -> toPackageName(DefaultTypeName.createFromTypeName(serviceTypeName));
     }
 
@@ -476,16 +502,14 @@ public class Dependencies {
     }
 
     /**
-     * The field's identity and its base identity are one in the same since there is no arguments to handle.
+     * The field's identity and its base identity are the same since there is no arguments to handle.
      *
      * @param elemName      the non-null field name
-     * @param ignoredAccess the access for the field
      * @param packageName   the package name of the owning service type containing the field
      * @return the field identity (relative to the owning service type)
      */
-    private static String toFieldIdentity(
+    public static String toFieldIdentity(
             String elemName,
-            ElementInfo.Access ignoredAccess,
             Supplier<String> packageName) {
         String id = Objects.requireNonNull(elemName);
         String pName = (packageName == null) ? null : packageName.get();
@@ -530,7 +554,7 @@ public class Dependencies {
      * @param packageName   the package name of the owning service type containing the method
      * @return the unique identity (relative to the owning service type)
      */
-    private static String toMethodIdentity(
+    public static String toMethodIdentity(
             String elemName,
             int methodArgCount,
             Integer elemOffset,

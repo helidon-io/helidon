@@ -18,7 +18,6 @@ package io.helidon.pico.services;
 
 import io.helidon.pico.DefaultQualifierAndValue;
 import io.helidon.pico.DefaultServiceInfo;
-import io.helidon.pico.Phase;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.ServiceInfo;
 
@@ -31,7 +30,7 @@ class BasicModuleServiceProvider extends AbstractServiceProvider<io.helidon.pico
             io.helidon.pico.Module module,
             String moduleName,
             PicoServices picoServices) {
-        super(module, Phase.ACTIVE, createServiceInfo(module, moduleName), picoServices);
+        super(module, PicoServices.terminalActivationPhase(), createServiceInfo(module, moduleName), picoServices);
         serviceRef(module);
     }
 

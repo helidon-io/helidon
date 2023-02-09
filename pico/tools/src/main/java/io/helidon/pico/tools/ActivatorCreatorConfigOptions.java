@@ -17,6 +17,7 @@
 package io.helidon.pico.tools;
 
 import io.helidon.builder.Builder;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.pico.PicoServicesConfig;
 
 /**
@@ -52,6 +53,7 @@ public interface ActivatorCreatorConfigOptions {
      *
      * @return true if the module should be created
      */
+    @ConfiguredOption("true")
     boolean isModuleCreated();
 
     /**

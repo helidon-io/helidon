@@ -58,9 +58,10 @@ public interface InjectorOptions {
         }
 
         @Override
-        public DefaultInjectorOptions.Builder intercept(DefaultInjectorOptions.Builder target) {
+        public DefaultInjectorOptions.Builder intercept(
+                DefaultInjectorOptions.Builder target) {
             if (target.activationRequest() == null) {
-                target.activationRequest(ActivationRequest.DEFAULT.get());
+                target.activationRequest(PicoServices.createDefaultActivationRequest());
             }
             return target;
         }

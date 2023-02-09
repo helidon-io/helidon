@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.Builder;
-import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.builder.Singular;
 import io.helidon.pico.QualifierAndValue;
 
 /**
@@ -38,6 +38,7 @@ public interface ExternalModuleCreatorRequest extends GeneralCreatorRequest {
      *
      * @return the list of package names to analyze and target for activator creation
      */
+    @Singular
     List<String> packageNamesToScan();
 
     /**
@@ -45,6 +46,7 @@ public interface ExternalModuleCreatorRequest extends GeneralCreatorRequest {
      *
      * @return any qualifiers that should be mapped into the generated services.
      */
+    @Singular
     Map<String, Set<QualifierAndValue>> serviceTypeToQualifiersMap();
 
     /**
@@ -59,7 +61,6 @@ public interface ExternalModuleCreatorRequest extends GeneralCreatorRequest {
      *
      * @return allows inner classes to be processed for potential pico activators
      */
-    @ConfiguredOption("true")
     boolean innerClassesProcessed();
 
 }

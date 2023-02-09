@@ -18,6 +18,7 @@ package io.helidon.pico.testsubjects;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.pico.ActivationLog;
 import io.helidon.pico.ActivationResult;
@@ -27,6 +28,7 @@ import io.helidon.pico.Module;
 import io.helidon.pico.PicoServices;
 import io.helidon.pico.PicoServicesConfig;
 import io.helidon.pico.ServiceBinder;
+import io.helidon.pico.ServiceInfoCriteria;
 import io.helidon.pico.Services;
 
 abstract class AbstractPicoServices implements PicoServices {
@@ -42,7 +44,8 @@ abstract class AbstractPicoServices implements PicoServices {
     }
 
     @Override
-    public Optional<ServiceBinder> createServiceBinder(Module module) {
+    public Optional<ServiceBinder> createServiceBinder(
+            Module module) {
         return Optional.empty();
     }
 
@@ -63,6 +66,11 @@ abstract class AbstractPicoServices implements PicoServices {
 
     @Override
     public Optional<Metrics> metrics() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Set<ServiceInfoCriteria>> lookups() {
         return Optional.empty();
     }
 

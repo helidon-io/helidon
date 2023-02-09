@@ -93,9 +93,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-XprintProcessorInfo</arg>
-                        <arg>-XprintRounds</arg>
-                        <arg>-verbose</arg>
+<!--                        <arg>-XprintProcessorInfo</arg>-->
+<!--                        <arg>-XprintRounds</arg>-->
+<!--                        <arg>-verbose</arg>-->
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>

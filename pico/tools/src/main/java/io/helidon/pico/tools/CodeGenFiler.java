@@ -73,7 +73,7 @@ public class CodeGenFiler {
      *
      * @param filer the filer to use for creating resources
      */
-    public CodeGenFiler(
+    CodeGenFiler(
             AbstractFilerMsgr filer) {
         this(filer, null);
     }
@@ -89,6 +89,17 @@ public class CodeGenFiler {
             Boolean enabled) {
         this.filer = Objects.requireNonNull(filer);
         this.enabled = enabled;
+    }
+
+    /**
+     * Creates a new code gen filer.
+     *
+     * @param filer the physical filer
+     * @return a newly created code gen filer
+     */
+    public static CodeGenFiler create(
+            AbstractFilerMsgr filer) {
+        return new CodeGenFiler(filer);
     }
 
     /**

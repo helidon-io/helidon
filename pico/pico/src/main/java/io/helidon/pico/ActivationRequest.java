@@ -19,7 +19,6 @@ package io.helidon.pico;
 import java.util.Optional;
 
 import io.helidon.builder.Builder;
-import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.ConfiguredOption;
 
 /**
@@ -27,11 +26,6 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 @Builder
 public interface ActivationRequest {
-
-    /**
-     * Default request.
-     */
-    LazyValue<ActivationRequest> DEFAULT = LazyValue.create(() -> DefaultActivationRequest.builder().build());
 
     /**
      * Optionally, the injection point context information.

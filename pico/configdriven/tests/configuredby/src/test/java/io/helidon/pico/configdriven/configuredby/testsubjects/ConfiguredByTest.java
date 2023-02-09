@@ -53,8 +53,8 @@ class ConfiguredByTest {
     static final String TAG_FAKE_SOCKET_CONFIG = "fake-socket-config";
     static final String TAG_FAKE_SERVER_CONFIG_CONFIG = "fake-server-config";
 
-    private PicoServices picoServices;
-    private Services services;
+    PicoServices picoServices;
+    Services services;
 
     @BeforeAll
     static void initialStateChecks() {
@@ -67,7 +67,10 @@ class ConfiguredByTest {
         PicoTestingSupport.resetAll();
         Config config = io.helidon.config.Config.create(
                 ConfigSources.create(
-                        Map.of(PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
+                        Map.of(
+                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_PERMITS_DYNAMIC, "true",
+                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_ACTIVATION_LOGS, "true",
+                                PicoServicesConfig.NAME + "." + PicoServicesConfig.KEY_SERVICE_LOOKUP_CACHING, "true",
                                 TAG_FAKE_SOCKET_CONFIG + ".port", "8080",
                                TAG_FAKE_SERVER_CONFIG_CONFIG + ".worker-count", "1"
                         ), "config-1"));
@@ -79,7 +82,7 @@ class ConfiguredByTest {
     @Test
     void testItAll() {
         // verify the services registry
-        testRegisty();
+        testRegistry();
 
         ServiceProvider<FakeWebServer> fakeWebServer = services.lookup(FakeWebServer.class);
         assertThat(fakeWebServer.currentActivationPhase(), is(Phase.ACTIVE));
@@ -97,7 +100,7 @@ class ConfiguredByTest {
     }
 
 //    @Test
-    void testRegisty() {
+    void testRegistry() {
         DefaultServiceInfoCriteria criteria = DefaultServiceInfoCriteria.builder()
                 .addQualifier(DefaultQualifierAndValue.create(ConfiguredBy.class))
                 .build();

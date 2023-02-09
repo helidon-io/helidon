@@ -520,6 +520,7 @@ public class ServicesToProcess implements Resetable {
     public void addScopeTypeName(
             TypeName serviceTypeName,
             String scopeTypeName) {
+        Objects.requireNonNull(scopeTypeName);
         addServiceTypeName(serviceTypeName);
 
         servicesToScopeTypeNames.compute(serviceTypeName, (k, v) -> {

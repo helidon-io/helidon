@@ -33,13 +33,16 @@ public class DefaultServiceBinder implements ServiceBinder {
     private final PicoServices picoServices;
     private final ServiceBinder serviceRegistry;
     private final String moduleName;
+    private final boolean trusted;
 
     private DefaultServiceBinder(
             PicoServices picoServices,
-            String moduleName) {
+            String moduleName,
+            boolean trusted) {
         this.picoServices = Objects.requireNonNull(picoServices);
         this.serviceRegistry = (ServiceBinder) picoServices.services();
         this.moduleName = moduleName;
+        this.trusted = trusted;
     }
 
     /**
@@ -47,20 +50,24 @@ public class DefaultServiceBinder implements ServiceBinder {
      *
      * @param picoServices the pico services instance
      * @param moduleName the module name
+     * @param trusted are we in trusted mode (typically only set during early initialization sequence)
      * @return the newly created service binder
      */
     public static DefaultServiceBinder create(
             PicoServices picoServices,
-            String moduleName) {
+            String moduleName,
+            boolean trusted) {
         Objects.requireNonNull(picoServices);
         Objects.requireNonNull(moduleName);
-        return new DefaultServiceBinder(picoServices, moduleName);
+        return new DefaultServiceBinder(picoServices, moduleName, trusted);
     }
 
     @Override
     public void bind(
             ServiceProvider<?> sp) {
-        DefaultServices.assertPermitsDynamic(picoServices.config());
+        if (!trusted) {
+            DefaultServices.assertPermitsDynamic(picoServices.config());
+        }
 
         Optional<ServiceProviderBindable<?>> bindableSp = toBindableProvider(sp);
 

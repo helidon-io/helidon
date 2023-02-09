@@ -115,14 +115,13 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
                     .filter((classInfo) -> !classInfo.isInnerClass() || req.innerClassesProcessed())
                     .forEach(this::processServiceType);
 
-            ActivatorCreatorCodeGen activatorCreatorCodeGen =
-                    DefaultActivatorCreator.createActivatorCreatorCodeGen(services).orElseThrow();
-            ActivatorCreatorRequest activatorCreatorRequest =
-                    DefaultActivatorCreator
-                            .createActivatorCreatorRequest(services, activatorCreatorCodeGen,
-                                                       req.activatorCreatorConfigOptions(),
-                                                       req.filer(),
-                                                       req.throwIfError());
+            ActivatorCreatorCodeGen activatorCreatorCodeGen = DefaultActivatorCreator
+                    .createActivatorCreatorCodeGen(services).orElseThrow();
+            ActivatorCreatorRequest activatorCreatorRequest = DefaultActivatorCreator
+                    .createActivatorCreatorRequest(services, activatorCreatorCodeGen,
+                                                   req.activatorCreatorConfigOptions(),
+                                                   req.filer(),
+                                                   req.throwIfError());
             return responseBuilder
                     .activatorCreatorRequest(activatorCreatorRequest)
                     .serviceTypeNames(services.serviceTypeNames())
@@ -213,7 +212,10 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
     private void processScopeAndQualifiers(
             ClassInfo classInfo,
             TypeName serviceTypeName) {
-        services.addScopeTypeName(serviceTypeName, extractScopeTypeName(classInfo));
+        String scopeTypeName = extractScopeTypeName(classInfo);
+        if (scopeTypeName != null) {
+            services.addScopeTypeName(serviceTypeName, scopeTypeName);
+        }
 
         Set<QualifierAndValue> qualifiers = createQualifierAndValueSet(classInfo);
         if (!qualifiers.isEmpty()) {
@@ -315,9 +317,11 @@ public class DefaultExternalModuleCreator extends AbstractCreator implements Ext
             ExternalModuleCreatorRequest request,
             ToolsException e,
             DefaultExternalModuleCreatorResponse.Builder builder) {
-        if (Objects.isNull(request) || request.throwIfError()) {
+        if (request == null || request.throwIfError()) {
             throw e;
         }
+
+        logger().log(System.Logger.Level.ERROR, e.getMessage(), e);
 
         return builder.error(e).success(false).build();
     }
