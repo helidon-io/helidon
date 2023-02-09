@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.tracing.SpanContext;
 
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder> {
     private final SpanBuilder spanBuilder;
@@ -89,7 +90,10 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         return new OpenTelemetrySpan(span);
     }
 
-    SpanBuilder openTelemetry() {
-        return spanBuilder;
+    // used to set open telemetry context as parent, to be equivalent in function to
+    // #parent(SpanContext)
+    void parent(Context context) {
+        this.parentSet = true;
+        this.spanBuilder.setParent(context);
     }
 }
