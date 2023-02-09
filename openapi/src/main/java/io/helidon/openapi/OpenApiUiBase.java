@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -41,19 +42,17 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
     private static final LazyValue<OpenApiUiFactory<?, ?>> UI_FACTORY = LazyValue.create(OpenApiUiBase::loadUiFactory);
 
-    private static final String HTML_PREFIX =
-              "<!doctype html> "
-            + "<html lang=\"en-US\">"
-            + "    <head>"
-            + "        <meta charset=\"utf-8\"/>"
-            + "        <title> OpenAPI Document</title>"
-            + "    </head>"
-            + "    <body>"
-            + "        <pre>";
-    private static final String HTML_SUFFIX =
-              "        </pre>"
-            + "    </body>"
-            + "</html>";
+    private static final String HTML_PREFIX =   "<!doctype html>\n"
+                                              + "<html lang=\"en-US\">\n"
+                                              + "    <head>\n"
+                                              + "        <meta charset=\"utf-8\"/>\n"
+                                              + "        <title>OpenAPI Document</title>\n"
+                                              + "    </head>\n"
+                                              + "    <body>\n"
+                                              + "        <pre>\n";
+    private static final String HTML_SUFFIX =   "        </pre>\n"
+                                              + "    </body>\n"
+                                              + "</html>\n";
     private final Map<MediaType, String> preparedDocuments = new HashMap<>();
 
     /**
@@ -96,6 +95,16 @@ public abstract class OpenApiUiBase implements OpenApiUi {
     }
 
     /**
+     * Prepares a representation of the OpenAPI document in the specified media type.
+     *
+     * @param mediaType media type in which to express the document
+     * @return representation of the OpenAPI document
+     */
+    protected String prepareDocument(MediaType mediaType) {
+        return documentPreparer.apply(mediaType);
+    }
+
+    /**
      *
      * @return web context this UI implementation responds at
      */
@@ -123,7 +132,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
         try {
             response
                     .addHeader(Http.Header.CONTENT_TYPE, mediaType.toString())
-                    .send(prepareDocument(mediaType));
+                    .send(prepareDocument(request.queryParams(), mediaType));
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Error formatting OpenAPI output as " + mediaType, e);
             response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
@@ -140,16 +149,22 @@ public abstract class OpenApiUiBase implements OpenApiUi {
                 .next();
     }
 
-    private String prepareDocument(MediaType mediaType) throws IOException {
+    private String prepareDocument(Parameters queryParameters, MediaType mediaType) throws IOException {
         String result = null;
         if (preparedDocuments.containsKey(mediaType)) {
             return preparedDocuments.get(mediaType);
         }
-        result = documentPreparer.apply(mediaType);
+        MediaType resultMediaType = queryParameters
+                .first(OpenAPISupport.OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER)
+                .map(OpenAPISupport.QueryParameterRequestedFormat::chooseFormat)
+                .map(OpenAPISupport.QueryParameterRequestedFormat::mediaType)
+                .orElse(mediaType);
+
+        result = prepareDocument(resultMediaType);
         if (mediaType.test(MediaType.TEXT_HTML)) {
             result = embedInHtml(result);
         }
-        preparedDocuments.put(mediaType, result);
+        preparedDocuments.put(resultMediaType, result);
         return result;
     }
 
@@ -173,7 +188,6 @@ public abstract class OpenApiUiBase implements OpenApiUi {
 
         @Override
         public B options(Map<String, String> options) {
-            this.options.clear();
             this.options.putAll(options);
             return identity();
         }
@@ -216,6 +230,10 @@ public abstract class OpenApiUiBase implements OpenApiUi {
          */
         public Function<MediaType, String> documentPreparer() {
             return documentPreparer;
+        }
+
+        protected Map<String, String> options() {
+            return options;
         }
     }
 }
