@@ -64,7 +64,6 @@ import org.jboss.weld.serialization.spi.ProxyServices;
 import org.jboss.weld.util.Proxies;
 import org.jboss.weld.util.Proxies.TypeInfo;
 import org.jboss.weld.util.bytecode.BytecodeUtils;
-import org.jboss.weld.util.bytecode.ClassFileUtils;
 import org.jboss.weld.util.bytecode.ConstructorUtils;
 import org.jboss.weld.util.bytecode.DeferredBytecode;
 import org.jboss.weld.util.bytecode.MethodInformation;
@@ -606,12 +605,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
             ProtectionDomainCache cache = Container.instance(contextId).services().get(ProtectionDomainCache.class);
             domain = cache.getProtectionDomainForProxy(domain);
         }
-        Class<T> proxyClass;
-        if (classLoader == null) {
-            proxyClass = cast(ClassFileUtils.toClass(proxyClassType, originalClass, proxyServices, domain));
-        } else {
-            proxyClass = cast(ClassFileUtils.toClass(proxyClassType, classLoader, domain));
-        }
+        Class<T> proxyClass = cast(toClass(proxyClassType, originalClass, proxyServices, domain));
         BeanLogger.LOG.createdProxyClass(proxyClass, Arrays.toString(proxyClass.getInterfaces()));
         return proxyClass;
     }
@@ -1056,6 +1050,26 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
      */
     protected boolean isUsingProxyInstantiator() {
         return true;
+    }
+
+    /**
+     * Delegates proxy creation via {@link ProxyServices} to the integrator or to our own implementation.
+     */
+    protected Class<?> toClass(ClassFile ct, Class<?> originalClass, ProxyServices proxyServices, ProtectionDomain domain) {
+        try {
+            byte[] bytecode = ct.toBytecode();
+            Class<?> result;
+            if (domain == null) {
+                result = proxyServices.defineClass(originalClass, ct.getName(), bytecode, 0, bytecode.length);
+            } else {
+                result = proxyServices.defineClass(originalClass, ct.getName(), bytecode, 0, bytecode.length, domain);
+            }
+            return result;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
